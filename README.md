@@ -44,3 +44,24 @@ gaussian = circ.gaussian_output()
 symplectic.cov # covariance matrix
 symplectic.means # covariance matrix
 ```
+
+#### Fock optimization
+```python
+def loss_fn():
+    probs = circ.fock_probabilities(cutoffs=[5,2,2])
+    return probs[0,0,0] + probs[1,1,1] # I made this up
+
+opt = Optimizer()
+opt.minimize(circ, loss_fn)
+```
+
+#### Gaussian optimization
+```python
+import tensorflow as tf
+def loss_fn():
+    cov = circ.gaussian_output().cov
+    return tf.abs(cov[0,0] + cov[1,1] - 0.5)**2 # I made this up
+
+opt = Optimizer()
+opt.minimize(circ, loss_fn)
+```
