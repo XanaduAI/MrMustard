@@ -47,7 +47,7 @@ class TFCircuitBackend(CircuitBackendInterface):
         
         Q = self._Qmat(cov, hbar=hbar)
         C = tf.math.exp(-0.5 * tf.einsum('i,ij,j', B, tf.linalg.inv(Q), tf.math.conj(B))) / tf.math.sqrt(tf.linalg.det(Q))
-        return A[:N, :N], B[:N], C
+        return A[:N, :N], B[:N], C**(0.5 + 0.5*mixed) # will be off by global phase
     
     @tf.custom_gradient
     def _recursive_state(self, A:tf.Tensor, B:tf.Tensor, C:tf.Tensor, cutoffs:Sequence[int]):
@@ -221,7 +221,6 @@ class TFGateBackend(GateBackendInterface):
         Args:
             theta (float): transmissivity parameter
             phi (float): phase parameter
-            dtype (numpy.dtype): datatype to represent the Symplectic matrix
         Returns:
             array: symplectic-orthogonal transformation matrix of an interferometer with angles theta and phi
         """
@@ -231,9 +230,9 @@ class TFGateBackend(GateBackendInterface):
         cp = tf.cast(tf.math.cos(phi), tf.float64)
         sp = tf.cast(tf.math.sin(phi), tf.float64)
 
-        return tf.convert_to_tensor([[ct, -cp * st, 0, sp * st],
+        return tf.convert_to_tensor([[ct, -cp * st, 0, -sp * st],
                                     [cp * st, ct, -sp * st, 0],
-                                    [0, -sp * st, ct, -cp * st],
+                                    [0, sp * st, ct, -cp * st],
                                     [sp * st, 0, cp * st, ct]])
     
     def _rotation_symplectic(self, theta:float):
