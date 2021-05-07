@@ -148,26 +148,6 @@ class TFGateBackend(GateBackendInterface):
             cov = tf.tensor_scatter_nd_add(cov, [[mode,mode], [mode+N,mode+N]], [(1 - T) * (2 * nbar + 1) * hbar / 2, (1 - T) * (2 * nbar + 1) * hbar / 2])
         return cov, means
 
-    def _expand(self, S, modes:List[int], N:int):
-        r"""_expands a Symplectic matrix S to act on the entire subsystem.
-
-        Args:
-            S (array): a :math:`2M\times 2M` Symplectic matrix
-            modes (Sequence[int]): the list of modes S acts on
-            N (int): full size of the subsystem
-        Returns:
-            array: the resulting :math:`2N\times 2N` Symplectic matrix
-        """
-        M = S.shape[-1] // 2
-        modes = modes + [m+N for m in modes]
-        idxS = iter(range(2*M))
-        idxI = iter(range(2*M,2*N))
-        Z = tf.zeros((2*M, 2*(N-M)), dtype=S.dtype)
-        I = tf.eye(2*(N-M), dtype=S.dtype)
-        S2 = tf.concat([tf.concat([S, Z], axis=1), tf.concat([tf.transpose(Z), I], axis=1)], axis=0)
-        pick = [next(idxI) if m not in modes else next(idxS) for m in range(2*N)]
-        return tf.gather(tf.gather(S2, pick, axis=0), pick, axis=1)
-
     def _beam_splitter_symplectic(self, theta:float, phi:float):
         r"""Beam-splitter.
         Args:
@@ -296,6 +276,7 @@ class TFMathbackend(MathBackendInterface):
 
     def _make_parameter(self, par: ParameterInfo):
         bounds = [par.bounds[0] or -np.inf, par.bounds[1] or np.inf]
+
         if not par.bounds == (None, None):
             constraint = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
@@ -305,6 +286,7 @@ class TFMathbackend(MathBackendInterface):
             val = truncnorm.rvs(*bounds, size=par.shape)
         else:
             val = par.init_value
+
         if par.trainable:
             return tf.Variable(val, dtype=tf.float64, name = par.name, constraint=constraint)
         else:

@@ -25,18 +25,21 @@ class CircuitBackendInterface(ABC):
 
 
 class GateInterface(ABC):
+    modes: List[int]
     mixing:bool
+    euclidean_parameters: List[ArrayLike]
+    symplectic_parameters: List[ArrayLike]
 
     @abstractmethod
     def __call__(self, state:State) -> State: pass
 
-    @property
-    def symplectic_parameters(self) -> List[ArrayLike]:
-        return []
+    # @property
+    # def symplectic_parameters(self) -> List[ArrayLike]:
+    #     return []
 
-    @property
-    def euclidean_parameters(self) -> List[ArrayLike]:
-        return []
+    # @property
+    # def euclidean_parameters(self) -> List[ArrayLike]:
+    #     return []
 
 
 ######################

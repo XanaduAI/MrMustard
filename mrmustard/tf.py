@@ -7,8 +7,9 @@ class Circuit(BaseCircuit,TFCircuitBackend): pass
 class Optimizer(TFOptimizerBackend, BaseOptimizer): pass
 class Sgate(TFGateBackend, BaseSgate, TFMathbackend): pass
 class Dgate(TFGateBackend, BaseDgate, TFMathbackend): pass
+class Rgate(TFGateBackend, BaseRgate, TFMathbackend): pass
 class Ggate(TFGateBackend, BaseGgate, TFMathbackend): pass
 class BSgate(TFGateBackend, BaseBSgate, TFMathbackend): pass
 class Loss(TFGateBackend, BaseLoss, TFMathbackend): pass
 
-__all__ = ['Circuit', 'Optimizer', 'Sgate', 'Dgate', 'Ggate', 'BSgate', 'Lossgate']
+__all__ = ['Circuit', 'Optimizer', 'Sgate', 'Dgate', 'Ggate', 'BSgate', 'Rgate', 'Lossgate']

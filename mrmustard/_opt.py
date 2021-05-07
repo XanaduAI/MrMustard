@@ -6,6 +6,9 @@ from mrmustard._states import State
 from mrmustard.visual import Progressbar
 
 
+################
+#  INTERFACES  #
+################
 
 class CircuitInterface(ABC):
     "Interface for the Circuit class. Implemented in _circuit.py"
@@ -59,6 +62,10 @@ class OptimizerBackendInterface(ABC):
 
     @abstractmethod
     def _all_euclidean_parameters(self, circuits) -> List: pass
+
+
+
+
 
 class BaseOptimizer(OptimizerBackendInterface):
     _backend_opt:type
