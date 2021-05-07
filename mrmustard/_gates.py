@@ -201,3 +201,29 @@ class BaseLoss(GateInterface, GateBackendInterface, MathBackendInterface):
     @property
     def euclidean_parameters(self) -> List[ArrayLike]:
         return [p for p in self._parameters if hasattr(p, 'trainable')]
+
+
+class BaseS2gate(GateInterface, GateBackendInterface, MathBackendInterface):
+    def __init__(self, modes:List[int],
+                       r:Optional[float]=None,
+                       r_bounds:Tuple[Optional[float], Optional[float]]=(0.0,None),
+                       r_trainable:bool=True,
+                       phi:Optional[float]=None,
+                       phi_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
+                       phi_trainable:bool=True):
+        self.modes = modes
+        self.mixing = False
+        _r = ParameterInfo(r, r_trainable, r_bounds, None, 'r')
+        _phi = ParameterInfo(phi, phi_trainable, phi_bounds, None, 'phi')
+        self._parameters = [self._make_parameter(_r), self._make_parameter(_phi)]
+        self.euclidean_parameters = [p for p,info in zip(self._parameters, [_r, _phi]) if info.trainable]
+
+    def __call__(self, state:State) -> State:
+        S2 = self._two_mode_squeezing_symplectic(*self._parameters) # (4x4)
+        output = State(state.num_modes)
+        output.cov = self._sandwich(bread=S2, filling=state.cov, modes=self.modes)
+        output.means = self._matvec(mat=S2, vec=state.means, modes=self.modes)
+        return output
+
+    def __repr__(self):
+        return f"S2gate(r={float(self._parameters[0]):.4f}, varphi={float(self._parameters[1]):.4f}, modes={self.modes})"
