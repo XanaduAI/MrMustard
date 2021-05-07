@@ -73,7 +73,7 @@ class BaseBSgate(GateInterface, GateBackendInterface, MathBackendInterface):
 
 
 
-class BaseDgate(GateInterface, GateBackendInterface):
+class BaseDgate(GateInterface, GateBackendInterface, MathBackendInterface):
     def __init__(self, modes:List[int],
                        x:Optional[float]=None,
                        x_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
@@ -101,7 +101,7 @@ class BaseDgate(GateInterface, GateBackendInterface):
 
 
 
-class BaseSgate(GateInterface, GateBackendInterface):
+class BaseSgate(GateInterface, GateBackendInterface, MathBackendInterface):
     def __init__(self, modes:List[int],
                        r:Optional[float]=None,
                        r_bounds:Tuple[Optional[float], Optional[float]]=(0.0,None),
@@ -128,7 +128,7 @@ class BaseSgate(GateInterface, GateBackendInterface):
 
 
 
-class BaseGgate(GateInterface, GateBackendInterface):
+class BaseGgate(GateInterface, GateBackendInterface, MathBackendInterface):
     def __init__(self, modes:List[int],
                        symp:Optional[ArrayLike]=None,
                        symp_trainable:bool=True,
@@ -155,7 +155,7 @@ class BaseGgate(GateInterface, GateBackendInterface):
     
 
 
-class BaseRgate(GateInterface, GateBackendInterface):
+class BaseRgate(GateInterface, GateBackendInterface, MathBackendInterface):
     def __init__(self, modes:List[int],
                        angle:Optional[float]=None,
                        angle_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
@@ -178,7 +178,7 @@ class BaseRgate(GateInterface, GateBackendInterface):
 
 
 
-class BaseLoss(GateInterface, GateBackendInterface):
+class BaseLoss(GateInterface, GateBackendInterface, MathBackendInterface):
     def __init__(self, modes:List[int],
                        transmissivity:Optional[float]=None,
                        transmissivity_bounds:Tuple[Optional[float], Optional[float]]=(0.0,1.0),
