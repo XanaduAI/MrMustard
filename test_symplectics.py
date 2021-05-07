@@ -31,12 +31,6 @@ def test_Sgate(r, phi):
     assert np.allclose(cov, expected)
 
 
-##################
-# The following test if failing
-# there is likely something off with the implementation of Rgate
-##################
-
-
 @pytest.mark.parametrize("theta", [0, np.pi / 4, np.pi / 2])
 def test_Rgate(theta):
     """Tests the Rgate is implemented correctly by applying it on one half of a maximally entangled state"""
@@ -48,10 +42,6 @@ def test_Rgate(theta):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(rotation(theta), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
-    print("\n\n\n\n\n")
-    print(cov)
-    print(expected)
-    print("\n\n\n\n\n")
     assert np.allclose(cov, expected)
 
 
