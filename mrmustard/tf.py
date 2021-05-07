@@ -11,5 +11,5 @@ class Rgate(TFGateBackend, BaseRgate, TFMathbackend): pass
 class Ggate(TFGateBackend, BaseGgate, TFMathbackend): pass
 class BSgate(TFGateBackend, BaseBSgate, TFMathbackend): pass
 class Loss(TFGateBackend, BaseLoss, TFMathbackend): pass
-
-__all__ = ['Circuit', 'Optimizer', 'Sgate', 'Dgate', 'Ggate', 'BSgate', 'Rgate', 'Lossgate']
+class S2gate(TFGateBackend, BaseSgate, TFMathbackend): pass
+__all__ = ['Circuit', 'Optimizer', 'Sgate', 'Dgate', 'Ggate', 'BSgate', 'Rgate', 'Lossgate', 'S2gate']
