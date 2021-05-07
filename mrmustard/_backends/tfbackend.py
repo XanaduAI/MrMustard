@@ -194,9 +194,8 @@ class TFGateBackend(GateBackendInterface):
         sh = tf.cast(tf.math.sinh(r), tf.float64)
         return tf.convert_to_tensor([[ch - cp*sh, -sp*sh], [-sp*sh, ch + cp*sh]])
 
-    def _two_mode__squeezing_symplectic(self, r:float, phi:float):
+    def _two_mode_squeezing_symplectic(self, r:float, phi:float):
         r"""Two-mode squeezing.
-
         Args:
             r (float): squeezing magnitude
             phi (float): rotation parameter

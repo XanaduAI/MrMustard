@@ -27,7 +27,7 @@ class GateBackendInterface(ABC):
     def _beam_splitter_symplectic(self, theta, varphi) -> ArrayLike: pass
 
     @abstractmethod
-    def _two_mode__squeezing_symplectic(self, r:float, phi:float) -> ArrayLike: pass
+    def _two_mode_squeezing_symplectic(self, r:float, phi:float) -> ArrayLike: pass
 
 
 @dataclass
