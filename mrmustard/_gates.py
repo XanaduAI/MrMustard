@@ -7,8 +7,6 @@ from mrmustard._circuit import GateInterface
 from mrmustard._states import State
 from mrmustard._backends import MathBackendInterface
 
-
-
 # NOTE Gates IMPLEMENT the GateInterface, and USE the GateBackendInterface
 
 
@@ -48,8 +46,10 @@ class BaseBSgate(GateInterface, GateBackendInterface, MathBackendInterface):
         _theta = ParameterInfo(theta, theta_trainable, theta_bounds, None, 'theta')
         _phi = ParameterInfo(phi, phi_trainable, phi_bounds, None, 'phi')
         self._parameters = [self._make_parameter(_theta), self._make_parameter(_phi)]
-
+        # import pdb
+        # pdb.set_trace()
     def __call__(self, state:State) -> State:
+        
         BS = self._beam_splitter_symplectic(*self._parameters) # (4x4)
         output = State(state.num_modes)
         output.cov = self._sandwich(bread=BS, filling=state.cov, modes=self.modes)
@@ -111,8 +111,7 @@ class BaseSgate(GateInterface, GateBackendInterface):
         self._parameters = [self._make_parameter(_r), self._make_parameter(_phi)]
 
     def __call__(self, state:State) -> State:
-        r, phi = self._parameters
-        S = self._expand(self._squeezing_symplectic(r, phi), self.modes, state.num_modes)
+        S = self._squeezing_symplectic(*self._parameters)
         output = State(state.num_modes)
         output.cov = self._sandwich(bread=S, filling=state.cov, modes=self.modes)
         output.means = self._matvec(mat=S, vec=state.means, modes=self.modes)
@@ -175,8 +174,7 @@ class BaseRgate(GateInterface, GateBackendInterface):
         self._parameters = [self._make_parameter(_angle)]
 
     def __call__(self, state:State) -> State:
-        angle, = self._parameters
-        R = self._expand(self._rotation_symplectic(angle), self.modes, state.num_modes)
+        R = self._rotation_symplectic(*self._parameters)
         output = State(state.num_modes)
         output.cov = self._sandwich(bread=R, filling=state.cov, modes=self.modes)
         output.means = self._matvec(mat=R, vec=state.means, modes=self.modes)

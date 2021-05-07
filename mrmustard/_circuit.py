@@ -18,12 +18,6 @@ class CircuitBackendInterface(ABC):
     def _recursive_state(self, A:ArrayLike, B:ArrayLike, C:ArrayLike, cutoffs:Sequence[int]): pass
 
     @abstractmethod
-    def _all_diagonals(self, rho: ArrayLike) -> ArrayLike: pass
-
-    @abstractmethod
-    def _modsquare(self, array:ArrayLike) -> ArrayLike: pass
-
-    @abstractmethod
     def _backend_photon_number_mean(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
 
     @abstractmethod

@@ -21,7 +21,4 @@ class MathBackendInterface(ABC):
     def _add_at_index(self, array:ArrayLike, value:ArrayLike, index:Sequence[int]) -> ArrayLike: pass
 
     @abstractmethod
-    def _constant(self, value:Optional[float]) -> Optional[ArrayLike]: pass
-
-    @abstractmethod
     def _make_parameter(self, parinfo): pass

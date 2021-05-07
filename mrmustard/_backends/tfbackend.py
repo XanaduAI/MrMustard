@@ -302,10 +302,9 @@ class TFMathbackend(MathBackendInterface):
             constraint = None
 
         if par.init_value is None:
-            val = truncnorm(*bounds, size=par.shape)
+            val = truncnorm.rvs(*bounds, size=par.shape)
         else:
             val = par.init_value
-
         if par.trainable:
             return tf.Variable(val, dtype=tf.float64, name = par.name, constraint=constraint)
         else:
