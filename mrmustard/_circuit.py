@@ -33,14 +33,6 @@ class GateInterface(ABC):
     @abstractmethod
     def __call__(self, state:State) -> State: pass
 
-    # @property
-    # def symplectic_parameters(self) -> List[ArrayLike]:
-    #     return []
-
-    # @property
-    # def euclidean_parameters(self) -> List[ArrayLike]:
-    #     return []
-
 
 ######################
 #  CONCRETE CLASSES  #
