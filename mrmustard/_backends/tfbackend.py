@@ -176,7 +176,7 @@ class TFGateBackend(GateBackendInterface):
         """
         x = tf.cast(tf.math.cos(theta), tf.float64)
         y = tf.cast(tf.math.sin(theta), tf.float64)
-        return tf.convert_to_tensor([[x, -y],[x, y]])
+        return tf.convert_to_tensor([[x, -y],[y, x]])
 
     def _squeezing_symplectic(self, r:float, phi:float):
         r"""Squeezing. In fock space this corresponds to \exp(\tfrac{1}{2}r e^{i \phi} (a^2 - a^{\dagger 2}) ).
