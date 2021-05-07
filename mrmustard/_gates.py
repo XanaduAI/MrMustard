@@ -206,7 +206,7 @@ class BaseLoss(GateInterface, GateBackendInterface, MathBackendInterface):
 class BaseS2gate(GateInterface, GateBackendInterface, MathBackendInterface):
     def __init__(self, modes:List[int],
                        r:Optional[float]=None,
-                       r_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
+                       r_bounds:Tuple[Optional[float], Optional[float]]=(0.0,None),
                        r_trainable:bool=True,
                        phi:Optional[float]=None,
                        phi_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
@@ -227,4 +227,3 @@ class BaseS2gate(GateInterface, GateBackendInterface, MathBackendInterface):
 
     def __repr__(self):
         return f"S2gate(r={float(self._parameters[0]):.4f}, varphi={float(self._parameters[1]):.4f}, modes={self.modes})"
-
