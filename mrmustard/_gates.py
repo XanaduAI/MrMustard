@@ -213,7 +213,7 @@ class BaseS2gate(GateInterface, GateBackendInterface, MathBackendInterface):
                        phi_trainable:bool=True):
         self.modes = modes
         self.mixing = False
-        _theta = ParameterInfo(r, r_trainable, r_bounds, None, 'r')
+        _r = ParameterInfo(r, r_trainable, r_bounds, None, 'r')
         _phi = ParameterInfo(phi, phi_trainable, phi_bounds, None, 'phi')
         self._parameters = [self._make_parameter(_r), self._make_parameter(_phi)]
         self.euclidean_parameters = [p for p,info in zip(self._parameters, [_r, _phi]) if info.trainable]
