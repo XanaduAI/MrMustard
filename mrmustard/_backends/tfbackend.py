@@ -2,14 +2,16 @@ import numpy as np
 import tensorflow as tf
 from numba import njit 
 from functools import lru_cache
-from scipy.stats import unitary_group
+from scipy.stats import unitary_group, truncnorm
 from scipy.linalg import expm
 from numpy.typing import ArrayLike
 from typing import List, Tuple, Callable, Sequence, Optional
 
-from mrmustard._gates import GateBackendInterface
+from mrmustard._gates import GateBackendInterface, ParameterInfo
 from mrmustard._opt import OptimizerBackendInterface
 from mrmustard._circuit import CircuitBackendInterface
+from mrmustard._backends import MathBackendInterface
+
 import mrmustard._backends.utils as utils
 
 class TFCircuitBackend(CircuitBackendInterface):
@@ -67,15 +69,6 @@ class TFCircuitBackend(CircuitBackendInterface):
             return dLdA, dLdB, dLdC
         return state, grad
 
-    def _modsquare(self, array:tf.Tensor) -> tf.Tensor:
-        return tf.abs(array)**2
-
-    def _all_diagonals(self, rho: tf.Tensor) -> tf.Tensor:
-        cutoffs = rho.shape[:rho.ndim//2]
-        rho = tf.reshape(rho, (np.prod(cutoffs), np.prod(cutoffs)))
-        diag = tf.linalg.diag_part(rho)
-        return tf.reshape(diag, cutoffs)
-
     def _backend_photon_number_mean(self, cov:tf.Tensor, means:tf.Tensor, hbar:int) -> tf.Tensor:
         N = len(means) // 2
         return (means[:N] ** 2
@@ -131,22 +124,6 @@ class TFOptimizerBackend(OptimizerBackendInterface):
 
 class TFGateBackend(GateBackendInterface):
 
-    def _constant(self, value: Optional[float]) -> Optional[tf.Tensor]:
-        if value is None:
-            return None
-        return tf.constant(value, dtype=tf.float64)
-
-    def _new_real_variable(self, shape:Optional[Sequence[int]]=None, clip_min:Optional[float]=None, clip_max:Optional[float]=None, name:str='') -> tf.Tensor:
-        constraint = None
-        val = tf.constant(np.random.normal(size=shape), dtype=tf.float64)
-        if (clip_min is not None) or (clip_max is not None):
-            clip_min = -np.inf if clip_min is None else clip_min
-            clip_max = np.inf if clip_max is None else clip_max
-            constraint = lambda x:tf.clip_by_value(x, clip_min, clip_max)
-            while not clip_min < val < clip_max:
-                val = tf.constant(np.random.normal(size=shape), dtype=tf.float64)
-        return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)
-
     def _bosonic_loss(self, cov, means, transmissivity, modes, nbar=0, hbar=2) -> Tuple[ArrayLike, ArrayLike]:
         r"""Loss channel acting on a Gaussian state.
 
@@ -171,51 +148,6 @@ class TFGateBackend(GateBackendInterface):
             cov = tf.tensor_scatter_nd_add(cov, [[mode,mode], [mode+N,mode+N]], [(1 - T) * (2 * nbar + 1) * hbar / 2, (1 - T) * (2 * nbar + 1) * hbar / 2])
         return cov, means
 
-    def _expand(self, S, modes:List[int], N:int):
-        r"""_expands a Symplectic matrix S to act on the entire subsystem.
-
-        Args:
-            S (array): a :math:`2M\times 2M` Symplectic matrix
-            modes (Sequence[int]): the list of modes S acts on
-            N (int): full size of the subsystem
-        Returns:
-            array: the resulting :math:`2N\times 2N` Symplectic matrix
-        """
-        M = S.shape[-1] // 2
-        modes = modes + [m+N for m in modes]
-        idxS = iter(range(2*M))
-        idxI = iter(range(2*M,2*N))
-        Z = tf.zeros((2*M, 2*(N-M)), dtype=S.dtype)
-        I = tf.eye(2*(N-M), dtype=S.dtype)
-        S2 = tf.concat([tf.concat([S, Z], axis=1), tf.concat([tf.transpose(Z), I], axis=1)], axis=0)
-        pick = [next(idxI) if m not in modes else next(idxS) for m in range(2*N)]
-        return tf.gather(tf.gather(S2, pick, axis=0), pick, axis=1)
-
-    def _new_symplectic_variable(self, num_modes:int, name:str): #TODO: move to utils and leave tf.Variable(...) here
-        "returns a tf.Variable initialized to a random symplectic matrix on `num_modes`"
-        if num_modes == 1:
-            W = np.exp(1j*np.random.uniform(size=(1,1)))
-            V = np.exp(1j*np.random.uniform(size=(1,1)))
-        else:
-            W = unitary_group.rvs(num_modes)
-            V = unitary_group.rvs(num_modes)
-        r = np.random.uniform(size=num_modes)
-        OW = self._unitary_to_orthogonal(W)
-        OV = self._unitary_to_orthogonal(V)
-        dd = tf.concat([tf.math.exp(-r), tf.math.exp(r)], 0)
-        return tf.Variable(tf.einsum('ij,j,jk->ik', OW,  dd,  OV), dtype=tf.float64, name=name)
-
-    def _unitary_to_orthogonal(self, U):
-        f"""Unitary to orthogonal mapping.
-        Args:
-            U (array): unitary matrix in U(n)
-        Returns:
-            array: Orthogonal matrix in O(2n)
-        """
-        X = tf.math.real(U)
-        Y = tf.math.imag(U)
-        return tf.concat([tf.concat([X, -Y], axis=1), tf.concat([Y, X], axis=1)], axis=0)
-
     def _beam_splitter_symplectic(self, theta:float, phi:float):
         r"""Beam-splitter.
         Args:
@@ -239,15 +171,12 @@ class TFGateBackend(GateBackendInterface):
         f"""Rotation gate.
         Args:
             theta (float): rotation angle
-            dtype (numpy.dtype): datatype to represent the Symplectic matrix
-
         Returns:
             array: rotation matrix by angle theta
         """
         x = tf.cast(tf.math.cos(theta), tf.float64)
         y = tf.cast(tf.math.sin(theta), tf.float64)
-        V = tf.eye(1, dtype=tf.complex128) * tf.complex(x, y)
-        return self._unitary_to_orthogonal(V)
+        return tf.convert_to_tensor([[x, -y],[x, y]])
 
     def _squeezing_symplectic(self, r:float, phi:float):
         r"""Squeezing. In fock space this corresponds to \exp(\tfrac{1}{2}r e^{i \phi} (a^2 - a^{\dagger 2}) ).
@@ -285,11 +214,82 @@ class TFGateBackend(GateBackendInterface):
                                     [0, sp * sh, ch, -cp * sh],
                                     [sp * sh, 0, -cp * sh, ch]])
 
+
+
+
+class TFMathbackend(MathBackendInterface):
+
     def _add_at_index(self, array:tf.Tensor, value:tf.Tensor, index:Sequence[int]) -> tf.Tensor:
         return tf.tensor_scatter_nd_add(array, [index], [value])
 
-    def _sandwich(self, bread:tf.Tensor, filling:tf.Tensor) -> tf.Tensor:
-        return bread @ filling @ tf.transpose(bread)
+    def _sandwich(self, bread:tf.Tensor, filling:tf.Tensor, modes:List[int]) -> tf.Tensor:
+        N = filling.shape[-1] // 2
+        indices = modes + [m+N for m in modes]
+        rows = bread @ tf.gather(filling, indices)
+        filling = tf.tensor_scatter_nd_update(filling, [[i] for i in indices], rows)
+        columns = bread @ tf.gather(tf.transpose(filling), indices)
+        return tf.transpose(tf.tensor_scatter_nd_update(tf.transpose(filling), [[i] for i in indices], columns))
+        
+    def _matvec(self, mat:tf.Tensor, vec:tf.Tensor, modes:List[int]) -> tf.Tensor:
+        N = vec.shape[-1] // 2
+        indices = modes + [m+N for m in modes]
+        updates = tf.linalg.matvec(mat,tf.gather(vec, modes + [m+N for m in modes]))
+        return tf.tensor_scatter_nd_update(vec, [[i] for i in indices], updates)
 
-    def _matvec(self, mat:tf.Tensor, vec:tf.Tensor) -> tf.Tensor:
-        return tf.linalg.matvec(mat, vec)
+    def _modsquare(self, array:tf.Tensor) -> tf.Tensor:
+        return tf.abs(array)**2
+
+    def _all_diagonals(self, rho: tf.Tensor) -> tf.Tensor:
+        cutoffs = rho.shape[:rho.ndim//2]
+        rho = tf.reshape(rho, (np.prod(cutoffs), np.prod(cutoffs)))
+        diag = tf.linalg.diag_part(rho)
+        return tf.reshape(diag, cutoffs)
+
+    def _block(self, blocks:List[List]):
+        rows = [tf.concat(row, axis=1) for row in blocks]
+        return tf.concat(rows, axis=0)
+
+    def _new_symplectic_variable(self, num_modes:int, name:str): #TODO: move to utils and leave tf.Variable(...) here
+        "returns a tf.Variable initialized to a random symplectic matrix on `num_modes`"
+        if num_modes == 1:
+            W = np.exp(1j*np.random.uniform(size=(1,1)))
+            V = np.exp(1j*np.random.uniform(size=(1,1)))
+        else:
+            W = unitary_group.rvs(num_modes)
+            V = unitary_group.rvs(num_modes)
+        r = np.random.uniform(size=num_modes)
+        OW = self._unitary_to_orthogonal(W)
+        OV = self._unitary_to_orthogonal(V)
+        dd = tf.concat([tf.math.exp(-r), tf.math.exp(r)], 0)
+        return tf.Variable(tf.einsum('ij,j,jk->ik', OW,  dd,  OV), dtype=tf.float64, name=name)
+
+    def _unitary_to_orthogonal(self, U):
+        f"""Unitary to orthogonal mapping.
+        Args:
+            U (array): unitary matrix in U(n)
+        Returns:
+            array: Orthogonal matrix in O(2n)
+        """
+        X = tf.math.real(U)
+        Y = tf.math.imag(U)
+        return self._block([[X,-Y],[Y,X]])
+
+    def _make_parameter(self, par: ParameterInfo):
+        bounds = [par.bounds[0] or -np.inf, par.bounds[1] or np.inf]
+
+        if not par.bounds == (None, None):
+            constraint = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+        else:
+            constraint = None
+
+        if par.init_value is None:
+            val = truncnorm.rvs(*bounds, size=par.shape)
+        else:
+            val = par.init_value
+
+        if par.trainable:
+            return tf.Variable(val, dtype=tf.float64, name = par.name, constraint=constraint)
+        else:
+            return tf.constant(val, dtype=tf.float64, name = par.name)
+
+
