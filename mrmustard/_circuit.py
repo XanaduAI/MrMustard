@@ -18,20 +18,34 @@ class CircuitBackendInterface(ABC):
     def _recursive_state(self, A:ArrayLike, B:ArrayLike, C:ArrayLike, cutoffs:Sequence[int]): pass
 
     @abstractmethod
-    def _backend_photon_number_mean(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
+    def _photon_number_mean(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
 
     @abstractmethod
-    def _backend_photon_number_covariance(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
+    def _photon_number_covariance(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
 
 
 class GateInterface(ABC):
     modes: List[int]
     mixing:bool
-    euclidean_parameters: List[ArrayLike]
-    symplectic_parameters: List[ArrayLike]
+    _parameters: List[ArrayLike]
 
     @abstractmethod
     def __call__(self, state:State) -> State: pass
+
+    @abstractproperty
+    def symplectic_matrix(self) -> Optional[ArrayLike]: pass
+    
+    @abstractproperty
+    def displacement_vector(self) -> Optional[ArrayLike]: pass
+
+    @abstractproperty
+    def noise_matrix(self) -> Optional[ArrayLike]: pass
+
+    @abstractproperty
+    def euclidean_parameters(self) -> List[ArrayLike]: pass
+
+    @abstractproperty
+    def symplectic_parameters(self) -> List[ArrayLike]: pass
 
 
 ######################
@@ -67,14 +81,11 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
 
     def photon_number_mean(self, hbar:int=2) -> ArrayLike:
         gaussian = self.gaussian_output()
-        return self._backend_photon_number_mean(gaussian.cov, gaussian.means, hbar)
+        return self._photon_number_mean(gaussian.cov, gaussian.means, hbar)
 
     def photon_number_covariance(self, hbar:int=2) -> ArrayLike:
         gaussian = self.gaussian_output()
-        return self._backend_photon_number_covariance(gaussian.cov, gaussian.means, hbar)
-
-
-
+        return self._photon_number_covariance(gaussian.cov, gaussian.means, hbar)
 
     @property
     def symplectic_parameters(self) -> List[ArrayLike]:
