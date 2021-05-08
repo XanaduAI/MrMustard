@@ -13,7 +13,7 @@ class Dgate(TFGateBackend, BaseDgate): pass
 class Rgate(TFGateBackend, BaseRgate): pass
 class Ggate(TFGateBackend, BaseGgate): pass
 class BSgate(TFGateBackend, BaseBSgate): pass
-class LossyChannel(TFGateBackend, BaseLoss): pass
+class LossChannel(TFGateBackend, BaseLoss): pass
 class S2gate(TFGateBackend, BaseS2gate): pass
 
-__all__ = ['Circuit', 'Optimizer', 'Sgate', 'Dgate', 'Ggate', 'BSgate', 'Rgate', 'LossyChannel', 'S2gate']
+__all__ = ['Circuit', 'Optimizer', 'Sgate', 'Dgate', 'Ggate', 'BSgate', 'Rgate', 'LossChannel', 'S2gate']
