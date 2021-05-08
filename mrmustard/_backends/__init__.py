@@ -1,24 +1,43 @@
 from abc import ABC, abstractproperty, abstractmethod
 from numpy.typing import ArrayLike
-from typing import List, Sequence, Optional
+from typing import List, Sequence, Optional, Tuple
 # from mrmustard._gates import ParameterInfo
 
 class MathBackendInterface(ABC):
 
     @abstractmethod
-    def _sandwich(self, bread:ArrayLike, filling:ArrayLike, modes:List[int]) -> ArrayLike: pass
+    def identity(self, size:int) -> ArrayLike: pass
 
     @abstractmethod
-    def _matvec(self, mat:ArrayLike, vec:ArrayLike, modes:List[int]) -> ArrayLike: pass
+    def zeros(self, size:int) -> ArrayLike: pass
 
     @abstractmethod
-    def _all_diagonals(self, rho: ArrayLike) -> ArrayLike: pass
+    def sandwich(self, bread:Optional[ArrayLike], filling:ArrayLike, modes:List[int]) -> ArrayLike: pass
 
     @abstractmethod
-    def _modsquare(self, array:ArrayLike) -> ArrayLike: pass
+    def matvec(self, mat:Optional[ArrayLike], vec:ArrayLike, modes:List[int]) -> ArrayLike: pass
 
     @abstractmethod
-    def _add_at_index(self, array:ArrayLike, value:ArrayLike, index:Sequence[int]) -> ArrayLike: pass
+    def add(self, old:ArrayLike, new:Optional[ArrayLike], modes:List[int]) -> ArrayLike: pass
 
     @abstractmethod
-    def _make_parameter(self, parinfo): pass
+    def concat(self, lst:List[ArrayLike]) -> ArrayLike: pass
+
+    @abstractmethod
+    def all_diagonals(self, rho: ArrayLike) -> ArrayLike: pass
+
+    @abstractmethod
+    def modsquare(self, array:ArrayLike) -> ArrayLike: pass
+
+    @abstractmethod
+    def make_symplectic_parameter(self, init_value: Optional[ArrayLike],
+                                        trainable:bool,
+                                        num_modes:int, 
+                                        name:str) -> ArrayLike: pass
+
+    @abstractmethod
+    def make_parameter(self, init_value: Optional[ArrayLike],
+                              trainable: bool,
+                              bounds: Tuple[Optional[float], Optional[float]],
+                              shape:Optional[Tuple[int,...]],
+                              name: str) -> ArrayLike: pass
