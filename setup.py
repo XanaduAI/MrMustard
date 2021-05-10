@@ -17,13 +17,13 @@ from setuptools import setup, find_packages
 
 
 requirements = [
-    "numpy",
+    "numpy==1.20.1",
     "scipy",
     "thewalrus",
     "numba",
     "thewalrus",
     "repoze.lru",
-    "tensorflow",
+    "tensorflow==2.4.0",
 ]
 
 
