@@ -23,6 +23,7 @@ requirements = [
     "numba",
     "thewalrus",
     "repoze.lru",
+    "tensorflow",
 ]
 
 
