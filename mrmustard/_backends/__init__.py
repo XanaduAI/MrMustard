@@ -1,7 +1,9 @@
 from abc import ABC, abstractproperty, abstractmethod
 from numpy.typing import ArrayLike
 from typing import List, Sequence, Optional, Tuple
-# from mrmustard._gates import ParameterInfo
+
+import rich
+rich.pretty.install()
 
 class MathBackendInterface(ABC):
 
