@@ -36,8 +36,8 @@ class MathBackendInterface(ABC):
                                         name:str) -> ArrayLike: pass
 
     @abstractmethod
-    def make_parameter(self, init_value: Optional[ArrayLike],
-                              trainable: bool,
-                              bounds: Tuple[Optional[float], Optional[float]],
-                              shape:Optional[Tuple[int,...]],
-                              name: str) -> ArrayLike: pass
+    def make_euclidean_parameter(self, init_value: Optional[ArrayLike],
+                                       trainable: bool,
+                                       bounds: Tuple[Optional[float], Optional[float]],
+                                       shape:Optional[Sequence[int]],
+                                       name: str) -> ArrayLike: pass
