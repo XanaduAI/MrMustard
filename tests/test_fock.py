@@ -36,16 +36,15 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     assert np.allclose(amps[1, 1, 1, 1], 0.0)
 
 
-@pytest.mark.parametrize("x", np.random.rand(4) - 0.5)
-@pytest.mark.parametrize("y", np.random.rand(4) - 0.5)
-def test_coherent_state(x, y):
+@pytest.mark.parametrize("realpha", np.random.rand(4) - 0.5)
+@pytest.mark.parametrize("imalpha", np.random.rand(4) - 0.5)
+def test_coherent_state(realpha, imalpha):
     """Test that coherent states have the correct photon number statistics"""
-    hbar = 2
     cutoff = 10
     circ = Circuit(num_modes=1)
-    circ.add_gate(Dgate(modes=[0], x=x, y=y))
+    circ.add_gate(Dgate(modes=[0], x=realpha, y=imalpha))
     amps = circ.fock_output(cutoffs=[cutoff])
-    alpha = np.sqrt(1 / (2 * hbar)) * (x + 1j * y)
+    alpha = (realpha + 1j * imalpha)
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
         [alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)]
     )
