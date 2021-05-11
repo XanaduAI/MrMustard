@@ -300,7 +300,7 @@ class TFMathbackend(MathBackendInterface):
         """
         X = tf.math.real(U)
         Y = tf.math.imag(U)
-        return self._block([[X,-Y],[Y,X]])
+        return self.block([[X,-Y],[Y,X]])
 
     def make_euclidean_parameter(self, init_value: Optional[float] = None,
                                        trainable: bool = True,
