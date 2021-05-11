@@ -36,7 +36,7 @@ class TFCircuitBackend(CircuitBackendInterface):
         aiaj = (x - p + 1j * (xp + tf.transpose(xp))) / 4
         return tf.concat([tf.concat([aidaj, tf.math.conj(aiaj)], axis=1), tf.concat([aiaj, tf.math.conj(aidaj)], axis=1)], axis=0) + tf.eye(2 * N, dtype=tf.complex128)
 
-    def _ABC(self, cov:tf.Tensor, means:tf.Tensor, mixed:bool=False, hbar:float=2.0) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    def _Sigma_mu_C(self, cov:tf.Tensor, means:tf.Tensor, mixed:bool=False, hbar:float=2.0) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         num_modes = means.shape[-1] // 2
         N = num_modes + num_modes*mixed 
         R = tf.cast(utils.rotmat(num_modes), tf.complex128)
@@ -70,8 +70,16 @@ class TFCircuitBackend(CircuitBackendInterface):
             return dLdA, dLdB, dLdC
         return state, grad
 
-    def _photon_number_mean(self, cov:tf.Tensor, means:tf.Tensor, hbar:int) -> tf.Tensor:
-        N = len(means) // 2
+    def AB(self, cov:tf.Tensor) -> tf.Tensor:
+        N = cov.shape[-1]//2
+        V1 = cov[:N,:N]
+        V2 = cov[:N,N:]
+        V2T = cov[N:,:N]
+        V3 = cov[N:,N:]
+        return 0.5*tf.complex(V1 + V3, V2T - V2), 0.5*tf.complex(V1 - V3, V2T + V2)
+
+    def _photon_number_mean(self, cov:tf.Tensor, means:tf.Tensor, hbar:float) -> tf.Tensor:
+        N = means.shape[-1] // 2
         return (means[:N] ** 2
             + means[N:] ** 2
             + tf.linalg.diag_part(cov[:N, :N])
@@ -80,7 +88,14 @@ class TFCircuitBackend(CircuitBackendInterface):
             ) / (2 * hbar)
 
     def _photon_number_covariance(self, cov, means, hbar)->tf.Tensor:
-        pass
+        A, B = self.AB(cov)
+        N = means.shape[-1] // 2
+        ac = tf.complex(means[:N], -means[:N]) # alpha conj
+        return (tf.abs(A * tf.math.conj(A))
+                + tf.abs(B * tf.math.conj(B))
+                - 0.25*tf.eye(len(A), dtype=tf.float64)
+                + 2*tf.math.real(ac[None,:]*tf.math.conj(ac)[:,None]*A + ac[None,:]*ac[:,None]*B)
+                )
             
 
     
@@ -234,7 +249,7 @@ class TFMathbackend(MathBackendInterface):
         indices = modes + [m+N for m in modes]
         return tf.tensor_scatter_nd_add(old, list(product(*[indices]*len(new.shape))), tf.reshape(new,-1))
 
-    def concat(self, lst:List[tf.Tensor]) -> tf.Tensor:
+    def concat(self, lst:List[tf.Tensor]) -> tf.Tensor: #TODO: remove?
         return tf.concat(lst, axis=-1)
 
     def sandwich(self, bread:Optional[tf.Tensor], filling:tf.Tensor, modes:List[int]) -> tf.Tensor:

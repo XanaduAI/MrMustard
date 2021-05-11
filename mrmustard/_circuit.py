@@ -12,16 +12,16 @@ from mrmustard._opt import CircuitInterface
 
 class CircuitBackendInterface(ABC):
     @abstractmethod
-    def _ABC(self, cov:ArrayLike, means:ArrayLike, mixed:bool, hbar:float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]: pass
+    def _Sigma_mu_C(self, cov:ArrayLike, means:ArrayLike, mixed:bool, hbar:float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]: pass
     
     @abstractmethod
     def _recursive_state(self, A:ArrayLike, B:ArrayLike, C:ArrayLike, cutoffs:Sequence[int]): pass
 
     @abstractmethod
-    def _photon_number_mean(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
+    def _photon_number_mean(self, cov:ArrayLike, means:ArrayLike, hbar:float) -> ArrayLike: pass
 
     @abstractmethod
-    def _photon_number_covariance(self, cov:ArrayLike, means:ArrayLike, hbar:int) -> ArrayLike: pass
+    def _photon_number_covariance(self, cov:ArrayLike, means:ArrayLike, hbar:float) -> ArrayLike: pass
 
 
 class GateInterface(ABC):
@@ -68,8 +68,8 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
 
     def fock_output(self, cutoffs:Sequence[int]) -> ArrayLike:
         output = self.gaussian_output()
-        A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=2)
-        return self._recursive_state(A, B, C, cutoffs=cutoffs)
+        Sigma, mu, C = self._Sigma_mu_C(output.cov, output.means, mixed=self._mixed_output, hbar=2)
+        return self._recursive_state(Sigma, mu, C, cutoffs=cutoffs)
 
     def fock_probabilities(self, cutoffs:Sequence[int]) -> ArrayLike:
         if self._mixed_output:
@@ -79,11 +79,11 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
             psi = self.fock_output(cutoffs=cutoffs)
             return self._modsquare(psi)
 
-    def photon_number_mean(self, hbar:int=2) -> ArrayLike:
+    def photon_number_mean(self, hbar:float=2) -> ArrayLike:
         gaussian = self.gaussian_output()
         return self._photon_number_mean(gaussian.cov, gaussian.means, hbar)
 
-    def photon_number_covariance(self, hbar:int=2) -> ArrayLike:
+    def photon_number_covariance(self, hbar:float=2) -> ArrayLike:
         gaussian = self.gaussian_output()
         return self._photon_number_covariance(gaussian.cov, gaussian.means, hbar)
 

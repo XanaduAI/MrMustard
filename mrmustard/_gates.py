@@ -114,7 +114,7 @@ class Dgate(Gate):
 
     @property
     def displacement_vector(self) -> ArrayLike:
-        return self._math_backend.displacement(*self._parameters, hbar=self.hbar)
+        return self._gate_backend.displacement(*self._parameters, hbar=self.hbar)
     
 
 
