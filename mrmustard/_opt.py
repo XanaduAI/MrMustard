@@ -100,7 +100,7 @@ class BaseOptimizer(OptimizerBackendInterface):
         if len(self.loss_history) > 5:
             # loss is stable for 5 steps
             if sum(abs(self.loss_history[-i-1] - self.loss_history[-i]) for i in range(1,5)) < 1e-6:
-                print('loss looks stable, stopping...')
+                print('Loss looks stable, stopping here.')
                 return True
         return False
 
