@@ -1,0 +1,7 @@
+numpy==1.20.1
+scipy
+numba
+repoze.lru
+tensorflow==2.4.0
+rich
+tqdm
