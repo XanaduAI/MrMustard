@@ -20,7 +20,6 @@ requirements = [
     "numpy==1.20.1",
     "scipy",
     "numba",
-    "thewalrus",
     "repoze.lru",
     "tensorflow==2.4.0",
 ]
