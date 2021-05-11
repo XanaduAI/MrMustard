@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Optional, Sequence, Union
+from typing import List, Tuple, Optional, Sequence, Union, Callable
 from numpy.typing import ArrayLike
 from dataclasses import dataclass
+import numpy as np
 
 from mrmustard._circuit import GateInterface
 from mrmustard._states import State
@@ -51,7 +52,8 @@ class Gate(GateInterface):
     _math_backend:MathBackendInterface
     _gate_backend:GateBackendInterface
     _parameters: List
-    _trainable: List
+    _trainable: List[bool]
+    _param_names: List[str]
     mixing: bool
 
     def _apply_gaussian_channel(self, state, modes, symplectic=None, displacement=None, noise=None):
@@ -65,10 +67,9 @@ class Gate(GateInterface):
     def __call__(self, state:State) -> State:
         return self._apply_gaussian_channel(state, self.modes, self.symplectic_matrix, self.displacement_vector, self.noise_matrix)
 
-    # TODO: use this as template 
-    # def __repr__(self):
-    #     str_params = ', '.join([f'{eta:.2f}' for eta in self._parameters])
-    #     return f"Loss(transmissivity=[{str_params}], modes={self.modes})"
+    def __repr__(self):
+        with np.printoptions(precision=3, suppress=True):
+            return f"{self.__class__.__qualname__}({self._repr_string(*[str(np.atleast_1d(p)) for p in self._parameters])})"
 
     @property
     def symplectic_matrix(self) -> Optional[ArrayLike]:
@@ -103,6 +104,7 @@ class Dgate(Gate):
                        y_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
                        y_trainable:bool=True,
                        hbar:float=2.0):
+        self._repr_string:Callable[[float,float],str] = lambda x,y : f'modes={modes}, x={x}, x_bounds={x_bounds}, x_trainable={x_trainable}, y={y}, y_bounds={y_bounds}, y_trainable={y_trainable}, hbar={hbar}'
         self.modes = modes
         self.mixing = False
         self.hbar = hbar
@@ -113,6 +115,7 @@ class Dgate(Gate):
     @property
     def displacement_vector(self) -> ArrayLike:
         return self._math_backend.displacement(*self._parameters, hbar=self.hbar)
+    
 
 
 
@@ -125,6 +128,7 @@ class Sgate(Gate):
                        phi:Union[Optional[float], Optional[List[float]]]=None,
                        phi_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
                        phi_trainable:bool=True):
+        self._repr_string:Callable[[float,float],str] = lambda r,phi : f'modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}'
         self.modes = modes
         self.mixing = False
         self._trainable = [r_trainable, phi_trainable]
@@ -143,6 +147,7 @@ class Rgate(Gate):
                        angle:Union[Optional[float], Optional[List[float]]]=None,
                        angle_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
                        angle_trainable:bool=True):
+        self._repr_string:Callable[[float],str] = lambda angle : f'modes={modes}, angle={angle}, angle_bounds={angle_bounds}, angle_trainable={angle_trainable}'
         self.modes = modes
         self.mixing = False
         self._trainable = [angle_trainable]
@@ -161,6 +166,7 @@ class Ggate(Gate):
                        symplectic_trainable:bool=True,
                        displacement:Optional[ArrayLike]=None,
                        displacement_trainable:bool=True):
+        self._repr_string:Callable[[float,float],str] = lambda symp,disp : f'modes={modes}, symplectic={1}, symplectic_trainable={symplectic_trainable}, displacement={1}, displacement_trainable={displacement_trainable}'
         self.modes = modes
         self.mixing = False
         self._trainable = [symplectic_trainable, displacement_trainable]
@@ -186,6 +192,7 @@ class BSgate(Gate):
                        phi:Optional[float]=None,
                        phi_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
                        phi_trainable:bool=True):
+        self._repr_string:Callable[[float,float],str] = lambda theta,phi : f'modes={modes}, theta={theta}, theta_bounds={theta_bounds}, theta_trainable={theta_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}'
         self.modes = modes
         self.mixing = False
         self._trainable = [theta_trainable, phi_trainable]
@@ -207,6 +214,7 @@ class S2gate(Gate):
                        phi:Optional[float]=None,
                        phi_bounds:Tuple[Optional[float], Optional[float]]=(None,None),
                        phi_trainable:bool=True):
+        self._repr_string:Callable[[float,float],str] = lambda r,phi : f'modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}'
         self.modes = modes
         self.mixing = False
         self._trainable = [r_trainable, phi_trainable]
@@ -227,6 +235,7 @@ class LossChannel(Gate):
                        transmissivity_bounds:Tuple[Optional[float], Optional[float]]=(0.0,1.0),
                        transmissivity_trainable:bool=False,
                        hbar:float=2.0):
+        self._repr_string:Callable[[float],str] = lambda T : f'modes={modes}, transmissivity={T}, transmissivity_bounds={transmissivity_bounds}, transmissivity_trainable={transmissivity_trainable}'
         self.modes = modes
         self.mixing = True
         self.hbar = hbar
