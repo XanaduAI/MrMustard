@@ -49,7 +49,7 @@ classifiers = [
 setup(
     name="Mr. Mustard",
     version="0.0.1",
-    description="Fast heralding circuits",
+    description="Differentiable quantum Gaussian circuits",
     url="https://github.com/XanaduAI/mrmustard",
     author="Xanadu",
     author_email="filippo@xanadu.ai",
