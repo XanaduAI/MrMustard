@@ -23,7 +23,7 @@ requirements = [
     "repoze.lru",
     "tensorflow==2.4.0",
     "rich",
-    "￼tqdm",
+    "tqdm",
 ]
 
 
