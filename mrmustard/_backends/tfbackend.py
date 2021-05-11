@@ -5,7 +5,7 @@ from functools import lru_cache
 from scipy.stats import unitary_group, truncnorm
 from scipy.linalg import expm
 from numpy.typing import ArrayLike
-from typing import List, Tuple, Callable, Sequence, Optional
+from typing import List, Tuple, Callable, Sequence, Optional, Union
 from itertools import product
 
 from mrmustard._gates import GateBackendInterface
@@ -125,86 +125,92 @@ class TFOptimizerBackend(OptimizerBackendInterface):
 
 class TFGateBackend(GateBackendInterface):
 
-    def _loss_X(self, transmissivity:Sequence[float], hbar=2) -> ArrayLike:
+    def loss_X(self, transmissivity:tf.Tensor) -> tf.Tensor:
         r"""Returns the X matrix for the lossy bosonic channel.
         The channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
-        diag = np.hstack([np.sqrt(eta)*np.ones(2) for eta in transmissivity])
-        return tf.convert_to_tensor(np.diag(diag), dtype=tf.float64)
+        D = tf.math.sqrt(transmissivity)
+        return tf.linalg.diag(tf.concat([D, D], axis=0))
 
-    def _loss_Y(self, transmissivity:Sequence[float], hbar=2) -> ArrayLike:
+    def loss_Y(self, transmissivity:tf.Tensor, hbar:float) -> tf.Tensor:
         r"""Returns the Y (noise) matrix for the lossy bosonic channel.
         The channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
-        diag = np.hstack([(1-eta)*hbar/2*np.ones(2) for eta in transmissivity])
-        return tf.convert_to_tensor(np.diag(diag), dtype=tf.float64)
+        D = tf.math.sqrt((1.0-transmissivity)*hbar/2.0)
+        return tf.linalg.diag(tf.concat([D, D], axis=0))
 
-    def _thermal_X(self, nbar: Sequence[float], hbar=2) -> Tuple[ArrayLike, ArrayLike]:
+    def thermal_X(self, nbar: tf.Tensor, hbar:float) -> Tuple[tf.Tensor, tf.Tensor]:
         raise NotImplementedError
 
-    def _thermal_Y(self, nbar: Sequence[float], hbar=2) -> Tuple[ArrayLike, ArrayLike]:
+    def thermal_Y(self, nbar: tf.Tensor, hbar:float) -> Tuple[tf.Tensor, tf.Tensor]:
         raise NotImplementedError
 
-    def _beam_splitter_symplectic(self, theta:float, phi:float):
+    def displacement(self, x:tf.Tensor, y:tf.Tensor, hbar:float) -> tf.Tensor:
+        return np.sqrt(2*hbar)*tf.concat([x, y], axis = 0)
+
+    def beam_splitter_symplectic(self, theta:tf.Tensor, phi:tf.Tensor) -> tf.Tensor:
         r"""Beam-splitter.
         Args:
-            theta (float): transmissivity parameter
-            phi (float): phase parameter
+            theta: transmissivity parameter
+            phi: phase parameter
         Returns:
             array: symplectic-orthogonal transformation matrix of an interferometer with angles theta and phi
         """
-
-        ct = tf.cast(tf.math.cos(theta), tf.float64)
-        st = tf.cast(tf.math.sin(theta), tf.float64)
-        cp = tf.cast(tf.math.cos(phi), tf.float64)
-        sp = tf.cast(tf.math.sin(phi), tf.float64)
-
+        ct = tf.math.cos(theta)
+        st = tf.math.sin(theta)
+        cp = tf.math.cos(phi)
+        sp = tf.math.sin(phi)
         return tf.convert_to_tensor([[ct, -cp * st, 0, -sp * st],
                                     [cp * st, ct, -sp * st, 0],
                                     [0, sp * st, ct, -cp * st],
                                     [sp * st, 0, cp * st, ct]])
     
-    def _rotation_symplectic(self, phi:float):
+    def rotation_symplectic(self, phi:tf.Tensor) -> tf.Tensor:
         f"""Rotation gate.
         Args:
-            phi (float): rotation angle
+            phi: rotation angles
         Returns:
-            array: rotation matrix by angle theta
+            array: rotation matrices by angle theta
         """
-        x = tf.cast(tf.math.cos(phi), tf.float64)
-        y = tf.cast(tf.math.sin(phi), tf.float64)
-        return tf.convert_to_tensor([[x, -y],[y, x]])
+        num_modes = phi.shape[-1]
+        x = tf.math.cos(phi)
+        y = tf.math.sin(phi)
+        return tf.linalg.diag(tf.concat([x, x], axis=0)) + tf.linalg.diag(-y, k=num_modes) + tf.linalg.diag(y, k=-num_modes)
 
-    def _squeezing_symplectic(self, r:float, phi:float):
+
+    def squeezing_symplectic(self, r:tf.Tensor, phi:tf.Tensor) -> tf.Tensor:
         r"""Squeezing. In fock space this corresponds to \exp(\tfrac{1}{2}r e^{i \phi} (a^2 - a^{\dagger 2}) ).
 
         Args:
-            r (float): squeezing magnitude
-            phi (float): rotation parameter
+            r: squeezing magnitude
+            phi: rotation parameter
         Returns:
             array: symplectic transformation matrix
         """
         # pylint: disable=assignment-from-no-return
-        cp = tf.cast(tf.math.cos(phi), tf.float64)
-        sp = tf.cast(tf.math.sin(phi), tf.float64)
-        ch = tf.cast(tf.math.cosh(r), tf.float64)
-        sh = tf.cast(tf.math.sinh(r), tf.float64)
-        return tf.convert_to_tensor([[ch - cp*sh, -sp*sh], [-sp*sh, ch + cp*sh]])
+        num_modes = phi.shape[-1]
+        cp = tf.math.cos(phi)
+        sp = tf.math.sin(phi)
+        ch = tf.math.cosh(r)
+        sh = tf.math.sinh(r)
+        return (tf.linalg.diag(tf.concat([ch - cp*sh, ch + cp*sh], axis=0))
+                + tf.linalg.diag(-sp*sh, k=num_modes)
+                + tf.linalg.diag(-sp*sh, k=-num_modes))
 
-    def _two_mode_squeezing_symplectic(self, r:float, phi:float):
+
+    def two_mode_squeezing_symplectic(self, r:tf.Tensor, phi:tf.Tensor) -> tf.Tensor:
         r"""Two-mode squeezing.
         Args:
-            r (float): squeezing magnitude
-            phi (float): rotation parameter
+            r: squeezing magnitude
+            phi: rotation parameter
         Returns:
             array: symplectic transformation matrix
         """
         # pylint: disable=assignment-from-no-return
-        cp = tf.cast(tf.math.cos(phi), tf.float64)
-        sp = tf.cast(tf.math.sin(phi), tf.float64)
-        ch = tf.cast(tf.math.cosh(r), tf.float64)
-        sh = tf.cast(tf.math.sinh(r), tf.float64)
-
+        cp = tf.math.cos(phi)
+        sp = tf.math.sin(phi)
+        ch = tf.math.cosh(r)
+        sh = tf.math.sinh(r)
         return tf.convert_to_tensor([[ch, cp * sh, 0, sp * sh],
                                     [cp * sh, ch, sp * sh, 0],
                                     [0, sp * sh, ch, -cp * sh],
@@ -229,25 +235,25 @@ class TFMathbackend(MathBackendInterface):
         return tf.tensor_scatter_nd_add(old, list(product(*[indices]*len(new.shape))), tf.reshape(new,-1))
 
     def concat(self, lst:List[tf.Tensor]) -> tf.Tensor:
-        return tf.concat(lst, axis=0)
+        return tf.concat(lst, axis=-1)
 
     def sandwich(self, bread:Optional[tf.Tensor], filling:tf.Tensor, modes:List[int]) -> tf.Tensor:
         if bread is None:
             return filling
         N = filling.shape[-1] // 2
-        indices = modes + [m+N for m in modes]
-        rows = bread @ tf.gather(filling, indices)
-        filling = tf.tensor_scatter_nd_update(filling, [[i] for i in indices], rows)
+        indices = tf.convert_to_tensor(modes + [m+N for m in modes])
+        rows = tf.matmul(bread, tf.gather(filling, indices))
+        filling = tf.tensor_scatter_nd_update(filling, indices[:,None], rows)
         columns = bread @ tf.gather(tf.transpose(filling), indices)
-        return tf.transpose(tf.tensor_scatter_nd_update(tf.transpose(filling), [[i] for i in indices], columns))
+        return tf.transpose(tf.tensor_scatter_nd_update(tf.transpose(filling), indices[:,None], columns))
         
     def matvec(self, mat:Optional[tf.Tensor], vec:tf.Tensor, modes:List[int]) -> tf.Tensor:
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
-        indices = modes + [m+N for m in modes]
+        indices = tf.convert_to_tensor(modes + [m+N for m in modes])
         updates = tf.linalg.matvec(mat, tf.gather(vec, indices))
-        return tf.tensor_scatter_nd_update(vec, [[i] for i in indices], updates)
+        return tf.tensor_scatter_nd_update(vec, indices[:,None], updates)
 
     def modsquare(self, array:tf.Tensor) -> tf.Tensor:
         return tf.abs(array)**2
@@ -296,15 +302,15 @@ class TFMathbackend(MathBackendInterface):
         Y = tf.math.imag(U)
         return self._block([[X,-Y],[Y,X]])
 
-    def make_parameter(self, init_value: Optional[float] = None,
-                              trainable: bool = True,
-                              bounds: Tuple[Optional[float], Optional[float]] = (None,None),
-                              shape:Optional[Tuple[int,...]] = None,
-                              name: str = '') -> tf.Tensor:
-        bounds = (bounds[0] or -np.inf, bounds[1] or np.inf)
+    def make_euclidean_parameter(self, init_value: Optional[float] = None,
+                                       trainable: bool = True,
+                                       bounds: Tuple[Optional[float], Optional[float]] = (None,None),
+                                       shape:Optional[Sequence[int]] = None,
+                                       name: str = '') -> tf.Tensor:
 
-        if not bounds == (None, None):
-            constraint = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+        bounds = (bounds[0] or -np.inf, bounds[1] or np.inf)
+        if not bounds == (-np.inf, np.inf):
+            constraint:Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
             constraint = None
 
