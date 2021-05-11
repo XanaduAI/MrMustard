@@ -332,7 +332,7 @@ class TFMathbackend(MathBackendInterface):
         if init_value is None:
             val = truncnorm.rvs(*bounds, size=shape)
         else:
-            val = init_value
+            val = init_value if shape is None else np.atleast_1d(init_value)
 
         if trainable:
             return tf.Variable(val, dtype=tf.float64, name = name, constraint=constraint)
