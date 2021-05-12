@@ -44,7 +44,7 @@ def test_coherent_state(realpha, imalpha):
     circ = Circuit(num_modes=1)
     circ.add_gate(Dgate(modes=[0], x=realpha, y=imalpha))
     amps = circ.fock_output(cutoffs=[cutoff])
-    alpha = (realpha + 1j * imalpha)
+    alpha = realpha + 1j * imalpha
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
         [alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)]
     )
