@@ -16,6 +16,31 @@ from mrmustard._states import StateBackendInterface
 
 import mrmustard._backends.utils as utils
 
+
+#                                                                                                                      
+#                                                                                                                      
+#          CCCCCCCCCCCCC  iiii                                                             iiii          tttt          
+#       CCC::::::::::::C i::::i                                                           i::::i      ttt:::t          
+#     CC:::::::::::::::C  iiii                                                             iiii       t:::::t          
+#    C:::::CCCCCCCC::::C                                                                              t:::::t          
+#   C:::::C       CCCCCCiiiiiiirrrrr   rrrrrrrrr       ccccccccccccccccuuuuuu    uuuuuu  iiiiiiittttttt:::::ttttttt    
+#  C:::::C              i:::::ir::::rrr:::::::::r    cc:::::::::::::::cu::::u    u::::u  i:::::it:::::::::::::::::t    
+#  C:::::C               i::::ir:::::::::::::::::r  c:::::::::::::::::cu::::u    u::::u   i::::it:::::::::::::::::t    
+#  C:::::C               i::::irr::::::rrrrr::::::rc:::::::cccccc:::::cu::::u    u::::u   i::::itttttt:::::::tttttt    
+#  C:::::C               i::::i r:::::r     r:::::rc::::::c     cccccccu::::u    u::::u   i::::i      t:::::t          
+#  C:::::C               i::::i r:::::r     rrrrrrrc:::::c             u::::u    u::::u   i::::i      t:::::t          
+#  C:::::C               i::::i r:::::r            c:::::c             u::::u    u::::u   i::::i      t:::::t          
+#   C:::::C       CCCCCC i::::i r:::::r            c::::::c     cccccccu:::::uuuu:::::u   i::::i      t:::::t    tttttt
+#    C:::::CCCCCCCC::::Ci::::::ir:::::r            c:::::::cccccc:::::cu:::::::::::::::uui::::::i     t::::::tttt:::::t
+#     CC:::::::::::::::Ci::::::ir:::::r             c:::::::::::::::::c u:::::::::::::::ui::::::i     tt::::::::::::::t
+#       CCC::::::::::::Ci::::::ir:::::r              cc:::::::::::::::c  uu::::::::uu:::ui::::::i       tt:::::::::::tt
+#          CCCCCCCCCCCCCiiiiiiiirrrrrrr                cccccccccccccccc    uuuuuuuu  uuuuiiiiiiii         ttttttttttt  
+#                                                                                                                      
+#                                                                                                                      
+#                                                                                                                      
+#                                                                                                                      
+#    
+
 class TFCircuitBackend(CircuitBackendInterface):
 
     def _Qmat(self, cov:tf.Tensor, hbar=2):
@@ -72,7 +97,31 @@ class TFCircuitBackend(CircuitBackendInterface):
         return state, grad
             
 
-    
+#                                                                                                
+#                                                                                                
+#       OOOOOOOOO                                  tttt            iiii                          
+#     OO:::::::::OO                             ttt:::t           i::::i                         
+#   OO:::::::::::::OO                           t:::::t            iiii                          
+#  O:::::::OOO:::::::O                          t:::::t                                          
+#  O::::::O   O::::::Oppppp   ppppppppp   ttttttt:::::ttttttt    iiiiiii    mmmmmmm    mmmmmmm   
+#  O:::::O     O:::::Op::::ppp:::::::::p  t:::::::::::::::::t    i:::::i  mm:::::::m  m:::::::mm 
+#  O:::::O     O:::::Op:::::::::::::::::p t:::::::::::::::::t     i::::i m::::::::::mm::::::::::m
+#  O:::::O     O:::::Opp::::::ppppp::::::ptttttt:::::::tttttt     i::::i m::::::::::::::::::::::m
+#  O:::::O     O:::::O p:::::p     p:::::p      t:::::t           i::::i m:::::mmm::::::mmm:::::m
+#  O:::::O     O:::::O p:::::p     p:::::p      t:::::t           i::::i m::::m   m::::m   m::::m
+#  O:::::O     O:::::O p:::::p     p:::::p      t:::::t           i::::i m::::m   m::::m   m::::m
+#  O::::::O   O::::::O p:::::p    p::::::p      t:::::t    tttttt i::::i m::::m   m::::m   m::::m
+#  O:::::::OOO:::::::O p:::::ppppp:::::::p      t::::::tttt:::::ti::::::im::::m   m::::m   m::::m
+#   OO:::::::::::::OO  p::::::::::::::::p       tt::::::::::::::ti::::::im::::m   m::::m   m::::m
+#     OO:::::::::OO    p::::::::::::::pp          tt:::::::::::tti::::::im::::m   m::::m   m::::m
+#       OOOOOOOOO      p::::::pppppppp              ttttttttttt  iiiiiiiimmmmmm   mmmmmm   mmmmmm
+#                      p:::::p                                                                   
+#                      p:::::p                                                                   
+#                     p:::::::p                                                                  
+#                     p:::::::p                                                                  
+#                     p:::::::p                                                                  
+#                     ppppppppp       
+
 
 class TFOptimizerBackend(OptimizerBackendInterface):
     _backend_opt = tf.optimizers.Adam
@@ -163,6 +212,30 @@ class TFStateBackend(StateBackendInterface):
                 + 2*tf.math.real(ac[None,:]*tf.math.conj(ac)[:,None]*A + ac[None,:]*ac[:,None]*B)
                 )
 
+
+
+#                                                                                   
+#                                                                                   
+#          GGGGGGGGGGGGG                          tttt                              
+#       GGG::::::::::::G                       ttt:::t                              
+#     GG:::::::::::::::G                       t:::::t                              
+#    G:::::GGGGGGGG::::G                       t:::::t                              
+#   G:::::G       GGGGGG  aaaaaaaaaaaaa  ttttttt:::::ttttttt        eeeeeeeeeeee    
+#  G:::::G                a::::::::::::a t:::::::::::::::::t      ee::::::::::::ee  
+#  G:::::G                aaaaaaaaa:::::at:::::::::::::::::t     e::::::eeeee:::::ee
+#  G:::::G    GGGGGGGGGG           a::::atttttt:::::::tttttt    e::::::e     e:::::e
+#  G:::::G    G::::::::G    aaaaaaa:::::a      t:::::t          e:::::::eeeee::::::e
+#  G:::::G    GGGGG::::G  aa::::::::::::a      t:::::t          e:::::::::::::::::e 
+#  G:::::G        G::::G a::::aaaa::::::a      t:::::t          e::::::eeeeeeeeeee  
+#   G:::::G       G::::Ga::::a    a:::::a      t:::::t    tttttte:::::::e           
+#    G:::::GGGGGGGG::::Ga::::a    a:::::a      t::::::tttt:::::te::::::::e          
+#     GG:::::::::::::::Ga:::::aaaa::::::a      tt::::::::::::::t e::::::::eeeeeeee  
+#       GGG::::::GGG:::G a::::::::::aa:::a       tt:::::::::::tt  ee:::::::::::::e  
+#          GGGGGG   GGGG  aaaaaaaaaa  aaaa         ttttttttttt      eeeeeeeeeeeeee  
+#                                                                                   
+#                                                                                   
+#                                                                                   
+#                                                                                   
 
 class TFGateBackend(GateBackendInterface):
 
@@ -259,6 +332,28 @@ class TFGateBackend(GateBackendInterface):
 
 
 
+#                                                                                            
+#                                                                                            
+#  MMMMMMMM               MMMMMMMM                          tttt         hhhhhhh             
+#  M:::::::M             M:::::::M                       ttt:::t         h:::::h             
+#  M::::::::M           M::::::::M                       t:::::t         h:::::h             
+#  M:::::::::M         M:::::::::M                       t:::::t         h:::::h             
+#  M::::::::::M       M::::::::::M  aaaaaaaaaaaaa  ttttttt:::::ttttttt    h::::h hhhhh       
+#  M:::::::::::M     M:::::::::::M  a::::::::::::a t:::::::::::::::::t    h::::hh:::::hhh    
+#  M:::::::M::::M   M::::M:::::::M  aaaaaaaaa:::::at:::::::::::::::::t    h::::::::::::::hh  
+#  M::::::M M::::M M::::M M::::::M           a::::atttttt:::::::tttttt    h:::::::hhh::::::h 
+#  M::::::M  M::::M::::M  M::::::M    aaaaaaa:::::a      t:::::t          h::::::h   h::::::h
+#  M::::::M   M:::::::M   M::::::M  aa::::::::::::a      t:::::t          h:::::h     h:::::h
+#  M::::::M    M:::::M    M::::::M a::::aaaa::::::a      t:::::t          h:::::h     h:::::h
+#  M::::::M     MMMMM     M::::::Ma::::a    a:::::a      t:::::t    tttttth:::::h     h:::::h
+#  M::::::M               M::::::Ma::::a    a:::::a      t::::::tttt:::::th:::::h     h:::::h
+#  M::::::M               M::::::Ma:::::aaaa::::::a      tt::::::::::::::th:::::h     h:::::h
+#  M::::::M               M::::::M a::::::::::aa:::a       tt:::::::::::tth:::::h     h:::::h
+#  MMMMMMMM               MMMMMMMM  aaaaaaaaaa  aaaa         ttttttttttt  hhhhhhh     hhhhhhh
+#                                                                                            
+#                                                                                            
+#                                                                                            
+#                                                                                            
 
 class TFMathbackend(MathBackendInterface):
 
