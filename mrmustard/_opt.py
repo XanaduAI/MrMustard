@@ -33,12 +33,6 @@ class CircuitInterface(ABC):
     @abstractmethod
     def fock_probabilities(self, cutoffs:Sequence[int]) -> ArrayLike: pass
 
-    @abstractmethod
-    def photon_number_mean(self) -> ArrayLike: pass
-
-    @abstractmethod
-    def photon_number_covariance(self) -> ArrayLike: pass
-
 
 class OptimizerBackendInterface(ABC):
     """Interface for the Circuit class.
