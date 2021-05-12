@@ -181,6 +181,14 @@ class Ggate(Gate):
     def displacement_vector(self) -> ArrayLike:
         return self._parameters[1]
 
+    @property
+    def symplectic_parameters(self) -> List[ArrayLike]:
+        return [self.symplectic_matrix] if self._trainable[0] else []
+
+    @property
+    def euclidean_parameters(self) -> List[ArrayLike]:
+        return [self.displacement_vector] if self._trainable[1] else []
+
 
 
 class BSgate(Gate):
