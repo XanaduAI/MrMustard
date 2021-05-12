@@ -76,3 +76,21 @@ def test_squeezed_state(r, phi):
         )
     )
     assert np.allclose(non_zero_amps, amp_pairs)
+
+####
+# The following tests currently fails
+####
+@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
+@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
+def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
+    """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
+    circ = Circuit(num_modes=2)
+    r = np.arcsinh(np.sqrt(n_mean))
+    circ.add_gate(S2gate(modes=[0, 1], r=-r, phi=phi))
+    state = circ.gaussian_output()
+    meanN =  state.photon_number_mean()
+    covN = state.photon_number_covariance()
+    expectedN = np.array([n_mean, n_mean])
+    expectedCov = n_mean*(n_mean+1)*np.ones([2,2])
+    assert np.allclose(meanN, expectedN)
+    assert np.allclose(covN, expectedCov)
