@@ -12,6 +12,7 @@ from mrmustard._gates import GateBackendInterface
 from mrmustard._opt import OptimizerBackendInterface
 from mrmustard._circuit import CircuitBackendInterface
 from mrmustard._backends import MathBackendInterface
+from mrmustard._states import StateBackendInterface
 
 import mrmustard._backends.utils as utils
 
@@ -69,33 +70,6 @@ class TFCircuitBackend(CircuitBackendInterface):
             dLdC = np.sum(dy*np.conj(dC), axis=tuple(range(dy.ndim)))
             return dLdA, dLdB, dLdC
         return state, grad
-
-    def AB(self, cov:tf.Tensor) -> tf.Tensor:
-        N = cov.shape[-1]//2
-        V1 = cov[:N,:N]
-        V2 = cov[:N,N:]
-        V2T = cov[N:,:N]
-        V3 = cov[N:,N:]
-        return 0.5*tf.complex(V1 + V3, V2T - V2), 0.5*tf.complex(V1 - V3, V2T + V2)
-
-    def _photon_number_mean(self, cov:tf.Tensor, means:tf.Tensor, hbar:float) -> tf.Tensor:
-        N = means.shape[-1] // 2
-        return (means[:N] ** 2
-            + means[N:] ** 2
-            + tf.linalg.diag_part(cov[:N, :N])
-            + tf.linalg.diag_part(cov[N:, N:])
-            - hbar
-            ) / (2 * hbar)
-
-    def _photon_number_covariance(self, cov, means, hbar)->tf.Tensor:
-        A, B = self.AB(cov)
-        N = means.shape[-1] // 2
-        ac = tf.complex(means[:N], -means[:N]) # alpha conj
-        return (tf.abs(A * tf.math.conj(A))
-                + tf.abs(B * tf.math.conj(B))
-                - 0.25*tf.eye(len(A), dtype=tf.float64)
-                + 2*tf.math.real(ac[None,:]*tf.math.conj(ac)[:,None]*A + ac[None,:]*ac[:,None]*B)
-                )
             
 
     
@@ -136,6 +110,58 @@ class TFOptimizerBackend(OptimizerBackendInterface):
         return [e.deref() for e in eucl]
 
 
+                                                                                                                                                                                                                                              
+#                                                                                                    
+#                                                                                                    
+#     SSSSSSSSSSSSSSS      tttt                                    tttt                              
+#   SS:::::::::::::::S  ttt:::t                                 ttt:::t                              
+#  S:::::SSSSSS::::::S  t:::::t                                 t:::::t                              
+#  S:::::S     SSSSSSS  t:::::t                                 t:::::t                              
+#  S:::::S        ttttttt:::::ttttttt      aaaaaaaaaaaaa  ttttttt:::::ttttttt        eeeeeeeeeeee    
+#  S:::::S        t:::::::::::::::::t      a::::::::::::a t:::::::::::::::::t      ee::::::::::::ee  
+#   S::::SSSS     t:::::::::::::::::t      aaaaaaaaa:::::at:::::::::::::::::t     e::::::eeeee:::::ee
+#    SS::::::SSSSStttttt:::::::tttttt               a::::atttttt:::::::tttttt    e::::::e     e:::::e
+#      SSS::::::::SS    t:::::t              aaaaaaa:::::a      t:::::t          e:::::::eeeee::::::e
+#         SSSSSS::::S   t:::::t            aa::::::::::::a      t:::::t          e:::::::::::::::::e 
+#              S:::::S  t:::::t           a::::aaaa::::::a      t:::::t          e::::::eeeeeeeeeee  
+#              S:::::S  t:::::t    tttttta::::a    a:::::a      t:::::t    tttttte:::::::e           
+#  SSSSSSS     S:::::S  t::::::tttt:::::ta::::a    a:::::a      t::::::tttt:::::te::::::::e          
+#  S::::::SSSSSS:::::S  tt::::::::::::::ta:::::aaaa::::::a      tt::::::::::::::t e::::::::eeeeeeee  
+#  S:::::::::::::::SS     tt:::::::::::tt a::::::::::aa:::a       tt:::::::::::tt  ee:::::::::::::e  
+#   SSSSSSSSSSSSSSS         ttttttttttt    aaaaaaaaaa  aaaa         ttttttttttt      eeeeeeeeeeeeee  
+#                                                                                                    
+#                                                                                                    
+
+
+
+class TFStateBackend(StateBackendInterface):
+
+    def AB(self, cov:tf.Tensor) -> tf.Tensor:
+        N = cov.shape[-1]//2
+        V1 = cov[:N,:N]
+        V2 = cov[:N,N:]
+        V2T = cov[N:,:N]
+        V3 = cov[N:,N:]
+        return 0.5*tf.complex(V1 + V3, V2T - V2), 0.5*tf.complex(V1 - V3, V2T + V2)
+
+    def photon_number_mean(self, cov:tf.Tensor, means:tf.Tensor, hbar:float) -> tf.Tensor:
+        N = means.shape[-1] // 2
+        return (means[:N] ** 2
+            + means[N:] ** 2
+            + tf.linalg.diag_part(cov[:N, :N])
+            + tf.linalg.diag_part(cov[N:, N:])
+            - hbar
+            ) / (2 * hbar)
+
+    def photon_number_covariance(self, cov, means, hbar)->tf.Tensor:
+        A, B = self.AB(cov)
+        N = means.shape[-1] // 2
+        ac = tf.complex(means[:N], -means[:N]) # alpha conj
+        return (tf.abs(A * tf.math.conj(A))
+                + tf.abs(B * tf.math.conj(B))
+                - 0.25*tf.eye(len(A), dtype=tf.float64)
+                + 2*tf.math.real(ac[None,:]*tf.math.conj(ac)[:,None]*A + ac[None,:]*ac[:,None]*B)
+                )
 
 
 class TFGateBackend(GateBackendInterface):

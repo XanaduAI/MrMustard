@@ -17,12 +17,6 @@ class CircuitBackendInterface(ABC):
     @abstractmethod
     def _recursive_state(self, A:ArrayLike, B:ArrayLike, C:ArrayLike, cutoffs:Sequence[int]): pass
 
-    @abstractmethod
-    def _photon_number_mean(self, cov:ArrayLike, means:ArrayLike, hbar:float) -> ArrayLike: pass
-
-    @abstractmethod
-    def _photon_number_covariance(self, cov:ArrayLike, means:ArrayLike, hbar:float) -> ArrayLike: pass
-
 
 class GateInterface(ABC):
     modes: List[int]
@@ -78,14 +72,6 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
         else:
             psi = self.fock_output(cutoffs=cutoffs)
             return self._modsquare(psi)
-
-    def photon_number_mean(self, hbar:float=2) -> ArrayLike:
-        gaussian = self.gaussian_output()
-        return self._photon_number_mean(gaussian.cov, gaussian.means, hbar)
-
-    def photon_number_covariance(self, hbar:float=2) -> ArrayLike:
-        gaussian = self.gaussian_output()
-        return self._photon_number_covariance(gaussian.cov, gaussian.means, hbar)
 
     @property
     def symplectic_parameters(self) -> List[ArrayLike]:
