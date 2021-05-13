@@ -43,43 +43,22 @@ import mrmustard._backends.utils as utils
 
 class TFCircuitBackend(CircuitBackendInterface):
 
-    # def Qmat(self, cov:tf.Tensor, hbar=2):
-    #     r"""Returns the :math:`Q` Husimi matrix of the Gaussian state.
-    #     Args:
-    #         cov (array): :math:`2N\times 2N xp-` Wigner covariance matrix
-    #         hbar (float): the value of :math:`\hbar` in the commutation
-    #             relation :math:`[\x,\p]=i\hbar`.
-    #     Returns:
-    #         array: the :math:`Q` matrix.
-    #     """
-    #     N = cov.shape[-1] // 2 # number of modes
-    #     I = tf.eye(N, dtype=tf.complex128)
-
-    #     x = tf.cast(cov[:N, :N] * 2 / hbar, tf.complex128)
-    #     xp = tf.cast(cov[:N, N:] * 2 / hbar, tf.complex128)
-    #     p = tf.cast(cov[N:, N:] * 2 / hbar, tf.complex128)
-    #     aidaj = (x + p + 1j * (xp - tf.transpose(xp)) - 2 * I) / 4
-    #     aiaj = (x - p + 1j * (xp + tf.transpose(xp))) / 4
-    #     return tf.concat([tf.concat([aidaj, tf.math.conj(aiaj)], axis=1), tf.concat([aiaj, tf.math.conj(aidaj)], axis=1)], axis=0) + tf.eye(2 * N, dtype=tf.complex128)
-
-    def sigma_Q(self, cov, hbar:float=2.0):
-        l = cov.shape[-1]
-        R = tf.cast(utils.rotmat(l//2), tf.complex128)
-        sigma = (1 / hbar) * R @ tf.cast(cov, tf.complex128) @ tf.math.conj(tf.transpose(R))
-        return sigma + 0.5 * tf.eye(l, dtype=tf.complex128)
-
     def _Sigma_mu_C(self, cov:tf.Tensor, means:tf.Tensor, mixed:bool=False, hbar:float=2.0) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         num_modes = means.shape[-1] // 2
-        N = num_modes + num_modes*mixed
-        sQ = self.sigma_Q(cov, hbar)
+        R = tf.cast(utils.rotmat(num_modes), tf.complex128)
+        sigma = (1 / hbar) * R @ tf.cast(cov, tf.complex128) @ tf.math.conj(tf.transpose(R))
+        beta = tf.linalg.matvec(R, tf.cast(means, tf.complex128)) / np.sqrt(hbar)
+
+        sQ = sigma + 0.5 * tf.eye(2*num_modes, dtype=tf.complex128)
         sQinv = tf.linalg.inv(sQ)
+
         A = tf.cast(utils.Xmat(num_modes), tf.complex128) @ (np.identity(2*num_modes) - sQinv)
-        alpha = tf.cast(tf.complex(means[:num_modes],means[num_modes:]), tf.complex128) / tf.cast(tf.math.sqrt(2.0 * hbar), tf.complex128)
-        beta = tf.concat([alpha, tf.math.conj(alpha)], axis=0)
         gamma = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
         T = tf.math.exp(-0.5 * tf.einsum('i,ij,j', beta, sQinv, tf.math.conj(beta))) / tf.math.sqrt(tf.linalg.det(sQ))
+        
+        N = num_modes + num_modes*mixed
         return -A[:N, :N], gamma[:N], T**(0.5 + 0.5*mixed) # will be off by global phase
-    
+
     @tf.custom_gradient
     def _recursive_state(self, A:tf.Tensor, B:tf.Tensor, C:tf.Tensor, cutoffs:Sequence[int]):
         mixed = len(B) == 2*len(cutoffs)
