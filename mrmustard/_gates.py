@@ -170,8 +170,6 @@ class Ggate(Gate):
         self.modes = modes
         self.mixing = False
         self._trainable = [symplectic_trainable, displacement_trainable]
-        if displacement is None:
-            displacement = np.zeros(2*len(modes))
         self._parameters =[self._math_backend.make_symplectic_parameter(symplectic, symplectic_trainable, len(modes), 'symplectic'),
                             self._math_backend.make_euclidean_parameter(displacement, displacement_trainable, (None,None), (2*len(modes),), 'displacement')]
 
