@@ -54,10 +54,11 @@ class TFCircuitBackend(CircuitBackendInterface):
 
         A = tf.cast(utils.Xmat(num_modes), tf.complex128) @ (np.identity(2*num_modes) - sQinv)
         gamma = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
-        T = tf.math.exp(-0.5 * tf.einsum('i,ij,j', beta, sQinv, tf.math.conj(beta))) / tf.math.sqrt(tf.linalg.det(sQ))
-        
+
+        T = tf.math.exp(-0.5 * tf.einsum('i,ij,j', tf.math.conj(beta), sQinv, beta)) / tf.math.sqrt(tf.linalg.det(sQ))
+
         N = num_modes + num_modes*mixed
-        return -A[:N, :N], gamma[:N], T**(0.5 + 0.5*mixed) # will be off by global phase
+        return A[N:, N:], gamma[N:], T**(0.5 + 0.5*mixed) # will be off by global phase
 
     @tf.custom_gradient
     def _recursive_state(self, A:tf.Tensor, B:tf.Tensor, C:tf.Tensor, cutoffs:Sequence[int]):

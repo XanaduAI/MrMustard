@@ -83,7 +83,7 @@ def fill_amplitudes_numbaloop(array, idx, A, B):
     ki = dec(idx, i)
     u = B[i]*array[ki]
     for p, kp in remove(ki):
-        u -= SQRT[ki[p]] * A[i, p] * array[kp]
+        u += SQRT[ki[p]] * A[i, p] * array[kp]
     array[idx] = u / SQRT[idx[i]]
     return array
 
@@ -105,9 +105,9 @@ def fill_gradients_numbaloop(dA, dB, state, idx, A, B):
     dudB = B[i]*dB[ki]
     dudB[i] += state[ki]
     for p, kp in remove(ki):
-        dudA -= SQRT[ki[p]] * A[i, p] * dA[kp]
+        dudA += SQRT[ki[p]] * A[i, p] * dA[kp]
         dudA[i, p] -= SQRT[ki[p]] * state[kp]
-        dudB -= SQRT[ki[p]] * A[i, p] * dB[kp]
+        dudB += SQRT[ki[p]] * A[i, p] * dB[kp]
     dA[idx] = dudA / SQRT[idx[i]]
     dB[idx] = dudB / SQRT[idx[i]]
     return dA, dB
