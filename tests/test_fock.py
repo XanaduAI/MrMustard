@@ -57,7 +57,6 @@ def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics"""
     cutoff = 10
     circ = Circuit(num_modes=1)
-    phi = 0.3
     circ.add_gate(Sgate(modes=[0], r=r, phi=phi))
     amps = circ.fock_output(cutoffs=[cutoff])
     assert np.allclose(amps[1::2], 0.0)
@@ -68,7 +67,7 @@ def test_squeezed_state(r, phi):
         / np.sqrt(np.cosh(r))
         * np.array(
             [
-                (np.exp(-1j * phi) * np.tanh(r)) ** n
+                (-np.exp(1j * phi) * np.tanh(r)) ** n
                 * np.sqrt(factorial(2 * n))
                 / (2 ** n * factorial(n))
                 for n in range(len_non_zero)
