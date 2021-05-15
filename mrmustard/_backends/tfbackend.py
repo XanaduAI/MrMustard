@@ -167,14 +167,6 @@ class TFOptimizerBackend(OptimizerBackendInterface):
 
 class TFStateBackend(StateBackendInterface):
 
-    def AB(self, cov:tf.Tensor) -> tf.Tensor:
-        N = cov.shape[-1]//2
-        V1 = cov[:N,:N]
-        V2 = cov[:N,N:]
-        V2T = cov[N:,:N]
-        V3 = cov[N:,N:]
-        return 0.5*tf.complex(V1 + V3, V2T - V2), 0.5*tf.complex(V1 - V3, V2T + V2)
-
     def photon_number_mean(self, cov:tf.Tensor, means:tf.Tensor, hbar:float) -> tf.Tensor:
         N = means.shape[-1] // 2
         return (means[:N] ** 2
@@ -185,14 +177,11 @@ class TFStateBackend(StateBackendInterface):
             ) / (2 * hbar)
 
     def photon_number_covariance(self, cov, means, hbar)->tf.Tensor:
-        A, B = self.AB(cov)
         N = means.shape[-1] // 2
-        ac = tf.complex(means[:N], -means[:N]) # alpha conj
-        return (tf.abs(A * tf.math.conj(A))
-                + tf.abs(B * tf.math.conj(B))
-                - 0.25*tf.eye(len(A), dtype=tf.float64)
-                + 2*tf.math.real(ac[None,:]*tf.math.conj(ac)[:,None]*A + ac[None,:]*ac[:,None]*B)
-                )
+        mCm = cov * means[:,None] * means[None,:]
+        dd = tf.linalg.diag(tf.linalg.diag_part(mCm[:N,:N]+mCm[N:,N:]+mCm[:N,N:]+mCm[N:,:N]))/(2*hbar**2)
+        CC = (cov**2 + mCm)/(2*hbar**2)
+        return CC[:N,:N] + CC[N:,N:] + CC[:N,N:] + CC[N:,:N] + dd - 0.25*np.identity(N)
 
 
 
