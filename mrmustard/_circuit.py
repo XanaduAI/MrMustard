@@ -12,28 +12,24 @@ from mrmustard._opt import CircuitInterface
 
 class CircuitBackendInterface(ABC):
     @abstractmethod
-    def _Sigma_mu_C(self, cov:ArrayLike, means:ArrayLike, mixed:bool, hbar:float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]: pass
-    
+    def _ABC(self, cov: ArrayLike, means: ArrayLike, mixed: bool, hbar: float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]: pass
+
     @abstractmethod
-    def _recursive_state(self, A:ArrayLike, B:ArrayLike, C:ArrayLike, cutoffs:Sequence[int]): pass
+    def _recursive_state(self, A: ArrayLike, B: ArrayLike, C: ArrayLike, cutoffs: Sequence[int]): pass
 
 
 class GateInterface(ABC):
-    modes: List[int]
-    mixing:bool
-    _parameters: List[ArrayLike]
+    @abstractmethod
+    def __call__(self, state: State) -> State: pass
 
     @abstractmethod
-    def __call__(self, state:State) -> State: pass
+    def symplectic_matrix(self, hbar: float) -> Optional[ArrayLike]: pass
 
-    @abstractproperty
-    def symplectic_matrix(self) -> Optional[ArrayLike]: pass
-    
-    @abstractproperty
-    def displacement_vector(self) -> Optional[ArrayLike]: pass
+    @abstractmethod
+    def displacement_vector(self, hbar: float) -> Optional[ArrayLike]: pass
 
-    @abstractproperty
-    def noise_matrix(self) -> Optional[ArrayLike]: pass
+    @abstractmethod
+    def noise_matrix(self, hbar: float) -> Optional[ArrayLike]: pass
 
     @abstractproperty
     def euclidean_parameters(self) -> List[ArrayLike]: pass
@@ -62,8 +58,8 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
 
     def fock_output(self, cutoffs:Sequence[int]) -> ArrayLike:
         output = self.gaussian_output()
-        Sigma, mu, C = self._Sigma_mu_C(output.cov, output.means, mixed=self._mixed_output, hbar=2)
-        return self._recursive_state(Sigma, mu, C, cutoffs=cutoffs)
+        A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=2)
+        return self._recursive_state(A, B, C, cutoffs=cutoffs)
 
     def fock_probabilities(self, cutoffs:Sequence[int]) -> ArrayLike:
         if self._mixed_output:
