@@ -14,9 +14,9 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     cutoff = 4
     circ = Circuit(num_modes=2)
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.add_gate(S2gate(modes=[0, 1], r=-r, phi=phi)) 
+    circ.add_gate(S2gate(modes=[0, 1], r=-r, phi=phi))
     amps = circ.fock_output(cutoffs=[cutoff, cutoff])
-    diag = (1 / np.cosh(r)) * (-np.exp(1j*phi)*np.tanh(r)) ** np.arange(cutoff)
+    diag = (1 / np.cosh(r)) * (-np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
     assert np.allclose(amps, expected)
 
@@ -77,6 +77,7 @@ def test_squeezed_state(r, phi):
     )
     assert np.allclose(non_zero_amps, amp_pairs)
 
+
 ####
 # The following tests currently fail
 ####
@@ -88,9 +89,9 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     r = np.arcsinh(np.sqrt(n_mean))
     circ.add_gate(S2gate(modes=[0, 1], r=-r, phi=phi))
     state = circ.gaussian_output()
-    meanN =  state.photon_number_mean()
+    meanN = state.photon_number_mean()
     covN = state.photon_number_covariance()
     expectedN = np.array([n_mean, n_mean])
-    expectedCov = n_mean*(n_mean+1)*np.ones([2,2])
+    expectedCov = n_mean * (n_mean + 1) * np.ones([2, 2])
     assert np.allclose(meanN, expectedN)
     assert np.allclose(covN, expectedCov)
