@@ -38,11 +38,11 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3 :: Only',
-    "Topic :: Scientific/Engineering :: Physics"
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Physics",
 ]
 
 
@@ -57,6 +57,6 @@ setup(
     packages=find_packages(where="."),
     install_requires=requirements,
     long_description=open("README.md", encoding="utf-8").read(),
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     classifiers=classifiers,
 )

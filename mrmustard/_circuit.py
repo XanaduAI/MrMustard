@@ -12,30 +12,40 @@ from mrmustard._opt import CircuitInterface
 
 class CircuitBackendInterface(ABC):
     @abstractmethod
-    def _ABC(self, cov: ArrayLike, means: ArrayLike, mixed: bool, hbar: float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]: pass
+    def _ABC(
+        self, cov: ArrayLike, means: ArrayLike, mixed: bool, hbar: float
+    ) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+        pass
 
     @abstractmethod
-    def _recursive_state(self, A: ArrayLike, B: ArrayLike, C: ArrayLike, cutoffs: Sequence[int]): pass
+    def _recursive_state(self, A: ArrayLike, B: ArrayLike, C: ArrayLike, cutoffs: Sequence[int]):
+        pass
 
 
 class GateInterface(ABC):
     @abstractmethod
-    def __call__(self, state: State) -> State: pass
+    def __call__(self, state: State) -> State:
+        pass
 
     @abstractmethod
-    def symplectic_matrix(self, hbar: float) -> Optional[ArrayLike]: pass
+    def symplectic_matrix(self, hbar: float) -> Optional[ArrayLike]:
+        pass
 
     @abstractmethod
-    def displacement_vector(self, hbar: float) -> Optional[ArrayLike]: pass
+    def displacement_vector(self, hbar: float) -> Optional[ArrayLike]:
+        pass
 
     @abstractmethod
-    def noise_matrix(self, hbar: float) -> Optional[ArrayLike]: pass
+    def noise_matrix(self, hbar: float) -> Optional[ArrayLike]:
+        pass
 
     @abstractproperty
-    def euclidean_parameters(self) -> List[ArrayLike]: pass
+    def euclidean_parameters(self) -> List[ArrayLike]:
+        pass
 
     @abstractproperty
-    def symplectic_parameters(self) -> List[ArrayLike]: pass
+    def symplectic_parameters(self) -> List[ArrayLike]:
+        pass
 
 
 ######################
@@ -86,4 +96,4 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
         self._input = input
 
     def __repr__(self) -> str:
-        return repr(self._input)+"\n"+"\n".join([repr(g) for g in self._gates])
+        return repr(self._input) + "\n" + "\n".join([repr(g) for g in self._gates])

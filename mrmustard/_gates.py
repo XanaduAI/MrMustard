@@ -13,38 +13,47 @@ from mrmustard._backends import MathBackendInterface
 
 
 class GateBackendInterface(ABC):
+    @abstractmethod
+    def loss_X(self, transmissivity: ArrayLike) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def loss_X(self, transmissivity: ArrayLike) -> ArrayLike: pass
+    def loss_Y(self, transmissivity: ArrayLike, hbar: float) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def loss_Y(self, transmissivity: ArrayLike, hbar: float) -> ArrayLike: pass
+    def thermal_X(self, nbar: ArrayLike, hbar: float) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def thermal_X(self, nbar: ArrayLike, hbar: float) -> ArrayLike: pass
+    def thermal_Y(self, nbar: ArrayLike, hbar: float) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def thermal_Y(self, nbar: ArrayLike, hbar: float) -> ArrayLike: pass
+    def rotation_symplectic(self, angle: ArrayLike) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def rotation_symplectic(self, angle: ArrayLike) -> ArrayLike: pass
+    def displacement(self, x: ArrayLike, y: ArrayLike, hbar: float) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def displacement(self, x: ArrayLike, y: ArrayLike, hbar: float) -> ArrayLike: pass
+    def squeezing_symplectic(self, r: ArrayLike, phi: ArrayLike) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def squeezing_symplectic(self, r: ArrayLike, phi: ArrayLike) -> ArrayLike: pass
+    def beam_splitter_symplectic(self, theta: ArrayLike, varphi: ArrayLike) -> ArrayLike:
+        pass
 
     @abstractmethod
-    def beam_splitter_symplectic(self, theta: ArrayLike, varphi: ArrayLike) -> ArrayLike: pass
-
-    @abstractmethod
-    def two_mode_squeezing_symplectic(self, r: ArrayLike, phi: ArrayLike) -> ArrayLike: pass
+    def two_mode_squeezing_symplectic(self, r: ArrayLike, phi: ArrayLike) -> ArrayLike:
+        pass
 
 
 ######################
 #  CONCRETE CLASSES  #
 ######################
+
 
 class Gate(GateInterface):
     _math_backend: MathBackendInterface
@@ -63,7 +72,13 @@ class Gate(GateInterface):
         return output
 
     def __call__(self, state: State) -> State:
-        return self._apply_gaussian_channel(state, self.modes, self.symplectic_matrix(state.hbar), self.displacement_vector(state.hbar), self.noise_matrix(state.hbar))
+        return self._apply_gaussian_channel(
+            state,
+            self.modes,
+            self.symplectic_matrix(state.hbar),
+            self.displacement_vector(state.hbar),
+            self.noise_matrix(state.hbar),
+        )
 
     def __repr__(self):
         with np.printoptions(precision=3, suppress=True):
@@ -89,19 +104,33 @@ class Gate(GateInterface):
 
 class Dgate(Gate):
     "Displacement gate"
-    def __init__(self, modes: List[int],
-                 x: Union[Optional[float], Optional[List[float]]] = None,
-                 x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 x_trainable: bool = True,
-                 y: Union[Optional[float], Optional[List[float]]] = None,
-                 y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 y_trainable: bool = True):
-        self._repr_string: Callable[[float, float], str] = lambda x, y: f'modes={modes}, x={x}, x_bounds={x_bounds}, x_trainable={x_trainable}, y={y}, y_bounds={y_bounds}, y_trainable={y_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        x: Union[Optional[float], Optional[List[float]]] = None,
+        x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        x_trainable: bool = True,
+        y: Union[Optional[float], Optional[List[float]]] = None,
+        y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        y_trainable: bool = True,
+    ):
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
+            lambda x, y: f"modes={modes}, x={x}, x_bounds={x_bounds}, x_trainable={x_trainable}, y={y}, y_bounds={y_bounds}, y_trainable={y_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [x_trainable, y_trainable]
-        self._parameters = [self._math_backend.make_euclidean_parameter(x, x_trainable, x_bounds, (len(modes),), 'x'),
-                            self._math_backend.make_euclidean_parameter(y, y_trainable, y_bounds, (len(modes),), 'y')]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(
+                x, x_trainable, x_bounds, (len(modes),), "x"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                y, y_trainable, y_bounds, (len(modes),), "y"
+            ),
+        ]
 
     def displacement_vector(self, hbar: float) -> ArrayLike:
         return self._gate_backend.displacement(*self._parameters, hbar=hbar)
@@ -109,19 +138,33 @@ class Dgate(Gate):
 
 class Sgate(Gate):
     "Squeezing gate"
-    def __init__(self, modes: List[int],
-                 r: Union[Optional[float], Optional[List[float]]] = None,
-                 r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-                 r_trainable: bool = True,
-                 phi: Union[Optional[float], Optional[List[float]]] = None,
-                 phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 phi_trainable: bool = True):
-        self._repr_string: Callable[[float, float], str] = lambda r, phi: f'modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        r: Union[Optional[float], Optional[List[float]]] = None,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        r_trainable: bool = True,
+        phi: Union[Optional[float], Optional[List[float]]] = None,
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_trainable: bool = True,
+    ):
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
+            lambda r, phi: f"modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [r_trainable, phi_trainable]
-        self._parameters = [self._math_backend.make_euclidean_parameter(r, r_trainable, r_bounds, (len(modes),), 'r'),
-                            self._math_backend.make_euclidean_parameter(phi, phi_trainable, phi_bounds, (len(modes),), 'phi')]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(
+                r, r_trainable, r_bounds, (len(modes),), "r"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                phi, phi_trainable, phi_bounds, (len(modes),), "phi"
+            ),
+        ]
 
     def symplectic_matrix(self, hbar: float) -> ArrayLike:
         return self._gate_backend.squeezing_symplectic(*self._parameters)
@@ -129,33 +172,65 @@ class Sgate(Gate):
 
 class Rgate(Gate):
     "Rotation gate"
-    def __init__(self, modes: List[int],
-                 angle: Union[Optional[float], Optional[List[float]]] = None,
-                 angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 angle_trainable: bool = True):
-        self._repr_string: Callable[[float], str] = lambda angle: f'modes={modes}, angle={angle}, angle_bounds={angle_bounds}, angle_trainable={angle_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        angle: Union[Optional[float], Optional[List[float]]] = None,
+        angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        angle_trainable: bool = True,
+    ):
+        self._repr_string: Callable[
+            [float], str
+        ] = (
+            lambda angle: f"modes={modes}, angle={angle}, angle_bounds={angle_bounds}, angle_trainable={angle_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [angle_trainable]
-        self._parameters = [self._math_backend.make_euclidean_parameter(angle, angle_trainable, angle_bounds, (len(modes),), 'angle')]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(
+                angle, angle_trainable, angle_bounds, (len(modes),), "angle"
+            )
+        ]
 
     def symplectic_matrix(self, hbar: float) -> ArrayLike:
-        return self._gate_backend.rotation_symplectic(*self._parameters)  # TODO: does this need to use hbar?
+        return self._gate_backend.rotation_symplectic(
+            *self._parameters
+        )  # TODO: does this need to use hbar?
 
 
 class Ggate(Gate):
     "Gaussian gate"
-    def __init__(self, modes: List[int],
-                 symplectic: Optional[ArrayLike] = None,
-                 symplectic_trainable: bool = True,
-                 displacement: Optional[ArrayLike] = None,
-                 displacement_trainable: bool = True):
-        self._repr_string: Callable[[float, float], str] = lambda symp, disp: f'modes={modes}, symplectic={1}, symplectic_trainable={symplectic_trainable}, displacement={1}, displacement_trainable={displacement_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        symplectic: Optional[ArrayLike] = None,
+        symplectic_trainable: bool = True,
+        displacement: Optional[ArrayLike] = None,
+        displacement_trainable: bool = True,
+    ):
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
+            lambda symp, disp: f"modes={modes}, symplectic={1}, symplectic_trainable={symplectic_trainable}, displacement={1}, displacement_trainable={displacement_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [symplectic_trainable, displacement_trainable]
-        self._parameters = [self._math_backend.make_symplectic_parameter(symplectic, symplectic_trainable, len(modes), 'symplectic'),
-                            self._math_backend.make_euclidean_parameter(displacement, displacement_trainable, (None, None), (2*len(modes),), 'displacement')]
+        self._parameters = [
+            self._math_backend.make_symplectic_parameter(
+                symplectic, symplectic_trainable, len(modes), "symplectic"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                displacement,
+                displacement_trainable,
+                (None, None),
+                (2 * len(modes),),
+                "displacement",
+            ),
+        ]
 
     def symplectic_matrix(self, hbar: float) -> ArrayLike:
         return self._parameters[0]
@@ -174,19 +249,33 @@ class Ggate(Gate):
 
 class BSgate(Gate):
     "Beam Splitter gate"
-    def __init__(self, modes: List[int],
-                 theta: Optional[float] = None,
-                 theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 theta_trainable: bool = True,
-                 phi: Optional[float] = None,
-                 phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 phi_trainable: bool = True):
-        self._repr_string: Callable[[float, float], str] = lambda theta, phi: f'modes={modes}, theta={theta}, theta_bounds={theta_bounds}, theta_trainable={theta_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        theta: Optional[float] = None,
+        theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        theta_trainable: bool = True,
+        phi: Optional[float] = None,
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_trainable: bool = True,
+    ):
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
+            lambda theta, phi: f"modes={modes}, theta={theta}, theta_bounds={theta_bounds}, theta_trainable={theta_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [theta_trainable, phi_trainable]
-        self._parameters = [self._math_backend.make_euclidean_parameter(theta, theta_trainable, theta_bounds, None, 'theta'),
-                            self._math_backend.make_euclidean_parameter(phi, phi_trainable, phi_bounds, None, 'phi')]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(
+                theta, theta_trainable, theta_bounds, None, "theta"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                phi, phi_trainable, phi_bounds, None, "phi"
+            ),
+        ]
 
     def symplectic_matrix(self, hbar: float) -> ArrayLike:
         return self._gate_backend.beam_splitter_symplectic(*self._parameters)
@@ -194,19 +283,31 @@ class BSgate(Gate):
 
 class S2gate(Gate):
     "Two-mode Squeezing gate"
-    def __init__(self, modes: List[int],
-                 r: Optional[float] = None,
-                 r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-                 r_trainable: bool = True,
-                 phi: Optional[float] = None,
-                 phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-                 phi_trainable: bool = True):
-        self._repr_string: Callable[[float, float], str] = lambda r, phi: f'modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        r: Optional[float] = None,
+        r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        r_trainable: bool = True,
+        phi: Optional[float] = None,
+        phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_trainable: bool = True,
+    ):
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
+            lambda r, phi: f"modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [r_trainable, phi_trainable]
-        self._parameters = [self._math_backend.make_euclidean_parameter(r, r_trainable, r_bounds, None, 'r'),
-                            self._math_backend.make_euclidean_parameter(phi, phi_trainable, phi_bounds, None, 'phi')]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(r, r_trainable, r_bounds, None, "r"),
+            self._math_backend.make_euclidean_parameter(
+                phi, phi_trainable, phi_bounds, None, "phi"
+            ),
+        ]
 
     def symplectic_matrix(self, hbar: float) -> ArrayLike:
         return self._gate_backend.two_mode_squeezing_symplectic(*self._parameters)
@@ -214,17 +315,33 @@ class S2gate(Gate):
 
 class LossChannel(Gate):
     "Lossy Bosonic Channel"
-    def __init__(self, modes: List[int],
-                 transmissivity: Union[Optional[float], Optional[List[float]]] = None,
-                 transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
-                 transmissivity_trainable: bool = False,
-                 hbar: float = 2.0):
-        self._repr_string: Callable[[float], str] = lambda T: f'modes={modes}, transmissivity={T}, transmissivity_bounds={transmissivity_bounds}, transmissivity_trainable={transmissivity_trainable}'
+
+    def __init__(
+        self,
+        modes: List[int],
+        transmissivity: Union[Optional[float], Optional[List[float]]] = None,
+        transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        transmissivity_trainable: bool = False,
+        hbar: float = 2.0,
+    ):
+        self._repr_string: Callable[
+            [float], str
+        ] = (
+            lambda T: f"modes={modes}, transmissivity={T}, transmissivity_bounds={transmissivity_bounds}, transmissivity_trainable={transmissivity_trainable}"
+        )
         self.modes = modes
         self.mixing = True
         self.hbar = hbar
         self._trainable = [transmissivity_trainable]
-        self._parameters = [self._math_backend.make_euclidean_parameter(transmissivity, transmissivity_trainable, transmissivity_bounds, (len(modes), 2), 'transmissivity')]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(
+                transmissivity,
+                transmissivity_trainable,
+                transmissivity_bounds,
+                (len(modes), 2),
+                "transmissivity",
+            )
+        ]
 
     def symplectic_matrix(self, hbar: float) -> ArrayLike:
         return self._gate_backend.loss_X(*self._parameters)
