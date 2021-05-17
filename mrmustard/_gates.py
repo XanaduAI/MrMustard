@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Union, Callable
-from numpy.typing import ArrayLike
 import numpy as np
 
 from mrmustard._circuit import GateInterface
@@ -14,39 +13,39 @@ from mrmustard._backends import MathBackendInterface
 
 class GateBackendInterface(ABC):
     @abstractmethod
-    def loss_X(self, transmissivity: ArrayLike) -> ArrayLike:
+    def loss_X(self, transmissivity):
         pass
 
     @abstractmethod
-    def loss_Y(self, transmissivity: ArrayLike, hbar: float) -> ArrayLike:
+    def loss_Y(self, transmissivity, hbar: float):
         pass
 
     @abstractmethod
-    def thermal_X(self, nbar: ArrayLike, hbar: float) -> ArrayLike:
+    def thermal_X(self, nbar, hbar: float):
         pass
 
     @abstractmethod
-    def thermal_Y(self, nbar: ArrayLike, hbar: float) -> ArrayLike:
+    def thermal_Y(self, nbar, hbar: float):
         pass
 
     @abstractmethod
-    def rotation_symplectic(self, angle: ArrayLike) -> ArrayLike:
+    def rotation_symplectic(self, angle):
         pass
 
     @abstractmethod
-    def displacement(self, x: ArrayLike, y: ArrayLike, hbar: float) -> ArrayLike:
+    def displacement(self, x, y, hbar: float):
         pass
 
     @abstractmethod
-    def squeezing_symplectic(self, r: ArrayLike, phi: ArrayLike) -> ArrayLike:
+    def squeezing_symplectic(self, r, phi):
         pass
 
     @abstractmethod
-    def beam_splitter_symplectic(self, theta: ArrayLike, varphi: ArrayLike) -> ArrayLike:
+    def beam_splitter_symplectic(self, theta, varphi):
         pass
 
     @abstractmethod
-    def two_mode_squeezing_symplectic(self, r: ArrayLike, phi: ArrayLike) -> ArrayLike:
+    def two_mode_squeezing_symplectic(self, r, phi):
         pass
 
 
@@ -84,21 +83,21 @@ class Gate(GateInterface):
         with np.printoptions(precision=3, suppress=True):
             return f"{self.__class__.__qualname__}({self._repr_string(*[str(np.atleast_1d(p)) for p in self._parameters])})"
 
-    def symplectic_matrix(self, hbar: float) -> Optional[ArrayLike]:
+    def symplectic_matrix(self, hbar: float) -> Optional:
         return None
 
-    def displacement_vector(self, hbar: float) -> Optional[ArrayLike]:
+    def displacement_vector(self, hbar: float) -> Optional:
         return None
 
-    def noise_matrix(self, hbar: float) -> Optional[ArrayLike]:
+    def noise_matrix(self, hbar: float) -> Optional:
         return None
 
     @property
-    def euclidean_parameters(self) -> List[ArrayLike]:
+    def euclidean_parameters(self) -> List:
         return [p for i, p in enumerate(self._parameters) if self._trainable[i]]
 
     @property
-    def symplectic_parameters(self) -> List[ArrayLike]:
+    def symplectic_parameters(self) -> List:
         return []
 
 
@@ -132,7 +131,7 @@ class Dgate(Gate):
             ),
         ]
 
-    def displacement_vector(self, hbar: float) -> ArrayLike:
+    def displacement_vector(self, hbar: float):
         return self._gate_backend.displacement(*self._parameters, hbar=hbar)
 
 
@@ -166,7 +165,7 @@ class Sgate(Gate):
             ),
         ]
 
-    def symplectic_matrix(self, hbar: float) -> ArrayLike:
+    def symplectic_matrix(self, hbar: float):
         return self._gate_backend.squeezing_symplectic(*self._parameters)
 
 
@@ -194,7 +193,7 @@ class Rgate(Gate):
             )
         ]
 
-    def symplectic_matrix(self, hbar: float) -> ArrayLike:
+    def symplectic_matrix(self, hbar: float):
         return self._gate_backend.rotation_symplectic(
             *self._parameters
         )  # TODO: does this need to use hbar?
@@ -206,9 +205,9 @@ class Ggate(Gate):
     def __init__(
         self,
         modes: List[int],
-        symplectic: Optional[ArrayLike] = None,
+        symplectic: Optional = None,
         symplectic_trainable: bool = True,
-        displacement: Optional[ArrayLike] = None,
+        displacement: Optional = None,
         displacement_trainable: bool = True,
     ):
         self._repr_string: Callable[
@@ -232,18 +231,18 @@ class Ggate(Gate):
             ),
         ]
 
-    def symplectic_matrix(self, hbar: float) -> ArrayLike:
+    def symplectic_matrix(self, hbar: float):
         return self._parameters[0]
 
-    def displacement_vector(self, hbar: float) -> ArrayLike:
+    def displacement_vector(self, hbar: float):
         return self._parameters[1]
 
     @property
-    def symplectic_parameters(self) -> List[ArrayLike]:
+    def symplectic_parameters(self) -> List:
         return [self.symplectic_matrix(hbar=2.0)] if self._trainable[0] else []
 
     @property
-    def euclidean_parameters(self) -> List[ArrayLike]:
+    def euclidean_parameters(self) -> List:
         return [self.displacement_vector(hbar=2.0)] if self._trainable[1] else []
 
 
@@ -277,7 +276,7 @@ class BSgate(Gate):
             ),
         ]
 
-    def symplectic_matrix(self, hbar: float) -> ArrayLike:
+    def symplectic_matrix(self, hbar: float):
         return self._gate_backend.beam_splitter_symplectic(*self._parameters)
 
 
@@ -309,7 +308,7 @@ class S2gate(Gate):
             ),
         ]
 
-    def symplectic_matrix(self, hbar: float) -> ArrayLike:
+    def symplectic_matrix(self, hbar: float):
         return self._gate_backend.two_mode_squeezing_symplectic(*self._parameters)
 
 
@@ -343,8 +342,8 @@ class LossChannel(Gate):
             )
         ]
 
-    def symplectic_matrix(self, hbar: float) -> ArrayLike:
+    def symplectic_matrix(self, hbar: float):
         return self._gate_backend.loss_X(*self._parameters)
 
-    def noise_matrix(self, hbar: float) -> ArrayLike:
+    def noise_matrix(self, hbar: float):
         return self._gate_backend.loss_Y(*self._parameters, hbar=hbar)
