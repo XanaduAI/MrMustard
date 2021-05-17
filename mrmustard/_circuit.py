@@ -58,7 +58,7 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
 
     def fock_output(self, cutoffs: Sequence[int]) -> ArrayLike:
         output = self.gaussian_output()
-        A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=2)
+        A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=output.hbar)
         return self._recursive_state(A, B, C, cutoffs=cutoffs)
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> ArrayLike:
