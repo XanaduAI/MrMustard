@@ -98,7 +98,7 @@ def fill_gradients_numbaloop(dA, dB, state, idx, A, B):
     dudB[i] += state[ki]
     for p, kp in remove(ki):
         dudA += SQRT[ki[p]] * A[i, p] * dA[kp]
-        dudA[i, p] -= SQRT[ki[p]] * state[kp]
+        dudA[i, p] += SQRT[ki[p]] * state[kp]
         dudB += SQRT[ki[p]] * A[i, p] * dB[kp]
     dA[idx] = dudA / SQRT[idx[i]]
     dB[idx] = dudB / SQRT[idx[i]]
