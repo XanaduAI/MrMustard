@@ -11,9 +11,7 @@ from mrmustard._opt import CircuitInterface
 
 class CircuitBackendInterface(ABC):
     @abstractmethod
-    def _ABC(
-        self, cov, means, mixed: bool, hbar: float
-    ) -> Tuple:
+    def _ABC(self, cov, means, mixed: bool, hbar: float) -> Tuple:
         pass
 
     @abstractmethod
