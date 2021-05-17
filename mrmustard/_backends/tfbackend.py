@@ -36,7 +36,7 @@ class TFCircuitBackend(CircuitBackendInterface):
 
     def _ABC(self, cov: tf.Tensor, means: tf.Tensor, mixed: bool = False, hbar: float = 2.0) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         num_modes = means.shape[-1] // 2
-        R = tf.cast(utils.rotmat(num_modes), tf.complex128)
+        R = utils.rotmat(num_modes)
         sigma = (1 / hbar) * R @ tf.cast(cov, tf.complex128) @ tf.math.conj(tf.transpose(R))
         beta = tf.linalg.matvec(R, tf.cast(means, tf.complex128)) / np.sqrt(hbar)
 

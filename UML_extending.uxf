@@ -1,0 +1,31 @@
+<diagram program="umletino" version="14.4.0-SNAPSHOT"><zoom_level>10</zoom_level><element><id>UMLClass</id><coordinates><x>141</x><y>260</y><w>150</w><h>80</h></coordinates><panel_attributes>_circuit
+bg=cyan</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>141</x><y>350</y><w>150</w><h>80</h></coordinates><panel_attributes>_opt
+bg=cyan</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>141</x><y>170</y><w>150</w><h>80</h></coordinates><panel_attributes>_gates
+bg=cyan
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>511</x><y>200</y><w>170</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;-
+&lt;&lt;inherits&gt;&gt;</panel_attributes><additional_attributes>150;20;10;20</additional_attributes></element><element><id>UMLClass</id><coordinates><x>391</x><y>160</y><w>160</w><h>270</h></coordinates><panel_attributes>public_API
+(empty)
+bg=green
+group=2</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>511</x><y>290</y><w>170</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;-
+&lt;&lt;inherits&gt;&gt;</panel_attributes><additional_attributes>150;20;10;20</additional_attributes></element><element><id>UMLClass</id><coordinates><x>421</x><y>290</y><w>100</w><h>30</h></coordinates><panel_attributes>Circuit
+bg=white
+group=2</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>421</x><y>200</y><w>100</w><h>30</h></coordinates><panel_attributes>xxxGate
+bg=white
+group=2</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>421</x><y>380</y><w>100</w><h>30</h></coordinates><panel_attributes>Optimizer
+bg=white
+group=2</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>641</x><y>160</y><w>200</w><h>270</h></coordinates><panel_attributes>custom backends
+bg=blue
+group=1</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>511</x><y>380</y><w>170</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;-
+&lt;&lt;inherits&gt;&gt;</panel_attributes><additional_attributes>150;20;10;20</additional_attributes></element><element><id>UMLClass</id><coordinates><x>161</x><y>290</y><w>110</w><h>30</h></coordinates><panel_attributes>BaseCircuit
+bg=white</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>161</x><y>380</y><w>110</w><h>30</h></coordinates><panel_attributes>BaseOptimizer
+bg=white</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>161</x><y>200</y><w>110</w><h>30</h></coordinates><panel_attributes>BaseXXXgate
+bg=white</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>261</x><y>200</y><w>180</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;-
+&lt;&lt;inherits&gt;&gt;</panel_attributes><additional_attributes>10;20;160;20</additional_attributes></element><element><id>Relation</id><coordinates><x>261</x><y>290</y><w>180</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;-
+&lt;&lt;inherits&gt;&gt;</panel_attributes><additional_attributes>10;20;160;20</additional_attributes></element><element><id>Relation</id><coordinates><x>261</x><y>380</y><w>180</w><h>40</h></coordinates><panel_attributes>lt=&lt;&lt;-
+&lt;&lt;inherits&gt;&gt;</panel_attributes><additional_attributes>10;20;160;20</additional_attributes></element><element><id>UMLClass</id><coordinates><x>661</x><y>200</y><w>160</w><h>30</h></coordinates><panel_attributes>customGateBackend
+bg=white
+group=1</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>661</x><y>290</y><w>160</w><h>30</h></coordinates><panel_attributes>customCircuitBackend
+bg=white
+group=1</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>661</x><y>380</y><w>160</w><h>30</h></coordinates><panel_attributes>customOptBackend
+bg=white
+group=1</panel_attributes><additional_attributes></additional_attributes></element></diagram>
