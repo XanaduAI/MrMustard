@@ -44,11 +44,11 @@ class GateInterface(ABC):
 
 
 class BaseCircuit(CircuitInterface, CircuitBackendInterface):
-    def __init__(self, num_modes:int):
-        self._gates:List[GateInterface] = []
-        self.num_modes:int = num_modes
-        self._input:State = Vacuum(num_modes = num_modes)
-        self._mixed_output:bool = False
+    def __init__(self, num_modes: int, hbar: float = 2.0):
+        self._gates: List[GateInterface] = []
+        self.num_modes: int = num_modes
+        self._input: State = Vacuum(num_modes=num_modes, hbar=hbar)
+        self._mixed_output: bool = False
 
     def gaussian_output(self) -> State:
         state = self._input
@@ -56,12 +56,12 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
             state = gate(state)
         return state
 
-    def fock_output(self, cutoffs:Sequence[int]) -> ArrayLike:
+    def fock_output(self, cutoffs: Sequence[int]) -> ArrayLike:
         output = self.gaussian_output()
         A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=2)
         return self._recursive_state(A, B, C, cutoffs=cutoffs)
 
-    def fock_probabilities(self, cutoffs:Sequence[int]) -> ArrayLike:
+    def fock_probabilities(self, cutoffs: Sequence[int]) -> ArrayLike:
         if self._mixed_output:
             rho = self.fock_output(cutoffs=cutoffs)
             return self._all_diagonals(rho)
