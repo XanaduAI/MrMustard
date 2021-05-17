@@ -13,11 +13,6 @@ class StateBackendInterface(ABC):
 
 
 class State:
-    _state_backend: StateBackendInterface
-    cov
-    means
-    hbar: float
-
     def __init__(self, num_modes: int, hbar: float = 2.0):
         self.num_modes = num_modes
         self.hbar = hbar

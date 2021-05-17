@@ -37,7 +37,7 @@ def test_hong_ou_mandel_optimizer():
 
     opt = Optimizer(euclidean_lr=0.005)
     circ = opt.minimize(circ, loss_fn, max_steps=0)
-    assert np.allclose(np.cos(circ.euclidean_parameters[2]) ** 2, 0.5, atol=2e-3)
+    assert np.allclose(np.cos(circ.euclidean_parameters[2]) ** 2, 0.5, atol=1e-2)
 
 
 def test_learning_two_mode_squeezing():
