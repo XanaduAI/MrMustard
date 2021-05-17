@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import List, Sequence, Tuple, Optional
-from numpy.typing import ArrayLike, DTypeLike
+from numpy.typing import ArrayLike
 from mrmustard._states import Vacuum, State
 from mrmustard._opt import CircuitInterface
 
@@ -77,19 +77,13 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
     def euclidean_parameters(self) -> List[ArrayLike]:
         return [par for gate in self._gates for par in gate.euclidean_parameters]
 
-    def add_gate(self, gate:GateInterface) -> None:
+    def add_gate(self, gate: GateInterface) -> None:
         self._gates.append(gate)
         if gate.mixing:
             self._mixed_output = True
 
-    def set_input(self, input:State) -> None:
+    def set_input(self, input: State) -> None:
         self._input = input
 
     def __repr__(self) -> str:
         return repr(self._input)+"\n"+"\n".join([repr(g) for g in self._gates])
-
-
-
-
-
-
