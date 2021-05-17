@@ -17,7 +17,7 @@ from setuptools import setup, find_packages
 
 
 requirements = [
-    "numpy==1.20.1",
+    "numpy==1.19.2",
     "scipy",
     "numba",
     "repoze.lru",
