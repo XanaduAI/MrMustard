@@ -49,7 +49,6 @@ class TFCircuitBackend(CircuitBackendInterface):
 
         T = tf.math.exp(-0.5 * tf.einsum('i,ij,j', tf.math.conj(beta), sQinv, beta)) / tf.math.sqrt(tf.linalg.det(sQ))
         N = num_modes + num_modes*mixed
-
         return A[N:, N:], B[N:], T**(0.5 + 0.5*mixed)  # will be off by global phase because T is real
 
     @tf.custom_gradient
