@@ -94,3 +94,14 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     expectedCov = n_mean*(n_mean+1)*np.ones([2,2])
     assert np.allclose(meanN, expectedN)
     assert np.allclose(covN, expectedCov)
+
+#@pytest.mark.parametrize("alpha", np.random.rand(4,4) + 1j*np.random.rand(4,4))
+#def test_four_coherent_states_mean_and_covar(alpha):
+#    """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
+#    circ = Circuit(num_modes=4)
+#    for i in range(4):
+#        circ.add_gate(Dgate(modes=[i], x=alpha.real, y=alpha.imag))
+#    state = circ.gaussian_output()
+#    meanN =  state.photon_number_mean()
+#    covN = state.photon_number_covariance()
+#    print(covN)
