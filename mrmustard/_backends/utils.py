@@ -45,7 +45,7 @@ def partition(photons: int, max_vals: Tuple[int, ...]) -> Tuple[Tuple[int, ...],
 
 
 @njit
-def remove(pattern: Tuple[int, ...]) -> Generator[Tuple[int, Tuple[int, ...]], None, None]:
+def remove(pattern: Tuple[int, ...]) -> Generator[Tuple[int, Tuple[int,...]], None, None]:  # pragma: no cover 
     "returns a generator for all the possible ways to decrease elements of the given tuple by 1"
     for p, n in enumerate(pattern):
         if n > 0:
@@ -53,7 +53,7 @@ def remove(pattern: Tuple[int, ...]) -> Generator[Tuple[int, Tuple[int, ...]], N
 
 
 @njit
-def dec(tup: Tuple[int], i: int) -> Tuple[int, ...]:
+def dec(tup: Tuple[int], i: int) -> Tuple[int, ...]:  # pragma: no cover
     "returns a copy of the given tuple of integers where the ith element has been decreased by 1"
     copy = tup[:]
     return tuple_setitem(copy, i, tup[i] - 1)
@@ -68,7 +68,7 @@ def fill_amplitudes(array, A, B, max_photons: Tuple[int, ...]):
 
 
 @njit
-def fill_amplitudes_numbaloop(array, idx, A, B):
+def fill_amplitudes_numbaloop(array, idx, A, B):  # pragma: no cover
     for i, val in enumerate(idx):
         if val > 0:
             break
@@ -88,7 +88,7 @@ def fill_gradients(dA, dB, state, A, B, max_photons: Tuple[int, ...]):
 
 
 @njit
-def fill_gradients_numbaloop(dA, dB, state, idx, A, B):
+def fill_gradients_numbaloop(dA, dB, state, idx, A, B):  # pragma: no cover
     for i, val in enumerate(idx):
         if val > 0:
             break

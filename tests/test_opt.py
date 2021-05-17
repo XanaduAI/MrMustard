@@ -9,6 +9,7 @@ import pytest
 @pytest.mark.parametrize("n", [0, 1, 2, 3])
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
+    tf.random.set_seed(137)
     circ = Circuit(num_modes=2)
     circ.add_gate(S2gate(modes=[0, 1]))
 
@@ -45,28 +46,29 @@ def test_learning_two_mode_squeezing():
     circ = Circuit(num_modes=2)
     circ.add_gate(Sgate(modes=[0]))
     circ.add_gate(Sgate(modes=[1]))
-    circ.add_gate(BSgate(modes=[0,1]))
+    circ.add_gate(BSgate(modes=[0, 1]))
     tf.random.set_seed(20)
 
     def loss_fn():
-        amps = circ.fock_output(cutoffs=[2,2])
-        return -tf.abs(amps[1,1])**2 + tf.abs(amps[0,1])**2
+        amps = circ.fock_output(cutoffs=[2, 2])
+        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.05)
 
     circ = opt.minimize(circ, loss_fn, max_steps=1000)
     assert np.allclose(-loss_fn(), 0.25, atol=2e-3)
 
+
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
-
-    circ = Circuit(num_modes=2) # emtpy circuit with vacuum input state
-    circ.add_gate(Ggate(modes = [0,1], displacement_trainable=False, displacement=[0,0,0,0]))
+    tf.random.set_seed(137)
+    circ = Circuit(num_modes=2)  # emtpy circuit with vacuum input state
+    circ.add_gate(Ggate(modes=[0, 1], displacement_trainable=False, displacement=[0, 0, 0, 0]))
     tf.random.set_seed(20)
 
     def loss_fn():
-        amps = circ.fock_output(cutoffs=[2,2])
-        return -tf.abs(amps[1,1])**2 + tf.abs(amps[0,1])**2
+        amps = circ.fock_output(cutoffs=[2, 2])
+        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(symplectic_lr=0.1)
 
