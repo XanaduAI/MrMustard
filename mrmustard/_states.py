@@ -32,7 +32,7 @@ class State:
 class Vacuum(State):
     def __init__(self, num_modes: int, hbar: float = 2.0):
         super().__init__(num_modes, hbar)
-        self.cov = np.identity(2*self.num_modes)
+        self.cov = hbar*np.identity(2*self.num_modes)/2.0
         self.means = np.zeros(2*self.num_modes)
 
     def __repr__(self) -> str:

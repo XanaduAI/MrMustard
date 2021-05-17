@@ -36,9 +36,10 @@ class TFCircuitBackend(CircuitBackendInterface):
 
     def _ABC(self, cov: tf.Tensor, means: tf.Tensor, mixed: bool = False, hbar: float = 2.0) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         num_modes = means.shape[-1] // 2
+
         R = utils.rotmat(num_modes)
-        sigma = (1 / hbar) * R @ tf.cast(cov, tf.complex128) @ tf.math.conj(tf.transpose(R))
-        beta = tf.linalg.matvec(R, tf.cast(means, tf.complex128)) / np.sqrt(hbar)
+        sigma = R @ tf.cast(cov/hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))  # cov in amplitude basis
+        beta = tf.linalg.matvec(R, tf.cast(means/np.sqrt(hbar), tf.complex128))       # means in amplitude basis
 
         sQ = sigma + 0.5 * tf.eye(2*num_modes, dtype=tf.complex128)
         sQinv = tf.linalg.inv(sQ)
@@ -47,8 +48,8 @@ class TFCircuitBackend(CircuitBackendInterface):
         B = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
 
         T = tf.math.exp(-0.5 * tf.einsum('i,ij,j', tf.math.conj(beta), sQinv, beta)) / tf.math.sqrt(tf.linalg.det(sQ))
-
         N = num_modes + num_modes*mixed
+
         return A[N:, N:], B[N:], T**(0.5 + 0.5*mixed)  # will be off by global phase because T is real
 
     @tf.custom_gradient

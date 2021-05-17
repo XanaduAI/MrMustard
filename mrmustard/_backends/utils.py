@@ -36,17 +36,6 @@ def J(num_modes: int):
     return np.block([[O, I], [-I, O]])
 
 
-@lru_cache()
-def fixed_cov(l, choi_r=np.arcsinh(1.0), hbar=2):
-    'Construct the covariance matrix of l two-mode squeezed vacua pairing modes i and i+l'
-    ch = np.diag([np.cosh(choi_r)] * l)
-    sh = np.diag([np.sinh(choi_r)] * l)
-    zh = np.zeros([l, l])
-    return np.block(
-        [[ch, sh, zh, zh], [sh, ch, zh, zh], [zh, zh, ch, -sh], [zh, zh, -sh, ch]]
-    )
-
-
 # LOW-LEVEL NUMBA CODE
 
 @lru_cache()
