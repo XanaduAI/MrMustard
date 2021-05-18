@@ -29,7 +29,9 @@ class Detector(DetectorInterface):
             raise IndexError(
                 "This detector does not support so many input photons (you should probably increase max_input_photons)"
             )
-        td = self._math_backend.tensordot(fock_probs, self._stochastic_channel[:cutoff, :cutoff], [[self.mode], [1]])
+        td = self._math_backend.tensordot(
+            fock_probs, self._stochastic_channel[:cutoff, :cutoff], [[self.mode], [1]]
+        )
         indices = list(range(fock_probs.ndim - 1))
         indices.insert(self.mode, fock_probs.ndim - 1)
         return self._math_backend.transpose(td, indices)
@@ -59,7 +61,9 @@ class PNR(Detector):
             self._stochastic_channel = conditional_probs
         else:
             dark_prior = poisson.pmf(np.arange(cutoff), dark_count_prob)
-            condprob = utils.binomial_conditional_prob(success_prob=quantum_efficiency, dim_in=cutoff, dim_out=cutoff)
+            condprob = utils.binomial_conditional_prob(
+                success_prob=quantum_efficiency, dim_in=cutoff, dim_out=cutoff
+            )
             self._stochastic_channel = self._detector_backend.convolve_probs_1d(
                 condprob, [dark_prior, np.identity(condprob.shape[1])[0]]
             )

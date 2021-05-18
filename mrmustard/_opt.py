@@ -96,7 +96,9 @@ class BaseOptimizer(OptimizerBackendInterface):
         bar = Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                loss, symp_grads, eucl_grads = self._loss_and_gradients(symplectic_parameters, euclidean_parameters, loss_fn)
+                loss, symp_grads, eucl_grads = self._loss_and_gradients(
+                    symplectic_parameters, euclidean_parameters, loss_fn
+                )
                 self._update_symplectic(symp_grads, symplectic_parameters)
                 self._update_euclidean(eucl_grads, euclidean_parameters)
                 self.loss_history.append(loss)
@@ -108,7 +110,10 @@ class BaseOptimizer(OptimizerBackendInterface):
             return True
         if len(self.loss_history) > 5:
             # loss is stable for 5 steps
-            if sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 5)) < 1e-6:
+            if (
+                sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 5))
+                < 1e-6
+            ):
                 print("Loss looks stable, stopping here.")
                 return True
         return False

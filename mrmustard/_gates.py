@@ -123,8 +123,12 @@ class Dgate(Gate):
         self.mixing = False
         self._trainable = [x_trainable, y_trainable]
         self._parameters = [
-            self._math_backend.make_euclidean_parameter(x, x_trainable, x_bounds, (len(modes),), "x"),
-            self._math_backend.make_euclidean_parameter(y, y_trainable, y_bounds, (len(modes),), "y"),
+            self._math_backend.make_euclidean_parameter(
+                x, x_trainable, x_bounds, (len(modes),), "x"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                y, y_trainable, y_bounds, (len(modes),), "y"
+            ),
         ]
 
     def displacement_vector(self, hbar: float):
@@ -153,8 +157,12 @@ class Sgate(Gate):
         self.mixing = False
         self._trainable = [r_trainable, phi_trainable]
         self._parameters = [
-            self._math_backend.make_euclidean_parameter(r, r_trainable, r_bounds, (len(modes),), "r"),
-            self._math_backend.make_euclidean_parameter(phi, phi_trainable, phi_bounds, (len(modes),), "phi"),
+            self._math_backend.make_euclidean_parameter(
+                r, r_trainable, r_bounds, (len(modes),), "r"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                phi, phi_trainable, phi_bounds, (len(modes),), "phi"
+            ),
         ]
 
     def symplectic_matrix(self, hbar: float):
@@ -173,18 +181,20 @@ class Rgate(Gate):
     ):
         self._repr_string: Callable[
             [float], str
-        ] = lambda angle: f"modes={modes}, angle={angle}, angle_bounds={angle_bounds}, angle_trainable={angle_trainable}"
+        ] = (
+            lambda angle: f"modes={modes}, angle={angle}, angle_bounds={angle_bounds}, angle_trainable={angle_trainable}"
+        )
         self.modes = modes
         self.mixing = False
         self._trainable = [angle_trainable]
         self._parameters = [
-            self._math_backend.make_euclidean_parameter(angle, angle_trainable, angle_bounds, (len(modes),), "angle")
+            self._math_backend.make_euclidean_parameter(
+                angle, angle_trainable, angle_bounds, (len(modes),), "angle"
+            )
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.rotation_symplectic(
-            *self._parameters
-        )
+        return self._gate_backend.rotation_symplectic(*self._parameters)
 
 
 class Ggate(Gate):
@@ -207,7 +217,9 @@ class Ggate(Gate):
         self.mixing = False
         self._trainable = [symplectic_trainable, displacement_trainable]
         self._parameters = [
-            self._math_backend.make_symplectic_parameter(symplectic, symplectic_trainable, len(modes), "symplectic"),
+            self._math_backend.make_symplectic_parameter(
+                symplectic, symplectic_trainable, len(modes), "symplectic"
+            ),
             self._math_backend.make_euclidean_parameter(
                 displacement,
                 displacement_trainable,
@@ -254,8 +266,12 @@ class BSgate(Gate):
         self.mixing = False
         self._trainable = [theta_trainable, phi_trainable]
         self._parameters = [
-            self._math_backend.make_euclidean_parameter(theta, theta_trainable, theta_bounds, None, "theta"),
-            self._math_backend.make_euclidean_parameter(phi, phi_trainable, phi_bounds, None, "phi"),
+            self._math_backend.make_euclidean_parameter(
+                theta, theta_trainable, theta_bounds, None, "theta"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                phi, phi_trainable, phi_bounds, None, "phi"
+            ),
         ]
 
     def symplectic_matrix(self, hbar: float):
@@ -285,7 +301,9 @@ class S2gate(Gate):
         self._trainable = [r_trainable, phi_trainable]
         self._parameters = [
             self._math_backend.make_euclidean_parameter(r, r_trainable, r_bounds, None, "r"),
-            self._math_backend.make_euclidean_parameter(phi, phi_trainable, phi_bounds, None, "phi"),
+            self._math_backend.make_euclidean_parameter(
+                phi, phi_trainable, phi_bounds, None, "phi"
+            ),
         ]
 
     def symplectic_matrix(self, hbar: float):
