@@ -37,16 +37,17 @@ def J(num_modes: int):
     return np.block([[O, I], [-I, O]])
 
 
-def binomial_conditional_prob(success_prob, dim_in: int, dim_out: int):
+def binomial_conditional_prob(success_prob, dim_out: int, dim_in: int):
+    "P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out"
     if np.isclose(success_prob, 0.0):
         conditional = np.zeros([dim_out, dim_in])
         conditional[0, :] = 1.0
     elif np.isclose(success_prob, 1.0):
         conditional = np.fill_diagonal(np.zeros([dim_out, dim_in]), 1.0)
     else:
-        j = np.arange(dim_in)[None, :]
-        r = np.arange(dim_out)[:, None]
-        conditional = binom(r, j) * (1-success_prob)**j * success_prob**(r - j)
+        in_ = np.arange(dim_in)[None, :]
+        out_ = np.arange(dim_out)[:, None]
+        conditional = binom(in_, out_) * (1-success_prob)**(in_ - out_) * success_prob**out_
     return conditional
 # LOW-LEVEL NUMBA CODE
 

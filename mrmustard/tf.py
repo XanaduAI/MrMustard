@@ -13,11 +13,12 @@ if __name__ == "mrmustard.tf":
     )
     from mrmustard._states import State
 
-    Gate._math_backend = TFMathbackend()                # injecting tf math backend into all the gates
-    Gate._gate_backend = TFGateBackend()                # injecting tf gate backend into all the gates
-    State._state_backend = TFStateBackend()             # injecting tf state backend into all the states
-    Detector._detector_backend = TFDetectorBackend()    # injecting tf detector backend into all the detectors
-    Detector._math_backend = TFMathbackend()            # injecting tf math backend into all the detectors
+    Gate._math_backend = TFMathbackend()
+    Gate._gate_backend = TFGateBackend()
+    State._state_backend = TFStateBackend()
+    Detector._detector_backend = TFDetectorBackend()
+    Detector._math_backend = TFMathbackend()
+    BaseCircuit._math_backend = TFMathbackend()
 
     class Circuit(BaseCircuit, TFCircuitBackend):
         pass

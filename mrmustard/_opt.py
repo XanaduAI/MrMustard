@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Sequence, List, Union
 from numpy.typing import ArrayLike
-from tqdm import tqdm
 from mrmustard._states import State
 from mrmustard.visual import Progressbar
-
+from mrmustard._backends import MathBackendInterface
 
 ################
 #  INTERFACES  #
@@ -13,6 +12,7 @@ from mrmustard.visual import Progressbar
 
 class CircuitInterface(ABC):
     "Interface for the Circuit class. Implemented in _circuit.py"
+    _math_backend = MathBackendInterface
 
     @abstractproperty
     def symplectic_parameters(self) -> List[ArrayLike]:

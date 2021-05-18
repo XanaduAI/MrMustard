@@ -457,10 +457,11 @@ class TFMathbackend(MathBackendInterface):
         else:
             return tf.constant(val, dtype=tf.float64, name=name)
 
-    def replace_index(self, array: tf.Tensor, array2d: tf.Tensor, index: int) -> tf.Tensor:
-        indices = list(range(array.ndim-1))
-        indices.insert(index, array.ndim-1)
-        return tf.transpose(tf.tensordot(array, array2d, [[index], [0]]), indices)
+    def tensordot(self, a, b, axes):
+        return tf.tensordot(a, b, axes)
+
+    def transpose(self, a, perm):
+        return tf.transpose(a, perm)
 
 
 class TFDetectorBackend(DetectorBackendInterface):
