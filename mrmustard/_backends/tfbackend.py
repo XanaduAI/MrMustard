@@ -465,20 +465,19 @@ class TFMathbackend(MathBackendInterface):
 
 
 class TFDetectorBackend(DetectorBackendInterface):
-
     def convolve_probs_1d(self, prob: tf.Tensor, other_probs: List[tf.Tensor]) -> tf.Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"
 
         if prob.ndim > 3 or len(other_probs) > 3:
-            raise ValueError('cannot convolve arrays with more than 3 axes')
+            raise ValueError("cannot convolve arrays with more than 3 axes")
         if not all([q.ndim == 1 for q in other_probs]):
-            raise ValueError('other_probs must contain 1d arrays')
+            raise ValueError("other_probs must contain 1d arrays")
         if not all([len(q) == s for q, s in zip(other_probs, prob.shape)]):
-            raise ValueError('The length of the 1d prob vectors must match shape of prob')
+            raise ValueError("The length of the 1d prob vectors must match shape of prob")
 
         q = other_probs[0]
         for q_ in other_probs[1:]:
-            q = q[..., None] * q_[(None,)*q.ndim + (slice(None),)]
+            q = q[..., None] * q_[(None,) * q.ndim + (slice(None),)]
 
         return self.convolve_probs(prob, q)
 
@@ -488,10 +487,12 @@ class TFDetectorBackend(DetectorBackendInterface):
         as it's computed only up to the dimension of the base probs."""
 
         if prob.ndim > 3 or other.ndim > 3:
-            raise ValueError('cannot convolve arrays with more than 3 axes')
+            raise ValueError("cannot convolve arrays with more than 3 axes")
         if not prob.shape == other.shape:
-            raise ValueError('prob and other must have the same shape')
+            raise ValueError("prob and other must have the same shape")
 
-        prob_padded = tf.pad(prob, [(s-1, 0) for s in other.shape])
-        other_reversed = other[(slice(None, None, -1),)*other.ndim]
-        return tf.nn.convolution(prob_padded[None, ..., None], other_reversed[..., None, None], padding='VALID')[0, ..., 0]
+        prob_padded = tf.pad(prob, [(s - 1, 0) for s in other.shape])
+        other_reversed = other[(slice(None, None, -1),) * other.ndim]
+        return tf.nn.convolution(
+            prob_padded[None, ..., None], other_reversed[..., None, None], padding="VALID"
+        )[0, ..., 0]

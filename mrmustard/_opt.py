@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Sequence, List, Union
-from numpy.typing import ArrayLike
 from mrmustard._states import State
 from mrmustard.visual import Progressbar
 from mrmustard._backends import MathBackendInterface
@@ -15,11 +14,11 @@ class CircuitInterface(ABC):
     _math_backend = MathBackendInterface
 
     @abstractproperty
-    def symplectic_parameters(self) -> List[ArrayLike]:
+    def symplectic_parameters(self) -> List:
         pass
 
     @abstractproperty
-    def euclidean_parameters(self) -> List[ArrayLike]:
+    def euclidean_parameters(self) -> List:
         pass
 
     @abstractmethod
@@ -35,11 +34,11 @@ class CircuitInterface(ABC):
         pass
 
     @abstractmethod
-    def fock_output(self, cutoffs: Sequence[int]) -> ArrayLike:
+    def fock_output(self, cutoffs: Sequence[int]):
         pass
 
     @abstractmethod
-    def fock_probabilities(self, cutoffs: Sequence[int]) -> ArrayLike:
+    def fock_probabilities(self, cutoffs: Sequence[int]):
         pass
 
 

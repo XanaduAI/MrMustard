@@ -48,8 +48,10 @@ def binomial_conditional_prob(success_prob, dim_out: int, dim_in: int):
     else:
         in_ = np.arange(dim_in)[None, :]
         out_ = np.arange(dim_out)[:, None]
-        conditional = binom(in_, out_) * (1-success_prob)**(in_ - out_) * success_prob**out_
+        conditional = binom(in_, out_) * (1 - success_prob) ** (in_ - out_) * success_prob ** out_
     return conditional
+
+
 # LOW-LEVEL NUMBA CODE
 
 
