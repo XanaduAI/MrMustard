@@ -41,3 +41,38 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     variance = np.arange(cutoff) ** 2 @ ps.numpy() - mean ** 2
     expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
     assert np.allclose(variance, expected_variance, atol=1e-3)
+
+
+@pytest.mark.parametrize("r", 0.5 * np.random.rand(3))
+@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
+@pytest.mark.parametrize("eta_s", [0, 0.3, 1.0])
+@pytest.mark.parametrize("eta_i", [0, 0.3, 1.0])
+@pytest.mark.parametrize("dc_s", [0, 0.2])
+@pytest.mark.parametrize("dc_i", [0, 0.2])
+def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
+    """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
+    circ = Circuit(num_modes=2)
+    circ.add_gate(S2gate(modes=[0, 1], r=r, phi=phi))
+    circ.add_detector(PNR(mode=0, quantum_efficiency=eta_s, dark_count_prob=dc_s))
+    circ.add_detector(PNR(mode=1, quantum_efficiency=eta_i, dark_count_prob=dc_i))
+    cutoff = 30
+    ps = circ.detection_probabilities(cutoffs=[cutoff, cutoff])
+    n = np.arange(cutoff)
+    mean_s = np.sum(ps, axis=1) @ n
+    n_s = eta_s * np.sinh(r) ** 2
+    expected_mean_s = n_s + dc_s
+    mean_i = np.sum(ps, axis=0) @ n
+    n_i = eta_i * np.sinh(r) ** 2
+    expected_mean_i = n_i + dc_i
+    expected_mean_s = n_s + dc_s
+    var_s = np.sum(ps, axis=1) @ n ** 2 - mean_s ** 2
+    var_i = np.sum(ps, axis=0) @ n ** 2 - mean_i ** 2
+    expected_var_s = n_s * (n_s + 1) + dc_s
+    expected_var_i = n_i * (n_i + 1) + dc_i
+    covar = n @ ps.numpy() @ n - mean_s * mean_i
+    expected_covar = eta_s * eta_i * (np.sinh(r) * np.cosh(r)) ** 2
+    assert np.allclose(mean_s, expected_mean_s, atol=1e-3)
+    assert np.allclose(mean_i, expected_mean_i, atol=1e-3)
+    assert np.allclose(var_s, expected_var_s, atol=1e-3)
+    assert np.allclose(var_i, expected_var_i, atol=1e-3)
+    assert np.allclose(covar, expected_covar, atol=1e-3)
