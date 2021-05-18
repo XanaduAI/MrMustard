@@ -48,6 +48,13 @@ class GateInterface(ABC):
         pass
 
 
+class DetectorInterface(ABC):
+    @abstractmethod
+    def __call__(self, fock_probs):
+        pass
+
+
+
 ######################
 #  CONCRETE CLASSES  #
 ######################

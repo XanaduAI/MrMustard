@@ -4,6 +4,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 from functools import lru_cache
 from itertools import product
 from typing import Tuple, Generator
+from scipy.special import binom
 
 SQRT = np.sqrt(np.arange(1000))  # saving the time to recompute square roots
 
@@ -36,6 +37,17 @@ def J(num_modes: int):
     return np.block([[O, I], [-I, O]])
 
 
+def binomial_conditional_prob(success_prob, dim_in: int, dim_out: int):
+    if np.isclose(success_prob, 0.0):
+        conditional = np.zeros([dim_out, dim_in])
+        conditional[0, :] = 1.0
+    elif np.isclose(success_prob, 1.0):
+        conditional = np.fill_diagonal(np.zeros([dim_out, dim_in]), 1.0)
+    else:
+        j = np.arange(dim_in)[None, :]
+        r = np.arange(dim_out)[:, None]
+        conditional = binom(r, j) * (1-success_prob)**j * success_prob**(r - j)
+    return conditional
 # LOW-LEVEL NUMBA CODE
 
 
