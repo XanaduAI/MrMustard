@@ -12,9 +12,7 @@ from mrmustard._opt import CircuitInterface
 
 class CircuitBackendInterface(ABC):
     @abstractmethod
-    def _ABC(
-        self, cov: ArrayLike, means: ArrayLike, mixed: bool, hbar: float
-    ) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+    def _ABC(self, cov: ArrayLike, means: ArrayLike, mixed: bool, hbar: float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
         pass
 
     @abstractmethod
@@ -52,7 +50,6 @@ class DetectorInterface(ABC):
     @abstractmethod
     def __call__(self, fock_probs):
         pass
-
 
 
 ######################

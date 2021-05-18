@@ -9,7 +9,7 @@ if __name__ == "mrmustard.tf":
         TFOptimizerBackend,
         TFStateBackend,
         TFMathbackend,
-        TFDetectorBackend
+        TFDetectorBackend,
     )
     from mrmustard._states import State
 

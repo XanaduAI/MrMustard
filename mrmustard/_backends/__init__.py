@@ -17,9 +17,7 @@ class MathBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def sandwich(
-        self, bread: Optional[ArrayLike], filling: ArrayLike, modes: List[int]
-    ) -> ArrayLike:
+    def sandwich(self, bread: Optional[ArrayLike], filling: ArrayLike, modes: List[int]) -> ArrayLike:
         pass
 
     @abstractmethod
@@ -43,9 +41,7 @@ class MathBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def make_symplectic_parameter(
-        self, init_value: Optional[ArrayLike], trainable: bool, num_modes: int, name: str
-    ) -> ArrayLike:
+    def make_symplectic_parameter(self, init_value: Optional[ArrayLike], trainable: bool, num_modes: int, name: str) -> ArrayLike:
         pass
 
     @abstractmethod

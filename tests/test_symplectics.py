@@ -55,9 +55,7 @@ def test_BSgate(theta, phi):
     circ.add_gate(S2gate(modes=[1, 3], r=r_choi, phi=0.0))
     circ.add_gate(BSgate(modes=[0, 1], theta=theta, phi=phi))
     cov = circ.gaussian_output().cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected)
@@ -73,9 +71,7 @@ def test_S2gate(r, phi):
     circ.add_gate(S2gate(modes=[1, 3], r=r_choi, phi=0.0))
     circ.add_gate(S2gate(modes=[0, 1], r=r, phi=phi))
     cov = circ.gaussian_output().cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected)

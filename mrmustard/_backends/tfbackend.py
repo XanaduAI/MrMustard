@@ -40,12 +40,8 @@ class TFCircuitBackend(CircuitBackendInterface):
         num_modes = means.shape[-1] // 2
 
         R = utils.rotmat(num_modes)
-        sigma = (
-            R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))
-        )  # cov in amplitude basis
-        beta = tf.linalg.matvec(
-            R, tf.cast(means / np.sqrt(hbar), tf.complex128)
-        )  # means in amplitude basis
+        sigma = R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))  # cov in amplitude basis
+        beta = tf.linalg.matvec(R, tf.cast(means / np.sqrt(hbar), tf.complex128))  # means in amplitude basis
 
         sQ = sigma + 0.5 * tf.eye(2 * num_modes, dtype=tf.complex128)
         sQinv = tf.linalg.inv(sQ)
@@ -53,9 +49,7 @@ class TFCircuitBackend(CircuitBackendInterface):
         A = tf.cast(utils.Xmat(num_modes), tf.complex128) @ (np.identity(2 * num_modes) - sQinv)
         B = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
 
-        T = tf.math.exp(-0.5 * tf.einsum("i,ij,j", tf.math.conj(beta), sQinv, beta)) / tf.math.sqrt(
-            tf.linalg.det(sQ)
-        )
+        T = tf.math.exp(-0.5 * tf.einsum("i,ij,j", tf.math.conj(beta), sQinv, beta)) / tf.math.sqrt(tf.linalg.det(sQ))
         N = num_modes + num_modes * mixed
         return (
             A[N:, N:],
@@ -122,23 +116,17 @@ class TFOptimizerBackend(OptimizerBackendInterface):
         symp_grads, eucl_grads = tape.gradient(loss, [symplectic_params, euclidean_params])
         return loss.numpy(), symp_grads, eucl_grads
 
-    def _update_symplectic(
-        self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor]
-    ) -> None:
+    def _update_symplectic(self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor]) -> None:
         for S, dS_eucl in zip(symplectic_params, symplectic_grads):
             Jmat = utils.J(S.shape[-1] // 2)
             Z = np.matmul(np.transpose(S), dS_eucl)
             Y = 0.5 * (Z + np.matmul(np.matmul(Jmat, Z.T), Jmat))
             S.assign(
-                S
-                @ expm(-self._symplectic_lr * np.transpose(Y))
-                @ expm(-self._symplectic_lr * (Y - np.transpose(Y))),
+                S @ expm(-self._symplectic_lr * np.transpose(Y)) @ expm(-self._symplectic_lr * (Y - np.transpose(Y))),
                 read_value=False,
             )
 
-    def _update_euclidean(
-        self, euclidean_grads: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor]
-    ) -> None:
+    def _update_euclidean(self, euclidean_grads: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor]) -> None:
         self._opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
     def _all_symplectic_parameters(self, circuits: Sequence):
@@ -179,20 +167,14 @@ class TFOptimizerBackend(OptimizerBackendInterface):
 class TFStateBackend(StateBackendInterface):
     def photon_number_mean(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
         N = means.shape[-1] // 2
-        return (
-            means[:N] ** 2
-            + means[N:] ** 2
-            + tf.linalg.diag_part(cov[:N, :N])
-            + tf.linalg.diag_part(cov[N:, N:])
-            - hbar
-        ) / (2 * hbar)
+        return (means[:N] ** 2 + means[N:] ** 2 + tf.linalg.diag_part(cov[:N, :N]) + tf.linalg.diag_part(cov[N:, N:]) - hbar) / (
+            2 * hbar
+        )
 
     def photon_number_covariance(self, cov, means, hbar) -> tf.Tensor:
         N = means.shape[-1] // 2
         mCm = cov * means[:, None] * means[None, :]
-        dd = tf.linalg.diag(
-            tf.linalg.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])
-        ) / (2 * hbar ** 2)
+        dd = tf.linalg.diag(tf.linalg.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
         return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * np.identity(N)
 
@@ -270,11 +252,7 @@ class TFGateBackend(GateBackendInterface):
         num_modes = phi.shape[-1]
         x = tf.math.cos(phi)
         y = tf.math.sin(phi)
-        return (
-            tf.linalg.diag(tf.concat([x, x], axis=0))
-            + tf.linalg.diag(-y, k=num_modes)
-            + tf.linalg.diag(y, k=-num_modes)
-        )
+        return tf.linalg.diag(tf.concat([x, x], axis=0)) + tf.linalg.diag(-y, k=num_modes) + tf.linalg.diag(y, k=-num_modes)
 
     def squeezing_symplectic(self, r: tf.Tensor, phi: tf.Tensor) -> tf.Tensor:
         r"""Squeezing. In fock space this corresponds to \exp(\tfrac{1}{2}r e^{i \phi} (a^2 - a^{\dagger 2}) ).
@@ -350,16 +328,12 @@ class TFMathbackend(MathBackendInterface):
             return old
         N = old.shape[-1] // 2
         indices = modes + [m + N for m in modes]
-        return tf.tensor_scatter_nd_add(
-            old, list(product(*[indices] * len(new.shape))), tf.reshape(new, -1)
-        )
+        return tf.tensor_scatter_nd_add(old, list(product(*[indices] * len(new.shape))), tf.reshape(new, -1))
 
     def concat(self, lst: List[tf.Tensor]) -> tf.Tensor:  # TODO: remove?
         return tf.concat(lst, axis=-1)
 
-    def sandwich(
-        self, bread: Optional[tf.Tensor], filling: tf.Tensor, modes: List[int]
-    ) -> tf.Tensor:
+    def sandwich(self, bread: Optional[tf.Tensor], filling: tf.Tensor, modes: List[int]) -> tf.Tensor:
         if bread is None:
             return filling
         N = filling.shape[-1] // 2
@@ -367,9 +341,7 @@ class TFMathbackend(MathBackendInterface):
         rows = tf.matmul(bread, tf.gather(filling, indices))
         filling = tf.tensor_scatter_nd_update(filling, indices[:, None], rows)
         columns = bread @ tf.gather(tf.transpose(filling), indices)
-        return tf.transpose(
-            tf.tensor_scatter_nd_update(tf.transpose(filling), indices[:, None], columns)
-        )
+        return tf.transpose(tf.tensor_scatter_nd_update(tf.transpose(filling), indices[:, None], columns))
 
     def matvec(self, mat: Optional[tf.Tensor], vec: tf.Tensor, modes: List[int]) -> tf.Tensor:
         if mat is None:
@@ -465,20 +437,19 @@ class TFMathbackend(MathBackendInterface):
 
 
 class TFDetectorBackend(DetectorBackendInterface):
-
     def convolve_probs_1d(self, prob: tf.Tensor, other_probs: List[tf.Tensor]) -> tf.Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"
 
         if prob.ndim > 3 or len(other_probs) > 3:
-            raise ValueError('cannot convolve arrays with more than 3 axes')
+            raise ValueError("cannot convolve arrays with more than 3 axes")
         if not all([q.ndim == 1 for q in other_probs]):
-            raise ValueError('other_probs must contain 1d arrays')
+            raise ValueError("other_probs must contain 1d arrays")
         if not all([len(q) == s for q, s in zip(other_probs, prob.shape)]):
-            raise ValueError('The length of the 1d prob vectors must match shape of prob')
+            raise ValueError("The length of the 1d prob vectors must match shape of prob")
 
         q = other_probs[0]
         for q_ in other_probs[1:]:
-            q = q[..., None] * q_[(None,)*q.ndim + (slice(None),)]
+            q = q[..., None] * q_[(None,) * q.ndim + (slice(None),)]
 
         return self.convolve_probs(prob, q)
 
@@ -488,10 +459,10 @@ class TFDetectorBackend(DetectorBackendInterface):
         as it's computed only up to the dimension of the base probs."""
 
         if prob.ndim > 3 or other.ndim > 3:
-            raise ValueError('cannot convolve arrays with more than 3 axes')
+            raise ValueError("cannot convolve arrays with more than 3 axes")
         if not prob.shape == other.shape:
-            raise ValueError('prob and other must have the same shape')
+            raise ValueError("prob and other must have the same shape")
 
-        prob_padded = tf.pad(prob, [(s-1, 0) for s in other.shape])
-        other_reversed = other[(slice(None, None, -1),)*other.ndim]
-        return tf.nn.convolution(prob_padded[None, ..., None], other_reversed[..., None, None], padding='VALID')[0, ..., 0]
+        prob_padded = tf.pad(prob, [(s - 1, 0) for s in other.shape])
+        other_reversed = other[(slice(None, None, -1),) * other.ndim]
+        return tf.nn.convolution(prob_padded[None, ..., None], other_reversed[..., None, None], padding="VALID")[0, ..., 0]
