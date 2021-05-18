@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import List, Sequence, Tuple, Optional
-from numpy.typing import ArrayLike
 from mrmustard._states import Vacuum, State
 from mrmustard._opt import CircuitInterface
 
@@ -12,11 +11,11 @@ from mrmustard._opt import CircuitInterface
 
 class CircuitBackendInterface(ABC):
     @abstractmethod
-    def _ABC(self, cov: ArrayLike, means: ArrayLike, mixed: bool, hbar: float) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+    def _ABC(self, cov, means, mixed: bool, hbar: float) -> Tuple:
         pass
 
     @abstractmethod
-    def _recursive_state(self, A: ArrayLike, B: ArrayLike, C: ArrayLike, cutoffs: Sequence[int]):
+    def _recursive_state(self, A, B, C, cutoffs: Sequence[int]):
         pass
 
 
@@ -26,23 +25,23 @@ class GateInterface(ABC):
         pass
 
     @abstractmethod
-    def symplectic_matrix(self, hbar: float) -> Optional[ArrayLike]:
+    def symplectic_matrix(self, hbar: float) -> Optional:
         pass
 
     @abstractmethod
-    def displacement_vector(self, hbar: float) -> Optional[ArrayLike]:
+    def displacement_vector(self, hbar: float) -> Optional:
         pass
 
     @abstractmethod
-    def noise_matrix(self, hbar: float) -> Optional[ArrayLike]:
+    def noise_matrix(self, hbar: float) -> Optional:
         pass
 
     @abstractproperty
-    def euclidean_parameters(self) -> List[ArrayLike]:
+    def euclidean_parameters(self) -> List:
         pass
 
     @abstractproperty
-    def symplectic_parameters(self) -> List[ArrayLike]:
+    def symplectic_parameters(self) -> List:
         pass
 
 
@@ -71,12 +70,12 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
             state = gate(state)
         return state
 
-    def fock_output(self, cutoffs: Sequence[int]) -> ArrayLike:
+    def fock_output(self, cutoffs: Sequence[int]):
         output = self.gaussian_output()
         A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=output.hbar)
         return self._recursive_state(A, B, C, cutoffs=cutoffs)
 
-    def fock_probabilities(self, cutoffs: Sequence[int]) -> ArrayLike:
+    def fock_probabilities(self, cutoffs: Sequence[int]):
         if self._mixed_output:
             rho = self.fock_output(cutoffs=cutoffs)
             return self._math_backend.all_diagonals(rho)
@@ -91,11 +90,11 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
         return probs
 
     @property
-    def symplectic_parameters(self) -> List[ArrayLike]:
+    def symplectic_parameters(self) -> List:
         return [par for gate in self._gates for par in gate.symplectic_parameters]
 
     @property
-    def euclidean_parameters(self) -> List[ArrayLike]:
+    def euclidean_parameters(self) -> List:
         return [par for gate in self._gates for par in gate.euclidean_parameters]
 
     def add_gate(self, gate: GateInterface) -> None:

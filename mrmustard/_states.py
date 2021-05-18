@@ -1,32 +1,26 @@
 from abc import ABC, abstractmethod
-from numpy.typing import ArrayLike
 import numpy as np
 
 
 class StateBackendInterface(ABC):
     @abstractmethod
-    def photon_number_mean(self, cov: ArrayLike, means: ArrayLike, hbar: float) -> ArrayLike:
+    def photon_number_mean(self, cov, means, hbar: float):
         pass
 
     @abstractmethod
-    def photon_number_covariance(self, cov: ArrayLike, means: ArrayLike, hbar: float) -> ArrayLike:
+    def photon_number_covariance(self, cov, means, hbar: float):
         pass
 
 
 class State:
-    _state_backend: StateBackendInterface
-    cov: ArrayLike
-    means: ArrayLike
-    hbar: float
-
     def __init__(self, num_modes: int, hbar: float = 2.0):
         self.num_modes = num_modes
         self.hbar = hbar
 
-    def photon_number_mean(self) -> ArrayLike:
+    def photon_number_mean(self):
         return self._state_backend.photon_number_mean(self.cov, self.means, self.hbar)
 
-    def photon_number_covariance(self) -> ArrayLike:
+    def photon_number_covariance(self):
         return self._state_backend.photon_number_covariance(self.cov, self.means, self.hbar)
 
 
