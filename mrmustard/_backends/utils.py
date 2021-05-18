@@ -43,7 +43,8 @@ def binomial_conditional_prob(success_prob, dim_out: int, dim_in: int):
         conditional = np.zeros([dim_out, dim_in])
         conditional[0, :] = 1.0
     elif np.isclose(success_prob, 1.0):
-        conditional = np.fill_diagonal(np.zeros([dim_out, dim_in]), 1.0)
+        conditional = np.zeros([dim_out, dim_in])
+        np.fill_diagonal(conditional, 1.0)
     else:
         in_ = np.arange(dim_in)[None, :]
         out_ = np.arange(dim_out)[:, None]
