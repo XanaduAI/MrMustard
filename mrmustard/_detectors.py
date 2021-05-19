@@ -13,21 +13,28 @@ class Detector(DetectorInterface):
     """
     _math_backend: MathBackendInterface
 
-    def __init__(self, mode: int):
-        self.mode = mode
+    def __init__(self, modes: List[int]):
+        self.modes = modes
 
     def __call__(self, fock_probs):
-        cutoff = fock_probs.shape[self.mode]
-        if cutoff > self._stochastic_channel.shape[0]:
-            raise IndexError(
-                "This detector does not support so many input photons (you should probably increase max_input_photons)"
+        cutoffs = [fock_probs.shape[m] for m in self.modes]
+        for mode in self.modes:
+            if cutoffs[mode] > self._stochastic_channel.shape[1]:
+                raise IndexError(
+                    f"This detector does not support so many input photons in mode {mode} (you could increase max_input_photons or reduce the cutoff)"
+                )
+
+        detector_probs = fock_probs
+        for mode in self.modes:
+            detector_probs = self._math_backend.tensordot(
+                detector_probs,
+                self._stochastic_channel[: cutoffs[mode], : cutoffs[mode]],
+                [[mode], [1]],
             )
-        td = self._math_backend.tensordot(
-            fock_probs, self._stochastic_channel[:cutoff, :cutoff], [[self.mode], [1]]
-        )
-        indices = list(range(fock_probs.ndim - 1))
-        indices.insert(self.mode, fock_probs.ndim - 1)
-        return self._math_backend.transpose(td, indices)
+            indices = list(range(fock_probs.ndim - 1))
+            indices.insert(mode, fock_probs.ndim - 1)
+            detector_probs = self._math_backend.transpose(detector_probs, indices)
+        return detector_probs
 
 
 class PNR(Detector):
@@ -38,13 +45,13 @@ class PNR(Detector):
 
     def __init__(
         self,
-        mode: int,
+        modes: List[int],
         conditional_probs=None,
         quantum_efficiency: float = 1.0,
         dark_count_prob: float = 0.0,
         max_input_photons: int = 50,
     ):
-        super().__init__(mode)
+        super().__init__(modes)
         self.quantum_efficiency = quantum_efficiency
         self.dark_count_prob = dark_count_prob
         self.max_input_photons = max_input_photons
