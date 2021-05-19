@@ -6,19 +6,12 @@ from mrmustard._backends import MathBackendInterface, utils
 from scipy.stats import poisson
 
 
-class DetectorBackendInterface(ABC):
-    @abstractmethod
-    def convolve_probs_1d(prob, other_probs: List):
-        pass
-
-
 class Detector(DetectorInterface):
     r"""
     Base class for photon detectors. It implements a conditional probability P(out|in) as a stochastic matrix,
     so that an input prob distribution P(in) is transformed to P(out) via belief propagation.
     """
     _math_backend: MathBackendInterface
-    _detector_backend: DetectorBackendInterface
 
     def __init__(self, mode: int):
         self.mode = mode
@@ -64,7 +57,7 @@ class PNR(Detector):
             condprob = utils.binomial_conditional_prob(
                 success_prob=quantum_efficiency, dim_in=cutoff, dim_out=cutoff
             )
-            self._stochastic_channel = self._detector_backend.convolve_probs_1d(
+            self._stochastic_channel = self._math_backend.convolve_probs_1d(
                 condprob, [dark_prior, np.identity(condprob.shape[1])[0]]
             )
 

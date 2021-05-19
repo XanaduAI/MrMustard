@@ -78,7 +78,7 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
     def fock_probabilities(self, cutoffs: Sequence[int]):
         if self._mixed_output:
             rho = self.fock_output(cutoffs=cutoffs)
-            return self._math_backend.all_diagonals(rho)
+            return self._math_backend.all_diagonals(rho, real=True)
         else:
             psi = self.fock_output(cutoffs=cutoffs)
             return self._math_backend.modsquare(psi)

@@ -9,14 +9,12 @@ if __name__ == "mrmustard.tf":
         TFOptimizerBackend,
         TFStateBackend,
         TFMathbackend,
-        TFDetectorBackend,
     )
     from mrmustard._states import State
 
     Gate._math_backend = TFMathbackend()
     Gate._gate_backend = TFGateBackend()
     State._state_backend = TFStateBackend()
-    Detector._detector_backend = TFDetectorBackend()
     Detector._math_backend = TFMathbackend()
     BaseCircuit._math_backend = TFMathbackend()
 

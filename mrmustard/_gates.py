@@ -335,7 +335,7 @@ class LossChannel(Gate):
                 transmissivity,
                 transmissivity_trainable,
                 transmissivity_bounds,
-                (len(modes), 2),
+                (len(modes),),
                 "transmissivity",
             )
         ]
