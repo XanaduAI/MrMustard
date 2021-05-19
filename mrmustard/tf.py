@@ -24,4 +24,16 @@ if __name__ == "mrmustard.tf":
     class Optimizer(TFOptimizerBackend, BaseOptimizer):
         pass
 
-__all__ = ["BSgate", "Sgate", "Rgate", "Dgate", "Ggate", "LossChannel", "S2gate", "PNR", "Circuit", "Optimizer"]
+
+__all__ = [
+    "BSgate",
+    "Sgate",
+    "Rgate",
+    "Dgate",
+    "Ggate",
+    "LossChannel",
+    "S2gate",
+    "PNR",
+    "Circuit",
+    "Optimizer",
+]
