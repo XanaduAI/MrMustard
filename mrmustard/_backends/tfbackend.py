@@ -40,7 +40,7 @@ class TFCircuitBackend(CircuitBackendInterface):
 
         # cov and means in the amplitude basis
         R = utils.rotmat(num_modes)
-        sigma = (R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R)))
+        sigma = R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))
         beta = tf.linalg.matvec(R, tf.cast(means / np.sqrt(hbar), tf.complex128))
 
         sQ = sigma + 0.5 * tf.eye(2 * num_modes, dtype=tf.complex128)
@@ -489,6 +489,8 @@ class TFMathbackend(MathBackendInterface):
         prob_padded = tf.pad(prob, [(s - 1, 0) for s in other.shape])
         other_reversed = other[(slice(None, None, -1),) * other.ndim]
         return tf.nn.convolution(
-            prob_padded[None, ..., None], other_reversed[..., None, None], padding="VALID",
-            data_format="N" + ("HD"[:other.ndim-1])[::-1] + "WC"
+            prob_padded[None, ..., None],
+            other_reversed[..., None, None],
+            padding="VALID",
+            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",
         )[0, ..., 0]
