@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 import numpy as np
 from typing import List
 from mrmustard._circuit import DetectorInterface

@@ -3,6 +3,7 @@ if __name__ == "mrmustard.tf":
     from mrmustard._opt import BaseOptimizer
     from mrmustard._detectors import Detector, PNR
     from mrmustard._gates import Gate, BSgate, Sgate, Rgate, Dgate, Ggate, LossChannel, S2gate
+    from mrmustard._states import Vacuum
     from mrmustard._backends.tfbackend import (
         TFCircuitBackend,
         TFGateBackend,
@@ -36,4 +37,5 @@ __all__ = [
     "PNR",
     "Circuit",
     "Optimizer",
+    "Vacuum",
 ]
