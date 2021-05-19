@@ -1,2 +1,4 @@
 *.ipynb
 *.pyc
+*.uxf
+settings.json
