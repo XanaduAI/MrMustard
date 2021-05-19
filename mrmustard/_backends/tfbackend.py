@@ -38,24 +38,19 @@ class TFCircuitBackend(CircuitBackendInterface):
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         num_modes = means.shape[-1] // 2
 
+        # cov and means in the amplitude basis
         R = utils.rotmat(num_modes)
-        sigma = (
-            R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))
-        )  # cov in amplitude basis
-        beta = tf.linalg.matvec(
-            R, tf.cast(means / np.sqrt(hbar), tf.complex128)
-        )  # means in amplitude basis
+        sigma = R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))
+        beta = tf.linalg.matvec(R, tf.cast(means / np.sqrt(hbar), tf.complex128))
 
         sQ = sigma + 0.5 * tf.eye(2 * num_modes, dtype=tf.complex128)
         sQinv = tf.linalg.inv(sQ)
 
         A = tf.cast(utils.Xmat(num_modes), tf.complex128) @ (np.identity(2 * num_modes) - sQinv)
         B = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
-
-        T = tf.math.exp(-0.5 * tf.einsum("i,ij,j", tf.math.conj(beta), sQinv, beta)) / tf.math.sqrt(
-            tf.linalg.det(sQ)
-        )
-        N = num_modes + num_modes * mixed
+        exponent = -0.5 * tf.reduce_sum(tf.math.conj(beta)[:, None] * sQinv * beta[None, :])
+        T = tf.math.exp(exponent) / tf.math.sqrt(tf.linalg.det(sQ))
+        N = num_modes - num_modes * mixed
         return (
             A[N:, N:],
             B[N:],
@@ -381,11 +376,14 @@ class TFMathbackend(MathBackendInterface):
     def modsquare(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array) ** 2
 
-    def all_diagonals(self, rho: tf.Tensor) -> tf.Tensor:
+    def all_diagonals(self, rho: tf.Tensor, real: bool) -> tf.Tensor:
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = tf.reshape(rho, (np.prod(cutoffs), np.prod(cutoffs)))
         diag = tf.linalg.diag_part(rho)
-        return tf.reshape(diag, cutoffs)
+        if real:
+            return tf.math.real(tf.reshape(diag, cutoffs))
+        else:
+            return tf.reshape(diag, cutoffs)
 
     def block(self, blocks: List[List]):
         rows = [tf.concat(row, axis=1) for row in blocks]
@@ -455,3 +453,44 @@ class TFMathbackend(MathBackendInterface):
             return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)
         else:
             return tf.constant(val, dtype=tf.float64, name=name)
+
+    def tensordot(self, a, b, axes):
+        return tf.tensordot(a, b, axes)
+
+    def transpose(self, a, perm):
+        return tf.transpose(a, perm)
+
+    def convolve_probs_1d(self, prob: tf.Tensor, other_probs: List[tf.Tensor]) -> tf.Tensor:
+        "Convolution of a joint probability with a list of single-index probabilities"
+
+        if prob.ndim > 3 or len(other_probs) > 3:
+            raise ValueError("cannot convolve arrays with more than 3 axes")
+        if not all([q.ndim == 1 for q in other_probs]):
+            raise ValueError("other_probs must contain 1d arrays")
+        if not all([len(q) == s for q, s in zip(other_probs, prob.shape)]):
+            raise ValueError("The length of the 1d prob vectors must match shape of prob")
+
+        q = other_probs[0]
+        for q_ in other_probs[1:]:
+            q = q[..., None] * q_[(None,) * q.ndim + (slice(None),)]
+
+        return self.convolve_probs(prob, q)
+
+    def convolve_probs(self, prob: tf.Tensor, other: tf.Tensor) -> tf.Tensor:
+        """Convolve two probability distributions.
+        Note that the output is not a complete joint probability,
+        as it's computed only up to the dimension of the base probs."""
+
+        if prob.ndim > 3 or other.ndim > 3:
+            raise ValueError("cannot convolve arrays with more than 3 axes")
+        if not prob.shape == other.shape:
+            raise ValueError("prob and other must have the same shape")
+
+        prob_padded = tf.pad(prob, [(s - 1, 0) for s in other.shape])
+        other_reversed = other[(slice(None, None, -1),) * other.ndim]
+        return tf.nn.convolution(
+            prob_padded[None, ..., None],
+            other_reversed[..., None, None],
+            padding="VALID",
+            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",
+        )[0, ..., 0]

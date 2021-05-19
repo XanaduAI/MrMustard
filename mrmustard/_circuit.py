@@ -45,6 +45,12 @@ class GateInterface(ABC):
         pass
 
 
+class DetectorInterface(ABC):
+    @abstractmethod
+    def __call__(self, fock_probs):
+        pass
+
+
 ######################
 #  CONCRETE CLASSES  #
 ######################
@@ -53,6 +59,7 @@ class GateInterface(ABC):
 class BaseCircuit(CircuitInterface, CircuitBackendInterface):
     def __init__(self, num_modes: int, hbar: float = 2.0):
         self._gates: List[GateInterface] = []
+        self._detectors: List[DetectorInterface] = []
         self.num_modes: int = num_modes
         self._input: State = Vacuum(num_modes=num_modes, hbar=hbar)
         self._mixed_output: bool = False
@@ -71,10 +78,16 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
     def fock_probabilities(self, cutoffs: Sequence[int]):
         if self._mixed_output:
             rho = self.fock_output(cutoffs=cutoffs)
-            return self._all_diagonals(rho)
+            return self._math_backend.all_diagonals(rho, real=True)
         else:
             psi = self.fock_output(cutoffs=cutoffs)
-            return self._modsquare(psi)
+            return self._math_backend.modsquare(psi)
+
+    def detection_probabilities(self, cutoffs: List[int]):
+        probs = self.fock_probabilities(cutoffs)
+        for detector in self._detectors:
+            probs = detector(probs)
+        return probs
 
     @property
     def symplectic_parameters(self) -> List:
@@ -88,6 +101,9 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
         self._gates.append(gate)
         if gate.mixing:
             self._mixed_output = True
+
+    def add_detector(self, detector: DetectorInterface) -> None:
+        self._detectors.append(detector)
 
     def set_input(self, input: State) -> None:
         self._input = input

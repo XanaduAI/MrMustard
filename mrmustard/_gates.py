@@ -194,9 +194,7 @@ class Rgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.rotation_symplectic(
-            *self._parameters
-        )  # TODO: does this need to use hbar?
+        return self._gate_backend.rotation_symplectic(*self._parameters)
 
 
 class Ggate(Gate):
@@ -337,7 +335,7 @@ class LossChannel(Gate):
                 transmissivity,
                 transmissivity_trainable,
                 transmissivity_bounds,
-                (len(modes), 2),
+                (len(modes),),
                 "transmissivity",
             )
         ]
