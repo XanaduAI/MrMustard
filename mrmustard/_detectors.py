@@ -99,6 +99,7 @@ class APD(Detector):
         dark_count_prob (float or List[float]): list of dark count probabilities for each detector
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -125,7 +126,7 @@ class APD(Detector):
         else:
             for cut, qe, dc in zip(self.max_cutoffs, quantum_efficiency, dark_count_prob):
                 dark_prior = poisson.pmf(self._math_backend.arange(cut), dc)
-                row1 = ((1.0-qe)**self._math_backend.arange(cut))[None, :]
+                row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :]
                 row2 = 1.0 - row1
                 rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = self._math_backend.concat([row1, row2, rest], axis=0)
@@ -134,4 +135,5 @@ class APD(Detector):
                         condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
                     )
                 )
+
     pass
