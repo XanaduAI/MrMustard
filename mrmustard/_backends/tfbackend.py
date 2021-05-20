@@ -221,7 +221,7 @@ class TFGateBackend(GateBackendInterface):
         r"""Returns the Y (noise) matrix for the lossy bosonic channel.
         The channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
-        D = tf.math.sqrt((1.0 - transmissivity) * hbar / 2.0)
+        D = (1.0 - transmissivity) * hbar / 2.0
         return tf.linalg.diag(tf.concat([D, D], axis=0))
 
     def thermal_X(self, nbar: tf.Tensor, hbar: float) -> Tuple[tf.Tensor, tf.Tensor]:
