@@ -86,9 +86,6 @@ def test_squeezed_state(r, phi):
     assert np.allclose(non_zero_amps, amp_pairs)
 
 
-####
-# The following tests currently fail
-####
 @pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
 @pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
@@ -103,6 +100,7 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     expectedCov = n_mean * (n_mean + 1) * np.ones([2, 2])
     assert np.allclose(meanN, expectedN)
     assert np.allclose(covN, expectedCov)
+
 
 @pytest.mark.parametrize("n_mean", [0, 1, 2])
 @pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
