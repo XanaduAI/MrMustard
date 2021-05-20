@@ -2,30 +2,18 @@
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 
-MrMustard is an easily-extendible simulation and optimization library for Gaussian circuits.
-Create circuits, add gates, compute the output. It's all differentiable. 
-
-MrMustard features:
-- Beam splitter, squeezer, displacement, phase rotation, bosonic lossy channel, general Gaussian gates
-- Pure and mixed states
-- Gaussian representation (covariance matrix and means vector)
-- Fock space representation (with custom per-mode cutoffs)
-- Optimization on the symplectic group
-- Plugin architecture for adding new backends (currently running on TensorFlow)
-- [coming soon] Complex Gaussian mixture representation 
-
-
-## API Reference
-
-### Intro
 MrMustard is a differentiable bridge between phase space and Fock space. In MrMustard _every operation is differentiable_.
 
 MrMustard supports:
-1. Gaussian channels (including bosonic loss)
-2. Custom fock-cutoff per mode
-3. PNR detectors with quantum efficiency and dark counts
-4. symplectic optimization (with a spiffy progress bar)
-5. plugin-based backends for easy customization and contributions
+- Gaussian channels and transformations (beam splitter, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, general Gaussian gates)
+- Phase space representation, Fock representation, photon number moments
+- Custom fock-cutoff per mode
+- PNR detectors with quantum efficiency and dark counts
+- symplectic optimization (with a spiffy progress bar)
+- plugin-based backends for easy customization and contributions
+
+
+## API Reference
 
 ### 1: Circuits
 
