@@ -47,7 +47,7 @@ class PNRDetector(Detector):
     Arguments:
         conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         quantum_efficiency (float or List[float]): list of quantum efficiencies for each detector
-        dark_count_prob (float or List[float]): list of dark count probabilities for each detector
+        expected_dark_count (float or List[float]): list of expected dark counts
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
     """
 
