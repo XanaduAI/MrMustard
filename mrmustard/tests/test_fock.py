@@ -1,4 +1,5 @@
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
+from thewalrus.quantum import total_photon_number_distribution
 import numpy as np
 from scipy.special import factorial
 from mrmustard.tf import Dgate, Sgate, LossChannel, BSgate, Ggate, Optimizer, Circuit, S2gate, Rgate
@@ -78,9 +79,6 @@ def test_squeezed_state(r, phi):
     assert np.allclose(non_zero_amps, amp_pairs)
 
 
-####
-# The following tests currently fail
-####
 @pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
 @pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
@@ -95,3 +93,40 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     expectedCov = n_mean * (n_mean + 1) * np.ones([2, 2])
     assert np.allclose(meanN, expectedN)
     assert np.allclose(covN, expectedCov)
+
+
+@pytest.mark.parametrize("n_mean", [0, 1, 2])
+@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
+@pytest.mark.parametrize("eta", [0, 0.3, 0.7, 1])
+def test_lossy_squeezing(n_mean, phi, eta):
+    """Tests the total photon number distribution of a lossy squeezed state"""
+    r = np.arcsinh(np.sqrt(n_mean))
+    cutoff = 40
+    circ = Circuit(num_modes=1)
+    r = np.arcsinh(np.sqrt(n_mean))
+    circ.add_gate(Sgate(modes=[0], r=-r, phi=0.0))
+    circ.add_gate(LossChannel(modes=[0], transmissivity=eta))
+    ps = circ.fock_probabilities(cutoffs=[cutoff])
+    expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
+    assert np.allclose(ps, expected)
+
+
+@pytest.mark.parametrize("n_mean", [0, 1, 2])
+@pytest.mark.parametrize("phi", [0, 2.4])
+@pytest.mark.parametrize("eta_s", [0, 0.3, 0.7, 1])
+@pytest.mark.parametrize("eta_i", [0, 0.3, 0.7, 1])
+def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
+    """Tests the total photon number distribution of a lossy two-mode squeezed state"""
+    r = np.arcsinh(np.sqrt(n_mean))
+    cutoff = 20
+    circ = Circuit(num_modes=2)
+    r = np.arcsinh(np.sqrt(n_mean))
+    circ.add_gate(S2gate(modes=[0, 1], r=-r, phi=0.0))
+    circ.add_gate(LossChannel(modes=[0], transmissivity=eta_s))
+    circ.add_gate(LossChannel(modes=[1], transmissivity=eta_i))
+    ps = circ.fock_probabilities(cutoffs=[cutoff, cutoff])
+    n = np.arange(cutoff)
+    mean_s = n @ np.sum(ps, axis=1)
+    mean_i = n @ np.sum(ps, axis=0)
+    assert np.allclose(mean_s, n_mean * eta_s, atol=1e-2)
+    assert np.allclose(mean_i, n_mean * eta_i, atol=1e-2)
