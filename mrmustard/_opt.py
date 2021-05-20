@@ -11,7 +11,6 @@ from mrmustard._backends import MathBackendInterface
 
 class CircuitInterface(ABC):
     "Interface for the Circuit class. Implemented in _circuit.py"
-    _math_backend = MathBackendInterface
 
     @abstractproperty
     def symplectic_parameters(self) -> List:
@@ -21,25 +20,17 @@ class CircuitInterface(ABC):
     def euclidean_parameters(self) -> List:
         pass
 
-    @abstractmethod
-    def add_gate(self, gate) -> None:
-        pass
+    # @abstractmethod
+    # def gaussian_output(self) -> State:
+    #     pass
 
-    @abstractmethod
-    def set_input(self, state) -> None:
-        pass
+    # @abstractmethod
+    # def fock_output(self, cutoffs: Sequence[int]):
+    #     pass
 
-    @abstractmethod
-    def gaussian_output(self) -> State:
-        pass
-
-    @abstractmethod
-    def fock_output(self, cutoffs: Sequence[int]):
-        pass
-
-    @abstractmethod
-    def fock_probabilities(self, cutoffs: Sequence[int]):
-        pass
+    # @abstractmethod
+    # def fock_probabilities(self, cutoffs: Sequence[int]):
+    #     pass
 
 
 class OptimizerBackendInterface(ABC):

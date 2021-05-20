@@ -63,7 +63,7 @@ class Gate(GateInterface):
     mixing: bool
 
     def _apply_gaussian_channel(self, state, modes, symplectic=None, displacement=None, noise=None):
-        output = State(state.num_modes, hbar=state.hbar)
+        output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)
         output.cov = self._math_backend.sandwich(bread=symplectic, filling=state.cov, modes=modes)
         output.cov = self._math_backend.add(old=output.cov, new=noise, modes=modes)
         output.means = self._math_backend.matvec(mat=symplectic, vec=state.means, modes=modes)
@@ -321,9 +321,7 @@ class LossChannel(Gate):
         transmissivity_trainable: bool = False,
         hbar: float = 2.0,
     ):
-        self._repr_string: Callable[
-            [float], str
-        ] = (
+        self._repr_string: Callable[[float], str] = (
             lambda T: f"modes={modes}, transmissivity={T}, transmissivity_bounds={transmissivity_bounds}, transmissivity_trainable={transmissivity_trainable}"
         )
         self.modes = modes
