@@ -101,6 +101,8 @@ The optimizer in MrMustard is a convenience class, which means that other optimi
 
 Here we use a default TensorFlow optimizer (no `Ggate`s):
 ```python
+from mrmustard.tf import Dgate, LossChannel, Vacuum
+
 displacement = Dgate(modes = [0], x = 0.1, y = -0.5, x_bounds=(0.0, 1.0), x_trainable=True, y_trainable=False)
 loss = LossChannel(modes=[0], transmissivity=0.5, transmissivity_trainable=False)
 
@@ -117,11 +119,12 @@ for i in trange(100):
 
 Here we use MrMustard's optimizer:
 ```python
+from mrmustard.tf import Ggate, LossChannel, Vacuum
+
 circ = Circuit()
 
 displacement = Ggate(modes = [0], displacement_trainable=False)
 loss = LossChannel(modes=[0], transmissivity=0.5, transmissivity_trainable=False)
-
 circ.append(displacement)
 circ.append(loss)
 
