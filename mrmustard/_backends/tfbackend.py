@@ -315,7 +315,7 @@ class TFMathbackend(MathBackendInterface):
         return tf.math.conj(array)
 
     def arange(self, start, limit=None, delta=1) -> tf.Tensor:
-        return tf.range(start, limit, delta)
+        return tf.range(start, limit, delta, dtype=tf.float64)
 
     def outer(self, arr1: tf.Tensor, arr2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(arr1, arr2, [[], []])
@@ -323,8 +323,8 @@ class TFMathbackend(MathBackendInterface):
     def identity(self, size: int) -> tf.Tensor:
         return tf.eye(size, dtype=tf.float64)
 
-    def zeros(self, size: int) -> tf.Tensor:
-        return tf.zeros(size, dtype=tf.float64)
+    def zeros(self, shape: Union[int, Tuple[int, ...]], dtype=tf.float64) -> tf.Tensor:
+        return tf.zeros(shape, dtype=dtype)
 
     def add(self, old: tf.Tensor, new: Optional[tf.Tensor], modes: List[int]) -> tf.Tensor:
         if new is None:
@@ -334,9 +334,6 @@ class TFMathbackend(MathBackendInterface):
         return tf.tensor_scatter_nd_add(
             old, list(product(*[indices] * len(new.shape))), tf.reshape(new, -1)
         )
-
-    def concat(self, lst: List[tf.Tensor]) -> tf.Tensor:  # TODO: remove?
-        return tf.concat(lst, axis=-1)
 
     def sandwich(
         self, bread: Optional[tf.Tensor], filling: tf.Tensor, modes: List[int]
@@ -375,6 +372,9 @@ class TFMathbackend(MathBackendInterface):
     def block(self, blocks: List[List]):
         rows = [tf.concat(row, axis=1) for row in blocks]
         return tf.concat(rows, axis=0)
+
+    def concat(self, values, axis):
+        return tf.concat(values, axis)
 
     def make_symplectic_parameter(
         self,

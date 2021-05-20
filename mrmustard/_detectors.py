@@ -99,5 +99,39 @@ class APD(Detector):
         dark_count_prob (float or List[float]): list of dark count probabilities for each detector
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
     """
+    def __init__(
+        self,
+        modes: List[int],
+        conditional_probs=None,
+        quantum_efficiency: Union[float, List[float]] = 1.0,
+        dark_count_prob: Union[float, List[float]] = 0.0,
+        max_cutoffs: Union[int, List[int]] = 50,
+    ):
+        super().__init__(modes)
 
+        if not isinstance(quantum_efficiency, Sequence):
+            quantum_efficiency = [quantum_efficiency for m in modes]
+        if not isinstance(dark_count_prob, Sequence):
+            dark_count_prob = [dark_count_prob for m in modes]
+        if not isinstance(max_cutoffs, Sequence):
+            max_cutoffs = [max_cutoffs for m in modes]
+        self.quantum_efficiency = quantum_efficiency
+        self.dark_count_prob = dark_count_prob
+        self.max_cutoffs = max_cutoffs
+        self._stochastic_channel = []
+
+        if conditional_probs is not None:
+            self._stochastic_channel = conditional_probs
+        else:
+            for cut, qe, dc in zip(self.max_cutoffs, quantum_efficiency, dark_count_prob):
+                dark_prior = poisson.pmf(self._math_backend.arange(cut), dc)
+                row1 = ((1.0-qe)**self._math_backend.arange(cut))[None, :]
+                row2 = 1.0 - row1
+                rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = self._math_backend.concat([row1, row2, rest], axis=0)
+                self._stochastic_channel.append(
+                    self._math_backend.convolve_probs_1d(
+                        condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
+                    )
+                )
     pass

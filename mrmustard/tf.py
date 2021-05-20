@@ -1,7 +1,7 @@
 if __name__ == "mrmustard.tf":
     from mrmustard._circuit import Circuit
     from mrmustard._opt import BaseOptimizer
-    from mrmustard._detectors import Detector, PNR
+    from mrmustard._detectors import Detector, PNR, APD
     from mrmustard._gates import Gate, BSgate, Sgate, Rgate, Dgate, Ggate, LossChannel, S2gate
     from mrmustard._states import Vacuum
     from mrmustard._states import State
@@ -33,6 +33,7 @@ if __name__ == "mrmustard.tf":
         "LossChannel",
         "S2gate",
         "PNR",
+        "APD",
         "Circuit",
         "Optimizer",
         "Vacuum",
