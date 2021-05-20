@@ -59,7 +59,7 @@ class Circuit(CircuitInterface, MutableSequence):
 
     def __setitem__(self, key, value):
         if not isinstance(value, GateInterface):
-            raise ValueError(f'Item {type(value)} is not a gate')
+            raise ValueError(f"Item {type(value)} is not a gate")
         return self._gates.__setitem__(key, value)
 
     def __delitem__(self, key):

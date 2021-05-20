@@ -31,11 +31,13 @@ class State:
         self.mixed = mixed
 
     def __repr__(self):
-        return 'covariance:\n' + repr(self.cov) + '\nmeans:\n' + repr(self.means)
+        return "covariance:\n" + repr(self.cov) + "\nmeans:\n" + repr(self.means)
 
     def ket(self, cutoffs: List[int]):
         if not self.mixed:
-            A, B, C = self._state_backend.ABC(self.cov, self.means, mixed=self.mixed, hbar=self.hbar)
+            A, B, C = self._state_backend.ABC(
+                self.cov, self.means, mixed=self.mixed, hbar=self.hbar
+            )
             return self._state_backend.fock_state(A, B, C, cutoffs=cutoffs)
 
     def dm(self, cutoffs: List[int]):
@@ -52,7 +54,7 @@ class State:
             return self._math_backend.all_diagonals(rho, real=True)
         else:
             psi = self.ket(cutoffs=cutoffs)
-            return self._math_backend.abs(psi)**2
+            return self._math_backend.abs(psi) ** 2
 
     @property
     def number_means(self):

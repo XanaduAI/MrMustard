@@ -70,12 +70,12 @@ class PNR(Detector):
         else:
             for cut, qe, dc in zip(cutoffs, quantum_efficiency, dark_count_prob):
                 dark_prior = poisson.pmf(self._math_backend.arange(cut), dc)
-                condprob = utils.binomial_conditional_prob(
-                    success_prob=qe, dim_in=cut, dim_out=cut
+                condprob = utils.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
+                self._stochastic_channel.append(
+                    self._math_backend.convolve_probs_1d(
+                        condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
+                    )
                 )
-                self._stochastic_channel.append(self._math_backend.convolve_probs_1d(
-                    condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
-                ))
 
 
 class APD(Detector):

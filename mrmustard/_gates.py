@@ -114,7 +114,9 @@ class Dgate(Gate):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = True,
     ):
-        self._repr_string: Callable[[float, float], str] = (
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
             lambda x, y: f"modes={modes}, x={x}, x_bounds={x_bounds}, x_trainable={x_trainable}, y={y}, y_bounds={y_bounds}, y_trainable={y_trainable}"
         )
         self.modes = modes
@@ -319,7 +321,9 @@ class LossChannel(Gate):
         transmissivity_trainable: bool = False,
         hbar: float = 2.0,
     ):
-        self._repr_string: Callable[[float], str] = (
+        self._repr_string: Callable[
+            [float], str
+        ] = (
             lambda T: f"modes={modes}, transmissivity={T}, transmissivity_bounds={transmissivity_bounds}, transmissivity_trainable={transmissivity_trainable}"
         )
         self.modes = modes
