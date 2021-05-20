@@ -60,7 +60,7 @@ class State:
 
     def fock_probabilities(self, cutoffs: List[int]):
         r"""
-        Returns the probabilities in Fock representation. If the state is pure, they are 
+        Returns the probabilities in Fock representation. If the state is pure, they are
         the absolute value squared of the ket amplitudes. If the state is mixed they are
         the diagonals of the density matrix.
         Arguments:
@@ -92,6 +92,7 @@ class Vacuum(State):
     r"""
     The N-mode vacuum state.
     """
+
     def __init__(self, num_modes: int, hbar: float = 2.0):
         super().__init__(num_modes, hbar, mixed=False)
         self.cov = hbar * self._math_backend.identity(2 * self.num_modes) / 2.0

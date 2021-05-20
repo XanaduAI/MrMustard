@@ -81,7 +81,9 @@ class Gate(GateInterface):
 
     @property
     def euclidean_parameters(self) -> List:
-        return [p for i, p in enumerate(self._parameters) if self._trainable[i]]  # NOTE overridden in Ggate
+        return [
+            p for i, p in enumerate(self._parameters) if self._trainable[i]
+        ]  # NOTE overridden in Ggate
 
     @property
     def symplectic_parameters(self) -> List:
@@ -105,6 +107,7 @@ class Dgate(Gate):
         y_bounds (float, float): bounds for the displacement along the y axis
         y_trainable bool: whether y is a trainable variable
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -153,6 +156,7 @@ class Sgate(Gate):
         phi_bounds (float, float): bounds for the squeezing angles
         phi_trainable bool: whether phi is a trainable variable
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -198,6 +202,7 @@ class Rgate(Gate):
         angle_bounds (float, float): bounds for the rotation angles
         angle_trainable bool: whether angle is a trainable variable
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -235,6 +240,7 @@ class Ggate(Gate):
         displacement (1d array): a displacement vector. For N modes it must have shape `(2N,)`
         displacement_trainable (bool): whether displacement is a trainable variable
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -292,6 +298,7 @@ class BSgate(Gate):
         phi_bounds (float, float): bounds for the phase angle
         phi_trainable bool: whether phi is a trainable variable
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -308,7 +315,9 @@ class BSgate(Gate):
             lambda theta, phi: f"modes={modes}, theta={theta}, theta_bounds={theta_bounds}, theta_trainable={theta_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
         )
         if len(modes) > 2:
-            raise ValueError('Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer.')
+            raise ValueError(
+                "Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
+            )
         self.modes = modes
         self.mixing = False
         self._trainable = [theta_trainable, phi_trainable]
