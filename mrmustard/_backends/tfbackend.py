@@ -43,10 +43,10 @@ class TFOptimizerBackend(OptimizerBackendInterface):
         self,
         symplectic_params: Sequence[tf.Tensor],
         euclidean_params: Sequence[tf.Tensor],
-        loss_fn: Callable,
+        cost_fn: Callable,
     ):
         with tf.GradientTape() as tape:
-            loss = loss_fn()
+            loss = cost_fn()
         symp_grads, eucl_grads = tape.gradient(loss, [symplectic_params, euclidean_params])
         return loss.numpy(), symp_grads, eucl_grads
 
