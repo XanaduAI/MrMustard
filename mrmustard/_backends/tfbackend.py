@@ -310,7 +310,7 @@ class TFGateBackend(GateBackendInterface):
 #  MMMMMMMM               MMMMMMMM  aaaaaaaaaa  aaaa         ttttttttttt  hhhhhhh     hhhhhhh
 
 
-class TFMathbackend(MathBackendInterface):
+class TFMathBackend(MathBackendInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 

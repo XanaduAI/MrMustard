@@ -9,10 +9,10 @@ if __name__ == "mrmustard.tf":
         TFGateBackend,
         TFOptimizerBackend,
         TFStateBackend,
-        TFMathbackend,
+        TFMathBackend,
     )
 
-    math = TFMathbackend()
+    math = TFMathBackend()
 
     Detector._math_backend = math
     Circuit._math_backend = math
