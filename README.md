@@ -8,7 +8,7 @@ MrMustard supports:
 - Gaussian channels and transformations (beam splitter, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, general Gaussian gates)
 - Phase space representation, Fock representation, photon number moments
 - Custom fock-cutoff per mode
-- PNR detectors with quantum efficiency and dark counts
+- PNR detectors and threshold detectors with quantum efficiency and dark counts
 - symplectic optimization (with a spiffy progress bar)
 - plugin-based backends for easy customization and contributions
 
