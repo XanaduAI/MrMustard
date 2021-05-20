@@ -168,6 +168,7 @@ class TFStateBackend(StateBackendInterface):
 
         return state, grad
 
+
 #          GGGGGGGGGGGGG                          tttt
 #       GGG::::::::::::G                       ttt:::t
 #     GG:::::::::::::::G                       t:::::t
@@ -310,7 +311,6 @@ class TFGateBackend(GateBackendInterface):
 
 
 class TFMathbackend(MathBackendInterface):
-
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
@@ -443,7 +443,7 @@ class TFMathbackend(MathBackendInterface):
                 elif len(init_value) == 1:
                     val = np.tile(init_value, shape)
                 else:
-                    raise ValueError(f'cannot initialize parameter {name}')
+                    raise ValueError(f"cannot initialize parameter {name}")
 
         if trainable:
             return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)
