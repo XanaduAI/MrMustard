@@ -54,7 +54,9 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
     circ = Circuit()
     circ.append(S2gate(modes=[0, 1], r=r, phi=phi))
-    detector = PNRDetector(modes=[0, 1], quantum_efficiency=[eta_s, eta_i], dark_count_prob=[dc_s, dc_i])
+    detector = PNRDetector(
+        modes=[0, 1], quantum_efficiency=[eta_s, eta_i], dark_count_prob=[dc_s, dc_i]
+    )
     cutoff = 30
     ps = detector(circ(Vacuum(num_modes=2)), cutoffs=[cutoff, cutoff])
 
