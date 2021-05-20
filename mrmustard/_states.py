@@ -5,11 +5,11 @@ from mrmustard._backends import MathBackendInterface
 
 class StateBackendInterface(ABC):
     @abstractmethod
-    def photon_number_mean(self, cov, means, hbar: float):
+    def umber_means(self, cov, means, hbar: float):
         pass
 
     @abstractmethod
-    def photon_number_covariance(self, cov, means, hbar: float):
+    def number_cov(self, cov, means, hbar: float):
         pass
 
     @abstractmethod
@@ -54,11 +54,13 @@ class State:
             psi = self.ket(cutoffs=cutoffs)
             return self._math_backend.abs(psi)**2
 
-    def photon_number_mean(self):
-        return self._state_backend.photon_number_mean(self.cov, self.means, self.hbar)
+    @property
+    def number_means(self):
+        return self._state_backend.number_means(self.cov, self.means, self.hbar)
 
-    def photon_number_covariance(self):
-        return self._state_backend.photon_number_covariance(self.cov, self.means, self.hbar)
+    @property
+    def number_cov(self):
+        return self._state_backend.number_cov(self.cov, self.means, self.hbar)
 
 
 class Vacuum(State):

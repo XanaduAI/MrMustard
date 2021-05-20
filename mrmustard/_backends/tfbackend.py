@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import unitary_group, truncnorm
 from scipy.linalg import expm
-from typing import List, Tuple, Callable, Sequence, Optional
+from typing import List, Tuple, Callable, Sequence, Optional, Union
 from itertools import product
 
 from mrmustard._gates import GateBackendInterface
@@ -105,7 +105,7 @@ class TFOptimizerBackend(OptimizerBackendInterface):
 
 
 class TFStateBackend(StateBackendInterface):
-    def photon_number_mean(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
+    def number_means(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
         N = means.shape[-1] // 2
         return (
             means[:N] ** 2
@@ -115,7 +115,7 @@ class TFStateBackend(StateBackendInterface):
             - hbar
         ) / (2 * hbar)
 
-    def photon_number_covariance(self, cov, means, hbar) -> tf.Tensor:
+    def number_covariance(self, cov, means, hbar) -> tf.Tensor:
         N = means.shape[-1] // 2
         mCm = cov * means[:, None] * means[None, :]
         dd = tf.linalg.diag(
@@ -415,7 +415,7 @@ class TFMathbackend(MathBackendInterface):
 
     def make_euclidean_parameter(
         self,
-        init_value: Optional[float] = None,
+        init_value: Optional[Union[float, List[float]]] = None,
         trainable: bool = True,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         shape: Optional[Sequence[int]] = None,
@@ -434,7 +434,16 @@ class TFMathbackend(MathBackendInterface):
             else:
                 val = tf.zeros(shape, dtype=tf.float64)
         else:
-            val = init_value if shape is None else np.atleast_1d(init_value)
+            if shape is None:
+                val = init_value
+            else:
+                init_value = np.atleast_1d(init_value)
+                if len(init_value) == shape[0]:
+                    val = init_value
+                elif len(init_value) == 1:
+                    val = np.tile(init_value, shape)
+                else:
+                    raise ValueError(f'cannot initialize parameter {name}')
 
         if trainable:
             return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)

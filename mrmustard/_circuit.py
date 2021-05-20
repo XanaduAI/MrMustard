@@ -69,7 +69,7 @@ class Circuit(CircuitInterface, MutableSequence):
         return len(self._gates)
 
     def __repr__(self) -> str:
-        return repr(self._input) + "\n" + "\n".join([repr(g) for g in self._gates])
+        return "\n".join([repr(g) for g in self._gates])
 
     def insert(self, index, object):
         return self._gates.insert(index, object)

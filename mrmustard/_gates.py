@@ -114,9 +114,7 @@ class Dgate(Gate):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
+        self._repr_string: Callable[[float, float], str] = (
             lambda x, y: f"modes={modes}, x={x}, x_bounds={x_bounds}, x_trainable={x_trainable}, y={y}, y_bounds={y_bounds}, y_trainable={y_trainable}"
         )
         self.modes = modes
