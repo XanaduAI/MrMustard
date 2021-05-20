@@ -39,8 +39,16 @@ class Detector:
 
 class PNR(Detector):
     r"""
-    Photon Number Resolving detector. It can be given the full conditional detection probabilities,
-    or it can compute them from the quantum efficiency (binomial) and the dark count probability (possonian).
+    Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
+    If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
+    To apply mode-specific values use a list of floats.
+    It can be supplied the full conditional detection probabilities, or it will compute them from
+    the quantum efficiency (binomial) and the dark count probability (possonian).
+    Arguments:
+        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
+        quantum_efficiency (float or List[float]): list of quantum efficiencies for each detector
+        dark_count_prob (float or List[float]): list of dark count probabilities for each detector
+        max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
     """
 
     def __init__(
@@ -49,7 +57,7 @@ class PNR(Detector):
         conditional_probs=None,
         quantum_efficiency: Union[float, List[float]] = 1.0,
         dark_count_prob: Union[float, List[float]] = 0.0,
-        max_input_photons: Union[int, List[int]] = 50,
+        max_cutoffs: Union[int, List[int]] = 50,
     ):
         super().__init__(modes)
 
@@ -57,18 +65,17 @@ class PNR(Detector):
             quantum_efficiency = [quantum_efficiency for m in modes]
         if not isinstance(dark_count_prob, Sequence):
             dark_count_prob = [dark_count_prob for m in modes]
-        if not isinstance(max_input_photons, Sequence):
-            max_input_photons = [max_input_photons for m in modes]
+        if not isinstance(max_cutoffs, Sequence):
+            max_cutoffs = [max_cutoffs for m in modes]
         self.quantum_efficiency = quantum_efficiency
         self.dark_count_prob = dark_count_prob
-        self.max_input_photons = max_input_photons
+        self.max_cutoffs = max_cutoffs
         self._stochastic_channel = []
-        cutoffs = [m + 1 for m in self.max_input_photons]
 
         if conditional_probs is not None:
             self._stochastic_channel = conditional_probs
         else:
-            for cut, qe, dc in zip(cutoffs, quantum_efficiency, dark_count_prob):
+            for cut, qe, dc in zip(self.max_cutoffs, quantum_efficiency, dark_count_prob):
                 dark_prior = poisson.pmf(self._math_backend.arange(cut), dc)
                 condprob = utils.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
                 self._stochastic_channel.append(
@@ -79,4 +86,18 @@ class PNR(Detector):
 
 
 class APD(Detector):
+    r"""
+    Avalanche photo-diode. Any state with more photons than vacuum is detected as a single photon.
+    If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
+    If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
+    To apply mode-specific values use a list of floats.
+    It can be supplied the full conditional detection probabilities, or it will compute them from
+    the quantum efficiency (binomial) and the dark count probability (possonian).
+    Arguments:
+        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
+        quantum_efficiency (float or List[float]): list of quantum efficiencies for each detector
+        dark_count_prob (float or List[float]): list of dark count probabilities for each detector
+        max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
+    """
+
     pass
