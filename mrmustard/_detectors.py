@@ -37,7 +37,7 @@ class Detector:
         return self.apply_stochastic_channel(state.fock_probabilities(cutoffs))
 
 
-class PNR(Detector):
+class PNRDetector(Detector):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
@@ -125,15 +125,8 @@ class ThresholdDetector(Detector):
             self._stochastic_channel = conditional_probs
         else:
             for cut, qe, dc in zip(self.max_cutoffs, quantum_efficiency, dark_count_prob):
-                dark_prior = [1-dc, dc]
-                row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :]
+                row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
                 rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = self._math_backend.concat([row1, row2, rest], axis=0)
-                self._stochastic_channel.append(
-                    self._math_backend.convolve_probs_1d(
-                        condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
-                    )
-                )
-
-    pass
+                self._stochastic_channel.append(condprob)
