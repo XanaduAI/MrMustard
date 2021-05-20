@@ -85,9 +85,9 @@ class PNR(Detector):
                 )
 
 
-class APD(Detector):
+class ThresholdDetector(Detector):
     r"""
-    Avalanche photo-diode. Any state with more photons than vacuum is detected as a single photon.
+    Threshold detector: any state with more photons than vacuum is detected as a single photon.
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
     To apply mode-specific values use a list of floats.
