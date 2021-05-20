@@ -2,81 +2,15 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import unitary_group, truncnorm
 from scipy.linalg import expm
-from typing import List, Tuple, Callable, Sequence, Optional
+from typing import List, Tuple, Callable, Sequence, Optional, Union
 from itertools import product
 
 from mrmustard._gates import GateBackendInterface
 from mrmustard._opt import OptimizerBackendInterface
-from mrmustard._circuit import CircuitBackendInterface
 from mrmustard._backends import MathBackendInterface
 from mrmustard._states import StateBackendInterface
 
 import mrmustard._backends.utils as utils
-
-
-#          CCCCCCCCCCCCC  iiii                                                             iiii          tttt
-#       CCC::::::::::::C i::::i                                                           i::::i      ttt:::t
-#     CC:::::::::::::::C  iiii                                                             iiii       t:::::t
-#    C:::::CCCCCCCC::::C                                                                              t:::::t
-#   C:::::C       CCCCCCiiiiiiirrrrr   rrrrrrrrr       ccccccccccccccccuuuuuu    uuuuuu  iiiiiiittttttt:::::ttttttt
-#  C:::::C              i:::::ir::::rrr:::::::::r    cc:::::::::::::::cu::::u    u::::u  i:::::it:::::::::::::::::t
-#  C:::::C               i::::ir:::::::::::::::::r  c:::::::::::::::::cu::::u    u::::u   i::::it:::::::::::::::::t
-#  C:::::C               i::::irr::::::rrrrr::::::rc:::::::cccccc:::::cu::::u    u::::u   i::::itttttt:::::::tttttt
-#  C:::::C               i::::i r:::::r     r:::::rc::::::c     cccccccu::::u    u::::u   i::::i      t:::::t
-#  C:::::C               i::::i r:::::r     rrrrrrrc:::::c             u::::u    u::::u   i::::i      t:::::t
-#  C:::::C               i::::i r:::::r            c:::::c             u::::u    u::::u   i::::i      t:::::t
-#   C:::::C       CCCCCC i::::i r:::::r            c::::::c     cccccccu:::::uuuu:::::u   i::::i      t:::::t    tttttt
-#    C:::::CCCCCCCC::::Ci::::::ir:::::r            c:::::::cccccc:::::cu:::::::::::::::uui::::::i     t::::::tttt:::::t
-#     CC:::::::::::::::Ci::::::ir:::::r             c:::::::::::::::::c u:::::::::::::::ui::::::i     tt::::::::::::::t
-#       CCC::::::::::::Ci::::::ir:::::r              cc:::::::::::::::c  uu::::::::uu:::ui::::::i       tt:::::::::::tt
-#          CCCCCCCCCCCCCiiiiiiiirrrrrrr                cccccccccccccccc    uuuuuuuu  uuuuiiiiiiii         ttttttttttt
-
-
-class TFCircuitBackend(CircuitBackendInterface):
-    def _ABC(
-        self, cov: tf.Tensor, means: tf.Tensor, mixed: bool = False, hbar: float = 2.0
-    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
-        num_modes = means.shape[-1] // 2
-
-        # cov and means in the amplitude basis
-        R = utils.rotmat(num_modes)
-        sigma = R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))
-        beta = tf.linalg.matvec(R, tf.cast(means / np.sqrt(hbar), tf.complex128))
-
-        sQ = sigma + 0.5 * tf.eye(2 * num_modes, dtype=tf.complex128)
-        sQinv = tf.linalg.inv(sQ)
-
-        A = tf.cast(utils.Xmat(num_modes), tf.complex128) @ (np.identity(2 * num_modes) - sQinv)
-        B = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
-        exponent = -0.5 * tf.reduce_sum(tf.math.conj(beta)[:, None] * sQinv * beta[None, :])
-        T = tf.math.exp(exponent) / tf.math.sqrt(tf.linalg.det(sQ))
-        N = num_modes - num_modes * mixed
-        return (
-            A[N:, N:],
-            B[N:],
-            T ** (0.5 + 0.5 * mixed),
-        )  # will be off by global phase because T is real
-
-    @tf.custom_gradient
-    def _recursive_state(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Sequence[int]):
-        mixed = len(B) == 2 * len(cutoffs)
-        cutoffs_minus_1 = tuple([c - 1 for c in cutoffs] + [c - 1 for c in cutoffs] * mixed)
-        state = np.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed, dtype=np.complex128)
-        state[(0,) * (len(cutoffs) + len(cutoffs) * mixed)] = C
-        state = utils.fill_amplitudes(state, A, B, cutoffs_minus_1)
-
-        def grad(dy):
-            dA = np.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed + A.shape, dtype=np.complex128)
-            dB = np.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed + B.shape, dtype=np.complex128)
-            dA, dB = utils.fill_gradients(dA, dB, state, A, B, cutoffs_minus_1)
-            dC = state / C
-            dLdA = np.sum(dy[..., None, None] * np.conj(dA), axis=tuple(range(dy.ndim)))
-            dLdB = np.sum(dy[..., None] * np.conj(dB), axis=tuple(range(dy.ndim)))
-            dLdC = np.sum(dy * np.conj(dC), axis=tuple(range(dy.ndim)))
-            return dLdA, dLdB, dLdC
-
-        return state, grad
-
 
 #       OOOOOOOOO                                  tttt            iiii
 #     OO:::::::::OO                             ttt:::t           i::::i
@@ -171,7 +105,7 @@ class TFOptimizerBackend(OptimizerBackendInterface):
 
 
 class TFStateBackend(StateBackendInterface):
-    def photon_number_mean(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
+    def number_means(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
         N = means.shape[-1] // 2
         return (
             means[:N] ** 2
@@ -181,7 +115,7 @@ class TFStateBackend(StateBackendInterface):
             - hbar
         ) / (2 * hbar)
 
-    def photon_number_covariance(self, cov, means, hbar) -> tf.Tensor:
+    def number_cov(self, cov, means, hbar) -> tf.Tensor:
         N = means.shape[-1] // 2
         mCm = cov * means[:, None] * means[None, :]
         dd = tf.linalg.diag(
@@ -189,6 +123,50 @@ class TFStateBackend(StateBackendInterface):
         ) / (2 * hbar ** 2)
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
         return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * np.identity(N)
+
+    def ABC(
+        self, cov: tf.Tensor, means: tf.Tensor, mixed: bool = False, hbar: float = 2.0
+    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+        num_modes = means.shape[-1] // 2
+
+        # cov and means in the amplitude basis
+        R = utils.rotmat(num_modes)
+        sigma = R @ tf.cast(cov / hbar, tf.complex128) @ tf.math.conj(tf.transpose(R))
+        beta = tf.linalg.matvec(R, tf.cast(means / np.sqrt(hbar), tf.complex128))
+
+        sQ = sigma + 0.5 * tf.eye(2 * num_modes, dtype=tf.complex128)
+        sQinv = tf.linalg.inv(sQ)
+
+        A = tf.cast(utils.Xmat(num_modes), tf.complex128) @ (np.identity(2 * num_modes) - sQinv)
+        B = tf.linalg.matvec(tf.transpose(sQinv), tf.math.conj(beta))
+        exponent = -0.5 * tf.reduce_sum(tf.math.conj(beta)[:, None] * sQinv * beta[None, :])
+        T = tf.math.exp(exponent) / tf.math.sqrt(tf.linalg.det(sQ))
+        N = num_modes - num_modes * mixed
+        return (
+            A[N:, N:],
+            B[N:],
+            T ** (0.5 + 0.5 * mixed),
+        )  # will be off by global phase because T is real
+
+    @tf.custom_gradient
+    def fock_state(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Sequence[int]):
+        mixed = len(B) == 2 * len(cutoffs)
+        cutoffs_minus_1 = tuple([c - 1 for c in cutoffs] + [c - 1 for c in cutoffs] * mixed)
+        state = np.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed, dtype=np.complex128)
+        state[(0,) * (len(cutoffs) + len(cutoffs) * mixed)] = C
+        state = utils.fill_amplitudes(state, A, B, cutoffs_minus_1)
+
+        def grad(dy):
+            dA = np.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed + A.shape, dtype=np.complex128)
+            dB = np.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed + B.shape, dtype=np.complex128)
+            dA, dB = utils.fill_gradients(dA, dB, state, A, B, cutoffs_minus_1)
+            dC = state / C
+            dLdA = np.sum(dy[..., None, None] * np.conj(dA), axis=tuple(range(dy.ndim)))
+            dLdB = np.sum(dy[..., None] * np.conj(dB), axis=tuple(range(dy.ndim)))
+            dLdC = np.sum(dy * np.conj(dC), axis=tuple(range(dy.ndim)))
+            return dLdA, dLdB, dLdC
+
+        return state, grad
 
 
 #          GGGGGGGGGGGGG                          tttt
@@ -333,6 +311,15 @@ class TFGateBackend(GateBackendInterface):
 
 
 class TFMathbackend(MathBackendInterface):
+    def conj(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.conj(array)
+
+    def arange(self, start, limit=None, delta=1) -> tf.Tensor:
+        return tf.range(start, limit, delta)
+
+    def outer(self, arr1: tf.Tensor, arr2: tf.Tensor) -> tf.Tensor:
+        return tf.tensordot(arr1, arr2, [[], []])
+
     def identity(self, size: int) -> tf.Tensor:
         return tf.eye(size, dtype=tf.float64)
 
@@ -373,8 +360,8 @@ class TFMathbackend(MathBackendInterface):
         updates = tf.linalg.matvec(mat, tf.gather(vec, indices))
         return tf.tensor_scatter_nd_update(vec, indices[:, None], updates)
 
-    def modsquare(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.abs(array) ** 2
+    def abs(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.abs(array)
 
     def all_diagonals(self, rho: tf.Tensor, real: bool) -> tf.Tensor:
         cutoffs = rho.shape[: rho.ndim // 2]
@@ -428,7 +415,7 @@ class TFMathbackend(MathBackendInterface):
 
     def make_euclidean_parameter(
         self,
-        init_value: Optional[float] = None,
+        init_value: Optional[Union[float, List[float]]] = None,
         trainable: bool = True,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         shape: Optional[Sequence[int]] = None,
@@ -447,7 +434,16 @@ class TFMathbackend(MathBackendInterface):
             else:
                 val = tf.zeros(shape, dtype=tf.float64)
         else:
-            val = init_value if shape is None else np.atleast_1d(init_value)
+            if shape is None:
+                val = init_value
+            else:
+                init_value = np.atleast_1d(init_value)
+                if len(init_value) == shape[0]:
+                    val = init_value
+                elif len(init_value) == 1:
+                    val = np.tile(init_value, shape)
+                else:
+                    raise ValueError(f"cannot initialize parameter {name}")
 
         if trainable:
             return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)

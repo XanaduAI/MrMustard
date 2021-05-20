@@ -1,10 +1,6 @@
 from abc import ABC, abstractproperty, abstractmethod
 from typing import List, Sequence, Optional, Tuple
 
-import rich
-
-rich.pretty.install()
-
 
 class MathBackendInterface(ABC):
     @abstractmethod
@@ -36,7 +32,7 @@ class MathBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def modsquare(self, array):
+    def abs(self, array):
         pass
 
     @abstractmethod

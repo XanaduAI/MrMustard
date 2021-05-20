@@ -1,22 +1,14 @@
+from collections.abc import MutableSequence
 from abc import ABC, abstractmethod, abstractproperty
-from typing import List, Sequence, Tuple, Optional
-from mrmustard._states import Vacuum, State
+from typing import List, Optional
+from mrmustard._states import State
 from mrmustard._opt import CircuitInterface
+from mrmustard._backends import MathBackendInterface
 
 
 ################
 #  INTERFACES  #
 ################
-
-
-class CircuitBackendInterface(ABC):
-    @abstractmethod
-    def _ABC(self, cov, means, mixed: bool, hbar: float) -> Tuple:
-        pass
-
-    @abstractmethod
-    def _recursive_state(self, A, B, C, cutoffs: Sequence[int]):
-        pass
 
 
 class GateInterface(ABC):
@@ -45,49 +37,42 @@ class GateInterface(ABC):
         pass
 
 
-class DetectorInterface(ABC):
-    @abstractmethod
-    def __call__(self, fock_probs):
-        pass
-
-
 ######################
 #  CONCRETE CLASSES  #
 ######################
 
 
-class BaseCircuit(CircuitInterface, CircuitBackendInterface):
-    def __init__(self, num_modes: int, hbar: float = 2.0):
+class Circuit(CircuitInterface, MutableSequence):
+    _math_backend: MathBackendInterface
+
+    def __init__(self):
         self._gates: List[GateInterface] = []
-        self._detectors: List[DetectorInterface] = []
-        self.num_modes: int = num_modes
-        self._input: State = Vacuum(num_modes=num_modes, hbar=hbar)
-        self._mixed_output: bool = False
 
-    def gaussian_output(self) -> State:
-        state = self._input
+    def __call__(self, state: State) -> State:
+        state_ = state
         for gate in self._gates:
-            state = gate(state)
-        return state
+            state_ = gate(state_)
+        return state_
 
-    def fock_output(self, cutoffs: Sequence[int]):
-        output = self.gaussian_output()
-        A, B, C = self._ABC(output.cov, output.means, mixed=self._mixed_output, hbar=output.hbar)
-        return self._recursive_state(A, B, C, cutoffs=cutoffs)
+    def __getitem__(self, key):
+        return self._gates.__getitem__(key)
 
-    def fock_probabilities(self, cutoffs: Sequence[int]):
-        if self._mixed_output:
-            rho = self.fock_output(cutoffs=cutoffs)
-            return self._math_backend.all_diagonals(rho, real=True)
-        else:
-            psi = self.fock_output(cutoffs=cutoffs)
-            return self._math_backend.modsquare(psi)
+    def __setitem__(self, key, value):
+        if not isinstance(value, GateInterface):
+            raise ValueError(f"Item {type(value)} is not a gate")
+        return self._gates.__setitem__(key, value)
 
-    def detection_probabilities(self, cutoffs: List[int]):
-        probs = self.fock_probabilities(cutoffs)
-        for detector in self._detectors:
-            probs = detector(probs)
-        return probs
+    def __delitem__(self, key):
+        return self._gates.__delitem__(key)
+
+    def __len__(self):
+        return len(self._gates)
+
+    def __repr__(self) -> str:
+        return "\n".join([repr(g) for g in self._gates])
+
+    def insert(self, index, object):
+        return self._gates.insert(index, object)
 
     @property
     def symplectic_parameters(self) -> List:
@@ -96,17 +81,3 @@ class BaseCircuit(CircuitInterface, CircuitBackendInterface):
     @property
     def euclidean_parameters(self) -> List:
         return [par for gate in self._gates for par in gate.euclidean_parameters]
-
-    def add_gate(self, gate: GateInterface) -> None:
-        self._gates.append(gate)
-        if gate.mixing:
-            self._mixed_output = True
-
-    def add_detector(self, detector: DetectorInterface) -> None:
-        self._detectors.append(detector)
-
-    def set_input(self, input: State) -> None:
-        self._input = input
-
-    def __repr__(self) -> str:
-        return repr(self._input) + "\n" + "\n".join([repr(g) for g in self._gates])

@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from scipy.stats import poisson
 
-from mrmustard.tf import Dgate, Sgate, S2gate, Circuit, PNR
+from mrmustard.tf import Dgate, Sgate, S2gate, Circuit, PNR, Vacuum
 
 
 np.random.seed(137)
@@ -14,11 +14,11 @@ np.random.seed(137)
 @pytest.mark.parametrize("dc", [0, 0.2])
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
-    circ = Circuit(num_modes=1)
+    circ = Circuit()
     cutoff = 20
-    circ.add_gate(Dgate(modes=[0], x=alpha.real, y=alpha.imag))
-    circ.add_detector(PNR(mode=0, quantum_efficiency=eta, dark_count_prob=dc))
-    ps = circ.detection_probabilities(cutoffs=[cutoff])
+    circ.append(Dgate(modes=[0], x=alpha.real, y=alpha.imag))
+    detector = PNR(modes=[0], quantum_efficiency=eta, dark_count_prob=dc)
+    ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
     expected = poisson.pmf(k=np.arange(cutoff), mu=eta * np.abs(alpha) ** 2 + dc)
     assert np.allclose(ps, expected)
 
@@ -29,11 +29,12 @@ def test_detector_coherent_state(alpha, eta, dc):
 @pytest.mark.parametrize("dc", [0, 0.2])
 def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
-    circ = Circuit(num_modes=1)
-    circ.add_gate(Sgate(modes=[0], r=r, phi=phi))
-    circ.add_detector(PNR(mode=0, quantum_efficiency=eta, dark_count_prob=dc))
+    circ = Circuit()
+    circ.append(Sgate(modes=[0], r=r, phi=phi))
+    detector = PNR(modes=[0], quantum_efficiency=eta, dark_count_prob=dc)
     cutoff = 40
-    ps = circ.detection_probabilities(cutoffs=[cutoff])
+    ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
+
     assert np.allclose(np.sum(ps), 1.0, atol=1e-3)
     mean = np.arange(cutoff) @ ps.numpy()
     expected_mean = eta * np.sinh(r) ** 2 + dc
@@ -51,12 +52,12 @@ def test_detector_squeezed_state(r, phi, eta, dc):
 @pytest.mark.parametrize("dc_i", [0, 0.2])
 def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
-    circ = Circuit(num_modes=2)
-    circ.add_gate(S2gate(modes=[0, 1], r=r, phi=phi))
-    circ.add_detector(PNR(mode=0, quantum_efficiency=eta_s, dark_count_prob=dc_s))
-    circ.add_detector(PNR(mode=1, quantum_efficiency=eta_i, dark_count_prob=dc_i))
+    circ = Circuit()
+    circ.append(S2gate(modes=[0, 1], r=r, phi=phi))
+    detector = PNR(modes=[0, 1], quantum_efficiency=[eta_s, eta_i], dark_count_prob=[dc_s, dc_i])
     cutoff = 30
-    ps = circ.detection_probabilities(cutoffs=[cutoff, cutoff])
+    ps = detector(circ(Vacuum(num_modes=2)), cutoffs=[cutoff, cutoff])
+
     n = np.arange(cutoff)
     mean_s = np.sum(ps, axis=1) @ n
     n_s = eta_s * np.sinh(r) ** 2

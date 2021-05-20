@@ -1,41 +1,39 @@
 if __name__ == "mrmustard.tf":
-    from mrmustard._circuit import BaseCircuit
+    from mrmustard._circuit import Circuit
     from mrmustard._opt import BaseOptimizer
     from mrmustard._detectors import Detector, PNR
     from mrmustard._gates import Gate, BSgate, Sgate, Rgate, Dgate, Ggate, LossChannel, S2gate
     from mrmustard._states import Vacuum
+    from mrmustard._states import State
     from mrmustard._backends.tfbackend import (
-        TFCircuitBackend,
         TFGateBackend,
         TFOptimizerBackend,
         TFStateBackend,
         TFMathbackend,
     )
-    from mrmustard._states import State
 
-    Gate._math_backend = TFMathbackend()
+    math = TFMathbackend()
+
+    Detector._math_backend = math
+    Circuit._math_backend = math
+    Gate._math_backend = math
     Gate._gate_backend = TFGateBackend()
+    State._math_backend = math
     State._state_backend = TFStateBackend()
-    Detector._math_backend = TFMathbackend()
-    BaseCircuit._math_backend = TFMathbackend()
-
-    class Circuit(BaseCircuit, TFCircuitBackend):
-        pass
 
     class Optimizer(TFOptimizerBackend, BaseOptimizer):
         pass
 
-
-__all__ = [
-    "BSgate",
-    "Sgate",
-    "Rgate",
-    "Dgate",
-    "Ggate",
-    "LossChannel",
-    "S2gate",
-    "PNR",
-    "Circuit",
-    "Optimizer",
-    "Vacuum",
-]
+    __all__ = [
+        "BSgate",
+        "Sgate",
+        "Rgate",
+        "Dgate",
+        "Ggate",
+        "LossChannel",
+        "S2gate",
+        "PNR",
+        "Circuit",
+        "Optimizer",
+        "Vacuum",
+    ]
