@@ -85,14 +85,14 @@ class PNR(Detector):
                 )
 
 
-class APD(Detector):
+class ThresholdDetector(Detector):
     r"""
-    Avalanche photo-diode. Any state with more photons than vacuum is detected as a single photon.
+    Threshold detector: any state with more photons than vacuum is detected as a single photon.
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
     To apply mode-specific values use a list of floats.
     It can be supplied the full conditional detection probabilities, or it will compute them from
-    the quantum efficiency (binomial) and the dark count probability (possonian).
+    the quantum efficiency (binomial) and the dark count probability (bernoulli).
     Arguments:
         conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         quantum_efficiency (float or List[float]): list of quantum efficiencies for each detector
@@ -125,7 +125,7 @@ class APD(Detector):
             self._stochastic_channel = conditional_probs
         else:
             for cut, qe, dc in zip(self.max_cutoffs, quantum_efficiency, dark_count_prob):
-                dark_prior = poisson.pmf(self._math_backend.arange(cut), dc)
+                dark_prior = [1-dc, dc]
                 row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :]
                 row2 = 1.0 - row1
                 rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
