@@ -5,7 +5,7 @@ from mrmustard._backends import MathBackendInterface
 
 class StateBackendInterface(ABC):
     @abstractmethod
-    def umber_means(self, cov, means, hbar: float):
+    def number_means(self, cov, means, hbar: float):
         pass
 
     @abstractmethod

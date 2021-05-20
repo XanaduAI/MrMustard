@@ -115,7 +115,7 @@ class TFStateBackend(StateBackendInterface):
             - hbar
         ) / (2 * hbar)
 
-    def number_covariance(self, cov, means, hbar) -> tf.Tensor:
+    def number_cov(self, cov, means, hbar) -> tf.Tensor:
         N = means.shape[-1] // 2
         mCm = cov * means[:, None] * means[None, :]
         dd = tf.linalg.diag(
