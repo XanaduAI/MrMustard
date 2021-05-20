@@ -3,7 +3,7 @@ from typing import List, Sequence, Optional, Tuple
 
 import rich
 
-#rich.pretty.install()
+rich.pretty.install()
 
 
 class MathBackendInterface(ABC):
