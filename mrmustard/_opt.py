@@ -65,7 +65,7 @@ class BaseOptimizer(OptimizerBackendInterface):
         Optimizes circuits and/or detectors such that the given cost function is minimized.
         Arguments:
             cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
-            optimize (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
+            by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
 

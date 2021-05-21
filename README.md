@@ -121,5 +121,5 @@ def cost_fn():
     return tf.abs(state_out.means[0] - 0.2)**2
 
 opt = Optimizer()
-opt.minimize(circ, cost_fn, max_steps=100) # the optimizer stops earlier if the loss is stable
+opt.minimize(cost_fn, by_optimizing=[circ], max_steps=100) # the optimizer stops earlier if the loss is stable
 ```
