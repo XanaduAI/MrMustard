@@ -6,11 +6,6 @@ from mrmustard._opt import CircuitInterface
 from mrmustard._backends import MathBackendInterface
 
 
-################
-#  INTERFACES  #
-################
-
-
 class GateInterface(ABC):
     @abstractmethod
     def __call__(self, state: State) -> State:
@@ -35,11 +30,6 @@ class GateInterface(ABC):
     @abstractproperty
     def symplectic_parameters(self) -> List:
         pass
-
-
-######################
-#  CONCRETE CLASSES  #
-######################
 
 
 class Circuit(CircuitInterface, MutableSequence):
@@ -76,8 +66,14 @@ class Circuit(CircuitInterface, MutableSequence):
 
     @property
     def symplectic_parameters(self) -> List:
+        r"""
+        Returns the list of symplectic parameters
+        """
         return [par for gate in self._gates for par in gate.symplectic_parameters]
 
     @property
     def euclidean_parameters(self) -> List:
+        r"""
+        Returns the list of Euclidean parameters
+        """
         return [par for gate in self._gates for par in gate.euclidean_parameters]

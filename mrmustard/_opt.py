@@ -1,12 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable, Sequence, List, Union
-from mrmustard._states import State
 from mrmustard.visual import Progressbar
-from mrmustard._backends import MathBackendInterface
-
-################
-#  INTERFACES  #
-################
 
 
 class CircuitInterface(ABC):
@@ -20,18 +14,6 @@ class CircuitInterface(ABC):
     def euclidean_parameters(self) -> List:
         pass
 
-    # @abstractmethod
-    # def gaussian_output(self) -> State:
-    #     pass
-
-    # @abstractmethod
-    # def fock_output(self, cutoffs: Sequence[int]):
-    #     pass
-
-    # @abstractmethod
-    # def fock_probabilities(self, cutoffs: Sequence[int]):
-    #     pass
-
 
 class OptimizerBackendInterface(ABC):
     """Interface for the Circuit class.
@@ -43,7 +25,7 @@ class OptimizerBackendInterface(ABC):
     _backend_opt: type
 
     @abstractmethod
-    def _loss_and_gradients(self, symplectic_params, euclidean_params, loss_fn):
+    def _loss_and_gradients(self, symplectic_params, euclidean_params, cost_fn):
         pass
 
     @abstractmethod
@@ -75,9 +57,18 @@ class BaseOptimizer(OptimizerBackendInterface):
     def minimize(
         self,
         circuit: Union[Sequence[CircuitInterface], CircuitInterface],
-        loss_fn: Callable,
+        cost_fn: Callable,
         max_steps: int = 1000,
     ) -> Union[Sequence[CircuitInterface], CircuitInterface]:
+        r"""
+        Optimizes a circuit or a list of circuits such that the given cost function is minimized.
+        Arguments:
+            circuit (Circuit or List[Circuit]): a single circuit or a list of circuits to optimize
+            cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
+            max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
+        Returns:
+            The optimized circuit or circuits
+        """
 
         circuits = [circuit] if not isinstance(circuit, Sequence) else circuit
 
@@ -88,7 +79,7 @@ class BaseOptimizer(OptimizerBackendInterface):
         with bar:
             while not self.should_stop(max_steps):
                 loss, symp_grads, eucl_grads = self._loss_and_gradients(
-                    symplectic_parameters, euclidean_parameters, loss_fn
+                    symplectic_parameters, euclidean_parameters, cost_fn
                 )
                 self._update_symplectic(symp_grads, symplectic_parameters)
                 self._update_euclidean(eucl_grads, euclidean_parameters)
