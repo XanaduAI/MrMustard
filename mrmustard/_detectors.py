@@ -37,9 +37,7 @@ class Detector:
 
     @property
     def euclidean_parameters(self) -> List:
-        return [
-            p for i, p in enumerate(self._parameters) if self._trainable[i]
-        ]
+        return [p for i, p in enumerate(self._parameters) if self._trainable[i]]
 
 
 class PNRDetector(Detector):
@@ -73,10 +71,18 @@ class PNRDetector(Detector):
         self._trainable = [quantum_efficiency_trainable, expected_dark_counts_trainable]
         self._parameters = [
             self._math_backend.make_euclidean_parameter(
-                quantum_efficiency, quantum_efficiency_trainable, quantum_efficiency_bounds, (len(modes),), "quantum_efficiency"
+                quantum_efficiency,
+                quantum_efficiency_trainable,
+                quantum_efficiency_bounds,
+                (len(modes),),
+                "quantum_efficiency",
             ),
             self._math_backend.make_euclidean_parameter(
-                expected_dark_counts, expected_dark_counts_trainable, expected_dark_counts_bounds, (len(modes),), "expected_dark_counts"
+                expected_dark_counts,
+                expected_dark_counts_trainable,
+                expected_dark_counts_bounds,
+                (len(modes),),
+                "expected_dark_counts",
             ),
         ]
         if not isinstance(max_cutoffs, Sequence):
@@ -92,9 +98,13 @@ class PNRDetector(Detector):
         if self.conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:
-            for cut, qe, dc in zip(self.max_cutoffs, self.quantum_efficiency[:], self.expected_dark_counts[:]):
+            for cut, qe, dc in zip(
+                self.max_cutoffs, self.quantum_efficiency[:], self.expected_dark_counts[:]
+            ):
                 dark_prior = self._math_backend.poisson(max_k=cut, rate=dc)
-                condprob = self._math_backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
+                condprob = self._math_backend.binomial_conditional_prob(
+                    success_prob=qe, dim_in=cut, dim_out=cut
+                )
                 self._stochastic_channel.append(
                     self._math_backend.convolve_probs_1d(
                         condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
@@ -134,10 +144,18 @@ class ThresholdDetector(Detector):
         self._trainable = [quantum_efficiency_trainable, expected_dark_probs_trainable]
         self._parameters = [
             self._math_backend.make_euclidean_parameter(
-                quantum_efficiency, quantum_efficiency_trainable, quantum_efficiency_bounds, (len(modes),), "quantum_efficiency"
+                quantum_efficiency,
+                quantum_efficiency_trainable,
+                quantum_efficiency_bounds,
+                (len(modes),),
+                "quantum_efficiency",
             ),
             self._math_backend.make_euclidean_parameter(
-                expected_dark_probs, expected_dark_probs_trainable, expected_dark_probs_bounds, (len(modes),), "expected_dark_counts"
+                expected_dark_probs,
+                expected_dark_probs_trainable,
+                expected_dark_probs_bounds,
+                (len(modes),),
+                "expected_dark_counts",
             ),
         ]
         if not isinstance(max_cutoffs, Sequence):
@@ -154,7 +172,9 @@ class ThresholdDetector(Detector):
         if self.conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:
-            for cut, qe, dc in zip(self.max_cutoffs, self.quantum_efficiency[:], self.dark_count_probs[:]):
+            for cut, qe, dc in zip(
+                self.max_cutoffs, self.quantum_efficiency[:], self.dark_count_probs[:]
+            ):
                 row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
                 rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)

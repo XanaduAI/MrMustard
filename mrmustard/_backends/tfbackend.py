@@ -467,13 +467,17 @@ class TFMathBackend(MathBackendInterface):
         "poisson distribution up to max_k"
         k = tf.range(max_k, dtype=tf.float64)
         rate = tf.cast(rate, tf.float64)
-        return tf.math.exp(k*tf.math.log(rate+1e-9) - rate - tf.math.lgamma(k+1.0))
+        return tf.math.exp(k * tf.math.log(rate + 1e-9) - rate - tf.math.lgamma(k + 1.0))
 
     def binomial_conditional_prob(self, success_prob: tf.Tensor, dim_out: int, dim_in: int):
         "P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out"
         in_ = tf.range(dim_in, dtype=tf.float64)[None, :]
         out_ = tf.range(dim_out, dtype=tf.float64)[:, None]
-        return tf.cast(binom(in_, out_), tf.float64) * success_prob ** out_ * (1.0 - success_prob) ** tf.math.maximum(in_ - out_, 0.0)
+        return (
+            tf.cast(binom(in_, out_), tf.float64)
+            * success_prob ** out_
+            * (1.0 - success_prob) ** tf.math.maximum(in_ - out_, 0.0)
+        )
 
     def convolve_probs_1d(self, prob: tf.Tensor, other_probs: List[tf.Tensor]) -> tf.Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"
