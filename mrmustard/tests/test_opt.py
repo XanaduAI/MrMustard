@@ -30,7 +30,7 @@ def test_S2gate_coincidence_prob(n):
         return -tf.abs(circ(state_in).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
-    circ = opt.minimize(circ, cost_fn, max_steps=0)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=0)
     prob = np.abs(circ(state_in).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
     assert np.allclose(prob, expected, atol=1e-4)
@@ -51,7 +51,7 @@ def test_hong_ou_mandel_optimizer():
         return tf.abs(circ(state_in).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.005)
-    circ = opt.minimize(circ, cost_fn, max_steps=0)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=0)
     assert np.allclose(np.cos(circ.euclidean_parameters[2]) ** 2, 0.5, atol=1e-2)
 
 
@@ -72,7 +72,7 @@ def test_learning_two_mode_squeezing():
 
     opt = Optimizer(euclidean_lr=0.05)
 
-    circ = opt.minimize(circ, cost_fn, max_steps=1000)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
 
 
@@ -91,5 +91,5 @@ def test_learning_two_mode_Ggate():
 
     opt = Optimizer(symplectic_lr=0.1)
 
-    circ = opt.minimize(circ, cost_fn, max_steps=1000)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
