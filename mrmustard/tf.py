@@ -1,7 +1,7 @@
 if __name__ == "mrmustard.tf":
     from mrmustard._circuit import Circuit
     from mrmustard._opt import BaseOptimizer
-    from mrmustard._detectors import Detector, PNR
+    from mrmustard._detectors import Detector, PNRDetector, ThresholdDetector
     from mrmustard._gates import Gate, BSgate, Sgate, Rgate, Dgate, Ggate, LossChannel, S2gate
     from mrmustard._states import Vacuum
     from mrmustard._states import State
@@ -9,10 +9,10 @@ if __name__ == "mrmustard.tf":
         TFGateBackend,
         TFOptimizerBackend,
         TFStateBackend,
-        TFMathbackend,
+        TFMathBackend,
     )
 
-    math = TFMathbackend()
+    math = TFMathBackend()
 
     Detector._math_backend = math
     Circuit._math_backend = math
@@ -32,7 +32,8 @@ if __name__ == "mrmustard.tf":
         "Ggate",
         "LossChannel",
         "S2gate",
-        "PNR",
+        "PNRDetector",
+        "ThresholdDetector",
         "Circuit",
         "Optimizer",
         "Vacuum",

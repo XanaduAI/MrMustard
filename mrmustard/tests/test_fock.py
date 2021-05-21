@@ -9,6 +9,7 @@ from mrmustard.tf import (
     Circuit,
     S2gate,
     Vacuum,
+    Ggate,
 )
 
 import pytest
@@ -137,3 +138,14 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
     mean_i = n @ np.sum(ps, axis=0)
     assert np.allclose(mean_s, n_mean * eta_s, atol=1e-2)
     assert np.allclose(mean_i, n_mean * eta_i, atol=1e-2)
+
+
+def test_density_matrix():
+    """Tests the density matrix of a pure state is equal to |psi><psi|"""
+    G = Ggate(modes=[0, 1, 2])
+    L = LossChannel(modes=[0, 1, 2], transmissivity=1.0)
+    rho_legit = L(G(Vacuum(num_modes=3))).dm(cutoffs=[4, 4, 4])
+    rho_built = G(Vacuum(num_modes=3)).dm(cutoffs=[4, 4, 4])
+    assert np.allclose(rho_legit, rho_built)
+
+    

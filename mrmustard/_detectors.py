@@ -37,7 +37,7 @@ class Detector:
         return self.apply_stochastic_channel(state.fock_probabilities(cutoffs))
 
 
-class PNR(Detector):
+class PNRDetector(Detector):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
@@ -47,7 +47,7 @@ class PNR(Detector):
     Arguments:
         conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         quantum_efficiency (float or List[float]): list of quantum efficiencies for each detector
-        dark_count_prob (float or List[float]): list of dark count probabilities for each detector
+        expected_dark_count (float or List[float]): list of expected dark counts
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
     """
 
@@ -92,7 +92,7 @@ class ThresholdDetector(Detector):
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
     To apply mode-specific values use a list of floats.
     It can be supplied the full conditional detection probabilities, or it will compute them from
-    the quantum efficiency (binomial) and the dark count probability (possonian).
+    the quantum efficiency (binomial) and the dark count probability (bernoulli).
     Arguments:
         conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         quantum_efficiency (float or List[float]): list of quantum efficiencies for each detector
@@ -100,4 +100,33 @@ class ThresholdDetector(Detector):
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
     """
 
-    pass
+    def __init__(
+        self,
+        modes: List[int],
+        conditional_probs=None,
+        quantum_efficiency: Union[float, List[float]] = 1.0,
+        dark_count_prob: Union[float, List[float]] = 0.0,
+        max_cutoffs: Union[int, List[int]] = 50,
+    ):
+        super().__init__(modes)
+
+        if not isinstance(quantum_efficiency, Sequence):
+            quantum_efficiency = [quantum_efficiency for m in modes]
+        if not isinstance(dark_count_prob, Sequence):
+            dark_count_prob = [dark_count_prob for m in modes]
+        if not isinstance(max_cutoffs, Sequence):
+            max_cutoffs = [max_cutoffs for m in modes]
+        self.quantum_efficiency = quantum_efficiency
+        self.dark_count_prob = dark_count_prob
+        self.max_cutoffs = max_cutoffs
+        self._stochastic_channel = []
+
+        if conditional_probs is not None:
+            self._stochastic_channel = conditional_probs
+        else:
+            for cut, qe, dc in zip(self.max_cutoffs, quantum_efficiency, dark_count_prob):
+                row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :] - dc
+                row2 = 1.0 - row1
+                rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = self._math_backend.concat([row1, row2, rest], axis=0)
+                self._stochastic_channel.append(condprob)
