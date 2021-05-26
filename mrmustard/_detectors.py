@@ -34,7 +34,7 @@ class Detector:
             norm = self._math_backend.norm(ket)
             return ket / norm, self._math_backend.abs(norm)**2
 
-    def __call__(self, state: State, cutoffs: List[int]):
+    def apply_stochastic_channel(self, state: State, cutoffs: List[int]):
         fock_probs = state.fock_probabilities(cutoffs)
         cutoffs = [fock_probs.shape[m] for m in self.modes]
         for i, mode in enumerate(self.modes):
@@ -53,6 +53,13 @@ class Detector:
             indices.insert(mode, fock_probs.ndim - 1)
             detector_probs = self._math_backend.transpose(detector_probs, indices)
         return detector_probs
+
+    def __call__(self, state: State, cutoffs: List[int], measurements: Optional[Sequence[Optional[int]]] = None):
+        if measurements is None:
+            return self.apply_stochastic_channel(state, cutoffs)
+        else:
+            return self.project(state, cutoffs, measurements)
+
 
     @property
     def euclidean_parameters(self) -> List:
