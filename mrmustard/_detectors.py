@@ -13,7 +13,29 @@ class Detector:
     def __init__(self, modes: List[int]):
         self.modes = modes
 
-    def apply_stochastic_channel(self, fock_probs):
+    def project(self, state: State, cutoffs: Sequence[int], measurements: Sequence[Optional[int]]) -> State:
+        r"""
+        Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
+        indicate the Fock measurement on that mode and None indicates no projection on that mode.
+
+        Returns the renormalized state (in the Fock basis) in the unmeasured modes
+        and the measurement probability.
+        """
+        if (len(cutoffs) != state.num_modes) or (len(measurements) != state.num_modes):
+            raise ValueError('the length of cutoffs and/or measurements does not match the number of modes')
+        measurement = [m if m is not None else slice(None) for m in measurements]
+        if state.mixed:
+            measurement = measurement + measurement
+            dm = state.dm(cutoffs=cutoffs)[measurement]
+            prob = self._math_backend.trace(dm)
+            return dm / prob, prob
+        else:
+            ket = state.ket(cutoffs=cutoffs)[measurement]
+            norm = self._math_backend.norm(ket)
+            return ket / norm, self._math_backend.abs(norm)**2
+
+    def __call__(self, state: State, cutoffs: List[int]):
+        fock_probs = state.fock_probabilities(cutoffs)
         cutoffs = [fock_probs.shape[m] for m in self.modes]
         for i, mode in enumerate(self.modes):
             if cutoffs[mode] > self._stochastic_channel[i].shape[1]:
@@ -31,27 +53,6 @@ class Detector:
             indices.insert(mode, fock_probs.ndim - 1)
             detector_probs = self._math_backend.transpose(detector_probs, indices)
         return detector_probs
-
-    def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> State:
-        r"""
-        Projects the state onto a Fock measurement in the form [3,7,None,0,...] where each integer
-        indicates the Fock measurement on that mode and None indicates no projection.
-
-        Returns the renormalized remaining fock state and the measurement probability.
-        """
-        measurement = [m if m is not None else slice(None) for m in measurement]
-        if state.mixed:
-            measurement = measurement + measurement
-            dm = state.dm(cutoffs=cutoffs)[measurement]
-            prob = self._math_backend.trace(dm)
-            return dm / prob, prob
-        else:
-            ket = state.ket(cutoffs=cutoffs)[measurement]
-            prob = self._math_backend.norm(ket)**2
-            return ket / 
-
-    def __call__(self, state: State, cutoffs: List[int]):
-        return self.apply_stochastic_channel(state.fock_probabilities(cutoffs))
 
     @property
     def euclidean_parameters(self) -> List:
