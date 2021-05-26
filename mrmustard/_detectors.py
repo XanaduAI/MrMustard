@@ -13,7 +13,9 @@ class Detector:
     def __init__(self, modes: List[int]):
         self.modes = modes
 
-    def project(self, state: State, cutoffs: Sequence[int], measurements: Sequence[Optional[int]]) -> State:
+    def project(
+        self, state: State, cutoffs: Sequence[int], measurements: Sequence[Optional[int]]
+    ) -> State:
         r"""
         Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
         indicate the Fock measurement on that mode and None indicates no projection on that mode.
@@ -22,7 +24,9 @@ class Detector:
         and the measurement probability.
         """
         if (len(cutoffs) != state.num_modes) or (len(measurements) != state.num_modes):
-            raise ValueError('the length of cutoffs and/or measurements does not match the number of modes')
+            raise ValueError(
+                "the length of cutoffs and/or measurements does not match the number of modes"
+            )
         measurement = [m if m is not None else slice(None) for m in measurements]
         if state.mixed:
             measurement = measurement + measurement
@@ -32,7 +36,7 @@ class Detector:
         else:
             ket = state.ket(cutoffs=cutoffs)[measurement]
             norm = self._math_backend.norm(ket)
-            return ket / norm, self._math_backend.abs(norm)**2
+            return ket / norm, self._math_backend.abs(norm) ** 2
 
     def apply_stochastic_channel(self, state: State, cutoffs: List[int]):
         fock_probs = state.fock_probabilities(cutoffs)
@@ -54,12 +58,16 @@ class Detector:
             detector_probs = self._math_backend.transpose(detector_probs, indices)
         return detector_probs
 
-    def __call__(self, state: State, cutoffs: List[int], measurements: Optional[Sequence[Optional[int]]] = None):
+    def __call__(
+        self,
+        state: State,
+        cutoffs: List[int],
+        measurements: Optional[Sequence[Optional[int]]] = None,
+    ):
         if measurements is None:
             return self.apply_stochastic_channel(state, cutoffs)
         else:
             return self.project(state, cutoffs, measurements)
-
 
     @property
     def euclidean_parameters(self) -> List:
