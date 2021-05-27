@@ -1,20 +1,10 @@
+import pytest
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.tf import (
-    Dgate,
-    Sgate,
-    LossChannel,
-    BSgate,
-    Ggate,
-    Optimizer,
-    Circuit,
-    S2gate,
-    Rgate,
-    Vacuum,
-)
-
-import pytest
+from mrmustard.gates import Sgate, BSgate, S2gate, Ggate
+from mrmustard.tools import Circuit, Optimizer
+from mrmustard.states import Vacuum
 
 
 @pytest.mark.parametrize("n", [0, 1, 2, 3])

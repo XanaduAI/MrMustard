@@ -4,8 +4,12 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard.tf import Dgate, Sgate, S2gate, Circuit, PNRDetector, Vacuum, Optimizer
-from mrmustard._backends.tfbackend import TFMathBackend
+from mrmustard.gates import Dgate, Sgate, S2gate
+from mrmustard.tools import Circuit, Optimizer
+from mrmustard.states import Vacuum
+from mrmustard.measurements import PNRDetector
+
+from mrmustard.core.backends.tf import MathBackend
 
 np.random.seed(137)
 
@@ -93,7 +97,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         "n_modes": 2,
     }
     cutoff = 20
-    tfbe = TFMathBackend()
+    tfbe = MathBackend()
     circc = Circuit()
     circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))
@@ -146,12 +150,10 @@ def test_postselection():
     S2 = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(n_mean)))
     my_state = S2(Vacuum(num_modes=2))
 
-    # outputs the measurement probs
     cutoff = 3
-    probs = detector(my_state, cutoffs=[cutoff, cutoff])
     n_measured = 1
-    # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
 
+    # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
     proj_state, success_prob = detector(
         my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None]
     )
