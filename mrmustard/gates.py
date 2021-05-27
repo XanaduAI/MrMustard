@@ -49,7 +49,7 @@ class Dgate(Gate):
         ]
 
     def displacement_vector(self, hbar: float):
-        return self._gate_backend.displacement(*self._parameters, hbar=hbar)
+        return self._symplectic_backend.displacement(*self._parameters, hbar=hbar)
 
 
 class Sgate(Gate):
@@ -98,7 +98,7 @@ class Sgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.squeezing_symplectic(*self._parameters)
+        return self._symplectic_backend.squeezing_symplectic(*self._parameters)
 
 
 class Rgate(Gate):
@@ -138,7 +138,7 @@ class Rgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.rotation_symplectic(*self._parameters)
+        return self._symplectic_backend.rotation_symplectic(*self._parameters)
 
 
 class Ggate(Gate):
@@ -244,7 +244,7 @@ class BSgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.beam_splitter_symplectic(*self._parameters)
+        return self._symplectic_backend.beam_splitter_symplectic(*self._parameters)
 
 
 class S2gate(Gate):
@@ -287,7 +287,7 @@ class S2gate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.two_mode_squeezing_symplectic(*self._parameters)
+        return self._symplectic_backend.two_mode_squeezing_symplectic(*self._parameters)
 
 
 class LossChannel(Gate):
@@ -332,7 +332,7 @@ class LossChannel(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.loss_X(*self._parameters)
+        return self._symplectic_backend.loss_X(*self._parameters)
 
     def noise_matrix(self, hbar: float):
-        return self._gate_backend.loss_Y(*self._parameters, hbar=hbar)
+        return self._symplectic_backend.loss_Y(*self._parameters, hbar=hbar)

@@ -54,13 +54,12 @@ class Circuit(MutableSequence):
 
 
 class Optimizer:
-    _backend_opt: OptimizerBackendInterface
+    _opt_backend: OptimizerBackendInterface
 
     def __init__(self, symplectic_lr: float = 1.0, euclidean_lr: float = 0.003):
         self.loss_history: List[float] = [0]
-        self._symplectic_lr = symplectic_lr
-        self._euclidean_lr = euclidean_lr
-        self._opt = self._backend_opt(euclidean_lr)  # from specific backend
+        self.symplectic_lr = symplectic_lr
+        self.euclidean_lr = euclidean_lr
 
     def minimize(
         self,
@@ -76,19 +75,19 @@ class Optimizer:
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
 
-        optimize = [by_optimizing] if not isinstance(by_optimizing, Sequence) else by_optimizing
+        to_optimize = [by_optimizing] if not isinstance(by_optimizing, Sequence) else by_optimizing
 
-        symplectic_parameters = self._all_symplectic_parameters(optimize)
-        euclidean_parameters = self._all_euclidean_parameters(optimize)
+        symplectic_parameters = self._opt_backend.extract_symplectic_parameters(to_optimize)
+        euclidean_parameters = self._opt_backend.extract_euclidean_parameters(to_optimize)
 
         bar = Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                loss, symp_grads, eucl_grads = self._loss_and_gradients(
+                loss, symp_grads, eucl_grads = self._opt_backend.loss_and_gradients(
                     symplectic_parameters, euclidean_parameters, cost_fn
                 )
-                self._update_symplectic(symp_grads, symplectic_parameters)
-                self._update_euclidean(eucl_grads, euclidean_parameters)
+                self._opt_backend.update_symplectic(symp_grads, symplectic_parameters, self.symplectic_lr)
+                self._opt_backend.update_euclidean(eucl_grads, euclidean_parameters, self.euclidean_lr)
                 self.loss_history.append(loss)
                 bar.step(loss)
 

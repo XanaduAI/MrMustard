@@ -17,7 +17,7 @@ if __name__ == "mrmustard.tf":
     Detector._math_backend = math
     Circuit._math_backend = math
     Gate._math_backend = math
-    Gate._gate_backend = TFGateBackend()
+    Gate._symplectic_backend = TFGateBackend()
     State._math_backend = math
     State._state_backend = TFStateBackend()
 

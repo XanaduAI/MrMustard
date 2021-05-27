@@ -3,14 +3,14 @@ import numpy as np
 from typing import Sequence, Callable
 from scipy.linalg import expm
 
-from mrmustard.backends import OptimizerBackendInterface
+from mrmustard.core.backends import OptimizerBackendInterface
 from mrmustard.core import utils
 
 
 class OptimizerBackend(OptimizerBackendInterface):
-    _backend_opt = tf.optimizers.Adam
+    euclidean_opt = tf.keras.optimizers.Adam()
 
-    def _loss_and_gradients(
+    def loss_and_gradients(
         self,
         symplectic_params: Sequence[tf.Tensor],
         euclidean_params: Sequence[tf.Tensor],
@@ -21,8 +21,8 @@ class OptimizerBackend(OptimizerBackendInterface):
         symp_grads, eucl_grads = tape.gradient(loss, [symplectic_params, euclidean_params])
         return loss.numpy(), symp_grads, eucl_grads
 
-    def _update_symplectic(
-        self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor]
+    def update_symplectic(
+        self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor], symplectic_lr: float
     ) -> None:
         for S, dS_eucl in zip(symplectic_params, symplectic_grads):
             Jmat = utils.J(S.shape[-1] // 2)
@@ -30,17 +30,18 @@ class OptimizerBackend(OptimizerBackendInterface):
             Y = 0.5 * (Z + np.matmul(np.matmul(Jmat, Z.T), Jmat))
             S.assign(
                 S
-                @ expm(-self._symplectic_lr * np.transpose(Y))
-                @ expm(-self._symplectic_lr * (Y - np.transpose(Y))),
+                @ expm(-symplectic_lr * np.transpose(Y))
+                @ expm(-symplectic_lr * (Y - np.transpose(Y))),
                 read_value=False,
             )
 
-    def _update_euclidean(
-        self, euclidean_grads: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor]
+    def update_euclidean(
+        self, euclidean_grads: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor], euclidean_lr: float
     ) -> None:
-        self._opt.apply_gradients(zip(euclidean_grads, euclidean_params))
+        self.euclidean_opt.lr = euclidean_lr
+        self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
-    def _all_symplectic_parameters(self, items: Sequence):
+    def extract_symplectic_parameters(self, items: Sequence):
         symp = []
         for item in items:
             try:
@@ -51,7 +52,7 @@ class OptimizerBackend(OptimizerBackendInterface):
                 continue
         return [s.deref() for s in symp]
 
-    def _all_euclidean_parameters(self, items: Sequence):
+    def extract_euclidean_parameters(self, items: Sequence):
         eucl = []
         for item in items:
             try:

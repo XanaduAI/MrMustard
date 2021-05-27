@@ -1,7 +1,7 @@
 import tensorflow as tf
 from typing import Tuple
 
-from mrmustard.backends import SymplecticBackendInterface
+from mrmustard.core.backends import SymplecticBackendInterface
 
 
 class SymplecticBackend(SymplecticBackendInterface):

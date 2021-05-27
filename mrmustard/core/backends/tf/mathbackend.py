@@ -5,7 +5,7 @@ from scipy.special import binom
 from typing import List, Tuple, Callable, Sequence, Optional, Union
 from itertools import product
 
-from mrmustard.backends import MathBackendInterface
+from mrmustard.core.backends import MathBackendInterface
 
 
 class MathBackend(MathBackendInterface):

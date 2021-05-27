@@ -2,7 +2,7 @@ from abc import ABC
 from typing import List, Optional
 import numpy as np  # NOTE: only needed for the repr...
 from mrmustard.core.backends import MathBackendInterface, SymplecticBackendInterface
-from mrmustard.core.baseclasses import State
+from mrmustard.core.baseclasses.state import State
 
 
 class Gate(ABC):
