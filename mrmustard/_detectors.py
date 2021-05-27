@@ -24,22 +24,22 @@ class Detector:
         and the measurement probability.
         """
         if (len(cutoffs) != state.num_modes) or (len(measurements) != state.num_modes):
-            raise ValueError(
-                "the length of cutoffs and/or measurements does not match the number of modes"
-            )
-        measurement = [m if m is not None else slice(None) for m in measurements]
-        if state.mixed:
-            measurement = measurement + measurement
-            dm = state.dm(cutoffs=cutoffs)[measurement]
-            prob = self._math_backend.trace(dm)
-            return dm / prob, prob
-        else:
-            ket = state.ket(cutoffs=cutoffs)[measurement]
-            norm = self._math_backend.norm(ket)
-            return ket / norm, self._math_backend.abs(norm) ** 2
+            raise ValueError("the length of cutoffs/measurements does not match the number of modes")
+        dm = state.dm(cutoffs=cutoffs)
+        measured = 0
+        for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurements)):
+            if meas is not None:
+                # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
+                last = [mode - measured, mode + state.num_modes - 2*measured]
+                perm = list(set(range(dm.ndim)).difference(last)) + last
+                dm = self._math_backend.transpose(dm, perm)
+                dm = self._math_backend.diag(dm)
+                dm = self._math_backend.tensordot(dm, stoch[meas, :dm.shape[-1]], [[-1], [0]], dtype=dm.dtype)
+                measured += 1
+        prob = self._math_backend.sum(self._math_backend.all_diagonals(dm, real=False))
+        return dm / prob, self._math_backend.abs(prob)
 
-    def apply_stochastic_channel(self, state: State, cutoffs: List[int]):
-        fock_probs = state.fock_probabilities(cutoffs)
+    def apply_stochastic_channel(self, fock_probs: State):
         cutoffs = [fock_probs.shape[m] for m in self.modes]
         for i, mode in enumerate(self.modes):
             if cutoffs[mode] > self._stochastic_channel[i].shape[1]:
@@ -65,7 +65,8 @@ class Detector:
         measurements: Optional[Sequence[Optional[int]]] = None,
     ):
         if measurements is None:
-            return self.apply_stochastic_channel(state, cutoffs)
+            fock_probs = state.fock_probabilities(cutoffs)
+            return self.apply_stochastic_channel(fock_probs)
         else:
             return self.project(state, cutoffs, measurements)
 
@@ -123,14 +124,14 @@ class PNRDetector(Detector):
             max_cutoffs = [max_cutoffs for m in modes]
         self.quantum_efficiency = self._parameters[0]
         self.expected_dark_counts = self._parameters[1]
-        self.max_cutoffs = max_cutoffs
+        self.max_cutoffs = max_cutoffs if isinstance(max_cutoffs, Sequence) else [max_cutoffs]*len(modes)
         self.conditional_probs = conditional_probs
         self.make_stochastic_channel()
 
     def make_stochastic_channel(self):
         self._stochastic_channel = []
         if self.conditional_probs is not None:
-            self._stochastic_channel = self.conditional_probs
+            self._stochastic_channel = [self.conditional_probs]
         else:
             for cut, qe, dc in zip(
                 self.max_cutoffs, self.quantum_efficiency[:], self.expected_dark_counts[:]

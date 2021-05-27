@@ -321,6 +321,21 @@ class TFMathBackend(MathBackendInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
+    def diag(self, array: tf.Tensor) -> tf.Tensor:
+        if array.ndim == 1:
+            return tf.linalg.diag(array)
+        else:
+            return tf.linalg.diag_part(array)
+
+    def reshape(self, array, shape) -> tf.Tensor:
+        return tf.reshape(array, shape)
+
+    def sum(self, array, axis=None):
+        return tf.reduce_sum(array, axis)
+
+    def einsum(self, string, *tensors) -> tf.Tensor:
+        return tf.einsum(string, tensors)
+
     def arange(self, start, limit=None, delta=1) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=tf.float64)
 
@@ -341,7 +356,10 @@ class TFMathBackend(MathBackendInterface):
         array = tf.reshape(array, (np.prod(cutoffs), np.prod(cutoffs)))
         return tf.linalg.trace(array)
 
-    def tensordot(self, a, b, axes):
+    def tensordot(self, a, b, axes, dtype=None):
+        if dtype is not None:
+            a = tf.cast(a, dtype)
+            b = tf.cast(b, dtype)
         return tf.tensordot(a, b, axes)
 
     def transpose(self, a, perm):
