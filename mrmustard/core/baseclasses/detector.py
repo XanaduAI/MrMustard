@@ -1,4 +1,7 @@
 from abc import ABC
+from typing import List, Sequence, Optional
+from mrmustard.core.backends import MathBackendInterface
+from mrmustard.core.baseclasses import State
 
 
 class Detector(ABC):

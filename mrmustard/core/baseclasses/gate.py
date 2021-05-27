@@ -1,9 +1,13 @@
 from abc import ABC
+from typing import List, Optional
+import numpy as np  # NOTE: only needed for the repr...
+from mrmustard.core.backends import MathBackendInterface, SymplecticBackendInterface
+from mrmustard.core.baseclasses import State
 
 
 class Gate(ABC):
     _math_backend: MathBackendInterface
-    _gate_backend: GateBackendInterface
+    _symplectic_backend: SymplecticBackendInterface
 
     def _apply_gaussian_channel(self, state, modes, symplectic=None, displacement=None, noise=None):
         output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)

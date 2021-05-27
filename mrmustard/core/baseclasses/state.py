@@ -1,9 +1,11 @@
 from abc import ABC
+from typing import List
+from mrmustard.core.backends import MathBackendInterface, StateBackendInterface
 
 
 class State(ABC):
-    _math_backend: MathBackendInterface  # set at import time
-    _state_backend: StateBackendInterface  # set at import time
+    _math_backend: MathBackendInterface
+    _state_backend: StateBackendInterface
 
     def __init__(self, num_modes: int, hbar: float = 2.0, mixed=False):
         self.num_modes = num_modes
