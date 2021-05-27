@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from typing import Tuple, Sequence
+
 from mrmustard.backends import StateBackendInterface
 from mrmustard.core import utils
 
