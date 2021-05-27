@@ -1,4 +1,4 @@
-class TFGateBackend(GateBackendInterface):
+class SymplecticBackend(SymplecticBackendInterface):
     def loss_X(self, transmissivity: tf.Tensor) -> tf.Tensor:
         r"""Returns the X matrix for the lossy bosonic channel.
         The channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
