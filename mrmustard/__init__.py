@@ -1,4 +1,5 @@
 import importlib
+
 # import rich
 # rich.pretty.install()
 
@@ -9,7 +10,7 @@ def set_backend(name: str):
     from mrmustard.core.baseclasses import State, Gate, Detector
     from mrmustard.tools import Optimizer
 
-    mod = importlib.import_module('mrmustard.core.backends.' + name)
+    mod = importlib.import_module("mrmustard.core.backends." + name)
 
     State._math_backend = mod.MathBackend()
     State._state_backend = mod.StateBackend()
@@ -20,4 +21,4 @@ def set_backend(name: str):
     Optimizer._opt_backend = mod.OptimizerBackend()
 
 
-set_backend('tf')
+set_backend("tf")

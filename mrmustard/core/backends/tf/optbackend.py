@@ -22,7 +22,10 @@ class OptimizerBackend(OptimizerBackendInterface):
         return loss.numpy(), symp_grads, eucl_grads
 
     def update_symplectic(
-        self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor], symplectic_lr: float
+        self,
+        symplectic_grads: Sequence[tf.Tensor],
+        symplectic_params: Sequence[tf.Tensor],
+        symplectic_lr: float,
     ) -> None:
         for S, dS_eucl in zip(symplectic_params, symplectic_grads):
             Jmat = utils.J(S.shape[-1] // 2)
@@ -36,7 +39,10 @@ class OptimizerBackend(OptimizerBackendInterface):
             )
 
     def update_euclidean(
-        self, euclidean_grads: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor], euclidean_lr: float
+        self,
+        euclidean_grads: Sequence[tf.Tensor],
+        euclidean_params: Sequence[tf.Tensor],
+        euclidean_lr: float,
     ) -> None:
         self.euclidean_opt.lr = euclidean_lr
         self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))

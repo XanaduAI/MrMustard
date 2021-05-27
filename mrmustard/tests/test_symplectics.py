@@ -1,4 +1,3 @@
-
 import pytest
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np

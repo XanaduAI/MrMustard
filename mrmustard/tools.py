@@ -86,8 +86,12 @@ class Optimizer:
                 loss, symp_grads, eucl_grads = self._opt_backend.loss_and_gradients(
                     symplectic_parameters, euclidean_parameters, cost_fn
                 )
-                self._opt_backend.update_symplectic(symp_grads, symplectic_parameters, self.symplectic_lr)
-                self._opt_backend.update_euclidean(eucl_grads, euclidean_parameters, self.euclidean_lr)
+                self._opt_backend.update_symplectic(
+                    symp_grads, symplectic_parameters, self.symplectic_lr
+                )
+                self._opt_backend.update_euclidean(
+                    eucl_grads, euclidean_parameters, self.euclidean_lr
+                )
                 self.loss_history.append(loss)
                 bar.step(loss)
 
