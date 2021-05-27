@@ -24,17 +24,21 @@ class Detector:
         and the measurement probability.
         """
         if (len(cutoffs) != state.num_modes) or (len(measurements) != state.num_modes):
-            raise ValueError("the length of cutoffs/measurements does not match the number of modes")
+            raise ValueError(
+                "the length of cutoffs/measurements does not match the number of modes"
+            )
         dm = state.dm(cutoffs=cutoffs)
         measured = 0
         for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurements)):
             if meas is not None:
                 # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
-                last = [mode - measured, mode + state.num_modes - 2*measured]
+                last = [mode - measured, mode + state.num_modes - 2 * measured]
                 perm = list(set(range(dm.ndim)).difference(last)) + last
                 dm = self._math_backend.transpose(dm, perm)
                 dm = self._math_backend.diag(dm)
-                dm = self._math_backend.tensordot(dm, stoch[meas, :dm.shape[-1]], [[-1], [0]], dtype=dm.dtype)
+                dm = self._math_backend.tensordot(
+                    dm, stoch[meas, : dm.shape[-1]], [[-1], [0]], dtype=dm.dtype
+                )
                 measured += 1
         prob = self._math_backend.sum(self._math_backend.all_diagonals(dm, real=False))
         return dm / prob, self._math_backend.abs(prob)
@@ -124,7 +128,9 @@ class PNRDetector(Detector):
             max_cutoffs = [max_cutoffs for m in modes]
         self.quantum_efficiency = self._parameters[0]
         self.expected_dark_counts = self._parameters[1]
-        self.max_cutoffs = max_cutoffs if isinstance(max_cutoffs, Sequence) else [max_cutoffs]*len(modes)
+        self.max_cutoffs = (
+            max_cutoffs if isinstance(max_cutoffs, Sequence) else [max_cutoffs] * len(modes)
+        )
         self.conditional_probs = conditional_probs
         self.make_stochastic_channel()
 
