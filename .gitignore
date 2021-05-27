@@ -3,3 +3,4 @@
 *.uxf
 settings.json
 *.npy
+__pycache__/
