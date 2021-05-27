@@ -1,10 +1,11 @@
 import pytest
 
 import numpy as np
+import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard.tf import Dgate, Sgate, S2gate, Circuit, PNRDetector, Vacuum
-
+from mrmustard.tf import Dgate, Sgate, S2gate, Circuit, PNRDetector, Vacuum, Optimizer
+from mrmustard._backends.tfbackend import TFMathBackend
 
 np.random.seed(137)
 
@@ -77,6 +78,65 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     assert np.allclose(var_s, expected_var_s, atol=1e-3)
     assert np.allclose(var_i, expected_var_i, atol=1e-3)
     assert np.allclose(covar, expected_covar, atol=1e-3)
+
+
+def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
+    """Adds a basic test for convolutions with two mode squeezed vacuum"""
+    tf.random.set_seed(20)
+    guess = {
+        "eta_s": 0.9,
+        "eta_i": 0.8,
+        "sq_0": np.sinh(1.0) ** 2,
+        "sq_1": np.sinh(0.5) ** 2,
+        "noise_s": 0.05,
+        "noise_i": 0.025,
+        "n_modes": 2,
+    }
+    cutoff = 20
+    tfbe = TFMathBackend()
+    circc = Circuit()
+    circd = Circuit()
+    r1 = np.arcsinh(np.sqrt(guess["sq_0"]))
+    r2 = np.arcsinh(np.sqrt(guess["sq_1"]))
+    S2c = S2gate(modes=[0, 1], r=r1)
+    S2d = S2gate(modes=[0, 1], r=r2)
+    circc.append(S2c)
+    circd.append(S2d)
+    tetas = [guess["eta_s"], guess["eta_i"]]
+    tdcs = [guess["noise_s"], guess["noise_i"]]
+    tdetector = PNRDetector(
+        modes=[0, 1],
+        efficiency=tetas,
+        efficiency_trainable=True,
+        efficiency_bounds=(0.7, 1.0),
+        dark_counts=tdcs,
+        dark_counts_trainable=True,
+        dark_counts_bounds=(0.0, 0.2),
+        max_cutoffs=20,
+    )
+
+    outc = circc(Vacuum(num_modes=2))
+    outd = circd(Vacuum(num_modes=2))
+    tdetector.make_stochastic_channel()
+    psc = tdetector(outc, cutoffs=[cutoff, cutoff])
+    psd = tdetector(outd, cutoffs=[cutoff, cutoff])
+    fake_data = tfbe.convolve_probs(psc, psd)
+
+    def loss_fn():
+        outc = circc(Vacuum(num_modes=2))
+        outd = circd(Vacuum(num_modes=2))
+        tdetector.make_stochastic_channel()
+        psc = tdetector(outc, cutoffs=[cutoff, cutoff])
+        psd = tdetector(outd, cutoffs=[cutoff, cutoff])
+        ps = tfbe.convolve_probs(psc, psd)
+        return tf.norm(fake_data - ps) ** 2
+
+    opt = Optimizer(euclidean_lr=0.001)
+    opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
+    assert np.allclose(guess["sq_0"], np.sinh(S2c.euclidean_parameters[0].numpy()) ** 2)
+    assert np.allclose(guess["sq_1"], np.sinh(S2d.euclidean_parameters[0].numpy()) ** 2)
+    assert np.allclose(tdetector._parameters[0], [guess["eta_s"], guess["eta_i"]])
+    assert np.allclose(tdetector._parameters[1], [guess["noise_s"], guess["noise_i"]])
 
 
 def test_postselection():

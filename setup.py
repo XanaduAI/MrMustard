@@ -21,7 +21,7 @@ requirements = [
     "scipy",
     "numba",
     "repoze.lru",
-    "tensorflow==2.4.0",
+    "tensorflow==2.4.1",
     "rich",
     "tqdm",
 ]
