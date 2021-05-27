@@ -1,56 +1,71 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Optional, List, Tuple, Sequence, Callable
+from typing import Optional, List, Tuple, Sequence, Callable, Union
 
 
 class MathBackendInterface(ABC):
-    @abstractmethod
-    def identity(self, size: int):
-        pass
+    def conj(self, array): ...
 
-    @abstractmethod
-    def zeros(self, size: int):
-        pass
+    def diag(self, array): ...
 
-    @abstractmethod
-    def sandwich(self, bread: Optional, filling, modes: List[int]):
-        pass
+    def reshape(self, array, shape): ...
 
-    @abstractmethod
-    def matvec(self, mat: Optional, vec, modes: List[int]):
-        pass
+    def sum(self, array, axis=None): ...
 
-    @abstractmethod
-    def add(self, old, new: Optional, modes: List[int]):
-        pass
+    def arange(self, start, limit=None, delta=1) : ...
 
-    @abstractmethod
-    def concat(self, lst: List):
-        pass
+    def outer(self, arr1, arr2): ...
 
-    @abstractmethod
-    def all_diagonals(self, rho):
-        pass
+    def identity(self, size: int): ...
 
-    @abstractmethod
-    def abs(self, array):
-        pass
+    def zeros(self, shape: Union[int, Tuple[int, ...]], dtype): ...
 
-    @abstractmethod
+    def abs(self, array): ...
+
+    def trace(self, array): ...
+
+    def tensordot(self, a, b, axes, dtype=None): ...
+
+    def transpose(self, a, perm): ...
+
+    def block(self, blocks: List[List]): ...
+
+    def concat(self, values, axis): ...
+
+    def norm(self, array): ...
+
+    def add(self, old, new: Optional, modes: List[int]): ...
+
+    def sandwich(self, bread: Optional, filling, modes: List[int]): ...
+
+    def matvec(self, mat: Optional, vec, modes: List[int]): ...
+
     def new_symplectic_parameter(
-        self, init_value: Optional, trainable: bool, num_modes: int, name: str
-    ):
-        pass
+        self,
+        init_value: Optional = None,
+        trainable: bool = True,
+        num_modes: int = 1,
+        name: str = "symplectic",
+    ): ...
 
-    @abstractmethod
+    def unitary_to_orthogonal(self, U): ...
+
     def new_euclidean_parameter(
         self,
-        init_value: Optional,
-        trainable: bool,
-        bounds: Tuple[Optional[float], Optional[float]],
-        shape: Optional[Sequence[int]],
-        name: str,
-    ):
-        pass
+        init_value: Optional[Union[float, List[float]]] = None,
+        trainable: bool = True,
+        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        shape: Optional[Sequence[int]] = None,
+        name: str = "",
+    ): ...
+
+    def poisson(self, max_k: int, rate): ...
+
+    def binomial_conditional_prob(self, success_prob, dim_out: int, dim_in: int): ...
+
+    def convolve_probs_1d(self, prob, other_probs: List): ...
+
+    def convolve_probs(self, prob, other): ...
+
 
 
 class SymplecticBackendInterface(ABC):
