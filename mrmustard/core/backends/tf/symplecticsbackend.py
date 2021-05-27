@@ -1,3 +1,8 @@
+import tensorflow as tf
+from typing import Tuple
+from mrmustard.backends import SymplecticBackendInterface
+
+
 class SymplecticBackend(SymplecticBackendInterface):
     def loss_X(self, transmissivity: tf.Tensor) -> tf.Tensor:
         r"""Returns the X matrix for the lossy bosonic channel.
@@ -20,7 +25,7 @@ class SymplecticBackend(SymplecticBackendInterface):
         raise NotImplementedError
 
     def displacement(self, x: tf.Tensor, y: tf.Tensor, hbar: float) -> tf.Tensor:
-        return np.sqrt(2 * hbar) * tf.concat([x, y], axis=0)
+        return tf.cast(tf.math.sqrt(2 * hbar), x.dtype) * tf.concat([x, y], axis=0)
 
     def beam_splitter_symplectic(self, theta: tf.Tensor, phi: tf.Tensor) -> tf.Tensor:
         r"""Beam-splitter.

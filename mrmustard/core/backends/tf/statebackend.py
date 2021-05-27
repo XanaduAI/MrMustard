@@ -1,4 +1,11 @@
-class TFStateBackend(StateBackendInterface):
+import tensorflow as tf
+import numpy as np
+from typing import Tuple, Sequence
+from mrmustard.backends import StateBackendInterface
+from mrmustard.core import utils
+
+
+class StateBackend(StateBackendInterface):
     def number_means(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
         N = means.shape[-1] // 2
         return (
@@ -60,4 +67,4 @@ class TFStateBackend(StateBackendInterface):
             dLdC = np.sum(dy * np.conj(dC), axis=tuple(range(dy.ndim)))
             return dLdA, dLdB, dLdC
 
-        return state, 
+        return state, grad

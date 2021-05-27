@@ -2,18 +2,13 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import unitary_group, truncnorm
 from scipy.special import binom
-from scipy.linalg import expm
 from typing import List, Tuple, Callable, Sequence, Optional, Union
 from itertools import product
 
-from mrmustard._gates import GateBackendInterface
-from mrmustard._opt import OptimizerBackendInterface
-from mrmustard._backends import MathBackendInterface
-from mrmustard._states import StateBackendInterface
+from mrmustard.backends import MathBackendInterface
 
-import mrmustard._backends.utils as utils
 
-class TFMathBackend(MathBackendInterface):
+class MathBackend(MathBackendInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
@@ -28,9 +23,6 @@ class TFMathBackend(MathBackendInterface):
 
     def sum(self, array, axis=None):
         return tf.reduce_sum(array, axis)
-
-    def einsum(self, string, *tensors) -> tf.Tensor:
-        return tf.einsum(string, tensors)
 
     def arange(self, start, limit=None, delta=1) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=tf.float64)
