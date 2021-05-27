@@ -147,5 +147,3 @@ def test_density_matrix():
     rho_legit = L(G(Vacuum(num_modes=3))).dm(cutoffs=[4, 4, 4])
     rho_built = G(Vacuum(num_modes=3)).dm(cutoffs=[4, 4, 4])
     assert np.allclose(rho_legit, rho_built)
-
-    
