@@ -17,7 +17,7 @@ def test_detector_coherent_state(alpha, eta, dc):
     circ = Circuit()
     cutoff = 20
     circ.append(Dgate(modes=[0], x=alpha.real, y=alpha.imag))
-    detector = PNRDetector(modes=[0], quantum_efficiency=eta, expected_dark_counts=dc)
+    detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
     ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
     expected = poisson.pmf(k=np.arange(cutoff), mu=eta * np.abs(alpha) ** 2 + dc)
     assert np.allclose(ps, expected)
@@ -31,7 +31,7 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
     circ = Circuit()
     circ.append(Sgate(modes=[0], r=r, phi=phi))
-    detector = PNRDetector(modes=[0], quantum_efficiency=eta, expected_dark_counts=dc)
+    detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
     cutoff = 40
     ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
 
@@ -54,9 +54,7 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
     circ = Circuit()
     circ.append(S2gate(modes=[0, 1], r=r, phi=phi))
-    detector = PNRDetector(
-        modes=[0, 1], quantum_efficiency=[eta_s, eta_i], expected_dark_counts=[dc_s, dc_i]
-    )
+    detector = PNRDetector(modes=[0, 1], efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
     cutoff = 30
     ps = detector(circ(Vacuum(num_modes=2)), cutoffs=[cutoff, cutoff])
 
