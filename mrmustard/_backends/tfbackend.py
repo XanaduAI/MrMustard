@@ -321,6 +321,21 @@ class TFMathBackend(MathBackendInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
+    def diag(self, array: tf.Tensor) -> tf.Tensor:
+        if array.ndim == 1:
+            return tf.linalg.diag(array)
+        else:
+            return tf.linalg.diag_part(array)
+
+    def reshape(self, array, shape) -> tf.Tensor:
+        return tf.reshape(array, shape)
+
+    def sum(self, array, axis=None):
+        return tf.reduce_sum(array, axis)
+
+    def einsum(self, string, *tensors) -> tf.Tensor:
+        return tf.einsum(string, tensors)
+
     def arange(self, start, limit=None, delta=1) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=tf.float64)
 
@@ -332,6 +347,33 @@ class TFMathBackend(MathBackendInterface):
 
     def zeros(self, shape: Union[int, Tuple[int, ...]], dtype=tf.float64) -> tf.Tensor:
         return tf.zeros(shape, dtype=dtype)
+
+    def abs(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.abs(array)
+
+    def trace(self, array: tf.Tensor) -> tf.Tensor:
+        cutoffs = array.shape[: array.ndim // 2]
+        array = tf.reshape(array, (np.prod(cutoffs), np.prod(cutoffs)))
+        return tf.linalg.trace(array)
+
+    def tensordot(self, a, b, axes, dtype=None):
+        if dtype is not None:
+            a = tf.cast(a, dtype)
+            b = tf.cast(b, dtype)
+        return tf.tensordot(a, b, axes)
+
+    def transpose(self, a, perm):
+        return tf.transpose(a, perm)
+
+    def block(self, blocks: List[List]):
+        rows = [tf.concat(row, axis=1) for row in blocks]
+        return tf.concat(rows, axis=0)
+
+    def concat(self, values, axis):
+        return tf.concat(values, axis)
+
+    def norm(self, array):
+        return tf.linalg.norm(array)
 
     def add(self, old: tf.Tensor, new: Optional[tf.Tensor], modes: List[int]) -> tf.Tensor:
         if new is None:
@@ -364,9 +406,6 @@ class TFMathBackend(MathBackendInterface):
         updates = tf.linalg.matvec(mat, tf.gather(vec, indices))
         return tf.tensor_scatter_nd_update(vec, indices[:, None], updates)
 
-    def abs(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.abs(array)
-
     def all_diagonals(self, rho: tf.Tensor, real: bool) -> tf.Tensor:
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = tf.reshape(rho, (np.prod(cutoffs), np.prod(cutoffs)))
@@ -375,13 +414,6 @@ class TFMathBackend(MathBackendInterface):
             return tf.math.real(tf.reshape(diag, cutoffs))
         else:
             return tf.reshape(diag, cutoffs)
-
-    def block(self, blocks: List[List]):
-        rows = [tf.concat(row, axis=1) for row in blocks]
-        return tf.concat(rows, axis=0)
-
-    def concat(self, values, axis):
-        return tf.concat(values, axis)
 
     def make_symplectic_parameter(
         self,
@@ -456,12 +488,6 @@ class TFMathBackend(MathBackendInterface):
             return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)
         else:
             return tf.constant(val, dtype=tf.float64, name=name)
-
-    def tensordot(self, a, b, axes):
-        return tf.tensordot(a, b, axes)
-
-    def transpose(self, a, perm):
-        return tf.transpose(a, perm)
 
     def poisson(self, max_k: int, rate: tf.Tensor):
         "poisson distribution up to max_k"

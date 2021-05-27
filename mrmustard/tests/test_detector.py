@@ -18,7 +18,7 @@ def test_detector_coherent_state(alpha, eta, dc):
     circ = Circuit()
     cutoff = 20
     circ.append(Dgate(modes=[0], x=alpha.real, y=alpha.imag))
-    detector = PNRDetector(modes=[0], quantum_efficiency=eta, expected_dark_counts=dc)
+    detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
     ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
     expected = poisson.pmf(k=np.arange(cutoff), mu=eta * np.abs(alpha) ** 2 + dc)
     assert np.allclose(ps, expected)
@@ -32,7 +32,7 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
     circ = Circuit()
     circ.append(Sgate(modes=[0], r=r, phi=phi))
-    detector = PNRDetector(modes=[0], quantum_efficiency=eta, expected_dark_counts=dc)
+    detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
     cutoff = 40
     ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
 
@@ -55,9 +55,7 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
     circ = Circuit()
     circ.append(S2gate(modes=[0, 1], r=r, phi=phi))
-    detector = PNRDetector(
-        modes=[0, 1], quantum_efficiency=[eta_s, eta_i], expected_dark_counts=[dc_s, dc_i]
-    )
+    detector = PNRDetector(modes=[0, 1], efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
     cutoff = 30
     ps = detector(circ(Vacuum(num_modes=2)), cutoffs=[cutoff, cutoff])
 
@@ -139,3 +137,27 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     assert np.allclose(guess["sq_1"], np.sinh(S2d.euclidean_parameters[0].numpy()) ** 2)
     assert np.allclose(tdetector._parameters[0], [guess["eta_s"], guess["eta_i"]])
     assert np.allclose(tdetector._parameters[1], [guess["noise_s"], guess["noise_i"]])
+
+
+def test_postselection():
+    """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
+    n_mean = 1.0
+    detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
+    S2 = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(n_mean)))
+    my_state = S2(Vacuum(num_modes=2))
+
+    # outputs the measurement probs
+    cutoff = 3
+    probs = detector(my_state, cutoffs=[cutoff, cutoff])
+    n_measured = 1
+    # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
+
+    proj_state, success_prob = detector(
+        my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None]
+    )
+    expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
+    assert np.allclose(success_prob, expected_prob)
+    expected_state = np.zeros([cutoff, cutoff])
+    expected_state[n_measured, n_measured] = 1.0
+    assert np.allclose(proj_state, expected_state)
+
