@@ -85,7 +85,6 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
 def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     """Adds a basic test for convolutions with two mode squeezed vacuum"""
     tf.random.set_seed(20)
-    tf.random
     guess = {
         "eta_s": 0.9,
         "eta_i": 0.8,
