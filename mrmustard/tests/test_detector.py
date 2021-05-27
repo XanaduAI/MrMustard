@@ -160,4 +160,3 @@ def test_postselection():
     expected_state = np.zeros([cutoff, cutoff])
     expected_state[n_measured, n_measured] = 1.0
     assert np.allclose(proj_state, expected_state)
-
