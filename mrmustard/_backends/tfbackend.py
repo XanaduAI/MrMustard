@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from scipy.stats import unitary_group, truncnorm
+from scipy.special import binom
 from scipy.linalg import expm
 from typing import List, Tuple, Callable, Sequence, Optional, Union
 from itertools import product
@@ -69,20 +70,26 @@ class TFOptimizerBackend(OptimizerBackendInterface):
     ) -> None:
         self._opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
-    def _all_symplectic_parameters(self, circuits: Sequence):
+    def _all_symplectic_parameters(self, items: Sequence):
         symp = []
-        for circ in circuits:
-            for s in circ.symplectic_parameters:
-                if s.ref() not in symp:
-                    symp.append(s.ref())
+        for item in items:
+            try:
+                for s in item.symplectic_parameters:
+                    if s.ref() not in symp:
+                        symp.append(s.ref())
+            except AttributeError:
+                continue
         return [s.deref() for s in symp]
 
-    def _all_euclidean_parameters(self, circuits: Sequence):
+    def _all_euclidean_parameters(self, items: Sequence):
         eucl = []
-        for circ in circuits:
-            for e in circ.euclidean_parameters:
-                if e.ref() not in eucl:
-                    eucl.append(e.ref())
+        for item in items:
+            try:
+                for e in item.euclidean_parameters:
+                    if e.ref() not in eucl:
+                        eucl.append(e.ref())
+            except AttributeError:
+                continue
         return [e.deref() for e in eucl]
 
 
@@ -314,6 +321,21 @@ class TFMathBackend(MathBackendInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
+    def diag(self, array: tf.Tensor) -> tf.Tensor:
+        if array.ndim == 1:
+            return tf.linalg.diag(array)
+        else:
+            return tf.linalg.diag_part(array)
+
+    def reshape(self, array, shape) -> tf.Tensor:
+        return tf.reshape(array, shape)
+
+    def sum(self, array, axis=None):
+        return tf.reduce_sum(array, axis)
+
+    def einsum(self, string, *tensors) -> tf.Tensor:
+        return tf.einsum(string, tensors)
+
     def arange(self, start, limit=None, delta=1) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=tf.float64)
 
@@ -325,6 +347,33 @@ class TFMathBackend(MathBackendInterface):
 
     def zeros(self, shape: Union[int, Tuple[int, ...]], dtype=tf.float64) -> tf.Tensor:
         return tf.zeros(shape, dtype=dtype)
+
+    def abs(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.abs(array)
+
+    def trace(self, array: tf.Tensor) -> tf.Tensor:
+        cutoffs = array.shape[: array.ndim // 2]
+        array = tf.reshape(array, (np.prod(cutoffs), np.prod(cutoffs)))
+        return tf.linalg.trace(array)
+
+    def tensordot(self, a, b, axes, dtype=None):
+        if dtype is not None:
+            a = tf.cast(a, dtype)
+            b = tf.cast(b, dtype)
+        return tf.tensordot(a, b, axes)
+
+    def transpose(self, a, perm):
+        return tf.transpose(a, perm)
+
+    def block(self, blocks: List[List]):
+        rows = [tf.concat(row, axis=1) for row in blocks]
+        return tf.concat(rows, axis=0)
+
+    def concat(self, values, axis):
+        return tf.concat(values, axis)
+
+    def norm(self, array):
+        return tf.linalg.norm(array)
 
     def add(self, old: tf.Tensor, new: Optional[tf.Tensor], modes: List[int]) -> tf.Tensor:
         if new is None:
@@ -357,9 +406,6 @@ class TFMathBackend(MathBackendInterface):
         updates = tf.linalg.matvec(mat, tf.gather(vec, indices))
         return tf.tensor_scatter_nd_update(vec, indices[:, None], updates)
 
-    def abs(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.abs(array)
-
     def all_diagonals(self, rho: tf.Tensor, real: bool) -> tf.Tensor:
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = tf.reshape(rho, (np.prod(cutoffs), np.prod(cutoffs)))
@@ -368,13 +414,6 @@ class TFMathBackend(MathBackendInterface):
             return tf.math.real(tf.reshape(diag, cutoffs))
         else:
             return tf.reshape(diag, cutoffs)
-
-    def block(self, blocks: List[List]):
-        rows = [tf.concat(row, axis=1) for row in blocks]
-        return tf.concat(rows, axis=0)
-
-    def concat(self, values, axis):
-        return tf.concat(values, axis)
 
     def make_symplectic_parameter(
         self,
@@ -450,11 +489,21 @@ class TFMathBackend(MathBackendInterface):
         else:
             return tf.constant(val, dtype=tf.float64, name=name)
 
-    def tensordot(self, a, b, axes):
-        return tf.tensordot(a, b, axes)
+    def poisson(self, max_k: int, rate: tf.Tensor):
+        "poisson distribution up to max_k"
+        k = tf.range(max_k, dtype=tf.float64)
+        rate = tf.cast(rate, tf.float64)
+        return tf.math.exp(k * tf.math.log(rate + 1e-9) - rate - tf.math.lgamma(k + 1.0))
 
-    def transpose(self, a, perm):
-        return tf.transpose(a, perm)
+    def binomial_conditional_prob(self, success_prob: tf.Tensor, dim_out: int, dim_in: int):
+        "P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out"
+        in_ = tf.range(dim_in, dtype=tf.float64)[None, :]
+        out_ = tf.range(dim_out, dtype=tf.float64)[:, None]
+        return (
+            tf.cast(binom(in_, out_), tf.float64)
+            * success_prob ** out_
+            * (1.0 - success_prob) ** tf.math.maximum(in_ - out_, 0.0)
+        )
 
     def convolve_probs_1d(self, prob: tf.Tensor, other_probs: List[tf.Tensor]) -> tf.Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, Sequence, List, Union
+from typing import Callable, Sequence, List, Union, Optional
 from mrmustard.visual import Progressbar
+from mrmustard._detectors import Detector
 
 
 class CircuitInterface(ABC):
@@ -37,11 +38,11 @@ class OptimizerBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def _all_symplectic_parameters(self, circuits) -> List:
+    def _all_symplectic_parameters(self, items) -> List:
         pass
 
     @abstractmethod
-    def _all_euclidean_parameters(self, circuits) -> List:
+    def _all_euclidean_parameters(self, items) -> List:
         pass
 
 
@@ -56,24 +57,22 @@ class BaseOptimizer(OptimizerBackendInterface):
 
     def minimize(
         self,
-        circuit: Union[Sequence[CircuitInterface], CircuitInterface],
         cost_fn: Callable,
+        by_optimizing: Sequence[Union[CircuitInterface, Detector]],
         max_steps: int = 1000,
     ) -> Union[Sequence[CircuitInterface], CircuitInterface]:
         r"""
-        Optimizes a circuit or a list of circuits such that the given cost function is minimized.
+        Optimizes circuits and/or detectors such that the given cost function is minimized.
         Arguments:
-            circuit (Circuit or List[Circuit]): a single circuit or a list of circuits to optimize
             cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
+            by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
-        Returns:
-            The optimized circuit or circuits
         """
 
-        circuits = [circuit] if not isinstance(circuit, Sequence) else circuit
+        optimize = [by_optimizing] if not isinstance(by_optimizing, Sequence) else by_optimizing
 
-        symplectic_parameters = self._all_symplectic_parameters(circuits)
-        euclidean_parameters = self._all_euclidean_parameters(circuits)
+        symplectic_parameters = self._all_symplectic_parameters(optimize)
+        euclidean_parameters = self._all_euclidean_parameters(optimize)
 
         bar = Progressbar(max_steps)
         with bar:
@@ -85,7 +84,6 @@ class BaseOptimizer(OptimizerBackendInterface):
                 self._update_euclidean(eucl_grads, euclidean_parameters)
                 self.loss_history.append(loss)
                 bar.step(loss)
-        return circuit
 
     def should_stop(self, max_steps: int) -> bool:
         if max_steps != 0 and len(self.loss_history) > max_steps:
