@@ -139,9 +139,7 @@ class PNRDetector(Detector):
         if self.conditional_probs is not None:
             self._stochastic_channel = [self.conditional_probs]
         else:
-            for cut, qe, dc in zip(
-                self.max_cutoffs, self.efficiency[:], self.dark_counts[:]
-            ):
+            for cut, qe, dc in zip(self.max_cutoffs, self.efficiency[:], self.dark_counts[:]):
                 dark_prior = self._math_backend.poisson(max_k=cut, rate=dc)
                 condprob = self._math_backend.binomial_conditional_prob(
                     success_prob=qe, dim_in=cut, dim_out=cut
@@ -213,9 +211,7 @@ class ThresholdDetector(Detector):
         if self.conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:
-            for cut, qe, dc in zip(
-                self.max_cutoffs, self.efficiency[:], self.dark_count_probs[:]
-            ):
+            for cut, qe, dc in zip(self.max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
                 row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
                 rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
