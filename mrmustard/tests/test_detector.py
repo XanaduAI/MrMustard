@@ -106,12 +106,12 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     tdcs = [guess["noise_s"], guess["noise_i"]]
     tdetector = PNRDetector(
         modes=[0, 1],
-        quantum_efficiency=tetas,
-        quantum_efficiency_trainable=True,
-        quantum_efficiency_bounds=(0.7, 1.0),
-        expected_dark_counts=tdcs,
-        expected_dark_counts_trainable=True,
-        expected_dark_counts_bounds=(0.0, 0.2),
+        efficiency=tetas,
+        efficiency_trainable=True,
+        efficiency_bounds=(0.7, 1.0),
+        dark_counts=tdcs,
+        dark_counts_trainable=True,
+        dark_counts_bounds=(0.0, 0.2),
         max_cutoffs=20,
     )
 
