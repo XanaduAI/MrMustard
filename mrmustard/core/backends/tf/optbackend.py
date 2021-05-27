@@ -1,4 +1,12 @@
-class TFOptimizerBackend(OptimizerBackendInterface):
+import tensorflow as tf
+import numpy as np
+from typing import Sequence, Callable
+from scipy.linalg import expm
+from mrmustard.backends import OptimizerBackendInterface
+from mrmustard.core import utils
+
+
+class OptimizerBackend(OptimizerBackendInterface):
     _backend_opt = tf.optimizers.Adam
 
     def _loss_and_gradients(
