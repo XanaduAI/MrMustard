@@ -149,7 +149,7 @@ class MathBackend(MathBackendInterface):
         name: str = "",
     ) -> tf.Tensor:
 
-        bounds = (bounds[0] or -np.inf, bounds[1] or np.inf)
+        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
         if not bounds == (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
