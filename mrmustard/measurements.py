@@ -61,7 +61,7 @@ class PNRDetector(Detector):
     def make_stochastic_channel(self):
         self._stochastic_channel = []
         if self.conditional_probs is not None:
-            self._stochastic_channel = [self.conditional_probs]
+            self._stochastic_channel = self.conditional_probs
         else:
             for cut, qe, dc in zip(self.max_cutoffs, self.efficiency[:], self.dark_counts[:]):
                 dark_prior = self._math_backend.poisson(max_k=cut, rate=dc)
