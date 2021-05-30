@@ -9,8 +9,8 @@ from mrmustard.core.visual import Progressbar
 class Circuit(MutableSequence):
     _math_backend: MathBackendInterface
 
-    def __init__(self):
-        self._gates: List[Gate] = []
+    def __init__(self, gates=[]):
+        self._gates: List[Gate] = list(gates)
 
     def __call__(self, state: State) -> State:
         state_ = state

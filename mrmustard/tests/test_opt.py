@@ -29,7 +29,7 @@ def test_S2gate_coincidence_prob(n):
 def test_hong_ou_mandel_optimizer():
     """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip"""
     tf.random.set_seed(137)
-    circ = Circuit()  # emtpy circuit with vacuum input state
+    circ = Circuit()
     r = np.arcsinh(1.0)
     circ.append(S2gate(modes=[0, 1], r=r, r_trainable=False))
     circ.append(S2gate(modes=[2, 3], r=r, r_trainable=False))
