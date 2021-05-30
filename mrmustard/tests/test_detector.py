@@ -4,8 +4,12 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard.tf import Dgate, Sgate, S2gate, Circuit, PNRDetector, Vacuum, Optimizer
-from mrmustard._backends.tfbackend import TFMathBackend
+from mrmustard.gates import Dgate, Sgate, S2gate, LossChannel, BSgate
+from mrmustard.tools import Circuit, Optimizer
+from mrmustard.states import Vacuum
+from mrmustard.measurements import PNRDetector
+
+from mrmustard.core.backends.tf import MathBackend
 
 np.random.seed(137)
 
@@ -93,7 +97,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         "n_modes": 2,
     }
     cutoff = 20
-    tfbe = TFMathBackend()
+    tfbe = MathBackend()
     circc = Circuit()
     circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))
@@ -146,12 +150,10 @@ def test_postselection():
     S2 = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(n_mean)))
     my_state = S2(Vacuum(num_modes=2))
 
-    # outputs the measurement probs
     cutoff = 3
-    probs = detector(my_state, cutoffs=[cutoff, cutoff])
     n_measured = 1
-    # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
 
+    # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
     proj_state, success_prob = detector(
         my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None]
     )
@@ -160,3 +162,34 @@ def test_postselection():
     expected_state = np.zeros([cutoff, cutoff])
     expected_state[n_measured, n_measured] = 1.0
     assert np.allclose(proj_state, expected_state)
+
+
+@pytest.mark.parametrize("eta", [0.2, 0.5, 0.9, 1.0])
+def test_loss_probs(eta):
+    "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
+    lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
+    ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
+    S = Sgate(modes=[0, 1], r=0.3, phi=[0.0, 0.7])
+    B = BSgate(modes=[0, 1], theta=1.4)
+    L = LossChannel(modes=[0, 1], transmissivity=eta)
+
+    dm_lossy = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20])
+    dm_ideal = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20])
+
+    assert np.allclose(dm_ideal, dm_lossy)
+
+
+@pytest.mark.parametrize("eta", [0.2, 0.5, 0.9, 1.0])
+@pytest.mark.parametrize("n", [0, 1, 2])
+def test_projected(eta, n):
+    "Checks that a lossy channel is equivalent to quantum efficiency on projected states"
+    lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
+    ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
+    S = Sgate(modes=[0, 1], r=0.3, phi=[0.0, 1.5])
+    B = BSgate(modes=[0, 1], theta=1.0)
+    L = LossChannel(modes=[0], transmissivity=eta)
+
+    dm_lossy, _ = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20], measurements=[n, None])
+    dm_ideal, _ = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20], measurements=[n, None])
+
+    assert np.allclose(dm_ideal, dm_lossy)

@@ -1,18 +1,11 @@
-from thewalrus.quantum import total_photon_number_distribution
+import pytest
 import numpy as np
 from scipy.special import factorial
-from mrmustard.tf import (
-    Dgate,
-    Sgate,
-    LossChannel,
-    BSgate,
-    Circuit,
-    S2gate,
-    Vacuum,
-    Ggate,
-)
+from thewalrus.quantum import total_photon_number_distribution
 
-import pytest
+from mrmustard.gates import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
+from mrmustard.tools import Circuit
+from mrmustard.states import Vacuum
 
 
 @pytest.mark.parametrize("n_mean", [0, 1, 2, 3])

@@ -1,93 +1,6 @@
-from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Union, Callable
-import numpy as np
 
-from mrmustard._circuit import GateInterface
-from mrmustard._states import State
-from mrmustard._backends import MathBackendInterface
-
-
-class GateBackendInterface(ABC):
-    @abstractmethod
-    def loss_X(self, transmissivity):
-        pass
-
-    @abstractmethod
-    def loss_Y(self, transmissivity, hbar: float):
-        pass
-
-    @abstractmethod
-    def thermal_X(self, nbar, hbar: float):
-        pass
-
-    @abstractmethod
-    def thermal_Y(self, nbar, hbar: float):
-        pass
-
-    @abstractmethod
-    def rotation_symplectic(self, angle):
-        pass
-
-    @abstractmethod
-    def displacement(self, x, y, hbar: float):
-        pass
-
-    @abstractmethod
-    def squeezing_symplectic(self, r, phi):
-        pass
-
-    @abstractmethod
-    def beam_splitter_symplectic(self, theta, varphi):
-        pass
-
-    @abstractmethod
-    def two_mode_squeezing_symplectic(self, r, phi):
-        pass
-
-
-class Gate(GateInterface):
-    _math_backend: MathBackendInterface
-    _gate_backend: GateBackendInterface
-
-    def _apply_gaussian_channel(self, state, modes, symplectic=None, displacement=None, noise=None):
-        output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)
-        output.cov = self._math_backend.sandwich(bread=symplectic, filling=state.cov, modes=modes)
-        output.cov = self._math_backend.add(old=output.cov, new=noise, modes=modes)
-        output.means = self._math_backend.matvec(mat=symplectic, vec=state.means, modes=modes)
-        output.means = self._math_backend.add(old=output.means, new=displacement, modes=modes)
-        return output
-
-    def __call__(self, state: State) -> State:
-        return self._apply_gaussian_channel(
-            state,
-            self.modes,
-            self.symplectic_matrix(state.hbar),
-            self.displacement_vector(state.hbar),
-            self.noise_matrix(state.hbar),
-        )
-
-    def __repr__(self):
-        with np.printoptions(precision=3, suppress=True):
-            return f"{self.__class__.__qualname__}({self._repr_string(*[str(np.atleast_1d(p)) for p in self._parameters])})"
-
-    def symplectic_matrix(self, hbar: float) -> Optional:
-        return None
-
-    def displacement_vector(self, hbar: float) -> Optional:
-        return None
-
-    def noise_matrix(self, hbar: float) -> Optional:
-        return None
-
-    @property
-    def euclidean_parameters(self) -> List:
-        return [
-            p for i, p in enumerate(self._parameters) if self._trainable[i]
-        ]  # NOTE overridden in Ggate
-
-    @property
-    def symplectic_parameters(self) -> List:
-        return []
+from mrmustard.core.baseclasses import Gate
 
 
 class Dgate(Gate):
@@ -136,7 +49,7 @@ class Dgate(Gate):
         ]
 
     def displacement_vector(self, hbar: float):
-        return self._gate_backend.displacement(*self._parameters, hbar=hbar)
+        return self._symplectic_backend.displacement(*self._parameters, hbar=hbar)
 
 
 class Sgate(Gate):
@@ -185,7 +98,7 @@ class Sgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.squeezing_symplectic(*self._parameters)
+        return self._symplectic_backend.squeezing_symplectic(*self._parameters)
 
 
 class Rgate(Gate):
@@ -225,7 +138,7 @@ class Rgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.rotation_symplectic(*self._parameters)
+        return self._symplectic_backend.rotation_symplectic(*self._parameters)
 
 
 class Ggate(Gate):
@@ -331,7 +244,7 @@ class BSgate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.beam_splitter_symplectic(*self._parameters)
+        return self._symplectic_backend.beam_splitter_symplectic(*self._parameters)
 
 
 class S2gate(Gate):
@@ -374,7 +287,7 @@ class S2gate(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.two_mode_squeezing_symplectic(*self._parameters)
+        return self._symplectic_backend.two_mode_squeezing_symplectic(*self._parameters)
 
 
 class LossChannel(Gate):
@@ -419,7 +332,7 @@ class LossChannel(Gate):
         ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._gate_backend.loss_X(*self._parameters)
+        return self._symplectic_backend.loss_X(*self._parameters)
 
     def noise_matrix(self, hbar: float):
-        return self._gate_backend.loss_Y(*self._parameters, hbar=hbar)
+        return self._symplectic_backend.loss_Y(*self._parameters, hbar=hbar)

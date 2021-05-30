@@ -1,29 +1,11 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import List
-from mrmustard._backends import MathBackendInterface
+from mrmustard.core.backends import MathBackendInterface, StateBackendInterface
 
 
-class StateBackendInterface(ABC):
-    @abstractmethod
-    def number_means(self, cov, means, hbar: float):
-        pass
-
-    @abstractmethod
-    def number_cov(self, cov, means, hbar: float):
-        pass
-
-    @abstractmethod
-    def ABC(self, cov, means, mixed: bool, hbar: float):
-        pass
-
-    @abstractmethod
-    def fock_state(A, B, C, cutoffs: List[int]):
-        pass
-
-
-class State:
-    _math_backend: MathBackendInterface  # set at import time
-    _state_backend: StateBackendInterface  # set at import time
+class State(ABC):
+    _math_backend: MathBackendInterface
+    _state_backend: StateBackendInterface
 
     def __init__(self, num_modes: int, hbar: float = 2.0, mixed=False):
         self.num_modes = num_modes
@@ -86,26 +68,3 @@ class State:
         Returns the complete photon number covariance matrix
         """
         return self._state_backend.number_cov(self.cov, self.means, self.hbar)
-
-
-class Vacuum(State):
-    r"""
-    The N-mode vacuum state.
-    """
-
-    def __init__(self, num_modes: int, hbar: float = 2.0):
-        super().__init__(num_modes, hbar, mixed=False)
-        self.cov = hbar * self._math_backend.identity(2 * self.num_modes) / 2.0
-        self.means = self._math_backend.zeros(2 * self.num_modes)
-
-
-class SqueezedVacuum(State):
-    pass
-
-
-class Coherent(State):
-    pass
-
-
-class Thermal(State):
-    pass
