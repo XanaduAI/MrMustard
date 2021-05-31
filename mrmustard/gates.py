@@ -247,6 +247,60 @@ class BSgate(Gate):
         return self._symplectic_backend.beam_splitter_symplectic(*self._parameters)
 
 
+class MZgate(Gate):
+    r"""
+    Mach-Zehnder gate. It applies to a single pair of modes. It supports two conventions: if `internal=True`, both
+        phases act internally, on the two arms of the interferometer (`a` = upper, `b` = lower); if `internal = False` (default),
+        `phi_a` acts on inner upper arm, but `phi_b` acts in the upper arm after the second BS.
+
+    Arguments:
+        modes (List[int]): the pair of modes to which the beamsplitter is applied to. Must be of length 2.
+        phi_a (float): the phase in the upper arm of the MZ interferometer
+        phi_a_bounds (float, float): bounds for phi_a
+        phi_a_trainable (bool): whether phi_a is a trainable variable
+        phi_b (float): the phase in the lower arm or external of the MZ interferometer
+        phi_b_bounds (float, float): bounds for phi_b
+        phi_b_trainable (bool): whether phi_b is a trainable variable
+        internal (bool): whether phases are both in the internal arms (default is False)
+    """
+
+    def __init__(
+        self,
+        modes: List[int],
+        phi_a: Optional[float] = None,
+        phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_a_trainable: bool = True,
+        phi_b: Optional[float] = None,
+        phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        phi_b_trainable: bool = True,
+        internal: bool = False,
+    ):
+        self._repr_string: Callable[
+            [float, float], str
+        ] = (
+            lambda phi_a, phi_b: f"modes={modes}, phi_a={phi_a}, phi_a_bounds={phi_a_bounds}, phi_a_trainable={phi_a_trainable}, phi_b={phi_b}, phi_b_bounds={phi_b_bounds}, phi_b_trainable={phi_b_trainable}"
+        )
+        if len(modes) > 2:
+            raise ValueError(
+                "Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
+            )
+        self.modes = modes
+        self.mixing = False
+        self._internal = internal
+        self._trainable = [phi_a_trainable, phi_b_trainable]
+        self._parameters = [
+            self._math_backend.make_euclidean_parameter(
+                phi_a, phi_a_trainable, phi_a_bounds, None, "phi_a"
+            ),
+            self._math_backend.make_euclidean_parameter(
+                phi_b, phi_b_trainable, phi_b_bounds, None, "phi_b"
+            ),
+        ]
+
+    def symplectic_matrix(self, hbar: float):
+        return self._symplectic_backend.mz_symplectic(*self._parameters, internal=self._internal)
+
+
 class S2gate(Gate):
     r"""
     Two-mode squeezing gate. It applies to a single pair of modes.

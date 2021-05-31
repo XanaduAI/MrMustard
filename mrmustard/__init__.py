@@ -1,7 +1,7 @@
 import importlib
+from rich.pretty import install
 
-# import rich
-# rich.pretty.install()
+install()
 
 __version__ = "0.1.0"
 
