@@ -273,7 +273,7 @@ class MZgate(Gate):
         phi_b: Optional[float] = None,
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_b_trainable: bool = True,
-        internal: bool = False
+        internal: bool = False,
     ):
         self._repr_string: Callable[
             [float, float], str

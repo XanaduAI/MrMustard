@@ -82,10 +82,11 @@ def test_MZgate_internal(phi_a, phi_b):
     """Tests the MZgate is implemented correctly"""
     MZ = MZgate(modes=[0, 1], phi_a=phi_a, phi_b=phi_b, internal=True)
     S = MZ.symplectic_matrix(hbar=2)
-    B = beam_splitter(np.pi/4, np.pi/2)
+    B = beam_splitter(np.pi / 4, np.pi / 2)
     Rab = np.kron(rotation(phi_a), rotation(phi_b))
     expected = B @ Rab @ B
     assert np.allclose(S, expected)
+
 
 @pytest.mark.parametrize("phi_a", np.random.rand(3))
 @pytest.mark.parametrize("phi_b", np.random.rand(3))
@@ -93,7 +94,7 @@ def test_MZgate_external(phi_a, phi_b):
     """Tests the MZgate is implemented correctly"""
     MZ = MZgate(modes=[0, 1], phi_a=phi_a, phi_b=phi_b, internal=False)
     S = MZ.symplectic_matrix(hbar=2)
-    B = beam_splitter(np.pi/4, np.pi/2)
+    B = beam_splitter(np.pi / 4, np.pi / 2)
     Ra = np.kron(rotation(phi_a), np.identity(2))
     Rb = np.kron(rotation(phi_b), np.identity(2))
     expected = Rb @ B @ Ra @ B
