@@ -99,3 +99,29 @@ def test_MZgate_external(phi_a, phi_b):
     Rb = np.kron(rotation(phi_b), np.identity(2))
     expected = B @ Rb @ B @ Ra
     assert np.allclose(S, expected)
+
+
+@pytest.mark.parametrize("phi_a", np.random.rand(3))
+@pytest.mark.parametrize("phi_b", np.random.rand(3))
+def test_MZgate_external_tms(phi_a, phi_b):
+    """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
+    r_choi = np.arcsinh(1.0)
+    S2a = S2gate(modes=[0, 2], r=r_choi, phi=0.0)
+    S2b = S2gate(modes=[1, 3], r=r_choi, phi=0.0)
+    MZ = MZgate(modes=[0, 1], phi_a=phi_a, phi_b=phi_b)
+    cov = MZ(S2b(S2a(Vacuum(num_modes=4)))).cov
+
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
+    S_expanded = expand(rotation(phi_a), [0], 4)
+    expected = S_expanded @ expected @ S_expanded.T
+
+    BS = beam_splitter(np.pi / 4, np.pi / 2)
+    S_expanded = expand(BS, [0, 1], 4)
+    expected = S_expanded @ expected @ S_expanded.T
+
+    S_expanded = expand(rotation(phi_b), [0], 4)
+    expected = S_expanded @ expected @ S_expanded.T
+
+    assert np.allclose(cov, expected)
