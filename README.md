@@ -5,7 +5,7 @@
 MrMustard is a differentiable bridge between phase space and Fock space. In MrMustard _every operation is differentiable_.
 
 MrMustard supports:
-- Gaussian channels and transformations (beam splitter, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, general Gaussian gates)
+- Gaussian channels and transformations (beam splitter, MZ interferometer, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel and general Gaussian gate)
 - Phase space representation, Fock representation, photon number moments
 - Custom fock-cutoff per mode
 - PNR detectors and threshold detectors with quantum efficiency and dark counts
