@@ -124,4 +124,8 @@ def test_MZgate_external_tms(phi_a, phi_b):
     S_expanded = expand(rotation(phi_b), [0], 4)
     expected = S_expanded @ expected @ S_expanded.T
 
+    BS = beam_splitter(np.pi / 4, np.pi / 2)
+    S_expanded = expand(BS, [0, 1], 4)
+    expected = S_expanded @ expected @ S_expanded.T
+
     assert np.allclose(cov, expected)
