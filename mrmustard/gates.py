@@ -249,9 +249,9 @@ class BSgate(Gate):
 
 class MZgate(Gate):
     r"""
-    Mach-Zehnder gate. It applies to a single pair of modes. It supports two conventions: if `internal=True`, both
-        phases act internally, on the two arms of the interferometer (`a` = upper, `b` = lower); if `internal = False` (default),
-        `phi_a` acts on inner upper arm, but `phi_b` acts in the upper arm after the second BS.
+    Mach-Zehnder gate. It supports two conventions:
+        if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
+        if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
 
     Arguments:
         modes (List[int]): the pair of modes to which the beamsplitter is applied to. Must be of length 2.
@@ -282,7 +282,7 @@ class MZgate(Gate):
         )
         if len(modes) > 2:
             raise ValueError(
-                "Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
+                "The Mach-Zehnder gate cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
             )
         self.modes = modes
         self.mixing = False

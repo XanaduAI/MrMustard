@@ -52,9 +52,9 @@ class SymplecticBackend(SymplecticBackendInterface):
     def mz_symplectic(
         self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False
     ) -> tf.Tensor:
-        r"""Mach-Zehnder symplectic matrix. It supports two conventions: if `internal=True`, both
-        phases act internally, on the two arms of the interferometer (`a` = upper, `b` = lower); if `internal = False`,
-        `phi_a` acts on inner upper arm, but `phi_b` acts in the upper arm after the second BS.
+        r"""Mach-Zehnder symplectic matrix. It supports two conventions:
+        if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
+        if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
         Args:
             phi_a: upper arm phase
             phi_b: lower arm phase
@@ -63,26 +63,28 @@ class SymplecticBackend(SymplecticBackendInterface):
             array: symplectic-orthogonal transformation matrix of a Mach-Zehnder interferometer
             with phases phi_a and phi_b
         """
+        ca = tf.math.cos(phi_a)
+        sa = tf.math.sin(phi_a)
+        cb = tf.math.cos(phi_b)
+        sb = tf.math.sin(phi_b)
         cp = tf.math.cos(phi_a + phi_b)
         sp = tf.math.sin(phi_a + phi_b)
-        cm = tf.math.cos(phi_a - phi_b)
-        sm = tf.math.sin(phi_a - phi_b)
         if internal:
-            return tf.convert_to_tensor(
+            return 0.5 * tf.convert_to_tensor(
                 [
-                    [0, -sp, 0, -cp],
-                    [-sm, 0, -cm, 0],
-                    [0, cp, 0, -sp],
-                    [cm, 0, -sm, 0],
+                    [ca - cb, -sa - sb, sb - sa, -ca - cb],
+                    [-sa - sb, cb - ca, -ca - cb, sa - sb],
+                    [sa - sb, ca + cb, ca - cb, -sa - sb],
+                    [ca + cb, sb - sa, -sa - sb, cb - ca],
                 ]
             )
         else:
-            return tf.convert_to_tensor(
+            return 0.5 * tf.convert_to_tensor(
                 [
-                    [0, -sp, 0, -cp],
-                    [-sp, 0, -cp, 0],
-                    [0, cp, 0, -sp],
-                    [cp, 0, -sp, 0],
+                    [cp - ca, -sb, sa - sp, -1 - cb],
+                    [-sa - sp, 1 - cb, -ca - cp, sb],
+                    [sp - sa, 1 + cb, cp - ca, -sb],
+                    [cp + ca, -sb, -sa - sp, 1 - cb],
                 ]
             )
 
