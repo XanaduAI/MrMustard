@@ -70,7 +70,7 @@ class SymplecticBackend(SymplecticBackendInterface):
         cp = tf.math.cos(phi_a + phi_b)
         sp = tf.math.sin(phi_a + phi_b)
         if internal:
-            return 0.5*tf.convert_to_tensor(
+            return 0.5 * tf.convert_to_tensor(
                 [
                     [ca - cb, -sa - sb, sb - sa, -ca - cb],
                     [-sa - sb, cb - ca, -ca - cb, sa - sb],
@@ -79,7 +79,7 @@ class SymplecticBackend(SymplecticBackendInterface):
                 ]
             )
         else:
-            return 0.5*tf.convert_to_tensor(
+            return 0.5 * tf.convert_to_tensor(
                 [
                     [cp - ca, -sb, sa - sp, -1 - cb],
                     [-sa - sp, 1 - cb, -ca - cp, sb],
