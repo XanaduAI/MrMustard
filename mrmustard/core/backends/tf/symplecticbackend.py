@@ -81,10 +81,10 @@ class SymplecticBackend(SymplecticBackendInterface):
         else:
             return 0.5*tf.convert_to_tensor(
                 [
-                    [cp-ca, -sb, sa - sp, -1 - cb],
-                    [-sa - sp, 1-cb, -ca - cp, sb],
-                    [sp - sa, 1+cb, cp - ca, -sb],
-                    [cp + ca, -sb, -sa - sp, 1-cb],
+                    [cp - ca, -sb, sa - sp, -1 - cb],
+                    [-sa - sp, 1 - cb, -ca - cp, sb],
+                    [sp - sa, 1 + cb, cp - ca, -sb],
+                    [cp + ca, -sb, -sa - sp, 1 - cb],
                 ]
             )
 

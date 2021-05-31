@@ -126,7 +126,7 @@ def test_MZgate_internal_tms(phi_a, phi_b):
 
     S_expanded = expand(rotation(phi_a), [0], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    
+
     S_expanded = expand(rotation(phi_b), [1], 4)
     expected = S_expanded @ expected @ S_expanded.T
 
