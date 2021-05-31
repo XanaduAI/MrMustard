@@ -49,6 +49,41 @@ class SymplecticBackend(SymplecticBackendInterface):
             ]
         )
 
+    def mz_symplectic(self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False) -> tf.Tensor:
+        r"""Mach-Zehnder symplectic matrix. It supports two conventions: if `internal=True`, both
+        phases act internally, on the two arms of the interferometer (`a` = upper, `b` = lower); if `internal = False`,
+        `phi_a` acts on inner upper arm, but `phi_b` acts in the upper arm after the second BS.
+        Args:
+            phi_a: upper arm phase
+            phi_b: lower arm phase
+            internal (bool): whether phases are in the internal arms (default is False)
+        Returns:
+            array: symplectic-orthogonal transformation matrix of a Mach-Zehnder interferometer
+            with phases phi_a and phi_b
+        """
+        cp = tf.math.cos(phi_a + phi_b)
+        sp = tf.math.sin(phi_a + phi_b)
+        cm = tf.math.cos(phi_a - phi_b)
+        sm = tf.math.sin(phi_a - phi_b)
+        if internal:
+            return tf.convert_to_tensor(
+                [
+                    [0, -sp, 0, -cp],
+                    [-sm, 0, -cm, 0],
+                    [0, cp, 0, -sp],
+                    [cm, 0, -sm, 0],
+                ]
+            )
+        else:
+            return tf.convert_to_tensor(
+                [
+                    [0, -sp, 0, -cp],
+                    [-sp, 0, -cp, 0],
+                    [0, cp, 0, -sp],
+                    [cp, 0, -sp, 0],
+                ]
+            )
+
     def rotation_symplectic(self, phi: tf.Tensor) -> tf.Tensor:
         r"""Rotation gate.
         Args:
