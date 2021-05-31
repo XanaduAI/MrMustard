@@ -63,26 +63,28 @@ class SymplecticBackend(SymplecticBackendInterface):
             array: symplectic-orthogonal transformation matrix of a Mach-Zehnder interferometer
             with phases phi_a and phi_b
         """
+        ca = tf.math.cos(phi_a)
+        sa = tf.math.sin(phi_a)
+        cb = tf.math.cos(phi_b)
+        sb = tf.math.sin(phi_b)
         cp = tf.math.cos(phi_a + phi_b)
         sp = tf.math.sin(phi_a + phi_b)
-        cm = tf.math.cos(phi_a - phi_b)
-        sm = tf.math.sin(phi_a - phi_b)
         if internal:
-            return tf.convert_to_tensor(
+            return 0.5*tf.convert_to_tensor(
                 [
-                    [0, -sp, 0, -cp],
-                    [-sm, 0, -cm, 0],
-                    [0, cp, 0, -sp],
-                    [cm, 0, -sm, 0],
+                    [ca - cb, -sa - sb, sb - sa, -ca - cb],
+                    [-sa - sb, cb - ca, -ca - cb, sa - sb],
+                    [sa - sb, ca + cb, ca - cb, -sa - sb],
+                    [ca + cb, sb - sa, -sa - sb, cb - ca],
                 ]
             )
         else:
-            return tf.convert_to_tensor(
+            return 0.5*tf.convert_to_tensor(
                 [
-                    [0, -sp, 0, -cp],
-                    [-sp, 0, -cp, 0],
-                    [0, cp, 0, -sp],
-                    [cp, 0, -sp, 0],
+                    [cp-ca, -sb, sa - sp, -1 - cb],
+                    [-sa - sp, 1-cb, -ca - cp, sb],
+                    [sp - sa, 1+cb, cp - ca, -sb],
+                    [cp + ca, -sb, -sa - sp, 1-cb],
                 ]
             )
 
