@@ -97,5 +97,5 @@ def test_MZgate_external(phi_a, phi_b):
     B = beam_splitter(np.pi / 4, np.pi / 2)
     Ra = np.kron(rotation(phi_a), np.identity(2))
     Rb = np.kron(rotation(phi_b), np.identity(2))
-    expected = Rb @ B @ Ra @ B
+    expected = B @ Rb @ B @ Ra
     assert np.allclose(S, expected)

@@ -52,9 +52,9 @@ class SymplecticBackend(SymplecticBackendInterface):
     def mz_symplectic(
         self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False
     ) -> tf.Tensor:
-        r"""Mach-Zehnder symplectic matrix. It supports two conventions: if `internal=True`, both
-        phases act internally, on the two arms of the interferometer (`a` = upper, `b` = lower); if `internal = False`,
-        `phi_a` acts on inner upper arm, but `phi_b` acts in the upper arm after the second BS.
+        r"""Mach-Zehnder symplectic matrix. It supports two conventions:
+        if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
+        if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
         Args:
             phi_a: upper arm phase
             phi_b: lower arm phase
