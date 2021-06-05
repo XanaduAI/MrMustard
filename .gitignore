@@ -4,3 +4,5 @@
 settings.json
 *.npy
 __pycache__/
+*.pdf
+.DS_Store
