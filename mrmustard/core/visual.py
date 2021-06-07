@@ -1,4 +1,9 @@
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib import cm
+import numpy as np
+import strawberryfields as sf
 
 
 class Progressbar:
@@ -36,3 +41,28 @@ class Progressbar:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
+
+
+def wigner(state, hbar: float = 2.0, filename: str = ''):
+    r"""
+    Plots the wigner function of a single mode state.
+    Arguments:
+        state (complex array): the state in Fock representation (can be pure or mixed)
+        hbar (float): sets the scale of phase space (default 2.0)
+    """
+    assert state.ndim in {1, 2}
+    scale = np.sqrt(hbar)
+    quad_axis = np.linspace(-6, 6, 200) * scale
+    pure = (state.ndim == 1)  # if ndim=2, then it's density matrix
+    state_sf = sf.backends.BaseFockState(state, 1, pure, len(state))
+    Wig = state_sf.wigner(mode=0, xvec=quad_axis, pvec=quad_axis)
+    scale = np.max(Wig.real)
+    nrm = Normalize(-scale, scale)
+    fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+    plt.contourf(quad_axis, quad_axis, Wig, 60, cmap=cm.RdBu, norm=nrm)
+    plt.xlabel(r"q (units of $\sqrt{\hbar}$)", fontsize=15)
+    plt.ylabel(r"p (units of $\sqrt{\hbar}$)", fontsize=15)
+    plt.tight_layout()
+    if filename != '':
+        plt.savefig(filename, dpi=300)
