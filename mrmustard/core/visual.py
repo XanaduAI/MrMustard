@@ -49,6 +49,7 @@ def wigner(state, hbar: float = 2.0, filename: str = ''):
     Arguments:
         state (complex array): the state in Fock representation (can be pure or mixed)
         hbar (float): sets the scale of phase space (default 2.0)
+        filename (str): optional filename for saving the plot of the wigner function
     """
     assert state.ndim in {1, 2}
     scale = np.sqrt(hbar)
