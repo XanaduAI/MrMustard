@@ -6,3 +6,5 @@ settings.json
 __pycache__/
 *.pdf
 .DS_Store
+*.pkl
+*.png
