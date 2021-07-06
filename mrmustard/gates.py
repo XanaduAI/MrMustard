@@ -6,9 +6,8 @@ from mrmustard.core.baseclasses import Gate
 class Dgate(Parametrized, Gate):
     r"""
     Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
-    If a parameter value is provided, that value will be used.
-    If a parameter value is not provided its value is picked at random, unless it's non-trainable in which case its value is set to zero.
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -41,9 +40,8 @@ class Dgate(Parametrized, Gate):
 class Sgate(Parametrized, Gate):
     r"""
     Squeezing gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
-    If a parameter value is provided, that value will be used.
-    If a parameter value is not provided its value is picked at random, unless it's non-trainable in which case its value is set to zero.
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -78,9 +76,8 @@ class Sgate(Parametrized, Gate):
 class Rgate(Parametrized, Gate):
     r"""
     Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
-    If a parameter value is provided, that value will be used.
-    If a parameter value is not provided its value is picked at random, unless it's non-trainable in which case its value is set to zero.
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -107,7 +104,7 @@ class Rgate(Parametrized, Gate):
 class Ggate(Parametrized, Gate):
     r"""
     General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
-    If a displacement value is not provided its value is picked at random, unless it's non-trainable in which case its value is set to zero.
+    If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
 
     Arguments:
         modes (List[int]): the list of modes this gate is applied to
@@ -158,6 +155,7 @@ class Ggate(Parametrized, Gate):
 class BSgate(Parametrized, Gate):
     r"""
     Beam splitter gate. It applies to a single pair of modes.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
         modes (List[int]): the pair of modes to which the beamsplitter is applied to. Must be of length 2.
@@ -180,7 +178,7 @@ class BSgate(Parametrized, Gate):
         phi_trainable: bool = True,
     ):
         if len(modes) > 2:
-            raise ValueError("Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer.")
+            raise ValueError("Beam splitter works on 2 modes. Perhaps you are looking for Interferometer.")
         super().__init__(
             modes=modes,
             theta=theta,
@@ -199,8 +197,9 @@ class BSgate(Parametrized, Gate):
 class MZgate(Parametrized, Gate):
     r"""
     Mach-Zehnder gate. It supports two conventions:
-        if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
-        if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
+        1. if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
+        2. if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
         modes (List[int]): the pair of modes to which the beamsplitter is applied to. Must be of length 2.
@@ -225,7 +224,7 @@ class MZgate(Parametrized, Gate):
         internal: bool = False,
     ):
         if len(modes) > 2:
-            raise ValueError("The Mach-Zehnder gate cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer.")
+            raise ValueError("The Mach-Zehnder gate works on 2 modes. Perhaps you are looking for Interferometer.")
         super().__init__(
             modes=modes,
             phi_a=phi_a,
@@ -245,6 +244,7 @@ class MZgate(Parametrized, Gate):
 class S2gate(Parametrized, Gate):
     r"""
     Two-mode squeezing gate. It applies to a single pair of modes.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
         modes (List[int]): the list of modes the two-mode squeezing is applied to. Must be of length 2.
@@ -278,9 +278,9 @@ class S2gate(Parametrized, Gate):
 class LossChannel(Parametrized, Gate):
     r"""
     The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If `transmissivity` is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
-    If `transmissivity` is not provided, its value is set to 1.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
+    One can optionally set bounds for `transmissivity`, which the optimizer will respect.
 
     Arguments:
         modes (List[int]): the list of modes the loss is applied to
