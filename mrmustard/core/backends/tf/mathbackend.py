@@ -68,13 +68,9 @@ class MathBackend(MathBackendInterface):
             return old
         N = old.shape[-1] // 2
         indices = modes + [m + N for m in modes]
-        return tf.tensor_scatter_nd_add(
-            old, list(product(*[indices] * len(new.shape))), tf.reshape(new, -1)
-        )
+        return tf.tensor_scatter_nd_add(old, list(product(*[indices] * len(new.shape))), tf.reshape(new, -1))
 
-    def sandwich(
-        self, bread: Optional[tf.Tensor], filling: tf.Tensor, modes: List[int]
-    ) -> tf.Tensor:
+    def sandwich(self, bread: Optional[tf.Tensor], filling: tf.Tensor, modes: List[int]) -> tf.Tensor:
         if bread is None:
             return filling
         N = filling.shape[-1] // 2
@@ -82,9 +78,7 @@ class MathBackend(MathBackendInterface):
         rows = tf.matmul(bread, tf.gather(filling, indices))
         filling = tf.tensor_scatter_nd_update(filling, indices[:, None], rows)
         columns = bread @ tf.gather(tf.transpose(filling), indices)
-        return tf.transpose(
-            tf.tensor_scatter_nd_update(tf.transpose(filling), indices[:, None], columns)
-        )
+        return tf.transpose(tf.tensor_scatter_nd_update(tf.transpose(filling), indices[:, None], columns))
 
     def matvec(self, mat: Optional[tf.Tensor], vec: tf.Tensor, modes: List[int]) -> tf.Tensor:
         if mat is None:
@@ -159,7 +153,7 @@ class MathBackend(MathBackendInterface):
                 tf.linalg.diag(self.tile_vec(tf.linalg.diag_part(mat), num_modes))
                 + tf.linalg.diag(tf.tile([b], [num_modes]), k=num_modes)
                 + tf.linalg.diag(tf.tile([c], [num_modes]), k=-num_modes)
-                )
+            )
         return mat
 
     def poisson(self, max_k: int, rate: tf.Tensor):
@@ -172,11 +166,7 @@ class MathBackend(MathBackendInterface):
         "P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out"
         in_ = tf.range(dim_in, dtype=tf.float64)[None, :]
         out_ = tf.range(dim_out, dtype=tf.float64)[:, None]
-        return (
-            tf.cast(binom(in_, out_), tf.float64)
-            * success_prob ** out_
-            * (1.0 - success_prob) ** tf.math.maximum(in_ - out_, 0.0)
-        )
+        return tf.cast(binom(in_, out_), tf.float64) * success_prob ** out_ * (1.0 - success_prob) ** tf.math.maximum(in_ - out_, 0.0)
 
     def convolve_probs_1d(self, prob: tf.Tensor, other_probs: List[tf.Tensor]) -> tf.Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"

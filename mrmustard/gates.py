@@ -66,7 +66,9 @@ class Sgate(Parametrized, Gate):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        super().__init__(modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
+        super().__init__(
+            modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
+        )
         self.mixing = False
 
     def symplectic_matrix(self, hbar: float):
@@ -127,7 +129,15 @@ class Ggate(Parametrized, Gate):
             symplectic = self._math_backend.new_symplectic_parameter(num_modes=len(modes))
         if displacement is None:
             displacement = self._math_backend.zeros(len(modes) * 2)
-        super().__init__(modes=modes, symplectic=symplectic, symplectic_bounds=(None, None), symplectic_trainable=symplectic_trainable, displacement=displacement, displacement_bounds=(None, None), displacement_trainable=displacement_trainable)
+        super().__init__(
+            modes=modes,
+            symplectic=symplectic,
+            symplectic_bounds=(None, None),
+            symplectic_trainable=symplectic_trainable,
+            displacement=displacement,
+            displacement_bounds=(None, None),
+            displacement_trainable=displacement_trainable,
+        )
         self.mixing = False
 
     def symplectic_matrix(self, hbar: float = 2.0):
@@ -170,10 +180,16 @@ class BSgate(Parametrized, Gate):
         phi_trainable: bool = True,
     ):
         if len(modes) > 2:
-            raise ValueError(
-                "Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
-            )
-        super().__init__(modes=modes, theta=theta, theta_bounds=theta_bounds, theta_trainable=theta_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
+            raise ValueError("Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer.")
+        super().__init__(
+            modes=modes,
+            theta=theta,
+            theta_bounds=theta_bounds,
+            theta_trainable=theta_trainable,
+            phi=phi,
+            phi_bounds=phi_bounds,
+            phi_trainable=phi_trainable,
+        )
         self.mixing = False
 
     def symplectic_matrix(self, hbar: float):
@@ -210,7 +226,16 @@ class MZgate(Parametrized, Gate):
     ):
         if len(modes) > 2:
             raise ValueError("The Mach-Zehnder gate cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer.")
-        super().__init__(modes=modes, phi_a=phi_a, phi_a_bounds=phi_a_bounds, phi_a_trainable=phi_a_trainable, phi_b=phi_b, phi_b_bounds=phi_b_bounds, phi_b_trainable=phi_b_trainable, internal=internal)
+        super().__init__(
+            modes=modes,
+            phi_a=phi_a,
+            phi_a_bounds=phi_a_bounds,
+            phi_a_trainable=phi_a_trainable,
+            phi_b=phi_b,
+            phi_b_bounds=phi_b_bounds,
+            phi_b_trainable=phi_b_trainable,
+            internal=internal,
+        )
         self.mixing = False
 
     def symplectic_matrix(self, hbar: float):
@@ -241,7 +266,9 @@ class S2gate(Parametrized, Gate):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        super().__init__(modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
+        super().__init__(
+            modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
+        )
         self.mixing = False
 
     def symplectic_matrix(self, hbar: float):
@@ -269,7 +296,12 @@ class LossChannel(Parametrized, Gate):
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         transmissivity_trainable: bool = False,
     ):
-        super().__init__(modes=modes, transmissivity=transmissivity, transmissivity_bounds=transmissivity_bounds, transmissivity_trainable=transmissivity_trainable)
+        super().__init__(
+            modes=modes,
+            transmissivity=transmissivity,
+            transmissivity_bounds=transmissivity_bounds,
+            transmissivity_trainable=transmissivity_trainable,
+        )
         self.mixing = True
 
     def symplectic_matrix(self, hbar: float):

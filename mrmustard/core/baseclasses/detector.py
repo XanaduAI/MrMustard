@@ -30,9 +30,7 @@ class Detector(ABC):
                 perm = list(set(range(dm.ndim)).difference(last)) + last
                 dm = self._math_backend.transpose(dm, perm)
                 dm = self._math_backend.diag(dm)
-                dm = self._math_backend.tensordot(
-                    dm, stoch[meas, : dm.shape[-1]], [[-1], [0]], dtype=dm.dtype
-                )
+                dm = self._math_backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]], dtype=dm.dtype)
                 measured += 1
         prob = self._math_backend.sum(self._math_backend.all_diagonals(dm, real=False))
         return dm / prob, self._math_backend.abs(prob)

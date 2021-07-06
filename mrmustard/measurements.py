@@ -36,15 +36,17 @@ class PNRDetector(Parametrized, Detector):
         if not isinstance(dark_counts, Sequence):
             dark_counts = [dark_counts for m in modes]
 
-        super().__init__(modes=modes,
-                         conditional_probs=conditional_probs,
-                         efficiency=efficiency,
-                         efficiency_trainable=efficiency_trainable,
-                         efficiency_bounds=efficiency_bounds,
-                         dark_counts=dark_counts,
-                         dark_counts_trainable=dark_counts_trainable,
-                         dark_counts_bounds=dark_counts_bounds,
-                         max_cutoffs=max_cutoffs)
+        super().__init__(
+            modes=modes,
+            conditional_probs=conditional_probs,
+            efficiency=efficiency,
+            efficiency_trainable=efficiency_trainable,
+            efficiency_bounds=efficiency_bounds,
+            dark_counts=dark_counts,
+            dark_counts_trainable=dark_counts_trainable,
+            dark_counts_bounds=dark_counts_bounds,
+            max_cutoffs=max_cutoffs,
+        )
 
         self.make_stochastic_channel()
 
@@ -55,13 +57,9 @@ class PNRDetector(Parametrized, Detector):
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
                 dark_prior = self._math_backend.poisson(max_k=cut, rate=dc)
-                condprob = self._math_backend.binomial_conditional_prob(
-                    success_prob=qe, dim_in=cut, dim_out=cut
-                )
+                condprob = self._math_backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
                 self._stochastic_channel.append(
-                    self._math_backend.convolve_probs_1d(
-                        condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]]
-                    )
+                    self._math_backend.convolve_probs_1d(condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]])
                 )
 
 
@@ -95,15 +93,17 @@ class ThresholdDetector(Parametrized, Detector):
         if not isinstance(max_cutoffs, Sequence):
             max_cutoffs = [max_cutoffs for m in modes]
 
-        super().__init__(modes=modes,
-                         conditional_probs=conditional_probs,
-                         efficiency=efficiency,
-                         efficiency_trainable=efficiency_trainable,
-                         efficiency_bounds=efficiency_bounds,
-                         dark_count_prob=dark_count_prob,
-                         dark_count_prob_trainable=dark_count_prob_trainable,
-                         dark_count_prob_bounds=dark_count_prob_bounds,
-                         max_cutoffs=max_cutoffs)
+        super().__init__(
+            modes=modes,
+            conditional_probs=conditional_probs,
+            efficiency=efficiency,
+            efficiency_trainable=efficiency_trainable,
+            efficiency_bounds=efficiency_bounds,
+            dark_count_prob=dark_count_prob,
+            dark_count_prob_trainable=dark_count_prob_trainable,
+            dark_count_prob_bounds=dark_count_prob_bounds,
+            max_cutoffs=max_cutoffs,
+        )
 
         self.make_stochastic_channel()
 

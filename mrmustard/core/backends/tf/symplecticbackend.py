@@ -5,7 +5,6 @@ from mrmustard.core.backends import SymplecticBackendInterface
 
 
 class SymplecticBackend(SymplecticBackendInterface):
-
     def loss_X(self, transmissivity: tf.Tensor) -> tf.Tensor:
         r"""Returns the X matrix for the lossy bosonic channel.
         The channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
@@ -50,9 +49,7 @@ class SymplecticBackend(SymplecticBackendInterface):
             ]
         )
 
-    def mz_symplectic(
-        self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False
-    ) -> tf.Tensor:
+    def mz_symplectic(self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False) -> tf.Tensor:
         r"""Mach-Zehnder symplectic matrix. It supports two conventions:
         if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
         if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
@@ -101,11 +98,7 @@ class SymplecticBackend(SymplecticBackendInterface):
         num_modes = angle.shape[-1]
         x = tf.math.cos(angle)
         y = tf.math.sin(angle)
-        return (
-            tf.linalg.diag(tf.concat([x, x], axis=0))
-            + tf.linalg.diag(-y, k=num_modes)
-            + tf.linalg.diag(y, k=-num_modes)
-        )
+        return tf.linalg.diag(tf.concat([x, x], axis=0)) + tf.linalg.diag(-y, k=num_modes) + tf.linalg.diag(y, k=-num_modes)
 
     def squeezing_symplectic(self, r: tf.Tensor, phi: tf.Tensor) -> tf.Tensor:
         r"""Squeezing. In fock space this corresponds to \exp(\tfrac{1}{2}r e^{i \phi} (a^2 - a^{\dagger 2}) ).

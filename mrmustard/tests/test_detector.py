@@ -154,9 +154,7 @@ def test_postselection():
     n_measured = 1
 
     # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
-    proj_state, success_prob = detector(
-        my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None]
-    )
+    proj_state, success_prob = detector(my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None])
     expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
     assert np.allclose(success_prob, expected_prob)
     expected_state = np.zeros([cutoff, cutoff])

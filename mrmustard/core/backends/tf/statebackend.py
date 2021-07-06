@@ -9,26 +9,16 @@ from mrmustard.core import utils
 class StateBackend(StateBackendInterface):
     def number_means(self, cov: tf.Tensor, means: tf.Tensor, hbar: float) -> tf.Tensor:
         N = means.shape[-1] // 2
-        return (
-            means[:N] ** 2
-            + means[N:] ** 2
-            + tf.linalg.diag_part(cov[:N, :N])
-            + tf.linalg.diag_part(cov[N:, N:])
-            - hbar
-        ) / (2 * hbar)
+        return (means[:N] ** 2 + means[N:] ** 2 + tf.linalg.diag_part(cov[:N, :N]) + tf.linalg.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
 
     def number_cov(self, cov, means, hbar) -> tf.Tensor:
         N = means.shape[-1] // 2
         mCm = cov * means[:, None] * means[None, :]
-        dd = tf.linalg.diag(
-            tf.linalg.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])
-        ) / (2 * hbar ** 2)
+        dd = tf.linalg.diag(tf.linalg.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
         return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * np.identity(N)
 
-    def ABC(
-        self, cov: tf.Tensor, means: tf.Tensor, mixed: bool = False, hbar: float = 2.0
-    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    def ABC(self, cov: tf.Tensor, means: tf.Tensor, mixed: bool = False, hbar: float = 2.0) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         num_modes = means.shape[-1] // 2
 
         # cov and means in the amplitude basis
