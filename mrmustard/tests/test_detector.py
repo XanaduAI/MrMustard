@@ -102,8 +102,8 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))
     r2 = np.arcsinh(np.sqrt(guess["sq_1"]))
-    S2c = S2gate(modes=[0, 1], r=r1)
-    S2d = S2gate(modes=[0, 1], r=r2)
+    S2c = S2gate(modes=[0, 1], r=r1, phi=0.0)
+    S2d = S2gate(modes=[0, 1], r=r2, phi=0.0)
     circc.append(S2c)
     circd.append(S2d)
     tetas = [guess["eta_s"], guess["eta_i"]]
@@ -139,15 +139,15 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
     assert np.allclose(guess["sq_0"], np.sinh(S2c.euclidean_parameters[0].numpy()) ** 2)
     assert np.allclose(guess["sq_1"], np.sinh(S2d.euclidean_parameters[0].numpy()) ** 2)
-    assert np.allclose(tdetector._parameters[0], [guess["eta_s"], guess["eta_i"]])
-    assert np.allclose(tdetector._parameters[1], [guess["noise_s"], guess["noise_i"]])
+    assert np.allclose(tdetector.efficiency, [guess["eta_s"], guess["eta_i"]])
+    assert np.allclose(tdetector.dark_counts, [guess["noise_s"], guess["noise_i"]])
 
 
 def test_postselection():
     """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
     n_mean = 1.0
     detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
-    S2 = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(n_mean)))
+    S2 = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(n_mean)), phi=0.0)
     my_state = S2(Vacuum(num_modes=2))
 
     cutoff = 3
@@ -170,7 +170,7 @@ def test_loss_probs(eta):
     lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
     ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
     S = Sgate(modes=[0, 1], r=0.3, phi=[0.0, 0.7])
-    B = BSgate(modes=[0, 1], theta=1.4)
+    B = BSgate(modes=[0, 1], theta=1.4, phi=0.0)
     L = LossChannel(modes=[0, 1], transmissivity=eta)
 
     dm_lossy = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20])
@@ -186,7 +186,7 @@ def test_projected(eta, n):
     lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
     ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
     S = Sgate(modes=[0, 1], r=0.3, phi=[0.0, 1.5])
-    B = BSgate(modes=[0, 1], theta=1.0)
+    B = BSgate(modes=[0, 1], theta=1.0, phi=0.0)
     L = LossChannel(modes=[0], transmissivity=eta)
 
     dm_lossy, _ = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20], measurements=[n, None])

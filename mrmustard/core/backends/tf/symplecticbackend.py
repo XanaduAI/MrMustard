@@ -5,6 +5,7 @@ from mrmustard.core.backends import SymplecticBackendInterface
 
 
 class SymplecticBackend(SymplecticBackendInterface):
+
     def loss_X(self, transmissivity: tf.Tensor) -> tf.Tensor:
         r"""Returns the X matrix for the lossy bosonic channel.
         The channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
@@ -88,16 +89,18 @@ class SymplecticBackend(SymplecticBackendInterface):
                 ]
             )
 
-    def rotation_symplectic(self, phi: tf.Tensor) -> tf.Tensor:
+    def rotation_symplectic(self, angle: tf.Tensor) -> tf.Tensor:
         r"""Rotation gate.
         Args:
-            phi: rotation angles
+            angle: rotation angles
         Returns:
-            array: rotation matrices by angle theta
+            array: rotation matrices by angle
         """
-        num_modes = phi.shape[-1]
-        x = tf.math.cos(phi)
-        y = tf.math.sin(phi)
+        if len(angle.shape) == 0:
+            angle = angle[None, ...]
+        num_modes = angle.shape[-1]
+        x = tf.math.cos(angle)
+        y = tf.math.sin(angle)
         return (
             tf.linalg.diag(tf.concat([x, x], axis=0))
             + tf.linalg.diag(-y, k=num_modes)
@@ -114,6 +117,10 @@ class SymplecticBackend(SymplecticBackendInterface):
             array: symplectic transformation matrix
         """
         # pylint: disable=assignment-from-no-return
+        if len(r.shape) == 0:
+            r = r[None, ...]
+        if len(phi.shape) == 0:
+            phi = phi[None, ...]
         num_modes = phi.shape[-1]
         cp = tf.math.cos(phi)
         sp = tf.math.sin(phi)

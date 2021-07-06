@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import unitary_group, truncnorm
 from scipy.special import binom
-from typing import List, Tuple, Callable, Sequence, Optional, Union
+from typing import List, Tuple, Callable, Optional, Union
 from itertools import product
 
 from mrmustard.core.backends import MathBackendInterface
@@ -54,8 +54,8 @@ class MathBackend(MathBackendInterface):
         return tf.transpose(a, perm)
 
     def block(self, blocks: List[List]):
-        rows = [tf.concat(row, axis=1) for row in blocks]
-        return tf.concat(rows, axis=0)
+        rows = [tf.concat(row, axis=-1) for row in blocks]
+        return tf.concat(rows, axis=-2)
 
     def concat(self, values, axis):
         return tf.concat(values, axis)
@@ -103,31 +103,18 @@ class MathBackend(MathBackendInterface):
         else:
             return tf.reshape(diag, cutoffs)
 
-    def make_symplectic_parameter(
-        self,
-        init_value: Optional[tf.Tensor] = None,
-        trainable: bool = True,
-        num_modes: int = 1,
-        name: str = "symplectic",
-    ) -> tf.Tensor:
-        if init_value is None:
-            if num_modes == 1:
-                W = np.exp(1j * np.random.uniform(size=(1, 1)))
-                V = np.exp(1j * np.random.uniform(size=(1, 1)))
-            else:
-                W = unitary_group.rvs(num_modes)
-                V = unitary_group.rvs(num_modes)
-            r = np.random.uniform(size=num_modes)
-            OW = self.unitary_to_orthogonal(W)
-            OV = self.unitary_to_orthogonal(V)
-            dd = tf.concat([tf.math.exp(-r), tf.math.exp(r)], 0)
-            val = tf.einsum("ij,j,jk->ik", OW, dd, OV)
+    def new_symplectic_parameter(self, num_modes: int = 1) -> tf.Tensor:
+        if num_modes == 1:
+            W = np.exp(1j * np.random.uniform(size=(1, 1)))
+            V = np.exp(1j * np.random.uniform(size=(1, 1)))
         else:
-            val = init_value
-        if trainable:
-            return tf.Variable(val, dtype=tf.float64, name=name)
-        else:
-            return tf.constant(val, dtype=tf.float64, name=name)
+            W = unitary_group.rvs(dim=num_modes)
+            V = unitary_group.rvs(dim=num_modes)
+        r = np.random.uniform(size=num_modes)
+        OW = self.unitary_to_orthogonal(W)
+        OV = self.unitary_to_orthogonal(V)
+        dd = tf.concat([tf.math.exp(-r), tf.math.exp(r)], axis=0)
+        return tf.einsum("ij,j,jk->ik", OW, dd, OV)
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
@@ -140,45 +127,40 @@ class MathBackend(MathBackendInterface):
         Y = tf.math.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def make_euclidean_parameter(
-        self,
-        init_value: Optional[Union[float, List[float]]] = None,
-        trainable: bool = True,
-        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        shape: Optional[Sequence[int]] = None,
-        name: str = "",
-    ) -> tf.Tensor:
-
-        bounds = (
-            -np.inf if bounds[0] is None else bounds[0],
-            np.inf if bounds[1] is None else bounds[1],
-        )
+    def make_constraint(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
+        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
         if not bounds == (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
             constraint = None
+        return constraint
 
-        if init_value is None:
-            if trainable:
-                val = truncnorm.rvs(*bounds, size=shape)
-            else:
-                val = tf.zeros(shape, dtype=tf.float64)
-        else:
-            if shape is None:
-                val = init_value
-            else:
-                init_value = np.atleast_1d(init_value)
-                if len(init_value) == shape[0]:
-                    val = init_value
-                elif len(init_value) == 1:
-                    val = np.tile(init_value, shape)
-                else:
-                    raise ValueError(f"cannot initialize parameter {name}")
+    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str):
+        return tf.Variable(value, dtype=tf.float64, name=name, constraint=self.make_constraint(bounds))
 
-        if trainable:
-            return tf.Variable(val, dtype=tf.float64, name=name, constraint=constraint)
-        else:
-            return tf.constant(val, dtype=tf.float64, name=name)
+    def new_constant(self, value, name: str):
+        return tf.constant(value, dtype=tf.float64, name=name)
+
+    def tile_vec(self, vec, num_modes: int):
+        if vec is None:
+            return None
+        if vec.shape[-1] != 2 * num_modes:
+            x, y = vec
+            vec = tf.concat([tf.tile([x], [num_modes]), tf.tile([y], [num_modes])], axis=-1)
+        return vec
+
+    def tile_mat(self, mat, num_modes):
+        if mat is None:
+            return None
+        if mat.shape[-1] != 2 * num_modes:
+            b = mat[..., 1, 0]
+            c = mat[..., 0, 1]
+            mat = (
+                tf.linalg.diag(self.tile_vec(tf.linalg.diag_part(mat), num_modes))
+                + tf.linalg.diag(tf.tile([b], [num_modes]), k=num_modes)
+                + tf.linalg.diag(tf.tile([c], [num_modes]), k=-num_modes)
+                )
+        return mat
 
     def poisson(self, max_k: int, rate: tf.Tensor):
         "poisson distribution up to max_k"

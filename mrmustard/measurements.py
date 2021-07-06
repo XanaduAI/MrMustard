@@ -1,9 +1,9 @@
 from typing import List, Union, Sequence, Optional, Tuple
-
+from mrmustard.core.baseclasses.parametrized import Parametrized
 from mrmustard.core.baseclasses import Detector
 
 
-class PNRDetector(Detector):
+class PNRDetector(Parametrized, Detector):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
@@ -29,41 +29,31 @@ class PNRDetector(Detector):
         dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         max_cutoffs: Union[int, List[int]] = 50,
     ):
-        super().__init__(modes)
-
-        self._trainable = [efficiency_trainable, dark_counts_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                efficiency,
-                efficiency_trainable,
-                efficiency_bounds,
-                (len(modes),),
-                "efficiency",
-            ),
-            self._math_backend.make_euclidean_parameter(
-                dark_counts,
-                dark_counts_trainable,
-                dark_counts_bounds,
-                (len(modes),),
-                "dark_counts",
-            ),
-        ]
         if not isinstance(max_cutoffs, Sequence):
             max_cutoffs = [max_cutoffs for m in modes]
-        self.efficiency = self._parameters[0]
-        self.dark_counts = self._parameters[1]
-        self.max_cutoffs = (
-            max_cutoffs if isinstance(max_cutoffs, Sequence) else [max_cutoffs] * len(modes)
-        )
-        self.conditional_probs = conditional_probs
+        if not isinstance(efficiency, Sequence):
+            efficiency = [efficiency for m in modes]
+        if not isinstance(dark_counts, Sequence):
+            dark_counts = [dark_counts for m in modes]
+
+        super().__init__(modes=modes,
+                         conditional_probs=conditional_probs,
+                         efficiency=efficiency,
+                         efficiency_trainable=efficiency_trainable,
+                         efficiency_bounds=efficiency_bounds,
+                         dark_counts=dark_counts,
+                         dark_counts_trainable=dark_counts_trainable,
+                         dark_counts_bounds=dark_counts_bounds,
+                         max_cutoffs=max_cutoffs)
+
         self.make_stochastic_channel()
 
     def make_stochastic_channel(self):
         self._stochastic_channel = []
-        if self.conditional_probs is not None:
-            self._stochastic_channel = self.conditional_probs
+        if self._conditional_probs is not None:
+            self._stochastic_channel = self._conditional_probs
         else:
-            for cut, qe, dc in zip(self.max_cutoffs, self.efficiency[:], self.dark_counts[:]):
+            for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
                 dark_prior = self._math_backend.poisson(max_k=cut, rate=dc)
                 condprob = self._math_backend.binomial_conditional_prob(
                     success_prob=qe, dim_in=cut, dim_out=cut
@@ -75,7 +65,7 @@ class PNRDetector(Detector):
                 )
 
 
-class ThresholdDetector(Detector):
+class ThresholdDetector(Parametrized, Detector):
     r"""
     Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
@@ -102,40 +92,28 @@ class ThresholdDetector(Detector):
         dark_count_prob_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         max_cutoffs: Union[int, List[int]] = 50,
     ):
-        super().__init__(modes)
-
-        self._trainable = [efficiency_trainable, dark_count_prob_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                efficiency,
-                efficiency_trainable,
-                efficiency_bounds,
-                (len(modes),),
-                "efficiency",
-            ),
-            self._math_backend.make_euclidean_parameter(
-                dark_count_prob,
-                dark_count_prob_trainable,
-                dark_count_prob_bounds,
-                (len(modes),),
-                "dark_counts",
-            ),
-        ]
         if not isinstance(max_cutoffs, Sequence):
             max_cutoffs = [max_cutoffs for m in modes]
-        self.efficiency = self._parameters[0]
-        self.dark_counts = self._parameters[1]
-        self.max_cutoffs = max_cutoffs
-        self.conditional_probs = conditional_probs
+
+        super().__init__(modes=modes,
+                         conditional_probs=conditional_probs,
+                         efficiency=efficiency,
+                         efficiency_trainable=efficiency_trainable,
+                         efficiency_bounds=efficiency_bounds,
+                         dark_count_prob=dark_count_prob,
+                         dark_count_prob_trainable=dark_count_prob_trainable,
+                         dark_count_prob_bounds=dark_count_prob_bounds,
+                         max_cutoffs=max_cutoffs)
+
         self.make_stochastic_channel()
 
     def make_stochastic_channel(self):
         self._stochastic_channel = []
 
-        if self.conditional_probs is not None:
+        if self._conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:
-            for cut, qe, dc in zip(self.max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
+            for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
                 row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
                 rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)

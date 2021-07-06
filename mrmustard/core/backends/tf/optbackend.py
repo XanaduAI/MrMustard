@@ -44,6 +44,7 @@ class OptimizerBackend(OptimizerBackendInterface):
         euclidean_params: Sequence[tf.Tensor],
         euclidean_lr: float,
     ) -> None:
+        print('Updating euclidean param!')
         self.euclidean_opt.lr = euclidean_lr
         self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 

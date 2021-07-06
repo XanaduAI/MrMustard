@@ -9,26 +9,21 @@ class Gate(ABC):
     _math_backend: MathBackendInterface
     _symplectic_backend: SymplecticBackendInterface
 
-    def _apply_gaussian_channel(self, state, modes, symplectic=None, displacement=None, noise=None):
-        output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)
-        output.cov = self._math_backend.sandwich(bread=symplectic, filling=state.cov, modes=modes)
-        output.cov = self._math_backend.add(old=output.cov, new=noise, modes=modes)
-        output.means = self._math_backend.matvec(mat=symplectic, vec=state.means, modes=modes)
-        output.means = self._math_backend.add(old=output.means, new=displacement, modes=modes)
-        return output
-
     def __call__(self, state: State) -> State:
-        return self._apply_gaussian_channel(
-            state,
-            self.modes,
-            self.symplectic_matrix(state.hbar),
-            self.displacement_vector(state.hbar),
-            self.noise_matrix(state.hbar),
-        )
+        displacement = self._math_backend.tile_vec(self.displacement_vector(state.hbar), len(self._modes))
+        symplectic = self._math_backend.tile_mat(self.symplectic_matrix(state.hbar), len(self._modes))
+        noise = self._math_backend.tile_mat(self.noise_matrix(state.hbar), len(self._modes))
+
+        output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)
+        output.cov = self._math_backend.sandwich(bread=symplectic, filling=state.cov, modes=self._modes)
+        output.cov = self._math_backend.add(old=output.cov, new=noise, modes=self._modes)
+        output.means = self._math_backend.matvec(mat=symplectic, vec=state.means, modes=self._modes)
+        output.means = self._math_backend.add(old=output.means, new=displacement, modes=self._modes)
+        return output
 
     def __repr__(self):
         with np.printoptions(precision=3, suppress=True):
-            return f"{self.__class__.__qualname__}({self._repr_string(*[str(np.atleast_1d(p)) for p in self._parameters])})"
+            return f"{self.__class__.__qualname__}({', '.join(self.all_params)})"
 
     def symplectic_matrix(self, hbar: float) -> Optional:
         return None
@@ -40,11 +35,21 @@ class Gate(ABC):
         return None
 
     @property
+    def variables(self) -> List:
+        return self._trainable_parameters
+
+    @property
+    def constants(self) -> List:
+        return self._constant_parameters
+
+    @property
+    def all_parameters(self) -> List:
+        return self.variables + self.constants
+
+    @property
     def euclidean_parameters(self) -> List:
-        return [
-            p for i, p in enumerate(self._parameters) if self._trainable[i]
-        ]  # NOTE overridden in Ggate
+        return self._trainable_parameters  # NOTE overridden in Ggate and Interferometer
 
     @property
     def symplectic_parameters(self) -> List:
-        return []
+        return []  # NOTE overridden in Ggate and Interferometer

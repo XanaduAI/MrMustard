@@ -1,9 +1,9 @@
-from typing import List, Tuple, Optional, Union, Callable
-
+from typing import List, Tuple, Optional, Union
+from mrmustard.core.baseclasses.parametrized import Parametrized
 from mrmustard.core.baseclasses import Gate
 
 
-class Dgate(Gate):
+class Dgate(Parametrized, Gate):
     r"""
     Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
@@ -31,28 +31,14 @@ class Dgate(Gate):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
-            lambda x, y: f"modes={modes}, x={x}, x_bounds={x_bounds}, x_trainable={x_trainable}, y={y}, y_bounds={y_bounds}, y_trainable={y_trainable}"
-        )
-        self.modes = modes
+        super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
         self.mixing = False
-        self._trainable = [x_trainable, y_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                x, x_trainable, x_bounds, (len(modes),), "x"
-            ),
-            self._math_backend.make_euclidean_parameter(
-                y, y_trainable, y_bounds, (len(modes),), "y"
-            ),
-        ]
 
     def displacement_vector(self, hbar: float):
-        return self._symplectic_backend.displacement(*self._parameters, hbar=hbar)
+        return self._symplectic_backend.displacement(self.x, self.y, hbar=hbar)
 
 
-class Sgate(Gate):
+class Sgate(Parametrized, Gate):
     r"""
     Squeezing gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
@@ -80,28 +66,14 @@ class Sgate(Gate):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
-            lambda r, phi: f"modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
-        )
-        self.modes = modes
+        super().__init__(modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
         self.mixing = False
-        self._trainable = [r_trainable, phi_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                r, r_trainable, r_bounds, (len(modes),), "r"
-            ),
-            self._math_backend.make_euclidean_parameter(
-                phi, phi_trainable, phi_bounds, (len(modes),), "phi"
-            ),
-        ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.squeezing_symplectic(*self._parameters)
+        return self._symplectic_backend.squeezing_symplectic(self.r, self.phi)
 
 
-class Rgate(Gate):
+class Rgate(Parametrized, Gate):
     r"""
     Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
@@ -123,25 +95,14 @@ class Rgate(Gate):
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         angle_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float], str
-        ] = (
-            lambda angle: f"modes={modes}, angle={angle}, angle_bounds={angle_bounds}, angle_trainable={angle_trainable}"
-        )
-        self.modes = modes
+        super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
         self.mixing = False
-        self._trainable = [angle_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                angle, angle_trainable, angle_bounds, (len(modes),), "angle"
-            )
-        ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.rotation_symplectic(*self._parameters)
+        return self._symplectic_backend.rotation_symplectic(self.angle)
 
 
-class Ggate(Gate):
+class Ggate(Parametrized, Gate):
     r"""
     General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
     If a displacement value is not provided its value is picked at random, unless it's non-trainable in which case its value is set to zero.
@@ -162,43 +123,29 @@ class Ggate(Gate):
         displacement: Optional = None,
         displacement_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
-            lambda symp, disp: f"modes={modes}, symplectic={1}, symplectic_trainable={symplectic_trainable}, displacement={1}, displacement_trainable={displacement_trainable}"
-        )
-        self.modes = modes
+        if symplectic is None:
+            symplectic = self._math_backend.new_symplectic_parameter(num_modes=len(modes))
+        if displacement is None:
+            displacement = self._math_backend.zeros(len(modes) * 2)
+        super().__init__(modes=modes, symplectic=symplectic, symplectic_bounds=(None, None), symplectic_trainable=symplectic_trainable, displacement=displacement, displacement_bounds=(None, None), displacement_trainable=displacement_trainable)
         self.mixing = False
-        self._trainable = [symplectic_trainable, displacement_trainable]
-        self._parameters = [
-            self._math_backend.make_symplectic_parameter(
-                symplectic, symplectic_trainable, len(modes), "symplectic"
-            ),
-            self._math_backend.make_euclidean_parameter(
-                displacement,
-                displacement_trainable,
-                (None, None),
-                (2 * len(modes),),
-                "displacement",
-            ),
-        ]
 
-    def symplectic_matrix(self, hbar: float):
-        return self._parameters[0]
+    def symplectic_matrix(self, hbar: float = 2.0):
+        return self.symplectic
 
-    def displacement_vector(self, hbar: float):
-        return self._parameters[1]
+    def displacement_vector(self, hbar: float = 2.0):
+        return self.displacement
 
     @property
     def symplectic_parameters(self) -> List:
-        return [self.symplectic_matrix(hbar=2.0)] if self._trainable[0] else []
+        return [mat for mat in self._trainable_parameters if len(mat.shape) == 2]
 
     @property
     def euclidean_parameters(self) -> List:
-        return [self.displacement_vector(hbar=2.0)] if self._trainable[1] else []
+        return [vec for vec in self._trainable_parameters if len(vec.shape) == 1]
 
 
-class BSgate(Gate):
+class BSgate(Parametrized, Gate):
     r"""
     Beam splitter gate. It applies to a single pair of modes.
 
@@ -222,32 +169,18 @@ class BSgate(Gate):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
-            lambda theta, phi: f"modes={modes}, theta={theta}, theta_bounds={theta_bounds}, theta_trainable={theta_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
-        )
         if len(modes) > 2:
             raise ValueError(
                 "Beam splitter cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
             )
-        self.modes = modes
+        super().__init__(modes=modes, theta=theta, theta_bounds=theta_bounds, theta_trainable=theta_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
         self.mixing = False
-        self._trainable = [theta_trainable, phi_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                theta, theta_trainable, theta_bounds, None, "theta"
-            ),
-            self._math_backend.make_euclidean_parameter(
-                phi, phi_trainable, phi_bounds, None, "phi"
-            ),
-        ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.beam_splitter_symplectic(*self._parameters)
+        return self._symplectic_backend.beam_splitter_symplectic(self.theta, self.phi)
 
 
-class MZgate(Gate):
+class MZgate(Parametrized, Gate):
     r"""
     Mach-Zehnder gate. It supports two conventions:
         if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
@@ -275,33 +208,16 @@ class MZgate(Gate):
         phi_b_trainable: bool = True,
         internal: bool = False,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
-            lambda phi_a, phi_b: f"modes={modes}, phi_a={phi_a}, phi_a_bounds={phi_a_bounds}, phi_a_trainable={phi_a_trainable}, phi_b={phi_b}, phi_b_bounds={phi_b_bounds}, phi_b_trainable={phi_b_trainable}"
-        )
         if len(modes) > 2:
-            raise ValueError(
-                "The Mach-Zehnder gate cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer."
-            )
-        self.modes = modes
+            raise ValueError("The Mach-Zehnder gate cannot be applied to more than 2 modes. Perhaps you are looking for Interferometer.")
+        super().__init__(modes=modes, phi_a=phi_a, phi_a_bounds=phi_a_bounds, phi_a_trainable=phi_a_trainable, phi_b=phi_b, phi_b_bounds=phi_b_bounds, phi_b_trainable=phi_b_trainable, internal=internal)
         self.mixing = False
-        self._internal = internal
-        self._trainable = [phi_a_trainable, phi_b_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                phi_a, phi_a_trainable, phi_a_bounds, None, "phi_a"
-            ),
-            self._math_backend.make_euclidean_parameter(
-                phi_b, phi_b_trainable, phi_b_bounds, None, "phi_b"
-            ),
-        ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.mz_symplectic(*self._parameters, internal=self._internal)
+        return self._symplectic_backend.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
-class S2gate(Gate):
+class S2gate(Parametrized, Gate):
     r"""
     Two-mode squeezing gate. It applies to a single pair of modes.
 
@@ -325,26 +241,14 @@ class S2gate(Gate):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        self._repr_string: Callable[
-            [float, float], str
-        ] = (
-            lambda r, phi: f"modes={modes}, r={r}, r_bounds={r_bounds}, r_trainable={r_trainable}, phi={phi}, phi_bounds={phi_bounds}, phi_trainable={phi_trainable}"
-        )
-        self.modes = modes
+        super().__init__(modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
         self.mixing = False
-        self._trainable = [r_trainable, phi_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(r, r_trainable, r_bounds, None, "r"),
-            self._math_backend.make_euclidean_parameter(
-                phi, phi_trainable, phi_bounds, None, "phi"
-            ),
-        ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.two_mode_squeezing_symplectic(*self._parameters)
+        return self._symplectic_backend.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
-class LossChannel(Gate):
+class LossChannel(Parametrized, Gate):
     r"""
     The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If `transmissivity` is a single float, its value is applied to all of the parallel instances of the gate. To apply mode-specific values use a list of floats.
@@ -364,29 +268,12 @@ class LossChannel(Gate):
         transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         transmissivity_trainable: bool = False,
-        hbar: float = 2.0,
     ):
-        self._repr_string: Callable[
-            [float], str
-        ] = (
-            lambda T: f"modes={modes}, transmissivity={T}, transmissivity_bounds={transmissivity_bounds}, transmissivity_trainable={transmissivity_trainable}"
-        )
-        self.modes = modes
+        super().__init__(modes=modes, transmissivity=transmissivity, transmissivity_bounds=transmissivity_bounds, transmissivity_trainable=transmissivity_trainable)
         self.mixing = True
-        self.hbar = hbar
-        self._trainable = [transmissivity_trainable]
-        self._parameters = [
-            self._math_backend.make_euclidean_parameter(
-                transmissivity,
-                transmissivity_trainable,
-                transmissivity_bounds,
-                (len(modes),),
-                "transmissivity",
-            )
-        ]
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.loss_X(*self._parameters)
+        return self._symplectic_backend.loss_X(self.transmissivity)
 
     def noise_matrix(self, hbar: float):
-        return self._symplectic_backend.loss_Y(*self._parameters, hbar=hbar)
+        return self._symplectic_backend.loss_Y(self.transmissivity, hbar=hbar)
