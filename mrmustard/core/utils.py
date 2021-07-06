@@ -42,17 +42,11 @@ def J(num_modes: int):
 @lru_cache()
 def partition(photons: int, max_vals: Tuple[int, ...]) -> Tuple[Tuple[int, ...], ...]:
     "Returns a list of all the ways of putting n photons into modes that have at most (n1, n2, etc.) photons each"
-    return [
-        comb
-        for comb in product(*(range(min(photons, i) + 1) for i in max_vals))
-        if sum(comb) == photons
-    ]
+    return [comb for comb in product(*(range(min(photons, i) + 1) for i in max_vals)) if sum(comb) == photons]
 
 
 @njit
-def remove(
-    pattern: Tuple[int, ...]
-) -> Generator[Tuple[int, Tuple[int, ...]], None, None]:  # pragma: no cover
+def remove(pattern: Tuple[int, ...]) -> Generator[Tuple[int, Tuple[int, ...]], None, None]:  # pragma: no cover
     "returns a generator for all the possible ways to decrease elements of the given tuple by 1"
     for p, n in enumerate(pattern):
         if n > 0:

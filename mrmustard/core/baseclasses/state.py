@@ -22,9 +22,7 @@ class State(ABC):
             cutoffs List[int]: the cutoff dimensions for each mode
         """
         if not self.mixed:
-            A, B, C = self._state_backend.ABC(
-                self.cov, self.means, mixed=self.mixed, hbar=self.hbar
-            )
+            A, B, C = self._state_backend.ABC(self.cov, self.means, mixed=self.mixed, hbar=self.hbar)
             return self._state_backend.fock_state(A, B, C, cutoffs=cutoffs)
 
     def dm(self, cutoffs: List[int]):

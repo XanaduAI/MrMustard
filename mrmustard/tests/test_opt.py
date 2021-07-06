@@ -12,7 +12,7 @@ def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     tf.random.set_seed(137)
     circ = Circuit()
-    circ.append(S2gate(modes=[0, 1]))
+    circ.append(S2gate(modes=[0, 1], r=abs(np.random.normal()), phi=np.random.normal()))
 
     state_in = Vacuum(num_modes=2)
 
@@ -31,9 +31,9 @@ def test_hong_ou_mandel_optimizer():
     tf.random.set_seed(137)
     circ = Circuit()
     r = np.arcsinh(1.0)
-    circ.append(S2gate(modes=[0, 1], r=r, r_trainable=False))
-    circ.append(S2gate(modes=[2, 3], r=r, r_trainable=False))
-    circ.append(BSgate(modes=[1, 2]))
+    circ.append(S2gate(modes=[0, 1], r=r, r_trainable=False, phi=0.0))
+    circ.append(S2gate(modes=[2, 3], r=r, r_trainable=False, phi=0.0))
+    circ.append(BSgate(modes=[1, 2], theta=np.random.normal(), phi=np.random.normal()))
 
     state_in = Vacuum(num_modes=4)
 
@@ -49,9 +49,9 @@ def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     tf.random.set_seed(137)
     circ = Circuit()
-    circ.append(Sgate(modes=[0]))
-    circ.append(Sgate(modes=[1]))
-    circ.append(BSgate(modes=[0, 1]))
+    circ.append(Sgate(modes=[0], r=np.random.normal(), phi=np.random.normal()))
+    circ.append(Sgate(modes=[1], r=np.random.normal(), phi=np.random.normal()))
+    circ.append(BSgate(modes=[0, 1], theta=np.random.normal(), phi=np.random.normal()))
     tf.random.set_seed(20)
 
     state_in = Vacuum(num_modes=2)
@@ -79,7 +79,7 @@ def test_learning_two_mode_Ggate():
         amps = circ(state_in).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
-    opt = Optimizer(symplectic_lr=0.1)
+    opt = Optimizer(symplectic_lr=1.0)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=2e-3)

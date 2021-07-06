@@ -49,9 +49,7 @@ class SymplecticBackend(SymplecticBackendInterface):
             ]
         )
 
-    def mz_symplectic(
-        self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False
-    ) -> tf.Tensor:
+    def mz_symplectic(self, phi_a: tf.Tensor, phi_b: tf.Tensor, internal: bool = False) -> tf.Tensor:
         r"""Mach-Zehnder symplectic matrix. It supports two conventions:
         if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
         if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
@@ -88,21 +86,19 @@ class SymplecticBackend(SymplecticBackendInterface):
                 ]
             )
 
-    def rotation_symplectic(self, phi: tf.Tensor) -> tf.Tensor:
+    def rotation_symplectic(self, angle: tf.Tensor) -> tf.Tensor:
         r"""Rotation gate.
         Args:
-            phi: rotation angles
+            angle: rotation angles
         Returns:
-            array: rotation matrices by angle theta
+            array: rotation matrices by angle
         """
-        num_modes = phi.shape[-1]
-        x = tf.math.cos(phi)
-        y = tf.math.sin(phi)
-        return (
-            tf.linalg.diag(tf.concat([x, x], axis=0))
-            + tf.linalg.diag(-y, k=num_modes)
-            + tf.linalg.diag(y, k=-num_modes)
-        )
+        if len(angle.shape) == 0:
+            angle = angle[None, ...]
+        num_modes = angle.shape[-1]
+        x = tf.math.cos(angle)
+        y = tf.math.sin(angle)
+        return tf.linalg.diag(tf.concat([x, x], axis=0)) + tf.linalg.diag(-y, k=num_modes) + tf.linalg.diag(y, k=-num_modes)
 
     def squeezing_symplectic(self, r: tf.Tensor, phi: tf.Tensor) -> tf.Tensor:
         r"""Squeezing. In fock space this corresponds to \exp(\tfrac{1}{2}r e^{i \phi} (a^2 - a^{\dagger 2}) ).
@@ -114,6 +110,10 @@ class SymplecticBackend(SymplecticBackendInterface):
             array: symplectic transformation matrix
         """
         # pylint: disable=assignment-from-no-return
+        if len(r.shape) == 0:
+            r = r[None, ...]
+        if len(phi.shape) == 0:
+            phi = phi[None, ...]
         num_modes = phi.shape[-1]
         cp = tf.math.cos(phi)
         sp = tf.math.sin(phi)

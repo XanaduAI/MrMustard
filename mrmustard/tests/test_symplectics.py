@@ -51,9 +51,7 @@ def test_BSgate(theta, phi):
     S2b = S2gate(modes=[1, 3], r=r_choi, phi=0.0)
     BS = BSgate(modes=[0, 1], theta=theta, phi=phi)
     cov = BS(S2b(S2a(Vacuum(num_modes=4)))).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected)
@@ -68,9 +66,7 @@ def test_S2gate(r, phi):
     S2b = S2gate(modes=[1, 3], r=r_choi, phi=0.0)
     S2c = S2gate(modes=[0, 1], r=r, phi=phi)
     cov = S2c(S2b(S2a(Vacuum(num_modes=4)))).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected)
@@ -86,9 +82,7 @@ def test_MZgate_external_tms(phi_a, phi_b):
     MZ = MZgate(modes=[0, 1], phi_a=phi_a, phi_b=phi_b, internal=False)
     cov = MZ(S2b(S2a(Vacuum(num_modes=4)))).cov
 
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(rotation(phi_a), [0], 4)
     expected = S_expanded @ expected @ S_expanded.T
 
@@ -116,9 +110,7 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     MZ = MZgate(modes=[0, 1], phi_a=phi_a, phi_b=phi_b, internal=True)
     cov = MZ(S2b(S2a(Vacuum(num_modes=4)))).cov
 
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
-        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
-    )
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
 
     BS = beam_splitter(np.pi / 4, np.pi / 2)
     S_expanded = expand(BS, [0, 1], 4)

@@ -5,3 +5,5 @@ repoze.lru
 tensorflow==2.4.1
 rich
 tqdm
+matplotlib
+strawberryfields

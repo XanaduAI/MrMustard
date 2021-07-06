@@ -132,9 +132,7 @@ class SymplecticBackendInterface(ABC):
 
 class OptimizerBackendInterface(ABC):
     @abstractmethod
-    def loss_and_gradients(
-        self, symplectic_params: Sequence, euclidean_params: Sequence, cost_fn: Callable
-    ):
+    def loss_and_gradients(self, symplectic_params: Sequence, euclidean_params: Sequence, cost_fn: Callable):
         ...
 
     @abstractmethod

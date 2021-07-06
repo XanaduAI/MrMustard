@@ -32,9 +32,7 @@ class OptimizerBackend(OptimizerBackendInterface):
             Z = np.matmul(np.transpose(S), dS_eucl)
             Y = 0.5 * (Z + np.matmul(np.matmul(Jmat, Z.T), Jmat))
             S.assign(
-                S
-                @ expm(-symplectic_lr * np.transpose(Y))
-                @ expm(-symplectic_lr * (Y - np.transpose(Y))),
+                S @ expm(-symplectic_lr * np.transpose(Y)) @ expm(-symplectic_lr * (Y - np.transpose(Y))),
                 read_value=False,
             )
 
@@ -44,6 +42,7 @@ class OptimizerBackend(OptimizerBackendInterface):
         euclidean_params: Sequence[tf.Tensor],
         euclidean_lr: float,
     ) -> None:
+        print("Updating euclidean param!")
         self.euclidean_opt.lr = euclidean_lr
         self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
