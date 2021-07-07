@@ -23,7 +23,8 @@ class Gate(ABC):
 
     def __repr__(self):
         with np.printoptions(precision=3, suppress=True):
-            return f"{self.__class__.__qualname__}({', '.join(self.all_params)})"
+            lst = [f'{name}={np.asarray(self.__dict__[name])}' for name in self.param_names]
+            return f"{self.__class__.__qualname__}({', '.join(lst)})"
 
     def symplectic_matrix(self, hbar: float) -> Optional:
         return None
