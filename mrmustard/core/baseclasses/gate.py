@@ -1,6 +1,6 @@
 from abc import ABC
 from typing import List, Optional
-import numpy as np  # NOTE: only needed for the repr...
+import numpy as np  # NOTE: only needed for the repr
 from mrmustard.core.backends import MathBackendInterface, SymplecticBackendInterface
 from mrmustard.core.baseclasses.state import State
 
@@ -23,7 +23,7 @@ class Gate(ABC):
 
     def __repr__(self):
         with np.printoptions(precision=5, suppress=True):
-            lst = [f'{name}={np.asarray(self.__dict__[name])}' for name in self.param_names]
+            lst = [f'{name}={[val for val in np.atleast_1d(np.asarray(self.__dict__[name]))]}' for name in self.param_names]
             return f"{self.__class__.__qualname__}(modes={self._modes}, {', '.join(lst)})"
 
     def symplectic_matrix(self, hbar: float) -> Optional:
