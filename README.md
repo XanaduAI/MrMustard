@@ -13,12 +13,12 @@ MrMustard supports:
 - plugin-based backends for easy customization and contributions
 
 
-## API Reference
+## Basic API Reference
 
 ### 1: Circuits
 
 In order to build a circuit we create an empty circuit object `circ = Circuit()` and append gates to it. 
-Circuits are mutable sequences, which means they support all of the `list` methods (e.g. `circ.append(gate)`, `for gate in circ`, `some_gates = circ[1:4]`, `circ[6] = this_gate`, etc...)
+Circuits are mutable sequences, which means they support all of the `list` methods (e.g. `circ.append(gate)`, `for gate in circ`, `some_gates = circ[1:4]`, `circ[6] = this_gate`, `circ.pop()`, etc...)
 
 The circuit is also callable: it takes a state object representing the input and it returns the output state:
 
@@ -37,20 +37,23 @@ state_out = circ(state_in)
 
 ### 2. Gates
 It's not necessary to set up a whole circuit if you just want to apply a few gates. Just like the circuit, gates are callable too (calling the circuit actually calls all of the gates in sequence):
+Also note that if a parameter of a single-mode gate is not a list (or a list of length 1) its value is shared across all modes.
 
 ```python
-from mrmustard.gates import Dgate, LossChannel
+from mrmustard.gates import Dgate, Sgate
 from mrmustard.states import Vacuum
 
-displacement = Dgate(modes = [0], x = 0.1, y = -0.5)
-loss = LossChannel(modes=[0], transmissivity=0.5)
+# two single-mode displacements in parallel, with independent parameters:
+displacement = Dgate(modes = [0,1], x = [0.1, 0.2], y = [-0.5, 0.4])
+# two single-mode squeezers in parallel, with shared parameters:
+squeezing = Sgate(modes = [0,1], r = 0.1, phi = 0.0)
 
-state_in = Vacuum(num_modes=1, hbar=2.0)
-state_out = loss(displacement(state_in))
+state_in = Vacuum(num_modes=2, hbar=2.0)
+state_out = squeezing(displacement(state_in))
 ```
 
 ### 3. Detectors
-MrMustard supports detectors, and even though the output of a detector is a probability distribution over the outcomes, even this operation is differentiable.
+MrMustard supports detectors, and even though the output of a detector is a probability distribution over the outcomes, even this operation is differentiable:
 
 ```python
 from mrmustard.tools import Circuit
@@ -60,9 +63,9 @@ from mrmustard.measurements import PNRDetector
 
 
 circ = Circuit()
-circ.append(Sgate(modes = [0,1], r=0.2, phi=[0.9,1.9])) # if a parameter is not a list, its value is the same on all modes
+circ.append(Sgate(modes = [0,1], r=0.2, phi=[0.9,1.9]))  #  a mix of shared and independent parameters is allowed
 circ.append(BSgate(modes = [0,1], theta=1.4, phi=-0.1))
-circ.append(LossChannel(modes=[0,1], transmissivity=0.5)) # same here
+circ.append(LossChannel(modes=[0,1], transmissivity=0.5))
 
 detector = PNRDetector(modes = [0,1], efficiency=0.9, dark_counts=0.01)
 

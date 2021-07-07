@@ -22,7 +22,7 @@ class Gate(ABC):
         return output
 
     def __repr__(self):
-        with np.printoptions(precision=3, suppress=True):
+        with np.printoptions(precision=5, suppress=True):
             lst = [f'{name}={np.asarray(self.__dict__[name])}' for name in self.param_names]
             return f"{self.__class__.__qualname__}(modes={self._modes}, {', '.join(lst)})"
 
