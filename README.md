@@ -37,7 +37,7 @@ state_out = circ(state_in)
 
 ### 2. Gates
 It's not necessary to set up a whole circuit if you just want to apply a few gates. Just like the circuit, gates are callable too (calling the circuit actually calls all of the gates in sequence):
-Also note that if a parameter of a single-mode gate is not a list (or a list of length 1) its value is shared across all modes.
+Also note that if a parameter of a single-mode gate is a float or a list of length 1 its value is shared across all modes.
 
 ```python
 from mrmustard.gates import Dgate, Sgate
@@ -63,7 +63,7 @@ from mrmustard.measurements import PNRDetector
 
 
 circ = Circuit()
-circ.append(Sgate(modes = [0,1], r=0.2, phi=[0.9,1.9]))  #  a mix of shared and independent parameters is allowed
+circ.append(Sgate(modes = [0,1], r=0.2, phi=[0.9,1.9]))  # a mix of shared and independent parameters is allowed
 circ.append(BSgate(modes = [0,1], theta=1.4, phi=-0.1))
 circ.append(LossChannel(modes=[0,1], transmissivity=0.5))
 
@@ -97,7 +97,7 @@ state_out.number_means  # photon number covariance
 ```
 
 ### 5. Optimization
-The optimizer in MrMustard is a convenience class, which means that other optimizers can be used, as all the transformations are differentiable with respect to the parameters of the gates. The only reason where you may want to use the optimizer is becasue it supports symplectic optimization for generic Gaussian transformations (`Ggate`), and it applies it automatically if there are `Ggate`s in the circuit.
+The optimizer in MrMustard is a convenience class, which means that other optimizers can be used as all the transformations are differentiable with respect to the parameters of the gates. The only reason where you may want to use the optimizer is becasue it supports symplectic optimization for generic Gaussian transformations (`Ggate`), and it kicks-in automatically if there are `Ggate`s in the circuit.
 
 Here we use a default TensorFlow optimizer (no `Ggate`s):
 ```python
@@ -119,7 +119,7 @@ for i in trange(100):
     adam.minimize(cost_fn, displacement.euclidean_parameters)
 ```
 
-Here we use MrMustard's optimizer:
+Here we use MrMustard's optimizer because we have a `Ggate`:
 ```python
 import tensorflow as tf
 from mrmustard.tools import Circuit, Optimizer
@@ -128,7 +128,7 @@ from mrmustard.states import Vacuum
 
 circ = Circuit()
 
-displacement = Ggate(modes = [0])
+displacement = Ggate(modes = [0])  # Ggate and Interferometer are the only gates which automate parameter initialization
 loss = LossChannel(modes=[0], transmissivity=0.5, transmissivity_trainable=False)
 circ.append(displacement)
 circ.append(loss)
