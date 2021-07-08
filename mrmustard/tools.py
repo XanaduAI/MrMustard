@@ -68,12 +68,7 @@ class Optimizer:
         self.symplectic_lr = symplectic_lr
         self.euclidean_lr = euclidean_lr
 
-    def minimize(
-        self,
-        cost_fn: Callable,
-        by_optimizing: Sequence[Union[Circuit, Detector]],
-        max_steps: int = 1000,
-    ) -> Union[Sequence[Circuit], Circuit]:
+    def minimize(self, cost_fn: Callable, by_optimizing: Sequence[Union[Circuit, Detector]], max_steps: int = 1000):
         r"""
         Optimizes circuits and/or detectors such that the given cost function is minimized.
         Arguments:
