@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from scipy.stats import unitary_group, truncnorm
+from scipy.stats import unitary_group
 from scipy.special import binom
 from typing import List, Tuple, Callable, Optional, Union
 from itertools import product
