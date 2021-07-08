@@ -10,7 +10,13 @@ from mrmustard.core import utils
 class OptimizerBackend(OptimizerBackendInterface):
     euclidean_opt = tf.keras.optimizers.Adam()
 
-    def loss_and_gradients(self, symplectic_params: Sequence[tf.Tensor], orthogonal_params: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor], cost_fn: Callable):
+    def loss_and_gradients(
+        self,
+        symplectic_params: Sequence[tf.Tensor],
+        orthogonal_params: Sequence[tf.Tensor],
+        euclidean_params: Sequence[tf.Tensor],
+        cost_fn: Callable,
+    ):
         with tf.GradientTape() as tape:
             loss = cost_fn()
         symp_grads, orth_grads, eucl_grads = tape.gradient(loss, [symplectic_params, orthogonal_params, euclidean_params])

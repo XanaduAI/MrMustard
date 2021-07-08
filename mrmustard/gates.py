@@ -307,6 +307,7 @@ class Interferometer(Parametrized, Gate):
 #  NON-UNITARY
 #
 
+
 class LossChannel(Parametrized, Gate):
     r"""
     The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
