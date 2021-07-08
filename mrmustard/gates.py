@@ -31,7 +31,7 @@ class Dgate(Parametrized, Gate):
         y_trainable: bool = True,
     ):
         super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
-        self.mixing = False
+        self.is_unitary = True
 
     def displacement_vector(self, hbar: float):
         return self._symplectic_backend.displacement(self.x, self.y, hbar=hbar)
@@ -67,7 +67,7 @@ class Sgate(Parametrized, Gate):
         super().__init__(
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
         )
-        self.mixing = False
+        self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
         return self._symplectic_backend.squeezing_symplectic(self.r, self.phi)
@@ -95,7 +95,7 @@ class Rgate(Parametrized, Gate):
         angle_trainable: bool = True,
     ):
         super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
-        self.mixing = False
+        self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
         return self._symplectic_backend.rotation_symplectic(self.angle)
@@ -135,7 +135,7 @@ class Ggate(Parametrized, Gate):
             displacement_bounds=(None, None),
             displacement_trainable=displacement_trainable,
         )
-        self.mixing = False
+        self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float = 2.0):
         return self.symplectic
@@ -188,7 +188,7 @@ class BSgate(Parametrized, Gate):
             phi_bounds=phi_bounds,
             phi_trainable=phi_trainable,
         )
-        self.mixing = False
+        self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
         return self._symplectic_backend.beam_splitter_symplectic(self.theta, self.phi)
@@ -235,7 +235,7 @@ class MZgate(Parametrized, Gate):
             phi_b_trainable=phi_b_trainable,
             internal=internal,
         )
-        self.mixing = False
+        self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
         return self._symplectic_backend.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
@@ -269,11 +269,43 @@ class S2gate(Parametrized, Gate):
         super().__init__(
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
         )
-        self.mixing = False
+        self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
         return self._symplectic_backend.two_mode_squeezing_symplectic(self.r, self.phi)
 
+
+class Interferometer(Parametrized, Gate):
+    r"""
+    N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
+
+    Arguments:
+        modes (List[int]): the list of modes this gate is applied to
+        orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
+        orthogonal_trainable (bool): whether orthogonal is a trainable variable
+    """
+
+    def __init__(self, modes: List[int], orthogonal: Optional = None, orthogonal_trainable: bool = True):
+        if orthogonal is None:
+            orthogonal = self._math_backend.new_orthogonal_parameter(num_modes=len(modes))
+        super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
+        self.is_unitary = True
+
+    def symplectic_matrix(self, hbar: float = 2.0):
+        return self.orthogonal
+
+    @property
+    def orthogonal_parameters(self) -> List:
+        return self._trainable_parameters
+
+    @property
+    def euclidean_parameters(self) -> List:
+        return []
+
+
+#
+#  NON-UNITARY
+#
 
 class LossChannel(Parametrized, Gate):
     r"""
@@ -302,7 +334,7 @@ class LossChannel(Parametrized, Gate):
             transmissivity_bounds=transmissivity_bounds,
             transmissivity_trainable=transmissivity_trainable,
         )
-        self.mixing = True
+        self.is_unitary = False
 
     def symplectic_matrix(self, hbar: float):
         return self._symplectic_backend.loss_X(self.transmissivity)

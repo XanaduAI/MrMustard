@@ -78,13 +78,15 @@ class Optimizer:
         to_optimize = [by_optimizing] if not isinstance(by_optimizing, Sequence) else by_optimizing
 
         symplectic_parameters = self._opt_backend.extract_symplectic_parameters(to_optimize)
+        orthogonal_parameters = self._opt_backend.extract_orthogonal_parameters(to_optimize)
         euclidean_parameters = self._opt_backend.extract_euclidean_parameters(to_optimize)
 
         bar = Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                loss, symp_grads, eucl_grads = self._opt_backend.loss_and_gradients(symplectic_parameters, euclidean_parameters, cost_fn)
+                loss, symp_grads, orth_grads, eucl_grads = self._opt_backend.loss_and_gradients(symplectic_parameters, orthogonal_parameters, euclidean_parameters, cost_fn)
                 self._opt_backend.update_symplectic(symp_grads, symplectic_parameters, self.symplectic_lr)
+                self._opt_backend.update_orthogonal(orth_grads, orthogonal_parameters, self.symplectic_lr)
                 self._opt_backend.update_euclidean(eucl_grads, euclidean_parameters, self.euclidean_lr)
                 self.loss_history.append(loss)
                 bar.step(loss)

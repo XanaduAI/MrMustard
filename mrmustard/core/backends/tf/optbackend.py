@@ -10,39 +10,25 @@ from mrmustard.core import utils
 class OptimizerBackend(OptimizerBackendInterface):
     euclidean_opt = tf.keras.optimizers.Adam()
 
-    def loss_and_gradients(
-        self,
-        symplectic_params: Sequence[tf.Tensor],
-        euclidean_params: Sequence[tf.Tensor],
-        cost_fn: Callable,
-    ):
+    def loss_and_gradients(self, symplectic_params: Sequence[tf.Tensor], orthogonal_params: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor], cost_fn: Callable):
         with tf.GradientTape() as tape:
             loss = cost_fn()
-        symp_grads, eucl_grads = tape.gradient(loss, [symplectic_params, euclidean_params])
-        return loss.numpy(), symp_grads, eucl_grads
+        symp_grads, orth_grads, eucl_grads = tape.gradient(loss, [symplectic_params, orthogonal_params, euclidean_params])
+        return loss.numpy(), symp_grads, orth_grads, eucl_grads
 
-    def update_symplectic(
-        self,
-        symplectic_grads: Sequence[tf.Tensor],
-        symplectic_params: Sequence[tf.Tensor],
-        symplectic_lr: float,
-    ) -> None:
+    def update_symplectic(self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor], symplectic_lr: float):
         for S, dS_eucl in zip(symplectic_params, symplectic_grads):
             Jmat = utils.J(S.shape[-1] // 2)
             Z = np.matmul(np.transpose(S), dS_eucl)
-            Y = 0.5 * (Z + np.matmul(np.matmul(Jmat, Z.T), Jmat))
-            S.assign(
-                S @ expm(-symplectic_lr * np.transpose(Y)) @ expm(-symplectic_lr * (Y - np.transpose(Y))),
-                read_value=False,
-            )
+            Y = 0.5 * (Z + np.linalg.multi_dot([Jmat, Z.T, Jmat]))
+            S.assign(S @ expm(-symplectic_lr * np.transpose(Y)) @ expm(-symplectic_lr * (Y - np.transpose(Y))), read_value=False)
 
-    def update_euclidean(
-        self,
-        euclidean_grads: Sequence[tf.Tensor],
-        euclidean_params: Sequence[tf.Tensor],
-        euclidean_lr: float,
-    ) -> None:
-        print("Updating euclidean param!")
+    def update_orthogonal(self, orthogonal_grads: Sequence[tf.Tensor], orthogonal_params: Sequence[tf.Tensor], symplectic_lr: float):
+        for O, dO_eucl in zip(orthogonal_params, orthogonal_grads):
+            D = 0.5 * (dO_eucl - np.linalg.multi_dot([O, np.transpose(dO_eucl), O]))
+            O.assign(O @ expm(symplectic_lr * np.matmul(np.transpose(D), O)), read_value=False)
+
+    def update_euclidean(self, euclidean_grads: Sequence[tf.Tensor], euclidean_params: Sequence[tf.Tensor], euclidean_lr: float):
         self.euclidean_opt.lr = euclidean_lr
         self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
@@ -56,6 +42,17 @@ class OptimizerBackend(OptimizerBackendInterface):
             except AttributeError:
                 continue
         return [s.deref() for s in symp]
+
+    def extract_orthogonal_parameters(self, items: Sequence):
+        orth = []
+        for item in items:
+            try:
+                for o in item.orthogonal_parameters:
+                    if o.ref() not in orth:
+                        orth.append(o.ref())
+            except AttributeError:
+                continue
+        return [o.deref() for o in orth]
 
     def extract_euclidean_parameters(self, items: Sequence):
         eucl = []

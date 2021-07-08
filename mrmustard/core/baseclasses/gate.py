@@ -22,8 +22,8 @@ class Gate(ABC):
         return output
 
     def __repr__(self):
-        with np.printoptions(precision=5, suppress=True):
-            lst = [f'{name}={[val for val in np.atleast_1d(np.asarray(self.__dict__[name]))]}' for name in self.param_names]
+        with np.printoptions(precision=6, suppress=True):
+            lst = [f'{name}={np.asarray(np.atleast_1d(self.__dict__[name]))}' for name in self.param_names]
             return f"{self.__class__.__qualname__}(modes={self._modes}, {', '.join(lst)})"
 
     def symplectic_matrix(self, hbar: float) -> Optional:
@@ -53,4 +53,8 @@ class Gate(ABC):
 
     @property
     def symplectic_parameters(self) -> List:
-        return []  # NOTE overridden in Ggate and Interferometer
+        return []  # NOTE overridden in Ggate
+
+    @property
+    def orthogonal_parameters(self) -> List:
+        return []  # NOTE overridden in Interferometer
