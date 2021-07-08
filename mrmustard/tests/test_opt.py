@@ -86,11 +86,10 @@ def test_learning_two_mode_Ggate():
 
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
-    tf.random.set_seed(137)
+    np.random.seed(11)
     circ = Circuit()  # emtpy circuit with vacuum input state
     circ.append(Sgate(modes=[0, 1], r=np.random.normal(size=(2)) ** 2, phi=np.random.normal(size=(2))))
     circ.append(Interferometer(modes=[0, 1]))
-    tf.random.set_seed(20)
 
     state_in = Vacuum(num_modes=2)
 

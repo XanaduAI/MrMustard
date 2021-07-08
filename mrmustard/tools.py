@@ -102,9 +102,9 @@ class Optimizer:
     def should_stop(self, max_steps: int) -> bool:
         if max_steps != 0 and len(self.loss_history) > max_steps:
             return True
-        if len(self.loss_history) > 5:
+        if len(self.loss_history) > 20:
             # loss is stable for 5 steps
-            if sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 5)) < 1e-6:
+            if sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 20)) < 1e-6:
                 print("Loss looks stable, stopping here.")
                 return True
         return False
