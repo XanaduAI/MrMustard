@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.gates import Sgate, BSgate, S2gate, Ggate
+from mrmustard.gates import Sgate, BSgate, S2gate, Ggate, Interferometer
 from mrmustard.tools import Circuit, Optimizer
 from mrmustard.states import Vacuum
 
@@ -49,8 +49,7 @@ def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     tf.random.set_seed(137)
     circ = Circuit()
-    circ.append(Sgate(modes=[0], r=np.random.normal(), phi=np.random.normal()))
-    circ.append(Sgate(modes=[1], r=np.random.normal(), phi=np.random.normal()))
+    circ.append(Sgate(modes=[0, 1], r=np.random.normal(size=(2)), phi=np.random.normal(size=(2))))
     circ.append(BSgate(modes=[0, 1], theta=np.random.normal(), phi=np.random.normal()))
     tf.random.set_seed(20)
 
@@ -71,6 +70,26 @@ def test_learning_two_mode_Ggate():
     tf.random.set_seed(137)
     circ = Circuit()  # emtpy circuit with vacuum input state
     circ.append(Ggate(modes=[0, 1], displacement_trainable=False, displacement=[0, 0, 0, 0]))
+    tf.random.set_seed(20)
+
+    state_in = Vacuum(num_modes=2)
+
+    def cost_fn():
+        amps = circ(state_in).ket(cutoffs=[2, 2])
+        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
+
+    opt = Optimizer(symplectic_lr=1.0)
+
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+
+
+def test_learning_two_mode_Interferometer():
+    """Finding the optimal Interferometer to make a pair of single photons"""
+    tf.random.set_seed(137)
+    circ = Circuit()  # emtpy circuit with vacuum input state
+    circ.append(Sgate(modes=[0, 1], r=np.random.normal(size=(2))**2, phi=np.random.normal(size=(2))))
+    circ.append(Interferometer(modes=[0, 1]))
     tf.random.set_seed(20)
 
     state_in = Vacuum(num_modes=2)
