@@ -46,6 +46,13 @@ class Circuit(MutableSequence):
         return [par for gate in self._gates for par in gate.symplectic_parameters]
 
     @property
+    def orthogonal_parameters(self) -> List:
+        r"""
+        Returns the list of orthogonal parameters
+        """
+        return [par for gate in self._gates for par in gate.orthogonal_parameters]
+
+    @property
     def euclidean_parameters(self) -> List:
         r"""
         Returns the list of Euclidean parameters
@@ -74,12 +81,11 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-
-        to_optimize = [by_optimizing] if not isinstance(by_optimizing, Sequence) else by_optimizing
-
-        symplectic_parameters = self._opt_backend.extract_symplectic_parameters(to_optimize)
-        orthogonal_parameters = self._opt_backend.extract_orthogonal_parameters(to_optimize)
-        euclidean_parameters = self._opt_backend.extract_euclidean_parameters(to_optimize)
+        if not isinstance(by_optimizing, Sequence):
+            by_optimizing = [by_optimizing]
+        symplectic_parameters = self._opt_backend.extract_symplectic_parameters(by_optimizing)
+        orthogonal_parameters = self._opt_backend.extract_orthogonal_parameters(by_optimizing)
+        euclidean_parameters = self._opt_backend.extract_euclidean_parameters(by_optimizing)
 
         bar = Progressbar(max_steps)
         with bar:
