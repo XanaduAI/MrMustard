@@ -106,11 +106,10 @@ def test_learning_two_mode_Interferometer():
 
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    tf.random.set_seed(137)
+    np.random.seed(11)
     circ = Circuit()
     circ.append(Sgate(modes=[0, 1, 2, 3], r=np.random.uniform(size=4), phi=np.random.normal(size=4)))
     circ.append(Interferometer(modes=[0, 1, 2, 3]))
-    tf.random.set_seed(20)
 
     state_in = Vacuum(num_modes=4)
 
@@ -121,4 +120,4 @@ def test_learning_four_mode_Interferometer():
     opt = Optimizer(symplectic_lr=1.0)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 1 / 16, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.0625, atol=2e-3)
