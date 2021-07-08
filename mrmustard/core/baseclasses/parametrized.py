@@ -3,9 +3,9 @@ from abc import ABC
 
 class Parametrized(ABC):
     r"""
-    Base class for all parametrized objects.
+    Absract base class for all parametrized objects (gates, detectors, etc...)
 
-    Arguments (must be all with keyword):
+    Arguments (must be all called with keyword):
         For each trainable parameter:
         xxx (tensor): initial value
         xxx_bounds (float, float): numerical bounds. Default is (None, None) for unbounded parameters

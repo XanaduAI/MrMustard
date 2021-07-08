@@ -110,6 +110,13 @@ class MathBackend(MathBackendInterface):
         dd = tf.concat([tf.math.exp(-r), tf.math.exp(r)], axis=0)
         return tf.einsum("ij,j,jk->ik", OW, dd, OV)
 
+    def new_orthogonal_parameter(self, num_modes: int = 1) -> tf.Tensor:
+        if num_modes == 1:
+            W = np.exp(1j * np.random.uniform(size=(1, 1)))
+        else:
+            W = unitary_group.rvs(dim=num_modes)
+        return self.unitary_to_orthogonal(W)
+
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
         Args:

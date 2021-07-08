@@ -6,8 +6,9 @@ from mrmustard.core.baseclasses import Detector
 class PNRDetector(Parametrized, Detector):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
-    If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
-    To apply mode-specific values use a list of floats.
+    If a parameter is a single float, the parallel instances of the detector share that parameter.
+    To apply mode-specific parmeters use a list of floats.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (possonian).
     Arguments:
