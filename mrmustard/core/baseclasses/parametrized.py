@@ -5,19 +5,19 @@ class Parametrized(ABC):
     r"""
     Base class for all parametrized objects.
 
-    Arguments (all keyword):
-        For each supported parameter:
-        xxx (tensor): initial parameter
-        xxx_bounds (float, float): numerical bounds. Default is (None, None) for unbounded parameters.
-        xxx_trainable (bool): whether the parameter `xxx` is trainable or not.
+    Arguments (must be all with keyword):
+        For each trainable parameter:
+        xxx (tensor): initial value
+        xxx_bounds (float, float): numerical bounds. Default is (None, None) for unbounded parameters
+        xxx_trainable (bool): whether the parameter `xxx` will be optimized
         yyy (any): other parameters
     """
 
     def __init__(self, **kwargs):
         self._trainable_parameters = []
         self._constant_parameters = []
-
         self.param_names = [key for key in kwargs if key + "_trainable" in kwargs]  # every parameter can be trainable! 🚀
+
         for name in self.param_names:
             if kwargs[name + "_trainable"]:
                 var = self._math_backend.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
