@@ -1,13 +1,13 @@
 from abc import ABC
 from typing import List, Optional
 import numpy as np  # NOTE: only needed for the repr
-from mrmustard.core.backends import MathBackendInterface, SymplecticBackendInterface
+from mrmustard.core.plugins import MathPluginInterface, SymplecticPlugin
 from mrmustard.core.baseclasses.state import State
 
 
 class Gate(ABC):
-    _math_backend: MathBackendInterface
-    _symplectic_backend: SymplecticBackendInterface
+    _math: MathPluginInterface
+    _symplectic_plugin: SymplecticPlugin
 
     def __call__(self, state: State) -> State:
         displacement = self._math_backend.tile_vec(self.displacement_vector(state.hbar), len(self._modes))
