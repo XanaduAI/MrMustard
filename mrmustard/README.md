@@ -1,5 +1,8 @@
 # Structure of MrMustard
-MrMustard is split into four components: the abstract classes, the concrete classes, the plugins and the backends.
+MrMustard is split into four components: the [abstract](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/abstract) classes,
+the [concrete](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/concrete) classes,
+the [plugins](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/plugins) and
+the [backends](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/backends).
 We also have a utils module, which is planned to be deprecated.
 
 Important: always write new tests if you are adding new functionality.
