@@ -7,7 +7,8 @@ Important: always write new tests if you are adding new functionality.
 ## 1. Abstract base classes
 Abstract base classes cannot be instantiated, as they are abstract.
 At the moment the main abstract classes are:
-    - `Parametrized` (functionality for all parametrized objects (Ops, Detectors, etc...))
+
+    - [`Parametrized`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/parametrized.py) (functionality for all parametrized objects (Ops, Detectors, etc...))
     - `Op` (abstract parent class for gates and Gaussian detectors)
     - `State` (abstract parent class for all types of states (Vacuum, Coherent, etc...))
     - `Detector` (abstract parent class for non-Gaussian detectors (PNRs, Threshold, etc...))
@@ -25,6 +26,7 @@ following the conventions you see holding for other similar objects.
 ## 3. Plugins
 Plugins add functionality without committing to a specific numerical library
 (which is instead handled by the backend). At the moment the main plugins are:
+
     - `SymplecticPlugin` (phase space functionality)
     - `FockPlugin` (Fock space functionality)
     - `TrainPlugin` (optimization functionality)
