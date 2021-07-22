@@ -9,15 +9,18 @@ Abstract base classes cannot be instantiated, as they are abstract.
 At the moment the main abstract classes are:
 
 - [`Parametrized`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/parametrized.py) (functionality for all parametrized objects (Ops, Detectors, etc...))
-- [`Op`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/op.py) (abstract parent class for gates and Gaussian detectors)
 - [`State`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/state.py) (abstract parent class for all types of states (Vacuum, Coherent, etc...))
+- [`Op`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/op.py) (abstract parent class for gates and Gaussian detectors)
 - [`Detector`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/detector.py) (abstract parent class for non-Gaussian detectors (PNRs, Threshold, etc...))
 
 Unless it's for a bug or a planned feature, we don't expect to touch these classes very often.
 
 ## 2. Concrete classes
-Concrete classes are the specific Ops (like Squeezers, Homodyne detectors, etc...)
-or Detectors (like PNRs, Threshold, etc...) or states (Vacuum, Coherent, etc...).
+Concrete classes are the specific:
+
+- [`State`s](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/concrete/states.py) (Vacuum, Coherent, etc...)
+- [`Op`s](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/concrete/ops.py) (like Squeezers, Homodyne detectors, etc...)
+- [`Detector`s](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/concrete/measurements.py) (like PNRs, Threshold, etc...)
 
 To develop additional concrete classes, determine which type of object you are implementing 
 e.g. a new gate) and add it to the appropriate file, 
