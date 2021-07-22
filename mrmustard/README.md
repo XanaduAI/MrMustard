@@ -1,9 +1,8 @@
-# Contributing to MrMustard
-Write tests for any new functionality.
-
 # Structure of MrMustard
 MrMustard is split into four components: the concrete classes, the abstract classes, the plugins and the backends.
 We also have a utils module, which we plan to deprecate.
+
+Important: always write new tests if you are adding new functionality.
 
 ## 1. Abstract base classes
 Abstract base classes cannot be instantiated, as they are abstract.
