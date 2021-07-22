@@ -1,14 +1,19 @@
-# Structure of MrMustard
+### Disclaimer
+This document describes the current target architecture.
+We welcome help to fix discrepancies between the codebase and the architecture below.
+
+You can raise [issues](https://github.com/XanaduAI/MrMustard/issues) if it helps you keep track of bugs, but we also have a [kanban board](https://github.com/XanaduAI/MrMustard/projects/1) to keep track of projects and you can [make your own](https://github.com/XanaduAI/MrMustard/projects).
+
+Always write new [tests](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/tests) if you are adding new functionality.
+# Target structure of MrMustard
 MrMustard is split into four components: the [abstract](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/abstract) classes,
 the [concrete](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/concrete) classes,
 the [plugins](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/plugins) and
 the [backends](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/backends).
-We also have a utils module, which is planned to be deprecated.
-
- ✅ Always write new [tests](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/tests) if you are adding new functionality.
 
 ## 1. Abstract base classes
-Abstract base classes cannot be instantiated, as they are abstract.
+Abstract base classes cannot be instantiated, as they are abstract. Except for the `Parametrized` class, which is a custom data class, abstract classes speak quantum mechanics.
+They are unaware of how quantum mechanical entities are computed (that is a job for the plugins).
 At the moment the main abstract classes are:
 
 - [`Parametrized`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/parametrized.py) (functionality for all parametrized objects (Ops, Detectors, etc...))
