@@ -42,4 +42,8 @@ The numerical functionality (be it with autodiff or not) is supplied by the back
 
 To write a new backend (e.g. at the time of writing we don't have a pytorch backend) 
 ne needs to create a new directory inside `backends/` for the new backend and implement
-a concrete interface for low-level math according to the `BackendInterface`.
+a concrete interface for low-level math according to the `BackendInterface` implemented
+in `backends/__init__.py`.
+
+To refactor backends, functionality can be made agnostic and moved into the plugins.
+New plugins can be created if necessary.
