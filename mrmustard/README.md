@@ -9,9 +9,9 @@ Abstract base classes cannot be instantiated, as they are abstract.
 At the moment the main abstract classes are:
 
 - [`Parametrized`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/parametrized.py) (functionality for all parametrized objects (Ops, Detectors, etc...))
-- `Op` (abstract parent class for gates and Gaussian detectors)
-- `State` (abstract parent class for all types of states (Vacuum, Coherent, etc...))
-- `Detector` (abstract parent class for non-Gaussian detectors (PNRs, Threshold, etc...))
+- [`Op`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/op.py) (abstract parent class for gates and Gaussian detectors)
+- [`State`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/state.py) (abstract parent class for all types of states (Vacuum, Coherent, etc...))
+- [`Detector`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/abstract/detector.py) (abstract parent class for non-Gaussian detectors (PNRs, Threshold, etc...))
 
 Unless it's for a bug or a planned feature, we don't expect to touch these classes very often.
 
@@ -27,9 +27,9 @@ following the conventions you see holding for other similar objects.
 Plugins add functionality without committing to a specific numerical library
 (which is instead handled by the backend). At the moment the main plugins are:
 
-- `SymplecticPlugin` (phase space functionality)
-- `FockPlugin` (Fock space functionality)
-- `TrainPlugin` (optimization functionality)
+- [`SymplecticPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/symplecticplugin.py) (phase space functionality)
+- [`FockPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/fockplugin.py) (Fock space functionality)
+- [`TrainPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/trainplugin.py) (optimization functionality)
 
 To develop the existing plugins (or to add new ones) one needs to make sure that only the 
 math backend is used when calling numerical math methods.
