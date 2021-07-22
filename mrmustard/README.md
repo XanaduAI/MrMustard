@@ -1,6 +1,6 @@
 # Structure of MrMustard
-MrMustard is split into four components: the concrete classes, the abstract classes, the plugins and the backends.
-We also have a utils module, which we plan to deprecate.
+MrMustard is split into four components: the abstract classes, the concrete classes, the plugins and the backends.
+We also have a utils module, which is planned to be deprecated.
 
 Important: always write new tests if you are adding new functionality.
 
