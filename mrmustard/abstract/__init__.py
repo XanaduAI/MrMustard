@@ -1,6 +1,6 @@
 from .detector import Detector
 from .state import State
-from .gate import Gate
+from .gate import Op
 from .parametrized import Parametrized
 
-__all__ = ["Detector", "State", "Gate", "Parametrized"]
+__all__ = ["Detector", "State", "Op", "Parametrized"]

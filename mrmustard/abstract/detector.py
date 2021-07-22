@@ -9,7 +9,7 @@ class Detector(ABC):
     Base class for photon detectors. It implements a conditional probability P(out|in) as a stochastic matrix,
     so that an input prob distribution P(in) is transformed to P(out) via belief propagation.
     """
-    _math_backend: MathBackendInterface
+    _math: MathBackendInterface
 
     def project(self, state: State, cutoffs: Sequence[int], measurements: Sequence[Optional[int]]) -> State:
         r"""
@@ -28,12 +28,12 @@ class Detector(ABC):
                 # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
                 last = [mode - measured, mode + state.num_modes - 2 * measured]
                 perm = list(set(range(dm.ndim)).difference(last)) + last
-                dm = self._math_backend.transpose(dm, perm)
-                dm = self._math_backend.diag(dm)
-                dm = self._math_backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]], dtype=dm.dtype)
+                dm = self._math.transpose(dm, perm)
+                dm = self._math.diag(dm)
+                dm = self._math.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]], dtype=dm.dtype)
                 measured += 1
-        prob = self._math_backend.sum(self._math_backend.all_diagonals(dm, real=False))
-        return dm / prob, self._math_backend.abs(prob)
+        prob = self._math.sum(self._math.all_diagonals(dm, real=False))
+        return dm / prob, self._math.abs(prob)
 
     def apply_stochastic_channel(self, fock_probs: State):
         cutoffs = [fock_probs.shape[m] for m in self._modes]
@@ -44,14 +44,14 @@ class Detector(ABC):
                 )
         detector_probs = fock_probs
         for i, mode in enumerate(self._modes):
-            detector_probs = self._math_backend.tensordot(
+            detector_probs = self._math.tensordot(
                 detector_probs,
                 self._stochastic_channel[i][: cutoffs[mode], : cutoffs[mode]],
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
             indices.insert(mode, fock_probs.ndim - 1)
-            detector_probs = self._math_backend.transpose(detector_probs, indices)
+            detector_probs = self._math.transpose(detector_probs, indices)
         return detector_probs
 
     def __call__(

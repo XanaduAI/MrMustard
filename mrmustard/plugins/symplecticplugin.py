@@ -1,17 +1,12 @@
-import numpy as np
+from mrmustard.core.plugins import MathBackendInterface
 from typing import Tuple
+from mrmustard.core.utils import Tensor
 
-from mrmustard.core.plugins import MathPluginInterface
-
-from typing import TypeVar
-
-Tensor = TypeVar('Tensor')
 
 class SymplecticPlugin:
     r"""
-    A plugin for all things symplectic, including symplectic transformations and covariance matrices.
-    It relies on a math plugin (implementing the MathPlugin interface)
-    to do the actual math, which is set by the user.
+    A plugin for all things symplectic.
+    It relies on a math plugin (implementing the MathBackend interface) to do the actual math.
 
     The SymplecticPlugin implements:
       - Gaussian states
@@ -20,23 +15,23 @@ class SymplecticPlugin:
       - Gaussian CPTP channels
       - Gaussian CP channels [upcoming]
     """
-    math: MathPlugin  # will be loaded at runtime
+    math: MathBackendInterface  # will be loaded at runtime
 
     #  ~~~~~~
     #  States
     #  ~~~~~~
-    
-    def vacuum_state(self, nmodes: int, hbar: float) -> Tuple[Tensor, Tensor]:
+
+    def vacuum_state(self, num_modes: int, hbar: float) -> Tuple[Tensor, Tensor]:
         r"""Returns the covariance matrix and displacement vector of the vacuum state.
         Args:
-            nmodes (int): number of modes
+            num_modes (int): number of modes
             hbar (float): value of hbar
         Returns:
             Tensor: vacuum covariance matrix
             Tensor: vacuum displacement vector
         """
-        cov = self.math.eye([nmodes*2], dtype=self.math.float64) * hbar/2
-        disp = self.math.zeros([nmodes*2], dtype=self.math.float64)
+        cov = self.math.eye([num_modes*2], dtype=self.math.float64) * hbar/2
+        disp = self.math.zeros([num_modes*2], dtype=self.math.float64)
         return cov, disp 
 
     def coherent_state(self, x: Tensor, y: Tensor, hbar: float) -> Tuple[Tensor, Tensor]:
@@ -49,11 +44,12 @@ class SymplecticPlugin:
             Tensor: coherent state covariance matrix
             Tensor: coherent state displacement vector
         """
-        cov = self.math.eye([nmodes*2], dtype=self.math.float64) * hbar/2
+        num_modes = self.math.atleast_1d(x).shape[-1]
+        cov = self.math.eye([num_modes*2], dtype=self.math.float64) * hbar/2
         disp = self.math.concat([x, y], axis=-1) * self.math.sqrt(2 * hbar)
         return cov, disp
 
-    def squeezed_state(self, r: Tensor, phi: Tensor, hbar: float) -> Tuple[Tensor, Tensor]:
+    def squeezed_vacuum_state(self, r: Tensor, phi: Tensor, hbar: float) -> Tuple[Tensor, Tensor]:
         r"""Returns the covariance matrix and displacement vector of a squeezed vacuum state.
         Args:
             r: squeezing magnitude
@@ -116,7 +112,10 @@ class SymplecticPlugin:
         num_modes = angle.shape[-1]
         x = self.math.cos(angle)
         y = self.math.sin(angle)
-        return self.math.diag(self.math.concat([x, x], axis=0)) + self.math.diag(-y, k=num_modes) + self.math.diag(y, k=-num_modes)
+        return (self.math.diag(self.math.concat([x, x], axis=0))
+            + self.math.diag(-y, k=num_modes)
+            + self.math.diag(y, k=-num_modes)
+        )
 
     def squeezing_symplectic(self, r: Tensor, phi: Tensor) -> Tensor:
         r"""Symplectic matrix of a squeezing gate.
@@ -177,8 +176,10 @@ class SymplecticPlugin:
     def mz_symplectic(self, phi_a: Tensor, phi_b: Tensor, internal: bool = False) -> Tensor:
         r"""Symplectic matrix of a Mach-Zehnder gate.
         It supports two conventions:
-        if `internal=True`, both phases act inside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
-        if `internal = False` (default), both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
+        if `internal=True`, both phases act inside the interferometer: 
+            `phi_a` on the upper arm, `phi_b` on the lower arm;
+        if `internal = False` (default), both phases act on the upper arm:
+            `phi_a` before the first BS, `phi_b` after the first BS.
         Args:
             phi_a: first phase
             phi_b: second phase
@@ -226,7 +227,7 @@ class SymplecticPlugin:
         ch = self.math.cosh(r)
         sh = self.math.sinh(r)
         zero = self.math.zeros_like(r)
-        return self.Tensor(
+        return self.math.Tensor(
             [
                 [ch, cp * sh, zero, sp * sh],
                 [cp * sh, ch, sp * sh, zero],
@@ -268,3 +269,20 @@ class SymplecticPlugin:
     # ~~~~~~~~~~~~~~~
     # non-TP channels
     # ~~~~~~~~~~~~~~~
+
+    def homodyne(self, angle: Tensor, measurement: Tensor) -> Tensor:
+        r"""Returns the homodyne channel operator.
+        """
+        raise NotImplementedError
+
+    def heterodyne(self, angle: Tensor, measurement: Tensor) -> Tensor:
+        r"""Returns the heterodyne channel operator.
+        """
+        raise NotImplementedError
+
+    def anydyne(self, angle: Tensor, measurement: Tensor) -> Tensor:
+        r"""Returns the anydyne channel operator.
+        """
+        raise NotImplementedError
+
+    

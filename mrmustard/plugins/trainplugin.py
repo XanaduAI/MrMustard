@@ -7,21 +7,29 @@ from mrmustard.core.backends import OptimizerBackendInterface
 from mrmustard.core import utils
 
 
-class OptimizerBackend(OptimizerBackendInterface):
+class TrainPlugin(OptimizerBackendInterface):
     euclidean_opt = tf.keras.optimizers.Adam()
 
-    def loss_and_gradients(
-        self,
-        symplectic_params: Sequence[tf.Tensor],
-        orthogonal_params: Sequence[tf.Tensor],
-        euclidean_params: Sequence[tf.Tensor],
-        cost_fn: Callable,
-    ):
+    def __init__(self):
+        self._eucl_params: Sequence[tf.Tensor] = []
+        self._symp_params: Sequence[tf.Tensor] = []
+        self._orth_params: Sequence[tf.Tensor] = []
+
+    def loss_and_gradients(self, cost_fn: Callable):
         with tf.GradientTape() as tape:
             loss = cost_fn()
-        symp_grads, orth_grads, eucl_grads = tape.gradient(loss, [symplectic_params, orthogonal_params, euclidean_params])
+        symp_grads, orth_grads, eucl_grads = tape.gradient(loss, [self._symp_params, self._orth_params, self._eucl_params])
         return loss.numpy(), symp_grads, orth_grads, eucl_grads
 
+    def store_symp_params(self, items: Sequence[Trainable]):
+        for item in items:
+            try:
+                for s in item.symplectic_parameters:
+                    symp.append(s.ref())
+            except AttributeError:
+                continue
+        return symp
+    
     def update_symplectic(self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor], symplectic_lr: float):
         for S, dS_eucl in zip(symplectic_params, symplectic_grads):
             Jmat = utils.J(S.shape[-1] // 2)

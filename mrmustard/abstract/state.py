@@ -1,16 +1,23 @@
 from abc import ABC
 from typing import List
-from mrmustard.core.backends import MathBackendInterface, StateBackendInterface
+from mrmustard.core.plugins import FockPlugin, SymplecticPlugin
+from mrmustard.core.backends import MathBackendInterface
+from mrmustard.utils import Tensor
 
 
 class State(ABC):
-    _math_backend: MathBackendInterface
-    _state_backend: StateBackendInterface
+    _math: MathBackendInterface
+    _fock: FockPlugin
+    _symplectic: SymplecticPlugin
+
+    # NOTE: we moved cov and means in the init
 
     def __init__(self, num_modes: int, hbar: float = 2.0, mixed=False):
         self.num_modes = num_modes
         self.hbar = hbar
         self.mixed = mixed
+        self.cov: Tensor = None
+        self.means: Tensor = None
 
     def __repr__(self):
         return "covariance:\n" + repr(self.cov) + "\nmeans:\n" + repr(self.means)
@@ -22,8 +29,8 @@ class State(ABC):
             cutoffs List[int]: the cutoff dimensions for each mode
         """
         if not self.mixed:
-            A, B, C = self._state_backend.ABC(self.cov, self.means, mixed=self.mixed, hbar=self.hbar)
-            return self._state_backend.fock_state(A, B, C, cutoffs=cutoffs)
+            A, B, C = self._fock.ABC(self.cov, self.means, mixed=self.mixed, hbar=self.hbar)
+            return self._fock.fock_state(A, B, C, cutoffs=cutoffs)
 
     def dm(self, cutoffs: List[int]):
         r"""
@@ -31,12 +38,12 @@ class State(ABC):
         Arguments:
             cutoffs List[int]: the cutoff dimensions for each mode
         """
-        A, B, C = self._state_backend.ABC(self.cov, self.means, mixed=self.mixed, hbar=self.hbar)
-        fock_state = self._state_backend.fock_state(A, B, C, cutoffs=cutoffs)
+        A, B, C = self._fock.ABC(self.cov, self.means, mixed=self.mixed, hbar=self.hbar)
+        fock_state = self._fock.fock_state(A, B, C, cutoffs=cutoffs)
         if self.mixed:
             return fock_state
         else:
-            return self._math_backend.outer(self._math_backend.conj(fock_state), fock_state)
+            return self._math.outer(self._math.conj(fock_state), fock_state)
 
     def fock_probabilities(self, cutoffs: List[int]):
         r"""
@@ -48,21 +55,21 @@ class State(ABC):
         """
         if self.mixed:
             rho = self.dm(cutoffs=cutoffs)
-            return self._math_backend.all_diagonals(rho, real=True)
+            return self._math.all_diagonals(rho, real=True)
         else:
             psi = self.ket(cutoffs=cutoffs)
-            return self._math_backend.abs(psi) ** 2
+            return self._math.abs(psi) ** 2
 
     @property
     def number_means(self):
         r"""
         Returns the mean photon number for each mode
         """
-        return self._state_backend.number_means(self.cov, self.means, self.hbar)
+        return self._fock.number_means(self.cov, self.means, self.hbar)
 
     @property
     def number_cov(self):
         r"""
         Returns the complete photon number covariance matrix
         """
-        return self._state_backend.number_cov(self.cov, self.means, self.hbar)
+        return self._fock.number_cov(self.cov, self.means, self.hbar)

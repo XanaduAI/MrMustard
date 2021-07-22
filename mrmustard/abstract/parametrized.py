@@ -3,7 +3,7 @@ from abc import ABC
 
 class Parametrized(ABC):
     r"""
-    Absract base class for all parametrized objects (gates, detectors, etc...)
+    Abstract base class for all parametrized objects (gates, detectors, etc...)
 
     Arguments (must be all called with keyword):
         For each trainable parameter:
@@ -20,11 +20,11 @@ class Parametrized(ABC):
 
         for name in self.param_names:
             if kwargs[name + "_trainable"]:
-                var = self._math_backend.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
+                var = self._math.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
                 self.__dict__[name] = var  # making params available as gate.param
             else:
-                const = self._math_backend.new_constant(kwargs[name], name)
+                const = self._math.new_constant(kwargs[name], name)
                 self._constant_parameters.append(const)
                 self.__dict__[name] = const
         for key, val in kwargs.items():

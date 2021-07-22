@@ -5,7 +5,7 @@ from scipy.special import binom
 from typing import List, Tuple, Callable, Optional, Union
 from itertools import product
 
-from mrmustard.core.backends import MathBackendInterface
+from mrmustard.backends import MathBackendInterface
 
 
 class MathBackend(MathBackendInterface):
@@ -192,7 +192,7 @@ class MathBackend(MathBackendInterface):
         return self.convolve_probs(prob, q)
 
     def convolve_probs(self, prob: tf.Tensor, other: tf.Tensor) -> tf.Tensor:
-        """Convolve two probability distributions.
+        r"""Convolve two probability distributions.
         Note that the output is not a complete joint probability,
         as it's computed only up to the dimension of the base probs."""
 
