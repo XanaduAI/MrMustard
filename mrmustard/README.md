@@ -5,7 +5,7 @@ the [plugins](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmust
 the [backends](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/backends).
 We also have a utils module, which is planned to be deprecated.
 
-Important: always write new tests if you are adding new functionality.
+⚠️ Always write new [tests](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/tests) if you are adding new functionality.
 
 ## 1. Abstract base classes
 Abstract base classes cannot be instantiated, as they are abstract.
