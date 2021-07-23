@@ -3,8 +3,8 @@ import numpy as np
 from typing import Sequence, Callable
 from scipy.linalg import expm
 
-from mrmustard.core.backends import OptimizerBackendInterface
-from mrmustard.core import utils
+from mrmustard.backends import OptimizerBackendInterface
+from mrmustard import utils
 
 
 class TrainPlugin(OptimizerBackendInterface):
@@ -78,3 +78,27 @@ class TrainPlugin(OptimizerBackendInterface):
             except AttributeError:
                 continue
         return [e.deref() for e in eucl]
+
+    def new_symplectic_parameter(
+        self,
+        init_value: Optional[Matrix] = None,
+        trainable: bool = True,
+        num_modes: int = 1,
+        name: str = "symplectic",
+    ):
+        
+
+    def new_euclidean_parameter(
+        self,
+        init_value: Optional[Union[Scalar, Vector]] = None,
+        trainable: bool = True,
+        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        shape: Optional[Sequence[int]] = None,
+        name: str = "",
+    ):
+        ...
+
+    
+        
+
+    

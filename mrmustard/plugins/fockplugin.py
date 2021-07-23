@@ -50,40 +50,6 @@ class FockPlugin:
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
         return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * self.math.eye(N)
 
-    def ABC(self, cov: Tensor, means: Tensor, mixed: bool, hbar: float) -> Tuple[Tensor, Tensor, Tensor]:
-        r"""
-        Returns the A matrix, B vector and C scalar
-        given a Wigner covariance matrix and a means vector.
-        The A, B, C triple is needed to compute the fock representation of the state.
-        Args:
-            cov: The Wigner covariance matrix.
-            means: The Wigner means vector.
-            mixed: Whether the state vector is mixed or not.
-            hbar: The value of the Plank constant.
-        Returns:
-            The A matrix, B vector and C scalar.
-        """
-        num_modes = means.shape[-1] // 2
-
-        # cov and means in the amplitude basis
-        R = self.math.rotmat(num_modes)
-        sigma = self.math.matmul(R,  cov/hbar, self.math.dagger(R))
-        beta = self.math.matvec(R, means/self.math.sqrt(hbar))
-
-        sQ = sigma + 0.5 * self.math.eye(2 * num_modes)
-        sQinv = self.math.inv(sQ)
-        X = self.math.Xmat(num_modes)
-        A = self.math.matmul(X, self.math.eye(2 * num_modes) - sQinv)
-        B = self.math.matvec(self.math.transpose(sQinv), self.math.conj(beta))
-        exponent = -0.5 * self.math.sum(self.math.conj(beta)[:, None] * sQinv * beta[None, :])
-        T = self.math.exp(exponent) / self.math.sqrt(self.math.det(sQ))
-        N = num_modes - num_modes * mixed
-        return (
-            A[N:, N:],
-            B[N:],
-            T ** (0.5 + 0.5 * mixed),
-        )  # will be off by global phase because T is real even for pure states
-
     def fock_representation(self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Sequence[int]) -> Tensor:
         r"""
         Returns the fock state given the A, B, C matrices and a list of cutoff indices.
@@ -132,3 +98,17 @@ class FockPlugin:
         dLdB = self.math.sum(dout[..., None] * self.math.conj(dB), axis=tuple(range(dout.ndim)))
         dLdC = self.math.sum(dout * self.math.conj(dC), axis=tuple(range(dout.ndim)))
         return dLdA, dLdB, dLdC
+
+    def remove_subsystems(self, array: tf.Tensor, subsystems: Sequence[int]) -> tf.Tensor:
+        cutoffs = array.shape[: array.ndim // 2]
+        # move the axes in subsystems to the end
+        subsystems = [i for i in range(array.ndim) if i not in subsystems] + subsystems
+        return tf.trace(tf.transpose(array, subsystems))
+        array = tf.transpose(array, 
+        array = tf.reshape(array, (np.prod(cutoffs), np.prod(cutoffs)))
+        return tf.linalg.trace(array, axis1=subsystems, axis2=subsystems)
+
+    def trace_all_systems(self, array: tf.Tensor) -> tf.Tensor:
+        cutoffs = array.shape[: array.ndim // 2]
+        array = tf.reshape(array, (np.prod(cutoffs), np.prod(cutoffs)))
+        return tf.linalg.trace(array)
