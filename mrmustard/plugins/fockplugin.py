@@ -99,12 +99,12 @@ class FockPlugin:
         dLdC = self.math.sum(dout * self.math.conj(dC), axis=tuple(range(dout.ndim)))
         return dLdA, dLdB, dLdC
 
-    def remove_subsystems(self, array: tf.Tensor, subsystems: Sequence[int]) -> tf.Tensor:
+    def remove_subsystems(self, array: tf.Tensor, subsystems: List[int]) -> tf.Tensor:
         cutoffs = array.shape[: array.ndim // 2]
-        # move the axes in subsystems to the end
+        # move the axes of subsystems to the end
         subsystems = [i for i in range(array.ndim) if i not in subsystems] + subsystems
         return tf.trace(tf.transpose(array, subsystems))
-        array = tf.transpose(array, 
+        array = tf.transpose(array, bla)
         array = tf.reshape(array, (np.prod(cutoffs), np.prod(cutoffs)))
         return tf.linalg.trace(array, axis1=subsystems, axis2=subsystems)
 

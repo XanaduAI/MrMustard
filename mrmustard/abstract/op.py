@@ -15,7 +15,7 @@ class Op(ABC):
         * Measurements
     """
 
-    _backend: BackendInterface
+    _backend: BackendInterface  # TODO: remove dependence on the Backend: abstract classes should only use the plugins.
 
     # the following 3 lines are so that mypy doesn't complain,
     # but all subclasses of Op have these 3 attributes

@@ -1,6 +1,6 @@
+from typing import Tuple, Union, Sequence
 from mrmustard.backends import BackendInterface
-from typing import Tuple, Union
-from mrmustard.backends import Vector, Matrix, Scalar
+from mrmustard.backends import Vector, Matrix, Scalar  # for typing
 
 
 class SymplecticPlugin:
@@ -9,7 +9,7 @@ class SymplecticPlugin:
     It relies on a math plugin (implementing the MathBackend interface) to do the actual math.
 
     The SymplecticPlugin implements:
-      - Gaussian states
+      - Gaussian states (pure and mixed)
       - Gaussian mixture states [upcoming]
       - Gaussian unitary transformations
       - Gaussian CPTP channels
@@ -287,5 +287,10 @@ class SymplecticPlugin:
 
     def anydyne(self, angle: Union[Scalar, Vector], measurement: Union[Scalar, Vector]) -> Matrix:
         r"""Returns the anydyne channel operator.
+        """
+        raise NotImplementedError
+
+    def trace(self, cov: Matrix, means: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
+        r"""Returns the covariances and means after discarding the specified modes.
         """
         raise NotImplementedError

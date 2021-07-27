@@ -3,14 +3,16 @@ import numpy as np
 from typing import Sequence, Callable
 from scipy.linalg import expm
 
-from mrmustard.backends import OptimizerBackendInterface
+from mrmustard.backends import Tensor
 from mrmustard import utils
 
 
-class TrainPlugin(OptimizerBackendInterface):
+class TrainPlugin:
     euclidean_opt = tf.keras.optimizers.Adam()
+    symplectic_opt = 
 
     def __init__(self):
+        # this is ugly: we shouldn't store the parameters in the plugin
         self._eucl_params: Sequence[tf.Tensor] = []
         self._symp_params: Sequence[tf.Tensor] = []
         self._orth_params: Sequence[tf.Tensor] = []
@@ -29,7 +31,7 @@ class TrainPlugin(OptimizerBackendInterface):
             except AttributeError:
                 continue
         return symp
-    
+
     def update_symplectic(self, symplectic_grads: Sequence[tf.Tensor], symplectic_params: Sequence[tf.Tensor], symplectic_lr: float):
         for S, dS_eucl in zip(symplectic_params, symplectic_grads):
             Jmat = utils.J(S.shape[-1] // 2)
