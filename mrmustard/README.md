@@ -6,10 +6,7 @@ You can raise [issues](https://github.com/XanaduAI/MrMustard/issues) if it helps
 
 Always write new [tests](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/tests) if you are adding new functionality.
 # Target structure of MrMustard
-MrMustard is split into four components: the [abstract](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/abstract) classes,
-the [concrete](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/concrete) classes,
-the [plugins](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/plugins) and
-the [backends](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/backends).
+MrMustard is split into four components:
 
 ## 1. Abstract base classes
 Abstract base classes cannot be instantiated, as they are abstract. Except for the `Parametrized` class, which is a custom data class, abstract classes speak quantum mechanics.
