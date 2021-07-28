@@ -1,6 +1,6 @@
-from .detector import Detector
+from .measurement import Measurement
 from .state import State
-from .op import Op
-from .parametrized import Parametrized
+from .transformation import Transformation
+from ._parametrized import Parametrized
 
-__all__ = ["Detector", "State", "Op", "Parametrized"]
+__all__ = ["Measurement", "State", "Transformation", "Parametrized"]

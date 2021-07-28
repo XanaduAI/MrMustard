@@ -1,8 +1,3 @@
-from .backend import MathBackend
+from .backend import Backend
 
-__all__ = [
-    "MathBackend",
-    "Vector",
-    "Matrix",
-    "Tensor",
-]
+__all__ = ["Backend"]

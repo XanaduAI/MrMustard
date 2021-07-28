@@ -1,18 +1,17 @@
 import numpy as np  # for repr
 from abc import ABC
-from typing import List, Optional
-from mrmustard.backends import BackendInterface
-from mrmustard.abstract.state import State
-from mrmustard.abstract.backend import Tensor
+from mrmustard.backends import BackendInterface  # TODO: remove dependence on the Backend
+from mrmustard.abstract import State
+from mrmustard.typing import *
 
 
-class Op(ABC):
+class Transformation(ABC):
     r"""
-    Base class for all operations (ops).
-    Ops include: 
+    Base class for all transformations.
+    Transformations include:
         * Unitary transformations
-        * CPTP Channels
-        * Measurements
+        * Non-unitary CPTP Channels
+    Measurements are non-TP channels and they have their own abstract class.
     """
 
     _backend: BackendInterface  # TODO: remove dependence on the Backend: abstract classes should only use the plugins.

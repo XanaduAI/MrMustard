@@ -1,6 +1,5 @@
-from typing import Tuple, Union, Sequence
 from mrmustard.backends import BackendInterface
-from mrmustard.backends import Vector, Matrix, Scalar  # for typing
+from mrmustard.typing import *
 
 
 class SymplecticPlugin:

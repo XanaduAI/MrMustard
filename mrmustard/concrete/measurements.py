@@ -1,9 +1,8 @@
-from typing import List, Union, Sequence, Optional, Tuple
-from mrmustard.core.baseclasses.parametrized import Parametrized
-from mrmustard.core.baseclasses import Detector
+from mrmustard.typing import *
+from mrmustard.abstract import Stochastic, Parametrized
 
 
-class PNRDetector(Parametrized, Detector):
+class PNRDetector(Parametrized, Stochastic):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.

@@ -30,3 +30,20 @@ class Parametrized(ABC):
         for key, val in kwargs.items():
             if not any(word in key for word in self.param_names):
                 self.__dict__["_" + key] = val  # making other values available as gate._val
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # override the necessary properties in the concrete subclasses:
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    @property
+    def is_symplectic(self):
+        return False
+
+    @property
+    def is_orthogonal(self):
+        return False
+
+    @property
+    def is_euclidean(self):
+        return False
+    

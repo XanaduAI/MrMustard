@@ -1,4 +1,4 @@
-from typing import List, Sequence, Callable, Union
+from mrmustard.typing import *
 from mrmustard.backends import Trainable
 from mrmustard.plugins import TrainPlugin
 from mrmustard.plugins import GraphicsPlugin

@@ -1,9 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from typing import Sequence, Callable
 from scipy.linalg import expm
-
-from mrmustard.backends import Tensor
+from mrmustard.typing import *
 from mrmustard import utils
 
 

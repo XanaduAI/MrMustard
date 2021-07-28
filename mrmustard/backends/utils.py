@@ -3,41 +3,12 @@ from numba import njit
 from numba.cpython.unsafe.tuple import tuple_setitem
 from functools import lru_cache
 from itertools import product
-from typing import Tuple, Generator
+
 
 SQRT = np.sqrt(np.arange(1000))  # saving the time to recompute square roots
 
 
-@lru_cache()
-def Xmat(num_modes: int):
-    r"""Returns the matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}`
-    Args:
-        num_modes (int): positive integer
-    Returns:
-        array: :math:`2N\times 2N` array
-    """
-    I = np.identity(num_modes)
-    O = np.zeros((num_modes, num_modes))
-    return np.block([[O, I], [I, O]])
-
-
-@lru_cache()
-def rotmat(num_modes: int):
-    "Rotation matrix from quadratures to complex amplitudes"
-    idl = np.identity(num_modes)
-    return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
-
-
-@lru_cache()
-def J(num_modes: int):
-    "Symplectic form"
-    I = np.identity(num_modes)
-    O = np.zeros_like(I)
-    return np.block([[O, I], [-I, O]])
-
-
-# LOW-LEVEL NUMBA CODE
-
+# TODO: will import from thewalrus
 
 @lru_cache()
 def partition(photons: int, max_vals: Tuple[int, ...]) -> Tuple[Tuple[int, ...], ...]:

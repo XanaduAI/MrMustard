@@ -1,18 +1,26 @@
 from abc import ABC
-from typing import List, Sequence, Optional
-from mrmustard.backends import BackendInterface
-from mrmustard.abstract.state import State
+from mrmustard.typing import *
+from mrmustard.plugins import FockPlugin, SymplecticPlugin
+from mrmustard.abstract import State, Parametrized
 
 
-class Detector(ABC):
+class Measurement(ABC, Parametrized):
     r"""
-    Base class for photon detectors. It implements a conditional probability P(out|in) as a stochastic matrix,
+    Base class for measurements. It implements a conditional probability P(out|in) as a stochastic matrix,
     so that an input prob distribution P(in) is transformed to P(out) via belief propagation.
     """
-    _backend: BackendInterface
-    _modes: List[int]
+    
+    _symplectic: SymplecticPlugin
+    _fock: FockPlugin
 
-    def project(self, state: State, cutoffs: Sequence[int], measurements: Sequence[Optional[int]]) -> State:
+    def __init__(self, **kwargs):
+        # NOTE: call super().__init__() last to avoid overwrites
+        self._modes: List[int] = []
+        self._stochastic_channel: Optional[Matrix] = None
+        super().__init__(**kwargs)
+        
+
+    def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> State:
         r"""
         Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
         indicate the Fock measurement on that mode and None indicates no projection on that mode.
@@ -20,11 +28,11 @@ class Detector(ABC):
         Returns the renormalized state (in the Fock basis) in the unmeasured modes
         and the measurement probability.
         """
-        if (len(cutoffs) != state.num_modes) or (len(measurements) != state.num_modes):
+        if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):
             raise ValueError("the length of cutoffs/measurements does not match the number of modes")
         dm = state.dm(cutoffs=cutoffs)
         measured = 0
-        for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurements)):
+        for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurement)):
             if meas is not None:
                 # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
                 last = [mode - measured, mode + state.num_modes - 2 * measured]
@@ -59,14 +67,20 @@ class Detector(ABC):
         self,
         state: State,
         cutoffs: List[int],
-        measurements: Optional[Sequence[Optional[int]]] = None,
-    ):
-        if measurements is None:
+        measurement: Optional[Sequence[Optional[int]]] = None,
+    ):  # TODO: this is ugly: the return type should be consistent.
+        if measurement is None:
             fock_probs = state.fock_probabilities(cutoffs)
             return self.apply_stochastic_channel(fock_probs)
         else:
-            return self.project(state, cutoffs, measurements)
+            return self.project(state, cutoffs, measurement)
+
+
 
     @property
     def euclidean_parameters(self) -> List:
+        return 
+
+    @property
+    def symplectic_parameters(self) -> List:
         return self._trainable_parameters

@@ -2,10 +2,11 @@ import numpy as np
 import tensorflow as tf
 from scipy.special import binom
 from scipy.stats import unitary_group
-from typing import List, Tuple, Callable, Optional, Sequence, Union
 from itertools import product
+from functools import lru_cache
 from mrmustard.backends import BackendInterface
 from thewalrus.fock_gradients import hermite_numba, hermite_numba_gradient
+from mrmustard.typing import *
 
 #  The reason why we have a class with methods and not a namespace with functions
 #  is that we want to enforce the interface, to ensure compatibility of a new backend
@@ -18,19 +19,19 @@ class Backend(BackendInterface):
     no_cast = (tf.int8, tf.uint8, tf.int16, tf.uint16, tf.int32, tf.uint32, tf.int64, tf.uint64)
 
     def autocast(self, *args, **kwargs):
-        'A method that casts to the highest numerical type'
-        args_dtypes = [arg.dtype for arg in args if hasattr(arg, 'dtype') and arg.dtype not in self.no_cast]
-        kwargs_dtypes = {k: v.dtype for k, v in kwargs.items() if hasattr(v, 'dtype') and v.dtype not in self.no_cast}
+        'A method that casts to the highest numerical type according to dtype_order'
+        args_dtypes = [arg.dtype for arg in args if (hasattr(arg, 'dtype') and arg.dtype not in self.no_cast)]
+        kwargs_dtypes = {k: v.dtype for k, v in kwargs.items() if (hasattr(v, 'dtype') and v.dtype not in self.no_cast)}
         dtypes = args_dtypes + list(kwargs_dtypes.values())
         if len(dtypes) == 0:
             return args, kwargs
         dtype = max(dtypes, key=lambda d: self.dtype_order.index(d))
         for arg in args:
             if hasattr(arg, 'dtype') and arg.dtype not in self.no_cast:
-                arg = tf.cast(arg, dtype)
+                arg = self.cast(arg, dtype)
         for k, v in kwargs.items():
             if hasattr(v, 'dtype') and v.dtype not in self.no_cast:
-                kwargs[k] = tf.cast(v, dtype)
+                kwargs[k] = self.cast(v, dtype)
         return args, kwargs
 
     def __getattr__(self, name: str) -> Callable:
@@ -67,11 +68,11 @@ class Backend(BackendInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
-    def reshape(self, array, shape) -> tf.Tensor:
+    def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
-    def sum(self, array, axis=None):
-        return tf.reduce_sum(array, axis)
+    def sum(self, array: tf.Tensor, axes: Sequence[int]=None):
+        return tf.reduce_sum(array, axes)
 
     def arange(self, start: int, limit: int = None, delta: int = 1) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=tf.float64)
@@ -116,6 +117,16 @@ class Backend(BackendInterface):
         'Note that the norm preserves the type of array'
         return tf.linalg.norm(array)
 
+    def real(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.real(array)
+
+    def imag(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.imag(array)
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Non-tf methods (will be refactored into the Interface class)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
         Args:
@@ -123,8 +134,8 @@ class Backend(BackendInterface):
         Returns:
             array: Orthogonal matrix in O(2n)
         """
-        X = tf.math.real(U)
-        Y = tf.math.imag(U)
+        X = self.real(U)
+        Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
     def random_symplectic(self, dim: int = 1) -> tf.Tensor:
@@ -149,10 +160,6 @@ class Backend(BackendInterface):
             W = unitary_group.rvs(dim=dim)
         return self.unitary_to_orthogonal(W)
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Non-tf methods (will be refactored out of the backend)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     def block(self, blocks: List[List[tf.Tensor]]) -> tf.Tensor:
         rows = [self.concat(row, axis=-1) for row in blocks]
         return self.concat(rows, axis=-2)
@@ -173,10 +180,37 @@ class Backend(BackendInterface):
             c = mat[..., 0, 1]
             mat = (
                 self.diag(self.tile_vec(self.diag_part(mat), num_modes))
-                + self.diag(tf.tile([b], [num_modes]), k=num_modes)
-                + self.diag(tf.tile([c], [num_modes]), k=-num_modes)
+                + self.diag(self.tile([b], [num_modes]), k=num_modes)
+                + self.diag(self.tile([c], [num_modes]), k=-num_modes)
             )
         return mat
+
+    @lru_cache()
+    def Xmat(num_modes: int):
+        r"""Returns the matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}`
+        Args:
+            num_modes (int): positive integer
+        Returns:
+            array: :math:`2N\times 2N` array
+        """
+        I = np.identity(num_modes)
+        O = np.zeros((num_modes, num_modes))
+        return np.block([[O, I], [I, O]])
+
+
+    @lru_cache()
+    def rotmat(num_modes: int):
+        "Rotation matrix from quadratures to complex amplitudes"
+        idl = np.identity(num_modes)
+        return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
+
+
+    @lru_cache()
+    def J(num_modes: int):
+        "Symplectic form"
+        I = np.identity(num_modes)
+        O = np.zeros_like(I)
+        return np.block([[O, I], [-I, O]])
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #  Specialized methods for phase space
@@ -296,10 +330,6 @@ class Backend(BackendInterface):
             return hermite_numba_gradient(dy, poly, A, B, C, shape)
 
         return poly, grad
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Getting ready for Fock space
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def hermite_parameters(self, cov: Tensor, means: Tensor, mixed: bool, hbar: float) -> Tuple[Tensor, Tensor, Tensor]:
         r"""

@@ -1,15 +1,5 @@
 from abc import ABC
-from typing import List, Optional, Tuple, Union, Sequence, TypeVar, Generator
-
-# e.g. in `def f(x: Vector, y: Vector) -> Tensor: ...`
-# the type of `x` and the type of `y` are assumed to be the same.
-Scalar = TypeVar("Scalar")
-Vector = TypeVar("Vector")
-Matrix = TypeVar("Matrix")
-Tensor = TypeVar("Tensor")
-Array = TypeVar("Array")  # TODO: let mypy know that this is Vector, Matrix, or Tensor
-
-Numeric = Union[Scalar, Vector, Matrix, Tensor]
+from mrmustard.typing import *
 
 
 class BackendInterface(ABC):
