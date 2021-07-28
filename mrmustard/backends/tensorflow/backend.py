@@ -124,7 +124,7 @@ class Backend(BackendInterface):
         return tf.math.imag(array)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Non-tf methods (will be refactored into the Interface class)
+    # Non-tf methods (will be refactored into the BackendInterface)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def unitary_to_orthogonal(self, U):
