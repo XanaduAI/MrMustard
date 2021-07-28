@@ -1,3 +1,5 @@
+# TODO: figure out where the Circuit should be
+
 from __future__ import annotations
 from collections.abc import MutableSequence
 from typing import List, Callable, Sequence, Union

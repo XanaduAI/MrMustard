@@ -1,38 +1,31 @@
 import importlib
 from rich.pretty import install
-
-install()
+install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
 
-
 def set_env(env_name: str):
-    from mrmustard.core.baseclasses import State, Op, Detector
+    from mrmustard.plugins import FockPlugin, SymplecticPlugin, TrainPlugin
     from mrmustard.tools import Optimizer
 
-    mod = importlib.import_module("mrmustard.core.plugins." + env_name)
+    backend = importlib.import_module("mrmustard.backends." + env_name).Backend()
 
-    State._math = mod.MathBackend()
-    State._state_plugin = mod.StatePlugin()
-    Op._math = mod.MathBackend()
-    Op._symplectic_plugin = mod.SymplecticPlugin()
-    Detector._math = mod.MathBackend()
-    Optimizer._math = mod.MathBackend()
-    Optimizer._opt_plugin = mod.OptimizerPlugin()
+    FockPlugin._backend = backend
+    SymplecticPlugin._backend = backend
+    TrainPlugin._backend = backend
 
 
-
-def set_tensorflow():
+def using_tensorflow():
     set_env("tensorflow")
 
-def set_pytorch():
+def using_pytorch():
     set_env("torch")
 
-def set_jax():
+def using_jax():
     set_env("jax")
 
-def set_numpy():
+def using_numpy():
     set_env("numpy")
 
 
-set_tensorflow()  # default
+using_tensorflow()  # default

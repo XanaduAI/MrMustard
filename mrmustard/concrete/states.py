@@ -1,5 +1,5 @@
 from mrmustard.core.baseclasses import State
-from mrmustard.utils import Tensor
+from mrmustard.typing import *
 
 
 class Vacuum(State):

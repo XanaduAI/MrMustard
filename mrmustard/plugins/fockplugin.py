@@ -1,6 +1,5 @@
-from typing import Tuple, Sequence
 from mrmustard.backends import BackendInterface
-from mrmustard.typing import Scalar, Vector, Matrix, Tensor
+from mrmustard.typing import *
 
 
 class FockPlugin:
@@ -112,6 +111,6 @@ class FockPlugin:
         Returns:
             The stochastic matrix.
         """
-        
+
 
 

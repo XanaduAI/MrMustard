@@ -1,7 +1,5 @@
 from mrmustard.typing import *
-from mrmustard.backends import Trainable
-from mrmustard.plugins import TrainPlugin
-from mrmustard.plugins import GraphicsPlugin
+from mrmustard.plugins import TrainPlugin, GraphicsPlugin
 
 
 class Optimizer:

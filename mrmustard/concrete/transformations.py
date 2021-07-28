@@ -1,9 +1,8 @@
-from typing import List, Tuple, Optional, Union
-from mrmustard.core.baseclasses.parametrized import Parametrized
-from mrmustard.core.baseclasses import Op, Tensor
+from mrmustard.typing import *
+from mrmustard.abstract import Parametrized, Transformation
 
 
-class Dgate(Parametrized, Op):
+class Dgate(Parametrized, Transformation):
     r"""
     Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the gate share that parameter.
@@ -37,7 +36,7 @@ class Dgate(Parametrized, Op):
         return self._symplectic_plugin.displacement(self.x, self.y, hbar=hbar)
 
 
-class Sgate(Parametrized, Op):
+class Sgate(Parametrized, Transformation):
     r"""
     Squeezing gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the gate share that parameter.
@@ -73,7 +72,7 @@ class Sgate(Parametrized, Op):
         return self._symplectic_plugin.squeezing_symplectic(self.r, self.phi)
 
 
-class Rgate(Parametrized, Op):
+class Rgate(Parametrized, Transformation):
     r"""
     Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the gate share that parameter.
@@ -101,7 +100,7 @@ class Rgate(Parametrized, Op):
         return self._symplectic_plugin.rotation_symplectic(self.angle)
 
 
-class Ggate(Parametrized, Op):
+class Ggate(Parametrized, Transformation):
     r"""
     General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
     If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
@@ -152,7 +151,7 @@ class Ggate(Parametrized, Op):
         return [vec for vec in self._trainable_parameters if len(vec.shape) == 1]
 
 
-class BSgate(Parametrized, Op):
+class BSgate(Parametrized, Transformation):
     r"""
     Beam splitter gate. It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -194,7 +193,7 @@ class BSgate(Parametrized, Op):
         return self._symplectic_plugin.beam_splitter_symplectic(self.theta, self.phi)
 
 
-class MZgate(Parametrized, Op):
+class MZgate(Parametrized, Transformation):
     r"""
     Mach-Zehnder gate. It supports two conventions:
         1. if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
@@ -241,7 +240,7 @@ class MZgate(Parametrized, Op):
         return self._symplectic_plugin.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
-class S2gate(Parametrized, Op):
+class S2gate(Parametrized, Transformation):
     r"""
     Two-mode squeezing gate. It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -275,7 +274,7 @@ class S2gate(Parametrized, Op):
         return self._symplectic_plugin.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
-class Interferometer(Parametrized, Op):
+class Interferometer(Parametrized, Transformation):
     r"""
     N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
 
@@ -308,7 +307,7 @@ class Interferometer(Parametrized, Op):
 #
 
 
-class LossChannel(Parametrized, Op):
+class LossChannel(Parametrized, Transformation):
     r"""
     The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If `transmissivity` is a single float, the parallel instances of the gate share that parameter.

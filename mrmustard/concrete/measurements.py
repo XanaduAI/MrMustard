@@ -1,8 +1,8 @@
 from mrmustard.typing import *
-from mrmustard.abstract import Stochastic, Parametrized
+from mrmustard.abstract import Measurement, Parametrized
 
 
-class PNRDetector(Parametrized, Stochastic):
+class PNRDetector(Parametrized, Measurement):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.
@@ -63,7 +63,7 @@ class PNRDetector(Parametrized, Stochastic):
                 )
 
 
-class ThresholdDetector(Parametrized, Detector):
+class ThresholdDetector(Parametrized, Measurement):
     r"""
     Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.

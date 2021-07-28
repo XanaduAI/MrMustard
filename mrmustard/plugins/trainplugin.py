@@ -1,13 +1,13 @@
-import tensorflow as tf
 import numpy as np
 from scipy.linalg import expm
 from mrmustard.typing import *
-from mrmustard import utils
+from mrmustard.backends import BackendInterface
 
 
 class TrainPlugin:
-    euclidean_opt = tf.keras.optimizers.Adam()
-    symplectic_opt = 
+    euclidean_opt = backend.DefaultEuclideanOptimizer()
+    symplectic_opt = None  # TODO: fix this
+    _backend: BackendInterface
 
     def __init__(self):
         # this is ugly: we shouldn't store the parameters in the plugin
