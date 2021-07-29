@@ -56,10 +56,10 @@ class PNRDetector(Parametrized, Measurement):
             self._stochastic_channel = self._conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
-                dark_prior = self._math.poisson(max_k=cut, rate=dc)
-                condprob = self._math.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
+                dark_prior = self._backend.poisson(max_k=cut, rate=dc)
+                condprob = self._backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
                 self._stochastic_channel.append(
-                    self._math.convolve_probs_1d(condprob, [dark_prior, self._math.identity(condprob.shape[1])[0]])
+                    self._backend.convolve_probs_1d(condprob, [dark_prior, self._backend.eye(condprob.shape[1])[0]])
                 )
 
 
@@ -114,8 +114,8 @@ class ThresholdDetector(Parametrized, Measurement):
             self._stochastic_channel = self.conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
-                row1 = ((1.0 - qe) ** self._math.arange(cut))[None, :] - dc
+                row1 = ((1.0 - qe) ** self._backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
-                rest = self._math.zeros((cut - 2, cut), dtype=row1.dtype)
-                condprob = self._math.concat([row1, row2, rest], axis=0)
+                rest = self._backend.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = self._backend.concat([row1, row2, rest], axis=0)
                 self._stochastic_channel.append(condprob)

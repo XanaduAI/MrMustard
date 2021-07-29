@@ -122,9 +122,9 @@ class Ggate(Parametrized, Transformation):
         displacement_trainable: bool = True,
     ):
         if symplectic is None:
-            symplectic = self._math.new_symplectic_parameter(num_modes=len(modes))
+            symplectic = self._backend.new_symplectic_parameter(num_modes=len(modes))
         if displacement is None:
-            displacement = self._math.zeros(len(modes) * 2)
+            displacement = self._backend.zeros(len(modes) * 2)
         super().__init__(
             modes=modes,
             symplectic=symplectic,
@@ -286,7 +286,7 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(self, modes: List[int], orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
         if orthogonal is None:
-            orthogonal = self._math.new_orthogonal_parameter(num_modes=len(modes))
+            orthogonal = self._backend.new_orthogonal_parameter(num_modes=len(modes))
         super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
         self.is_unitary = True
 

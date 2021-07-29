@@ -20,11 +20,11 @@ class Parametrized(ABC):
 
         for name in self.param_names:
             if kwargs[name + "_trainable"]:
-                var = self._math.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
+                var = self._backend.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
                 self.__dict__[name] = var  # making params available as gate.param
             else:
-                const = self._math.new_constant(kwargs[name], name)
+                const = self._backend.new_constant(kwargs[name], name)
                 self._constant_parameters.append(const)
                 self.__dict__[name] = const
         for key, val in kwargs.items():

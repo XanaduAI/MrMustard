@@ -1,20 +1,21 @@
 import numpy as np  # for repr
 from abc import ABC
-from mrmustard.backends import BackendInterface  # TODO: remove dependence on the Backend
+from mrmustard.plugins import SymplecticPlugin
 from mrmustard.abstract import State
 from mrmustard.typing import *
+
 
 
 class Transformation(ABC):
     r"""
     Base class for all transformations.
     Transformations include:
-        * Unitary transformations
-        * Non-unitary CPTP Channels
-    Measurements are non-TP channels and they have their own abstract class.
+        * unitary transformations
+        * non-unitary CPTP channels
+    Given that measurements are CP but not TP, they have their own abstract class.
     """
 
-    _backend: BackendInterface  # TODO: remove dependence on the Backend: abstract classes should only use the plugins.
+    _symplectic: SymplecticPlugin
 
     # the following 3 lines are so that mypy doesn't complain,
     # but all subclasses of Op have these 3 attributes
@@ -23,15 +24,12 @@ class Transformation(ABC):
     _constant_parameters: List[Tensor]
 
     def __call__(self, state: State) -> State:
-        displacement = self._backend.tile_vec(self.displacement_vector(state.hbar), len(self._modes))
-        symplectic = self._backend.tile_mat(self.symplectic_matrix(state.hbar), len(self._modes))
-        noise = self._backend.tile_mat(self.noise_matrix(state.hbar), len(self._modes))
+        displacement = self.displacement_vector(state.hbar)
+        symplectic = self.symplectic_matrix(state.hbar)
+        noise = self.noise_matrix(state.hbar)
 
         output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)
-        output.cov = self._backend.sandwich(bread=symplectic, filling=state.cov, modes=self._modes)
-        output.cov = self._backend.add(old=output.cov, new=noise, modes=self._modes)
-        output.means = self._backend.matvec(mat=symplectic, vec=state.means, modes=self._modes)
-        output.means = self._backend.add(old=output.means, new=displacement, modes=self._modes)
+        output.cov, output.means = self._symplectic.CPTP(state.cov, state.means, symplectic, noise, displacement, self._modes)
         return output
 
     def __repr__(self):
@@ -39,15 +37,13 @@ class Transformation(ABC):
             lst = [f"{name}={self.nparray(self.math.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
             return f"{self.__class__.__qualname__}(modes={self._modes}, {', '.join(lst)})"
 
-    # TODO: refactor/update for non-TP channels
-
-    def symplectic_matrix(self, hbar: float) -> Optional[Tensor]:
+    def symplectic_matrix(self, hbar: float) -> Optional[Matrix]:
         return None
 
-    def displacement_vector(self, hbar: float) -> Optional[Tensor]:
+    def displacement_vector(self, hbar: float) -> Optional[Vector]:
         return None
 
-    def noise_matrix(self, hbar: float) -> Optional[Tensor]:
+    def noise_matrix(self, hbar: float) -> Optional[Matrix]:
         return None
 
     @property

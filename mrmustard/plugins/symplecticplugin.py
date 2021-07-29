@@ -2,19 +2,18 @@ from mrmustard.backends import BackendInterface
 from mrmustard.typing import *
 
 
-class SymplecticPlugin:
+class GaussianPlugin:
     r"""
-    A plugin for all things symplectic.
-    It relies on a math plugin (implementing the MathBackend interface) to do the actual math.
+    A plugin for all things Gaussian.
 
-    The SymplecticPlugin implements:
+    The GaussianPlugin implements:
       - Gaussian states (pure and mixed)
       - Gaussian mixture states [upcoming]
       - Gaussian unitary transformations
       - Gaussian CPTP channels
       - Gaussian CP channels [upcoming]
     """
-    backend: BackendInterface  # will be loaded at runtime
+    backend: BackendInterface
 
     #  ~~~~~~
     #  States
@@ -243,6 +242,32 @@ class SymplecticPlugin:
     # ~~~~~~~~~~~~~
     # CPTP channels
     # ~~~~~~~~~~~~~
+
+    def CPTP(self, cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
+        r"""Returns the cov matrix of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`.
+        If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
+        otherwise it must contain as many modes as the number of modes in the channel.
+
+        Args:
+            cov (Matrix): covariance matrix
+            means (Vector): means vector
+            X (Matrix): the X matrix of the CPTP channel
+            Y (Matrix): noise matrix of the CPTP channel
+            d (Vector): displacement vector of the CPTP channel
+            modes (Sequence[int]): modes on which the channel operates
+        Returns:
+            Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
+        """
+        if X.shape[-1] == Y.shape[-1] == d.shape[-1] == 2:  # single-mode channel
+            X = self._backend.single_mode_to_multimode_mat(X, len(modes))
+            Y = self._backend.single_mode_to_multimode_mat(Y, len(modes))
+            d = self._backend.single_mode_to_multimode_vec(d, len(modes))
+        cov = self._backend.left_matmul_to_modes(X, cov, modes)
+        cov = self._backend.right_matmul_to_modes(cov, self._backend.transpose(X), modes)
+        cov = self._backend.add_to_modes(cov, Y, modes)
+        means = self._backend.left_matmul_to_modes(X, means, modes)
+        means = self._backend.add_to_modes(means, d, modes)
+        return cov, means
 
     def loss_X(self, transmissivity: Union[Scalar, Vector]) -> Matrix:
         r"""Returns the X matrix for the lossy bosonic channel.
