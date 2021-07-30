@@ -1,24 +1,47 @@
 from abc import ABC
 from mrmustard.typing import *
-from mrmustard.plugins import FockPlugin, SymplecticPlugin
+from mrmustard.plugins import FockPlugin, GaussianPlugin
 from mrmustard.abstract import State, Parametrized
 
 
-class Measurement(ABC, Parametrized):
+class GaussianMeasurement(ABC, Parametrized):
     r"""
-    Base class for measurements. It implements a conditional probability P(out|in) as a stochastic matrix,
-    so that an input prob distribution P(in) is transformed to P(out) via belief propagation.
+    A Gaussian general-dyne measurement.
     """
-    
-    _symplectic: SymplecticPlugin
-    _fock: FockPlugin
 
     def __init__(self, **kwargs):
-        # NOTE: call super().__init__() last to avoid overwrites
-        self._modes: List[int] = []
-        self._stochastic_channel: Optional[Matrix] = None
         super().__init__(**kwargs)
-        
+
+    def __call__(self, state: State, projecto_onto: State) -> Tuple[Scalar, State]:
+        r"""
+        Applies a general-dyne Gaussian measurement to the state, i.e. it projects
+        onto the state with given cov and outcome means vector.
+        Args:
+            state: the state to be measured
+            projecto_onto: the Gaussian state to project onto
+        Returns:
+            the measurement probabilities and the remaining post-measurement state (if any)
+        """
+        prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, projecto_onto.cov, projecto_onto.means, self._modes)
+        remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
+        remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed(cov))
+        if len(remaining_modes) > 0:
+            remaining_state.cov = cov
+            remaining_state.means = means
+        return prob, remaining_state
+
+
+class FockMeasurement(ABC, Parametrized):
+    r"""
+    A Fock measurement projecting onto a Fock measurement pattern.
+    It works by representing the state in the Fock basis and then applying
+    a stochastic channel matrix P(meas|n) to the Fock probabilities (belief propagation).
+    It outputs the measurement probabilities and the remaining post-measurement state (if any)
+    in the Fock basis.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> State:
         r"""
@@ -44,10 +67,10 @@ class Measurement(ABC, Parametrized):
         prob = self._backend.sum(self._backend.all_diagonals(dm, real=False))
         return dm / prob, self._backend.abs(prob)
 
-    def apply_stochastic_channel(self, fock_probs: State):
+    def apply_stochastic_channel(self, stochastic_channel, fock_probs: State):
         cutoffs = [fock_probs.shape[m] for m in self._modes]
         for i, mode in enumerate(self._modes):
-            if cutoffs[mode] > self._stochastic_channel[i].shape[1]:
+            if cutoffs[mode] > stochastic_channel[i].shape[1]:
                 raise IndexError(
                     f"This detector does not support so many input photons in mode {mode} (you could increase max_input_photons or reduce the cutoff)"
                 )
@@ -55,7 +78,7 @@ class Measurement(ABC, Parametrized):
         for i, mode in enumerate(self._modes):
             detector_probs = self._backend.tensordot(
                 detector_probs,
-                self._stochastic_channel[i][: cutoffs[mode], : cutoffs[mode]],
+                stochastic_channel[i][: cutoffs[mode], : cutoffs[mode]],
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
@@ -63,24 +86,4 @@ class Measurement(ABC, Parametrized):
             detector_probs = self._backend.transpose(detector_probs, indices)
         return detector_probs
 
-    def __call__(
-        self,
-        state: State,
-        cutoffs: List[int],
-        measurement: Optional[Sequence[Optional[int]]] = None,
-    ):  # TODO: this is ugly: the return type should be consistent.
-        if measurement is None:
-            fock_probs = state.fock_probabilities(cutoffs)
-            return self.apply_stochastic_channel(fock_probs)
-        else:
-            return self.project(state, cutoffs, measurement)
-
-
-
-    @property
-    def euclidean_parameters(self) -> List:
-        return 
-
-    @property
-    def symplectic_parameters(self) -> List:
-        return self._trainable_parameters
+    def __call__(self, state: State, measurement_: Matrix, outcome: Vector) -> Tuple[Scalar, State]:

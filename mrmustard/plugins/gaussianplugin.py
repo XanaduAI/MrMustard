@@ -12,6 +12,7 @@ class GaussianPlugin:
       - Gaussian unitary transformations
       - Gaussian CPTP channels
       - Gaussian CP channels [upcoming]
+      - Gaussian utilities
     """
     backend: BackendInterface
 
@@ -285,13 +286,13 @@ class GaussianPlugin:
 
     def thermal_X(self, nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
         r"""Returns the X matrix for the thermal lossy channel.
-        The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
+        The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
         """
         raise NotImplementedError
 
     def thermal_Y(self, nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
         r"""Returns the Y (noise) matrix for the thermal lossy channel.
-        The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
+        The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
         """
         raise NotImplementedError
 
@@ -299,22 +300,90 @@ class GaussianPlugin:
     # non-TP channels
     # ~~~~~~~~~~~~~~~
 
-    def homodyne(self, angle: Union[Scalar, Vector], measurement: Union[Scalar, Vector]) -> Matrix:
-        r"""Returns the homodyne channel operator.
+    def homodyne(self, ...) -> Tuple[Scalar, Matrix, Vector]:
+        r"""
+        Returns the results of a homodyne measurement.
         """
         raise NotImplementedError
 
-    def heterodyne(self, angle: Union[Scalar, Vector], measurement: Union[Scalar, Vector]) -> Matrix:
-        r"""Returns the heterodyne channel operator.
+    def heterodyne(self, ...) -> Tuple[Scalar, Matrix, Vector]:
+        r"""
+        Returns the results of a heterodyne measurement.
         """
         raise NotImplementedError
 
-    def anydyne(self, angle: Union[Scalar, Vector], measurement: Union[Scalar, Vector]) -> Matrix:
-        r"""Returns the anydyne channel operator.
+    def general_dyne(self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int]) -> Tuple[Scalar, Matrix, Vector]:
+        r"""
+        Returns the results of a general dyne measurement.
+        Arguments:
+            cov (Matrix): covariance matrix of the state being measured
+            means (Vector): means vector of the state being measured
+            proj_cov (Matrix): covariance matrix of the state being projected onto
+            proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
+            modes (Sequence[int]): modes being measured
+        Returns:
+            Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
         """
-        raise NotImplementedError
+        N, n = len(cov) // 2, len(proj_cov) // 2
+        # get the A, B and AB blocks
+        Amodes = [i for i in range(N) if i not in modes]
+        A, B, AB = self.partition_cov(cov, Amodes)
+        a, b = self.partition_means(means, Amodes)
+        inv = self.backend.inv(B + proj_cov)
+        ABinv = self.backend.matmul(AB, inv))
+        new_cov = A - self.backend.matmul(ABinv, self.backend.transpose(AB))
+        new_means = a + self.backend.matvec(ABinv, proj_means - b)
+        prob = self.backend.exp(self.backend.matvec(self.backend.matvec(inv, proj_means - b), proj_means - b)) / (self.backend.pi**(N-n) * self.backend.sqrt(self.backend.det(B + proj_cov)))
+        return prob, new_cov, new_means
 
-    def trace(self, cov: Matrix, means: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariances and means after discarding the specified modes.
+    # ~~~~~~~~~
+    # utilities
+    # ~~~~~~~~~
+
+    def trace(self, cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
+        r"""
+        Returns the covariances and means after discarding the specified modes.
+        Arguments:
+            cov (Matrix): covariance matrix
+            means (Vector): means vector
+            Bmodes (Sequence[int]): modes to discard
+        Returns:
+            Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
         """
-        raise NotImplementedError
+        N = len(cov) // 2
+        Aindices = self.backend.astensor([i for i in range(N) if i not in Bmodes])
+        A_cov_block = self.backend.gather(self.backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
+        A_means_vec = self.backend.gather(means, Aindices)
+        return A_cov_block, A_means_vec
+
+    def partition_cov(self, cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
+        r"""
+        Partitions the covariance matrix into the A and B subsystems and the AB coherence block.
+        Arguments:
+            cov (Matrix): the covariance matrix
+            Amodes (Sequence[int]): the modes of system A
+        Returns:
+            Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
+        """
+        N = len(cov) // 2
+        Bindices = self.backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
+        Aindices = self.backend.astensor(Amodes + [i + N for i in Amodes])
+        
+        A_block =  self.backend.gather(self.backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
+        B_block =  self.backend.gather(self.backend.gather(cov, Bindices, axis=0), Bindices, axis=1)
+        AB_block = self.backend.gather(self.backend.gather(cov, Aindices, axis=0), Bindices, axis=1)
+        return A_block, B_block, AB_block
+
+    def partition_means(self, means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
+        r"""
+        Partitions the means vector into the A and B subsystems.
+        Arguments:
+            means (Vector): the means vector
+            Amodes (Sequence[int]): the modes of system A
+        Returns:
+            Tuple[Vector, Vector]: the means of A and the means of B
+        """
+        N = len(means) // 2
+        Bindices = self.backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
+        Aindices = self.backend.astensor(Amodes + [i + N for i in Amodes])
+        return self.backend.gather(means, Aindices), self.backend.gather(means, Bindices)

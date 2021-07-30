@@ -1,11 +1,11 @@
 from abc import ABC
 from mrmustard.typing import *
-from mrmustard.core.plugins import FockPlugin, SymplecticPlugin
+from mrmustard.core.plugins import FockPlugin, GaussianPlugin
 
 
 class State(ABC):
     _fock: FockPlugin
-    _symplectic: SymplecticPlugin
+    _gaussian GaussianPlugin
 
     # NOTE: we moved cov and means in the init
 
@@ -19,7 +19,7 @@ class State(ABC):
     def __repr__(self):
         return "covariance:\n" + repr(self.cov) + "\nmeans:\n" + repr(self.means)
 
-    def ket(self, cutoffs: List[int]) -> Optional[Tensor]:
+    def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
         r"""
         Returns the ket of the state in Fock representation or `None` if the state is mixed.
         Arguments:
@@ -28,7 +28,7 @@ class State(ABC):
             Tensor: the ket
         """
         if not self.mixed:
-            return self._fock.ket(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+            return self._fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
 
     def dm(self, cutoffs: List[int]) -> Tensor:
         r"""
@@ -40,7 +40,7 @@ class State(ABC):
         """
         return self._fock.dm(self.cov, self.means, cutoffs=cutoffs, mixed=self.mixed, hbar=self.hbar)
 
-    def fock_probabilities(self, cutoffs: List[int]) -> Tensor:
+    def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""
         Returns the probabilities in Fock representation. If the state is pure, they are
         the absolute value squared of the ket amplitudes. If the state is mixed they are

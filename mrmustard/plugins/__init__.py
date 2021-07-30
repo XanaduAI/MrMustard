@@ -1,11 +1,11 @@
 from fockplugin import FockPlugin
-from symplecticplugin import SymplecticPlugin
+from GaussianPlugin import GaussianPlugin
 from trainplugin import TrainPlugin
 from graphicsplugin import GraphicsPlugin
 
 __all__ = [
     'FockPlugin',
-    'SymplecticPlugin',
+    'GaussianPlugin',
     'TrainPlugin',
     'GraphicsPlugin',
 ]

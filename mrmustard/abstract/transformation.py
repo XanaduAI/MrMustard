@@ -1,6 +1,6 @@
 import numpy as np  # for repr
 from abc import ABC
-from mrmustard.plugins import SymplecticPlugin
+from mrmustard.plugins import GaussianPlugin
 from mrmustard.abstract import State
 from mrmustard.typing import *
 
@@ -15,7 +15,7 @@ class Transformation(ABC):
     Given that measurements are CP but not TP, they have their own abstract class.
     """
 
-    _symplectic: SymplecticPlugin
+    _gaussian GaussianPlugin
 
     # the following 3 lines are so that mypy doesn't complain,
     # but all subclasses of Op have these 3 attributes
@@ -29,7 +29,7 @@ class Transformation(ABC):
         noise = self.noise_matrix(state.hbar)
 
         output = State(state.num_modes, hbar=state.hbar, mixed=noise is not None)
-        output.cov, output.means = self._symplectic.CPTP(state.cov, state.means, symplectic, noise, displacement, self._modes)
+        output.cov, output.means = self._gaussian.CPTP(state.cov, state.means, symplectic, noise, displacement, self._modes)
         return output
 
     def __repr__(self):

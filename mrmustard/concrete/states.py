@@ -8,7 +8,7 @@ class Vacuum(State):
     """
     def __init__(self, num_modes: int, hbar: float = 2.0):
         super().__init__(num_modes, hbar, mixed=False)
-        self.cov, self.means = self._symplectic.vacuum_state(self.num_modes, hbar)
+        self.cov, self.means = self._gaussian.vacuum_state(self.num_modes, hbar)
 
 
 class SqueezedVacuum(State):
@@ -18,7 +18,7 @@ class SqueezedVacuum(State):
     def __init__(self, r: Tensor, phi: Tensor, hbar: float = 2.0):
         num_modes = self.math.atleast_1d(r).shape[-1]
         super().__init__(num_modes, hbar, mixed=False)
-        self.cov, self.means = self._symplectic.squeezed_vacuum_state(r, phi, hbar)
+        self.cov, self.means = self._gaussian.squeezed_vacuum_state(r, phi, hbar)
 
 
 class Coherent(State):
@@ -28,7 +28,7 @@ class Coherent(State):
     def __init__(self, x: Tensor, y: Tensor, hbar: float = 2.0):
         num_modes = self.math.atleast_1d(x).shape[-1]
         super().__init__(num_modes, hbar, mixed=False)
-        self.cov, self.means = self._symplectic.coherent_state(x, y, hbar)
+        self.cov, self.means = self._gaussian.coherent_state(x, y, hbar)
 
 
 class Thermal(State):
@@ -38,7 +38,7 @@ class Thermal(State):
     def __init__(self, nbar: Tensor, hbar: float = 2.0):
         num_modes = self.math.atleast_1d(nbar).shape[-1]
         super().__init__(num_modes, hbar, mixed=False)
-        self.cov, self.means = self._symplectic.thermal_state(nbar, hbar)
+        self.cov, self.means = self._gaussian.thermal_state(nbar, hbar)
 
 
 class DisplacedSqueezed(State):
@@ -48,4 +48,4 @@ class DisplacedSqueezed(State):
     def __init__(self, r: Tensor, phi: Tensor, x: Tensor, y: Tensor, hbar: float = 2.0):
         num_modes = self.math.atleast_1d(r).shape[-1]
         super().__init__(num_modes, hbar, mixed=False)
-        self.cov, self.means = self._symplectic.displaced_squeezed_state(r, phi, x, y, hbar)
+        self.cov, self.means = self._gaussian.displaced_squeezed_state(r, phi, x, y, hbar)

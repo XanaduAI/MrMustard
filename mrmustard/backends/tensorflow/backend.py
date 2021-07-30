@@ -1,9 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from scipy.special import binom
-from scipy.stats import unitary_group
-from itertools import product
-from functools import lru_cache
 from mrmustard.backends import BackendInterface
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
 from mrmustard.typing import *
@@ -155,7 +151,7 @@ class Backend(BackendInterface):
     def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the Taylor series of exp(Ax^2 + Bx + C) at zero.
-        
+
         Args:
             A: The A matrix.
             B: The B vector.
@@ -164,10 +160,10 @@ class Backend(BackendInterface):
         Returns:
             The Fock state.
         """
-        poly = hermite_multidimensional_numba(-A, shape, B, C)
+        poly = hermite_multidimensional_numba(A, shape, B, C)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, -A, shape, B, C)
+            dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, A, shape, B, C)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axis=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax))

@@ -13,10 +13,6 @@ class FockPlugin:
     """
     backend: BackendInterface
 
-    # ~~~~~~
-    # states
-    # ~~~~~~
-
     def number_means(self, cov: Matrix, means: Vector, hbar: float) -> Vector:
         r"""
         Returns the photon number means vector
@@ -24,7 +20,7 @@ class FockPlugin:
         Args:
             cov: The Wigner covariance matrix.
             means: The Wigner means vector.
-            hbar: The value of the Plank constant.
+            hbar: The value of the Planck constant.
         Returns:
             The photon number means vector.
         """
@@ -41,7 +37,7 @@ class FockPlugin:
         Args:
             cov: The Wigner covariance matrix.
             means: The Wigner means vector.
-            hbar: The value of the Plank constant.
+            hbar: The value of the Planck constant.
         Returns:
             The photon number covariance matrix.
         """
@@ -53,56 +49,22 @@ class FockPlugin:
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
         return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * self.backend.eye(N)
 
-    def fock_representation(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
+    def fock_representation(cov: Matrix, means: Vector, shape: Sequence[int], mixed: bool, hbar: float) -> Tensor:
         r"""
-        Returns the fock state given the A, B, C matrices and a list of cutoff indices.
+        Returns the Fock representation of the phase space representation
+        given a Wigenr covariance matrix and a means vector.
         Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The cutoff indices.
+            cov: The Wigner covariance matrix.
+            means: The Wigner means vector.
+            shape: The shape of the tensor.
+            mixed: Whether the state vector is mixed or not.
+            hbar: The value of the Planck constant.
         Returns:
-            The fock state.
+            The Fock representation of the phase space representation.
         """
-        # mixed = len(B) == 2 * len(cutoffs)
-        # cutoffs_minus_1 = tuple([c - 1 for c in cutoffs] + [c - 1 for c in cutoffs] * mixed)
-        # state = self.backend.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed, dtype=self.backend.complex128)
-        # state[(0,) * (len(cutoffs) + len(cutoffs) * mixed)] = C
-        # state = self.backend.fill_amplitudes(state, A, B, cutoffs_minus_1)  # implemented in MathBackendInterface
-        # return state
+        A, B, C = self.hermite_parameters(cov, means, mixed, hbar)
+        return self.backend.hermite_renormalized(A, B, C, shape)
 
-        return self._backend.hermite_renormalized(A, B, C, shape)
-
-    def grad_fock_representation(self,
-                                 dout: Tensor,
-                                 state: Tensor,
-                                 A: Matrix,
-                                 B: Vector,
-                                 C: Scalar,
-                                 cutoffs: Sequence[int]
-                                 ) -> Tuple[Tensor, Tensor, Tensor]:
-        r"""
-        Returns the gradient of the fock state given the A, B, C matrices and a list of cutoff indices.
-        Args:
-            dout: The output gradient.
-            state: The fock state.
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: The cutoff indices.
-        Returns:
-            The gradient of the fock state.
-        """
-        mixed = len(B) == 2 * len(cutoffs)
-        dA = self.backend.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed + A.shape, dtype=self.backend.complex128)
-        dB = self.backend.zeros(tuple(cutoffs) + tuple(cutoffs) * mixed + B.shape, dtype=self.backend.complex128)
-        cutoffs_minus_1 = tuple([c - 1 for c in cutoffs] + [c - 1 for c in cutoffs] * mixed)
-        dA, dB = self.backend.fill_gradients(dA, dB, state, A, B, cutoffs_minus_1)  # implemented in BackendInterface
-        dC = state / C
-        dLdA = self.backend.sum(dout[..., None, None] * self.backend.conj(dA), axis=tuple(range(dout.ndim)))
-        dLdB = self.backend.sum(dout[..., None] * self.backend.conj(dB), axis=tuple(range(dout.ndim)))
-        dLdC = self.backend.sum(dout * self.backend.conj(dC), axis=tuple(range(dout.ndim)))
-        return dLdA, dLdB, dLdC
 
     def hermite_parameters(self, cov: Matrix, means: Vector, mixed: bool, hbar: float) -> Tuple[Matrix, Vector, Scalar]:  # TODO: move to FockPlugin?
         r"""
@@ -112,27 +74,27 @@ class FockPlugin:
             cov: The Wigner covariance matrix.
             means: The Wigner means vector.
             mixed: Whether the state vector is mixed or not.
-            hbar: The value of the Plank constant.
+            hbar: The value of the Planck constant.
         Returns:
             The A matrix, B vector and C scalar.
         """
-        num_modes = means.shape[-1] // 2
+        num_indices = means.shape[-1]
 
         # cov and means in the amplitude basis
-        R = self.rotmat(num_modes)
-        sigma = self.matmul(R, cov/hbar, self.dagger(R))
-        beta = self.matvec(R, means/self.sqrt(hbar))
+        R = self.backend.rotmat(num_indices//2)
+        sigma = self.backend.matmul(self.backend.matmul(R, cov/hbar), self.backend.dagger(R))
+        beta = self.backend.matvec(R, means/self.sqrt(hbar))
 
-        sQ = sigma + 0.5 * self.eye(2 * num_modes)
+        sQ = sigma + 0.5 * self.eye(len(sigma))
         sQinv = self.inv(sQ)
-        X = self.Xmat(num_modes)
-        A = self.matmul(X, self.eye(2 * num_modes) - sQinv)
-        B = self.matvec(self.transpose(sQinv), self.conj(beta))
-        exponent = -0.5 * self.sum(self.conj(beta)[:, None] * sQinv * beta[None, :])
-        T = self.exp(exponent) / self.sqrt(self.det(sQ))
-        N = num_modes - num_modes * mixed
+        X = self.backend.Xmat(num_indices//2)
+        A = self.backend.matmul(X, self.backend.eye(len(X)) - sQinv)
+        B = self.backend.matvec(self.backend.transpose(sQinv), self.backend.conj(beta))
+        exponent = -0.5 * self.sum(self.backend.conj(beta)[:, None] * sQinv * beta[None, :])
+        T = self.backend.exp(exponent) / self.backend.sqrt(self.det(sQ))
+        N = 0 if mixed else num_indices
         return (
             A[N:, N:],
             B[N:],
-            T ** (0.5 + 0.5 * mixed),
+            T ** (1.0 if mixed else 0.5),
         )  # will be off by global phase because T is real even for pure states

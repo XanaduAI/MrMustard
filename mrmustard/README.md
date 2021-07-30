@@ -36,7 +36,7 @@ To refactor concrete classes, you need to spot a common pattern among all of the
 Plugins add functionality to the concrete classes by composition, without committing to a specific numerical library
 (which is instead handled by the backend). At the moment the main plugins are:
 
-- [`SymplecticPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/symplecticplugin.py) (phase space functionality)
+- [`GaussianPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/GaussianPlugin.py) (phase space functionality)
 - [`FockPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/fockplugin.py) (Fock space functionality)
 - [`TrainPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/trainplugin.py) (optimization functionality)
 - [`GraphicsPlugin`](https://github.com/XanaduAI/MrMustard/blob/abstract_backend/mrmustard/plugins/graphicsplugin.py) (plots and visualizations)

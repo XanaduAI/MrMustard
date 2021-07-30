@@ -33,7 +33,7 @@ class Dgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def displacement_vector(self, hbar: float):
-        return self._symplectic_plugin.displacement(self.x, self.y, hbar=hbar)
+        return self._gaussian_plugin.displacement(self.x, self.y, hbar=hbar)
 
 
 class Sgate(Parametrized, Transformation):
@@ -69,7 +69,7 @@ class Sgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_plugin.squeezing_symplectic(self.r, self.phi)
+        return self._gaussian_plugin.squeezing_symplectic(self.r, self.phi)
 
 
 class Rgate(Parametrized, Transformation):
@@ -97,7 +97,7 @@ class Rgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_plugin.rotation_symplectic(self.angle)
+        return self._gaussian_plugin.rotation_symplectic(self.angle)
 
 
 class Ggate(Parametrized, Transformation):
@@ -190,7 +190,7 @@ class BSgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_plugin.beam_splitter_symplectic(self.theta, self.phi)
+        return self._gaussian_plugin.beam_splitter_symplectic(self.theta, self.phi)
 
 
 class MZgate(Parametrized, Transformation):
@@ -237,7 +237,7 @@ class MZgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_plugin.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
+        return self._gaussian_plugin.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
 class S2gate(Parametrized, Transformation):
@@ -271,7 +271,7 @@ class S2gate(Parametrized, Transformation):
         self.is_unitary = True
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_plugin.two_mode_squeezing_symplectic(self.r, self.phi)
+        return self._gaussian_plugin.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
 class Interferometer(Parametrized, Transformation):
@@ -337,7 +337,7 @@ class LossChannel(Parametrized, Transformation):
         self.is_unitary = False
 
     def symplectic_matrix(self, hbar: float):
-        return self._symplectic_plugin.loss_X(self.transmissivity)
+        return self._gaussian_plugin.loss_X(self.transmissivity)
 
     def noise_matrix(self, hbar: float):
-        return self._symplectic_plugin.loss_Y(self.transmissivity, hbar=hbar)
+        return self._gaussian_plugin.loss_Y(self.transmissivity, hbar=hbar)

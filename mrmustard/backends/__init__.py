@@ -2,8 +2,10 @@ from abc import ABC
 from mrmustard.typing import *
 import numpy as np
 from functools import lru_cache
-
-
+from scipy.special import binom
+from scipy.stats import unitary_group
+from itertools import product
+from functools import lru_cache
 class BackendInterface(ABC):
     r"""
     The interface that all backends must implement.
@@ -14,7 +16,7 @@ class BackendInterface(ABC):
     no_cast: Tuple
 
     def autocast(self, *args, **kwargs):
-        'A method that casts to the highest numerical type according to dtype_order'
+        'A method that casts args and kwargs to the highest numerical type according to dtype_order'
         args_dtypes = [arg.dtype for arg in args if (hasattr(arg, 'dtype') and arg.dtype not in self.no_cast)]
         kwargs_dtypes = {k: v.dtype for k, v in kwargs.items() if (hasattr(v, 'dtype') and v.dtype not in self.no_cast)}
         dtypes = args_dtypes + list(kwargs_dtypes.values())
