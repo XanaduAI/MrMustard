@@ -155,13 +155,14 @@ class Backend(BackendInterface):
     def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the Taylor series of exp(Ax^2 + Bx + C) at zero.
-            Args:
-                A: The A matrix.
-                B: The B vector.
-                C: The C scalar.
-                shape: The shape of the final tensor.
-            Returns:
-                The Fock state.
+        
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+        Returns:
+            The Fock state.
         """
         poly = hermite_multidimensional_numba(-A, shape, B, C)
 
