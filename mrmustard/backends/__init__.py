@@ -6,6 +6,8 @@ from scipy.special import binom
 from scipy.stats import unitary_group
 from itertools import product
 from functools import lru_cache
+
+
 class BackendInterface(ABC):
     r"""
     The interface that all backends must implement.
@@ -75,7 +77,7 @@ class BackendInterface(ABC):
 
     def tensordot(self, a: Tensor, b: Tensor, axes: List[int]) -> Tensor: ...
 
-    def einsum(self, string: str, *tensors) -> tTesor: ...
+    def einsum(self, string: str, *tensors) -> Tensor: ...
 
     def inv(self, tensor: Tensor) -> Tensor: ...
 
@@ -103,9 +105,9 @@ class BackendInterface(ABC):
 
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor: ...
 
-    def eye(self, size: int, dtype=float64) -> Tensor: ...
+    def eye(self, size: int, dtype) -> Tensor: ...
 
-    def zeros(self, shape: Sequence[int], dtype) -> Tensor: # NOTE: should be float64 by default
+    def zeros(self, shape: Sequence[int], dtype) -> Tensor: ... # NOTE: should be float64 by default
 
     def zeros_like(self, array: Tensor) -> Tensor: ...
 
@@ -130,6 +132,8 @@ class BackendInterface(ABC):
     def new_constant(self, value: Tensor, name: str) -> Tensor: ...
 
     def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: Sequence[int]) -> Tensor: ...
+
+    def DefaultEuclideanOptimizer(self): ...
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
@@ -341,3 +345,18 @@ class BackendInterface(ABC):
             padding="VALID",
             data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",
         )[0, ..., 0]
+
+    def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:
+        r"""
+        Convert the Riemannian gradient to a symplectic gradient.
+
+        Arguments:
+            S (Matrix): symplectic matrix
+            dS_riemann (Matrix): Riemannian gradient tensor
+        
+        Returns:
+            Matrix: symplectic gradient tensor
+        """
+        Jmat = self.J(len(s) // 2)
+        Z = self.matmul(self.transpose(S), dS_riemann)
+        return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))

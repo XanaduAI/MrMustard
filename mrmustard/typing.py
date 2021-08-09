@@ -1,4 +1,4 @@
-from typing import TypeVar, Union, List, Optional, Tuple, Union, Sequence, Generator
+from typing import TypeVar, Union, List, Dict, Optional, Tuple, Union, Sequence, Generator, Callable
 
 # NOTE: when type-annotating with typevars, objects with the same typevars must have the same type
 # E.g. in `def f(x: Vector, y: Vector) -> Tensor: ...`

@@ -48,6 +48,9 @@ class Backend(BackendInterface):
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
+    def expm(self, matrix: tf.Tensor) -> tf.Tensor:
+        return tf.linalg.expm(matrix)
+
     def norm(self, array: tf.Tensor) -> tf.Tensor:
         'Note that the norm preserves the type of array'
         return tf.linalg.norm(array)
@@ -147,6 +150,16 @@ class Backend(BackendInterface):
     def new_constant(self, value, name: str):
         return tf.constant(value, dtype=tf.float64, name=name)
 
+    def value(self, tensor: tf.Tensor) -> Union[int, float, complex]:
+        return tensor.numpy()
+
+    def hash_tensor(self, tensor: tf.Tensor) -> str:
+        try:
+            REF = tensor.ref()
+        except AttributeError:
+            raise TypeError(f'Cannot hash tensor')
+        return hash(REF)
+
     @tf.custom_gradient
     def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
@@ -166,8 +179,31 @@ class Backend(BackendInterface):
             dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, A, shape, B, C)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axis=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax))
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax))
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax)
             return dLdA, dLdB, dLdC
 
         return poly, grad
+
+    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:
+        r"""
+        Default optimizer for the Euclidean parameters.
+        """
+        return tf.keras.optimizers.Adam(learning_rate=0.001)
+
+    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
+        r"""
+        Computes the loss and gradients of the given cost function.
+
+        Arguments:
+            cost_fn (Callable with no args): The cost function.
+            parameters (Dict): The parameters to optimize in three kinds:
+                symplectic, orthogonal and euclidean.
+        
+        Returns:
+            The loss and the gradients.
+        """
+        with tf.GradientTape() as tape:
+            loss = cost_fn()
+        gradients = tape.gradient(loss, list(parameters.values()))
+        return loss, dict(zip(parameters.keys(), gradients))

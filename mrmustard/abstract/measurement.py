@@ -1,16 +1,14 @@
 from abc import ABC
 from mrmustard.typing import *
 from mrmustard.plugins import FockPlugin, GaussianPlugin
-from mrmustard.abstract import State, Parametrized
+from mrmustard.abstract.state import State
+from mrmustard.abstract._parametrized import Parametrized
 
-
-class GaussianMeasurement(ABC, Parametrized):
+class GaussianMeasurement(ABC):
     r"""
     A Gaussian general-dyne measurement.
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    _gaussian: GaussianPlugin
 
     def __call__(self, state: State, projecto_onto: State) -> Tuple[Scalar, State]:
         r"""
@@ -31,7 +29,7 @@ class GaussianMeasurement(ABC, Parametrized):
         return prob, remaining_state
 
 
-class FockMeasurement(ABC, Parametrized):
+class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.
     It works by representing the state in the Fock basis and then applying
@@ -40,8 +38,7 @@ class FockMeasurement(ABC, Parametrized):
     in the Fock basis.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    _fock: FockPlugin
 
     def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> State:
         r"""
@@ -87,3 +84,4 @@ class FockMeasurement(ABC, Parametrized):
         return detector_probs
 
     def __call__(self, state: State, measurement_: Matrix, outcome: Vector) -> Tuple[Scalar, State]:
+        pass

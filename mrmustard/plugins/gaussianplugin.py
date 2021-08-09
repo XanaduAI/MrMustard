@@ -300,13 +300,13 @@ class GaussianPlugin:
     # non-TP channels
     # ~~~~~~~~~~~~~~~
 
-    def homodyne(self, ...) -> Tuple[Scalar, Matrix, Vector]:
+    def homodyne(self, *args, **kwargs) -> Tuple[Scalar, Matrix, Vector]:
         r"""
         Returns the results of a homodyne measurement.
         """
         raise NotImplementedError
 
-    def heterodyne(self, ...) -> Tuple[Scalar, Matrix, Vector]:
+    def heterodyne(self, *args, **kwargs) -> Tuple[Scalar, Matrix, Vector]:
         r"""
         Returns the results of a heterodyne measurement.
         """
@@ -322,15 +322,14 @@ class GaussianPlugin:
             proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
             modes (Sequence[int]): modes being measured
         Returns:
-            Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
+            Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
         """
         N, n = len(cov) // 2, len(proj_cov) // 2
-        # get the A, B and AB blocks
         Amodes = [i for i in range(N) if i not in modes]
         A, B, AB = self.partition_cov(cov, Amodes)
         a, b = self.partition_means(means, Amodes)
         inv = self.backend.inv(B + proj_cov)
-        ABinv = self.backend.matmul(AB, inv))
+        ABinv = self.backend.matmul(AB, inv)
         new_cov = A - self.backend.matmul(ABinv, self.backend.transpose(AB))
         new_means = a + self.backend.matvec(ABinv, proj_means - b)
         prob = self.backend.exp(self.backend.matvec(self.backend.matvec(inv, proj_means - b), proj_means - b)) / (self.backend.pi**(N-n) * self.backend.sqrt(self.backend.det(B + proj_cov)))

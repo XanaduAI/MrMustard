@@ -1,13 +1,10 @@
 from abc import ABC
 from mrmustard.typing import *
-from mrmustard.core.plugins import FockPlugin, GaussianPlugin
-
+from mrmustard.plugins import FockPlugin, GaussianPlugin
 
 class State(ABC):
     _fock: FockPlugin
-    _gaussian GaussianPlugin
-
-    # NOTE: we moved cov and means in the init
+    _gaussian: GaussianPlugin
 
     def __init__(self, num_modes: int, hbar: float, mixed: bool):
         self.num_modes = num_modes

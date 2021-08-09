@@ -4,8 +4,6 @@ from mrmustard.plugins import GaussianPlugin
 from mrmustard.abstract import State
 from mrmustard.typing import *
 
-
-
 class Transformation(ABC):
     r"""
     Base class for all transformations.
@@ -15,10 +13,10 @@ class Transformation(ABC):
     Given that measurements are CP but not TP, they have their own abstract class.
     """
 
-    _gaussian GaussianPlugin
+    _gaussian: GaussianPlugin
 
-    # the following 3 lines are so that mypy doesn't complain,
-    # but all subclasses of Op have these 3 attributes
+    # NOTE: the following 3 lines are so that mypy doesn't complain,
+    # even though all subclasses of Op have these 3 attributes already
     _modes: List[int]
     _trainable_parameters: List[Tensor]
     _constant_parameters: List[Tensor]

@@ -1,5 +1,7 @@
-from mrmustard.core.baseclasses import State
 from mrmustard.typing import *
+from mrmustard.abstract import State
+
+__all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed"]
 
 
 class Vacuum(State):

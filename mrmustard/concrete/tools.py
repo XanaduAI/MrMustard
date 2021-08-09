@@ -1,27 +1,15 @@
+from __future__ import annotations
 # TODO: figure out where the Circuit should be
 
-from __future__ import annotations
+__all__ = ["Circuit"]
+
+from mrmustard.typing import *
 from collections.abc import MutableSequence
-from typing import List, Callable, Sequence, Union
-
-from mrmustard.core.backends import MathBackendInterface, TrainingBackendInterface
-from mrmustard.core.baseclasses import Op, State, Detector, Tensor
-from mrmustard.core.visual import Progressbar
-
-from typing import TypeVar
-
-Trainable = TypeVar("Trainable", Circuit, Op)
 
 class Circuit(MutableSequence):
 
     def __init__(self, ops: Sequence[Op] = []):
-        try:
-            if all(isinstance(o, Op) for o in ops):
-                self._ops: List[Op] = [o for o in ops]
-        except TypeError:
-            raise TypeError(f"not a sequence of ops")
-        except Exception as e:
-            raise e
+        self._ops: List[Op] = [o for o in ops]
 
     def __call__(self, state: State) -> State:
         state_ = state  # NOTE: otherwise the next time we call the circuit, the state will be mutated

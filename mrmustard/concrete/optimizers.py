@@ -1,25 +1,25 @@
 from mrmustard.typing import *
 from mrmustard.plugins import TrainPlugin, GraphicsPlugin
 
+__all__ = ["Optimizer"]
 
 class Optimizer:
     r"""An optimizer for any parametrized object.
     It can optimize euclidean, orthogonal and symplectic parameters.
 
     NOTE: In the future it will also include a compiler, so that it will be possible to
-    simplify the circuit/detector/gate/etc before the optimization.
+    simplify the circuit/detector/gate/etc before the optimization and also
+    compile other types of structures like error correcting codes and encoders/decoders.
     """
 
-    _train: TrainPlugin
-    _graphics: GraphicsPlugin
+    _train = TrainPlugin()
+    _graphics = GraphicsPlugin()
 
-    def __init__(self, symplectic_lr: float = 1.0, euclidean_lr: float = 0.003):
-        self.symplectic_lr: float = 0.1
-        self.orthogonal_lr: float = 0.1
-        self.euclidean_lr: float = 0.003
-
+    def __init__(self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001):
+        self.symplectic_lr: float = symplectic_lr
+        self.orthogonal_lr: float = orthogonal_lr
+        self.euclidean_lr: float = euclidean_lr
         self.loss_history: List[float] = [0]
-        self._by_optimizing: Sequence[Trainable] = []
 
     def minimize(self, cost_fn: Callable, by_optimizing: Union[Trainable, Sequence[Trainable]], max_steps: int = 1000):
         r"""
@@ -29,19 +29,16 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-        symplectic_params: List[Trainable] = self._train.get_symp_params(by_optimizing)
-        orthogonal_params: List[Trainable] = self._train.get_orth_params(by_optimizing)
-        euclidean_params:  List[Trainable] = self._train.get_eucl_params(by_optimizing)
-
+        params = {kind: self._train.extract_parameters(by_optimizing, kind) for kind in ('symplectic', 'orthogonal', 'euclidean')}
         bar = self._graphics.Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                loss, symp_grads, orth_grads, eucl_grads = self._train.loss_and_gradients(cost_fn)
-                self._train.update_symp(symplectic_params, symp_grads, self.symplectic_lr)
-                self._train.update_orth(orthogonal_params, orth_grads, self.orthogonal_lr)
-                self._train.update_eucl(euclidean_params, eucl_grads, self.euclidean_lr)
+                loss, grads = self._train.loss_and_gradients(cost_fn, params)
+                self._train.update_symp(params['symplectic'], grads['symplectic'], self.symplectic_lr)
+                self._train.update_orth(params['orthogonal'], grads['orthogonal'], self.orthogonal_lr)
+                self._train.update_eucl(params['euclidean'],  grads['euclidean'],  self.euclidean_lr)
                 self.loss_history.append(loss)
-                bar.step(loss)
+                bar.step(self._train.value(loss))
 
     def should_stop(self, max_steps: int) -> bool:
         r"""

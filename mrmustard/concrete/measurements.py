@@ -1,8 +1,9 @@
 from mrmustard.typing import *
-from mrmustard.abstract import Measurement, Parametrized
+from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized
 
+__all__ = ["PNRDetector", "ThresholdDetector"]
 
-class PNRDetector(Parametrized, Measurement):
+class PNRDetector(Parametrized, FockMeasurement):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.
@@ -63,7 +64,7 @@ class PNRDetector(Parametrized, Measurement):
                 )
 
 
-class ThresholdDetector(Parametrized, Measurement):
+class ThresholdDetector(Parametrized, FockMeasurement):
     r"""
     Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.

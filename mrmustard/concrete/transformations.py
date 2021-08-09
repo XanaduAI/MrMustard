@@ -1,6 +1,7 @@
 from mrmustard.typing import *
 from mrmustard.abstract import Parametrized, Transformation
 
+__all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
 class Dgate(Parametrized, Transformation):
     r"""
