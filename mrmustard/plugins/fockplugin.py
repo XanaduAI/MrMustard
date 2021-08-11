@@ -124,7 +124,7 @@ class FockPlugin:
         sQ = sigma + 0.5 * self._backend.eye(num_indices, dtype=sigma.dtype)
         sQinv = self._backend.inv(sQ)
         X = self._backend.Xmat(num_modes)
-        A = self._backend.matmul(X, self._backend.eye(num_indices, dtype=sQinv.dtype)) - sQinv
+        A = self._backend.matmul(X, self._backend.eye(num_indices, dtype=sQinv.dtype) - sQinv)
         B = self._backend.matvec(self._backend.transpose(sQinv), self._backend.conj(beta))
         exponent = -0.5 * self._backend.sum(self._backend.conj(beta)[:, None] * sQinv * beta[None, :])
         T = self._backend.exp(exponent) / self._backend.sqrt(self._backend.det(sQ))
