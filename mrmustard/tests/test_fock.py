@@ -12,13 +12,13 @@ from mrmustard import Vacuum
 @pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
 def test_two_mode_squeezing_fock(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
-    Note that we use an extra - sign with respect to TMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
+    Note that this is consistent with the Strawberryfields convention"""
     cutoff = 4
     circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=-r, phi=phi))
+    circ.append(S2gate(modes=[0, 1], r=r, phi=phi))
     amps = circ(Vacuum(num_modes=2)).ket(cutoffs=[cutoff, cutoff])
-    diag = (1 / np.cosh(r)) * (-np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
+    diag = (1 / np.cosh(r)) * (np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
     assert np.allclose(amps, expected)
 
