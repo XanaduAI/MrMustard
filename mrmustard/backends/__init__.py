@@ -1,49 +1,66 @@
 from abc import ABC
-from mrmustard.typing import *
+from mrmustard._typing import *
 import numpy as np
 from functools import lru_cache
 from scipy.special import binom
 from scipy.stats import unitary_group
 from itertools import product
-from functools import lru_cache
+from functools import lru_cache, wraps
+
+
+class Autocast:
+    r"""
+    A decorator that casts all castable arguments of a method to the dtype with highest precision.
+    """
+    def __init__(self):
+        self.dtype_order = ('float16', 'float32', 'float64', 'complex64', 'complex128')
+        self.no_cast = ('int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'int64', 'uint64')
+
+    def can_cast(self, arg):
+        return hasattr(arg, 'dtype') and arg.dtype.name not in self.no_cast
+
+    def get_dtypes(self, *args, **kwargs) -> List:
+        r"""
+        Returns the dtypes of the arguments.
+        """
+        args_dtypes = [arg.dtype.name for arg in args if self.can_cast(arg)]
+        kwargs_dtypes = [v.dtype.name for v in kwargs.values() if self.can_cast(v)]
+        return args_dtypes + kwargs_dtypes
+
+    def max_dtype(self, dtypes: List):
+        r"""
+        Returns the dtype with the highest precision.
+        """
+        if dtypes == []:
+            return None
+        return max(dtypes, key=lambda dtype: self.dtype_order.index(dtype))
+
+    def cast_all(self, backend, *args, **kwargs):
+        r"""
+        Cast all arguments to the highest precision.
+        """
+        max_dtype = self.max_dtype(self.get_dtypes(*args, **kwargs))
+        args = [backend.cast(arg, max_dtype) if self.can_cast(arg) else arg for arg in args]
+        kwargs = {k: backend.cast(v, max_dtype) if self.can_cast(v) else v for k, v in kwargs.items()}
+        return args, kwargs
+
+    def __call__(self, func):
+        @wraps(func)
+        def wrapper(backend, *args, **kwargs):
+            args, kwargs = self.cast_all(backend, *args, **kwargs)
+            return func(backend, *args, **kwargs)
+        return wrapper
+    
+
+
+
 
 
 class BackendInterface(ABC):
     r"""
     The interface that all backends must implement.
     All methods are pure (no side effects) and are be used by the plugins.
-    """
-
-    dtype_order: Tuple
-    no_cast: Tuple
-
-    def autocast(self, *args, **kwargs):
-        'A method that casts args and kwargs to the highest numerical type according to dtype_order'
-        args_dtypes = [arg.dtype for arg in args if (hasattr(arg, 'dtype') and arg.dtype not in self.no_cast)]
-        kwargs_dtypes = {k: v.dtype for k, v in kwargs.items() if (hasattr(v, 'dtype') and v.dtype not in self.no_cast)}
-        dtypes = args_dtypes + list(kwargs_dtypes.values())
-        if len(dtypes) == 0:
-            return args, kwargs
-        dtype = max(dtypes, key=lambda d: self.dtype_order.index(d))
-        for arg in args:
-            if hasattr(arg, 'dtype') and arg.dtype not in self.no_cast:
-                arg = self.cast(arg, dtype)
-        for k, v in kwargs.items():
-            if hasattr(v, 'dtype') and v.dtype not in self.no_cast:
-                kwargs[k] = self.cast(v, dtype)
-        return args, kwargs
-
-    def __getattr__(self, name: str) -> Callable:
-        r"""we wrap the methods when they are called, to ensure that they are called with the correct dtypes"""
-        try:
-            func = self.__dict__[name]
-        except KeyError:
-            raise AttributeError("Backend '{}' has no method '{}'".format(self.__class__.__name__, name))
-
-        def wrapper(*args, **kwargs):
-            args, kwargs = self.autocast(*args, **kwargs)
-            return func(*args, **kwargs)
-        return wrapper
+    """ 
 
     # ~~~~~~~~~
     # Basic ops
@@ -87,7 +104,7 @@ class BackendInterface(ABC):
 
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor: ...
 
-    def diag(self, array: Tensor) -> Tensor: ...
+    def diag(self, array: Tensor, k: int) -> Tensor: ...
 
     def diag_part(self, array: Tensor) -> Tensor: ...
 
@@ -157,26 +174,26 @@ class BackendInterface(ABC):
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, dim: int = 1) -> Tensor:
-        'a random symplectic matrix in Sp(2*dim)'
-        if dim == 1:
+    def random_symplectic(self, num_modes: int = 1) -> Tensor:
+        'a random symplectic matrix in Sp(2*num_modes)'
+        if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))
             V = np.exp(1j * np.random.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=dim)
-            V = unitary_group.rvs(dim=dim)
-        r = np.random.uniform(size=dim)
+            W = unitary_group.rvs(dim=num_modes)
+            V = unitary_group.rvs(dim=num_modes)
+        r = np.random.uniform(size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.concat([self.exp(-r), np.exp(r)], axis=0)
         return self.einsum("ij,j,jk->ik", OW, dd, OV)
 
-    def random_orthogonal(self, dim: int = 1) -> Tensor:
-        'a random orthogonal matrix in O(2*dim)'
-        if dim == 1:
+    def random_orthogonal(self, num_modes: int = 1) -> Tensor:
+        'a random orthogonal matrix in O(2*num_modes)'
+        if num_modes == 1:
             W = self.exp(1j * np.random.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=dim)
+            W = unitary_group.rvs(dim=num_modes)
         return self.unitary_to_orthogonal(W)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
@@ -185,7 +202,7 @@ class BackendInterface(ABC):
         """
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
-        x, y = vec
+        x, y = vec[..., -2], vec[..., -1]
         vec = self.concat([self.tile([x], [num_modes]), self.tile([y], [num_modes])], axis=-1)
         return vec
 
@@ -195,15 +212,16 @@ class BackendInterface(ABC):
         """
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
-        b = mat[..., 1, 0]
-        c = mat[..., 0, 1]
+        b = mat[..., 0, 1]
+        c = mat[..., 1, 0]
         mat = (
-            self.diag(self.tile_vec(self.diag_part(mat), num_modes))
+            self.diag(self.tile(self.diag_part(mat), [num_modes]))
             + self.diag(self.tile([b], [num_modes]), k=num_modes)
             + self.diag(self.tile([c], [num_modes]), k=-num_modes)
         )
         return mat
 
+    @staticmethod
     @lru_cache()
     def Xmat(num_modes: int):
         r"""Returns the matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}`
@@ -216,14 +234,14 @@ class BackendInterface(ABC):
         O = np.zeros((num_modes, num_modes))
         return np.block([[O, I], [I, O]])
 
-
+    @staticmethod
     @lru_cache()
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes"
         idl = np.identity(num_modes)
         return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
 
-
+    @staticmethod
     @lru_cache()
     def J(num_modes: int):
         "Symplectic form"
@@ -241,9 +259,9 @@ class BackendInterface(ABC):
 
     def left_matmul_at_modes(self, a_partial: Tensor, b_full: Tensor, modes: List[int]) -> Tensor:
         r"""
-        Left Matrix multiplication of a restricted matrix and a full matrix on the specified modes.
+        Left matrix multiplication of a partial matrix and a full matrix.
         It assumes that that `a_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
-        i.e. it will apply a_partial on the corresponding M modes of `b_full`.
+        i.e. it will apply a_partial on the corresponding M modes of `b_full` from the left.
 
         Args:
             a_partial (array): :math:`2M\times 2M` array
@@ -262,9 +280,9 @@ class BackendInterface(ABC):
 
     def right_matmul_at_modes(self, a_full: Tensor, b_partial: Tensor, modes: List[int]) -> Tensor:
         r"""
-        Right Matrix multiplication of a full matrix and a restricted matrix on the specified modes.
+        Right matrix multiplication of a full matrix and a partial matrix.
         It assumes that that `b_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
-        i.e. it will apply b_partial on the corresponding M modes of `a_full`.
+        i.e. it will apply b_partial on the corresponding M modes of `a_full` from the right.
 
         Args:
             a_full (array): :math:`2N\times 2N` array
@@ -273,13 +291,7 @@ class BackendInterface(ABC):
         Returns:
             array: :math:`2N\times 2N` array
         """
-        if b_partial is None:
-            return a
-        N = a_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes])
-        a_columns = self.gather(a_full, indices, axis=1)
-        a_columns = self.matmul(a_columns, b_partial)
-        return self.update_tensor(a_full, indices[None, :], a_columns)
+        return self.transpose(self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes))
 
     def matvec_at_modes(self, mat: Optional[Tensor], vec: Tensor, modes: List[int]) -> Tensor:
         'matrix-vector multiplication between a phase-space matrix and a vector in the specified modes'

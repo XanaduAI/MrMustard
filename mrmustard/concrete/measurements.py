@@ -1,4 +1,4 @@
-from mrmustard.typing import *
+from mrmustard._typing import *
 from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized
 
 __all__ = ["PNRDetector", "ThresholdDetector"]

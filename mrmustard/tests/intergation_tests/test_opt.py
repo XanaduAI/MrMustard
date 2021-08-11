@@ -2,9 +2,9 @@ import pytest
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.gates import Sgate, BSgate, S2gate, Ggate, Interferometer
-from mrmustard.tools import Circuit, Optimizer
-from mrmustard.states import Vacuum
+from mrmustard import Sgate, BSgate, S2gate, Ggate, Interferometer
+from mrmustard import Circuit, Optimizer
+from mrmustard import Vacuum
 
 
 @pytest.mark.parametrize("n", [0, 1, 2, 3])

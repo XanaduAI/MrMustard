@@ -1,15 +1,15 @@
 from abc import ABC
-from mrmustard.typing import *
-from mrmustard.plugins import FockPlugin, GaussianPlugin
+from mrmustard._typing import *
+from mrmustard import FockPlugin, GaussianPlugin
 
 class State(ABC):
-    _fock: FockPlugin
-    _gaussian: GaussianPlugin
+    _fock = FockPlugin()
+    _gaussian = GaussianPlugin()
 
     def __init__(self, num_modes: int, hbar: float, mixed: bool):
         self.num_modes = num_modes
         self.hbar = hbar
-        self.mixed = mixed
+        self.isMixed: bool = mixed
         self.cov: Matrix = None
         self.means: Vector = None
 
@@ -24,8 +24,10 @@ class State(ABC):
         Returns:
             Tensor: the ket
         """
-        if not self.mixed:
+        if not self.isMixed:
             return self._fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+        else:
+            return None
 
     def dm(self, cutoffs: List[int]) -> Tensor:
         r"""
@@ -35,7 +37,11 @@ class State(ABC):
         Returns:
             Tensor: the density matrix
         """
-        return self._fock.dm(self.cov, self.means, cutoffs=cutoffs, mixed=self.mixed, hbar=self.hbar)
+        if not self.isMixed:
+            ket = self._fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+            return self._fock.ket_to_dm(ket)
+        else:
+            return self._fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self.hbar)
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""
@@ -47,12 +53,12 @@ class State(ABC):
         Returns:
             Tensor: the probabilities
         """
-        if self.mixed:
+        if self.isMixed:
             dm = self.dm(cutoffs=cutoffs)
-            return self._fock.dm_to_probs(dm, real=True)
+            return self._fock.dm_to_probs(dm)
         else:
             ket = self.ket(cutoffs=cutoffs)
-            return self._fock.ket_to_probs(ket, real=True)
+            return self._fock.ket_to_probs(ket)
 
     @property
     def number_means(self):

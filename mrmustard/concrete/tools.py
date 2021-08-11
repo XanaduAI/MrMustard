@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from mrmustard.typing import *
+from mrmustard._typing import *
 from collections.abc import MutableSequence
 
 class Circuit(MutableSequence):

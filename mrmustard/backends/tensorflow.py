@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
-from mrmustard.backends import BackendInterface
+from mrmustard.backends import BackendInterface, Autocast
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
-from mrmustard.typing import *
+from mrmustard._typing import *
 
 #  NOTE: the reason why we have a class with methods and not a namespace with functions
 #  is that we want to enforce the interface, in order to ensure compatibility
@@ -11,16 +11,21 @@ from mrmustard.typing import *
 
 class Backend(BackendInterface):
 
-    dtype_order = (tf.float16, float, tf.float32, tf.float64, complex, tf.complex64, tf.complex128)
-    no_cast = (int, tf.int8, tf.uint8, tf.int16, tf.uint16, tf.int32, tf.uint32, tf.int64, tf.uint64)
+    float64 = tf.float64
+    float32 = tf.float32
+    complex64 = tf.complex64
+    complex128 = tf.complex128
 
     # ~~~~~~~~~
     # Basic ops
     # ~~~~~~~~~
 
-    def astensor(self, array: Union[np.ndarray, tf.Tensor]) -> tf.Tensor:
-        return tf.convert_to_tensor(array)
+    def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        return self.cast(tf.reshape(array, [-1]), dtype)
 
+    def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
+        return tf.convert_to_tensor(array, dtype=dtype)
+    
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
@@ -30,8 +35,23 @@ class Backend(BackendInterface):
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
 
+    def cos(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.cos(array)
+
+    def cosh(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.cosh(array)
+
+    def sinh(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.sinh(array)
+
+    def sin(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.sin(array)
+
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
+
+    def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
+        return self.cast(tf.sqrt(x), dtype)
 
     def lgamma(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.lgamma(x)
@@ -39,9 +59,16 @@ class Backend(BackendInterface):
     def log(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.log(x)
 
+    def cast(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
+        if dtype is None:
+            return x
+        return tf.cast(x, dtype)
+
+    @Autocast()
     def maximum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.maximum(a, b)
 
+    @Autocast()
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
 
@@ -55,12 +82,15 @@ class Backend(BackendInterface):
         'Note that the norm preserves the type of array'
         return tf.linalg.norm(array)
 
+    @Autocast()
     def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False)  -> tf.Tensor:
         return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
 
+    @Autocast()
     def matvec(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, adjoint_a=False) -> tf.Tensor:
         return tf.linalg.matvec(a, b, transpose_a, adjoint_a)
 
+    @Autocast()
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: List[int]) -> tf.Tensor:
         return tf.tensordot(a, b, axes)
 
@@ -79,8 +109,8 @@ class Backend(BackendInterface):
     def tile(self, array: tf.Tensor, repeats: Sequence[int]) -> tf.Tensor:
         return tf.tile(array, repeats)
 
-    def diag(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.diag(array)
+    def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
+        return tf.linalg.diag(array, k=k)
 
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
@@ -88,10 +118,13 @@ class Backend(BackendInterface):
     def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode='CONSTANT', constant_values=0) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
+    @Autocast()
     def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: List[int], padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
-    def transpose(self, a: tf.Tensor, perm: List[int]):
+    def transpose(self, a: tf.Tensor, perm: List[int] = None):
+        if a is None:
+            return None
         return tf.transpose(a, perm)
 
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
@@ -100,9 +133,10 @@ class Backend(BackendInterface):
     def sum(self, array: tf.Tensor, axes: Sequence[int]=None):
         return tf.reduce_sum(array, axes)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1) -> tf.Tensor:
-        return tf.range(start, limit, delta, dtype=tf.float64)
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
+        return tf.range(start, limit, delta, dtype=dtype)
 
+    @Autocast()
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(array1, array2, [[], []])
 
@@ -121,13 +155,13 @@ class Backend(BackendInterface):
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
 
-    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: tf.Tensor) -> tf.Tensor:
-        return tf.gather(array, indices, axes)
+    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: tf.Tensor = None) -> tf.Tensor:
+        return tf.gather(array, indices, axis)
 
-    def trace(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.trace(array)
+    def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        return self.cast(tf.linalg.trace(array), dtype)
 
-    def concat(self, values, axis):
+    def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
         return tf.concat(values, axis)
 
     def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
@@ -144,13 +178,13 @@ class Backend(BackendInterface):
             constraint = None
         return constraint
 
-    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str):
-        return tf.Variable(value, dtype=tf.float64, name=name, constraint=self.constraint_func(bounds))
+    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
+        return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
-    def new_constant(self, value, name: str):
-        return tf.constant(value, dtype=tf.float64, name=name)
+    def new_constant(self, value, name: str, dtype=tf.float64):
+        return tf.constant(value, dtype=dtype, name=name)
 
-    def value(self, tensor: tf.Tensor) -> Union[int, float, complex]:
+    def asnumpy(self, tensor: tf.Tensor) -> Tensor:
         return tensor.numpy()
 
     def hash_tensor(self, tensor: tf.Tensor) -> str:
@@ -161,9 +195,10 @@ class Backend(BackendInterface):
         return hash(REF)
 
     @tf.custom_gradient
-    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:  # TODO this is not ready
+    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
-        Renormalized multidimensional Hermite polynomial given by the Taylor series of exp(Ax^2 + Bx + C) at zero.
+        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
+        of exp(Ax^2 + Bx + C) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
 
         Args:
             A: The A matrix.
@@ -171,9 +206,9 @@ class Backend(BackendInterface):
             C: The C scalar.
             shape: The shape of the final tensor.
         Returns:
-            The Fock state.
+            The renormalized Hermite polynomial of given shape.
         """
-        poly = hermite_multidimensional_numba(A, shape, B, C)
+        poly = hermite_multidimensional_numba(A, tuple(shape), B, C)
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, A, shape, B, C)

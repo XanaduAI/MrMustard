@@ -5,22 +5,16 @@ install()  # NOTE: just for the looks, not stricly required
 __version__ = "0.1.0"
 
 from mrmustard.plugins import FockPlugin, GaussianPlugin, TrainPlugin, GraphicsPlugin
-from mrmustard.abstract import GaussianMeasurement, FockMeasurement, State, Transformation
-from mrmustard.concrete import *
 
 def set_env(env_name: str):
     backend = importlib.import_module("mrmustard.backends." + env_name).Backend()
 
-    FockPlugin.backend = backend
-    GaussianPlugin.backend = backend
-    TrainPlugin.backend = backend
-    GraphicsPlugin.backend = backend
+    FockPlugin._backend = backend
+    GaussianPlugin._backend = backend
+    TrainPlugin._backend = backend
+    GraphicsPlugin._backend = backend
 
-    State._fock = FockPlugin()
-    State._gaussian = GaussianPlugin()
-    Transformation._gaussian = GaussianPlugin()
-    GaussianMeasurement._gaussian = GaussianPlugin()
-    FockMeasurement._fock = FockPlugin()
+    print('done')
 
 def using_tensorflow():
     return set_env("tensorflow")
@@ -40,3 +34,4 @@ def using_tinygrad():
 
 using_tensorflow()  # default
 
+from mrmustard.concrete import *

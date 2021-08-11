@@ -1,6 +1,6 @@
 from abc import ABC
-from mrmustard.typing import *
-from mrmustard.plugins import FockPlugin, GaussianPlugin
+from mrmustard._typing import *
+from mrmustard import FockPlugin, GaussianPlugin
 from mrmustard.abstract.state import State
 from mrmustard.abstract._parametrized import Parametrized
 
@@ -8,7 +8,7 @@ class GaussianMeasurement(ABC):
     r"""
     A Gaussian general-dyne measurement.
     """
-    _gaussian: GaussianPlugin
+    _gaussian = GaussianPlugin()
 
     def __call__(self, state: State, projecto_onto: State) -> Tuple[Scalar, State]:
         r"""
@@ -22,7 +22,7 @@ class GaussianMeasurement(ABC):
         """
         prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, projecto_onto.cov, projecto_onto.means, self._modes)
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
-        remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed(cov))
+        remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed_cov(cov))
         if len(remaining_modes) > 0:
             remaining_state.cov = cov
             remaining_state.means = means
@@ -38,7 +38,7 @@ class FockMeasurement(ABC):
     in the Fock basis.
     """
 
-    _fock: FockPlugin
+    _fock = FockPlugin()
 
     def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> State:
         r"""

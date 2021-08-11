@@ -3,9 +3,9 @@ import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
-from mrmustard.gates import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
-from mrmustard.tools import Circuit
-from mrmustard.states import Vacuum
+from mrmustard import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
+from mrmustard import Circuit
+from mrmustard import Vacuum
 
 
 @pytest.mark.parametrize("n_mean", [0, 1, 2, 3])

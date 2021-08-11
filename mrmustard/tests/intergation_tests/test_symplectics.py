@@ -2,8 +2,8 @@ import pytest
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
 
-from mrmustard.gates import Sgate, BSgate, S2gate, Rgate, MZgate
-from mrmustard.states import Vacuum
+from mrmustard import Sgate, BSgate, S2gate, Rgate, MZgate
+from mrmustard import Vacuum
 
 
 @pytest.mark.parametrize("r", [0.1, 1, 2])

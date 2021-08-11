@@ -1,5 +1,5 @@
-from mrmustard.typing import *
-from mrmustard.plugins import TrainPlugin, GraphicsPlugin
+from mrmustard._typing import *
+from mrmustard import TrainPlugin, GraphicsPlugin
 
 __all__ = ["Optimizer"]
 
@@ -38,7 +38,7 @@ class Optimizer:
                 self._train.update_orth(params['orthogonal'], grads['orthogonal'], self.orthogonal_lr)
                 self._train.update_eucl(params['euclidean'],  grads['euclidean'],  self.euclidean_lr)
                 self.loss_history.append(loss)
-                bar.step(self._train.value(loss))
+                bar.step(self._train.numeric(loss))  # TODO 
 
     def should_stop(self, max_steps: int) -> bool:
         r"""

@@ -1,5 +1,5 @@
 from mrmustard.backends import BackendInterface
-from mrmustard.typing import *
+from mrmustard._typing import *
 
 
 class GaussianPlugin:
@@ -14,7 +14,7 @@ class GaussianPlugin:
       - Gaussian CP channels [upcoming]
       - Gaussian utilities
     """
-    backend: BackendInterface
+    _backend: BackendInterface
 
     #  ~~~~~~
     #  States
@@ -29,8 +29,8 @@ class GaussianPlugin:
             Matrix: vacuum covariance matrix
             Vector: vacuum displacement vector
         """
-        cov = self.backend.eye([num_modes*2], dtype=self.backend.float64) * hbar/2
-        disp = self.backend.zeros([num_modes*2], dtype=self.backend.float64)
+        cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
+        disp = self._backend.zeros([num_modes*2], dtype=self._backend.float64)
         return cov, disp
 
     def coherent_state(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
@@ -44,9 +44,9 @@ class GaussianPlugin:
             Matrix: coherent state covariance matrix
             Vector: coherent state displacement vector
         """
-        num_modes = self.backend.atleast_1d(x).shape[-1]
-        cov = self.backend.eye([num_modes*2], dtype=self.backend.float64) * hbar/2
-        disp = self.backend.concat([x, y], axis=-1) * self.backend.sqrt(2 * hbar)
+        num_modes = self._backend.atleast_1d(x).shape[-1]
+        cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
+        disp = self._backend.concat([x, y], axis=-1) * self._backend.sqrt(2 * hbar)
         return cov, disp
 
     def squeezed_vacuum_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
@@ -61,7 +61,7 @@ class GaussianPlugin:
             Vector: squeezed state displacement vector
         """
         S = self.squeezing_symplectic(r, phi)
-        cov = self.backend.matmul(S, self.backend.transpose(S)) * hbar/2
+        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar/2
         _, disp = self.coherent_state(0, 0, hbar)
         return cov, disp
 
@@ -76,8 +76,8 @@ class GaussianPlugin:
             Vector: thermal state displacement vector
         """
         g = (2*nbar + 1) * hbar/2
-        cov = self.backend.diag(self.backend.concat([g, g], axis=-1), dtype=self.backend.float64)
-        disp = self.backend.zeros([nbar*2], dtype=self.backend.float64)
+        cov = self._backend.diag(self._backend.concat([g, g], axis=-1), dtype=self._backend.float64)
+        disp = self._backend.zeros([nbar*2], dtype=self._backend.float64)
         return cov, disp
 
     def displaced_squeezed_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
@@ -94,8 +94,8 @@ class GaussianPlugin:
             Vector: displaced squeezed state displacement vector
         """
         S = self.squeezing_symplectic(r, phi)
-        cov = self.backend.matmul(S, self.backend.transpose(S)) * hbar/2
-        disp = self.backend.concat([x, y], axis=-1)
+        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar/2
+        disp = self._backend.concat([x, y], axis=-1)
         return cov, disp
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,14 +110,14 @@ class GaussianPlugin:
         Returns:
             Tensor: symplectic matrix of a rotation gate
         """
-        angle = self.backend.atleast_1d(angle)
+        angle = self._backend.atleast_1d(angle)
         num_modes = angle.shape[-1]
-        x = self.backend.cos(angle)
-        y = self.backend.sin(angle)
+        x = self._backend.cos(angle)
+        y = self._backend.sin(angle)
         return (
-            self.backend.diag(self.backend.concat([x, x], axis=0))
-            + self.backend.diag(-y, k=num_modes)
-            + self.backend.diag(y, k=-num_modes)
+            self._backend.diag(self._backend.concat([x, x], axis=0))
+            + self._backend.diag(-y, k=num_modes)
+            + self._backend.diag(y, k=-num_modes)
         )
 
     def squeezing_symplectic(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
@@ -129,17 +129,17 @@ class GaussianPlugin:
         Returns:
             Tensor: symplectic matrix of a squeezing gate
         """
-        r = self.backend.atleast_1d(r)
-        phi = self.backend.atleast_1d(phi)
+        r = self._backend.atleast_1d(r)
+        phi = self._backend.atleast_1d(phi)
         num_modes = phi.shape[-1]
-        cp = self.backend.cos(phi)
-        sp = self.backend.sin(phi)
-        ch = self.backend.cosh(r)
-        sh = self.backend.sinh(r)
+        cp = self._backend.cos(phi)
+        sp = self._backend.sin(phi)
+        ch = self._backend.cosh(r)
+        sh = self._backend.sinh(r)
         return (
-            self.backend.diag(self.backend.concat([ch - cp * sh, ch + cp * sh], axis=0))
-            + self.backend.diag(-sp * sh, k=num_modes)
-            + self.backend.diag(-sp * sh, k=-num_modes)
+            self._backend.diag(self._backend.concat([ch - cp * sh, ch + cp * sh], axis=0))
+            + self._backend.diag(-sp * sh, k=num_modes)
+            + self._backend.diag(-sp * sh, k=-num_modes)
         )
 
     def displacement(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
@@ -152,7 +152,7 @@ class GaussianPlugin:
         Returns:
             Vector: displacement vector of a displacement gate
         """
-        return self.backend.sqrt(2 * hbar) * self.backend.concat([x, y], axis=0)
+        return self._backend.sqrt(2 * hbar, dtype=x.dtype) * self._backend.concat([x, y], axis=0)
 
     def beam_splitter_symplectic(self, theta: Scalar, phi: Scalar) -> Matrix:
         r"""Symplectic matrix of a Beam-splitter gate.
@@ -163,12 +163,12 @@ class GaussianPlugin:
         Returns:
             Matrix: symplectic (orthogonal) matrix of a beam-splitter gate
         """
-        ct = self.backend.cos(theta)
-        st = self.backend.sin(theta)
-        cp = self.backend.cos(phi)
-        sp = self.backend.sin(phi)
-        zero = self.backend.zeros_like(theta)
-        return self.backend.Tensor(
+        ct = self._backend.cos(theta)
+        st = self._backend.sin(theta)
+        cp = self._backend.cos(phi)
+        sp = self._backend.sin(phi)
+        zero = self._backend.zeros_like(theta)
+        return self._backend.astensor(
             [
                 [ct, -cp * st, zero, -sp * st],
                 [cp * st, ct, -sp * st, zero],
@@ -191,15 +191,15 @@ class GaussianPlugin:
         Returns:
             Matrix: symplectic (orthogonal) matrix of a Mach-Zehnder interferometer
         """
-        ca = self.backend.cos(phi_a)
-        sa = self.backend.sin(phi_a)
-        cb = self.backend.cos(phi_b)
-        sb = self.backend.sin(phi_b)
-        cp = self.backend.cos(phi_a + phi_b)
-        sp = self.backend.sin(phi_a + phi_b)
+        ca = self._backend.cos(phi_a)
+        sa = self._backend.sin(phi_a)
+        cb = self._backend.cos(phi_b)
+        sb = self._backend.sin(phi_b)
+        cp = self._backend.cos(phi_a + phi_b)
+        sp = self._backend.sin(phi_a + phi_b)
 
         if internal:
-            return 0.5 * self.backend.Tensor(
+            return 0.5 * self._backend.astensor(
                 [
                     [ca - cb, -sa - sb, sb - sa, -ca - cb],
                     [-sa - sb, cb - ca, -ca - cb, sa - sb],
@@ -208,7 +208,7 @@ class GaussianPlugin:
                 ]
             )
         else:
-            return 0.5 * self.backend.Tensor(
+            return 0.5 * self._backend.astensor(
                 [
                     [cp - ca, -sb, sa - sp, -1 - cb],
                     [-sa - sp, 1 - cb, -ca - cp, sb],
@@ -226,12 +226,12 @@ class GaussianPlugin:
         Returns:
             Matrix: symplectic matrix of a two-mode squeezing gate
         """
-        cp = self.backend.cos(phi)
-        sp = self.backend.sin(phi)
-        ch = self.backend.cosh(r)
-        sh = self.backend.sinh(r)
-        zero = self.backend.zeros_like(r)
-        return self.backend.astensor(
+        cp = self._backend.cos(phi)
+        sp = self._backend.sin(phi)
+        ch = self._backend.cosh(r)
+        sh = self._backend.sinh(r)
+        zero = self._backend.zeros_like(r)
+        return self._backend.astensor(
             [
                 [ch, cp * sh, zero, sp * sh],
                 [cp * sh, ch, sp * sh, zero],
@@ -259,30 +259,33 @@ class GaussianPlugin:
         Returns:
             Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
         """
-        if X.shape[-1] == Y.shape[-1] == d.shape[-1] == 2:  # single-mode channel
+        # if single-mode channel, apply to all modes indicated in `modes`
+        if X is not None and X.shape[-1] == 2:
             X = self._backend.single_mode_to_multimode_mat(X, len(modes))
+        if Y is not None and Y.shape[-1] == 2:
             Y = self._backend.single_mode_to_multimode_mat(Y, len(modes))
+        if d is not None and d.shape[-1] == 2:
             d = self._backend.single_mode_to_multimode_vec(d, len(modes))
-        cov = self._backend.left_matmul_to_modes(X, cov, modes)
-        cov = self._backend.right_matmul_to_modes(cov, self._backend.transpose(X), modes)
-        cov = self._backend.add_to_modes(cov, Y, modes)
-        means = self._backend.left_matmul_to_modes(X, means, modes)
-        means = self._backend.add_to_modes(means, d, modes)
+        cov = self._backend.left_matmul_at_modes(X, cov, modes)
+        cov = self._backend.right_matmul_at_modes(cov, self._backend.transpose(X), modes)
+        cov = self._backend.add_at_modes(cov, Y, modes)
+        means = self._backend.matvec_at_modes(X, means, modes)
+        means = self._backend.add_at_modes(means, d, modes)
         return cov, means
 
     def loss_X(self, transmissivity: Union[Scalar, Vector]) -> Matrix:
         r"""Returns the X matrix for the lossy bosonic channel.
         The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
-        D = self.backend.sqrt(transmissivity)
-        return self.backend.diag(self.backend.concat([D, D], axis=0))
+        D = self._backend.sqrt(transmissivity)
+        return self._backend.diag(self._backend.concat([D, D], axis=0))
 
     def loss_Y(self, transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
         r"""Returns the Y (noise) matrix for the lossy bosonic channel.
         The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
         D = (1.0 - transmissivity) * hbar/2
-        return self.backend.diag(self.backend.concat([D, D], axis=0))
+        return self._backend.diag(self._backend.concat([D, D], axis=0))
 
     def thermal_X(self, nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
         r"""Returns the X matrix for the thermal lossy channel.
@@ -328,11 +331,11 @@ class GaussianPlugin:
         Amodes = [i for i in range(N) if i not in modes]
         A, B, AB = self.partition_cov(cov, Amodes)
         a, b = self.partition_means(means, Amodes)
-        inv = self.backend.inv(B + proj_cov)
-        ABinv = self.backend.matmul(AB, inv)
-        new_cov = A - self.backend.matmul(ABinv, self.backend.transpose(AB))
-        new_means = a + self.backend.matvec(ABinv, proj_means - b)
-        prob = self.backend.exp(self.backend.matvec(self.backend.matvec(inv, proj_means - b), proj_means - b)) / (self.backend.pi**(N-n) * self.backend.sqrt(self.backend.det(B + proj_cov)))
+        inv = self._backend.inv(B + proj_cov)
+        ABinv = self._backend.matmul(AB, inv)
+        new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
+        new_means = a + self._backend.matvec(ABinv, proj_means - b)
+        prob = self._backend.exp(self._backend.matvec(self._backend.matvec(inv, proj_means - b), proj_means - b)) / (self._backend.pi**(N-n) * self._backend.sqrt(self._backend.det(B + proj_cov)))
         return prob, new_cov, new_means
 
     # ~~~~~~~~~
@@ -350,9 +353,9 @@ class GaussianPlugin:
             Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
         """
         N = len(cov) // 2
-        Aindices = self.backend.astensor([i for i in range(N) if i not in Bmodes])
-        A_cov_block = self.backend.gather(self.backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
-        A_means_vec = self.backend.gather(means, Aindices)
+        Aindices = self._backend.astensor([i for i in range(N) if i not in Bmodes])
+        A_cov_block = self._backend.gather(self._backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
+        A_means_vec = self._backend.gather(means, Aindices)
         return A_cov_block, A_means_vec
 
     def partition_cov(self, cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
@@ -365,12 +368,12 @@ class GaussianPlugin:
             Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
         """
         N = len(cov) // 2
-        Bindices = self.backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
-        Aindices = self.backend.astensor(Amodes + [i + N for i in Amodes])
+        Bindices = self._backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
+        Aindices = self._backend.astensor(Amodes + [i + N for i in Amodes])
         
-        A_block =  self.backend.gather(self.backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
-        B_block =  self.backend.gather(self.backend.gather(cov, Bindices, axis=0), Bindices, axis=1)
-        AB_block = self.backend.gather(self.backend.gather(cov, Aindices, axis=0), Bindices, axis=1)
+        A_block =  self._backend.gather(self._backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
+        B_block =  self._backend.gather(self._backend.gather(cov, Bindices, axis=0), Bindices, axis=1)
+        AB_block = self._backend.gather(self._backend.gather(cov, Aindices, axis=0), Bindices, axis=1)
         return A_block, B_block, AB_block
 
     def partition_means(self, means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
@@ -383,6 +386,6 @@ class GaussianPlugin:
             Tuple[Vector, Vector]: the means of A and the means of B
         """
         N = len(means) // 2
-        Bindices = self.backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
-        Aindices = self.backend.astensor(Amodes + [i + N for i in Amodes])
-        return self.backend.gather(means, Aindices), self.backend.gather(means, Bindices)
+        Bindices = self._backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
+        Aindices = self._backend.astensor(Amodes + [i + N for i in Amodes])
+        return self._backend.gather(means, Aindices), self._backend.gather(means, Bindices)

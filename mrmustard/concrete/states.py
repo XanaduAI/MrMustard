@@ -1,4 +1,4 @@
-from mrmustard.typing import *
+from mrmustard._typing import *
 from mrmustard.abstract import State
 
 __all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed"]
