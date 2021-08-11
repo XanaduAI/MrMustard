@@ -208,7 +208,7 @@ class Backend(BackendInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = hermite_multidimensional_numba(-A, tuple(shape), B, C)
+        poly = self.conj(hermite_multidimensional_numba(-A, tuple(shape), B, C))
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, -A, shape, B, C)
