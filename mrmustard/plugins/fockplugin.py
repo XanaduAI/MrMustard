@@ -64,7 +64,7 @@ class FockPlugin:
         Returns:
             The Fock representation of the phase space representation.
         """
-        assert len(cutoffs) == len(means) // 2
+        assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
         A, B, C = self.hermite_parameters(cov, means, mixed, hbar)
         return self._backend.hermite_renormalized(A, B, C, shape = cutoffs + cutoffs*mixed)
 

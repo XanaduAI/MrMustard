@@ -122,9 +122,9 @@ class Backend(BackendInterface):
     def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: List[int], padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
-    def transpose(self, a: tf.Tensor, perm: List[int] = None):
+    def transpose(self, a: tf.Tensor, perm: List[int] = None) -> tf.Tensor:
         if a is None:
-            return None
+            return None  # TODO: remove and address None inputs where tranpose is used
         return tf.transpose(a, perm)
 
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
