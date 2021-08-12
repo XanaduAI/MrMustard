@@ -46,7 +46,7 @@ class GaussianPlugin:
         """
         num_modes = self._backend.atleast_1d(x).shape[-1]
         cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
-        disp = self._backend.concat([x, y], axis=-1) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
+        disp = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
         return cov, disp
 
     def squeezed_vacuum_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:

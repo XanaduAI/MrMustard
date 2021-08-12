@@ -2,7 +2,6 @@ from abc import ABC
 from mrmustard._typing import *
 from mrmustard import FockPlugin, GaussianPlugin
 from mrmustard.abstract.state import State
-from mrmustard.abstract._parametrized import Parametrized
 
 class GaussianMeasurement(ABC):
     r"""

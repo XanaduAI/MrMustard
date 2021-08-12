@@ -49,9 +49,9 @@ class PNRDetector(Parametrized, FockMeasurement):
             max_cutoffs=max_cutoffs,
         )
 
-        self.make_stochastic_channel()
+        self.recompute_stochastic_channel()
 
-    def make_stochastic_channel(self):
+    def recompute_stochastic_channel(self):
         self._stochastic_channel = []
         if self._conditional_probs is not None:
             self._stochastic_channel = self._conditional_probs
@@ -106,9 +106,9 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             max_cutoffs=max_cutoffs,
         )
 
-        self.make_stochastic_channel()
+        self.recompute_stochastic_channel()
 
-    def make_stochastic_channel(self):
+    def recompute_stochastic_channel(self):
         self._stochastic_channel = []
 
         if self._conditional_probs is not None:
@@ -120,3 +120,9 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 rest = self._backend.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = self._backend.concat([row1, row2, rest], axis=0)
                 self._stochastic_channel.append(condprob)
+
+    @property
+    def stochastic_channel(self) -> List[Matrix]:
+        if self._stochastic_channel is None:
+            self._fock.stochastic_channel()
+        return self._stochastic_channel

@@ -18,8 +18,8 @@ def test_vacuum_state(num_modes, hbar):
 def test_coherent_state_single(hbar):
     x, y = np.random.uniform(size=2)
     cov, disp = gp.coherent_state(x, y, hbar)
-    assert np.allclose(cov, np.eye(2*num_modes) * hbar/2)
-    assert np.allclose(disp, np.array([x, y], axis=0) * gp._backend.sqrt(2 * hbar))
+    assert np.allclose(cov, np.eye(2) * hbar/2)
+    assert np.allclose(disp, np.array([x, y]) * gp._backend.sqrt(2 * hbar))
 
 # test coherent state multi-mode
 @pytest.mark.parametrize("num_modes", [1, 2, 3])

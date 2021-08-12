@@ -119,7 +119,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
 
     outc = circc(Vacuum(num_modes=2))
     outd = circd(Vacuum(num_modes=2))
-    tdetector.make_stochastic_channel()
+    tdetector.recompute_stochastic_channel()
     psc = tdetector(outc, cutoffs=[cutoff, cutoff])
     psd = tdetector(outd, cutoffs=[cutoff, cutoff])
     fake_data = tfbe.convolve_probs(psc, psd)
@@ -127,7 +127,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     def loss_fn():
         outc = circc(Vacuum(num_modes=2))
         outd = circd(Vacuum(num_modes=2))
-        tdetector.make_stochastic_channel()
+        tdetector.recompute_stochastic_channel()
         psc = tdetector(outc, cutoffs=[cutoff, cutoff])
         psd = tdetector(outd, cutoffs=[cutoff, cutoff])
         ps = tfbe.convolve_probs(psc, psd)

@@ -1,17 +1,22 @@
-from abc import ABC
 from mrmustard._typing import *
 from mrmustard import FockPlugin, GaussianPlugin
 
-class State(ABC):
+class State:  # NOTE: this is not an ABC
     _fock = FockPlugin()
     _gaussian = GaussianPlugin()
 
-    def __init__(self, num_modes: int, hbar: float, mixed: bool):
+    def __init__(self, num_modes: int, hbar: float, mixed: bool, cov: Optional[Matrix] = None, means: Optional[Vector] = None):
+        if cov is not None:
+            assert cov.shape[-1] == num_modes
+            assert cov.shape[-2] == num_modes
+        self.cov: Optional[Matrix] = cov
+        if means is not None:
+            assert means.shape[-1] == num_modes
+        self.means: Optional[Vector] = means
+        
         self.num_modes = num_modes
         self.hbar = hbar
         self.isMixed: bool = mixed
-        self.cov: Matrix = None
-        self.means: Vector = None
 
     def __repr__(self):
         return "covariance:\n" + repr(self.cov) + "\nmeans:\n" + repr(self.means)
