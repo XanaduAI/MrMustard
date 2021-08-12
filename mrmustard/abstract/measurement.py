@@ -3,29 +3,42 @@ from mrmustard._typing import *
 from mrmustard import FockPlugin, GaussianPlugin
 from mrmustard.abstract.state import State
 
+
+# TODO: the recompute_project_onto trick is there because measurements are treated differently from gates: the parameters
+# are assumed to be mostly constant and they can be called with additional kwargs if we want the internal representation to be recomputed.
+# However, we should find the how to make them work the same way, i.e. use xxx_trainable and xxx_bounds for all of the measurement parameters.
+# This is a problem due to the generality of Generaldyne: for homodyne and heterodyne we could already do it, as they
+# depend on euclidean parameters, rather than on a Gaussian state.
+
 class GaussianMeasurement(ABC):
     r"""
     A Gaussian general-dyne measurement.
     """
     _gaussian = GaussianPlugin()
 
-    def __call__(self, state: State, projecto_onto: State) -> Tuple[Scalar, State]:
+    def __call__(self, state: State, **kwargs) -> Tuple[Scalar, State]:
         r"""
         Applies a general-dyne Gaussian measurement to the state, i.e. it projects
         onto the state with given cov and outcome means vector.
         Args:
-            state: the state to be measured
-            projecto_onto: the Gaussian state to project onto
+            state (State): the state to be measured.
+            kwargs (optional): same arguments as in the init, but specify if they are different
+            from the arguments supplied at init time (e.g. for training the measurement).
         Returns:
-            the measurement probabilities and the remaining post-measurement state (if any)
+            (float, state) The measurement probabilities and the remaining post-measurement state.
+            Note that the post-measurement state is trivial if all modes are measured.
         """
-        prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, projecto_onto.cov, projecto_onto.means, self._modes)
+        if len(kwargs) > 0:
+            self._project_onto = self.recompute_project_onto(**kwargs)
+        prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes)
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
         remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed_cov(cov))
         if len(remaining_modes) > 0:
             remaining_state.cov = cov
             remaining_state.means = means
         return prob, remaining_state
+
+    def recompute_project_onto(self, **kwargs) -> State: ...
 
 
 class FockMeasurement(ABC):

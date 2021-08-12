@@ -9,7 +9,7 @@ class Vacuum(State):
     The N-mode vacuum state.
     """
     def __init__(self, num_modes: int, hbar: float = 2.0):
-        cov, means = self._gaussian.vacuum_state(self.num_modes, hbar)
+        cov, means = self._gaussian.vacuum_state(num_modes, hbar)
         super().__init__(num_modes, hbar, mixed=False, cov=cov, means=means)
 
 

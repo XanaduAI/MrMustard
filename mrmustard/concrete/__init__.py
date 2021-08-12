@@ -1,4 +1,4 @@
-from .measurements import PNRDetector, ThresholdDetector
+from .measurements import PNRDetector, ThresholdDetector, Generaldyne, Homodyne, Heterodyne
 from .optimizers import Optimizer
 from .states import Vacuum, Coherent, Thermal, SqueezedVacuum, DisplacedSqueezed
 from .tools import Circuit
@@ -9,6 +9,9 @@ __all__ = [
     'Optimizer',
     'PNRDetector',
     'ThresholdDetector',
+    'Generaldyne',
+    'Homodyne',
+    'Heterodyne',
     'Vacuum',
     'Coherent',
     'Thermal',

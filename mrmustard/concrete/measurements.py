@@ -1,5 +1,7 @@
 from mrmustard._typing import *
-from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized
+from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized, State
+from mrmustard.concrete.states import DisplacedSqueezed, Coherent
+from math import pi
 
 __all__ = ["PNRDetector", "ThresholdDetector"]
 
@@ -126,3 +128,67 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         if self._stochastic_channel is None:
             self._fock.stochastic_channel()
         return self._stochastic_channel
+
+
+class Generaldyne(Parametrized, GaussianMeasurement):
+    r"""
+    General dyne measurement.
+    """
+    def __init__(self, modes: List[int], project_onto: State):
+        assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
+        super().__init__(modes=modes, project_onto=project_onto)
+
+    def recompute_project_onto(self, project_onto: State) -> State:
+        return project_onto
+
+
+class Homodyne(Parametrized, GaussianMeasurement):
+    r"""
+    Homodyne measurement on a given list of modes.
+    """
+    def __init__(
+        self,
+        modes: List[int],
+        quadrature_angles: Union[Scalar, Vector],
+        results: Union[Scalar, Vector],
+        hbar: float = 2.0,
+        ):
+        r"""
+        Args:
+            modes (list of ints): modes of the measurement
+            quadrature_angles (float or vector): angle(s) of the quadrature axes of the measurement
+            results (float or vector): result(s) of the measurement on each axis
+        """
+        self.modes = modes
+        self._project_onto = recompute_project_onto(modes, quadrature_angles, results)
+        super().__init__(modes=modes, quadrature_angles=quadrature_angles, results=results)
+
+        def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
+            x = results * self._gaussian._backend.sin(quadrature_angles)
+            y = results * self._gaussian._backend.cos(quadrature_angles)
+            return DisplacedSqueezed(r=10.0, phi=pi/2 + quadrature_angles, x=x, y=y, hbar=hbar)  # TODO: fix r
+
+
+class Heterodyne(Parametrized, GaussianMeasurement):
+    r"""
+    Heterodyne measurement on a given mode.
+    """
+    def __init__(
+        self,
+        modes: List[int],
+        x: Union[Scalar, Vector],
+        y: Union[Scalar, Vector],
+        hbar: float = 2.0):
+        r"""
+        Args:
+            mode: modes of the measurement
+            x: x-coordinates of the measurement
+            y: y-coordinates of the measurement
+        """
+        self.modes = modes
+        self.hbar = hbar
+        self.project_onto = Coherent(x=x, y=y, hbar=hbar)
+        super().__init__(modes=modes, x=x, y=y)
+
+        def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
+            return Coherent(x=x, y=y, hbar=self.hbar)

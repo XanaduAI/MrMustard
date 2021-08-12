@@ -1,6 +1,7 @@
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
-
+from math import pi
+from thewalrus.quantum import is_pure_cov
 
 class GaussianPlugin:
     r"""
@@ -327,7 +328,9 @@ class GaussianPlugin:
         Returns:
             Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
         """
-        N, n = len(cov) // 2, len(proj_cov) // 2
+        N = len(cov) // 2
+        nB = len(proj_cov) // 2  # B is the system being measured
+        nA = N - nB
         Amodes = [i for i in range(N) if i not in modes]
         A, B, AB = self.partition_cov(cov, Amodes)
         a, b = self.partition_means(means, Amodes)
@@ -335,12 +338,18 @@ class GaussianPlugin:
         ABinv = self._backend.matmul(AB, inv)
         new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
         new_means = a + self._backend.matvec(ABinv, proj_means - b)
-        prob = self._backend.exp(self._backend.matvec(self._backend.matvec(inv, proj_means - b), proj_means - b)) / (self._backend.pi**(N-n) * self._backend.sqrt(self._backend.det(B + proj_cov)))
+        prob = self._backend.exp(self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (pi**nA * self._backend.sqrt(self._backend.det(B + proj_cov)))
         return prob, new_cov, new_means
 
     # ~~~~~~~~~
     # utilities
     # ~~~~~~~~~
+
+    def is_mixed_cov(self, cov: Matrix) -> bool:
+        r"""
+        Returns True if the covariance matrix is mixed, False otherwise.
+        """
+        return not is_pure_cov(self._backend.asnumpy(cov))
 
     def trace(self, cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
         r"""
@@ -368,12 +377,11 @@ class GaussianPlugin:
             Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
         """
         N = len(cov) // 2
-        Bindices = self._backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
-        Aindices = self._backend.astensor(Amodes + [i + N for i in Amodes])
-        
-        A_block =  self._backend.gather(self._backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
-        B_block =  self._backend.gather(self._backend.gather(cov, Bindices, axis=0), Bindices, axis=1)
-        AB_block = self._backend.gather(self._backend.gather(cov, Aindices, axis=0), Bindices, axis=1)
+        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
+        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
+        A_block =  self._backend.gather(self._backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
+        B_block =  self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Bindices, axis=0)
+        AB_block = self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Aindices, axis=0)
         return A_block, B_block, AB_block
 
     def partition_means(self, means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
@@ -386,6 +394,6 @@ class GaussianPlugin:
             Tuple[Vector, Vector]: the means of A and the means of B
         """
         N = len(means) // 2
-        Bindices = self._backend.astensor([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes])
-        Aindices = self._backend.astensor(Amodes + [i + N for i in Amodes])
+        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
+        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
         return self._backend.gather(means, Aindices), self._backend.gather(means, Bindices)

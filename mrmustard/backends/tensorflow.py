@@ -155,8 +155,8 @@ class Backend(BackendInterface):
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
 
-    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: tf.Tensor = None) -> tf.Tensor:
-        return tf.gather(array, indices, axis)
+    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
+        return tf.gather(array, indices, axis=axis)
 
     def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.linalg.trace(array), dtype)

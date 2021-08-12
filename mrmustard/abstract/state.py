@@ -7,11 +7,11 @@ class State:  # NOTE: this is not an ABC
 
     def __init__(self, num_modes: int, hbar: float, mixed: bool, cov: Optional[Matrix] = None, means: Optional[Vector] = None):
         if cov is not None:
-            assert cov.shape[-1] == num_modes
-            assert cov.shape[-2] == num_modes
+            assert cov.shape[-1] == num_modes * 2
+            assert cov.shape[-2] == num_modes * 2
         self.cov: Optional[Matrix] = cov
         if means is not None:
-            assert means.shape[-1] == num_modes
+            assert means.shape[-1] == num_modes * 2
         self.means: Optional[Vector] = means
         
         self.num_modes = num_modes

@@ -128,7 +128,7 @@ class FockPlugin:
         B = self._backend.matvec(self._backend.transpose(sQinv), self._backend.conj(beta))
         exponent = -0.5 * self._backend.sum(self._backend.conj(beta)[:, None] * sQinv * beta[None, :])
         T = self._backend.exp(exponent) / self._backend.sqrt(self._backend.det(sQ))
-        N = 2*num_modes if mixed else num_modes
+        N = 2 * num_modes if mixed else num_modes
         return (
             A[:N, :N],
             B[:N],
