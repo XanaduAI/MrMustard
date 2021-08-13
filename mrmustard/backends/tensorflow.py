@@ -119,7 +119,7 @@ class Backend(BackendInterface):
         return tf.pad(array, paddings, mode, constant_values)
 
     @Autocast()
-    def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: List[int], padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
+    def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
     def transpose(self, a: tf.Tensor, perm: List[int] = None) -> tf.Tensor:

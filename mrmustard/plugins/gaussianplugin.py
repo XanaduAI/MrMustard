@@ -13,7 +13,8 @@ class GaussianPlugin:
       - Gaussian unitary transformations
       - Gaussian CPTP channels
       - Gaussian CP channels [upcoming]
-      - Gaussian utilities
+      - Gaussian entropies [upcoming]
+      - Gaussian entanglement [upcoming]
     """
     _backend: BackendInterface
 
@@ -304,19 +305,7 @@ class GaussianPlugin:
     # non-TP channels
     # ~~~~~~~~~~~~~~~
 
-    def homodyne(self, *args, **kwargs) -> Tuple[Scalar, Matrix, Vector]:
-        r"""
-        Returns the results of a homodyne measurement.
-        """
-        raise NotImplementedError
-
-    def heterodyne(self, *args, **kwargs) -> Tuple[Scalar, Matrix, Vector]:
-        r"""
-        Returns the results of a heterodyne measurement.
-        """
-        raise NotImplementedError
-
-    def general_dyne(self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int]) -> Tuple[Scalar, Matrix, Vector]:
+    def general_dyne(self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float) -> Tuple[Scalar, Matrix, Vector]:
         r"""
         Returns the results of a general dyne measurement.
         Arguments:
@@ -330,7 +319,7 @@ class GaussianPlugin:
         """
         N = len(cov) // 2
         nB = len(proj_cov) // 2  # B is the system being measured
-        nA = N - nB
+        nA = N - nB  # A is the system left over after measurement
         Amodes = [i for i in range(N) if i not in modes]
         A, B, AB = self.partition_cov(cov, Amodes)
         a, b = self.partition_means(means, Amodes)
@@ -338,7 +327,9 @@ class GaussianPlugin:
         ABinv = self._backend.matmul(AB, inv)
         new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
         new_means = a + self._backend.matvec(ABinv, proj_means - b)
-        prob = self._backend.exp(self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (pi**nA * self._backend.sqrt(self._backend.det(B + proj_cov)))
+        print(B+proj_cov)
+        print(self._backend.sqrt(self._backend.det(B + proj_cov)))
+        prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (pi**nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov)))  # TODO: check this (hbar part especially)
         return prob, new_cov, new_means
 
     # ~~~~~~~~~

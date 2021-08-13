@@ -28,9 +28,10 @@ class GaussianMeasurement(ABC):
             (float, state) The measurement probabilities and the remaining post-measurement state.
             Note that the post-measurement state is trivial if all modes are measured.
         """
+        assert self._hbar == state.hbar
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
-        prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes)
+        prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto.hbar)
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
         remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed_cov(cov))
         if len(remaining_modes) > 0:
@@ -76,7 +77,7 @@ class FockMeasurement(ABC):
         prob = self._backend.sum(self._backend.all_diagonals(dm, real=False))
         return dm / prob, self._backend.abs(prob)
 
-    def apply_stochastic_channel(self, stochastic_channel, fock_probs: State):
+    def apply_stochastic_channel(self, stochastic_channel, fock_probs: Tensor) -> Tensor:
         cutoffs = [fock_probs.shape[m] for m in self._modes]
         for i, mode in enumerate(self._modes):
             if cutoffs[mode] > stochastic_channel[i].shape[1]:
@@ -95,5 +96,10 @@ class FockMeasurement(ABC):
             detector_probs = self._backend.transpose(detector_probs, indices)
         return detector_probs
 
-    def __call__(self, state: State, measurement_: Matrix, outcome: Vector) -> Tuple[Scalar, State]:
-        pass
+    def __call__( self, state: State, cutoffs: List[int], outcomes: Sequence[Optional[int]]) -> Tuple[Tensor, Tensor]:
+        fock_probs = state.fock_probabilities(cutoffs)
+        detector_probs = self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
+        leftover = self.project(state, cutoffs, outcomes)  # project onto measurement pattern
+        return detector_probs, leftover
+
+    def recompute_stochastic_channel(self, **kwargs) -> State: ...

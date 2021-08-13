@@ -59,10 +59,10 @@ class PNRDetector(Parametrized, FockMeasurement):
             self._stochastic_channel = self._conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
-                dark_prior = self._backend.poisson(max_k=cut, rate=dc)
-                condprob = self._backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
+                dark_prior = self._fock._backend.poisson(max_k=cut, rate=dc)
+                condprob = self._fock._backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
                 self._stochastic_channel.append(
-                    self._backend.convolve_probs_1d(condprob, [dark_prior, self._backend.eye(condprob.shape[1])[0]])
+                    self._fock._backend.convolve_probs_1d(condprob, [dark_prior, self._fock._backend.eye(condprob.shape[1])[0]])
                 )
 
 
@@ -117,10 +117,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             self._stochastic_channel = self.conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
-                row1 = ((1.0 - qe) ** self._backend.arange(cut))[None, :] - dc
+                row1 = ((1.0 - qe) ** self._fock._backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
-                rest = self._backend.zeros((cut - 2, cut), dtype=row1.dtype)
-                condprob = self._backend.concat([row1, row2, rest], axis=0)
+                rest = self._fock._backend.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = self._fock._backend.concat([row1, row2, rest], axis=0)
                 self._stochastic_channel.append(condprob)
 
     @property
@@ -136,7 +136,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
     """
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
-        super().__init__(modes=modes, project_onto=project_onto)
+        super().__init__(modes=modes, project_onto=project_onto, hbar=project_onto.hbar)
 
     def recompute_project_onto(self, project_onto: State) -> State:
         return project_onto
@@ -151,6 +151,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
         modes: List[int],
         quadrature_angles: Union[Scalar, Vector],
         results: Union[Scalar, Vector],
+        squeezing: float = 10.0,
         hbar: float = 2.0,
         ):
         r"""
@@ -158,15 +159,18 @@ class Homodyne(Parametrized, GaussianMeasurement):
             modes (list of ints): modes of the measurement
             quadrature_angles (float or vector): angle(s) of the quadrature axes of the measurement
             results (float or vector): result(s) of the measurement on each axis
+            squeezing (float): amount of squeezing of the measurement (default 10.0, ideally infinite)
         """
-        self.modes = modes
-        self._project_onto = recompute_project_onto(modes, quadrature_angles, results)
-        super().__init__(modes=modes, quadrature_angles=quadrature_angles, results=results)
 
-        def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
-            x = results * self._gaussian._backend.sin(quadrature_angles)
-            y = results * self._gaussian._backend.cos(quadrature_angles)
-            return DisplacedSqueezed(r=10.0, phi=pi/2 + quadrature_angles, x=x, y=y, hbar=hbar)  # TODO: fix r
+        super().__init__(modes=modes, quadrature_angles=quadrature_angles, results=results, squeezing=self._gaussian._backend.astensor(squeezing, 'float64'), hbar=hbar)
+        self._project_onto = self.recompute_project_onto(quadrature_angles, results)
+
+    def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
+        quadrature_angles = self._gaussian._backend.astensor(quadrature_angles, 'float64')
+        results = self._gaussian._backend.astensor(results, 'float64')
+        x = results * self._gaussian._backend.sin(quadrature_angles)
+        y = results * self._gaussian._backend.cos(quadrature_angles)
+        return DisplacedSqueezed(r=self._squeezing, phi=pi/2 + quadrature_angles, x=x, y=y, hbar=self._hbar)
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
@@ -185,10 +189,10 @@ class Heterodyne(Parametrized, GaussianMeasurement):
             x: x-coordinates of the measurement
             y: y-coordinates of the measurement
         """
-        self.modes = modes
-        self.hbar = hbar
-        self.project_onto = Coherent(x=x, y=y, hbar=hbar)
-        super().__init__(modes=modes, x=x, y=y)
+        super().__init__(modes=modes, x=x, y=y, hbar=hbar)
+        self._project_onto = self.recompute_project_onto(x, y)
 
-        def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
-            return Coherent(x=x, y=y, hbar=self.hbar)
+    def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
+        x = results = self._gaussian._backend.astensor(x, 'float64')
+        y = results = self._gaussian._backend.astensor(y, 'float64')
+        return Coherent(x=x, y=y, hbar=self._hbar)
