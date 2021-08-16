@@ -29,3 +29,19 @@ def test_coherent_state_multi(num_modes, hbar):
     cov, disp = gp.coherent_state(x, y, hbar)
     assert np.allclose(cov, np.eye(2*num_modes) * hbar/2)
     assert np.allclose(disp, np.concatenate([x,y], axis=0) * gp._backend.sqrt(2 * hbar))
+
+
+def test_the_purity_of_a_pure_state():
+    from mrmustard import Coherent
+    state = Coherent(0.5, 1.0)
+    purity = gp.purity(state.cov, state.hbar)
+    expected = 1.0
+    assert np.allclose(purity, expected)
+
+def test_the_purity_of_a_mixed_state():
+    from mrmustard import Thermal
+    state = Thermal(nbar=0.5, hbar=2.0)
+    purity = gp.purity(state.cov, state.hbar)
+    expected = 1/(2*state.nbar + 1)
+    assert np.allclose(purity, expected)
+

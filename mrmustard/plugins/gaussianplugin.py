@@ -388,3 +388,13 @@ class GaussianPlugin:
         Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
         Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
         return self._backend.gather(means, Aindices), self._backend.gather(means, Bindices)
+
+    def purity(self, cov: Matrix, hbar: float) -> float:
+        r"""
+        Returns the purity of the state with the given covariance matrix.
+        Arguments:
+            cov (Matrix): the covariance matrix
+        Returns:
+            float: the purity
+        """
+        return 1 / self._backend.det((2/hbar) * cov)
