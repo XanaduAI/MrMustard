@@ -13,8 +13,8 @@ np.random.seed(137)
 
 
 @pytest.mark.parametrize("alpha", np.random.rand(3) + 1j * np.random.rand(3))
-@pytest.mark.parametrize("eta", [0, 0.3, 1.0])
-@pytest.mark.parametrize("dc", [0, 0.2])
+@pytest.mark.parametrize("eta", [0.0, 0.3, 1.0])
+@pytest.mark.parametrize("dc", [0.0, 0.2])
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
     circ = Circuit()
@@ -152,7 +152,7 @@ def test_postselection():
     n_measured = 1
 
     # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
-    proj_state, success_prob = detector(my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None])
+    proj_state, success_prob = detector(my_state, cutoffs=[cutoff, cutoff], outcomes=[n_measured, None])
     expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
     assert np.allclose(success_prob, expected_prob)
     expected_state = np.zeros([cutoff, cutoff])
@@ -185,7 +185,7 @@ def test_projected(eta, n):
     B = BSgate(modes=[0, 1], theta=1.0, phi=0.0)
     L = LossChannel(modes=[0], transmissivity=eta)
 
-    dm_lossy, _ = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20], measurements=[n, None])
-    dm_ideal, _ = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20], measurements=[n, None])
+    dm_lossy, _ = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20], outcomes=[n, None])
+    dm_ideal, _ = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20], outcomes=[n, None])
 
     assert np.allclose(dm_ideal, dm_lossy)

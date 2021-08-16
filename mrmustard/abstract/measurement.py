@@ -72,7 +72,7 @@ class FockMeasurement(ABC):
                 perm = list(set(range(dm.ndim)).difference(last)) + last
                 dm = self._fock._backend.transpose(dm, perm)
                 dm = self._fock._backend.diag(dm)
-                dm = self._fock._backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]], dtype=dm.dtype)
+                dm = self._fock._backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
                 measured += 1
         prob = self._fock._backend.sum(self._fock._backend.all_diagonals(dm, real=False))
         return self._fock._backend.abs(prob), dm / prob
@@ -102,6 +102,7 @@ class FockMeasurement(ABC):
         if outcomes is None:
             return all_probs
         else:
-            return self.project(state, cutoffs, outcomes)  # project onto measurement pattern
+            probs, dm = self.project(state, cutoffs, outcomes)
+            return dm, probs
 
     def recompute_stochastic_channel(self, **kwargs) -> State: ...

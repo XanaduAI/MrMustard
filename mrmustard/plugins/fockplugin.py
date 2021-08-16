@@ -86,8 +86,7 @@ class FockPlugin:
         Returns:
             The probabilities vector.
         """
-        probs = ket ** 2
-        return self._backend.real(probs)
+        return self._backend.abs(ket) ** 2
 
     def dm_to_probs(self, dm: Tensor) -> Tensor:
         r"""
