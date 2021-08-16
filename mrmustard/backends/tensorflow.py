@@ -94,7 +94,7 @@ class Backend(BackendInterface):
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: List[int]) -> tf.Tensor:
         return tf.tensordot(a, b, axes)
 
-    def einsum(self, string: str, *tensors) -> tf.Tensor:
+    def einsum(self, string: str, *tensors) -> tf.Tensor: 
         return tf.einsum(string, *tensors)
 
     def inv(self, a: tf.Tensor) -> tf.Tensor:
