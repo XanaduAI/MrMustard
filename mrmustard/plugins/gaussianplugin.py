@@ -154,6 +154,8 @@ class GaussianPlugin:
         Returns:
             Vector: displacement vector of a displacement gate
         """
+        x = self._backend.atleast_1d(x)
+        y = self._backend.atleast_1d(y)
         return self._backend.sqrt(2 * hbar, dtype=x.dtype) * self._backend.concat([x, y], axis=0)
 
     def beam_splitter_symplectic(self, theta: Scalar, phi: Scalar) -> Matrix:
