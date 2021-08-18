@@ -33,7 +33,7 @@ class Dgate(Parametrized, Transformation):
         super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
         self.is_unitary = True
 
-    def displacement_vector(self, hbar: float):
+    def d_vector(self, hbar: float):
         return self._gaussian.displacement(self.x, self.y, hbar=hbar)
 
 
@@ -69,7 +69,7 @@ class Sgate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
+    def X_matrix(self, hbar: float):
         return self._gaussian.squeezing_symplectic(self.r, self.phi)
 
 
@@ -97,7 +97,7 @@ class Rgate(Parametrized, Transformation):
         super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
+    def X_matrix(self, hbar: float):
         return self._gaussian.rotation_symplectic(self.angle)
 
 
@@ -137,19 +137,17 @@ class Ggate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float = 2.0):
+    def X_matrix(self, hbar: float):
         return self.symplectic
 
-    def displacement_vector(self, hbar: float = 2.0):
+    def d_vector(self, hbar: float):
         return self.displacement
 
-    @property
-    def symplectic_parameters(self) -> List:
-        return [mat for mat in self._trainable_parameters if len(mat.shape) == 2]
-
-    @property
-    def euclidean_parameters(self) -> List:
-        return [vec for vec in self._trainable_parameters if len(vec.shape) == 1]
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {
+            "symplectic": [self.symplectic] if self._symplectic_trainable else [],
+            "orthogonal": [],
+            "euclidean": [self.displacement] if self._displacement_trainable else []}
 
 
 class BSgate(Parametrized, Transformation):
@@ -190,7 +188,7 @@ class BSgate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
+    def X_matrix(self, hbar: float):
         return self._gaussian.beam_splitter_symplectic(self.theta, self.phi)
 
 
@@ -237,7 +235,7 @@ class MZgate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
+    def X_matrix(self, hbar: float):
         return self._gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
@@ -271,7 +269,7 @@ class S2gate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
+    def X_matrix(self, hbar: float):
         return self._gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
@@ -291,16 +289,14 @@ class Interferometer(Parametrized, Transformation):
         super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float = 2.0):
+    def X_matrix(self, hbar: float = 2.0):
         return self.orthogonal
 
-    @property
-    def orthogonal_parameters(self) -> List:
-        return self._trainable_parameters
-
-    @property
-    def euclidean_parameters(self) -> List:
-        return []
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {
+            "symplectic": [],
+            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
+            "euclidean": []}
 
 
 #
@@ -337,8 +333,8 @@ class LossChannel(Parametrized, Transformation):
         )
         self.is_unitary = False
 
-    def symplectic_matrix(self, hbar: float):
+    def X_matrix(self, hbar: float):
         return self._gaussian.loss_X(self.transmissivity)
 
-    def noise_matrix(self, hbar: float):
+    def Y_matrix(self, hbar: float):
         return self._gaussian.loss_Y(self.transmissivity, hbar=hbar)

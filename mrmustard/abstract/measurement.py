@@ -71,7 +71,7 @@ class FockMeasurement(ABC):
                 last = [mode - measured, mode + state.num_modes - 2 * measured]
                 perm = list(set(range(dm.ndim)).difference(last)) + last
                 dm = self._fock._backend.transpose(dm, perm)
-                dm = self._fock._backend.diag(dm)
+                dm = self._fock._backend.diag_part(dm)
                 dm = self._fock._backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
                 measured += 1
         prob = self._fock._backend.sum(self._fock._backend.all_diagonals(dm, real=False))

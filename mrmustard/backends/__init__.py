@@ -10,7 +10,7 @@ from functools import lru_cache, wraps
 
 class Autocast:
     r"""
-    A decorator that casts all castable arguments of a method to the dtype with highest precision.
+    A decorator that casts all castable arguments of a method to the dtype with highest precision. # TODO: cast to lowest precision?
     """
     def __init__(self):
         self.dtype_order = ('float16', 'float32', 'float64', 'complex64', 'complex128')
@@ -377,6 +377,6 @@ class BackendInterface(ABC):
         Returns:
             Matrix: symplectic gradient tensor
         """
-        Jmat = self.J(len(s) // 2)
+        Jmat = self.J(len(S) // 2)
         Z = self.matmul(self.transpose(S), dS_riemann)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))

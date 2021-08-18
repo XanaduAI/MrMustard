@@ -14,8 +14,6 @@ def set_env(env_name: str):
     TrainPlugin._backend = backend
     GraphicsPlugin._backend = backend
 
-    print('done')
-
 def using_tensorflow():
     return set_env("tensorflow")
 

@@ -3,7 +3,6 @@ from scipy.linalg import expm
 from mrmustard._typing import *
 from mrmustard.backends import BackendInterface
 
-
 class TrainPlugin:
 
     _backend: BackendInterface
@@ -64,11 +63,11 @@ class TrainPlugin:
             D = 0.5 * (dO_riemann - self._backend.matmul(self._backend.matmul(O, self._backend.transpose(dO_riemann)), O))
             O = O @ self._backend.expm(orthogonal_lr * self._backend.matmul(self._backend.transpose(D), O))
 
-    def update_euclidean(self, euclidean_grads: Sequence[Tensor], euclidean_params: Sequence[Trainable], euclidean_lr: float):
+    def update_euclidean(self, euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
         self.euclidean_opt.lr = euclidean_lr
         self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
-    def extract_parameters(self, items: Sequence[Trainable], kind: str) -> Dict[str, Trainable]:
+    def extract_parameters(self, items: Sequence, kind: str) -> List[Trainable]:
         r"""
         Extracts the parameters of the given kind from the given items.
         Arguments:
@@ -80,12 +79,12 @@ class TrainPlugin:
         params_dict = dict()
         for item in items:
             try:
-                for p in getattr(item, kind + '_parameters'):
-                    if (hash := self._backend.hash_tensor(p)) not in params:
+                for p in item.trainable_parameters[kind]:
+                    if (hash := self._backend.hash_tensor(p)) not in params_dict:
                         params_dict[hash] = p
-            except TypeError:  # make sure hash_tensor raises a TypeError when the tensor is not hashable
+            except TypeError:  # NOTE: make sure hash_tensor raises a TypeError when the tensor is not hashable
                 continue
-        return {kind : list(params_dict.values())}
+        return list(params_dict.values())
 
     def loss_and_gradients(self, cost_fn: Callable, params: dict) -> Tuple[Tensor, Dict[str, Tensor]]:
         r"""

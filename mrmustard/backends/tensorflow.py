@@ -198,7 +198,8 @@ class Backend(BackendInterface):
     def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of exp(Ax^2 + Bx + C) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        Note the minus sign in front of A.
 
         Args:
             A: The A matrix.
@@ -208,14 +209,18 @@ class Backend(BackendInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = self.conj(hermite_multidimensional_numba(-A, tuple(shape), B, C))
+        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
+        poly = self.conj(poly)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, -A, shape, B, C)
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, shape, B, C], [poly.dtype, poly.dtype, poly.dtype])
             ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axis=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax)
+            # dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            # dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            # dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            dLdA = self.sum(dLdpoly[..., None, None] * dpoly_dA, axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * dpoly_dB, axes=ax)
+            dLdC = self.sum(dLdpoly * dpoly_dC, axes=ax)
             return dLdA, dLdB, dLdC
 
         return poly, grad
@@ -241,4 +246,4 @@ class Backend(BackendInterface):
         with tf.GradientTape() as tape:
             loss = cost_fn()
         gradients = tape.gradient(loss, list(parameters.values()))
-        return loss, dict(zip(parameters.keys(), gradients))
+        return loss, {p : g for p, g in zip(parameters.keys(), gradients)}

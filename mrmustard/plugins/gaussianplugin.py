@@ -327,8 +327,6 @@ class GaussianPlugin:
         ABinv = self._backend.matmul(AB, inv)
         new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
         new_means = a + self._backend.matvec(ABinv, proj_means - b)
-        print(B+proj_cov)
-        print(self._backend.sqrt(self._backend.det(B + proj_cov)))
         prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (pi**nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov)))  # TODO: check this (hbar part especially)
         return prob, new_cov, new_means
 

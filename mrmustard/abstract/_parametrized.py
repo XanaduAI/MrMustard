@@ -1,5 +1,6 @@
-from abc import ABC
+from abc import ABC, abstractproperty
 from mrmustard import TrainPlugin
+from mrmustard._typing import *
 
 class Parametrized(ABC):
     r"""
@@ -24,12 +25,18 @@ class Parametrized(ABC):
             if kwargs[name + "_trainable"]:
                 var = self._train.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
-                self.__dict__[name] = var  # making params available as gate.param
+                self.__dict__[name] = var  # making parameters available as gate.parameter_name
             else:
                 const = self._train.new_constant(kwargs[name], name)
                 self._constant_parameters.append(const)
                 self.__dict__[name] = const
         for key, val in kwargs.items():
             if not any(word in key for word in self.param_names):
-                self.__dict__["_" + key] = val  # making other values available as gate._val
-    
+                self.__dict__["_" + key] = val  # making other values available as gate._val_name
+
+    @property
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as necessary
+        return {
+            "symplectic": [],
+            "orthogonal": [],
+            "euclidean": self._trainable_parameters}
