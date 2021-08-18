@@ -18,9 +18,10 @@ class SqueezedVacuum(State):
     The N-mode squeezed vacuum state.
     """
     def __init__(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], hbar: float = 2.0):
-        num_modes = self._gaussian._backend.atleast_1d(r).shape[-1]
+        r = self._gaussian._backend.atleast_1d(r)
+        phi = self._gaussian._backend.atleast_1d(phi)
         cov, means = self._gaussian.squeezed_vacuum_state(r, phi, hbar)
-        super().__init__(num_modes, hbar, mixed=False, cov=cov, means=means)
+        super().__init__(r.shape[-1], hbar, mixed=False, cov=cov, means=means)
 
 
 class Coherent(State):
@@ -28,9 +29,10 @@ class Coherent(State):
     The N-mode coherent state.
     """
     def __init__(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float = 2.0):
-        num_modes = self._gaussian._backend.atleast_1d(x).shape[-1]
+        x = self._gaussian._backend.atleast_1d(x)
+        y = self._gaussian._backend.atleast_1d(y)
         cov, means = self._gaussian.coherent_state(x, y, hbar)
-        super().__init__(num_modes, hbar, mixed=False, cov=cov, means=means)
+        super().__init__(x.shape[-1], hbar, mixed=False, cov=cov, means=means)
         
 
 
@@ -39,9 +41,9 @@ class Thermal(State):
     The N-mode thermal state.
     """
     def __init__(self, nbar: Union[Scalar, Vector], hbar: float = 2.0):
-        num_modes = self._gaussian._backend.atleast_1d(nbar).shape[-1]
+        nbar = self._gaussian._backend.atleast_1d(nbar)
         cov, means = self._gaussian.thermal_state(nbar, hbar)
-        super().__init__(num_modes, hbar, mixed=False, cov=cov, means=means)
+        super().__init__(nbar.shape[-1], hbar, mixed=False, cov=cov, means=means)
 
 
 class DisplacedSqueezed(State):
@@ -49,6 +51,9 @@ class DisplacedSqueezed(State):
     The N-mode displaced squeezed state.
     """
     def __init__(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float = 2.0):
-        num_modes = self._gaussian._backend.atleast_1d(r).shape[-1]
+        r = self._gaussian._backend.atleast_1d(r)
+        phi = self._gaussian._backend.atleast_1d(phi)
+        x = self._gaussian._backend.atleast_1d(x)
+        y = self._gaussian._backend.atleast_1d(y)
         cov, means = self._gaussian.displaced_squeezed_state(r, phi, x, y, hbar)
-        super().__init__(num_modes, hbar, mixed=False, cov=cov, means=means)
+        super().__init__(self.r.shape[-1], hbar, mixed=False, cov=cov, means=means)

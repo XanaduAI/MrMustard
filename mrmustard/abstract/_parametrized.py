@@ -22,6 +22,7 @@ class Parametrized(ABC):
         self.param_names = [key for key in kwargs if key + "_trainable" in kwargs]  # every parameter can be trainable! 🚀
 
         for name in self.param_names:
+            self.__dict__['_' + name + "_trainable"] = kwargs[name + "_trainable"]  # making trainable flag available
             if kwargs[name + "_trainable"]:
                 var = self._train.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)

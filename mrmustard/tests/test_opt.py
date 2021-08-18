@@ -72,7 +72,7 @@ def test_learning_two_mode_Ggate():
         amps = G(Vacuum(2)).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
-    opt = Optimizer(symplectic_lr=1.0)
+    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=2000)
     assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
@@ -91,7 +91,7 @@ def test_learning_two_mode_Interferometer():
         amps = circ(state_in).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
-    opt = Optimizer(symplectic_lr=1.0)
+    opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
@@ -110,7 +110,7 @@ def test_learning_four_mode_Interferometer():
         amps = circ(state_in).ket(cutoffs=[3, 3, 3, 3])
         return -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]]))) ** 2
 
-    opt = Optimizer(symplectic_lr=1.0)
+    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=2e-3)

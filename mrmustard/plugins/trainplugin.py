@@ -52,16 +52,18 @@ class TrainPlugin:
     def numeric(self, tensor: Tensor) -> Tensor:
         return self._backend.asnumpy(tensor)
 
-    def update_symplectic(self, symplectic_grads: Sequence[Tensor], symplectic_params: Sequence[Trainable], symplectic_lr: float):
+    def update_symplectic(self, symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float):
         for S, dS_riemann in zip(symplectic_params, symplectic_grads):
             Y = self._backend.riemann_to_symplectic(S, dS_riemann)
             YT = self._backend.transpose(Y)
-            S = S @ self._backend.expm(-symplectic_lr * YT) @ self._backend.expm(-symplectic_lr * (Y - YT))
+            new_value = self._backend.matmul(S, self._backend.expm(-symplectic_lr * YT) @ self._backend.expm(-symplectic_lr * (Y - YT)))
+            self._backend.assign(S, new_value)
 
-    def update_orthogonal(self, orthogonal_grads: Sequence[Tensor], orthogonal_params: Sequence[Trainable], orthogonal_lr: float):
+    def update_orthogonal(self, orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float):
         for O, dO_riemann in zip(orthogonal_params, orthogonal_grads):
             D = 0.5 * (dO_riemann - self._backend.matmul(self._backend.matmul(O, self._backend.transpose(dO_riemann)), O))
-            O = O @ self._backend.expm(orthogonal_lr * self._backend.matmul(self._backend.transpose(D), O))
+            new_value = self._backend.matmul(O, self._backend.expm(orthogonal_lr * self._backend.matmul(self._backend.transpose(D), O)))
+            self._backend.assign(O, new_value)
 
     def update_euclidean(self, euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
         self.euclidean_opt.lr = euclidean_lr

@@ -135,8 +135,8 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
-    assert np.allclose(guess["sq_0"], np.sinh(S2c.euclidean_parameters[0].numpy()) ** 2)
-    assert np.allclose(guess["sq_1"], np.sinh(S2d.euclidean_parameters[0].numpy()) ** 2)
+    assert np.allclose(guess["sq_0"], np.sinh(S2c.trainable_parameters['euclidean'][0].numpy()) ** 2)
+    assert np.allclose(guess["sq_1"], np.sinh(S2d.trainable_parameters['euclidean'][0].numpy()) ** 2)
     assert np.allclose(tdetector.efficiency, [guess["eta_s"], guess["eta_i"]])
     assert np.allclose(tdetector.dark_counts, [guess["noise_s"], guess["noise_i"]])
 

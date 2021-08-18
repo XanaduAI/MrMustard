@@ -1,6 +1,6 @@
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
-from math import pi
+from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 
 class GaussianPlugin:
@@ -35,28 +35,28 @@ class GaussianPlugin:
         disp = self._backend.zeros([num_modes*2], dtype=self._backend.float64)
         return cov, disp
 
-    def coherent_state(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
+    def coherent_state(self, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         r"""Returns the covariance matrix and displacement vector of a coherent state.
         The dimension depends on the dimensions of x and y.
         Args:
-            x (scalar or vector): real part of the displacement
-            y(scalar or vector): imaginary part of the displacement
+            x (vector): real part of the displacement
+            y (vector): imaginary part of the displacement
             hbar: value of hbar
         Returns:
             Matrix: coherent state covariance matrix
             Vector: coherent state displacement vector
         """
-        num_modes = self._backend.atleast_1d(x).shape[-1]
-        cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
+        num_modes = x.shape[-1]
+        cov = self._backend.eye(num_modes*2, dtype=x.dtype) * hbar/2
         disp = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
         return cov, disp
 
-    def squeezed_vacuum_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
+    def squeezed_vacuum_state(self, r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         r"""Returns the covariance matrix and displacement vector of a squeezed vacuum state.
         The dimension depends on the dimensions of r and phi.
         Args:
-            r (scalar or vector): squeezing magnitude
-            phi (scalar or vector): squeezing angle
+            r (vector): squeezing magnitude
+            phi (vector): squeezing angle
             hbar: value of hbar
         Returns:
             Matrix: squeezed state covariance matrix
@@ -67,22 +67,22 @@ class GaussianPlugin:
         _, disp = self.coherent_state(0, 0, hbar)
         return cov, disp
 
-    def thermal_state(self, nbar: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
+    def thermal_state(self, nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         r"""Returns the covariance matrix and displacement vector of a thermal state.
         The dimension depends on the dimensions of nbar.
         Args:
-            nbar (scalar or vector): average number of photons per mode
+            nbar (vector): average number of photons per mode
             hbar: value of hbar
         Returns:
             Matrix: thermal state covariance matrix
             Vector: thermal state displacement vector
         """
-        g = (2*nbar + 1) * hbar/2
-        cov = self._backend.diag(self._backend.concat([g, g], axis=-1), dtype=self._backend.float64)
-        disp = self._backend.zeros([nbar*2], dtype=self._backend.float64)
+        g = self._backend.astensor((2*nbar + 1) * hbar/2)
+        cov = self._backend.diag(self._backend.concat([g, g], axis=-1))
+        disp = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
         return cov, disp
 
-    def displaced_squeezed_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
+    def displaced_squeezed_state(self, r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         r"""Returns the covariance matrix and displacement vector of a displaced squeezed state.
         The dimension depends on the dimensions of r, phi, x and y.
         Args:
@@ -387,7 +387,7 @@ class GaussianPlugin:
         Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
         return self._backend.gather(means, Aindices), self._backend.gather(means, Bindices)
 
-    def purity(self, cov: Matrix, hbar: float) -> float:
+    def purity(self, cov: Matrix, hbar: float) -> Scalar:
         r"""
         Returns the purity of the state with the given covariance matrix.
         Arguments:

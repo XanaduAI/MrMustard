@@ -3,10 +3,13 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from mrmustard._typing import *
 from collections.abc import MutableSequence
+from mrmustard import FockPlugin
+from mrmustard._typing import *
 
 class Circuit(MutableSequence):
+
+    _fock = FockPlugin()
 
     def __init__(self, ops: Sequence[Op] = []):
         self._ops: List[Op] = [o for o in ops]
@@ -21,8 +24,6 @@ class Circuit(MutableSequence):
         return self._ops.__getitem__(key)
 
     def __setitem__(self, key, value):
-        if not isinstance(value, Gate):
-            raise ValueError(f"Item {type(value)} is not a gate")
         return self._ops.__setitem__(key, value)
 
     def __delitem__(self, key):
@@ -42,9 +43,9 @@ class Circuit(MutableSequence):
         r"""
         Returns the dictionary of trainable parameters
         """
-        symp = [op.trainable_parameters['symplectic'] for op in self._ops if hasattr(op, 'trainable_parameters')]
-        orth = [op.trainable_parameters['orthogonal'] for op in self._ops if hasattr(op, 'trainable_parameters')]
-        eucl = [op.trainable_parameters['euclidean'] for op in self._ops if hasattr(op, 'trainable_parameters')]
+        symp = [p for op in self._ops for p in op.trainable_parameters['symplectic'] if hasattr(op, 'trainable_parameters')]
+        orth = [p for op in self._ops for p in op.trainable_parameters['orthogonal'] if hasattr(op, 'trainable_parameters')]
+        eucl = [p for op in self._ops for p in op.trainable_parameters['euclidean'] if hasattr(op, 'trainable_parameters')]
         return {'symplectic': symp, 'orthogonal': orth, 'euclidean': eucl}
 
 

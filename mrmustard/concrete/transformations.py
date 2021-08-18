@@ -143,6 +143,7 @@ class Ggate(Parametrized, Transformation):
     def d_vector(self, hbar: float):
         return self.displacement
 
+    @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {
             "symplectic": [self.symplectic] if self._symplectic_trainable else [],
@@ -292,6 +293,7 @@ class Interferometer(Parametrized, Transformation):
     def X_matrix(self, hbar: float = 2.0):
         return self.orthogonal
 
+    @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {
             "symplectic": [],

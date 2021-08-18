@@ -164,6 +164,10 @@ class Backend(BackendInterface):
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
         return tf.concat(values, axis)
 
+    def assign(self, array: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
+        array.assign(value)
+        return array
+
     def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
         return tf.tensor_scatter_nd_update(tensor, indices, values)
 
