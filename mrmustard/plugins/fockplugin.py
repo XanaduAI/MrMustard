@@ -66,7 +66,7 @@ class FockPlugin:
         """
         assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
         A, B, C = self.hermite_parameters(cov, means, mixed, hbar)
-        return self._backend.hermite_renormalized(-A, B, C, shape = cutoffs + cutoffs*mixed)
+        return self._backend.hermite_renormalized(self._backend.conj(-A), self._backend.conj(B), self._backend.conj(C), shape = cutoffs + cutoffs*mixed)
 
     def ket_to_dm(self, ket: Tensor) -> Tensor:
         r"""

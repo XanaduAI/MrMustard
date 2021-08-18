@@ -38,25 +38,14 @@ class Circuit(MutableSequence):
         return self._ops.insert(index, object)
 
     @property
-    def symplectic_parameters(self) -> List:
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         r"""
-        Returns the list of symplectic parameters
+        Returns the dictionary of trainable parameters
         """
-        return [par for op in self._ops for par in op.symplectic_parameters]
-
-    @property
-    def orthogonal_parameters(self) -> List:
-        r"""
-        Returns the list of orthogonal parameters
-        """
-        return [par for op in self._ops for par in op.orthogonal_parameters]
-
-    @property
-    def euclidean_parameters(self) -> List:
-        r"""
-        Returns the list of Euclidean parameters
-        """
-        return [par for op in self._ops for par in op.euclidean_parameters]
+        symp = [op.trainable_parameters['symplectic'] for op in self._ops if hasattr(op, 'trainable_parameters')]
+        orth = [op.trainable_parameters['orthogonal'] for op in self._ops if hasattr(op, 'trainable_parameters')]
+        eucl = [op.trainable_parameters['euclidean'] for op in self._ops if hasattr(op, 'trainable_parameters')]
+        return {'symplectic': symp, 'orthogonal': orth, 'euclidean': eucl}
 
 
 

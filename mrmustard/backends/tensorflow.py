@@ -122,7 +122,7 @@ class Backend(BackendInterface):
     def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
-    def transpose(self, a: tf.Tensor, perm: List[int] = None) -> tf.Tensor:
+    def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
         return tf.transpose(a, perm)
@@ -187,7 +187,7 @@ class Backend(BackendInterface):
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
         return tensor.numpy()
 
-    def hash_tensor(self, tensor: tf.Tensor) -> str:
+    def hash_tensor(self, tensor: tf.Tensor) -> int:
         try:
             REF = tensor.ref()
         except AttributeError:
@@ -210,17 +210,13 @@ class Backend(BackendInterface):
             The renormalized Hermite polynomial of given shape.
         """
         poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
-        poly = self.conj(poly)
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, shape, B, C], [poly.dtype, poly.dtype, poly.dtype])
             ax = tuple(range(dLdpoly.ndim))
-            # dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            # dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            # dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            dLdA = self.sum(dLdpoly[..., None, None] * dpoly_dA, axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * dpoly_dB, axes=ax)
-            dLdC = self.sum(dLdpoly * dpoly_dC, axes=ax)
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
             return dLdA, dLdB, dLdC
 
         return poly, grad
