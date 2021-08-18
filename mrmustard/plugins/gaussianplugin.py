@@ -365,7 +365,7 @@ class GaussianPlugin:
         Returns:
             Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
         """
-        N = len(cov) // 2
+        N = cov.shape[-1] // 2
         Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
         Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
         A_block =  self._backend.gather(self._backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
@@ -395,4 +395,4 @@ class GaussianPlugin:
         Returns:
             float: the purity
         """
-        return 1 / self._backend.det((2/hbar) * cov)
+        return 1 / self._backend.sqrt(self._backend.det((2/hbar) * cov))
