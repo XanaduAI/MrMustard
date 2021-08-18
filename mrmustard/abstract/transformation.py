@@ -4,6 +4,7 @@ from mrmustard import GaussianPlugin
 from mrmustard.abstract import State
 from mrmustard._typing import *
 
+
 class Transformation(ABC):
     r"""
     Base class for all transformations.
@@ -39,7 +40,4 @@ class Transformation(ABC):
         return None
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [],
-            "orthogonal": [],
-            "euclidean": self._trainable_parameters}
+        return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}

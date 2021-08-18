@@ -7,6 +7,7 @@ import strawberryfields as sf  # TODO: remove dependency on strawberryfields
 
 from mrmustard.backends import BackendInterface
 
+
 class GraphicsPlugin:
     "A plugin for all things graphical (plots, graphs, etc...)"
 
@@ -14,6 +15,7 @@ class GraphicsPlugin:
 
     class Progressbar:  # oh my, a class in a class :p
         "A spiffy loading bar to display the progress during an optimization"
+
         def __init__(self, max_steps: int):
             self.taskID = None
             if max_steps == 0:

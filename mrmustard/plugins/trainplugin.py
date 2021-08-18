@@ -3,6 +3,7 @@ from scipy.linalg import expm
 from mrmustard._typing import *
 from mrmustard.backends import BackendInterface
 
+
 class TrainPlugin:
 
     _backend: BackendInterface
@@ -25,7 +26,7 @@ class TrainPlugin:
 
     def new_constant(self, value, name: str) -> Tensor:
         r"""
-        Returns a new constant (non-trainable) tensor from the current backend 
+        Returns a new constant (non-trainable) tensor from the current backend
         with initial value set by `value`.
         Arguments:
             value (numeric): The initial value of the tensor
@@ -97,7 +98,7 @@ class TrainPlugin:
         Arguments:
             cost_fn (Callable): The cost function to be minimized
             params (dict): A dictionary of parameters to be optimized
-        
+
         Returns:
             loss (float): The cost function of the current parameters
             gradients (dict): A dictionary of gradients of the cost function with respect to the parameters

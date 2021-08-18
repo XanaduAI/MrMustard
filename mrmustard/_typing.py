@@ -11,4 +11,3 @@ Array = TypeVar("Array")  # TODO: let mypy know that this is Vector, Matrix, or 
 Trainable = TypeVar("Trainable")
 
 Numeric = Union[Scalar, Vector, Matrix, Tensor]
-

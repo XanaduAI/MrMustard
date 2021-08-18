@@ -3,6 +3,7 @@ from mrmustard._typing import *
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 
+
 class GaussianPlugin:
     r"""
     A plugin for all things Gaussian.
@@ -31,8 +32,8 @@ class GaussianPlugin:
             Matrix: vacuum covariance matrix
             Vector: vacuum displacement vector
         """
-        cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
-        disp = self._backend.zeros([num_modes*2], dtype=self._backend.float64)
+        cov = self._backend.eye(num_modes * 2, dtype=self._backend.float64) * hbar / 2
+        disp = self._backend.zeros([num_modes * 2], dtype=self._backend.float64)
         return cov, disp
 
     def coherent_state(self, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -47,7 +48,7 @@ class GaussianPlugin:
             Vector: coherent state displacement vector
         """
         num_modes = x.shape[-1]
-        cov = self._backend.eye(num_modes*2, dtype=x.dtype) * hbar/2
+        cov = self._backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
         disp = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
         return cov, disp
 
@@ -63,7 +64,7 @@ class GaussianPlugin:
             Vector: squeezed state displacement vector
         """
         S = self.squeezing_symplectic(r, phi)
-        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar/2
+        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
         _, disp = self.coherent_state(0, 0, hbar)
         return cov, disp
 
@@ -77,7 +78,7 @@ class GaussianPlugin:
             Matrix: thermal state covariance matrix
             Vector: thermal state displacement vector
         """
-        g = self._backend.astensor((2*nbar + 1) * hbar/2)
+        g = self._backend.astensor((2 * nbar + 1) * hbar / 2)
         cov = self._backend.diag(self._backend.concat([g, g], axis=-1))
         disp = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
         return cov, disp
@@ -96,7 +97,7 @@ class GaussianPlugin:
             Vector: displaced squeezed state displacement vector
         """
         S = self.squeezing_symplectic(r, phi)
-        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar/2
+        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
         disp = self._backend.concat([x, y], axis=-1)
         return cov, disp
 
@@ -288,7 +289,7 @@ class GaussianPlugin:
         r"""Returns the Y (noise) matrix for the lossy bosonic channel.
         The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
-        D = (1.0 - transmissivity) * hbar/2
+        D = (1.0 - transmissivity) * hbar / 2
         return self._backend.diag(self._backend.concat([D, D], axis=0))
 
     def thermal_X(self, nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
@@ -307,7 +308,9 @@ class GaussianPlugin:
     # non-TP channels
     # ~~~~~~~~~~~~~~~
 
-    def general_dyne(self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float) -> Tuple[Scalar, Matrix, Vector]:
+    def general_dyne(
+        self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
+    ) -> Tuple[Scalar, Matrix, Vector]:
         r"""
         Returns the results of a general dyne measurement.
         Arguments:
@@ -329,7 +332,9 @@ class GaussianPlugin:
         ABinv = self._backend.matmul(AB, inv)
         new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
         new_means = a + self._backend.matvec(ABinv, proj_means - b)
-        prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (pi**nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov)))  # TODO: check this (hbar part especially)
+        prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (
+            pi ** nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov))
+        )  # TODO: check this (hbar part especially)
         return prob, new_cov, new_means
 
     # ~~~~~~~~~
@@ -368,10 +373,10 @@ class GaussianPlugin:
             Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
         """
         N = cov.shape[-1] // 2
-        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
-        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
-        A_block =  self._backend.gather(self._backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
-        B_block =  self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Bindices, axis=0)
+        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], "int32")
+        A_block = self._backend.gather(self._backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
+        B_block = self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Bindices, axis=0)
         AB_block = self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Aindices, axis=0)
         return A_block, B_block, AB_block
 
@@ -385,8 +390,8 @@ class GaussianPlugin:
             Tuple[Vector, Vector]: the means of A and the means of B
         """
         N = len(means) // 2
-        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
-        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
+        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], "int32")
         return self._backend.gather(means, Aindices), self._backend.gather(means, Bindices)
 
     def purity(self, cov: Matrix, hbar: float) -> Scalar:
@@ -397,4 +402,4 @@ class GaussianPlugin:
         Returns:
             float: the purity
         """
-        return 1 / self._backend.sqrt(self._backend.det((2/hbar) * cov))
+        return 1 / self._backend.sqrt(self._backend.det((2 / hbar) * cov))

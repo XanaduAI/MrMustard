@@ -5,6 +5,7 @@ from math import pi
 
 __all__ = ["PNRDetector", "ThresholdDetector"]
 
+
 class PNRDetector(Parametrized, FockMeasurement):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
@@ -134,6 +135,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
     r"""
     General dyne measurement.
     """
+
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
         super().__init__(modes=modes, project_onto=project_onto, hbar=project_onto.hbar)
@@ -146,6 +148,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
     r"""
     Homodyne measurement on a given list of modes.
     """
+
     def __init__(
         self,
         modes: List[int],
@@ -153,7 +156,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
         results: Union[Scalar, Vector],
         squeezing: float = 10.0,
         hbar: float = 2.0,
-        ):
+    ):
         r"""
         Args:
             modes (list of ints): modes of the measurement
@@ -162,27 +165,29 @@ class Homodyne(Parametrized, GaussianMeasurement):
             squeezing (float): amount of squeezing of the measurement (default 10.0, ideally infinite)
         """
 
-        super().__init__(modes=modes, quadrature_angles=quadrature_angles, results=results, squeezing=self._gaussian._backend.astensor(squeezing, 'float64'), hbar=hbar)
+        super().__init__(
+            modes=modes,
+            quadrature_angles=quadrature_angles,
+            results=results,
+            squeezing=self._gaussian._backend.astensor(squeezing, "float64"),
+            hbar=hbar,
+        )
         self._project_onto = self.recompute_project_onto(quadrature_angles, results)
 
     def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
-        quadrature_angles = self._gaussian._backend.astensor(quadrature_angles, 'float64')
-        results = self._gaussian._backend.astensor(results, 'float64')
+        quadrature_angles = self._gaussian._backend.astensor(quadrature_angles, "float64")
+        results = self._gaussian._backend.astensor(results, "float64")
         x = results * self._gaussian._backend.sin(quadrature_angles)
         y = results * self._gaussian._backend.cos(quadrature_angles)
-        return DisplacedSqueezed(r=self._squeezing, phi=pi/2 + quadrature_angles, x=x, y=y, hbar=self._hbar)
+        return DisplacedSqueezed(r=self._squeezing, phi=pi / 2 + quadrature_angles, x=x, y=y, hbar=self._hbar)
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
     r"""
     Heterodyne measurement on a given mode.
     """
-    def __init__(
-        self,
-        modes: List[int],
-        x: Union[Scalar, Vector],
-        y: Union[Scalar, Vector],
-        hbar: float = 2.0):
+
+    def __init__(self, modes: List[int], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float = 2.0):
         r"""
         Args:
             mode: modes of the measurement
@@ -193,6 +198,6 @@ class Heterodyne(Parametrized, GaussianMeasurement):
         self._project_onto = self.recompute_project_onto(x, y)
 
     def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
-        x = results = self._gaussian._backend.astensor(x, 'float64')
-        y = results = self._gaussian._backend.astensor(y, 'float64')
+        x = results = self._gaussian._backend.astensor(x, "float64")
+        y = results = self._gaussian._backend.astensor(y, "float64")
         return Coherent(x=x, y=y, hbar=self._hbar)

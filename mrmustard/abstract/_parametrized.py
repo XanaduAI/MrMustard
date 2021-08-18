@@ -2,6 +2,7 @@ from abc import ABC, abstractproperty
 from mrmustard import TrainPlugin
 from mrmustard._typing import *
 
+
 class Parametrized(ABC):
     r"""
     Abstract base class for all parametrized objects (gates, detectors, etc...)
@@ -22,7 +23,7 @@ class Parametrized(ABC):
         self.param_names = [key for key in kwargs if key + "_trainable" in kwargs]  # every parameter can be trainable! 🚀
 
         for name in self.param_names:
-            self.__dict__['_' + name + "_trainable"] = kwargs[name + "_trainable"]  # making trainable flag available
+            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # making trainable flag available
             if kwargs[name + "_trainable"]:
                 var = self._train.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
@@ -37,7 +38,4 @@ class Parametrized(ABC):
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as necessary
-        return {
-            "symplectic": [],
-            "orthogonal": [],
-            "euclidean": self._trainable_parameters}
+        return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}

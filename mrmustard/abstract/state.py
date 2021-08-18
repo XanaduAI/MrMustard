@@ -1,6 +1,7 @@
 from mrmustard._typing import *
 from mrmustard import FockPlugin, GaussianPlugin
 
+
 class State:  # NOTE: this is not an ABC
     _fock = FockPlugin()
     _gaussian = GaussianPlugin()
@@ -13,7 +14,7 @@ class State:  # NOTE: this is not an ABC
         if means is not None:
             assert means.shape[-1] == num_modes * 2
         self.means: Optional[Vector] = means
-        
+
         self.num_modes = num_modes
         self.hbar = hbar
         self.isMixed: bool = mixed

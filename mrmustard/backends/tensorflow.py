@@ -25,7 +25,7 @@ class Backend(BackendInterface):
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
         return tf.convert_to_tensor(array, dtype=dtype)
-    
+
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
@@ -79,11 +79,11 @@ class Backend(BackendInterface):
         return tf.linalg.expm(matrix)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
-        'Note that the norm preserves the type of array'
+        "Note that the norm preserves the type of array"
         return tf.linalg.norm(array)
 
     @Autocast()
-    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False)  -> tf.Tensor:
+    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> tf.Tensor:
         return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
 
     @Autocast()
@@ -94,7 +94,7 @@ class Backend(BackendInterface):
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: List[int]) -> tf.Tensor:
         return tf.tensordot(a, b, axes)
 
-    def einsum(self, string: str, *tensors) -> tf.Tensor: 
+    def einsum(self, string: str, *tensors) -> tf.Tensor:
         return tf.einsum(string, *tensors)
 
     def inv(self, a: tf.Tensor) -> tf.Tensor:
@@ -115,11 +115,19 @@ class Backend(BackendInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
-    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode='CONSTANT', constant_values=0) -> tf.Tensor:
+    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
     @Autocast()
-    def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
+    def convolution(
+        self,
+        array: tf.Tensor,
+        filters: tf.Tensor,
+        strides: Optional[List[int]] = None,
+        padding="VALID",
+        data_format="NWC",
+        dilations: Optional[List[int]] = None,
+    ) -> tf.Tensor:
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
     def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
@@ -130,7 +138,7 @@ class Backend(BackendInterface):
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
-    def sum(self, array: tf.Tensor, axes: Sequence[int]=None):
+    def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
@@ -195,7 +203,7 @@ class Backend(BackendInterface):
         try:
             REF = tensor.ref()
         except AttributeError:
-            raise TypeError(f'Cannot hash tensor')
+            raise TypeError(f"Cannot hash tensor")
         return hash(REF)
 
     @tf.custom_gradient
@@ -216,7 +224,9 @@ class Backend(BackendInterface):
         poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, shape, B, C], [poly.dtype, poly.dtype, poly.dtype])
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_numba, [poly, A, shape, B, C], [poly.dtype, poly.dtype, poly.dtype]
+            )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
@@ -239,11 +249,11 @@ class Backend(BackendInterface):
             cost_fn (Callable with no args): The cost function.
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
-        
+
         Returns:
             The loss and the gradients.
         """
         with tf.GradientTape() as tape:
             loss = cost_fn()
         gradients = tape.gradient(loss, list(parameters.values()))
-        return loss, {p : g for p, g in zip(parameters.keys(), gradients)}
+        return loss, {p: g for p, g in zip(parameters.keys(), gradients)}

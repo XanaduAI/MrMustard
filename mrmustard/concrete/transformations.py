@@ -3,6 +3,7 @@ from mrmustard.abstract import Parametrized, Transformation
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
+
 class Dgate(Parametrized, Transformation):
     r"""
     Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
@@ -125,7 +126,7 @@ class Ggate(Parametrized, Transformation):
         if symplectic is None:
             symplectic = self._train.new_symplectic(num_modes=len(modes))
         if displacement is None:
-            displacement = self._train._backend.zeros(len(modes) * 2) # TODO: gates should not know about the backend
+            displacement = self._train._backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
         super().__init__(
             modes=modes,
             symplectic=symplectic,
@@ -148,7 +149,8 @@ class Ggate(Parametrized, Transformation):
         return {
             "symplectic": [self.symplectic] if self._symplectic_trainable else [],
             "orthogonal": [],
-            "euclidean": [self.displacement] if self._displacement_trainable else []}
+            "euclidean": [self.displacement] if self._displacement_trainable else [],
+        }
 
 
 class BSgate(Parametrized, Transformation):
@@ -295,10 +297,7 @@ class Interferometer(Parametrized, Transformation):
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [],
-            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
-            "euclidean": []}
+        return {"symplectic": [], "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [], "euclidean": []}
 
 
 #

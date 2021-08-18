@@ -10,6 +10,7 @@ from mrmustard.abstract.state import State
 # This is a problem due to the generality of Generaldyne: for homodyne and heterodyne we could already do it, as they
 # depend on euclidean parameters, rather than on a Gaussian state.
 
+
 class GaussianMeasurement(ABC):
     r"""
     A Gaussian general-dyne measurement.
@@ -31,7 +32,9 @@ class GaussianMeasurement(ABC):
         assert self._hbar == state.hbar
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
-        prob, cov, means = self._gaussian.general_dyne(state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto.hbar)
+        prob, cov, means = self._gaussian.general_dyne(
+            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto.hbar
+        )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
         remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed_cov(cov))
         if len(remaining_modes) > 0:
@@ -39,7 +42,8 @@ class GaussianMeasurement(ABC):
             remaining_state.means = means
         return prob, remaining_state
 
-    def recompute_project_onto(self, **kwargs) -> State: ...
+    def recompute_project_onto(self, **kwargs) -> State:
+        ...
 
 
 # TODO: push backend methods into the fock plugin
@@ -96,7 +100,7 @@ class FockMeasurement(ABC):
             detector_probs = self._fock._backend.transpose(detector_probs, indices)
         return detector_probs
 
-    def __call__( self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]]=None) -> Tuple[Tensor, Tensor]:
+    def __call__(self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None) -> Tuple[Tensor, Tensor]:
         fock_probs = state.fock_probabilities(cutoffs)
         all_probs = self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
         if outcomes is None:
@@ -105,4 +109,5 @@ class FockMeasurement(ABC):
             probs, dm = self.project(state, cutoffs, outcomes)
             return dm, probs
 
-    def recompute_stochastic_channel(self, **kwargs) -> State: ...
+    def recompute_stochastic_channel(self, **kwargs) -> State:
+        ...
