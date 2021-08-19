@@ -1,5 +1,8 @@
 import pytest
 
+from hypothesis import given, strategies as st
+from hypothesis.extra.numpy import arrays
+
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
@@ -7,7 +10,7 @@ from scipy.stats import poisson
 from mrmustard import Dgate, Sgate, S2gate, LossChannel, BSgate
 from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
-from mrmustard import PNRDetector
+from mrmustard import PNRDetector, Homodyne
 
 np.random.seed(137)
 
@@ -189,3 +192,12 @@ def test_projected(eta, n):
     dm_ideal, _ = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20], outcomes=[n, None])
 
     assert np.allclose(dm_ideal, dm_lossy)
+
+@given(x = st.floats(min_value=-2.0, max_value=2.0), angle=st.floats(min_value=0.0, max_value=2.0*np.pi))
+def test_homodyne_on_2mode_squeezed_vacuum(x, angle):
+    """Checks that measuring a two-mode squeezed vacuum (S2gate) measured in the first mode for a value of x
+    returns a state with means vector at x."""
+    tmsv = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(x)), phi=angle)(Vacuum(num_modes=2))
+    homodyne = Homodyne(modes=[0], quadrature_angles=[angle], results=[x])
+    prob, remaining_state = homodyne(tmsv)
+    assert np.allclose(remaining_state.means, [x, 0.0])
