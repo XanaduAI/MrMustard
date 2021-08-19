@@ -20,10 +20,10 @@ class Backend(BackendInterface):
     # ~~~~~~~~~
 
     def atleast_1d(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
-        return self.cast(tf.reshape(array, [-1]), dtype)
+        return self.cast(torch.reshape(array, [-1]), dtype)
 
     def astensor(self, array: Union[np.ndarray, torch.Tensor], dtype=None) -> torch.Tensor:
-        return tf.convert_to_tensor(array, dtype=dtype)
+        return torch.from_numpy(array, dtype=dtype)
     
     def conj(self, array: torch.Tensor) -> torch.Tensor:
         return torch.conj(array)
@@ -91,7 +91,7 @@ class Backend(BackendInterface):
 
     @Autocast()
     def tensordot(self, a: torch.Tensor, b: torch.Tensor, axes: List[int]) -> torch.Tensor:
-        return torch.Tensordot(a, b, axes)
+        return tf.Tensordot(a, b, axes)
 
     def einsum(self, string: str, *tensors) -> torch.Tensor:
         return torch.einsum(string, *tensors)
@@ -114,11 +114,13 @@ class Backend(BackendInterface):
     def diag_part(self, array: torch.Tensor) -> torch.Tensor:
         return torch.diag_embed(array)
 
-    def pad(self, array: torch.Tensor, paddings: Sequence[Tuple[int, int]], mode='CONSTANT', constant_values=0) -> torch.Tensor:
-        return tf.pad(array, paddings, mode, constant_values)
+    def pad(self, array: torch.Tensor, paddings: Sequence[Tuple[int, int]], mode='constant', constant_values=0) -> torch.Tensor:
+        return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
     @Autocast()
     def convolution(self, array: torch.Tensor, filters: torch.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> torch.Tensor:
+        # TODO: pytorch convolution returns a function, tensorflow returns a output.
+
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
     def transpose(self, a: torch.Tensor, perm: List[int] = None) -> torch.Tensor:
@@ -139,26 +141,28 @@ class Backend(BackendInterface):
     def outer(self, array1: torch.Tensor, array2: torch.Tensor) -> torch.Tensor:
         return torch.Tensordot(array1, array2, [[], []])
 
-    def eye(self, size: int, dtype=tf.float64) -> torch.Tensor:
+    def eye(self, size: int, dtype=torch.float64) -> torch.Tensor:
         return torch.eye(size, dtype=dtype)
 
-    def zeros(self, shape: Sequence[int], dtype=tf.float64) -> torch.Tensor:
+    def zeros(self, shape: Sequence[int], dtype=torch.float64) -> torch.Tensor:
         return torch.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: torch.Tensor) -> torch.Tensor:
         return torch.zeros_like(array)
 
-    def ones(self, shape: Sequence[int], dtype=tf.float64) -> torch.Tensor:
+    def ones(self, shape: Sequence[int], dtype=torch.float64) -> torch.Tensor:
         return torch.ones(shape, dtype=dtype)
 
     def ones_like(self, array: torch.Tensor) -> torch.Tensor:
         return torch.ones_like(array)
 
     def gather(self, array: torch.Tensor, indices: torch.Tensor, axis: int = None) -> torch.Tensor:
-        return tf.gather(array, indices, axis=axis)
+        # TODO: gather works differently in Pytorch vs Tensorflow. 
+
+        return torch.gather(array, axis, indices)
 
     def trace(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
-        return self.cast(tf.linalg.trace(array), dtype)
+        return self.cast(torch.trace(array), dtype)
 
     def concat(self, values: Sequence[torch.Tensor], axis: int) -> torch.Tensor:
         return torch.cat(values, axis)
