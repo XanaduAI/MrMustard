@@ -132,7 +132,7 @@ adam = tf.optimizers.Adam(learning_rate=0.001)
 
 from tqdm import trange
 for i in trange(100):
-    adam.minimize(cost_fn, displacement.euclidean_parameters)
+    adam.minimize(cost_fn, displacement.trainable_parameters['euclidean'])
 ```
 
 Here we use MrMustard's optimizer because we have a `Ggate`:
