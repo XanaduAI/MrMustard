@@ -102,57 +102,6 @@ class Rgate(Parametrized, Transformation):
         return self._gaussian.rotation_symplectic(self.angle)
 
 
-class Ggate(Parametrized, Transformation):
-    r"""
-    General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
-    If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
-
-    Arguments:
-        modes (List[int]): the list of modes this gate is applied to
-        symplectic (2d array): a valid symplectic matrix. For N modes it must have shape `(2N,2N)`
-        symplectic_trainable (bool): whether symplectic is a trainable variable
-        displacement (1d array): a displacement vector. For N modes it must have shape `(2N,)`
-        displacement_trainable (bool): whether displacement is a trainable variable
-    """
-
-    def __init__(
-        self,
-        modes: List[int],
-        symplectic: Optional[Tensor] = None,
-        symplectic_trainable: bool = True,
-        displacement: Optional[Tensor] = None,
-        displacement_trainable: bool = True,
-    ):
-        if symplectic is None:
-            symplectic = self._train.new_symplectic(num_modes=len(modes))
-        if displacement is None:
-            displacement = self._train._backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
-        super().__init__(
-            modes=modes,
-            symplectic=symplectic,
-            symplectic_bounds=(None, None),
-            symplectic_trainable=symplectic_trainable,
-            displacement=displacement,
-            displacement_bounds=(None, None),
-            displacement_trainable=displacement_trainable,
-        )
-        self.is_unitary = True
-
-    def X_matrix(self, hbar: float):
-        return self.symplectic
-
-    def d_vector(self, hbar: float):
-        return self.displacement
-
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [self.symplectic] if self._symplectic_trainable else [],
-            "orthogonal": [],
-            "euclidean": [self.displacement] if self._displacement_trainable else [],
-        }
-
-
 class BSgate(Parametrized, Transformation):
     r"""
     Beam splitter gate. It applies to a single pair of modes.
@@ -298,6 +247,58 @@ class Interferometer(Parametrized, Transformation):
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [], "euclidean": []}
+
+
+class Ggate(Parametrized, Transformation):
+    r"""
+    General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
+    If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
+
+    Arguments:
+        modes (List[int]): the list of modes this gate is applied to
+        symplectic (2d array): a valid symplectic matrix. For N modes it must have shape `(2N,2N)`
+        symplectic_trainable (bool): whether symplectic is a trainable variable
+        displacement (1d array): a displacement vector. For N modes it must have shape `(2N,)`
+        displacement_trainable (bool): whether displacement is a trainable variable
+    """
+
+    def __init__(
+        self,
+        modes: List[int],
+        symplectic: Optional[Tensor] = None,
+        symplectic_trainable: bool = True,
+        displacement: Optional[Tensor] = None,
+        displacement_trainable: bool = True,
+    ):
+        if symplectic is None:
+            symplectic = self._train.new_symplectic(num_modes=len(modes))
+        if displacement is None:
+            displacement = self._train._backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
+        super().__init__(
+            modes=modes,
+            symplectic=symplectic,
+            symplectic_bounds=(None, None),
+            symplectic_trainable=symplectic_trainable,
+            displacement=displacement,
+            displacement_bounds=(None, None),
+            displacement_trainable=displacement_trainable,
+        )
+        self.is_unitary = True
+
+    def X_matrix(self, hbar: float):
+        return self.symplectic
+
+    def d_vector(self, hbar: float):
+        return self.displacement
+
+    @property
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {
+            "symplectic": [self.symplectic] if self._symplectic_trainable else [],
+            "orthogonal": [],
+            "euclidean": [self.displacement] if self._displacement_trainable else [],
+        }
+
 
 
 #

@@ -124,7 +124,7 @@ class BackendInterface(ABC):
     def matvec(self, a: Tensor, b: Tensor, transpose_a=False, adjoint_a=False) -> Tensor:
         ...
 
-    def tensordot(self, a: Tensor, b: Tensor, axes: List[int]) -> Tensor:
+    def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         ...
 
     def einsum(self, string: str, *tensors) -> Tensor:
@@ -322,7 +322,7 @@ class BackendInterface(ABC):
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
 
-    def add_at_modes(self, old: Tensor, new: Optional[Tensor], modes: List[int]) -> Tensor:
+    def add_at_modes(self, old: Tensor, new: Optional[Tensor], modes: Sequence[int]) -> Tensor:
         "adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes"
         if new is None:
             return old
@@ -330,7 +330,7 @@ class BackendInterface(ABC):
         indices = modes + [m + N for m in modes]
         return self.update_add_tensor(old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1))
 
-    def left_matmul_at_modes(self, a_partial: Tensor, b_full: Tensor, modes: List[int]) -> Tensor:
+    def left_matmul_at_modes(self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]) -> Tensor:
         r"""
         Left matrix multiplication of a partial matrix and a full matrix.
         It assumes that that `a_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
@@ -351,7 +351,7 @@ class BackendInterface(ABC):
         b_rows = self.matmul(a_partial, b_rows)
         return self.update_tensor(b_full, indices[:, None], b_rows)
 
-    def right_matmul_at_modes(self, a_full: Tensor, b_partial: Tensor, modes: List[int]) -> Tensor:
+    def right_matmul_at_modes(self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]) -> Tensor:
         r"""
         Right matrix multiplication of a full matrix and a partial matrix.
         It assumes that that `b_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
@@ -366,7 +366,7 @@ class BackendInterface(ABC):
         """
         return self.transpose(self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes))
 
-    def matvec_at_modes(self, mat: Optional[Tensor], vec: Tensor, modes: List[int]) -> Tensor:
+    def matvec_at_modes(self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]) -> Tensor:
         "matrix-vector multiplication between a phase-space matrix and a vector in the specified modes"
         if mat is None:
             return vec

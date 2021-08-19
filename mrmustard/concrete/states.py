@@ -62,4 +62,4 @@ class DisplacedSqueezed(State):
         x = self._gaussian._backend.atleast_1d(x)
         y = self._gaussian._backend.atleast_1d(y)
         cov, means = self._gaussian.displaced_squeezed_state(r, phi, x, y, hbar)
-        super().__init__(self.r.shape[-1], hbar, mixed=False, cov=cov, means=means)
+        super().__init__(r.shape[-1], hbar, mixed=False, cov=cov, means=means)

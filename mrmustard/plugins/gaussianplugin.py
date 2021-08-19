@@ -47,6 +47,8 @@ class GaussianPlugin:
             Matrix: coherent state covariance matrix
             Vector: coherent state displacement vector
         """
+        x = self._backend.atleast_1d(x)
+        y = self._backend.atleast_1d(y)
         num_modes = x.shape[-1]
         cov = self._backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
         disp = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
@@ -65,7 +67,7 @@ class GaussianPlugin:
         """
         S = self.squeezing_symplectic(r, phi)
         cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
-        _, disp = self.coherent_state(0, 0, hbar)
+        _, disp = self.coherent_state(0.0, 0.0, hbar)
         return cov, disp
 
     def thermal_state(self, nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -157,6 +159,10 @@ class GaussianPlugin:
         """
         x = self._backend.atleast_1d(x)
         y = self._backend.atleast_1d(y)
+        if x.shape[-1] == 1:
+            x = self._backend.tile(x, y.shape)
+        if y.shape[-1] == 1:
+            y = self._backend.tile(y, x.shape)
         return self._backend.sqrt(2 * hbar, dtype=x.dtype) * self._backend.concat([x, y], axis=0)
 
     def beam_splitter_symplectic(self, theta: Scalar, phi: Scalar) -> Matrix:

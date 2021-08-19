@@ -45,7 +45,7 @@ class FockPlugin:
         mCm = cov * means[:, None] * means[None, :]
         dd = self._backend.diag(self._backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
-        return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * self._backend.eye(N)
+        return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * self._backend.eye(N, dtype=CC.dtype)
 
     def fock_representation(self, cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
         r"""
