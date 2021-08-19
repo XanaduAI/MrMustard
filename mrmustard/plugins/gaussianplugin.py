@@ -4,6 +4,36 @@ from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 
 
+class XXPPMatrix:
+    r"""A block matrix in the XXPP basis. It can represent Covariance and symplectic matrices."""
+
+    _backend: BackendInterface
+
+    def __init__(self, matrix):
+        nmodes = matrix.shape[-1] // 2
+        self.nmodes = nmodes
+        self.XX = matrix[:nmodes, :nmodes]
+        self.PP = matrix[nmodes:, nmodes:]
+        self.PX = matrix[nmodes:, :nmodes]
+        self.XP = matrix[:nmodes, nmodes:]
+
+    def move_modes_to_beginning(self, modes: List[int]):
+        r"""Move the specified modes to the beginning of the matrix.
+        This will affect each of the XX, PP, PX, XP blocks.
+        In each block the rows and columns indexed by the modes
+        will be moved to the beginning.
+        """
+        perm = [i for i in range(self.nmodes) if i not in modes]
+        perm.extend(modes)
+        self.XX = self.XX[perm, :][:, perm]
+        self.PP = self.PP[perm, :][:, perm]
+        self.PX = self.PX[perm, :][:, perm]
+        self.XP = self.XP[perm, :][:, perm]
+
+    def rearrange_modes(self, modes_from: List[int], modes_to: List[int]) -> None:
+        r"""Move the specified modes to the specified positions.
+        This will affect each of the XX, PP, PX, XP blocks.
+
 class GaussianPlugin:
     r"""
     A plugin for all things Gaussian.
