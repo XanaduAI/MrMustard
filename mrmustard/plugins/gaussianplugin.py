@@ -32,7 +32,8 @@ class XXPPMatrix:
 
     def rearrange_modes(self, modes_from: List[int], modes_to: List[int]) -> None:
         r"""Move the specified modes to the specified positions.
-        This will affect each of the XX, PP, PX, XP blocks.
+        This will affect each of the XX, PP, PX, XP blocks."""
+        pass
 
 class GaussianPlugin:
     r"""
