@@ -67,6 +67,7 @@ class TrainPlugin:
             self._backend.assign(O, new_value)
 
     def update_euclidean(self, euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
+        # self._backend.update_euclidean(euclidean_params, euclidean_grads, euclidean_lr)
         self.euclidean_opt.lr = euclidean_lr
         self.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
