@@ -189,7 +189,7 @@ class Backend(BackendInterface):
         return torch.tensor(value, requires_grad=True)
 
     def new_constant(self, value, name: str, dtype=tf.float64):
-        return torch.tensor(value, requires_grad=True)
+        return torch.tensor(value)
 
     def asnumpy(self, tensor: torch.Tensor) -> Tensor:
         return tensor.numpy()
