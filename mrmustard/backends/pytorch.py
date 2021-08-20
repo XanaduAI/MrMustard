@@ -87,11 +87,11 @@ class Backend(BackendInterface):
 
     @Autocast()
     def matvec(self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False) -> torch.Tensor:
-        return tf.linalg.matvec(a, b, transpose_a, adjoint_a)
+        return torch.mv(a, b)
 
     @Autocast()
     def tensordot(self, a: torch.Tensor, b: torch.Tensor, axes: List[int]) -> torch.Tensor:
-        return tf.Tensordot(a, b, axes)
+        return torch.tensordot(a, b, axes)
 
     def einsum(self, string: str, *tensors) -> torch.Tensor:
         return torch.einsum(string, *tensors)
@@ -100,7 +100,7 @@ class Backend(BackendInterface):
         return torch.inverse(a)
 
     def pinv(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.pinv(array)
+        return torch.pinverse(array)
 
     def det(self, a: torch.Tensor) -> torch.Tensor:
         return torch.det(a)
@@ -139,7 +139,7 @@ class Backend(BackendInterface):
 
     @Autocast()
     def outer(self, array1: torch.Tensor, array2: torch.Tensor) -> torch.Tensor:
-        return torch.Tensordot(array1, array2, [[], []])
+        return torch.tensordot(array1, array2, [[], []])
 
     def eye(self, size: int, dtype=torch.float64) -> torch.Tensor:
         return torch.eye(size, dtype=dtype)
@@ -168,30 +168,34 @@ class Backend(BackendInterface):
         return torch.cat(values, axis)
 
     def update_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor):
-        return torch.Tensor_scatter_nd_update(tensor, indices, values)
+        # dims need to be interpreted 
+        # return tensor.scatter_(dims, indices, values)
+        raise NotImplementedError
 
     def update_add_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor):
-        return torch.Tensor_scatter_nd_add(tensor, indices, values)
+        # dims need to be interpreted 
+        # return tensor.scatter_add_(dims, indices, values)
+        raise NotImplementedError
 
     def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
         bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
         if not bounds == (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+            constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
         else:
             constraint = None
         return constraint
 
     def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
-        return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
+        return torch.tensor(value, requires_grad=True)
 
     def new_constant(self, value, name: str, dtype=tf.float64):
-        return tf.constant(value, dtype=dtype, name=name)
+        return torch.tensor(value, requires_grad=True)
 
     def asnumpy(self, tensor: torch.Tensor) -> Tensor:
         return tensor.numpy()
 
     def hash_tensor(self, tensor: torch.Tensor) -> str:
-        raise NotImplementedError
+        return hash(tensor)
 
     @tf.custom_gradient
     def hermite_renormalized(self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]) -> torch.Tensor:  # TODO this is not ready
