@@ -213,10 +213,11 @@ class Backend(BackendInterface):
         """
         raise NotImplementedError
 
-    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:
+    def DefaultEuclideanOptimizer(self, params) -> torch.optim.Optimizer:
         r"""
         Default optimizer for the Euclidean parameters.
         """
+        return torch.optim.Adam(params, lr=0.001)
         raise NotImplementedError
 
     def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
