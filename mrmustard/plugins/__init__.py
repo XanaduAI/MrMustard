@@ -1,5 +1,5 @@
 from .fockplugin import FockPlugin
-from .gaussianplugin import GaussianPlugin
+from .gaussianplugin import GaussianPlugin, XPTensor
 from .trainplugin import TrainPlugin
 from .graphicsplugin import GraphicsPlugin
 
@@ -8,4 +8,5 @@ __all__ = [
     "GaussianPlugin",
     "TrainPlugin",
     "GraphicsPlugin",
+    "XPTensor"
 ]

@@ -5,7 +5,7 @@ install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
 
-from mrmustard.plugins import FockPlugin, GaussianPlugin, TrainPlugin, GraphicsPlugin
+from mrmustard.plugins import FockPlugin, GaussianPlugin, TrainPlugin, GraphicsPlugin, XPTensor
 
 
 def set_env(env_name: str):
@@ -14,7 +14,7 @@ def set_env(env_name: str):
     FockPlugin._backend = backend
     GaussianPlugin._backend = backend
     TrainPlugin._backend = backend
-    GraphicsPlugin._backend = backend
+    XPTensor._backend = backend
 
 
 def using_tensorflow():

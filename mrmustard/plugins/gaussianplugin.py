@@ -1,39 +1,102 @@
+from __future__ import annotations
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 
 
-class XXPPMatrix:
-    r"""A block matrix in the XXPP basis. It can represent Covariance and symplectic matrices."""
+class XPTensor:
+    r"""A representation of tensors in phase space."""
 
     _backend: BackendInterface
 
-    def __init__(self, matrix):
-        nmodes = matrix.shape[-1] // 2
-        self.nmodes = nmodes
-        self.XX = matrix[:nmodes, :nmodes]
-        self.PP = matrix[nmodes:, nmodes:]
-        self.PX = matrix[nmodes:, :nmodes]
-        self.XP = matrix[:nmodes, nmodes:]
+    def __init__(self, modes: List[int], tensor: Optional[Tensor], zero_based: bool = False) -> None:
+        if tensor is None:
+            if zero_based:
+                tensor = self._backend.zeros((2, len(modes), 2, len(modes)))
+            else:
+                tensor = self._backend.reshape(self._backend.eye(2*len(modes)), (2, len(modes), 2, len(modes)))
+        if len(tensor.shape) < 4:
+            raise ValueError("Tensor must have at least 4 dimensions")
+        if tensor.shape[0] != 2 and tensor.shape[2] != 2 and tensor.shape[3] != tensor.shape[1]:
+            raise ValueError("Tensor must have shape (2, N, 2, N)")
+        if not isinstance(modes, List):
+            raise TypeError("modes must be a List of ints")
+        self.nmodes = len(modes)
+        self.modes = modes
+        self._tensor = tensor
+        self.zero_based = zero_based
+    
+    @classmethod
+    def from_xpxp(cls, xpxp_matrix: Matrix, modes: List[int], zero_based: bool=False) -> XPTensor:
+        # internal representation has shape (2, N, 2, N)
+        if xpxp_matrix is not None:
+            xpxp_matrix = cls._backend.reshape(xpxp_matrix, (len(modes), 2, len(modes), 2))
+            xpxp_matrix = cls._backend.transpose(xpxp_matrix, (1, 0, 3, 2))
+        return XPTensor(modes, xpxp_matrix, zero_based)
 
-    def move_modes_to_beginning(self, modes: List[int]):
-        r"""Move the specified modes to the beginning of the matrix.
-        This will affect each of the XX, PP, PX, XP blocks.
-        In each block the rows and columns indexed by the modes
-        will be moved to the beginning.
-        """
-        perm = [i for i in range(self.nmodes) if i not in modes]
-        perm.extend(modes)
-        self.XX = self.XX[perm, :][:, perm]
-        self.PP = self.PP[perm, :][:, perm]
-        self.PX = self.PX[perm, :][:, perm]
-        self.XP = self.XP[perm, :][:, perm]
+    @classmethod
+    def from_xxpp(cls, xxpp_matrix: Matrix, modes: List[int], zero_based: bool=False) -> XPTensor:
+        # internal representation has shape (2, N, 2, N)
+        if xxpp_matrix is not None:
+            xxpp_matrix = cls._backend.reshape(xxpp_matrix, (2, len(modes), 2, len(modes)))
+        return XPTensor(modes, xxpp_matrix, zero_based)
 
-    def rearrange_modes(self, modes_from: List[int], modes_to: List[int]) -> None:
-        r"""Move the specified modes to the specified positions.
-        This will affect each of the XX, PP, PX, XP blocks."""
-        pass
+    def to_xpxp(self) -> Matrix:
+        transposed = self._backend.transpose(self._tensor, (0, 1, 3, 2))
+        return self._backend.reshape(transposed, (2*len(self.modes), 2*len(self.modes)))
+
+    def to_xxpp(self) -> Matrix:
+        return self._backend.reshape(self._tensor, (2*len(self.modes), 2*len(self.modes)))
+
+    def empty(self, modes: List[int], zero_based: bool) -> XPTensor:
+        if zero_based:
+            base = self._backend.zeros((2*len(modes), 2*len(modes)))
+        else:
+            base = self._backend.eye(2*len(modes))
+        return XPTensor(modes, self._backend.reshape(base, (2, len(modes), 2, len(modes))), zero_based)
+
+    def reorder_modes(self, perm: List[int]):
+        if len(perm) != self.nmodes:
+            raise ValueError(f"permutation must have length {self.nmodes}")
+        if not all(i in range(self.nmodes) for i in perm):
+            raise ValueError("permutation must be a permutation of the modes")
+        if perm == list(range(self.nmodes)):
+            return self
+        self._tensor = self._backend.gather(self._backend.gather(self._tensor, perm, axis=1), perm, axis=3)
+        self.modes = [self.modes[i] for i in perm]
+
+    def __mul__(self, other: XPTensor) -> XPTensor:
+        empty = self.empty(sorted(list(set(self.modes) | set(other.modes))), self.zero_based or other.zero_based)
+        after_self = self._backend.right_matmul_at_modes(empty.to_xxpp(), self.to_xxpp(), modes=self.modes)
+        after_other = self._backend.right_matmul_at_modes(after_self, other.to_xxpp(), modes=other.modes)
+        return XPTensor.from_xxpp(after_other, empty.modes, self.zero_based)
+
+    def __add__(self, other: XPTensor) -> XPTensor:
+        all_modes = sorted(list(set(self.modes) | set(other.modes)))
+        zeros = self._backend.zeros((2 * len(all_modes), 2 * len(all_modes)))
+        after_self = self._backend.add_at_modes(zeros, self.to_xxpp(), self.modes)
+        after_other = self._backend.add_at_modes(after_self, other.to_xxpp(), other.modes)
+        return XPTensor.from_xxpp(after_other, all_modes, self.zero_based)
+
+    def __repr__(self) -> str:
+        return repr(self._tensor)
+
+    def __getitem__(self, item: Union[int, slice, List[int]]) -> XPTensor:
+        if isinstance(item, int):
+            return XPTensor([item], self._tensor[:, item, :, item][:, None, :, None], self.zero_based)
+        elif isinstance(item, slice):
+            return XPTensor(list(range(item.start, item.stop)), self._tensor[:, item, :, item], self.zero_based)
+        elif isinstance(item, List):
+            return XPTensor(item, self._backend.gather(self._backend.gather(self._tensor, item, axis=1), item, axis=3), self.zero_based)
+        else:
+            raise TypeError("Invalid index type")
+
+    @property
+    def T(self) -> XPTensor:
+        return XPTensor(self.modes, self._backend.transpose(self._tensor, (0, 2, 1, 3)), self.zero_based)
+
+
 
 class GaussianPlugin:
     r"""
@@ -55,38 +118,38 @@ class GaussianPlugin:
     #  ~~~~~~
 
     def vacuum_state(self, num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of the vacuum state.
+        r"""Returns the real covariance matrix and real means vector of the vacuum state.
         Args:
             num_modes (int): number of modes
             hbar (float): value of hbar
         Returns:
             Matrix: vacuum covariance matrix
-            Vector: vacuum displacement vector
+            Vector: vacuum means vector
         """
         cov = self._backend.eye(num_modes * 2, dtype=self._backend.float64) * hbar / 2
-        disp = self._backend.zeros([num_modes * 2], dtype=self._backend.float64)
-        return cov, disp
+        means = self._backend.zeros([num_modes * 2], dtype=self._backend.float64)
+        return cov, means
 
     def coherent_state(self, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a coherent state.
+        r"""Returns the real covariance matrix and real means vector of a coherent state.
         The dimension depends on the dimensions of x and y.
         Args:
-            x (vector): real part of the displacement
-            y (vector): imaginary part of the displacement
+            x (vector): real part of the means vector
+            y (vector): imaginary part of the means vector
             hbar: value of hbar
         Returns:
             Matrix: coherent state covariance matrix
-            Vector: coherent state displacement vector
+            Vector: coherent state means vector
         """
         x = self._backend.atleast_1d(x)
         y = self._backend.atleast_1d(y)
         num_modes = x.shape[-1]
         cov = self._backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
-        disp = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
-        return cov, disp
+        means = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
+        return cov, means
 
     def squeezed_vacuum_state(self, r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a squeezed vacuum state.
+        r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
         The dimension depends on the dimensions of r and phi.
         Args:
             r (vector): squeezing magnitude
@@ -94,45 +157,45 @@ class GaussianPlugin:
             hbar: value of hbar
         Returns:
             Matrix: squeezed state covariance matrix
-            Vector: squeezed state displacement vector
+            Vector: squeezed state means vector
         """
         S = self.squeezing_symplectic(r, phi)
         cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
-        _, disp = self.coherent_state(0.0, 0.0, hbar)
-        return cov, disp
+        means = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
+        return cov, means
 
     def thermal_state(self, nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a thermal state.
+        r"""Returns the real covariance matrix and real means vector of a thermal state.
         The dimension depends on the dimensions of nbar.
         Args:
             nbar (vector): average number of photons per mode
             hbar: value of hbar
         Returns:
             Matrix: thermal state covariance matrix
-            Vector: thermal state displacement vector
+            Vector: thermal state means vector
         """
         g = self._backend.astensor((2 * nbar + 1) * hbar / 2)
         cov = self._backend.diag(self._backend.concat([g, g], axis=-1))
-        disp = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
-        return cov, disp
+        means = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
+        return cov, means
 
     def displaced_squeezed_state(self, r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a displaced squeezed state.
+        r"""Returns the real covariance matrix and real means vector of a displaced squeezed state.
         The dimension depends on the dimensions of r, phi, x and y.
         Args:
             r   (scalar or vector): squeezing magnitude
             phi (scalar or vector): squeezing angle
-            x   (scalar or vector): real part of the displacement
-            y   (scalar or vector): imaginary part of the displacement
+            x   (scalar or vector): real part of the means
+            y   (scalar or vector): imaginary part of the means
             hbar: value of hbar
         Returns:
             Matrix: displaced squeezed state covariance matrix
-            Vector: displaced squeezed state displacement vector
+            Vector: displaced squeezed state means vector
         """
         S = self.squeezing_symplectic(r, phi)
         cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
-        disp = self._backend.concat([x, y], axis=-1)
-        return cov, disp
+        means = self._backend.concat([x, y], axis=-1)
+        return cov, means
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~
     #  Unitary transformations
