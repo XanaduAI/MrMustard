@@ -20,7 +20,7 @@ class Circuit(MutableSequence):
         self._ops: List[Op] = [o for o in ops]
 
     def __call__(self, state: State) -> State:
-        state_ = state  # NOTE: otherwise the next time we call the circuit, the state will be mutated
+        state_ = state  # NOTE: otherwise state will be mutated
         for op in self._ops:
             state_ = op(state_)
         return state_
@@ -49,7 +49,7 @@ class Circuit(MutableSequence):
 
     def update_channel(self, op):
         if hasattr(op, "X_matrix"):
-            Xprime = XPTensor.from_xxpp(op.X_matrix(hbar=2.0), op._modes)
+            Xprime = XPTensor.from_xxpp(op.X_matrix(), op._modes)
             Yprime = XPTensor.from_xxpp(op.Y_matrix(hbar=2.0), op._modes, zero_based=True)
             self.X = Xprime * self.X
             self.Y = (Xprime * self.Y) * Xprime.T + Yprime

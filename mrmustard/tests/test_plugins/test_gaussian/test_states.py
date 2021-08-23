@@ -1,4 +1,4 @@
-from hypothesis import given, strategies as st
+from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 
 import numpy as np
@@ -41,16 +41,17 @@ def test_coherent_state_array(hbar, x, y):
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    x = draw(arrays(dtype=np.float, shape=(length,), elements=st.floats(-5.0, 5.0)))
-    y = draw(arrays(dtype=np.float, shape=(length,), elements=st.floats(-5.0, 5.0)))
-    return x, y
+    return draw(arrays(dtype=np.float, shape=(2,length), elements=st.floats(-5.0, 5.0)))
 
 
-@given(hbar=st.floats(0.5, 2.0), xy=xy_arrays())
-def test_coherent_state_multiple(hbar, xy):
-    x, y = xy
+n = st.shared(st.integers(2, 10))
+arr = arrays(dtype=np.float, shape=(n), elements=st.floats(-5.0, 5.0))
+
+@given(hbar=st.floats(0.5, 2.0), x=arr, y=arr)
+def test_coherent_state_multiple(hbar, x, y):
     cov, disp = gp.coherent_state(x, y, hbar)
     assert np.allclose(cov, np.eye(2 * len(x)) * hbar / 2)
+    assert len(x) == len(y)
     assert np.allclose(disp, np.concatenate([x, y], axis=-1) * np.sqrt(2 * hbar))
 
 

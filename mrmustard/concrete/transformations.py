@@ -70,7 +70,7 @@ class Sgate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self._gaussian.squeezing_symplectic(self.r, self.phi)
 
 
@@ -98,7 +98,7 @@ class Rgate(Parametrized, Transformation):
         super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self._gaussian.rotation_symplectic(self.angle)
 
 
@@ -140,7 +140,7 @@ class BSgate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self._gaussian.beam_splitter_symplectic(self.theta, self.phi)
 
 
@@ -187,7 +187,7 @@ class MZgate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self._gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
@@ -221,7 +221,7 @@ class S2gate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self._gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
@@ -241,7 +241,7 @@ class Interferometer(Parametrized, Transformation):
         super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float = 2.0):
+    def X_matrix(self):
         return self.orthogonal
 
     @property
@@ -285,7 +285,7 @@ class Ggate(Parametrized, Transformation):
         )
         self.is_unitary = True
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self.symplectic
 
     def d_vector(self, hbar: float):
@@ -335,7 +335,7 @@ class LossChannel(Parametrized, Transformation):
         )
         self.is_unitary = False
 
-    def X_matrix(self, hbar: float):
+    def X_matrix(self):
         return self._gaussian.loss_X(self.transmissivity)
 
     def Y_matrix(self, hbar: float):

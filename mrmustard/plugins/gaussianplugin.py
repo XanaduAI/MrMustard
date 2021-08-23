@@ -350,7 +350,8 @@ class GaussianPlugin:
     # ~~~~~~~~~~~~~
 
     def CPTP(self, cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
-        r"""Returns the cov matrix of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`.
+        r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
+        and `d = X \cdot means + d`.
         If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
         otherwise it must contain as many modes as the number of modes in the channel.
 
@@ -361,6 +362,7 @@ class GaussianPlugin:
             Y (Matrix): noise matrix of the CPTP channel
             d (Vector): displacement vector of the CPTP channel
             modes (Sequence[int]): modes on which the channel operates
+            hbar (float): value of hbar
         Returns:
             Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
         """
@@ -392,7 +394,7 @@ class GaussianPlugin:
         D = (1.0 - transmissivity) * hbar / 2
         return self._backend.diag(self._backend.concat([D, D], axis=0))
 
-    def thermal_X(self, nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
+    def thermal_X(self, nbar: Union[Scalar, Vector]) -> Matrix:
         r"""Returns the X matrix for the thermal lossy channel.
         The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
         """
@@ -403,6 +405,39 @@ class GaussianPlugin:
         The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
         """
         raise NotImplementedError
+
+
+    def compose_channels_XYd(self, X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector) -> Tuple[Matrix, Matrix, Vector]:
+        r"""Returns the combined X, Y, and d for two CPTP channels.
+        Arguments:
+            X1 (Matrix): the X matrix of the first CPTP channel
+            Y1 (Matrix): the Y matrix of the first CPTP channel
+            d1 (Vector): the displacement vector of the first CPTP channel
+            X2 (Matrix): the X matrix of the second CPTP channel
+            Y2 (Matrix): the Y matrix of the second CPTP channel
+            d2 (Vector): the displacement vector of the second CPTP channel
+        Returns:
+            Tuple[Matrix, Matrix, Vector]: the combined X, Y, and d matrices
+        """
+        if X1 is None:
+            X = X2
+        elif X2 is None:
+            X = X1
+        else:
+            X = self._backend.matmul(X2, X1)
+        if Y1 is None:
+            Y = Y2
+        elif Y2 is None:
+            Y = Y1
+        else:
+            Y = self._backend.matmul(self._backend.matmul(X2, Y1), X2) + Y2
+        if d1 is None:
+            d = d2
+        elif d2 is None:
+            d = d1
+        else:
+            d = self._backend.matmul(X2, d1) + d2
+        return X, Y, d
 
     # ~~~~~~~~~~~~~~~
     # non-TP channels
