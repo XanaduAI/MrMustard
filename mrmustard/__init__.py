@@ -32,6 +32,6 @@ def using_tinygrad():
     return set_env("tinygrad")
 
 
-using_tensorflow()  # default
+using_pytorch() # default
 
 from mrmustard.concrete import *

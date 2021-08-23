@@ -118,10 +118,33 @@ class Backend(BackendInterface):
         return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
     @Autocast()
-    def convolution(self, array: torch.Tensor, filters: torch.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> torch.Tensor:
-        # TODO: pytorch convolution returns a function, tensorflow returns a output.
+    def convolution(self, array: torch.Tensor, filters: torch.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> torch.Tensor:        
+        r"""
+        Wrapper for torch.nn.Conv1d and torch.nn.Conv2d. 
 
-        return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
+        Args:
+            1D convolution: Tensor of shape [batch_size, input_channels, signal_length].
+            2D convolution: [batch_size, input_channels, input_height, input_width]
+        Returns:
+        """
+        
+        batch_size = array.shape[0]
+        input_channels = array.shape[1]
+        output_channels = ... #TODO: unsure of how to get output channels 
+
+        if array.dim() == 3: # 1D case
+            signal_length = array.shape[2]
+            
+            m = torch.nn.Conv1d(input_channels, output_channels, filters,stride=strides,padding=padding,dtype=data_format, dilation=dilations)
+            return m(array)
+        elif array.dim() == 4: #2D case
+            input_height = array.shape[2]
+            input_width = array.shape[3]
+
+            m = torch.nn.Conv2d(input_channels, output_channels, filters,stride=strides,padding=padding,dtype=data_format, dilation=dilations)
+            return m(array)
+        else:
+            raise NotImplementedError
 
     def transpose(self, a: torch.Tensor, perm: List[int] = None) -> torch.Tensor:
         if a is None:
@@ -167,15 +190,15 @@ class Backend(BackendInterface):
     def concat(self, values: Sequence[torch.Tensor], axis: int) -> torch.Tensor:
         return torch.cat(values, axis)
 
-    def update_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor):
-        # dims need to be interpreted 
-        # return tensor.scatter_(dims, indices, values)
-        raise NotImplementedError
+    def update_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0):
+        # TODO: dims need to be an argument, or should be interpreted from the other data
 
-    def update_add_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor):
-        # dims need to be interpreted 
-        # return tensor.scatter_add_(dims, indices, values)
-        raise NotImplementedError
+        return tensor.scatter_(dims, indices, values)
+
+    def update_add_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0):
+        # TODO: dims need to be an argument, or should be interpreted from the other data
+
+        return tensor.scatter_add_(dims, indices, values)
 
     def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
         bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
@@ -217,19 +240,28 @@ class Backend(BackendInterface):
         r"""
         Default optimizer for the Euclidean parameters.
         """
-        return torch.optim.Adam(params, lr=0.001)
-        raise NotImplementedError
+        self.optimizer = torch.optim.Adam(params, lr=0.001)
+        return self.optimizer
 
     def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
         r"""
         Computes the loss and gradients of the given cost function.
 
         Arguments:
-            cost_fn (Callable with no args): The cost function.
+            cost_fn (Callable): The cost function. Takes in two arguments:
+                - Output: The output tensor of the model.
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
-        
+            optimizer: The optimizer to be used by the backend.
         Returns:
             The loss and the gradients.
         """
-        raise NotImplementedError
+        self.optimizer.zero_grad()
+        loss = cost_fn() #TODO: I think this should be cost_fn(params), but if it works I think it is fine.
+        loss.backward()
+        self.optimizer.step()
+        
+        grads = [p.grad for p in parameters]
+
+        return loss, grads
+        
