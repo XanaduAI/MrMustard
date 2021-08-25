@@ -411,7 +411,7 @@ class GaussianPlugin:
 
         J = self._backend.J(cov.shape[0]) # create a sympletic form 
 
-        M = 1j*self._backend.matmul(J, cov) # compute iJ*cov
+        M = self._backend.matmul(1j*J, cov) # compute iJ*cov
         vals = self._backend.eigvalsh(M) # compute the eigenspectrum
         return self._backend.abs(vals)[::2] # return the even eigenvalues
 
