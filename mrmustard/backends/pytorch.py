@@ -265,3 +265,14 @@ class Backend(BackendInterface):
 
         return loss, grads
         
+    def eigvals(self, tensor: torch.Tensor) -> Tensor:
+        "Returns the eigenvalues of a matrix."
+        return torch.linalg.eigvals(tensor)
+
+    def eigvalsh(self, tensor: torch.Tensor) -> Tensor:
+        "Returns the eigenvalues of a Real Symmetric or Hermitian matrix."
+        return torch.linalg.eigvalsh(tensor)
+
+    def svd(self, tensor: torch.Tensor) -> Tensor:
+        "Returns the Singular Value Decomposition of a matrix."
+        return torch.linalg.svd(tensor)

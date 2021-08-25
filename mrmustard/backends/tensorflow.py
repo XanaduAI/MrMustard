@@ -242,3 +242,15 @@ class Backend(BackendInterface):
             loss = cost_fn()
         gradients = tape.gradient(loss, list(parameters.values()))
         return loss, dict(zip(parameters.keys(), gradients))
+
+    def eigvals(self, tensor: torch.Tensor) -> Tensor:
+        "Returns the eigenvalues of a matrix."
+        return tf.linalg.eigvals(tensor)
+
+    def eigvalsh(self, tensor: torch.Tensor) -> Tensor:
+        "Returns the eigenvalues of a Real Symmetric or Hermitian matrix."
+        return tf.linalg.eigvalsh(tensor)
+
+    def svd(self, tensor: torch.Tensor) -> Tensor:
+        "Returns the Singular Value Decomposition of a matrix."
+        return tf.linalg.svd(tensor)
