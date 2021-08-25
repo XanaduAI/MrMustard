@@ -1,3 +1,4 @@
+from typing import Any
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
 from math import pi
@@ -398,3 +399,36 @@ class GaussianPlugin:
             float: the purity
         """
         return 1 / self._backend.det((2/hbar) * cov)
+
+    def sympletic_eigenvals(self, cov: Matrix) -> Any:
+        r"""
+        Returns the sympletic eigenspectrum of a covariance matrix. 
+        Arguments:
+            cov (Matrix): the covariance matrix
+        Returns:
+            List[float]: the sympletic eigenvalues
+        """     
+
+        J = self._backend.J(cov.shape[0]) # create a sympletic form 
+
+        M = 1j*self._backend.matmul(J, cov) # compute iJ*cov
+        vals = self._backend.eigvalsh(M) # compute the eigenspectrum
+        return self._backend.abs(vals)[::2] # return the even eigenvalues
+
+    def von_neumann_entropy(self, cov: Matrix) -> float:
+        r"""
+        Returns the sympletic eigenspectrum of a covariance matrix. 
+        Arguments:
+            cov (Matrix): the covariance matrix
+        Returns:
+            List[float]: the sympletic eigenvalues
+
+        Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
+        """     
+
+        symp_vals = self.sympletic_eigenvals(cov)
+
+        g = lambda x: ((x + 1)/2)*self._backend.log((x+1)/2)-((x-1)/2)**self._backend.log((x-1)/2)
+
+        entropy = self._backend.sum(g(symp_vals))
+        return entropy
