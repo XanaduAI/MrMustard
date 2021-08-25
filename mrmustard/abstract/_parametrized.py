@@ -23,7 +23,7 @@ class Parametrized(ABC):
         self.param_names = [key for key in kwargs if key + "_trainable" in kwargs]  # every parameter can be trainable! 🚀
 
         for name in self.param_names:
-            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # making trainable flag available
+            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # making "is trainable" available as param._trainable
             if kwargs[name + "_trainable"]:
                 var = self._train.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
@@ -37,5 +37,5 @@ class Parametrized(ABC):
                 self.__dict__["_" + key] = val  # making other values available as gate._val_name
 
     @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as necessary
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as needed
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}

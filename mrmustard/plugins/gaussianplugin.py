@@ -3,98 +3,123 @@ from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
+from abc import ABC
 
 
-class XPTensor:
-    r"""A representation of tensors in phase space."""
+class XPTensor(ABC):
+    r"""A representation of tensors in phase space.
+    """
 
     _backend: BackendInterface
 
-    def __init__(self, modes: List[int], tensor: Optional[Tensor], zero_based: bool = False) -> None:
-        if tensor is None:
-            if zero_based:
-                tensor = self._backend.zeros((2, len(modes), 2, len(modes)))
-            else:
-                tensor = self._backend.reshape(self._backend.eye(2*len(modes)), (2, len(modes), 2, len(modes)))
-        if len(tensor.shape) < 4:
-            raise ValueError("Tensor must have at least 4 dimensions")
-        if tensor.shape[0] != 2 and tensor.shape[2] != 2 and tensor.shape[3] != tensor.shape[1]:
-            raise ValueError("Tensor must have shape (2, N, 2, N)")
-        if not isinstance(modes, List):
-            raise TypeError("modes must be a List of ints")
+    def __init__(self, tensor: Optional[Tensor]=None, modes: List[int] = [], additive=True) -> None:
         self.nmodes = len(modes)
         self.modes = modes
         self._tensor = tensor
-        self.zero_based = zero_based
-    
+        self.additive = additive  # NOTE: if not it's additive it's multiplicative
+
+    def to_xpxp(self) -> Optional[Matrix]:
+        if self._tensor is None:
+            return None
+        matrix = cls._backend.transpose(self.tensor, (1, 0, 3, 2))
+        return cls._backend.reshape(matrix, (2*self.nmodes, 2*self.nmodes))
+
+    def to_xxpp(self) -> Optional[Matrix]:
+        return self._tensor
+
+    @property
+    def tensor(self):
+        return self._backend.reshape(self._tensor, (2, self.nmodes, 2, self.nmodes))
+
     @classmethod
-    def from_xpxp(cls, xpxp_matrix: Matrix, modes: List[int], zero_based: bool=False) -> XPTensor:
-        # internal representation has shape (2, N, 2, N)
+    def from_xpxp(cls, xpxp_matrix: Matrix,  modes: List[int], additive: bool) -> XPTensor:
+        # internal representation has shape (2N, 2N) in xxpp ordering
         if xpxp_matrix is not None:
             xpxp_matrix = cls._backend.reshape(xpxp_matrix, (len(modes), 2, len(modes), 2))
             xpxp_matrix = cls._backend.transpose(xpxp_matrix, (1, 0, 3, 2))
-        return XPTensor(modes, xpxp_matrix, zero_based)
+            xpxp_matrix = cls._backend.reshape(xpxp_matrix, (2*len(modes), 2*len(modes)))
+        return XPTensor(xpxp_matrix, modes, additive)
 
     @classmethod
-    def from_xxpp(cls, xxpp_matrix: Matrix, modes: List[int], zero_based: bool=False) -> XPTensor:
-        # internal representation has shape (2, N, 2, N)
-        if xxpp_matrix is not None:
-            xxpp_matrix = cls._backend.reshape(xxpp_matrix, (2, len(modes), 2, len(modes)))
-        return XPTensor(modes, xxpp_matrix, zero_based)
+    def from_xxpp(cls, xxpp_matrix: Matrix, modes: List[int], additive: bool) -> XPTensor:
+        return XPTensor(xxpp_matrix, modes, additive)
 
-    def to_xpxp(self) -> Matrix:
-        transposed = self._backend.transpose(self._tensor, (0, 1, 3, 2))
-        return self._backend.reshape(transposed, (2*len(self.modes), 2*len(self.modes)))
-
-    def to_xxpp(self) -> Matrix:
-        return self._backend.reshape(self._tensor, (2*len(self.modes), 2*len(self.modes)))
-
-    def empty(self, modes: List[int], zero_based: bool) -> XPTensor:
-        if zero_based:
-            base = self._backend.zeros((2*len(modes), 2*len(modes)))
-        else:
-            base = self._backend.eye(2*len(modes))
-        return XPTensor(modes, self._backend.reshape(base, (2, len(modes), 2, len(modes))), zero_based)
-
-    def reorder_modes(self, perm: List[int]):
-        if len(perm) != self.nmodes:
-            raise ValueError(f"permutation must have length {self.nmodes}")
-        if not all(i in range(self.nmodes) for i in perm):
-            raise ValueError("permutation must be a permutation of the modes")
-        if perm == list(range(self.nmodes)):
+    def __mul__(self, other: XPTensor) -> Optional[XPTensor]:
+        if self._tensor is None and other._tensor is None:
+            return XPTensor(None, [], self.additive or other.additive)
+        if self._tensor is None:  # only self is None
+            if self.additive:
+                return self
+            return other
+        if other._tensor is None:
+            if other.additive:
+                return other
             return self
-        self._tensor = self._backend.gather(self._backend.gather(self._tensor, perm, axis=1), perm, axis=3)
-        self.modes = [self.modes[i] for i in perm]
+        xxpp = self.matmul_at_modes(self.to_xxpp(), other.to_xxpp(), modes_a=self.modes, modes_b=other.modes)
+        return XPTensor.from_xxpp(xxpp, sorted(list(set(self.modes) | set(other.modes))), self.additive or other.additive)
 
-    def __mul__(self, other: XPTensor) -> XPTensor:
-        empty = self.empty(sorted(list(set(self.modes) | set(other.modes))), self.zero_based or other.zero_based)
-        after_self = self._backend.right_matmul_at_modes(empty.to_xxpp(), self.to_xxpp(), modes=self.modes)
-        after_other = self._backend.right_matmul_at_modes(after_self, other.to_xxpp(), modes=other.modes)
-        return XPTensor.from_xxpp(after_other, empty.modes, self.zero_based)
+    def matmul_at_modes(self, xxpp_a: Matrix, xxpp_b: Matrix, modes_a: List[int], modes_b: List[int]) -> Matrix:
+        if modes_a == modes_b:
+            return self._backend.matmul(xxpp_a, xxpp_b)
+        modes = set(modes_a) | set(modes_b)
+        out = self._backend.eye(2*len(modes), dtype=xxpp_a.dtype)
+        out = self._backend.left_matmul_at_modes(xxpp_b, out, modes_b)
+        out = self._backend.left_matmul_at_modes(xxpp_a, out, modes_a)
+        return out
 
-    def __add__(self, other: XPTensor) -> XPTensor:
-        all_modes = sorted(list(set(self.modes) | set(other.modes)))
-        zeros = self._backend.zeros((2 * len(all_modes), 2 * len(all_modes)))
-        after_self = self._backend.add_at_modes(zeros, self.to_xxpp(), self.modes)
-        after_other = self._backend.add_at_modes(after_self, other.to_xxpp(), other.modes)
-        return XPTensor.from_xxpp(after_other, all_modes, self.zero_based)
+    def __add__(self, other: XPTensor) -> Optional[XPTensor]:
+        if self._tensor is None and other._tensor is None:
+            return XPTensor(None, [], self.additive and other.additive)  # NOTE: this says 1+1 = 1
+        if self._tensor is None:  # only self is None
+            if self.additive:
+                return other
+            return ValueError("0+1 or not implemented 🥸")
+        if other._tensor is None:   # only other is None
+            if other.additive:
+                return self
+            return ValueError("1+0 or not implemented 🥸")
+        xxpp = self.add_at_modes(self.to_xxpp(), other.to_xxpp(), modes_a=self.modes, modes_b=other.modes)
+        return XPTensor.from_xxpp(xxpp, sorted(list(set(self.modes) | set(other.modes))), self.additive and other.additive)
+
+    def add_at_modes(self, xxpp_a: Matrix, xxpp_b: Matrix, modes_a: List[int], modes_b: List[int]) -> Matrix:
+        if modes_a == modes_b:
+            return xxpp_a + xxpp_b
+        modes = set(modes_a) | set(modes_b)
+        out = self._backend.zeros((2*len(modes), 2*len(modes)), dtype=xxpp_a.dtype)
+        out = self._backend.add_at_modes(out, xxpp_a, modes_a)
+        out = self._backend.add_at_modes(out, xxpp_b, modes_b)
+        return out
 
     def __repr__(self) -> str:
-        return repr(self._tensor)
+        return f"XPTensor(modes={self.modes}, additive={self.additive}, _tensor={self._tensor})"
 
     def __getitem__(self, item: Union[int, slice, List[int]]) -> XPTensor:
         if isinstance(item, int):
-            return XPTensor([item], self._tensor[:, item, :, item][:, None, :, None], self.zero_based)
+            return XPTensor(self._tensor[:, item, :, item][:, None, :, None], [item])
         elif isinstance(item, slice):
-            return XPTensor(list(range(item.start, item.stop)), self._tensor[:, item, :, item], self.zero_based)
+            return XPTensor(self._tensor[:, item, :, item], list(range(item.start, item.stop)))
         elif isinstance(item, List):
-            return XPTensor(item, self._backend.gather(self._backend.gather(self._tensor, item, axis=1), item, axis=3), self.zero_based)
+            return XPTensor(self._backend.gather(self._backend.gather(self._tensor, item, axis=1), item, axis=3), item)
         else:
             raise TypeError("Invalid index type")
 
+    # TODO: write a tensor wrapper to use the method here below with TF as well (it's already possible with pytorch)
+    # (must be differentiable!)
+    # def __setitem__(self, key: Union[int, slice, List[int]], value: XPTensor) -> None:
+    #     if isinstance(key, int):
+    #         self._tensor[:, key, :, key] = value._tensor
+    #     elif isinstance(key, slice):
+    #         self._tensor[:, key, :, key] = value._tensor
+    #     elif isinstance(key, List):
+    #         self._tensor[:, key, :, key] = value._tensor
+    #     else:
+    #         raise TypeError("Invalid index type")
+
     @property
     def T(self) -> XPTensor:
-        return XPTensor(self.modes, self._backend.transpose(self._tensor, (0, 2, 1, 3)), self.zero_based)
+        if self._tensor is None:
+            return XPTensor()
+        return XPTensor(self._backend.transpose(self._tensor), self.modes)
 
 
 

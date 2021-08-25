@@ -451,16 +451,16 @@ class BackendInterface(ABC):
         return self.transpose(self.transpose(matrix)[permutation])
 
 
-
-class _TensorWrapper:  # NOTE: copilot generated
+class TensorWrapperInterface:  # NOTE: copilot generated
     """
     Wrapper for tensor objects to make them work with any backend.
     """
     _backend: BackendInterface
 
-    def __init__(self, tensor: Tensor):
+    def __init__(self, tensor: Tensor, sparse: bool = False, name: str = None):
+        self._name = name
+        self._sparse = True
         self._tensor = self._backend.astensor(tensor)
-        self._backend.tensor_wrapper = self
 
     def __getattr__(self, attr):
         return getattr(self._tensor, attr)
@@ -518,3 +518,4 @@ class _TensorWrapper:  # NOTE: copilot generated
     
     def __iter__(self):
         return self._tensor.__iter__()
+
