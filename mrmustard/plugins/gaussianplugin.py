@@ -409,7 +409,7 @@ class GaussianPlugin:
             List[float]: the sympletic eigenvalues
         """     
 
-        J = self._backend.J(cov.shape[0]) # create a sympletic form 
+        J = self._backend.J(cov.shape[0]//2) # create a sympletic form 
 
         M = self._backend.matmul(1j*J, cov) # compute iJ*cov
         vals = self._backend.eigvalsh(M) # compute the eigenspectrum

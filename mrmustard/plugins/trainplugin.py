@@ -9,7 +9,11 @@ class TrainPlugin:
     _backend: BackendInterface
 
     def __init__(self):
-        self.euclidean_opt = self.__class__._backend.DefaultEuclideanOptimizer()
+        #TODO: fix this later
+        try:
+            self.euclidean_opt = self.__class__._backend.DefaultEuclideanOptimizer()
+        except:
+            pass
 
     def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
         r"""

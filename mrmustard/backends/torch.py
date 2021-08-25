@@ -20,10 +20,10 @@ class Backend(BackendInterface):
     # ~~~~~~~~~
 
     def atleast_1d(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
-        return self.cast(torch.reshape(array, [-1]), dtype)
+        return self.cast(torch.reshape(self.astensor(array), [-1]), dtype)
 
     def astensor(self, array: Union[np.ndarray, torch.Tensor], dtype=None) -> torch.Tensor:
-        return torch.from_numpy(array, dtype=dtype)
+        return self.cast(torch.tensor(array), dtype)
     
     def conj(self, array: torch.Tensor) -> torch.Tensor:
         return torch.conj(array)
@@ -157,7 +157,7 @@ class Backend(BackendInterface):
     def sum(self, array: torch.Tensor, axes: Sequence[int]=None):
         return torch.sum(array, axes)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> torch.Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64) -> torch.Tensor:
         return torch.arange(start, limit, delta, dtype=dtype)
 
     @Autocast()
@@ -208,10 +208,10 @@ class Backend(BackendInterface):
             constraint = None
         return constraint
 
-    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
+    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64):
         return torch.tensor(value, requires_grad=True)
 
-    def new_constant(self, value, name: str, dtype=tf.float64):
+    def new_constant(self, value, name: str, dtype=torch.float64):
         return torch.tensor(value)
 
     def asnumpy(self, tensor: torch.Tensor) -> Tensor:
@@ -220,7 +220,6 @@ class Backend(BackendInterface):
     def hash_tensor(self, tensor: torch.Tensor) -> str:
         return hash(tensor)
 
-    @tf.custom_gradient
     def hermite_renormalized(self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]) -> torch.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
