@@ -254,3 +254,4 @@ class Backend(BackendInterface):
     def svd(self, tensor: tf.Tensor) -> Tensor:
         "Returns the Singular Value Decomposition of a matrix."
         return tf.linalg.svd(tensor)
+    

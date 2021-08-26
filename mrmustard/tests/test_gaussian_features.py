@@ -8,10 +8,19 @@ import tensorflow as tf
 
 gp = GaussianPlugin()
 
+
 @given(x=st.floats(), y=st.floats())
 def test_von_neumann_entropy_is_zero_for_pure_states(x, y):
     pure_state = Coherent(tf.constant(x), tf.constant(y))
-    assert np.isclose(gp.von_neumann_entropy(pure_state.cov), 0.0)
+    print('purestate_cov', pure_state.cov, 'entropy=', gp.von_neumann_entropy(pure_state.cov))
+    assert np.isclose(gp.von_neumann_entropy(pure_state.cov), 0)
 
-def test_known_values_of_vne():
-    pass
+
+'''
+@given(x=st.floats(), y=st.floats())
+def test_sympletic_diag(x, y):
+    pure_state = Coherent(tf.constant(x), tf.constant(y))
+    vals = gp.sympletic_eigenvals(pure_state.cov).numpy()
+    print('vals' , vals, np.greater_equal(vals, 1), np.isclose(vals, 1))
+    assert np.greater_equal(vals, 1) or np.isclose(vals, 1)
+'''

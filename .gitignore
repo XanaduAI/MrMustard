@@ -9,3 +9,4 @@ __pycache__/
 *.pkl
 *.png
 .hypothesis/
+.Mr._Mustard.egg-info/

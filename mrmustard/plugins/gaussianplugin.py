@@ -1,4 +1,5 @@
 from typing import Any
+import backends
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
 from math import pi
@@ -428,7 +429,7 @@ class GaussianPlugin:
 
         symp_vals = self.sympletic_eigenvals(cov)
 
-        g = lambda x: ((x + 1)/2)*self._backend.log((x+1)/2)-((x-1)/2)**self._backend.log((x-1)/2)
-
+        g = lambda x: ((x + 1)/2)*self._backend.log((x+1)/2)-((x-1)/2)*self._backend.log((x-1+1e-9)/2)
+    
         entropy = self._backend.sum(g(symp_vals))
         return entropy
