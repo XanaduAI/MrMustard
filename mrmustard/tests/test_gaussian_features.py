@@ -8,8 +8,6 @@ import tensorflow as tf
 
 gp = GaussianPlugin()
 
-
-@given(x=st.floats(), y=st.floats())
 def test_von_neumann_entropy_is_zero_for_pure_states(x, y):
     pure_state = Coherent(tf.constant(x), tf.constant(y))
     print('purestate_cov', pure_state.cov, 'entropy=', gp.von_neumann_entropy(pure_state.cov))

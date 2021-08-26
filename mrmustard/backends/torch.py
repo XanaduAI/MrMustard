@@ -275,3 +275,7 @@ class Backend(BackendInterface):
     def svd(self, tensor: torch.Tensor) -> Tensor:
         "Returns the Singular Value Decomposition of a matrix."
         return torch.linalg.svd(tensor)
+
+    def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
+        "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
+        return torch.xlogy(x, y)
