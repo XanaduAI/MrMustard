@@ -258,7 +258,7 @@ class Backend(BackendInterface):
         with tf.GradientTape() as tape:
             loss = cost_fn()
         gradients = tape.gradient(loss, list(parameters.values()))
-        return loss, dict(zip(parameters.keys(), gradients))
+        return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
 
     def eigvals(self, tensor: tf.Tensor) -> Tensor:
         "Returns the eigenvalues of a matrix."
@@ -275,4 +275,7 @@ class Backend(BackendInterface):
     def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
         "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
         return tf.math.xlogy(x, y)
-        return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
+
+    def eigh(self, tensor: tf.Tensor) -> Tensor:
+        "Returns the eigenvalues and eigenvectors of a matrix."
+        return tf.linalg.eigh(tensor)

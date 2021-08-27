@@ -575,10 +575,10 @@ class GaussianPlugin:
         """     
 
         J = self._backend.J(cov.shape[0]//2) # create a sympletic form 
-
-        M = self._backend.matmul(1j*J, cov) # compute iJ*cov
-        vals = self._backend.eigvalsh(M) # compute the eigenspectrum
-        return self._backend.abs(vals)[::2] # return the even eigenvalues
+        M = self._backend.abs(1j*J @ cov) # compute iJ*cov
+        print(M)
+        vals = self._backend.eigvals(M) # compute the eigenspectrum
+        return vals[::2] # return the even eigenvalues
 
     def von_neumann_entropy(self, cov: Matrix) -> float:
         r"""
@@ -592,6 +592,8 @@ class GaussianPlugin:
         """     
 
         symp_vals = self.sympletic_eigenvals(cov)
+        print(symp_vals)
+        assert symp_vals >= 1
 
         g = lambda x: ((x + 1)/2)*self._backend.log((x+1)/2)-self._backend.xlogy((x-1)/2, (x-1)/2)
     
