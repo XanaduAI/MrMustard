@@ -569,16 +569,17 @@ class GaussianPlugin:
         r"""
         Returns the sympletic eigenspectrum of a covariance matrix. 
         Arguments:
-            cov (Matrix): the covariance matrix
+            cov (Matrix): the covariance matrix.
         Returns:
             List[float]: the sympletic eigenvalues
-        """     
+        """
 
+        cov = self._backend.cast(cov, "complex128") # cast to complex otherwise matmul will break
         J = self._backend.J(cov.shape[0]//2) # create a sympletic form 
-        M = self._backend.abs(1j*J @ cov) # compute iJ*cov
-        print(M)
+        M = 1j*J @ cov # compute iJ*cov
+
         vals = self._backend.eigvals(M) # compute the eigenspectrum
-        return vals[::2] # return the even eigenvalues
+        return self._backend.abs(vals[::2]) # return the even eigenvalues
 
     def von_neumann_entropy(self, cov: Matrix) -> float:
         r"""
@@ -592,10 +593,7 @@ class GaussianPlugin:
         """     
 
         symp_vals = self.sympletic_eigenvals(cov)
-        print(symp_vals)
-        assert symp_vals >= 1
-
-        g = lambda x: ((x + 1)/2)*self._backend.log((x+1)/2)-self._backend.xlogy((x-1)/2, (x-1)/2)
+        g = lambda x: self._backend.xlogy((x+1)/2, (x+1)/2)-self._backend.xlogy((x-1)/2, (x-1)/2+1e-9)
     
         entropy = self._backend.sum(g(symp_vals))
         return entropy
