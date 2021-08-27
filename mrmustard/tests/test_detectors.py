@@ -1,5 +1,8 @@
 import pytest
 
+from hypothesis import given, strategies as st
+from hypothesis.extra.numpy import arrays
+
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
@@ -7,14 +10,14 @@ from scipy.stats import poisson
 from mrmustard import Dgate, Sgate, S2gate, LossChannel, BSgate
 from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
-from mrmustard import PNRDetector
+from mrmustard import PNRDetector, Homodyne
 
 np.random.seed(137)
 
 
 @pytest.mark.parametrize("alpha", np.random.rand(3) + 1j * np.random.rand(3))
-@pytest.mark.parametrize("eta", [0, 0.3, 1.0])
-@pytest.mark.parametrize("dc", [0, 0.2])
+@pytest.mark.parametrize("eta", [0.0, 0.3, 1.0])
+@pytest.mark.parametrize("dc", [0.0, 0.2])
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
     circ = Circuit()
@@ -135,8 +138,8 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
-    assert np.allclose(guess["sq_0"], np.sinh(S2c.euclidean_parameters[0].numpy()) ** 2)
-    assert np.allclose(guess["sq_1"], np.sinh(S2d.euclidean_parameters[0].numpy()) ** 2)
+    assert np.allclose(guess["sq_0"], np.sinh(S2c.trainable_parameters["euclidean"][0].numpy()) ** 2)
+    assert np.allclose(guess["sq_1"], np.sinh(S2d.trainable_parameters["euclidean"][0].numpy()) ** 2)
     assert np.allclose(tdetector.efficiency, [guess["eta_s"], guess["eta_i"]])
     assert np.allclose(tdetector.dark_counts, [guess["noise_s"], guess["noise_i"]])
 
@@ -152,7 +155,7 @@ def test_postselection():
     n_measured = 1
 
     # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
-    proj_state, success_prob = detector(my_state, cutoffs=[cutoff, cutoff], measurements=[n_measured, None])
+    proj_state, success_prob = detector(my_state, cutoffs=[cutoff, cutoff], outcomes=[n_measured, None])
     expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
     assert np.allclose(success_prob, expected_prob)
     expected_state = np.zeros([cutoff, cutoff])
@@ -185,7 +188,16 @@ def test_projected(eta, n):
     B = BSgate(modes=[0, 1], theta=1.0, phi=0.0)
     L = LossChannel(modes=[0], transmissivity=eta)
 
-    dm_lossy, _ = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20], measurements=[n, None])
-    dm_ideal, _ = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20], measurements=[n, None])
+    dm_lossy, _ = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20], outcomes=[n, None])
+    dm_ideal, _ = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20], outcomes=[n, None])
 
     assert np.allclose(dm_ideal, dm_lossy)
+
+@given(x = st.floats(min_value=-2.0, max_value=2.0), angle=st.floats(min_value=0.0, max_value=2.0*np.pi))
+def test_homodyne_on_2mode_squeezed_vacuum(x, angle):
+    """Checks that measuring a two-mode squeezed vacuum (S2gate) measured in the first mode for a value of x
+    returns a state with means vector at x."""
+    tmsv = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(x)), phi=angle)(Vacuum(num_modes=2))
+    homodyne = Homodyne(modes=[0], quadrature_angles=[angle], results=[x])
+    prob, remaining_state = homodyne(tmsv)
+    assert np.allclose(remaining_state.means, [x, 0.0])

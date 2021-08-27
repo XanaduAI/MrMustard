@@ -1,8 +1,128 @@
 from typing import Any
+from __future__ import annotations
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
-from math import pi
+from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
+from abc import ABC
+
+
+class XPTensor(ABC):
+    r"""A representation of tensors in phase space.
+    """
+
+    _backend: BackendInterface
+
+    def __init__(self, tensor: Optional[Tensor]=None, modes: List[int] = [], additive=True) -> None:
+        self.nmodes = len(modes)
+        self.modes = modes
+        self._tensor = tensor
+        self.additive = additive  # NOTE: if not it's additive it's multiplicative
+
+    def to_xpxp(self) -> Optional[Matrix]:
+        if self._tensor is None:
+            return None
+        matrix = cls._backend.transpose(self.tensor, (1, 0, 3, 2))
+        return cls._backend.reshape(matrix, (2*self.nmodes, 2*self.nmodes))
+
+    def to_xxpp(self) -> Optional[Matrix]:
+        return self._tensor
+
+    @property
+    def tensor(self):
+        return self._backend.reshape(self._tensor, (2, self.nmodes, 2, self.nmodes))
+
+    @classmethod
+    def from_xpxp(cls, xpxp_matrix: Matrix,  modes: List[int], additive: bool) -> XPTensor:
+        # internal representation has shape (2N, 2N) in xxpp ordering
+        if xpxp_matrix is not None:
+            xpxp_matrix = cls._backend.reshape(xpxp_matrix, (len(modes), 2, len(modes), 2))
+            xpxp_matrix = cls._backend.transpose(xpxp_matrix, (1, 0, 3, 2))
+            xpxp_matrix = cls._backend.reshape(xpxp_matrix, (2*len(modes), 2*len(modes)))
+        return XPTensor(xpxp_matrix, modes, additive)
+
+    @classmethod
+    def from_xxpp(cls, xxpp_matrix: Matrix, modes: List[int], additive: bool) -> XPTensor:
+        return XPTensor(xxpp_matrix, modes, additive)
+
+    def __mul__(self, other: XPTensor) -> Optional[XPTensor]:
+        if self._tensor is None and other._tensor is None:
+            return XPTensor(None, [], self.additive or other.additive)
+        if self._tensor is None:  # only self is None
+            if self.additive:
+                return self
+            return other
+        if other._tensor is None:
+            if other.additive:
+                return other
+            return self
+        xxpp = self.matmul_at_modes(self.to_xxpp(), other.to_xxpp(), modes_a=self.modes, modes_b=other.modes)
+        return XPTensor.from_xxpp(xxpp, sorted(list(set(self.modes) | set(other.modes))), self.additive or other.additive)
+
+    def matmul_at_modes(self, xxpp_a: Matrix, xxpp_b: Matrix, modes_a: List[int], modes_b: List[int]) -> Matrix:
+        if modes_a == modes_b:
+            return self._backend.matmul(xxpp_a, xxpp_b)
+        modes = set(modes_a) | set(modes_b)
+        out = self._backend.eye(2*len(modes), dtype=xxpp_a.dtype)
+        out = self._backend.left_matmul_at_modes(xxpp_b, out, modes_b)
+        out = self._backend.left_matmul_at_modes(xxpp_a, out, modes_a)
+        return out
+
+    def __add__(self, other: XPTensor) -> Optional[XPTensor]:
+        if self._tensor is None and other._tensor is None:
+            return XPTensor(None, [], self.additive and other.additive)  # NOTE: this says 1+1 = 1
+        if self._tensor is None:  # only self is None
+            if self.additive:
+                return other
+            return ValueError("0+1 or not implemented 🥸")
+        if other._tensor is None:   # only other is None
+            if other.additive:
+                return self
+            return ValueError("1+0 or not implemented 🥸")
+        xxpp = self.add_at_modes(self.to_xxpp(), other.to_xxpp(), modes_a=self.modes, modes_b=other.modes)
+        return XPTensor.from_xxpp(xxpp, sorted(list(set(self.modes) | set(other.modes))), self.additive and other.additive)
+
+    def add_at_modes(self, xxpp_a: Matrix, xxpp_b: Matrix, modes_a: List[int], modes_b: List[int]) -> Matrix:
+        if modes_a == modes_b:
+            return xxpp_a + xxpp_b
+        modes = set(modes_a) | set(modes_b)
+        out = self._backend.zeros((2*len(modes), 2*len(modes)), dtype=xxpp_a.dtype)
+        out = self._backend.add_at_modes(out, xxpp_a, modes_a)
+        out = self._backend.add_at_modes(out, xxpp_b, modes_b)
+        return out
+
+    def __repr__(self) -> str:
+        return f"XPTensor(modes={self.modes}, additive={self.additive}, _tensor={self._tensor})"
+
+    def __getitem__(self, item: Union[int, slice, List[int]]) -> XPTensor:
+        if isinstance(item, int):
+            return XPTensor(self._tensor[:, item, :, item][:, None, :, None], [item])
+        elif isinstance(item, slice):
+            return XPTensor(self._tensor[:, item, :, item], list(range(item.start, item.stop)))
+        elif isinstance(item, List):
+            return XPTensor(self._backend.gather(self._backend.gather(self._tensor, item, axis=1), item, axis=3), item)
+        else:
+            raise TypeError("Invalid index type")
+
+    # TODO: write a tensor wrapper to use the method here below with TF as well (it's already possible with pytorch)
+    # (must be differentiable!)
+    # def __setitem__(self, key: Union[int, slice, List[int]], value: XPTensor) -> None:
+    #     if isinstance(key, int):
+    #         self._tensor[:, key, :, key] = value._tensor
+    #     elif isinstance(key, slice):
+    #         self._tensor[:, key, :, key] = value._tensor
+    #     elif isinstance(key, List):
+    #         self._tensor[:, key, :, key] = value._tensor
+    #     else:
+    #         raise TypeError("Invalid index type")
+
+    @property
+    def T(self) -> XPTensor:
+        if self._tensor is None:
+            return XPTensor()
+        return XPTensor(self._backend.transpose(self._tensor), self.modes)
+
+
 
 class GaussianPlugin:
     r"""
@@ -24,82 +144,84 @@ class GaussianPlugin:
     #  ~~~~~~
 
     def vacuum_state(self, num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of the vacuum state.
+        r"""Returns the real covariance matrix and real means vector of the vacuum state.
         Args:
             num_modes (int): number of modes
             hbar (float): value of hbar
         Returns:
             Matrix: vacuum covariance matrix
-            Vector: vacuum displacement vector
+            Vector: vacuum means vector
         """
-        cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
-        disp = self._backend.zeros([num_modes*2], dtype=self._backend.float64)
-        return cov, disp
+        cov = self._backend.eye(num_modes * 2, dtype=self._backend.float64) * hbar / 2
+        means = self._backend.zeros([num_modes * 2], dtype=self._backend.float64)
+        return cov, means
 
-    def coherent_state(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a coherent state.
+    def coherent_state(self, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+        r"""Returns the real covariance matrix and real means vector of a coherent state.
         The dimension depends on the dimensions of x and y.
         Args:
-            x (scalar or vector): real part of the displacement
-            y(scalar or vector): imaginary part of the displacement
+            x (vector): real part of the means vector
+            y (vector): imaginary part of the means vector
             hbar: value of hbar
         Returns:
             Matrix: coherent state covariance matrix
-            Vector: coherent state displacement vector
+            Vector: coherent state means vector
         """
-        num_modes = self._backend.atleast_1d(x).shape[-1]
-        cov = self._backend.eye(num_modes*2, dtype=self._backend.float64) * hbar/2
-        disp = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
-        return cov, disp
+        x = self._backend.atleast_1d(x)
+        y = self._backend.atleast_1d(y)
+        num_modes = x.shape[-1]
+        cov = self._backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
+        means = self._backend.concat([x, y], axis=0) * self._backend.sqrt(2 * hbar, dtype=x.dtype)
+        return cov, means
 
-    def squeezed_vacuum_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a squeezed vacuum state.
+    def squeezed_vacuum_state(self, r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+        r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
         The dimension depends on the dimensions of r and phi.
         Args:
-            r (scalar or vector): squeezing magnitude
-            phi (scalar or vector): squeezing angle
+            r (vector): squeezing magnitude
+            phi (vector): squeezing angle
             hbar: value of hbar
         Returns:
             Matrix: squeezed state covariance matrix
-            Vector: squeezed state displacement vector
+            Vector: squeezed state means vector
         """
         S = self.squeezing_symplectic(r, phi)
-        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar/2
-        _, disp = self.coherent_state(0, 0, hbar)
-        return cov, disp
+        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
+        means = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
+        return cov, means
 
-    def thermal_state(self, nbar: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a thermal state.
+    def thermal_state(self, nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+        r"""Returns the real covariance matrix and real means vector of a thermal state.
         The dimension depends on the dimensions of nbar.
         Args:
-            nbar (scalar or vector): average number of photons per mode
+            nbar (vector): average number of photons per mode
             hbar: value of hbar
         Returns:
             Matrix: thermal state covariance matrix
-            Vector: thermal state displacement vector
+            Vector: thermal state means vector
         """
-        g = (2*nbar + 1) * hbar/2
-        cov = self._backend.diag(self._backend.concat([g, g], axis=-1), dtype=self._backend.float64)
-        disp = self._backend.zeros([nbar*2], dtype=self._backend.float64)
-        return cov, disp
+        g = self._backend.astensor((2 * nbar + 1) * hbar / 2)
+        cov = self._backend.diag(self._backend.concat([g, g], axis=-1))
+        means = self._backend.zeros(cov.shape[-1], dtype=cov.dtype)
+        return cov, means
 
-    def displaced_squeezed_state(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariance matrix and displacement vector of a displaced squeezed state.
+    def displaced_squeezed_state(self, r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+        r"""Returns the real covariance matrix and real means vector of a displaced squeezed state.
         The dimension depends on the dimensions of r, phi, x and y.
         Args:
             r   (scalar or vector): squeezing magnitude
             phi (scalar or vector): squeezing angle
-            x   (scalar or vector): real part of the displacement
-            y   (scalar or vector): imaginary part of the displacement
+            x   (scalar or vector): real part of the means
+            y   (scalar or vector): imaginary part of the means
             hbar: value of hbar
         Returns:
             Matrix: displaced squeezed state covariance matrix
-            Vector: displaced squeezed state displacement vector
+            Vector: displaced squeezed state means vector
         """
         S = self.squeezing_symplectic(r, phi)
-        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar/2
-        disp = self._backend.concat([x, y], axis=-1)
-        return cov, disp
+        cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
+        means = self._backend.concat([x, y], axis=-1)
+        return cov, means
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~
     #  Unitary transformations
@@ -155,6 +277,12 @@ class GaussianPlugin:
         Returns:
             Vector: displacement vector of a displacement gate
         """
+        x = self._backend.atleast_1d(x)
+        y = self._backend.atleast_1d(y)
+        if x.shape[-1] == 1:
+            x = self._backend.tile(x, y.shape)
+        if y.shape[-1] == 1:
+            y = self._backend.tile(y, x.shape)
         return self._backend.sqrt(2 * hbar, dtype=x.dtype) * self._backend.concat([x, y], axis=0)
 
     def beam_splitter_symplectic(self, theta: Scalar, phi: Scalar) -> Matrix:
@@ -248,7 +376,8 @@ class GaussianPlugin:
     # ~~~~~~~~~~~~~
 
     def CPTP(self, cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
-        r"""Returns the cov matrix of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`.
+        r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
+        and `d = X \cdot means + d`.
         If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
         otherwise it must contain as many modes as the number of modes in the channel.
 
@@ -259,6 +388,7 @@ class GaussianPlugin:
             Y (Matrix): noise matrix of the CPTP channel
             d (Vector): displacement vector of the CPTP channel
             modes (Sequence[int]): modes on which the channel operates
+            hbar (float): value of hbar
         Returns:
             Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
         """
@@ -287,10 +417,10 @@ class GaussianPlugin:
         r"""Returns the Y (noise) matrix for the lossy bosonic channel.
         The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
         """
-        D = (1.0 - transmissivity) * hbar/2
+        D = (1.0 - transmissivity) * hbar / 2
         return self._backend.diag(self._backend.concat([D, D], axis=0))
 
-    def thermal_X(self, nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
+    def thermal_X(self, nbar: Union[Scalar, Vector]) -> Matrix:
         r"""Returns the X matrix for the thermal lossy channel.
         The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
         """
@@ -302,11 +432,46 @@ class GaussianPlugin:
         """
         raise NotImplementedError
 
+
+    def compose_channels_XYd(self, X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector) -> Tuple[Matrix, Matrix, Vector]:
+        r"""Returns the combined X, Y, and d for two CPTP channels.
+        Arguments:
+            X1 (Matrix): the X matrix of the first CPTP channel
+            Y1 (Matrix): the Y matrix of the first CPTP channel
+            d1 (Vector): the displacement vector of the first CPTP channel
+            X2 (Matrix): the X matrix of the second CPTP channel
+            Y2 (Matrix): the Y matrix of the second CPTP channel
+            d2 (Vector): the displacement vector of the second CPTP channel
+        Returns:
+            Tuple[Matrix, Matrix, Vector]: the combined X, Y, and d matrices
+        """
+        if X1 is None:
+            X = X2
+        elif X2 is None:
+            X = X1
+        else:
+            X = self._backend.matmul(X2, X1)
+        if Y1 is None:
+            Y = Y2
+        elif Y2 is None:
+            Y = Y1
+        else:
+            Y = self._backend.matmul(self._backend.matmul(X2, Y1), X2) + Y2
+        if d1 is None:
+            d = d2
+        elif d2 is None:
+            d = d1
+        else:
+            d = self._backend.matmul(X2, d1) + d2
+        return X, Y, d
+
     # ~~~~~~~~~~~~~~~
     # non-TP channels
     # ~~~~~~~~~~~~~~~
 
-    def general_dyne(self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float) -> Tuple[Scalar, Matrix, Vector]:
+    def general_dyne(
+        self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
+    ) -> Tuple[Scalar, Matrix, Vector]:
         r"""
         Returns the results of a general dyne measurement.
         Arguments:
@@ -328,9 +493,9 @@ class GaussianPlugin:
         ABinv = self._backend.matmul(AB, inv)
         new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
         new_means = a + self._backend.matvec(ABinv, proj_means - b)
-        print(B+proj_cov)
-        print(self._backend.sqrt(self._backend.det(B + proj_cov)))
-        prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (pi**nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov)))  # TODO: check this (hbar part especially)
+        prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (
+            pi ** nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov))
+        )  # TODO: check this (hbar part especially)
         return prob, new_cov, new_means
 
     # ~~~~~~~~~
@@ -368,11 +533,11 @@ class GaussianPlugin:
         Returns:
             Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
         """
-        N = len(cov) // 2
-        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
-        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
-        A_block =  self._backend.gather(self._backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
-        B_block =  self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Bindices, axis=0)
+        N = cov.shape[-1] // 2
+        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], "int32")
+        A_block = self._backend.gather(self._backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
+        B_block = self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Bindices, axis=0)
         AB_block = self._backend.gather(self._backend.gather(cov, Bindices, axis=1), Aindices, axis=0)
         return A_block, B_block, AB_block
 
@@ -386,11 +551,11 @@ class GaussianPlugin:
             Tuple[Vector, Vector]: the means of A and the means of B
         """
         N = len(means) // 2
-        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], 'int32')
-        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], 'int32')
+        Bindices = self._backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+        Aindices = self._backend.cast(Amodes + [i + N for i in Amodes], "int32")
         return self._backend.gather(means, Aindices), self._backend.gather(means, Bindices)
 
-    def purity(self, cov: Matrix, hbar: float) -> float:
+    def purity(self, cov: Matrix, hbar: float) -> Scalar:
         r"""
         Returns the purity of the state with the given covariance matrix.
         Arguments:

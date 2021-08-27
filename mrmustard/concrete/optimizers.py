@@ -3,6 +3,9 @@ from mrmustard import TrainPlugin, GraphicsPlugin
 
 __all__ = ["Optimizer"]
 
+# NOTE: there is no abstract optimizer class for the time being
+
+
 class Optimizer:
     r"""An optimizer for any parametrized object.
     It can optimize euclidean, orthogonal and symplectic parameters.
@@ -29,16 +32,16 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-        params = {kind: self._train.extract_parameters(by_optimizing, kind) for kind in ('symplectic', 'orthogonal', 'euclidean')}
+        params = {kind: self._train.extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
         bar = self._graphics.Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
                 loss, grads = self._train.loss_and_gradients(cost_fn, params)
-                self._train.update_symp(params['symplectic'], grads['symplectic'], self.symplectic_lr)
-                self._train.update_orth(params['orthogonal'], grads['orthogonal'], self.orthogonal_lr)
-                self._train.update_eucl(params['euclidean'],  grads['euclidean'],  self.euclidean_lr)
+                self._train.update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
+                self._train.update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                self._train.update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                 self.loss_history.append(loss)
-                bar.step(self._train.numeric(loss))  # TODO 
+                bar.step(self._train.numeric(loss))  # TODO
 
     def should_stop(self, max_steps: int) -> bool:
         r"""

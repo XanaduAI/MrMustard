@@ -26,10 +26,9 @@ class FockPlugin:
             The photon number means vector.
         """
         N = means.shape[-1] // 2
-        return (means[:N] ** 2 + means[N:] ** 2
-                + self._backend.diag_part(cov[:N, :N])
-                + self._backend.diag_part(cov[N:, N:]) - hbar
-                ) / (2 * hbar)
+        return (means[:N] ** 2 + means[N:] ** 2 + self._backend.diag_part(cov[:N, :N]) + self._backend.diag_part(cov[N:, N:]) - hbar) / (
+            2 * hbar
+        )
 
     def number_cov(self, cov: Matrix, means: Vector, hbar: float) -> Matrix:
         r"""
@@ -44,11 +43,9 @@ class FockPlugin:
         """
         N = means.shape[-1] // 2
         mCm = cov * means[:, None] * means[None, :]
-        dd = self._backend.diag(
-            self._backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])
-            ) / (2 * hbar ** 2)
+        dd = self._backend.diag(self._backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
         CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
-        return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * self._backend.eye(N)
+        return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * self._backend.eye(N, dtype=CC.dtype)
 
     def fock_representation(self, cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
         r"""
@@ -66,7 +63,9 @@ class FockPlugin:
         """
         assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
         A, B, C = self.hermite_parameters(cov, means, mixed, hbar)
-        return self._backend.hermite_renormalized(A, B, C, shape = cutoffs + cutoffs*mixed)
+        return self._backend.hermite_renormalized(
+            self._backend.conj(-A), self._backend.conj(B), self._backend.conj(C), shape=cutoffs + cutoffs * mixed
+        )
 
     def ket_to_dm(self, ket: Tensor) -> Tensor:
         r"""
@@ -86,8 +85,7 @@ class FockPlugin:
         Returns:
             The probabilities vector.
         """
-        probs = ket ** 2
-        return self._backend.real(probs)
+        return self._backend.abs(ket) ** 2
 
     def dm_to_probs(self, dm: Tensor) -> Tensor:
         r"""
@@ -117,9 +115,9 @@ class FockPlugin:
         num_modes = num_indices // 2
 
         # cov and means in the amplitude basis
-        R = self._backend.rotmat(num_indices//2)
-        sigma = self._backend.matmul(self._backend.matmul(R, cov/hbar), self._backend.dagger(R))
-        beta = self._backend.matvec(R, means/self._backend.sqrt(hbar, dtype=means.dtype))
+        R = self._backend.rotmat(num_indices // 2)
+        sigma = self._backend.matmul(self._backend.matmul(R, cov / hbar), self._backend.dagger(R))
+        beta = self._backend.matvec(R, means / self._backend.sqrt(hbar, dtype=means.dtype))
 
         sQ = sigma + 0.5 * self._backend.eye(num_indices, dtype=sigma.dtype)
         sQinv = self._backend.inv(sQ)

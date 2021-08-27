@@ -1,18 +1,27 @@
 from __future__ import annotations
+
 # TODO: figure out where the Circuit should be
 
 __all__ = ["Circuit"]
 
-from mrmustard._typing import *
 from collections.abc import MutableSequence
+from mrmustard import FockPlugin, GaussianPlugin
+from mrmustard._typing import *
+from mrmustard import XPTensor
 
 class Circuit(MutableSequence):
 
+    _fock = FockPlugin()
+    _gaussian = GaussianPlugin()
+
     def __init__(self, ops: Sequence[Op] = []):
+        self.X = XPTensor(None, modes=[], additive=False)
+        self.Y = XPTensor(None, modes=[], additive=True)
         self._ops: List[Op] = [o for o in ops]
+        self._compiled = False
 
     def __call__(self, state: State) -> State:
-        state_ = state  # NOTE: otherwise the next time we call the circuit, the state will be mutated
+        state_ = state  # NOTE: otherwise state will be mutated (is this true?)
         for op in self._ops:
             state_ = op(state_)
         return state_
@@ -21,42 +30,56 @@ class Circuit(MutableSequence):
         return self._ops.__getitem__(key)
 
     def __setitem__(self, key, value):
-        if not isinstance(value, Gate):
-            raise ValueError(f"Item {type(value)} is not a gate")
-        return self._ops.__setitem__(key, value)
+        try:
+            result = self._ops.__setitem__(key, value)
+        except Exception as e:
+            raise e
+        self._compiled = False
 
     def __delitem__(self, key):
-        return self._ops.__delitem__(key)
+        try:
+            result = self._ops.__delitem__(key)
+        except Exception as e:
+            raise e
+        self._compiled = False
 
     def __len__(self):
         return len(self._ops)
 
     def __repr__(self) -> str:
-        return "\n".join([repr(g) for g in self._ops])
+        return f"Circuit | {len(self._ops)} ops | compiled = {self._compiled}"
 
-    def insert(self, index, object):
-        return self._ops.insert(index, object)
+    def insert(self, index, obj):
+        try:
+            result = self._ops.insert(index, obj)
+        except Exception as e:
+            raise e
+        self._compiled = False
+
+    def compile(self) -> None:
+        for obj in self._ops:  # TODO: make this not redo the same thing
+            self.update_channel(obj)
+        self._compiled = True
+
+    def recompile(self) -> None:
+        self.X = XPTensor(None, modes=[], additive=False)
+        self.Y = XPTensor(None, modes=[], additive=True)
+        self.compile()
+        self._compiled = True
+
+    def update_channel(self, op):
+        if hasattr(op, "X_matrix"):
+            Xprime = XPTensor.from_xxpp(op.X_matrix(), op._modes, additive=False)
+            Yprime = XPTensor.from_xxpp(op.Y_matrix(hbar=2.0), op._modes, additive=True)
+            self.X = Xprime * self.X
+            self.Y = (Xprime * self.Y) * Xprime.T + Yprime
 
     @property
-    def symplectic_parameters(self) -> List:
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         r"""
-        Returns the list of symplectic parameters
+        Returns the dictionary of trainable parameters
         """
-        return [par for op in self._ops for par in op.symplectic_parameters]
-
-    @property
-    def orthogonal_parameters(self) -> List:
-        r"""
-        Returns the list of orthogonal parameters
-        """
-        return [par for op in self._ops for par in op.orthogonal_parameters]
-
-    @property
-    def euclidean_parameters(self) -> List:
-        r"""
-        Returns the list of Euclidean parameters
-        """
-        return [par for op in self._ops for par in op.euclidean_parameters]
-
-
-
+        symp = [p for op in self._ops for p in op.trainable_parameters["symplectic"] if hasattr(op, "trainable_parameters")]
+        orth = [p for op in self._ops for p in op.trainable_parameters["orthogonal"] if hasattr(op, "trainable_parameters")]
+        eucl = [p for op in self._ops for p in op.trainable_parameters["euclidean"] if hasattr(op, "trainable_parameters")]
+        return {"symplectic": symp, "orthogonal": orth, "euclidean": eucl}

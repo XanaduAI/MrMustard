@@ -25,7 +25,7 @@ class Backend(BackendInterface):
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
         return tf.convert_to_tensor(array, dtype=dtype)
-    
+
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
@@ -79,11 +79,11 @@ class Backend(BackendInterface):
         return tf.linalg.expm(matrix)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
-        'Note that the norm preserves the type of array'
+        "Note that the norm preserves the type of array"
         return tf.linalg.norm(array)
 
     @Autocast()
-    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False)  -> tf.Tensor:
+    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> tf.Tensor:
         return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
 
     @Autocast()
@@ -115,14 +115,22 @@ class Backend(BackendInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
-    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode='CONSTANT', constant_values=0) -> tf.Tensor:
+    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
     @Autocast()
-    def convolution(self, array: tf.Tensor, filters: tf.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> tf.Tensor:
+    def convolution(
+        self,
+        array: tf.Tensor,
+        filters: tf.Tensor,
+        strides: Optional[List[int]] = None,
+        padding="VALID",
+        data_format="NWC",
+        dilations: Optional[List[int]] = None,
+    ) -> tf.Tensor:
         return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
 
-    def transpose(self, a: tf.Tensor, perm: List[int] = None) -> tf.Tensor:
+    def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
         return tf.transpose(a, perm)
@@ -130,7 +138,7 @@ class Backend(BackendInterface):
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
-    def sum(self, array: tf.Tensor, axes: Sequence[int]=None):
+    def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
@@ -164,9 +172,15 @@ class Backend(BackendInterface):
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
         return tf.concat(values, axis)
 
+    def assign(self, array: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
+        array.assign(value)
+        return array
+
+    @Autocast()
     def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
         return tf.tensor_scatter_nd_update(tensor, indices, values)
 
+    @Autocast()
     def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
@@ -187,18 +201,19 @@ class Backend(BackendInterface):
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
         return tensor.numpy()
 
-    def hash_tensor(self, tensor: tf.Tensor) -> str:
+    def hash_tensor(self, tensor: tf.Tensor) -> int:
         try:
             REF = tensor.ref()
         except AttributeError:
-            raise TypeError(f'Cannot hash tensor')
+            raise TypeError(f"Cannot hash tensor")
         return hash(REF)
 
     @tf.custom_gradient
     def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of exp(Ax^2 + Bx + C) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        Note the minus sign in front of A.
 
         Args:
             A: The A matrix.
@@ -208,14 +223,16 @@ class Backend(BackendInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = self.conj(hermite_multidimensional_numba(-A, tuple(shape), B, C))
+        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_numba(poly, -A, shape, B, C)
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_numba, [poly, A, shape, B, C], [poly.dtype, poly.dtype, poly.dtype]
+            )
             ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axis=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axis=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axis=ax)
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
             return dLdA, dLdB, dLdC
 
         return poly, grad
@@ -234,7 +251,7 @@ class Backend(BackendInterface):
             cost_fn (Callable with no args): The cost function.
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
-        
+
         Returns:
             The loss and the gradients.
         """
@@ -258,3 +275,4 @@ class Backend(BackendInterface):
     def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
         "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
         return tf.math.xlogy(x, y)
+        return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
