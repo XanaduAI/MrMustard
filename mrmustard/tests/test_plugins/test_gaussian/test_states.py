@@ -2,9 +2,11 @@ from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 
 import numpy as np
+
 np.random.seed(137)
 
 from mrmustard import GaussianPlugin, Coherent, Thermal, Sgate, Dgate, Vacuum
+
 gp = GaussianPlugin()
 
 
@@ -21,12 +23,14 @@ def test_coherent_state_single(hbar, x, y):
     assert np.allclose(cov, np.eye(2) * hbar / 2)
     assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
 
+
 # a test like test_coherent_state_single but with x and y being lists of a single float each
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_list(hbar, x, y):
     cov, disp = gp.coherent_state([x], [y], hbar)
     assert np.allclose(cov, np.eye(2) * hbar / 2)
     assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
+
 
 # a test like test_coherent_state_list but with x and y being numpy arrays of length 1
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
@@ -36,7 +40,7 @@ def test_coherent_state_array(hbar, x, y):
     assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
 
 
-@given(hbar=st.floats(0.5, 2.0), r=st.floats(0.0, 10.0), phi=st.floats(0.0, 2*np.pi), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(hbar=st.floats(0.5, 2.0), r=st.floats(0.0, 10.0), phi=st.floats(0.0, 2 * np.pi), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_displaced_squeezed_state(hbar, r, phi, x, y):
     cov, means = gp.displaced_squeezed_state(r, phi, x, y, hbar)
     S = Sgate(modes=[0], r=r, phi=phi)
@@ -51,11 +55,12 @@ def test_displaced_squeezed_state(hbar, r, phi, x, y):
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return draw(arrays(dtype=np.float, shape=(2,length), elements=st.floats(-5.0, 5.0)))
+    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 
 n = st.shared(st.integers(2, 10))
 arr = arrays(dtype=np.float, shape=(n), elements=st.floats(-5.0, 5.0))
+
 
 @given(hbar=st.floats(0.5, 2.0), x=arr, y=arr)
 def test_coherent_state_multiple(hbar, x, y):

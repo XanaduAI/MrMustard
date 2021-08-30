@@ -455,6 +455,7 @@ class TensorWrapperInterface:  # NOTE: copilot generated
     """
     Wrapper for tensor objects to make them work with any backend.
     """
+
     _backend: BackendInterface
 
     def __init__(self, tensor: Tensor, sparse: bool = False, name: str = None):
@@ -515,7 +516,6 @@ class TensorWrapperInterface:  # NOTE: copilot generated
 
     def __len__(self):
         return self._tensor.__len__()
-    
+
     def __iter__(self):
         return self._tensor.__iter__()
-

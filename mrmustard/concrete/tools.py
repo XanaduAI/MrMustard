@@ -9,6 +9,7 @@ from mrmustard import FockPlugin, GaussianPlugin
 from mrmustard._typing import *
 from mrmustard import XPTensor
 
+
 class Circuit(MutableSequence):
 
     _fock = FockPlugin()

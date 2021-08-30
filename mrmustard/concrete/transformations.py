@@ -300,7 +300,6 @@ class Ggate(Parametrized, Transformation):
         }
 
 
-
 #
 #  NON-UNITARY
 #

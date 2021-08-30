@@ -3,10 +3,4 @@ from .gaussianplugin import GaussianPlugin, XPTensor
 from .trainplugin import TrainPlugin
 from .graphicsplugin import GraphicsPlugin
 
-__all__ = [
-    "FockPlugin",
-    "GaussianPlugin",
-    "TrainPlugin",
-    "GraphicsPlugin",
-    "XPTensor"
-]
+__all__ = ["FockPlugin", "GaussianPlugin", "TrainPlugin", "GraphicsPlugin", "XPTensor"]
