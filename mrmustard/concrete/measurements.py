@@ -177,9 +177,9 @@ class Homodyne(Parametrized, GaussianMeasurement):
     def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
         quadrature_angles = self._gaussian._backend.astensor(quadrature_angles, "float64")
         results = self._gaussian._backend.astensor(results, "float64")
-        x = results * self._gaussian._backend.sin(quadrature_angles)
-        y = results * self._gaussian._backend.cos(quadrature_angles)
-        return DisplacedSqueezed(r=self._squeezing, phi=pi / 2 + quadrature_angles, x=x, y=y, hbar=self._hbar)
+        x = results * self._gaussian._backend.cos(quadrature_angles)
+        y = results * self._gaussian._backend.sin(quadrature_angles)
+        return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y, hbar=self._hbar)
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
@@ -198,6 +198,4 @@ class Heterodyne(Parametrized, GaussianMeasurement):
         self._project_onto = self.recompute_project_onto(x, y)
 
     def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
-        x = results = self._gaussian._backend.astensor(x, "float64")
-        y = results = self._gaussian._backend.astensor(y, "float64")
         return Coherent(x=x, y=y, hbar=self._hbar)

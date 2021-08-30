@@ -4,7 +4,7 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 np.random.seed(137)
 
-from mrmustard import GaussianPlugin, Coherent, Thermal
+from mrmustard import GaussianPlugin, Coherent, Thermal, Sgate, Dgate, Vacuum
 gp = GaussianPlugin()
 
 
@@ -34,6 +34,16 @@ def test_coherent_state_array(hbar, x, y):
     cov, disp = gp.coherent_state(np.array([x]), np.array([y]), hbar)
     assert np.allclose(cov, np.eye(2) * hbar / 2)
     assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
+
+
+@given(hbar=st.floats(0.5, 2.0), r=st.floats(0.0, 10.0), phi=st.floats(0.0, 2*np.pi), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+def test_displaced_squeezed_state(hbar, r, phi, x, y):
+    cov, means = gp.displaced_squeezed_state(r, phi, x, y, hbar)
+    S = Sgate(modes=[0], r=r, phi=phi)
+    D = Dgate(modes=[0], x=x, y=y)
+    state = D(S(Vacuum(num_modes=1, hbar=hbar)))
+    assert np.allclose(cov, state.cov)
+    assert np.allclose(means, state.means)
 
 
 # a hypothesis strategy to generate x and y as numpy arrays of the same length

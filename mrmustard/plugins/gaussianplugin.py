@@ -8,43 +8,79 @@ from abc import ABC
 
 class XPTensor(ABC):
     r"""A representation of tensors in phase space.
+    A cov tensor is stored as a matrix of shape (2*nmodes, 2*nmodes) in xxpp ordering, but internally we heavily utilize a 
+    (2, nmodes, 2, nmodes) representation to simplify several operations.
+    A means vector is stored as a vector of shape (2*nmodes), but analogously to the cov case,
+    we use the (2, nmodes) representation to perform simplified operations.
     """
 
     _backend: BackendInterface
 
-    def __init__(self, tensor: Optional[Tensor]=None, modes: List[int] = [], additive=True) -> None:
-        self.nmodes = len(modes)
+    def __init__(self, tensor: Optional[Tensor]=None, modes=[], additive=None, multiplicative=None) -> None:
         self.modes = modes
+        self.additive = bool(additive) or not bool(multiplicative)  # I love python
+        self.isVector = None if tensor is None else tensor.ndim == 1
+        self.shape = None if tensor is None else (t//2 for t in tensor.shape)
+        self.ndim = None if tensor is None else tensor.ndim
         self._tensor = tensor
-        self.additive = additive  # NOTE: if not it's additive it's multiplicative
+
+    @property
+    def multiplicative(self) -> bool:
+        return not self.additive
+
+    @property
+    def isMatrix(self) -> bool:
+        return not self.isVector
+
+    @property
+    def tensor(self):
+        return self._backend.reshape(self._tensor, (k for n in self.shape for k in (2, n)))  # (2,n) or (2,n,2,n)
+
+    @classmethod
+    def from_xxpp(cls, array: Matrix, modes: List[int], additive:bool = None, multiplicative:bool = None) -> XPTensor:
+        return XPTensor(array, modes, additive, multiplicative)
+
+    @classmethod
+    def from_xpxp(cls, array: Union[Matrix, Vector], additive:bool = None, multiplicative:bool = None) -> XPTensor:
+        if array is not None:
+            array = cls._backend.reshape(array, (k for n in array.shape for k in (n, 2)))
+            array = cls._backend.transpose(array, (1, 0, 3, 2)[:2*array.ndim])
+            array = cls._backend.reshape(array, (2*s for s in array.shape))
+        return cls(array, modes, additive, multiplicative)
 
     def to_xpxp(self) -> Optional[Matrix]:
         if self._tensor is None:
             return None
-        matrix = cls._backend.transpose(self.tensor, (1, 0, 3, 2))
-        return cls._backend.reshape(matrix, (2*self.nmodes, 2*self.nmodes))
+        tensor = self._backend.transpose(self.tensor, (1, 0, 3, 2)[:2*self.ndim])
+        return self._backend.reshape(tensor, (2*s for s in self.shape))
 
     def to_xxpp(self) -> Optional[Matrix]:
         return self._tensor
 
-    @property
-    def tensor(self):
-        return self._backend.reshape(self._tensor, (2, self.nmodes, 2, self.nmodes))
-
-    @classmethod
-    def from_xpxp(cls, xpxp_matrix: Matrix,  modes: List[int], additive: bool) -> XPTensor:
-        # internal representation has shape (2N, 2N) in xxpp ordering
-        if xpxp_matrix is not None:
-            xpxp_matrix = cls._backend.reshape(xpxp_matrix, (len(modes), 2, len(modes), 2))
-            xpxp_matrix = cls._backend.transpose(xpxp_matrix, (1, 0, 3, 2))
-            xpxp_matrix = cls._backend.reshape(xpxp_matrix, (2*len(modes), 2*len(modes)))
-        return XPTensor(xpxp_matrix, modes, additive)
-
-    @classmethod
-    def from_xxpp(cls, xxpp_matrix: Matrix, modes: List[int], additive: bool) -> XPTensor:
-        return XPTensor(xxpp_matrix, modes, additive)
-
     def __mul__(self, other: XPTensor) -> Optional[XPTensor]:
+        if self._tensor is None and other._tensor is None:
+            return XPTensor(None, self.additive or other.additive)
+        if self._tensor is None:  # only self is None
+            if self.additive:
+                return self
+            return other
+        if other._tensor is None:
+            if other.additive:
+                return other
+            return self
+        xxpp = self.mul_at_modes(self.to_xxpp(), other.to_xxpp(), modes_a=self.modes, modes_b=other.modes)
+        return XPTensor.from_xxpp(xxpp, sorted(list(set(self.modes) | set(other.modes))), self.additive or other.additive)
+
+    def mul_at_modes(self, xxpp_a: Matrix, xxpp_b: Matrix, modes_a: List[int], modes_b: List[int]) -> Matrix:
+        if modes_a == modes_b:
+            return xxpp_a * xxpp_b
+        modes = set(modes_a) | set(modes_b)
+        out = self._backend.eye(2*len(modes), dtype=xxpp_a.dtype)
+        out = self._backend.left_mul_at_modes(xxpp_b, out, modes_b)
+        out = self._backend.left_mul_at_modes(xxpp_a, out, modes_a)
+        return out
+    
+    def __matmul__(self, other: XPTensor) -> Optional[XPTensor]:
         if self._tensor is None and other._tensor is None:
             return XPTensor(None, [], self.additive or other.additive)
         if self._tensor is None:  # only self is None
@@ -73,11 +109,11 @@ class XPTensor(ABC):
         if self._tensor is None:  # only self is None
             if self.additive:
                 return other
-            return ValueError("0+1 or not implemented 🥸")
+            return ValueError("0+1 not implemented 🥸")
         if other._tensor is None:   # only other is None
             if other.additive:
                 return self
-            return ValueError("1+0 or not implemented 🥸")
+            return ValueError("1+0 not implemented 🥸")
         xxpp = self.add_at_modes(self.to_xxpp(), other.to_xxpp(), modes_a=self.modes, modes_b=other.modes)
         return XPTensor.from_xxpp(xxpp, sorted(list(set(self.modes) | set(other.modes))), self.additive and other.additive)
 
@@ -94,14 +130,30 @@ class XPTensor(ABC):
         return f"XPTensor(modes={self.modes}, additive={self.additive}, _tensor={self._tensor})"
 
     def __getitem__(self, item: Union[int, slice, List[int]]) -> XPTensor:
-        if isinstance(item, int):
-            return XPTensor(self._tensor[:, item, :, item][:, None, :, None], [item])
-        elif isinstance(item, slice):
-            return XPTensor(self._tensor[:, item, :, item], list(range(item.start, item.stop)))
-        elif isinstance(item, List):
-            return XPTensor(self._backend.gather(self._backend.gather(self._tensor, item, axis=1), item, axis=3), item)
+        r"""
+        Returns modes or subsets of modes from the XPTensor, or coherences between modes.
+        Examples:
+        >>> T[0]  # returns mode 0
+        >>> T[0:3]  # returns modes 0, 1, 2
+        >>> T[[0, 2, 12]]  # returns modes 0, 2 and 12
+        >>> T[0:3, [0, 10]]  # returns the coherence between modes 0,1,2 and 0,10 (rectangular block)
+        >>> T[[0,1,2], [0, 10]]  # equivalent to T[0:3, 0:10]
+        """
+        if self._tensor is None:
+            return XPTensor(None, [], self.additive)
+        lst1 = self.__getitem_lists(item)
+        lst2 = lst1
+        if isinstance(item, tuple) and len(item) == 2:
+            if self.ndim == 1:
+                raise ValueError("XPTensor is a vector")
+            lst1 = self.__getitem_list(item[0])
+            lst2 = self.__getitem_list(item[1])
         else:
             raise TypeError("Invalid index type")
+        gather = self._backend.gather(self.tensor, lst1, axis=1)
+        if self.ndim == 2:
+            gather = self._backend.gather(gather, item, axis=3), lst2
+        return gather
 
     # TODO: write a tensor wrapper to use the method here below with TF as well (it's already possible with pytorch)
     # (must be differentiable!)
@@ -115,10 +167,21 @@ class XPTensor(ABC):
     #     else:
     #         raise TypeError("Invalid index type")
 
+    def __getitem_list(self, item):
+        if isinstance(item, int):
+            lst = [item]
+        elif isinstance(item, slice):
+            lst = list(range(item.start or 0, item.stop or self.nmodes, item.step))
+        elif isinstance(item, List):
+            lst = item
+        else:
+            lst = None # is this right?
+        return lst
+
     @property
     def T(self) -> XPTensor:
         if self._tensor is None:
-            return XPTensor()
+            return XPTensor(None, [], self.additive)
         return XPTensor(self._backend.transpose(self._tensor), self.modes)
 
 
@@ -219,7 +282,7 @@ class GaussianPlugin:
         """
         S = self.squeezing_symplectic(r, phi)
         cov = self._backend.matmul(S, self._backend.transpose(S)) * hbar / 2
-        means = self._backend.concat([x, y], axis=-1)
+        means = self.displacement(x, y, hbar)
         return cov, means
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -253,8 +316,8 @@ class GaussianPlugin:
         Returns:
             Tensor: symplectic matrix of a squeezing gate
         """
-        r = self._backend.atleast_1d(r)
-        phi = self._backend.atleast_1d(phi)
+        r = self._backend.atleast_1d(r, 'float64')
+        phi = self._backend.atleast_1d(phi, 'float64')
         num_modes = phi.shape[-1]
         cp = self._backend.cos(phi)
         sp = self._backend.sin(phi)
@@ -276,8 +339,8 @@ class GaussianPlugin:
         Returns:
             Vector: displacement vector of a displacement gate
         """
-        x = self._backend.atleast_1d(x)
-        y = self._backend.atleast_1d(y)
+        x = self._backend.atleast_1d(x, 'float64')
+        y = self._backend.atleast_1d(y, 'float64')
         if x.shape[-1] == 1:
             x = self._backend.tile(x, y.shape)
         if y.shape[-1] == 1:
@@ -466,7 +529,7 @@ class GaussianPlugin:
 
     # ~~~~~~~~~~~~~~~
     # non-TP channels
-    # ~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~98
 
     def general_dyne(
         self, cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
@@ -482,16 +545,15 @@ class GaussianPlugin:
         Returns:
             Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
         """
-        N = len(cov) // 2
-        nB = len(proj_cov) // 2  # B is the system being measured
-        nA = N - nB  # A is the system left over after measurement
+        N = cov.shape[-1] // 2
+        nB = proj_cov.shape[-1] // 2  # B is the system being measured
+        nA = N - nB  # A is the leftover
         Amodes = [i for i in range(N) if i not in modes]
         A, B, AB = self.partition_cov(cov, Amodes)
         a, b = self.partition_means(means, Amodes)
         inv = self._backend.inv(B + proj_cov)
-        ABinv = self._backend.matmul(AB, inv)
-        new_cov = A - self._backend.matmul(ABinv, self._backend.transpose(AB))
-        new_means = a + self._backend.matvec(ABinv, proj_means - b)
+        new_cov = A - self._backend.matmul(self._backend.matmul(AB, inv), self._backend.transpose(AB))
+        new_means = a + self._backend.matvec(self._backend.matmul(AB, inv), proj_means - b)
         prob = self._backend.exp(-self._backend.sum(self._backend.matvec(inv, proj_means - b) * proj_means - b)) / (
             pi ** nB * (hbar ** -nB) * self._backend.sqrt(self._backend.det(B + proj_cov))
         )  # TODO: check this (hbar part especially)

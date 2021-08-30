@@ -19,8 +19,17 @@ class State:  # NOTE: this is not an ABC
         self.hbar = hbar
         self.isMixed: bool = mixed
 
+    @property
+    def isPure(self):
+        return not self.isMixed
+
     def __repr__(self):
-        return "covariance:\n" + repr(self.cov) + "\nmeans:\n" + repr(self.means)
+        info = f"num_modes={self.num_modes} | hbar={self.hbar} | pure={self.isPure}\n"
+        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+        if self.num_modes <= 4:
+            return info + "-"*len(info) + detailed_info
+        else:
+            return info
 
     def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
         r"""

@@ -41,3 +41,19 @@ class Transformation(ABC):
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
+
+    def __getitem__(self, item) -> Callable:
+        r"""
+        Allows transformations to be used as:
+        op[0,1](input)  # acting on modes 0 and 1
+        """
+        if isinstance(item, int):
+            modes = [item]
+        elif isinstance(item, slice):
+            modes = list(range(item.start, item.stop, item.step))
+        elif isinstance(item, Iterable):
+            modes = list(item)
+        else:
+            raise ValueError(f"{item} is not a valid slice or list of modes.")
+        self._modes = modes
+        return lambda *args, **kwargs: self(*args, **kwargs)

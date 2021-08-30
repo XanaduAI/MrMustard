@@ -71,8 +71,8 @@ class Circuit(MutableSequence):
         if hasattr(op, "X_matrix"):
             Xprime = XPTensor.from_xxpp(op.X_matrix(), op._modes, additive=False)
             Yprime = XPTensor.from_xxpp(op.Y_matrix(hbar=2.0), op._modes, additive=True)
-            self.X = Xprime * self.X
-            self.Y = (Xprime * self.Y) * Xprime.T + Yprime
+            self.X = Xprime @ self.X
+            self.Y = (Xprime @ self.Y) @ Xprime.T + Yprime
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
