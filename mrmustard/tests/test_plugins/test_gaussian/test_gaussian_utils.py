@@ -34,7 +34,7 @@ def test_partition_cov_2modes():
     A,B,AB = gp.partition_cov(gp._backend.astensor(arr), Amodes=[1])
     assert np.allclose(A, [[6,8],[14,16]])
     assert np.allclose(B, [[1,3],[9, 11]])
-    assert np.allclose(AB, [[2,4],[10,12]])
+    assert np.allclose(AB, [[5,7],[13,15]]) # effectively BA because A is mode 1
 
 def test_partition_cov_3modes():
     pass  # TODO

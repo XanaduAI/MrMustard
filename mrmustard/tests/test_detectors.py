@@ -247,4 +247,4 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):
     assert np.allclose(remaining_state.cov, cov)
     xb,xa,pb,pa = d
     means = np.array([xa*(1+s)+np.sqrt(s*(1+s))*(x-xb), pa*(1+s)+np.sqrt(s*(1+s))*(pb-y)]) * np.sqrt(2*tmsv.hbar)/(1+s)
-    assert np.allclose(remaining_state.means, means)
+    assert np.allclose(remaining_state.means, means, atol=1e-5)

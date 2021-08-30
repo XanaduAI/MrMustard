@@ -18,7 +18,7 @@ class Transformation(ABC):
 
     def __call__(self, state: State) -> State:
         d = self.d_vector(state.hbar)
-        X = self.X_matrix()
+        X = self.X_matrix()  # TODO: confirm with nico which ones depend on hbar
         Y = self.Y_matrix(state.hbar)
 
         output = State(state.num_modes, hbar=state.hbar, mixed=Y is not None)

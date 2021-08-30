@@ -17,11 +17,12 @@ class XPTensor(ABC):
     _backend: BackendInterface
 
     def __init__(self, tensor: Optional[Tensor]=None, modes=[], additive=None, multiplicative=None) -> None:
-        self.modes = modes
+        self.validate(tensor, modes)
         self.additive = bool(additive) or not bool(multiplicative)  # I love python
         self.isVector = None if tensor is None else tensor.ndim == 1
-        self.shape = None if tensor is None else (t//2 for t in tensor.shape)
+        self.shape = None if tensor is None else [t//2 for t in tensor.shape]
         self.ndim = None if tensor is None else tensor.ndim
+        self.modes = modes
         self._tensor = tensor
 
     @property
@@ -34,25 +35,37 @@ class XPTensor(ABC):
 
     @property
     def tensor(self):
-        return self._backend.reshape(self._tensor, (k for n in self.shape for k in (2, n)))  # (2,n) or (2,n,2,n)
+        if self._tensor is None:
+            return None
+        return self._backend.reshape(self._tensor, [k for n in self.shape for k in (2, n)])  # [2,n] or [2,n,2,n]
+
+    def validate(self, tensor: Optional[Tensor], modes: List[int]) -> None:
+        if tensor is None:
+            return
+        if len(tensor.shape) > 2:
+            raise ValueError(f"Tensor must be at most 2D, got {tensor.ndim}D")
+        if len(modes) > tensor.shape[-1]//2:
+            raise ValueError(f"Too many modes ({len(modes)}) for tensor with {tensor.shape[-1]//2} modes")
+        if len(modes) < tensor.shape[-1]//2:
+            raise ValueError(f"Too few modes ({len(modes)}) for tensor with {tensor.shape[-1]//2} modes")
 
     @classmethod
-    def from_xxpp(cls, array: Matrix, modes: List[int], additive:bool = None, multiplicative:bool = None) -> XPTensor:
-        return XPTensor(array, modes, additive, multiplicative)
+    def from_xxpp(cls, tensor: Union[Matrix, Vector], modes: List[int], additive:bool = None, multiplicative:bool = None) -> XPTensor:
+        return XPTensor(tensor, modes, additive, multiplicative)
 
     @classmethod
-    def from_xpxp(cls, array: Union[Matrix, Vector], additive:bool = None, multiplicative:bool = None) -> XPTensor:
-        if array is not None:
-            array = cls._backend.reshape(array, (k for n in array.shape for k in (n, 2)))
-            array = cls._backend.transpose(array, (1, 0, 3, 2)[:2*array.ndim])
-            array = cls._backend.reshape(array, (2*s for s in array.shape))
-        return cls(array, modes, additive, multiplicative)
+    def from_xpxp(cls, tensor: Union[Matrix, Vector], modes: List[int], additive:bool = None, multiplicative:bool = None) -> XPTensor:
+        if tensor is not None:
+            tensor = cls._backend.reshape(tensor, [k for n in tensor.shape for k in (n, 2)])
+            tensor = cls._backend.transpose(tensor, (1, 0, 3, 2)[:2*tensor.ndim])
+            tensor = cls._backend.reshape(tensor, [2*s for s in tensor.shape])
+        return cls(tensor, modes, additive, multiplicative)
 
     def to_xpxp(self) -> Optional[Matrix]:
         if self._tensor is None:
             return None
         tensor = self._backend.transpose(self.tensor, (1, 0, 3, 2)[:2*self.ndim])
-        return self._backend.reshape(tensor, (2*s for s in self.shape))
+        return self._backend.reshape(tensor, [2*s for s in self.shape])
 
     def to_xxpp(self) -> Optional[Matrix]:
         return self._tensor
@@ -140,20 +153,18 @@ class XPTensor(ABC):
         >>> T[[0,1,2], [0, 10]]  # equivalent to T[0:3, 0:10]
         """
         if self._tensor is None:
-            return XPTensor(None, [], self.additive)
-        lst1 = self.__getitem_lists(item)
+            return XPTensor(None, self.__getitem_list(item), self.additive)
+        lst1 = self.__getitem_list(item)
         lst2 = lst1
         if isinstance(item, tuple) and len(item) == 2:
             if self.ndim == 1:
                 raise ValueError("XPTensor is a vector")
             lst1 = self.__getitem_list(item[0])
             lst2 = self.__getitem_list(item[1])
-        else:
-            raise TypeError("Invalid index type")
         gather = self._backend.gather(self.tensor, lst1, axis=1)
         if self.ndim == 2:
-            gather = self._backend.gather(gather, item, axis=3), lst2
-        return gather
+            gather = self._backend.gather(gather, lst2, axis=3), 
+        return gather  #self._backend.reshape(gather, (2*len(lst1), 2*len(lst2))[:self.ndim])
 
     # TODO: write a tensor wrapper to use the method here below with TF as well (it's already possible with pytorch)
     # (must be differentiable!)
@@ -323,10 +334,12 @@ class GaussianPlugin:
         sp = self._backend.sin(phi)
         ch = self._backend.cosh(r)
         sh = self._backend.sinh(r)
+        cpsh = cp * sh
+        spsh = sp * sh
         return (
-            self._backend.diag(self._backend.concat([ch - cp * sh, ch + cp * sh], axis=0))
-            + self._backend.diag(-sp * sh, k=num_modes)
-            + self._backend.diag(-sp * sh, k=-num_modes)
+            self._backend.diag(self._backend.concat([ch - cpsh, ch + cpsh], axis=0))
+            + self._backend.diag(-spsh, k=num_modes)
+            + self._backend.diag(-spsh, k=-num_modes)
         )
 
     def displacement(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
