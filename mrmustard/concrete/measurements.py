@@ -1,9 +1,12 @@
-from typing import List, Union, Sequence, Optional, Tuple
-from mrmustard.core.baseclasses.parametrized import Parametrized
-from mrmustard.core.baseclasses import Detector
+from mrmustard._typing import *
+from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized, State
+from mrmustard.concrete.states import DisplacedSqueezed, Coherent
+from math import pi
+
+__all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
 
 
-class PNRDetector(Parametrized, Detector):
+class PNRDetector(Parametrized, FockMeasurement):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.
@@ -49,22 +52,22 @@ class PNRDetector(Parametrized, Detector):
             max_cutoffs=max_cutoffs,
         )
 
-        self.make_stochastic_channel()
+        self.recompute_stochastic_channel()
 
-    def make_stochastic_channel(self):
+    def recompute_stochastic_channel(self):
         self._stochastic_channel = []
         if self._conditional_probs is not None:
             self._stochastic_channel = self._conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
-                dark_prior = self._math_backend.poisson(max_k=cut, rate=dc)
-                condprob = self._math_backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
+                dark_prior = self._fock._backend.poisson(max_k=cut, rate=dc)
+                condprob = self._fock._backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
                 self._stochastic_channel.append(
-                    self._math_backend.convolve_probs_1d(condprob, [dark_prior, self._math_backend.identity(condprob.shape[1])[0]])
+                    self._fock._backend.convolve_probs_1d(condprob, [dark_prior, self._fock._backend.eye(condprob.shape[1])[0]])
                 )
 
 
-class ThresholdDetector(Parametrized, Detector):
+class ThresholdDetector(Parametrized, FockMeasurement):
     r"""
     Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
@@ -106,17 +109,93 @@ class ThresholdDetector(Parametrized, Detector):
             max_cutoffs=max_cutoffs,
         )
 
-        self.make_stochastic_channel()
+        self.recompute_stochastic_channel()
 
-    def make_stochastic_channel(self):
+    def recompute_stochastic_channel(self):
         self._stochastic_channel = []
 
         if self._conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
-                row1 = ((1.0 - qe) ** self._math_backend.arange(cut))[None, :] - dc
+                row1 = ((1.0 - qe) ** self._fock._backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
-                rest = self._math_backend.zeros((cut - 2, cut), dtype=row1.dtype)
-                condprob = self._math_backend.concat([row1, row2, rest], axis=0)
+                rest = self._fock._backend.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = self._fock._backend.concat([row1, row2, rest], axis=0)
                 self._stochastic_channel.append(condprob)
+
+    @property
+    def stochastic_channel(self) -> List[Matrix]:
+        if self._stochastic_channel is None:
+            self._fock.stochastic_channel()
+        return self._stochastic_channel
+
+
+class Generaldyne(Parametrized, GaussianMeasurement):
+    r"""
+    General dyne measurement.
+    """
+
+    def __init__(self, modes: List[int], project_onto: State):
+        assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
+        super().__init__(modes=modes, project_onto=project_onto, hbar=project_onto.hbar)
+
+    def recompute_project_onto(self, project_onto: State) -> State:
+        return project_onto
+
+
+class Homodyne(Parametrized, GaussianMeasurement):
+    r"""
+    Homodyne measurement on a given list of modes.
+    """
+
+    def __init__(
+        self,
+        modes: List[int],
+        quadrature_angles: Union[Scalar, Vector],
+        results: Union[Scalar, Vector],
+        squeezing: float = 10.0,
+        hbar: float = 2.0,
+    ):
+        r"""
+        Args:
+            modes (list of ints): modes of the measurement
+            quadrature_angles (float or vector): angle(s) of the quadrature axes of the measurement
+            results (float or vector): result(s) of the measurement on each axis
+            squeezing (float): amount of squeezing of the measurement (default 10.0, ideally infinite)
+        """
+
+        super().__init__(
+            modes=modes,
+            quadrature_angles=quadrature_angles,
+            results=results,
+            squeezing=self._gaussian._backend.astensor(squeezing, "float64"),
+            hbar=hbar,
+        )
+        self._project_onto = self.recompute_project_onto(quadrature_angles, results)
+
+    def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
+        quadrature_angles = self._gaussian._backend.astensor(quadrature_angles, "float64")
+        results = self._gaussian._backend.astensor(results, "float64")
+        x = results * self._gaussian._backend.cos(quadrature_angles)
+        y = results * self._gaussian._backend.sin(quadrature_angles)
+        return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y, hbar=self._hbar)
+
+
+class Heterodyne(Parametrized, GaussianMeasurement):
+    r"""
+    Heterodyne measurement on a given mode.
+    """
+
+    def __init__(self, modes: List[int], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float = 2.0):
+        r"""
+        Args:
+            mode: modes of the measurement
+            x: x-coordinates of the measurement
+            y: y-coordinates of the measurement
+        """
+        super().__init__(modes=modes, x=x, y=y, hbar=hbar)
+        self._project_onto = self.recompute_project_onto(x, y)
+
+    def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
+        return Coherent(x=x, y=y, hbar=self._hbar)

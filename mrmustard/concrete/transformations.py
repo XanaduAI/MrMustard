@@ -1,9 +1,10 @@
-from typing import List, Tuple, Optional, Union
-from mrmustard.core.baseclasses.parametrized import Parametrized
-from mrmustard.core.baseclasses import Gate
+from mrmustard._typing import *
+from mrmustard.abstract import Parametrized, Transformation
+
+__all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
 
-class Dgate(Parametrized, Gate):
+class Dgate(Parametrized, Transformation):
     r"""
     Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the gate share that parameter.
@@ -33,11 +34,11 @@ class Dgate(Parametrized, Gate):
         super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
         self.is_unitary = True
 
-    def displacement_vector(self, hbar: float):
-        return self._symplectic_backend.displacement(self.x, self.y, hbar=hbar)
+    def d_vector(self, hbar: float):
+        return self._gaussian.displacement(self.x, self.y, hbar=hbar)
 
 
-class Sgate(Parametrized, Gate):
+class Sgate(Parametrized, Transformation):
     r"""
     Squeezing gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the gate share that parameter.
@@ -69,11 +70,11 @@ class Sgate(Parametrized, Gate):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.squeezing_symplectic(self.r, self.phi)
+    def X_matrix(self):
+        return self._gaussian.squeezing_symplectic(self.r, self.phi)
 
 
-class Rgate(Parametrized, Gate):
+class Rgate(Parametrized, Transformation):
     r"""
     Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the gate share that parameter.
@@ -97,62 +98,11 @@ class Rgate(Parametrized, Gate):
         super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.rotation_symplectic(self.angle)
+    def X_matrix(self):
+        return self._gaussian.rotation_symplectic(self.angle)
 
 
-class Ggate(Parametrized, Gate):
-    r"""
-    General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
-    If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
-
-    Arguments:
-        modes (List[int]): the list of modes this gate is applied to
-        symplectic (2d array): a valid symplectic matrix. For N modes it must have shape `(2N,2N)`
-        symplectic_trainable (bool): whether symplectic is a trainable variable
-        displacement (1d array): a displacement vector. For N modes it must have shape `(2N,)`
-        displacement_trainable (bool): whether displacement is a trainable variable
-    """
-
-    def __init__(
-        self,
-        modes: List[int],
-        symplectic: Optional = None,
-        symplectic_trainable: bool = True,
-        displacement: Optional = None,
-        displacement_trainable: bool = True,
-    ):
-        if symplectic is None:
-            symplectic = self._math_backend.new_symplectic_parameter(num_modes=len(modes))
-        if displacement is None:
-            displacement = self._math_backend.zeros(len(modes) * 2)
-        super().__init__(
-            modes=modes,
-            symplectic=symplectic,
-            symplectic_bounds=(None, None),
-            symplectic_trainable=symplectic_trainable,
-            displacement=displacement,
-            displacement_bounds=(None, None),
-            displacement_trainable=displacement_trainable,
-        )
-        self.is_unitary = True
-
-    def symplectic_matrix(self, hbar: float = 2.0):
-        return self.symplectic
-
-    def displacement_vector(self, hbar: float = 2.0):
-        return self.displacement
-
-    @property
-    def symplectic_parameters(self) -> List:
-        return [mat for mat in self._trainable_parameters if len(mat.shape) == 2]
-
-    @property
-    def euclidean_parameters(self) -> List:
-        return [vec for vec in self._trainable_parameters if len(vec.shape) == 1]
-
-
-class BSgate(Parametrized, Gate):
+class BSgate(Parametrized, Transformation):
     r"""
     Beam splitter gate. It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -190,11 +140,11 @@ class BSgate(Parametrized, Gate):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.beam_splitter_symplectic(self.theta, self.phi)
+    def X_matrix(self):
+        return self._gaussian.beam_splitter_symplectic(self.theta, self.phi)
 
 
-class MZgate(Parametrized, Gate):
+class MZgate(Parametrized, Transformation):
     r"""
     Mach-Zehnder gate. It supports two conventions:
         1. if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
@@ -237,11 +187,11 @@ class MZgate(Parametrized, Gate):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
+    def X_matrix(self):
+        return self._gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
-class S2gate(Parametrized, Gate):
+class S2gate(Parametrized, Transformation):
     r"""
     Two-mode squeezing gate. It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -271,11 +221,11 @@ class S2gate(Parametrized, Gate):
         )
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.two_mode_squeezing_symplectic(self.r, self.phi)
+    def X_matrix(self):
+        return self._gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
-class Interferometer(Parametrized, Gate):
+class Interferometer(Parametrized, Transformation):
     r"""
     N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
 
@@ -285,22 +235,69 @@ class Interferometer(Parametrized, Gate):
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
-    def __init__(self, modes: List[int], orthogonal: Optional = None, orthogonal_trainable: bool = True):
+    def __init__(self, modes: List[int], orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
         if orthogonal is None:
-            orthogonal = self._math_backend.new_orthogonal_parameter(num_modes=len(modes))
+            orthogonal = self._train.new_orthogonal(num_modes=len(modes))
         super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
         self.is_unitary = True
 
-    def symplectic_matrix(self, hbar: float = 2.0):
+    def X_matrix(self):
         return self.orthogonal
 
     @property
-    def orthogonal_parameters(self) -> List:
-        return self._trainable_parameters
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {"symplectic": [], "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [], "euclidean": []}
+
+
+class Ggate(Parametrized, Transformation):
+    r"""
+    General Gaussian gate. If len(modes) == N the gate represents an N-mode Gaussian unitary transformation.
+    If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
+
+    Arguments:
+        modes (List[int]): the list of modes this gate is applied to
+        symplectic (2d array): a valid symplectic matrix. For N modes it must have shape `(2N,2N)`
+        symplectic_trainable (bool): whether symplectic is a trainable variable
+        displacement (1d array): a displacement vector. For N modes it must have shape `(2N,)`
+        displacement_trainable (bool): whether displacement is a trainable variable
+    """
+
+    def __init__(
+        self,
+        modes: List[int],
+        symplectic: Optional[Tensor] = None,
+        symplectic_trainable: bool = True,
+        displacement: Optional[Tensor] = None,
+        displacement_trainable: bool = True,
+    ):
+        if symplectic is None:
+            symplectic = self._train.new_symplectic(num_modes=len(modes))
+        if displacement is None:
+            displacement = self._train._backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
+        super().__init__(
+            modes=modes,
+            symplectic=symplectic,
+            symplectic_bounds=(None, None),
+            symplectic_trainable=symplectic_trainable,
+            displacement=displacement,
+            displacement_bounds=(None, None),
+            displacement_trainable=displacement_trainable,
+        )
+        self.is_unitary = True
+
+    def X_matrix(self):
+        return self.symplectic
+
+    def d_vector(self, hbar: float):
+        return self.displacement
 
     @property
-    def euclidean_parameters(self) -> List:
-        return []
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {
+            "symplectic": [self.symplectic] if self._symplectic_trainable else [],
+            "orthogonal": [],
+            "euclidean": [self.displacement] if self._displacement_trainable else [],
+        }
 
 
 #
@@ -308,7 +305,7 @@ class Interferometer(Parametrized, Gate):
 #
 
 
-class LossChannel(Parametrized, Gate):
+class LossChannel(Parametrized, Transformation):
     r"""
     The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
@@ -337,8 +334,8 @@ class LossChannel(Parametrized, Gate):
         )
         self.is_unitary = False
 
-    def symplectic_matrix(self, hbar: float):
-        return self._symplectic_backend.loss_X(self.transmissivity)
+    def X_matrix(self):
+        return self._gaussian.loss_X(self.transmissivity)
 
-    def noise_matrix(self, hbar: float):
-        return self._symplectic_backend.loss_Y(self.transmissivity, hbar=hbar)
+    def Y_matrix(self, hbar: float):
+        return self._gaussian.loss_Y(self.transmissivity, hbar=hbar)
