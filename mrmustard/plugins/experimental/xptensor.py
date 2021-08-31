@@ -1,3 +1,7 @@
+from __future__ import annotations
+from mrmustard.backends import BackendInterface
+from mrmustard._typing import *
+
 class XPTensor:
     r"""A representation of tensors in phase space.
     A cov tensor is stored as a matrix of shape (2*nmodes, 2*nmodes) in xxpp ordering, but internally we heavily utilize a
