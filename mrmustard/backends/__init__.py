@@ -60,6 +60,14 @@ class BackendInterface(ABC):
     All methods are pure (no side effects) and are be used by the plugins.
     """
 
+    __instance = None
+
+    # all backends are singletons
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = object.__new__(cls)
+        return cls.__instance
+
     # ~~~~~~~~~
     # Basic ops
     # ~~~~~~~~~
@@ -449,73 +457,3 @@ class BackendInterface(ABC):
     def rearrange_rows_and_columns(self, matrix, permutation):
         "Rearrange the rows and the columns of a matrix without using self.gather"
         return self.transpose(self.transpose(matrix)[permutation])
-
-
-class TensorWrapperInterface:  # NOTE: copilot generated
-    """
-    Wrapper for tensor objects to make them work with any backend.
-    """
-
-    _backend: BackendInterface
-
-    def __init__(self, tensor: Tensor, sparse: bool = False, name: str = None):
-        self._name = name
-        self._sparse = True
-        self._tensor = self._backend.astensor(tensor)
-
-    def __getattr__(self, attr):
-        return getattr(self._tensor, attr)
-
-    def __getitem__(self, item):
-        return self._tensor[item]
-
-    def __setitem__(self, key, value):  # override with custom gradient
-        self._tensor.__setitem__(key, value)
-
-    def __array__(self, *args, **kwargs):
-        return self._tensor.__array__(*args, **kwargs)
-
-    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        return self._tensor.__array_ufunc__(ufunc, method, *inputs, **kwargs)
-
-    def __array_function__(self, func, types, args, kwargs):
-        return self._tensor.__array_function__(func, types, args, kwargs)
-
-    def __repr__(self):
-        return self._tensor.__repr__()
-
-    def __str__(self):
-        return self._tensor.__str__()
-
-    def __hash__(self):
-        return self._tensor.__hash__()
-
-    def __eq__(self, other):
-        return self._tensor.__eq__(other)
-
-    def __ne__(self, other):
-        return self._tensor.__ne__(other)
-
-    def __lt__(self, other):
-        return self._tensor.__lt__(other)
-
-    def __le__(self, other):
-        return self._tensor.__le__(other)
-
-    def __gt__(self, other):
-        return self._tensor.__gt__(other)
-
-    def __ge__(self, other):
-        return self._tensor.__ge__(other)
-
-    def __bool__(self):
-        return self._tensor.__bool__()
-
-    def __nonzero__(self):
-        return self._tensor.__nonzero__()
-
-    def __len__(self):
-        return self._tensor.__len__()
-
-    def __iter__(self):
-        return self._tensor.__iter__()

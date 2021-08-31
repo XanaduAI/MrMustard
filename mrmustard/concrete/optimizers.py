@@ -1,5 +1,5 @@
 from mrmustard._typing import *
-from mrmustard import TrainPlugin, GraphicsPlugin
+from mrmustard.plugins import train, graphics
 
 __all__ = ["Optimizer"]
 
@@ -15,9 +15,6 @@ class Optimizer:
     compile other types of structures like error correcting codes and encoders/decoders.
     """
 
-    _train = TrainPlugin()
-    _graphics = GraphicsPlugin()
-
     def __init__(self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001):
         self.symplectic_lr: float = symplectic_lr
         self.orthogonal_lr: float = orthogonal_lr
@@ -32,16 +29,16 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-        params = {kind: self._train.extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
-        bar = self._graphics.Progressbar(max_steps)
+        params = {kind: train.extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
+        bar = graphics.Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                loss, grads = self._train.loss_and_gradients(cost_fn, params)
-                self._train.update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
-                self._train.update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
-                self._train.update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
+                loss, grads = train.loss_and_gradients(cost_fn, params)
+                train.update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
+                train.update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                train.update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                 self.loss_history.append(loss)
-                bar.step(self._train.numeric(loss))  # TODO
+                bar.step(train.numeric(loss))  # TODO
 
     def should_stop(self, max_steps: int) -> bool:
         r"""

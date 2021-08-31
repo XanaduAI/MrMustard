@@ -1,5 +1,5 @@
 from abc import ABC, abstractproperty
-from mrmustard import TrainPlugin
+from mrmustard.plugins import train
 from mrmustard._typing import *
 
 
@@ -15,8 +15,6 @@ class Parametrized(ABC):
         yyy (any): other parameters
     """
 
-    _train = TrainPlugin()
-
     def __init__(self, **kwargs):
         self._trainable_parameters = []
         self._constant_parameters = []
@@ -25,11 +23,11 @@ class Parametrized(ABC):
         for name in self.param_names:
             self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # making "is trainable" available as param._trainable
             if kwargs[name + "_trainable"]:
-                var = self._train.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
+                var = train.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
                 self.__dict__[name] = var  # making parameters available as gate.parameter_name
             else:
-                const = self._train.new_constant(kwargs[name], name)
+                const = train.new_constant(kwargs[name], name)
                 self._constant_parameters.append(const)
                 self.__dict__[name] = const
         for key, val in kwargs.items():

@@ -1,4 +1,5 @@
-from mrmustard import Coherent, XPTensor
+from mrmustard import Coherent
+from mrmustard.experimental import XPTensor
 import numpy as np
 
 

@@ -1,6 +1,6 @@
 import numpy as np  # for repr
 from abc import ABC
-from mrmustard import GaussianPlugin
+from mrmustard.plugins import gaussian
 from mrmustard.abstract import State
 from mrmustard._typing import *
 
@@ -14,15 +14,12 @@ class Transformation(ABC):
         * non-unitary CPTP channels
     """
 
-    _gaussian = GaussianPlugin()
-
     def __call__(self, state: State) -> State:
         d = self.d_vector(state.hbar)
         X = self.X_matrix()  # TODO: confirm with nico which ones depend on hbar
         Y = self.Y_matrix(state.hbar)
-
-        output = State(state.num_modes, hbar=state.hbar, mixed=Y is not None)
-        output.cov, output.means = self._gaussian.CPTP(state.cov, state.means, X, Y, d, self._modes)
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self._modes)
+        output = State(hbar=state.hbar, mixed=Y is not None, cov=cov, means=means)
         return output
 
     def __repr__(self):
