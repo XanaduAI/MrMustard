@@ -226,8 +226,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
                 ],
                 [
                     2 * s * (1 + s) * np.sin(angle) * np.sinh(2 * r) / denom,
-                    (1 + 2 * s + (1 + 2 * s * (1 + s)) * np.cosh(2 * r) + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r))
-                    / denom,
+                    (1 + 2 * s + (1 + 2 * s * (1 + s)) * np.cosh(2 * r) + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r)) / denom,
                 ],
             ]
         )
@@ -246,9 +245,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
     assert np.allclose(remaining_state.means, means)
 
 
-@given(
-    s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0), d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0))
-)
+@given(s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0), d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)))
 def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
     D = Dgate(modes=[0, 1], x=d[:2], y=d[2:])
