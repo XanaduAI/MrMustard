@@ -124,11 +124,7 @@ Note that measurements require the outcome to be specified.
 
 
 ```python
-from mrmustard.tools import Circuit
-from mrmustard.states import Vacuum
-from mrmustard.gates import Sgate, BSgate, LossChannel
-from mrmustard.measurements import PNRDetector, ThresholdDetector, Homodyne
-
+from mrmustard import Circuit, Vacuum, Sgate, BSgate, LossChannel, PNRDetector, ThresholdDetector
 
 circ = Circuit()
 circ.append(Sgate(modes = [0,1], r=0.2, phi=[0.9,1.9]))  # a mix of shared and independent parameters is allowed
@@ -141,6 +137,7 @@ state_out = circ(Vacuum(num_modes=2))
 detection_probs = detector(state_out, cutoffs=[2,3])
 
 # TODO Teleportation of a single-mode Gaussian state
+
 
 ```
 
