@@ -38,18 +38,6 @@ class SqueezedVacuum(State):
         super().__init__(r.shape[-1], hbar, mixed=False, cov=cov, means=means)
 
 
-class TMSV(State):
-    r"""
-    The two mode squeezed vacuum state.
-    """
-
-    def __init__(self, r: Union[Scalar, Vector], phi: Union[Scalar, Vector], hbar: float = 2.0):
-        r = self._gaussian._backend.atleast_1d(r, dtype="float64" if not hasattr(r, "dtype") else r.dtype)
-        phi = self._gaussian._backend.atleast_1d(phi, dtype="float64" if not hasattr(r, "dtype") else r.dtype)
-        cov, means = self._gaussian.two_mode_squeezed_vacuum_state(r, phi, hbar)  # TODO: implement
-        super().__init__(r.shape[-1], hbar, mixed=False, cov=cov, means=means)
-
-
 class Thermal(State):
     r"""
     The N-mode thermal state.

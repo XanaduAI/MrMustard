@@ -3,7 +3,7 @@ from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrize
 from mrmustard.concrete.states import DisplacedSqueezed, Coherent
 from math import pi
 
-__all__ = ["PNRDetector", "ThresholdDetector"]
+__all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
 
 
 class PNRDetector(Parametrized, FockMeasurement):
