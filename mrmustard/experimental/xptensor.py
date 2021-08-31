@@ -1,5 +1,5 @@
 from __future__ import annotations
-from mrmustard.backends import BackendInterface
+from mrmustard import Backend
 from mrmustard._typing import *
 
 
@@ -11,7 +11,7 @@ class XPTensor:
     we use the (2, nmodes) representation to perform simplified operations.
     """
 
-    _backend: BackendInterface
+    backend = Backend()
 
     def __init__(self, tensor: Optional[Tensor] = None, modes=[], additive=None, multiplicative=None) -> None:
         self.validate(tensor, modes)
@@ -34,7 +34,7 @@ class XPTensor:
     def tensor(self):
         if self._tensor is None:
             return None
-        return self._backend.reshape(self._tensor, [k for n in self.shape for k in (2, n)])  # [2,n] or [2,n,2,n]
+        return self.backend.reshape(self._tensor, [k for n in self.shape for k in (2, n)])  # [2,n] or [2,n,2,n]
 
     def validate(self, tensor: Optional[Tensor], modes: List[int]) -> None:
         if tensor is None:
@@ -53,16 +53,16 @@ class XPTensor:
     @classmethod
     def from_xpxp(cls, tensor: Union[Matrix, Vector], modes: List[int], additive: bool = None, multiplicative: bool = None) -> XPTensor:
         if tensor is not None:
-            tensor = cls._backend.reshape(tensor, [k for n in tensor.shape for k in (n, 2)])
-            tensor = cls._backend.transpose(tensor, (1, 0, 3, 2)[: 2 * tensor.ndim])
-            tensor = cls._backend.reshape(tensor, [2 * s for s in tensor.shape])
+            tensor = cls.backend.reshape(tensor, [k for n in tensor.shape for k in (n, 2)])
+            tensor = cls.backend.transpose(tensor, (1, 0, 3, 2)[: 2 * tensor.ndim])
+            tensor = cls.backend.reshape(tensor, [2 * s for s in tensor.shape])
         return cls(tensor, modes, additive, multiplicative)
 
     def to_xpxp(self) -> Optional[Matrix]:
         if self._tensor is None:
             return None
-        tensor = self._backend.transpose(self.tensor, (1, 0, 3, 2)[: 2 * self.ndim])
-        return self._backend.reshape(tensor, [2 * s for s in self.shape])
+        tensor = self.backend.transpose(self.tensor, (1, 0, 3, 2)[: 2 * self.ndim])
+        return self.backend.reshape(tensor, [2 * s for s in self.shape])
 
     def to_xxpp(self) -> Optional[Matrix]:
         return self._tensor
@@ -85,9 +85,9 @@ class XPTensor:
         if modes_a == modes_b:
             return xxpp_a * xxpp_b
         modes = set(modes_a) | set(modes_b)
-        out = self._backend.eye(2 * len(modes), dtype=xxpp_a.dtype)
-        out = self._backend.left_mul_at_modes(xxpp_b, out, modes_b)
-        out = self._backend.left_mul_at_modes(xxpp_a, out, modes_a)
+        out = self.backend.eye(2 * len(modes), dtype=xxpp_a.dtype)
+        out = self.backend.left_mul_at_modes(xxpp_b, out, modes_b)
+        out = self.backend.left_mul_at_modes(xxpp_a, out, modes_a)
         return out
 
     def __matmul__(self, other: XPTensor) -> Optional[XPTensor]:
@@ -106,11 +106,11 @@ class XPTensor:
 
     def matmul_at_modes(self, xxpp_a: Matrix, xxpp_b: Matrix, modes_a: List[int], modes_b: List[int]) -> Matrix:
         if modes_a == modes_b:
-            return self._backend.matmul(xxpp_a, xxpp_b)
+            return self.backend.matmul(xxpp_a, xxpp_b)
         modes = set(modes_a) | set(modes_b)
-        out = self._backend.eye(2 * len(modes), dtype=xxpp_a.dtype)
-        out = self._backend.left_matmul_at_modes(xxpp_b, out, modes_b)
-        out = self._backend.left_matmul_at_modes(xxpp_a, out, modes_a)
+        out = self.backend.eye(2 * len(modes), dtype=xxpp_a.dtype)
+        out = self.backend.left_matmul_at_modes(xxpp_b, out, modes_b)
+        out = self.backend.left_matmul_at_modes(xxpp_a, out, modes_a)
         return out
 
     def __add__(self, other: XPTensor) -> Optional[XPTensor]:
@@ -131,9 +131,9 @@ class XPTensor:
         if modes_a == modes_b:
             return xxpp_a + xxpp_b
         modes = set(modes_a) | set(modes_b)
-        out = self._backend.zeros((2 * len(modes), 2 * len(modes)), dtype=xxpp_a.dtype)
-        out = self._backend.add_at_modes(out, xxpp_a, modes_a)
-        out = self._backend.add_at_modes(out, xxpp_b, modes_b)
+        out = self.backend.zeros((2 * len(modes), 2 * len(modes)), dtype=xxpp_a.dtype)
+        out = self.backend.add_at_modes(out, xxpp_a, modes_a)
+        out = self.backend.add_at_modes(out, xxpp_b, modes_b)
         return out
 
     def __repr__(self) -> str:
@@ -158,10 +158,10 @@ class XPTensor:
                 raise ValueError("XPTensor is a vector")
             lst1 = self.__getitem_list(item[0])
             lst2 = self.__getitem_list(item[1])
-        gather = self._backend.gather(self.tensor, lst1, axis=1)
+        gather = self.backend.gather(self.tensor, lst1, axis=1)
         if self.ndim == 2:
-            gather = (self._backend.gather(gather, lst2, axis=3),)
-        return gather  # self._backend.reshape(gather, (2*len(lst1), 2*len(lst2))[:self.ndim])
+            gather = (self.backend.gather(gather, lst2, axis=3),)
+        return gather  # self.backend.reshape(gather, (2*len(lst1), 2*len(lst2))[:self.ndim])
 
     # TODO: write a tensor wrapper to use the method here below with TF as well (it's already possible with pytorch)
     # (must be differentiable!)
@@ -190,4 +190,4 @@ class XPTensor:
     def T(self) -> XPTensor:
         if self._tensor is None:
             return XPTensor(None, [], self.additive)
-        return XPTensor(self._backend.transpose(self._tensor), self.modes)
+        return XPTensor(self.backend.transpose(self._tensor), self.modes)

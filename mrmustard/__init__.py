@@ -1,43 +1,22 @@
-import importlib
 from rich.pretty import install
 
 install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
 
-from mrmustard.plugins import FockPlugin, GaussianPlugin, TrainPlugin, GraphicsPlugin
-from mrmustard.plugins.experimental import XPTensor
+
+def get_env(env_name: str):
+    import importlib
+
+    return importlib.import_module("mrmustard.backends." + env_name).Backend
 
 
-def set_env(env_name: str):
-    backend = importlib.import_module("mrmustard.backends." + env_name).Backend()
+Backend = get_env("tensorflow")  # default backend
 
-    FockPlugin._backend = backend
-    GaussianPlugin._backend = backend
-    TrainPlugin._backend = backend
-    XPTensor._backend = backend
-
-
-def using_tensorflow():
-    return set_env("tensorflow")
-
-
-def using_pytorch():
-    return set_env("torch")
-
-
-def using_jax():
-    return set_env("jax")
-
-
-def using_numpy():
-    return set_env("numpy")
-
-
-def using_tinygrad():
-    return set_env("tinygrad")
-
-
-using_tensorflow()  # default
+# TODO
+# Backend = get_env("pytorch")
+# Backend = get_env("jax")
+# Backend = get_env("numpy")
+# Backend = get_env("tinygrad?")
 
 from mrmustard.concrete import *

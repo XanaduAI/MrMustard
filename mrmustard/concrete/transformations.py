@@ -1,5 +1,6 @@
 from mrmustard._typing import *
 from mrmustard.abstract import Parametrized, Transformation
+from mrmustard.plugins import gaussian, train
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
@@ -35,7 +36,7 @@ class Dgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def d_vector(self, hbar: float):
-        return self._gaussian.displacement(self.x, self.y, hbar=hbar)
+        return gaussian.displacement(self.x, self.y, hbar=hbar)
 
 
 class Sgate(Parametrized, Transformation):
@@ -71,7 +72,7 @@ class Sgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self._gaussian.squeezing_symplectic(self.r, self.phi)
+        return gaussian.squeezing_symplectic(self.r, self.phi)
 
 
 class Rgate(Parametrized, Transformation):
@@ -99,7 +100,7 @@ class Rgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self._gaussian.rotation_symplectic(self.angle)
+        return gaussian.rotation_symplectic(self.angle)
 
 
 class BSgate(Parametrized, Transformation):
@@ -141,7 +142,7 @@ class BSgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self._gaussian.beam_splitter_symplectic(self.theta, self.phi)
+        return gaussian.beam_splitter_symplectic(self.theta, self.phi)
 
 
 class MZgate(Parametrized, Transformation):
@@ -188,7 +189,7 @@ class MZgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self._gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
+        return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
 
 class S2gate(Parametrized, Transformation):
@@ -222,7 +223,7 @@ class S2gate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self._gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
+        return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
 
 
 class Interferometer(Parametrized, Transformation):
@@ -237,7 +238,7 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(self, modes: List[int], orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
         if orthogonal is None:
-            orthogonal = self._train.new_orthogonal(num_modes=len(modes))
+            orthogonal = train.new_orthogonal(num_modes=len(modes))
         super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
         self.is_unitary = True
 
@@ -271,9 +272,9 @@ class Ggate(Parametrized, Transformation):
         displacement_trainable: bool = True,
     ):
         if symplectic is None:
-            symplectic = self._train.new_symplectic(num_modes=len(modes))
+            symplectic = train.new_symplectic(num_modes=len(modes))
         if displacement is None:
-            displacement = self._train._backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
+            displacement = train.backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
         super().__init__(
             modes=modes,
             symplectic=symplectic,
@@ -335,7 +336,7 @@ class LossChannel(Parametrized, Transformation):
         self.is_unitary = False
 
     def X_matrix(self):
-        return self._gaussian.loss_X(self.transmissivity)
+        return gaussian.loss_X(self.transmissivity)
 
     def Y_matrix(self, hbar: float):
-        return self._gaussian.loss_Y(self.transmissivity, hbar=hbar)
+        return gaussian.loss_Y(self.transmissivity, hbar=hbar)
