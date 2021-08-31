@@ -1,4 +1,5 @@
 from rich.pretty import install
+
 install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
@@ -6,8 +7,10 @@ __version__ = "0.1.0"
 
 def get_env(env_name: str):
     import importlib
+
     return importlib.import_module("mrmustard.backends." + env_name).Backend
-     
+
+
 Backend = get_env("tensorflow")  # default backend
 
 # TODO

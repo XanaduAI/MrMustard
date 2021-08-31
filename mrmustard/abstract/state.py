@@ -3,7 +3,6 @@ from mrmustard.plugins import fock, gaussian
 
 
 class State:  # NOTE: this is not an ABC
-
     def __init__(self, hbar: float, mixed: bool, cov: Optional[Matrix] = None, means: Optional[Vector] = None):
         self.cov: Optional[Matrix] = cov
         self.means: Optional[Vector] = means

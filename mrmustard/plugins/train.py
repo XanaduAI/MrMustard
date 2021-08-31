@@ -6,6 +6,7 @@ from mrmustard._typing import *
 backend = Backend()
 euclidean_opt = backend.DefaultEuclideanOptimizer()
 
+
 def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
     r"""
     Returns a new trainable variable from the current backend
@@ -19,6 +20,7 @@ def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: s
     """
     return backend.new_variable(value, bounds, name)
 
+
 def new_constant(value, name: str) -> Tensor:
     r"""
     Returns a new constant (non-trainable) tensor from the current backend
@@ -31,6 +33,7 @@ def new_constant(value, name: str) -> Tensor:
     """
     return backend.new_constant(value, name)
 
+
 def new_symplectic(num_modes: int) -> Tensor:
     r"""
     Returns a new symplectic matrix from the current backend
@@ -42,11 +45,14 @@ def new_symplectic(num_modes: int) -> Tensor:
     """
     return backend.random_symplectic(num_modes)
 
+
 def new_orthogonal(num_modes: int) -> Tensor:
     return backend.random_orthogonal(num_modes)
 
+
 def numeric(tensor: Tensor) -> Tensor:
     return backend.asnumpy(tensor)
+
 
 def update_symplectic(symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float):
     for S, dS_riemann in zip(symplectic_params, symplectic_grads):
@@ -55,16 +61,19 @@ def update_symplectic(symplectic_params: Sequence[Trainable], symplectic_grads: 
         new_value = backend.matmul(S, backend.expm(-symplectic_lr * YT) @ backend.expm(-symplectic_lr * (Y - YT)))
         backend.assign(S, new_value)
 
+
 def update_orthogonal(orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float):
     for O, dO_riemann in zip(orthogonal_params, orthogonal_grads):
         D = 0.5 * (dO_riemann - backend.matmul(backend.matmul(O, backend.transpose(dO_riemann)), O))
         new_value = backend.matmul(O, backend.expm(orthogonal_lr * backend.matmul(backend.transpose(D), O)))
         backend.assign(O, new_value)
 
+
 def update_euclidean(euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
     # backend.update_euclidean(euclidean_params, euclidean_grads, euclidean_lr)
     euclidean_opt.lr = euclidean_lr
     euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
+
 
 def extract_parameters(items: Sequence, kind: str) -> List[Trainable]:
     r"""
@@ -84,6 +93,7 @@ def extract_parameters(items: Sequence, kind: str) -> List[Trainable]:
         except TypeError:  # NOTE: make sure hash_tensor raises a TypeError when the tensor is not hashable
             continue
     return list(params_dict.values())
+
 
 def loss_and_gradients(cost_fn: Callable, params: dict) -> Tuple[Tensor, Dict[str, Tensor]]:
     r"""

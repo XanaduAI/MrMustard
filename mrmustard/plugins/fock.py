@@ -26,9 +26,8 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
         The photon number means vector.
     """
     N = means.shape[-1] // 2
-    return (means[:N] ** 2 + means[N:] ** 2 + backend.diag_part(cov[:N, :N]) + backend.diag_part(cov[N:, N:]) - hbar) / (
-        2 * hbar
-    )
+    return (means[:N] ** 2 + means[N:] ** 2 + backend.diag_part(cov[:N, :N]) + backend.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
+
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     r"""
@@ -47,6 +46,7 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
     return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * backend.eye(N, dtype=CC.dtype)
 
+
 def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
     r"""
     Returns the Fock representation of the phase space representation
@@ -63,9 +63,8 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
     """
     assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
     A, B, C = hermite_parameters(cov, means, mixed, hbar)
-    return backend.hermite_renormalized(
-        backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs * mixed
-    )
+    return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs * mixed)
+
 
 def ket_to_dm(ket: Tensor) -> Tensor:
     r"""
@@ -77,6 +76,7 @@ def ket_to_dm(ket: Tensor) -> Tensor:
     """
     return backend.outer(ket, backend.conj(ket))
 
+
 def ket_to_probs(ket: Tensor) -> Tensor:
     r"""
     Maps a ket to probabilities.
@@ -87,6 +87,7 @@ def ket_to_probs(ket: Tensor) -> Tensor:
     """
     return backend.abs(ket) ** 2
 
+
 def dm_to_probs(dm: Tensor) -> Tensor:
     r"""
     Extracts the diagonals of a density matrix.
@@ -96,6 +97,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
         The probabilities vector.
     """
     return backend.all_diagonals(dm, real=True)
+
 
 def hermite_parameters(cov: Matrix, means: Vector, mixed: bool, hbar: float) -> Tuple[Matrix, Vector, Scalar]:
     r"""

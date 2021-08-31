@@ -10,7 +10,6 @@ from mrmustard.experimental import XPTensor
 
 
 class Circuit(MutableSequence):
-
     def __init__(self, ops: Sequence[Op] = []):
         self.X = XPTensor(None, modes=[], additive=False)
         self.Y = XPTensor(None, modes=[], additive=True)

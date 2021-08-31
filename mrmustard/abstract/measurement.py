@@ -35,7 +35,7 @@ class GaussianMeasurement(ABC):
             state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto.hbar
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
-        
+
         if len(remaining_modes) > 0:
             remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov), cov, means)
         else:

@@ -6,6 +6,7 @@ from math import pi
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
 
+
 class PNRDetector(Parametrized, FockMeasurement):
     r"""
     Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.

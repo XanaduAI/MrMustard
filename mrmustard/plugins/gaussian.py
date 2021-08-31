@@ -21,6 +21,7 @@ backend = Backend()
 #  States
 #  ~~~~~~
 
+
 def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
@@ -33,6 +34,7 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     cov = backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
     means = backend.zeros([num_modes * 2], dtype=backend.float64)
     return cov, means
+
 
 def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a coherent state.
@@ -52,6 +54,7 @@ def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     means = backend.concat([x, y], axis=0) * backend.sqrt(2 * hbar, dtype=x.dtype)
     return cov, means
 
+
 def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
@@ -68,6 +71,7 @@ def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, 
     means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
     return cov, means
 
+
 def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
     The dimension depends on the dimensions of nbar.
@@ -82,6 +86,7 @@ def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     cov = backend.diag(backend.concat([g, g], axis=-1))
     means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
     return cov, means
+
 
 def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a displaced squeezed state.
@@ -101,6 +106,7 @@ def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar:
     means = displacement(x, y, hbar)
     return cov, means
 
+
 def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a two-mode squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
@@ -117,9 +123,11 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
     means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
     return cov, means
 
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 #  Unitary transformations
 # ~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     r"""Symplectic matrix of a rotation gate.
@@ -133,11 +141,8 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     num_modes = angle.shape[-1]
     x = backend.cos(angle)
     y = backend.sin(angle)
-    return (
-        backend.diag(backend.concat([x, x], axis=0))
-        + backend.diag(-y, k=num_modes)
-        + backend.diag(y, k=-num_modes)
-    )
+    return backend.diag(backend.concat([x, x], axis=0)) + backend.diag(-y, k=num_modes) + backend.diag(y, k=-num_modes)
+
 
 def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
     r"""Symplectic matrix of a squeezing gate.
@@ -158,10 +163,9 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     cpsh = cp * sh
     spsh = sp * sh
     return (
-        backend.diag(backend.concat([ch - cpsh, ch + cpsh], axis=0))
-        + backend.diag(-spsh, k=num_modes)
-        + backend.diag(-spsh, k=-num_modes)
+        backend.diag(backend.concat([ch - cpsh, ch + cpsh], axis=0)) + backend.diag(-spsh, k=num_modes) + backend.diag(-spsh, k=-num_modes)
     )
+
 
 def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
     r"""Returns the displacement vector for a displacement by alpha = x + iy.
@@ -180,6 +184,7 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
     if y.shape[-1] == 1:
         y = backend.tile(y, x.shape)
     return backend.sqrt(2 * hbar, dtype=x.dtype) * backend.concat([x, y], axis=0)
+
 
 def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a Beam-splitter gate.
@@ -203,6 +208,7 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
             [sp * st, zero, cp * st, ct],
         ]
     )
+
 
 def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matrix:
     r"""Symplectic matrix of a Mach-Zehnder gate.
@@ -244,6 +250,7 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
             ]
         )
 
+
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a two-mode squeezing gate.
     The dimension is 4x4.
@@ -267,9 +274,11 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
         ]
     )
 
+
 # ~~~~~~~~~~~~~
 # CPTP channels
 # ~~~~~~~~~~~~~
+
 
 def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
@@ -302,12 +311,14 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
     means = backend.add_at_modes(means, d, modes)
     return cov, means
 
+
 def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the lossy bosonic channel.
     The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
     """
     D = backend.sqrt(transmissivity)
     return backend.diag(backend.concat([D, D], axis=0))
+
 
 def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the Y (noise) matrix for the lossy bosonic channel.
@@ -316,17 +327,20 @@ def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
     D = (1.0 - transmissivity) * hbar / 2
     return backend.diag(backend.concat([D, D], axis=0))
 
+
 def thermal_X(nbar: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the thermal lossy channel.
     The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
     """
     raise NotImplementedError
 
+
 def thermal_Y(nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the Y (noise) matrix for the thermal lossy channel.
     The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
     """
     raise NotImplementedError
+
 
 def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector) -> Tuple[Matrix, Matrix, Vector]:
     r"""Returns the combined X, Y, and d for two CPTP channels.
@@ -360,11 +374,14 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
         d = backend.matmul(X2, d1) + d2
     return X, Y, d
 
+
 # ~~~~~~~~~~~~~~~
 # non-TP channels
 # ~~~~~~~~~~~~~~~98
 
-def general_dyne(cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
+
+def general_dyne(
+    cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
 ) -> Tuple[Scalar, Matrix, Vector]:
     r"""
     Returns the results of a general dyne measurement.
@@ -393,15 +410,18 @@ def general_dyne(cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vecto
     )  # TODO: check this (hbar part especially)
     return prob, new_cov, new_means
 
+
 # ~~~~~~~~~
 # utilities
 # ~~~~~~~~~
+
 
 def is_mixed_cov(cov: Matrix) -> bool:
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """
     return not is_pure_cov(backend.asnumpy(cov))
+
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
     r"""
@@ -418,6 +438,7 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     A_cov_block = backend.gather(backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = backend.gather(means, Aindices)
     return A_cov_block, A_means_vec
+
 
 def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
     r"""
@@ -436,6 +457,7 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
     AB_block = backend.gather(backend.gather(cov, Bindices, axis=1), Aindices, axis=0)
     return A_block, B_block, AB_block
 
+
 def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
     r"""
     Partitions the means vector into the A and B subsystems.
@@ -449,6 +471,7 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
     Bindices = backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
     Aindices = backend.cast(Amodes + [i + N for i in Amodes], "int32")
     return backend.gather(means, Aindices), backend.gather(means, Bindices)
+
 
 def purity(cov: Matrix, hbar: float) -> Scalar:
     r"""

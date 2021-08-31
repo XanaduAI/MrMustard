@@ -7,6 +7,7 @@ import strawberryfields as sf  # TODO: remove dependency on strawberryfields
 from mrmustard._typing import *
 from mrmustard import Backend
 
+
 class Progressbar:
     "A spiffy loading bar to display the progress during an optimization"
 
@@ -44,6 +45,7 @@ class Progressbar:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
+
 
 def wigner(self, state, hbar: float = 2.0, filename: str = ""):
     r"""
