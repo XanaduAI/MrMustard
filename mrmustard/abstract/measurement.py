@@ -1,6 +1,6 @@
 from abc import ABC
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian
+from mrmustard.functionality import fock, gaussian
 from mrmustard.abstract.state import State
 
 
@@ -46,7 +46,7 @@ class GaussianMeasurement(ABC):
         ...
 
 
-# TODO: push backend methods into the fock plugin
+# TODO: push backend methods into the fock module
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.

@@ -1,6 +1,6 @@
 from mrmustard._typing import *
 from mrmustard.abstract import Parametrized, Transformation
-from mrmustard.plugins import gaussian, train
+from mrmustard.functionality import gaussian, train
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 

@@ -1,5 +1,5 @@
 from mrmustard._typing import *
-from mrmustard.plugins import train, graphics
+from mrmustard.functionality import train, graphics
 
 __all__ = ["Optimizer"]
 

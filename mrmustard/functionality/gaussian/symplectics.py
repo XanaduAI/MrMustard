@@ -17,7 +17,7 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     num_modes = angle.shape[-1]
     x = backend.cos(angle)
     y = backend.sin(angle)
-    return backend.diag(backend.concat([x, x], axis=0)) + backend.diag(-y, k=num_modes) + backend.diag(y, k=-num_modes)
+    return XPTensor(backend.diag(backend.concat([x, x], axis=0)) + backend.diag(-y, k=num_modes) + backend.diag(y, k=-num_modes), multiplicative=True)
 
 
 def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
@@ -38,9 +38,9 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     sh = backend.sinh(r)
     cpsh = cp * sh
     spsh = sp * sh
-    return (
-        backend.diag(backend.concat([ch - cpsh, ch + cpsh], axis=0)) + backend.diag(-spsh, k=num_modes) + backend.diag(-spsh, k=-num_modes)
-    )
+    return XPTensor(
+        backend.diag(backend.concat([ch - cpsh, ch + cpsh], axis=0)) + backend.diag(-spsh, k=num_modes) + backend.diag(-spsh, k=-num_modes),
+        multiplicative=True)
 
 
 def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
@@ -59,7 +59,7 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
         x = backend.tile(x, y.shape)
     if y.shape[-1] == 1:
         y = backend.tile(y, x.shape)
-    return backend.sqrt(2 * hbar, dtype=x.dtype) * backend.concat([x, y], axis=0)
+    return XPTensor(backend.sqrt(2 * hbar, dtype=x.dtype) * backend.concat([x, y], axis=0), additive=True)
 
 
 def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
@@ -76,14 +76,14 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
     cp = backend.cos(phi)
     sp = backend.sin(phi)
     zero = backend.zeros_like(theta)
-    return backend.astensor(
+    return XPTensor(backend.astensor(
         [
             [ct, -cp * st, zero, -sp * st],
             [cp * st, ct, -sp * st, zero],
             [zero, sp * st, ct, -cp * st],
             [sp * st, zero, cp * st, ct],
         ]
-    )
+    ), multiplicative=True)
 
 
 def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matrix:
@@ -108,23 +108,23 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
     sp = backend.sin(phi_a + phi_b)
 
     if internal:
-        return 0.5 * backend.astensor(
+        return XPTensor(0.5 * backend.astensor(
             [
                 [ca - cb, -sa - sb, sb - sa, -ca - cb],
                 [-sa - sb, cb - ca, -ca - cb, sa - sb],
                 [sa - sb, ca + cb, ca - cb, -sa - sb],
                 [ca + cb, sb - sa, -sa - sb, cb - ca],
             ]
-        )
+        ), multiplicative=True)
     else:
-        return 0.5 * backend.astensor(
+        return XPTensor(0.5 * backend.astensor(
             [
                 [cp - ca, -sb, sa - sp, -1 - cb],
                 [-sa - sp, 1 - cb, -ca - cp, sb],
                 [sp - sa, 1 + cb, cp - ca, -sb],
                 [cp + ca, -sb, -sa - sp, 1 - cb],
             ]
-        )
+        ), multiplicative=True)
 
 
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
@@ -141,11 +141,11 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     ch = backend.cosh(r)
     sh = backend.sinh(r)
     zero = backend.zeros_like(r)
-    return backend.astensor(
+    return XPTensor(backend.astensor(
         [
             [ch, cp * sh, zero, sp * sh],
             [cp * sh, ch, sp * sh, zero],
             [zero, sp * sh, ch, -cp * sh],
             [sp * sh, zero, -cp * sh, ch],
         ]
-    )
+    ), multiplicative=True)

@@ -1,6 +1,6 @@
 from mrmustard._typing import *
 from mrmustard.abstract import State
-from mrmustard.plugins import gaussian
+from mrmustard.functionality import gaussian
 
 __all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV"]
 

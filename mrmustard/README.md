@@ -9,7 +9,7 @@ You can raise [issues](https://github.com/XanaduAI/MrMustard/issues) to keep tra
 MrMustard is split into four+1 components:
 
 ### 1. Abstract base classes
-Except for the `Parametrized` class (which is a custom data class) abstract classes speak quantum mechanics. Abstract classes cannot be instantiated, as they are abstract. They are unaware of how quantum mechanical calculations are performed (that is a job for the plugins).
+Except for the `Parametrized` class (which is a custom data class) abstract classes speak quantum mechanics. Abstract classes cannot be instantiated, as they are abstract. They are unaware of how quantum mechanical calculations are performed.
 At the moment the main abstract classes are:
 
 - [`Parametrized`](https://github.com/XanaduAI/MrMustard/mrmustard/abstract/parametrized.py) (functionality for all parametrized objects (Ops, Detectors, etc...))
@@ -34,14 +34,14 @@ To refactor concrete classes, you need to spot a common pattern among all of the
 
 ### 3. Plugins
 Plugins add functionality to the concrete classes by composition, without committing to a specific numerical library
-(which is instead handled by the backend). At the moment the main plugins are:
+(which is instead handled by the backend). At the moment the main functionalities are:
 
-- [`gaussian`](https://github.com/XanaduAI/MrMustard/mrmustard/plugins/gaussian.py) (phase space functionality)
-- [`fock`](https://github.com/XanaduAI/MrMustard/mrmustard/plugins/fockp.py) (Fock space functionality)
-- [`train`](https://github.com/XanaduAI/MrMustard/mrmustard/plugins/train.py) (optimization functionality)
-- [`graphics`](https://github.com/XanaduAI/MrMustard/mrmustard/plugins/graphics.py) (plots and visualizations)
+- [`gaussian`](https://github.com/XanaduAI/MrMustard/mrmustard/functionality/gaussian) (phase space functionality)
+- [`fock`](https://github.com/XanaduAI/MrMustard/mrmustard/functionality/fock) (Fock space functionality)
+- [`train`](https://github.com/XanaduAI/MrMustard/mrmustard/functionality/train.py) (optimization functionality)
+- [`graphics`](https://github.com/XanaduAI/MrMustard/mrmustard/functionality/graphics.py) (plots and visualizations)
 
-To develop the existing plugins (or to add new ones), make sure that the backend is used when calling numerical math methods, e.g. `backend.transpose(M)`.
+To develop the existing functionalities (or to add new ones), make sure that the backend is used when calling numerical math methods, e.g. `backend.transpose(M)`.
 
 ### 4. Backends
 The numerical functionality (be it with autodiff or not) is supplied by the backends.
@@ -52,8 +52,6 @@ a concrete backend according to `BackendInterface` (implemented
 in [`backends/__init__.py`](https://github.com/XanaduAI/MrMustard/mrmustard/backends/__init__.py)).
 
 To refactor backends, build functionality using methods in the same backend, then it can be moved in the `BackendInterface`.
-
-New plugins can be created if necessary.
 
 ### +1 typing
 The typing namespace contains the types specific to Mr Mustard to use when type-annotating, as well as common types from the python typing module.

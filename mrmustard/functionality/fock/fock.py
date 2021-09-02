@@ -3,9 +3,9 @@ from mrmustard._typing import *
 import numpy as np
 
 r"""
-A plugin that interfaces the phase space representation with the Fock representation.
+Interfacing the phase space representation with the Fock representation.
 
-It implements:
+Implements:
 - fock_representation and its gradient
 - number cov and means
 - classical stochastic channels

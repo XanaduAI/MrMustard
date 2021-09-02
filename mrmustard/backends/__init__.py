@@ -56,13 +56,11 @@ class Autocast:
 
 class BackendInterface(ABC):
     r"""
-    The interface that all backends must implement.
-    All methods are pure (no side effects) and are be used by the plugins.
+    The interface that all concrete backends must implement.
     """
 
+    # The backend is a singleton
     __instance = None
-
-    # all backends are singletons
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = object.__new__(cls)
@@ -332,7 +330,7 @@ class BackendInterface(ABC):
 
     def add_at_modes(self, old: Tensor, new: Optional[Tensor], modes: Sequence[int]) -> Tensor:
         "adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes"
-        if new is None:
+        if new is None: # TODO: this can go after XPTensors are implemented
             return old
         N = old.shape[-1] // 2
         indices = modes + [m + N for m in modes]
@@ -351,7 +349,7 @@ class BackendInterface(ABC):
         Returns:
             array: :math:`2N\times 2N` array
         """
-        if a_partial is None:
+        if a_partial is None: # TODO: this can go after XPTensors are implemented
             return b_full
         N = b_full.shape[-1] // 2
         indices = self.astensor(modes + [m + N for m in modes])
@@ -376,12 +374,18 @@ class BackendInterface(ABC):
 
     def matvec_at_modes(self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]) -> Tensor:
         "matrix-vector multiplication between a phase-space matrix and a vector in the specified modes"
-        if mat is None:
+        if mat is None:  # TODO: this can go after XPTensors are implemented
             return vec
         N = vec.shape[-1] // 2
         indices = self.astensor(modes + [m + N for m in modes])
         updates = self.matvec(mat, self.gather(vec, indices))
         return self.update_tensor(vec, indices[:, None], updates)
+
+    def vecvec_at_modes(self, vec_a: Optional[Tensor], vec_b: Tensor, modes: Sequence[int]) -> Scalar:
+        "vector-vector multiplication between two phase-space vectors in the specified modes"
+        N = vec_b.shape[-1] // 2
+        indices = self.astensor(modes + [m + N for m in modes])
+        return self.sum(self.gather(vec_a, indices, axis=-1) * self.gather(vec_b, indices, axis=-1))
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
         cutoffs = rho.shape[: rho.ndim // 2]
@@ -406,30 +410,25 @@ class BackendInterface(ABC):
 
     def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"
-
         if prob.ndim > 3 or len(other_probs) > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
         if not all([q.ndim == 1 for q in other_probs]):
             raise ValueError("other_probs must contain 1d arrays")
         if not all([len(q) == s for q, s in zip(other_probs, prob.shape)]):
             raise ValueError("The length of the 1d prob vectors must match shape of prob")
-
         q = other_probs[0]
         for q_ in other_probs[1:]:
             q = q[..., None] * q_[(None,) * q.ndim + (slice(None),)]
-
         return self.convolve_probs(prob, q)
 
     def convolve_probs(self, prob: Tensor, other: Tensor) -> Tensor:
         r"""Convolve two probability distributions (up to 3D) with the same shape.
         Note that the output is not guaranteed to be a complete joint probability,
         as it's computed only up to the dimension of the base probs."""
-
         if prob.ndim > 3 or other.ndim > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
         if not prob.shape == other.shape:
             raise ValueError("prob and other must have the same shape")
-
         prob_padded = self.pad(prob, [(s - 1, 0) for s in other.shape])
         other_reversed = other[(slice(None, None, -1),) * other.ndim]
         return self.convolution(

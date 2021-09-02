@@ -2,7 +2,7 @@ from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 from mrmustard._typing import *
 from mrmustard.functionality.gaussian.channels import CPTP
-from mrmustard.functionality.gaussian.symplectics import displacement
+from mrmustard.functionality.gaussian.symplectics import displacement, squeezing_symplectic, two_mode_squeezing_symplectic
 from mrmustard import Backend, XPTensor
 backend = Backend()
 
@@ -18,7 +18,7 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     """
     cov = backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
     means = backend.zeros([num_modes * 2], dtype=backend.float64)
-    return cov, means
+    return XPTensor(cov), XPTensor(means)
 
 
 def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -32,15 +32,7 @@ def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: coherent state covariance matrix
         Vector: coherent state means vector
     """
-    d = displacement(x, y, hbar)
-    cov, means = vacuum_state(len(d)//2, hbar)
-    return CPTP(cov, means, XPTensor(), XPTensor(), d)
-    
-    
-    # num_modes = x.shape[-1]
-    # cov = backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
-    # means = backend.concat([x, y], axis=0) * backend.sqrt(2 * hbar, dtype=x.dtype)
-    # return cov, means
+    return CPTP(X=XPTensor(multiplicative=True), d=displacement(x, y, hbar))
 
 
 def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -54,11 +46,7 @@ def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, 
         Matrix: squeezed state covariance matrix
         Vector: squeezed state means vector
     """
-    S = squeezing_symplectic(r, phi)
-    cov, means = vacuum_state(len(d)//2, hbar)
-    # cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    # means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    # return cov, means
+    return CPTP(X=squeezing_symplectic(r, phi))
 
 
 def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -72,8 +60,8 @@ def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Vector: thermal state means vector
     """
     g = (2 * backend.atleast_1d(nbar) + 1) * hbar / 2
-    cov = backend.diag(backend.concat([g, g], axis=-1))
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
+    cov = XPTensor(backend.diag(backend.concat([g, g], axis=-1)), multiplicative=True)
+    means = XPTensor(backend.zeros(cov.shape[-1], dtype=cov.dtype), additive=True)
     return cov, means
 
 
@@ -90,10 +78,7 @@ def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar:
         Matrix: displaced squeezed state covariance matrix
         Vector: displaced squeezed state means vector
     """
-    S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = displacement(x, y, hbar)
-    return cov, means
+    return CPTP(X=squeezing_symplectic(r, phi), d=displacement(x, y, hbar))
 
 
 def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -107,7 +92,4 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
         Matrix: two-mode squeezed state covariance matrix
         Vector: two-mode squeezed state means vector
     """
-    S = two_mode_squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return CPTP(X=two_mode_squeezing_symplectic(r, phi))

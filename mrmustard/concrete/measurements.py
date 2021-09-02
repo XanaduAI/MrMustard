@@ -1,7 +1,7 @@
 from mrmustard._typing import *
 from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized, State
 from mrmustard.concrete.states import DisplacedSqueezed, Coherent
-from mrmustard.plugins import fock, gaussian
+from mrmustard.functionality import fock, gaussian
 from math import pi
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]

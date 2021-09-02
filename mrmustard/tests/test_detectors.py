@@ -11,7 +11,7 @@ from mrmustard import Dgate, Sgate, S2gate, LossChannel, BSgate
 from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
 from mrmustard import PNRDetector, Homodyne, Heterodyne
-from mrmustard.plugins import gaussian
+from mrmustard.functionality import gaussian
 
 np.random.seed(137)
 

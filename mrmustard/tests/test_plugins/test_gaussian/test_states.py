@@ -2,7 +2,7 @@ import numpy as np
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard import *
-from mrmustard.plugins import gaussian as gp
+from mrmustard.functionality import gaussian as gp
 
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))

@@ -1,6 +1,6 @@
 import numpy as np  # for repr
 from abc import ABC
-from mrmustard.plugins import gaussian
+from mrmustard.functionality import gaussian
 from mrmustard.abstract import State
 from mrmustard._typing import *
 

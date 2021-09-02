@@ -1,5 +1,5 @@
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian
+from mrmustard.functionality import fock, gaussian
 
 
 class State:  # NOTE: this is not an ABC

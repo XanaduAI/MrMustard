@@ -1,7 +1,7 @@
 import numpy as np
 from hypothesis import given, strategies as st
 from mrmustard import *
-from mrmustard.plugins import gaussian as gp
+from mrmustard.functionality import gaussian as gp
 
 
 def test_partition_means():

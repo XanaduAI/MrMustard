@@ -4,27 +4,14 @@ from mrmustard._typing import *
 from mrmustard import Backend, XPTensor
 backend = Backend()
 
-r"""
-A plugin for all things Gaussian.
-
-The GaussianPlugin implements:
-    - Gaussian states (pure and mixed)
-    - Gaussian mixture states [upcoming]
-    - Gaussian unitary transformations
-    - Gaussian CPTP channels
-    - Gaussian CP channels [upcoming]
-    - Gaussian entropies [upcoming]
-    - Gaussian entanglement [upcoming]
-"""
 
 
-
-
-def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
+def CPTP(cov: XPTensor, means: XPTensor, modes: Sequence[int], X = XPTensor(multiplicative=True), Y = XPTensor(additive=True), d = XPTensor(additive=True)) -> Tuple[XPTensor, XPTensor]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
     otherwise it must contain as many modes as the number of modes in the channel.
+    It is assumed that X, Y and d are XPTensors in fewer or the same modes as cov and means.
 
     Args:
         cov (Matrix): covariance matrix
@@ -38,17 +25,15 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
         Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
     """
     # if single-mode channel, apply to all modes indicated in `modes`
-    if X is not None and X.shape[-1] == 2:
-        X = backend.single_mode_to_multimode_mat(X, len(modes))
-    if Y is not None and Y.shape[-1] == 2:
-        Y = backend.single_mode_to_multimode_mat(Y, len(modes))
-    if d is not None and d.shape[-1] == 2:
-        d = backend.single_mode_to_multimode_vec(d, len(modes))
-    cov = backend.left_matmul_at_modes(X, cov, modes)
-    cov = backend.right_matmul_at_modes(cov, backend.transpose(X), modes)
-    cov = backend.add_at_modes(cov, Y, modes)
-    means = backend.matvec_at_modes(X, means, modes)
-    means = backend.add_at_modes(means, d, modes)
+    if X.nmodes == 1 and len(modes) > 1:
+        X = X.clone(times=len(modes))
+    if Y.nmodes == 1 and len(modes) > 1:
+        Y = Y.clone(times=len(modes))
+    if d.nmodes == 1 and len(modes) > 1:
+        d = d.clone(times=len(modes))
+    X._modes = Y._modes = d._modes = modes
+    cov = X @ cov @ X.T + Y
+    means = X @ means + d
     return cov, means
 
 
@@ -82,7 +67,7 @@ def thermal_Y(nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
     raise NotImplementedError
 
 
-def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector) -> Tuple[Matrix, Matrix, Vector]:
+def compose_channels_XYd(X1: XPTensor, Y1: XPTensor, d1: XPTensor, X2: XPTensor, Y2: XPTensor, d2: XPTensor) -> Tuple[XPTensor, XPTensor, XPTensor]:
     r"""Returns the combined X, Y, and d for two CPTP channels.
     Arguments:
         X1 (Matrix): the X matrix of the first CPTP channel
@@ -99,19 +84,19 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
     elif X2 is None:
         X = X1
     else:
-        X = backend.matmul(X2, X1)
+        X = X2 @ X1
     if Y1 is None:
         Y = Y2
     elif Y2 is None:
         Y = Y1
     else:
-        Y = backend.matmul(backend.matmul(X2, Y1), X2) + Y2
+        Y = X2 @ Y1 @ X2.T + Y2
     if d1 is None:
         d = d2
     elif d2 is None:
         d = d1
     else:
-        d = backend.matmul(X2, d1) + d2
+        d = X2 @ d1 + d2
     return X, Y, d
 
 
