@@ -1,45 +1,38 @@
-import pytest
+from hypothesis import strategies as st, given, settings
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-
-from mrmustard import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
-from mrmustard import Circuit
-from mrmustard import Vacuum
+from mrmustard import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate, Circuit, Vacuum
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
-def test_two_mode_squeezing_fock(n_mean, phi):
+@given(n_mean=st.floats(0.0, 3.0), phi=st.floats(0.0, 2 * np.pi), cutoff=st.integers(1, 5))  # deadline = None because of jit compilation on first run
+@settings(deadline=None)
+def test_two_mode_squeezing_fock(n_mean, phi, cutoff):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
     Note that this is consistent with the Strawberryfields convention"""
-    cutoff = 4
-    circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=r, phi=phi))
-    amps = circ(Vacuum(num_modes=2)).ket(cutoffs=[cutoff, cutoff])
+    S = S2gate(modes=[0, 1], r=r, phi=phi)
+    amps = S(Vacuum(num_modes=2)).ket(cutoffs=[cutoff, cutoff])
     diag = (1 / np.cosh(r)) * (np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
     assert np.allclose(amps, expected)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
-@pytest.mark.parametrize("varphi", 2 * np.pi * np.random.rand(4))
-def test_hong_ou_mandel(n_mean, phi, varphi):
+@given(n_mean=st.floats(0.0, 3.0), phi=st.floats(0.0, 2 * np.pi), varphi=st.floats(0.0, 2 * np.pi), cutoff=st.integers(2, 5))
+@settings(deadline=None)
+def test_hong_ou_mandel(n_mean, phi, varphi, cutoff):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     cutoff = 2
     circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=-r, phi=phi))
-    circ.append(S2gate(modes=[2, 3], r=-r, phi=phi))
+    circ.append(S2gate(modes=[0, 1], r=r, phi=phi+np.pi))
+    circ.append(S2gate(modes=[2, 3], r=r, phi=phi+np.pi))
     circ.append(BSgate(modes=[1, 2], theta=np.pi / 4, phi=varphi))
     amps = circ(Vacuum(num_modes=4)).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
     assert np.allclose(amps[1, 1, 1, 1], 0.0)
 
 
-@pytest.mark.parametrize("realpha", np.random.rand(4) - 0.5)
-@pytest.mark.parametrize("imalpha", np.random.rand(4) - 0.5)
+@given(realpha=st.floats(-5.0, 5.0), imalpha=st.floats(-5.0, 5.0))
 def test_coherent_state(realpha, imalpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
@@ -51,15 +44,12 @@ def test_coherent_state(realpha, imalpha):
     assert np.allclose(amps, expected)
 
 
-@pytest.mark.parametrize("r", 2 * np.random.rand(4))
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
-def test_squeezed_state(r, phi):
+@given(r=st.floats(0.0, 5.0), phi=st.floats(0.0, 2 * np.pi), cutoff=st.integers(2, 12))
+def test_squeezed_state(r, phi, cutoff):
     """Test that squeezed states have the correct photon number statistics
     Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
-    cutoff = 10
-    circ = Circuit()
-    circ.append(Sgate(modes=[0], r=r, phi=phi))
-    amps = circ(Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
+    S = Sgate(modes=[0], r=r, phi=phi)
+    amps = S(Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
     assert np.allclose(amps[1::2], 0.0)
     non_zero_amps = amps[0::2]
     len_non_zero = len(non_zero_amps)
@@ -73,14 +63,12 @@ def test_squeezed_state(r, phi):
     assert np.allclose(non_zero_amps, amp_pairs)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
+@given(n_mean=st.floats(0.0, 5.0), phi=st.floats(0.0, 2 * np.pi))
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
-    circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=-r, phi=phi))
-    state = circ(Vacuum(num_modes=2))
+    S = S2gate(modes=[0, 1], r=-r, phi=phi)
+    state = S(Vacuum(num_modes=2))
     meanN = state.number_means
     covN = state.number_cov
     expectedN = np.array([n_mean, n_mean])
@@ -89,9 +77,7 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     assert np.allclose(covN, expectedCov)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
-@pytest.mark.parametrize("eta", [0, 0.3, 0.7, 1])
+@given(n_mean=st.floats(0.0, 5.0), phi=st.floats(0.0, 2 * np.pi), eta=st.floats(0.0, 1.0))
 def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
@@ -105,31 +91,33 @@ def test_lossy_squeezing(n_mean, phi, eta):
     assert np.allclose(ps, expected)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2])
-@pytest.mark.parametrize("phi", [0, 2.4])
-@pytest.mark.parametrize("eta_s", [0, 0.3, 0.7, 1])
-@pytest.mark.parametrize("eta_i", [0, 0.3, 0.7, 1])
-def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
+@given(n_mean=st.floats(0.0, 1.5), eta_s=st.floats(0.0, 1.0), eta_i=st.floats(0.0, 1.0))
+@settings(deadline=None)
+def test_lossy_two_mode_squeezing(n_mean, eta_s, eta_i):
     """Tests the total photon number distribution of a lossy two-mode squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
-    cutoff = 20
-    circ = Circuit()
-    r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=-r, phi=0.0))
-    circ.append(LossChannel(modes=[0], transmissivity=eta_s))
-    circ.append(LossChannel(modes=[1], transmissivity=eta_i))
-    ps = circ(Vacuum(num_modes=2)).fock_probabilities(cutoffs=[cutoff, cutoff])
+    cutoff = 10
+    TMSV = S2gate(modes=[0, 1], r=-r, phi=0.0)(Vacuum(2))
+    state = LossChannel(modes=[0,1], transmissivity=[eta_s, eta_i])(TMSV)
+    ps = state.fock_probabilities(cutoffs=[cutoff, cutoff])
     n = np.arange(cutoff)
     mean_s = n @ np.sum(ps, axis=1)
     mean_i = n @ np.sum(ps, axis=0)
-    assert np.allclose(mean_s, n_mean * eta_s, atol=1e-2)
-    assert np.allclose(mean_i, n_mean * eta_i, atol=1e-2)
+    assert np.allclose(mean_s, n_mean * eta_s, atol=1e-4)
+    assert np.allclose(mean_i, n_mean * eta_i, atol=1e-4)
 
+@st.composite
+def n_cutoffs(draw):
+    n = draw(st.integers(1, 3))
+    return (n, draw(st.lists(st.integers(1, 4), min_size=n, max_size=n)))
 
-def test_density_matrix():
+@given(ncutoffs=n_cutoffs())
+@settings(deadline=None)
+def test_density_matrix(ncutoffs):
     """Tests the density matrix of a pure state is equal to |psi><psi|"""
-    G = Ggate(modes=[0, 1, 2])
-    L = LossChannel(modes=[0, 1, 2], transmissivity=1.0)
-    rho_legit = L(G(Vacuum(num_modes=3))).dm(cutoffs=[4, 4, 4])
-    rho_built = G(Vacuum(num_modes=3)).dm(cutoffs=[4, 4, 4])
+    n, cutoffs = ncutoffs
+    G = Ggate(modes=[i for i in range(n)])
+    L = LossChannel(modes=[i for i in range(n)], transmissivity=1.0)
+    rho_legit = L(G(Vacuum(num_modes=n))).dm(cutoffs=cutoffs)
+    rho_built = G(Vacuum(num_modes=n)).dm(cutoffs=cutoffs)
     assert np.allclose(rho_legit, rho_built)
