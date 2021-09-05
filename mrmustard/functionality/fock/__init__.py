@@ -1,1 +1,1 @@
-from fock import *
+from .fock import *

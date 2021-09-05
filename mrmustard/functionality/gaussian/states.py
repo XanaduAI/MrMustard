@@ -3,11 +3,12 @@ from thewalrus.quantum import is_pure_cov
 from mrmustard._typing import *
 from mrmustard.functionality.gaussian.channels import CPTP
 from mrmustard.functionality.gaussian.symplectics import displacement, squeezing_symplectic, two_mode_squeezing_symplectic
-from mrmustard import Backend, XPTensor
+from mrmustard import Backend
+from mrmustard.experimental import XPTensor
 backend = Backend()
 
 
-def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
+def vacuum_state(num_modes: int, hbar: float) -> Tuple[XPTensor, XPTensor]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
         num_modes (int): number of modes
@@ -32,7 +33,7 @@ def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: coherent state covariance matrix
         Vector: coherent state means vector
     """
-    return CPTP(X=XPTensor(multiplicative=True), d=displacement(x, y, hbar))
+    return CPTP(d=displacement(x, y, hbar))
 
 
 def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -47,22 +48,6 @@ def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, 
         Vector: squeezed state means vector
     """
     return CPTP(X=squeezing_symplectic(r, phi))
-
-
-def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-    r"""Returns the real covariance matrix and real means vector of a thermal state.
-    The dimension depends on the dimensions of nbar.
-    Args:
-        nbar (vector): average number of photons per mode
-        hbar: value of hbar
-    Returns:
-        Matrix: thermal state covariance matrix
-        Vector: thermal state means vector
-    """
-    g = (2 * backend.atleast_1d(nbar) + 1) * hbar / 2
-    cov = XPTensor(backend.diag(backend.concat([g, g], axis=-1)), multiplicative=True)
-    means = XPTensor(backend.zeros(cov.shape[-1], dtype=cov.dtype), additive=True)
-    return cov, means
 
 
 def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
@@ -93,3 +78,19 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
         Vector: two-mode squeezed state means vector
     """
     return CPTP(X=two_mode_squeezing_symplectic(r, phi))
+
+
+def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+    r"""Returns the real covariance matrix and real means vector of a thermal state.
+    The dimension depends on the dimensions of nbar.
+    Args:
+        nbar (vector): average number of photons per mode
+        hbar: value of hbar
+    Returns:
+        Matrix: thermal state covariance matrix
+        Vector: thermal state means vector
+    """
+    g = (2 * backend.atleast_1d(nbar) + 1) * hbar / 2
+    cov = XPTensor(backend.diag(backend.concat([g, g], axis=-1)), multiplicative=True)
+    means = XPTensor(backend.zeros(cov.shape[-1], dtype=cov.dtype), additive=True)
+    return cov, means

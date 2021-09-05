@@ -1,7 +1,8 @@
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 from mrmustard._typing import *
-from mrmustard import Backend, XPTensor
+from mrmustard import Backend
+from mrmustard.experimental import XPTensor
 backend = Backend()
 
 

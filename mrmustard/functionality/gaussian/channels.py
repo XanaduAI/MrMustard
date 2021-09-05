@@ -1,7 +1,8 @@
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 from mrmustard._typing import *
-from mrmustard import Backend, XPTensor
+from mrmustard import Backend
+from mrmustard.experimental import XPTensor
 backend = Backend()
 
 
@@ -106,8 +107,8 @@ def compose_channels_XYd(X1: XPTensor, Y1: XPTensor, d1: XPTensor, X2: XPTensor,
 
 
 def general_dyne(
-    cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
-) -> Tuple[Scalar, Matrix, Vector]:
+    cov: XPTensor, means: XPTensor, proj_cov: XPTensor, proj_means: XPTensor, modes: List[int], hbar: float
+) -> Tuple[Scalar, XPTensor, XPTensor]:
     r"""
     Returns the results of a general dyne measurement.
     Arguments:
@@ -119,18 +120,14 @@ def general_dyne(
     Returns:
         Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
     """
-    N = cov.shape[-1] // 2
-    nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    nA = N - nB  # A is the leftover
-    Amodes = [i for i in range(N) if i not in modes]
-    A, B, AB = partition_cov(cov, Amodes)
-    a, b = partition_means(means, Amodes)
-    proj_cov = backend.cast(proj_cov, B.dtype)
-    proj_means = backend.cast(proj_means, b.dtype)
-    inv = backend.inv(B + proj_cov)
-    new_cov = A - backend.matmul(backend.matmul(AB, inv), backend.transpose(AB))
-    new_means = a + backend.matvec(backend.matmul(AB, inv), proj_means - b)
+    Amodes = [i for i in range(cov.ndim) if i not in modes]
+    Bmodes = list(modes)
+    A, B, AB = cov[Amodes], cov[Bmodes], cov[Amodes, Bmodes]
+    a, b = means[Amodes], means[Bmodes]
+    inv = XPTensor(backend.inv(B + proj_cov), multiplicative=True)
+    new_cov = A - AB @ inv @ AB.T
+    new_means = a + AB @ inv @ (proj_means - b)
     prob = backend.exp(-backend.sum(backend.matvec(inv, proj_means - b) * proj_means - b)) / (
-        pi ** nB * (hbar ** -nB) * backend.sqrt(backend.det(B + proj_cov))
+        pi ** B.ndim * (hbar ** -B.ndim) * backend.sqrt(backend.det(B + proj_cov))
     )  # TODO: check this (hbar part especially)
     return prob, new_cov, new_means
