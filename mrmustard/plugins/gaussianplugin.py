@@ -609,24 +609,33 @@ class GaussianPlugin:
         Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99.
         """
 
-        J = self._backend.J(cov.shape[0]//2)
-        I = self._backend.eye(cov.shape[0]//2)
+        mu1 = self._backend.cast(mu1, "complex128")
+        mu2 = self._backend.cast(mu2, "complex128")
+        cov1 = self._backend.cast(cov1, "complex128")
+        cov2 = self._backend.cast(cov2, "complex128")
+
+        J = self._backend.J(cov1.shape[0]//2)
+        I = self._backend.eye(cov1.shape[0])
+
+        J = self._backend.cast(J, "complex128")
+        I = self._backend.cast(I, "complex128")
 
         cov12_inv = self._backend.inv(cov1 + cov2)
 
         V = self._backend.transpose(J) @ cov12_inv @ ((1/4)*J + cov2 @ J @ cov1)
         
 
-
-        W = -2j*(V @ J)
+        W = -2*(V @ (1j*J))
         W_inv = self._backend.inv(W)
 
-        f0_top = self._backend.det((self._backend.sqrtm(I - W_inv @ W_inv) + 1) @ (W @ (1j*J)))
+        f0_top = self._backend.det((self._backend.sqrtm(I - W_inv @ W_inv) + I) @ (W @ (1j*J)))
         f0_bot = self._backend.det(cov1 + cov2)
 
         f0 = (f0_top/f0_bot)**(1/4)
 
-        fidelity = f0*self._backend.exp((-1/4)*self._backend.transpose(mu2-mu1) @ cov12_inv @ (mu2 - mu1))
+        dot = self._backend.sum(self._backend.transpose(mu2-mu1)*self._backend.matvec(cov12_inv, mu2-mu1)) # computing (mu2-mu1).T @ cov12_inv @ (mu2-mu1)
+
+        fidelity = f0*self._backend.exp((-1/4)*dot)
 
         return fidelity
 
