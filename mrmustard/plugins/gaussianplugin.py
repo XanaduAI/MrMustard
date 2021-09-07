@@ -568,6 +568,8 @@ class GaussianPlugin:
     def sympletic_eigenvals(self, cov: Matrix) -> Any:
         r"""
         Returns the sympletic eigenspectrum of a covariance matrix. 
+        For a pure state, we expect the sympletic eigenvalues to be 1.
+
         Arguments:
             cov (Matrix): the covariance matrix.
         Returns:
@@ -583,7 +585,9 @@ class GaussianPlugin:
 
     def von_neumann_entropy(self, cov: Matrix) -> float:
         r"""
-        Returns the sympletic eigenspectrum of a covariance matrix. 
+        Returns the Von Neumann entropy. 
+        For a pure state, we expect the Von Neumann entropy to be 0.
+        
         Arguments:
             cov (Matrix): the covariance matrix
         Returns:
