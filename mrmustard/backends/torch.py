@@ -279,3 +279,6 @@ class Backend(BackendInterface):
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
         "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
         return torch.xlogy(x, y)
+
+    def sqrtm(self, tensor: torch.Tensor) -> Tensor:
+        raise NotImplementedError

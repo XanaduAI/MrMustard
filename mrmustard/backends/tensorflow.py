@@ -279,3 +279,7 @@ class Backend(BackendInterface):
     def eigh(self, tensor: tf.Tensor) -> Tensor:
         "Returns the eigenvalues and eigenvectors of a matrix."
         return tf.linalg.eigh(tensor)
+
+    def sqrtm(self, tensor: tf.Tensor) -> Tensor:
+        "Returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A."
+        return tf.linalg.sqrtm(tensor)

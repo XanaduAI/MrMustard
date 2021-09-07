@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import Any
+import backends
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
 from math import pi, sqrt
+from numpy.lib.function_base import cov
 from thewalrus.quantum import is_pure_cov
 from abc import ABC
 
@@ -601,3 +603,39 @@ class GaussianPlugin:
     
         entropy = self._backend.sum(g(symp_vals))
         return entropy
+
+    def fidelity(self, mu1, mu2, cov1: Matrix, cov2: Matrix) -> float:
+        r"""
+        Returns the fidelity of two gaussian states.         
+        
+        Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99.
+        """
+
+        J = self._backend.J(cov.shape[0]//2)
+        I = self._backend.eye(cov.shape[0]//2)
+
+        cov12_inv = self._backend.inv(cov1 + cov2)
+
+        V = self._backend.transpose(J) @ cov12_inv @ ((1/4)*J + cov2 @ J @ cov1)
+        
+
+
+        W = -2j*(V @ J)
+        W_inv = self._backend.inv(W)
+
+        f0_top = self._backend.det((self._backend.sqrtm(I - W_inv @ W_inv) + 1) @ (W @ (1j*J)))
+        f0_bot = self._backend.det(cov1 + cov2)
+
+        f0 = (f0_top/f0_bot)**(1/4)
+
+        fidelity = f0*self._backend.exp((-1/4)*self._backend.transpose(mu2-mu1) @ cov12_inv @ (mu2 - mu1))
+
+        return fidelity
+
+
+
+
+
+
+
+
