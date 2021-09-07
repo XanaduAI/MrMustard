@@ -1,10 +1,8 @@
 from __future__ import annotations
 from typing import Any
-import backends
 from mrmustard.backends import BackendInterface
 from mrmustard._typing import *
 from math import pi, sqrt
-from numpy.lib.function_base import cov
 from thewalrus.quantum import is_pure_cov
 from abc import ABC
 
