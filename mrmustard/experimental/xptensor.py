@@ -4,14 +4,7 @@ from mrmustard import Backend
 backend = Backend()
 from mrmustard._typing import *
 
-class AdditiveXPTensor(XPTensor):
-    pass
 
-class MultiplicativeXPTensor(XPTensor):
-    pass
-
-class XPVector(XPTensor):
-    pass
 class XPTensor:
     r"""A representation of tensors in phase space.
     Matrices are stored as a (2*nmodes_out, 2*nmodes_in)-tensor in xxpp ordering, but internally we utilize the
@@ -31,7 +24,10 @@ class XPTensor:
 
     def __init__(self,
                 tensor: Optional[Union[Matrix, Vector]] = None,
-                modes: Union[Tuple[List[int], List[int]], List[int]] = None):
+                modes: Union[Tuple[List[int], List[int]], List[int]] = None,
+                additive=None, multiplicative=None
+                ):
+        self.additive = bool(additive) or not bool(multiplicative)  # I love python
         self.shape = None if tensor is None else [t // 2 for t in tensor.shape]
         self.ndim = None if tensor is None else tensor.ndim
         self.isVector = None if tensor is None else self.ndim == 1
@@ -46,6 +42,10 @@ class XPTensor:
         self.tensor = None if tensor is None else backend.reshape(tensor, [k for n in tensor.shape for k in (2, n)])
 
     @property
+    def isCoherence(self):
+        return self.isMatrix and self.modes[0] != self.modes[1]
+
+    @property
     def multiplicative(self) -> bool:
         return not bool(self.additive)
 
@@ -58,14 +58,14 @@ class XPTensor:
         return self.modes[1]
 
     @classmethod
-    def from_xxpp(cls, tensor: Union[Matrix, Vector], modes: Optional[Tuple[List[int],List[int]]], additive: bool = None, multiplicative: bool = None) -> XPMatrix:
-        return XPMatrix(tensor, modes, additive, multiplicative)
+    def from_xxpp(cls, tensor: Union[Matrix, Vector], modes: Optional[Tuple[List[int],List[int]]], additive: bool = None, multiplicative: bool = None) -> XPTensor:
+        return XPTensor(tensor, modes, additive, multiplicative)
 
     @classmethod
     def from_xpxp(cls, tensor: Union[Matrix, Vector], modes: Optional[Tuple[List[int], List[int]]], additive: bool = None, multiplicative: bool = None) -> XPTensor:
         if tensor is not None:
             tensor = backend.reshape(tensor, [k for n in matrix.shape for k in (n, 2)])
-            tensor = backend.transpose(tensor, (1, 0, 3, 2)[: 2 * self.ndim])
+            tensor = backend.transpose(tensor, (1, 0, 3, 2)[: 2 * tensor.ndim])
             tensor = backend.reshape(tensor, [2 * s for s in matrix.shape])
         return cls(tensor, modes, additive, multiplicative)
 
@@ -81,16 +81,15 @@ class XPTensor:
         return backend.reshape(self.tensor, [2 * s for s in matrix.shape])
 
     def clone(self, modes: Sequence[int], times: int):  # TODO: finish this
-        r"""Artificially clones the given modes (while preserving the coherences) a given number of times and includes them as new modes."""
-        if self._tensor is None:
+        r"""Artificially clones the given modes a given number of times and includes them as new modes."""
+        if self.tensor is None:
             pass
-        to_clone = self[list(modes)]  # [2,m] or [2,m,2,m]
-        if self.isMatrix:
-            coherences = self[:, list(modes)] # [2,n,2,m]
+        if self.isCoherence:
+            raise NotImplementedError("Cloning of pure coherences is not yet implemented.")
         if self.isVector:
-            return XPTensor(backend.concat([self.tensor]+[to_clone]*times, axis=-1))
-        if self.isMatrix:
-            rows = backend.concat([coherences]*times, axis=-1)
+            return XPTensor(backend.concat([self.tensor] + ([to_clone] for _ in range(times)), axis=1), (self.outmodes + outmodes*times, self.inmodes), self.additive, self.multiplicative)
+        else:
+            pass
 
     def __array__(self):
         return self.tensor
