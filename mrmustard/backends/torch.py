@@ -282,3 +282,6 @@ class Backend(BackendInterface):
 
     def sqrtm(self, tensor: torch.Tensor) -> Tensor:
         raise NotImplementedError
+
+    def allclose(self, a: torch.Tensor, b: torch.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+        return torch.allclose(a, b, rtol=rtol, atol=atol)

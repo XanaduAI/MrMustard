@@ -602,17 +602,21 @@ class GaussianPlugin:
         entropy = self._backend.sum(g(symp_vals))
         return entropy
 
-    def fidelity(self, mu1, mu2, cov1: Matrix, cov2: Matrix) -> float:
+    def fidelity(self, mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
         r"""
         Returns the fidelity of two gaussian states.         
         
         Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99.
         """
 
+
+        cov1 = self._backend.cast(cov1/hbar, "complex128") # convert to units where hbar = 1
+        cov2 = self._backend.cast(cov2/hbar, "complex128") # convert to units where hbar = 1
+
         mu1 = self._backend.cast(mu1, "complex128")
         mu2 = self._backend.cast(mu2, "complex128")
-        cov1 = self._backend.cast(cov1, "complex128")
-        cov2 = self._backend.cast(cov2, "complex128")
+
+        deltar = (mu2 - mu1) / self._backend.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
 
         J = self._backend.J(cov1.shape[0]//2)
         I = self._backend.eye(cov1.shape[0])
@@ -620,20 +624,30 @@ class GaussianPlugin:
         J = self._backend.cast(J, "complex128")
         I = self._backend.cast(I, "complex128")
 
+        #print(mu1, mu2, cov1, cov2)
+
         cov12_inv = self._backend.inv(cov1 + cov2)
 
         V = self._backend.transpose(J) @ cov12_inv @ ((1/4)*J + cov2 @ J @ cov1)
         
-
         W = -2*(V @ (1j*J))
         W_inv = self._backend.inv(W)
 
-        f0_top = self._backend.det((self._backend.sqrtm(I - W_inv @ W_inv) + I) @ (W @ (1j*J)))
+        sqrtm_arg = I - W_inv @ W_inv
+
+        # The sqrtm function has issues with matrices that are close to zero, hence we branch
+        if self._backend.allclose(sqrtm_arg, 0, rtol=rtol, atol=atol):
+            mat_sqrtm = self._backend.zeros_like(sqrtm_arg)
+            print('ran')
+        else:
+            mat_sqrtm = self._backend.sqrtm(sqrtm_arg)
+
+        f0_top = self._backend.det((mat_sqrtm + I) @ (W @ (1j*J)))
         f0_bot = self._backend.det(cov1 + cov2)
 
         f0 = (f0_top/f0_bot)**(1/4)
 
-        dot = self._backend.sum(self._backend.transpose(mu2-mu1)*self._backend.matvec(cov12_inv, mu2-mu1)) # computing (mu2-mu1).T @ cov12_inv @ (mu2-mu1)
+        dot = self._backend.sum(self._backend.transpose(deltar)*self._backend.matvec(cov12_inv, deltar)) # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
         fidelity = f0*self._backend.exp((-1/4)*dot)
 
