@@ -633,16 +633,9 @@ class GaussianPlugin:
         W = -2*(V @ (1j*J))
         W_inv = self._backend.inv(W)
 
-        sqrtm_arg = I - W_inv @ W_inv
+        matsqrtm = self._backend.sqrtm(I - W_inv @ W_inv) # this also handles the case where the input matrix is close to zero
 
-        # The sqrtm function has issues with matrices that are close to zero, hence we branch
-        if self._backend.allclose(sqrtm_arg, 0, rtol=rtol, atol=atol):
-            mat_sqrtm = self._backend.zeros_like(sqrtm_arg)
-            print('ran')
-        else:
-            mat_sqrtm = self._backend.sqrtm(sqrtm_arg)
-
-        f0_top = self._backend.det((mat_sqrtm + I) @ (W @ (1j*J)))
+        f0_top = self._backend.det((matsqrtm + I) @ (W @ (1j*J)))
         f0_bot = self._backend.det(cov1 + cov2)
 
         f0 = (f0_top/f0_bot)**(1/4)
