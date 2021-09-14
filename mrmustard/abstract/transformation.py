@@ -2,6 +2,7 @@ import numpy as np  # for repr
 from abc import ABC
 from mrmustard.functionality import gaussian
 from mrmustard.abstract import State
+from experimental import XPTensor
 from mrmustard._typing import *
 
 
@@ -15,10 +16,10 @@ class Transformation(ABC):
     """
 
     def __call__(self, state: State) -> State:
-        d = self.d_vector(state.hbar)
-        X = self.X_matrix()  # TODO: confirm with nico which ones depend on hbar
-        Y = self.Y_matrix(state.hbar)
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self._modes)
+        d = XPTensor(self.d_vector(state.hbar), modes=(self._modes, self._modes))
+        X = XPTensor(self.X_matrix(), modes=self._modes)  # TODO: confirm with nico which of (X,Y,d) depend on hbar
+        Y = XPTensor(self.Y_matrix(state.hbar), modes=(self._modes, self._modes)))
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d)
         output = State(hbar=state.hbar, mixed=Y is not None, cov=cov, means=means)
         return output
 
