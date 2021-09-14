@@ -7,7 +7,7 @@ backend = Backend()
 
 
 
-def CPTP(cov: XPTensor, means: XPTensor, modes: Optional[Sequence[int]] = None, X = XPTensor(multiplicative=True), Y = XPTensor(additive=True), d = XPTensor(additive=True)) -> Tuple[XPTensor, XPTensor]:
+def CPTP(cov: XPTensor, means: XPTensor, X = XPTensor(multiplicative=True), Y = XPTensor(additive=True), d = XPTensor(additive=True)) -> Tuple[XPTensor, XPTensor]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,

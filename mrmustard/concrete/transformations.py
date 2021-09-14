@@ -13,7 +13,6 @@ class Dgate(Parametrized, Transformation):
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
-        modes (List[int]): the list of modes this gate is applied to
         x (float or List[float]): the list of displacements along the x axis
         x_bounds (float, float): bounds for the displacement along the x axis
         x_trainable (bool): whether x is a trainable variable
@@ -24,7 +23,6 @@ class Dgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         x: Union[Optional[float], Optional[List[float]]] = None,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_trainable: bool = True,
@@ -32,8 +30,7 @@ class Dgate(Parametrized, Transformation):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = True,
     ):
-        super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
-        self.is_unitary = True
+        super().__init__(x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
 
     def d_vector(self, hbar: float):
         return gaussian.displacement(self.x, self.y, hbar=hbar)
@@ -47,7 +44,6 @@ class Sgate(Parametrized, Transformation):
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
-        modes (List[int]): the list of modes this gate is applied to
         r (float or List[float]): the list of squeezing magnitudes
         r_bounds (float, float): bounds for the squeezing magnitudes
         r_trainable (bool): whether r is a trainable variable
@@ -58,7 +54,6 @@ class Sgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         r: Union[Optional[float], Optional[List[float]]] = None,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = True,
@@ -66,10 +61,7 @@ class Sgate(Parametrized, Transformation):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        super().__init__(
-            modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
-        )
-        self.is_unitary = True
+        super().__init__(r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
 
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r, self.phi)
@@ -83,7 +75,6 @@ class Rgate(Parametrized, Transformation):
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
-        modes (List[int]): the list of modes this gate is applied to
         angle (float or List[float]): the list of rotation angles
         angle_bounds (float, float): bounds for the rotation angles
         angle_trainable bool: whether angle is a trainable variable
@@ -91,13 +82,11 @@ class Rgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         angle: Union[Optional[float], Optional[List[float]]] = None,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         angle_trainable: bool = True,
     ):
-        super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
-        self.is_unitary = True
+        super().__init__(angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
 
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle)
@@ -109,7 +98,6 @@ class BSgate(Parametrized, Transformation):
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
-        modes (List[int]): the pair of modes to which the beamsplitter is applied to. Must be of length 2.
         theta (float): the transmissivity angle
         theta_bounds (float, float): bounds for the transmissivity angle
         theta_trainable (bool): whether theta is a trainable variable
@@ -120,7 +108,6 @@ class BSgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         theta: Optional[float] = None,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         theta_trainable: bool = True,
@@ -128,10 +115,7 @@ class BSgate(Parametrized, Transformation):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        if len(modes) > 2:
-            raise ValueError("Beam splitter works on 2 modes. Perhaps you are looking for Interferometer.")
         super().__init__(
-            modes=modes,
             theta=theta,
             theta_bounds=theta_bounds,
             theta_trainable=theta_trainable,
@@ -139,7 +123,6 @@ class BSgate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
             phi_trainable=phi_trainable,
         )
-        self.is_unitary = True
 
     def X_matrix(self):
         return gaussian.beam_splitter_symplectic(self.theta, self.phi)
@@ -153,7 +136,6 @@ class MZgate(Parametrized, Transformation):
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
-        modes (List[int]): the pair of modes to which the beamsplitter is applied to. Must be of length 2.
         phi_a (float): the phase in the upper arm of the MZ interferometer
         phi_a_bounds (float, float): bounds for phi_a
         phi_a_trainable (bool): whether phi_a is a trainable variable
@@ -165,7 +147,6 @@ class MZgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         phi_a: Optional[float] = None,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_a_trainable: bool = True,
@@ -174,10 +155,7 @@ class MZgate(Parametrized, Transformation):
         phi_b_trainable: bool = True,
         internal: bool = False,
     ):
-        if len(modes) > 2:
-            raise ValueError("The Mach-Zehnder gate works on 2 modes. Perhaps you are looking for Interferometer.")
         super().__init__(
-            modes=modes,
             phi_a=phi_a,
             phi_a_bounds=phi_a_bounds,
             phi_a_trainable=phi_a_trainable,
@@ -186,7 +164,6 @@ class MZgate(Parametrized, Transformation):
             phi_b_trainable=phi_b_trainable,
             internal=internal,
         )
-        self.is_unitary = True
 
     def X_matrix(self):
         return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
@@ -209,7 +186,6 @@ class S2gate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         r: Optional[float] = None,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = True,
@@ -217,10 +193,7 @@ class S2gate(Parametrized, Transformation):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = True,
     ):
-        super().__init__(
-            modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
-        )
-        self.is_unitary = True
+        super().__init__(r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable)
 
     def X_matrix(self):
         return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
@@ -231,16 +204,15 @@ class Interferometer(Parametrized, Transformation):
     N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
 
     Arguments:
-        modes (List[int]): the list of modes this gate is applied to
+        num_modes (int): the number of modes this gate is acting on
         orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
-    def __init__(self, modes: List[int], orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
+    def __init__(self, num_modes: int, orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
         if orthogonal is None:
-            orthogonal = train.new_orthogonal(num_modes=len(modes))
-        super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
-        self.is_unitary = True
+            orthogonal = train.new_orthogonal(num_modes=num_modes)
+        super().__init__(num_modes=num_modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
 
     def X_matrix(self):
         return self.orthogonal
@@ -256,7 +228,7 @@ class Ggate(Parametrized, Transformation):
     If a symplectic matrix is not provided, one will be picked at random with effective squeezings between 0 and 1.
 
     Arguments:
-        modes (List[int]): the list of modes this gate is applied to
+        num_modes (int): the number of modes this gate is applied to
         symplectic (2d array): a valid symplectic matrix. For N modes it must have shape `(2N,2N)`
         symplectic_trainable (bool): whether symplectic is a trainable variable
         displacement (1d array): a displacement vector. For N modes it must have shape `(2N,)`
@@ -265,18 +237,18 @@ class Ggate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        num_modes: int,
         symplectic: Optional[Tensor] = None,
         symplectic_trainable: bool = True,
         displacement: Optional[Tensor] = None,
         displacement_trainable: bool = True,
     ):
         if symplectic is None:
-            symplectic = train.new_symplectic(num_modes=len(modes))
+            symplectic = train.new_symplectic(num_modes=num_modes)
         if displacement is None:
-            displacement = train.backend.zeros(len(modes) * 2)  # TODO: gates should not know about the backend
+            displacement = train.backend.zeros(num_modes * 2)  # TODO: gates should not know about the backend
         super().__init__(
-            modes=modes,
+            num_modes=num_modes,
             symplectic=symplectic,
             symplectic_bounds=(None, None),
             symplectic_trainable=symplectic_trainable,
@@ -284,7 +256,6 @@ class Ggate(Parametrized, Transformation):
             displacement_bounds=(None, None),
             displacement_trainable=displacement_trainable,
         )
-        self.is_unitary = True
 
     def X_matrix(self):
         return self.symplectic
@@ -322,18 +293,15 @@ class LossChannel(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
         transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         transmissivity_trainable: bool = False,
     ):
         super().__init__(
-            modes=modes,
             transmissivity=transmissivity,
             transmissivity_bounds=transmissivity_bounds,
             transmissivity_trainable=transmissivity_trainable,
         )
-        self.is_unitary = False
 
     def X_matrix(self):
         return gaussian.loss_X(self.transmissivity)

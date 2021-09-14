@@ -15,11 +15,24 @@ class Transformation(ABC):
         * non-unitary CPTP channels
     """
 
-    def __call__(self, state: State) -> State:
-        d = XPTensor(self.d_vector(state.hbar), modes=(self._modes, self._modes))
-        X = XPTensor(self.X_matrix(), modes=self._modes)  # TODO: confirm with nico which of (X,Y,d) depend on hbar
-        Y = XPTensor(self.Y_matrix(state.hbar), modes=(self._modes, self._modes)))
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d)
+    def __call__(self, state: State, modes: Sequence[int] = []) -> State:
+        r"""
+        Apply the transformation to the state. If modes are not specified, it is assumed that the transformation acts on
+        modes 0, 1, 2, ..., N-1 where N is the number of modes in the state.
+        Arguments:
+            state: The state to transform.
+            modes (optional): The modes of the state the transformation acts on, relative to the state.
+        Returns:
+            The transformed state.
+        """
+        if modes == []:
+            modes = list(range(state.num_modes))
+        d = XPTensor(self.d_vector(state.hbar), modes=(modes,))
+        X = XPTensor(self.X_matrix(), modes=(modes,modes))  # TODO: confirm with nico which of (X,Y,d) depend on hbar
+        Y = XPTensor(self.Y_matrix(state.hbar), modes=(modes,modes))
+        cov = XPTensor(state.cov, modes=(list(range(state.num_modes)), list(range(state.num_modes))))
+        means = XPTensor(state.means, modes=(list(range(state.num_modes)),))
+        cov, means = gaussian.CPTP(cov, means, X, Y, d, modes)
         output = State(hbar=state.hbar, mixed=Y is not None, cov=cov, means=means)
         return output
 
@@ -53,5 +66,4 @@ class Transformation(ABC):
             modes = list(item)
         else:
             raise ValueError(f"{item} is not a valid slice or list of modes.")
-        self._modes = modes
-        return lambda *args, **kwargs: self(*args, **kwargs)
+        return lambda *args, **kwargs: self(*args, modes=modes, **kwargs)
