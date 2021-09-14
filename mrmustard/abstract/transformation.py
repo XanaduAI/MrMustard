@@ -2,7 +2,7 @@ import numpy as np  # for repr
 from abc import ABC
 from mrmustard.functionality import gaussian
 from mrmustard.abstract import State
-from experimental import XPTensor
+from mrmustard.experimental import XPTensor
 from mrmustard._typing import *
 
 
@@ -27,7 +27,7 @@ class Transformation(ABC):
         """
         if modes == []:
             modes = list(range(state.num_modes))
-        d = XPTensor(self.d_vector(state.hbar), modes=(modes,), additive=True)
+        d = XPTensor(self.d_vector(state.hbar), modes=(modes,[]), additive=True)
         X = XPTensor(self.X_matrix(), modes=(modes,modes), multiplicative=True)  # TODO: confirm with nico which of (X,Y,d) depend on hbar
         Y = XPTensor(self.Y_matrix(state.hbar), modes=(modes,modes), additive=True)
         cov = XPTensor(state.cov, multiplicative=True)

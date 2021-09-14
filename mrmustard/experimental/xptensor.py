@@ -24,9 +24,10 @@ class XPTensor:
 
     def __init__(self,
                 tensor: Optional[Union[Matrix, Vector]] = None,
-                modes: Tuple[List[int], List[int]] = ([], []),
+                modes: Tuple[Sequence[int], Sequence[int]] = ([], []),
                 additive=None, multiplicative=None
                 ):
+
         self.additive = bool(additive) or not bool(multiplicative)  # I love python
         self.shape = None if tensor is None else tuple([t // 2 for t in tensor.shape])
         self.ndim = None if tensor is None else len(self.shape)
@@ -137,10 +138,6 @@ class XPTensor:
             raise ValueError("Cannot clone a vector to a matrix or viceversa")
         return XPTensor.from_tensor(tensor, (other.modes[0], other.modes[1]), additive=self.additive)
 
-
-    def __array__(self):
-        return self.tensor
-
     def __rmul__(self, other: Scalar) -> XPTensor:
         if self.tensor is None:
             if self.multiplicative:
@@ -237,7 +234,7 @@ class XPTensor:
         return self + (-1) * other
 
     def __repr__(self) -> str:
-        return f"XPTensor(modes={self.modes}, additive={self.additive}, tensor_xpxp={self.tensor.to_xpxp()})"
+        return f"XPTensor(modes={self.modes}, additive={self.additive}, tensor_xpxp={self.to_xpxp()})"
 
     def __getitem__(self, item: Union[int, slice, List[int]]) -> Tensor:
         r"""
