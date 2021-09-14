@@ -7,7 +7,7 @@ backend = Backend()
 
 
 
-def CPTP(cov: XPTensor, means: XPTensor, modes: Sequence[int], X = XPTensor(multiplicative=True), Y = XPTensor(additive=True), d = XPTensor(additive=True)) -> Tuple[XPTensor, XPTensor]:
+def CPTP(cov: XPTensor, means: XPTensor, modes: Optional[Sequence[int]] = None, X = XPTensor(multiplicative=True), Y = XPTensor(additive=True), d = XPTensor(additive=True)) -> Tuple[XPTensor, XPTensor]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
@@ -20,19 +20,18 @@ def CPTP(cov: XPTensor, means: XPTensor, modes: Sequence[int], X = XPTensor(mult
         X (Matrix): the X matrix of the CPTP channel
         Y (Matrix): noise matrix of the CPTP channel
         d (Vector): displacement vector of the CPTP channel
-        modes (Sequence[int]): modes on which the channel operates
+        modes (Sequence[int] or None): override which modes the states are in. Othewise it's assumed that X, Y and d are in the same modes as cov and means.
         hbar (float): value of hbar
     Returns:
         Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
     """
     # if single-mode channel, apply to all modes indicated in `modes`
-    if X.nmodes == 1 and len(modes) > 1:
-        X = X.clone(times=len(modes))
-    if Y.nmodes == 1 and len(modes) > 1:
-        Y = Y.clone(times=len(modes))
-    if d.nmodes == 1 and len(modes) > 1:
-        d = d.clone(times=len(modes))
-    X._modes = Y._modes = d._modes = modes
+    if len(X.inmodes) == len(X.outmodes) == 1 and len(modes) > 1:
+        X = X.clone(modes)
+    if len(Y.indmoes) == len(Y.outmodes) == 1 and len(modes) > 1:
+        Y = Y.clone(modes)
+    if len(d.outmodes) == 1 and len(modes) > 1:
+        d = d.clone(modes)
     cov = X @ cov @ X.T + Y
     means = X @ means + d
     return cov, means

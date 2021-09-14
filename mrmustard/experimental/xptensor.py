@@ -24,15 +24,15 @@ class XPTensor:
 
     def __init__(self,
                 tensor: Optional[Union[Matrix, Vector]] = None,
-                modes: Union[Tuple[List[int], List[int]], List[int]] = None,
+                modes: Tuple[List[int], List[int]] = ([], []),
                 additive=None, multiplicative=None
                 ):
         self.additive = bool(additive) or not bool(multiplicative)  # I love python
-        self.shape = None if tensor is None else [t // 2 for t in tensor.shape]
+        self.shape = None if tensor is None else tuple([t // 2 for t in tensor.shape])
         self.ndim = None if tensor is None else len(self.shape)
-        self.isVector = None if tensor is None else = self.ndim == 1
-        self.tensor = None if tensor is None else backend.reshape(tensor, [_ for n in tensor.shape for _ in (2, n)])
-        if modes is None and tensor is not None:
+        self.isVector = None if tensor is None else self.ndim == 1
+        self.tensor = None if tensor is None else backend.reshape(tensor, [_ for n in self.shape for _ in (2, n)])
+        if modes == [[], []] and tensor is not None:
             modes = [list(range(s)) for s in self.shape+(0,)*self.isVector]
         assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])  # either a coherence or a diagonal block
         self.modes = modes
@@ -231,11 +231,6 @@ class XPTensor:
         if isinstance(item, tuple) and len(item) == 2:
             if self.isVector:
                 raise ValueError("Cannot index a vector with 2 indices")
-            return XPTensor(backend.getitem(self.tensor, (_all, item[0], _all, item[1])), self.modes, self.additive)
-        if isinstance(item, int):
-            return XPTensor(backend.getitem(self.tensor, (_all, item)[:2+self.isMatrix]), self.modes, self.additive)
-        if isinstance(item, slice):
-            return XPTensor(backend.getitem(self.tensor, (item, slice(
         # the right indices (don't exceed 2 or 1 index)
 
         # lst1 = self.__getitem_list(item)
@@ -252,7 +247,7 @@ class XPTensor:
 
     def __setitem__(self, key, value: XPTensor):
         if self.isMatrix:
-            self._tensor = backend.setitem(self.tensor, (slice(), key[0], slice(), key[1]], value.tensor[:, key[0], :, key[1]])
+            self._tensor = backend.setitem(self.tensor, (slice(), key[0], slice(), key[1]), value.tensor[:, key[0], :, key[1]])
         else:
             self._tensor = backend.setitem(self.tensor, (slice(), key), value.tensor[:, key])
 
