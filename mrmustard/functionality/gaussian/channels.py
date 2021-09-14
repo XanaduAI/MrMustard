@@ -7,7 +7,12 @@ backend = Backend()
 
 
 
-def CPTP(cov: XPTensor, means: XPTensor, X = XPTensor(multiplicative=True), Y = XPTensor(additive=True), d = XPTensor(additive=True)) -> Tuple[XPTensor, XPTensor]:
+def CPTP(cov: XPTensor,
+         means: XPTensor,
+         X = XPTensor(multiplicative=True),
+         Y = XPTensor(additive=True),
+         d = XPTensor(additive=True),
+         modes: Sequence[int] = []) -> Tuple[XPTensor, XPTensor]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
@@ -15,23 +20,23 @@ def CPTP(cov: XPTensor, means: XPTensor, X = XPTensor(multiplicative=True), Y = 
     It is assumed that X, Y and d are XPTensors in fewer or the same modes as cov and means.
 
     Args:
-        cov (Matrix): covariance matrix
-        means (Vector): means vector
-        X (Matrix): the X matrix of the CPTP channel
-        Y (Matrix): noise matrix of the CPTP channel
-        d (Vector): displacement vector of the CPTP channel
-        modes (Sequence[int] or None): override which modes the states are in. Othewise it's assumed that X, Y and d are in the same modes as cov and means.
-        hbar (float): value of hbar
+        cov (XPTensor): covariance matrix
+        means (XPTensor): means vector
+        X (XPTensor): the X matrix of the CPTP channel
+        Y (XPTensor): noise matrix of the CPTP channel
+        d (XPTensor): displacement vector of the CPTP channel
     Returns:
-        Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
+        Tuple[XPTensor, XPTensor]: the covariance matrix and the means vector of the state after the CPTP channel
     """
-    # if single-mode channel, apply to all modes indicated in `modes`
+    if modes == []:
+        modes = list(range(cov.shape[0]))
+    # if it's a single-mode channel we can apply to all modes indicated in modes
     if len(X.inmodes) == len(X.outmodes) == 1 and len(modes) > 1:
-        X = X.clone(modes)
+        X = X.clone_like(cov)
     if len(Y.indmoes) == len(Y.outmodes) == 1 and len(modes) > 1:
-        Y = Y.clone(modes)
+        Y = Y.clone_like(cov)
     if len(d.outmodes) == 1 and len(modes) > 1:
-        d = d.clone(modes)
+        d = d.clone_like(means)
     cov = X @ cov @ X.T + Y
     means = X @ means + d
     return cov, means

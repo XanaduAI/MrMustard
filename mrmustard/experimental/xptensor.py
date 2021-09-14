@@ -111,6 +111,33 @@ class XPTensor:
             return None
         return backend.reshape(self.tensor, [2 * s for s in self.shape])
 
+    def clone_like(self, other:XPTensor):
+        r"""
+        Create a new XPTensor with the same shape and modes as other. The new tensor
+        has the same content as self, cloned as many times as necessary to match the shape of other. 
+        """
+        if other.shape == self.shape:
+            return self
+        if self.isCoherence:
+            raise ValueError("Cannot clone a coherence block")
+        if any(o % s != 0 for o, s in zip(other.shape, self.shape)):
+            raise ValueError(f"Cannot clone tensor of shape {self.shape} to tensor of shape {other.shape}")
+        times = other.shape[0]//self.shape[0]
+        if self.isMatrix and other.isMatrix:
+            tensor = backend.transpose(self.tensor, (0, 2, 1, 3))  # shape = [2,2,N,N]
+            tensor = backend.expand_dims(tensor, axis=4)  # shape = [2,2,N,N,1]
+            tensor = backend.tile(tensor, (1, 1, 1, 1, times))  # shape = [2,2,N,N,T]
+            tensor = backend.diag(tensor) # shape = [2,2,N,N,T,T]
+            tensor = backend.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
+            tensor = backend.reshape(tensor, (2,2,times*self.shape[0],times*self.shape[1]))  # shape = [2,2,NT,NT]
+        if self.isVector and other.isVector:
+            tensor = backend.tile(self.expand_dims(self.tensor, axis=2), (1, 1, times))  # shape = [2,N,T]
+            tensor = backend.reshape(tensor, (2, -1))  # shape = [2,NT]
+        else:
+            raise ValueError("Cannot clone a vector to a matrix or viceversa")
+        return XPTensor.from_tensor(tensor, (other.modes[0], other.modes[1]), additive=self.additive)
+
+
     def __array__(self):
         return self.tensor
 

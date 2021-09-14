@@ -27,13 +27,13 @@ class Transformation(ABC):
         """
         if modes == []:
             modes = list(range(state.num_modes))
-        d = XPTensor(self.d_vector(state.hbar), modes=(modes,))
-        X = XPTensor(self.X_matrix(), modes=(modes,modes))  # TODO: confirm with nico which of (X,Y,d) depend on hbar
-        Y = XPTensor(self.Y_matrix(state.hbar), modes=(modes,modes))
-        cov = XPTensor(state.cov, modes=(list(range(state.num_modes)), list(range(state.num_modes))))
-        means = XPTensor(state.means, modes=(list(range(state.num_modes)),))
+        d = XPTensor(self.d_vector(state.hbar), modes=(modes,), additive=True)
+        X = XPTensor(self.X_matrix(), modes=(modes,modes), multiplicative=True)  # TODO: confirm with nico which of (X,Y,d) depend on hbar
+        Y = XPTensor(self.Y_matrix(state.hbar), modes=(modes,modes), additive=True)
+        cov = XPTensor(state.cov, multiplicative=True)
+        means = XPTensor(state.means, additive=True)
         cov, means = gaussian.CPTP(cov, means, X, Y, d, modes)
-        output = State(hbar=state.hbar, mixed=Y is not None, cov=cov, means=means)
+        output = State(hbar=state.hbar, mixed=Y.tensor is not None, cov=cov, means=means)
         return output
 
     def __repr__(self):
