@@ -7,9 +7,12 @@ from mrmustard import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
 from mrmustard import Circuit
 from mrmustard import Vacuum
 
+from hypothesis import settings, given, strategies as st
+from hypothesis.extra.numpy import arrays
+import random
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
+@settings(deadline=500)
+@given(n_mean=st.integers(0,3), phi=st.floats(min_value=0, max_value=2*np.pi))
 def test_two_mode_squeezing_fock(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
     Note that this is consistent with the Strawberryfields convention"""
