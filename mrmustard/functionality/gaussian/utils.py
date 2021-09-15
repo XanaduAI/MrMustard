@@ -82,4 +82,22 @@ def fidelity(cov1, cov2, means1, means2) -> Scalar:
     Returns:
         float: the fidelity
     """
-    return #backend.exp(-backend.trace(backend.matmul(backend.transpose(cov1), cov2)))
+    return backend.exp(-backend.trace(backend.matmul(backend.transpose(cov1), cov2)))
+
+def join_covs(*covs: XPTensor) -> XPTensor:
+    r"""
+    Joins the given sequence of covariance matrices along the diagonal.
+    Arguments:
+        matrices (Sequence[XPTensor]): the sequence of covariance matrices
+    Returns:
+        XPTensor: the joined covariance matrix
+    """
+    if any(c.isVector or c.isCoherence for c in covs):
+        raise ValueError("Only cov matrices allowed")
+    if any(c.additive for c in covs) and any(c.multiplicative for c in covs):
+        raise ValueError("Must be either all additive or all multiplicative")
+    covs = backend.stack([backend.transpose(c.tensor, (0,2,1,3)) for c in covs], axis=-1)
+    cov = backend.diag(covs)  # shape [2,2,N,N,T,T]
+    cov = backend.transpose(cov, (0,1,2,4,3,5))  # shape [2,2,N,T,N,T]
+    cov = backend.reshape(cov, (2,2,cov.shape[2]*cov.shape[3],cov.shape[4]*cov.shape[5]))  # shape [2,2,N*T,N*T]
+    return XPTensor(cov, additive
