@@ -66,6 +66,23 @@ class State:  # NOTE: this is not an ABC
             ket = self.ket(cutoffs=cutoffs)
             return fock.ket_to_probs(ket)
 
+    def concat(self, other: State):
+        r"""
+        Returns a new state that is the concatenation of this state and the other state.
+        The new state is a mixed state.
+        Arguments:
+            other State: the other state
+        Returns:
+            State: the concatenated state
+        """
+        if self.hbar != other.hbar:
+            raise ValueError("hbar must be the same for both states")
+        if self.isPure != other.isPure:
+            raise ValueError("states must be either mixed or pure, but not a combination")
+        cov = gaussian.join_covs(self.cov, other.cov)
+        means = gaussian.join_means(self.means, other.means)
+        return State(self.hbar, mixed=True, cov=cov, means=means)
+
     @property
     def number_means(self):
         r"""

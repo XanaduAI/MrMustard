@@ -33,7 +33,7 @@ class XPTensor:
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = None if tensor is None else self.ndim == 1
         self.tensor = None if tensor is None else backend.reshape(tensor, [_ for n in self.shape for _ in (2, n)])
-        if modes == [[], []] and tensor is not None:
+        if modes == ([], []) and tensor is not None:
             modes = [list(range(s)) for s in self.shape+(0,)*self.isVector]
         assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])  # either a coherence or a diagonal block
         self.modes = modes

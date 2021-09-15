@@ -19,7 +19,7 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[XPTensor, XPTensor]:
     """
     cov = backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
     means = backend.zeros([num_modes * 2], dtype=backend.float64)
-    return XPTensor(cov), XPTensor(means)
+    return XPTensor(cov, multiplicative=True), XPTensor(means, additive=True)
 
 
 def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
