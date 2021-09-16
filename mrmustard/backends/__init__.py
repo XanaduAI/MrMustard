@@ -450,7 +450,7 @@ class BackendInterface(ABC):
         Returns:
             Matrix: symplectic gradient tensor
         """
-        Jmat = self.J(len(s) // 2)
+        Jmat = self.J(S.shape[0] // 2)
         Z = self.matmul(self.transpose(S), dS_riemann)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
 
