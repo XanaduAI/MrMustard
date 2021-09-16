@@ -8,6 +8,7 @@ from mrmustard._typing import *
 #  is that we want to enforce the interface, in order to ensure compatibility
 #  of new backends with the rest of the codebase.
 
+
 class Backend(BackendInterface):
 
     float64 = torch.float64
@@ -24,7 +25,7 @@ class Backend(BackendInterface):
 
     def astensor(self, array: Union[np.ndarray, torch.Tensor], dtype=None) -> torch.Tensor:
         return self.cast(torch.tensor(array), dtype)
-    
+
     def conj(self, array: torch.Tensor) -> torch.Tensor:
         return torch.conj(array)
 
@@ -78,11 +79,13 @@ class Backend(BackendInterface):
         return torch.matrix_exp(matrix)
 
     def norm(self, array: torch.Tensor) -> torch.Tensor:
-        'Note that the norm preserves the type of array'
+        "Note that the norm preserves the type of array"
         return torch.norm(array)
 
     @Autocast()
-    def matmul(self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False)  -> torch.Tensor:
+    def matmul(
+        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False
+    ) -> torch.Tensor:
         return torch.matmul(a, b)
 
     @Autocast()
@@ -114,34 +117,46 @@ class Backend(BackendInterface):
     def diag_part(self, array: torch.Tensor) -> torch.Tensor:
         return torch.diag_embed(array)
 
-    def pad(self, array: torch.Tensor, paddings: Sequence[Tuple[int, int]], mode='constant', constant_values=0) -> torch.Tensor:
+    def pad(self, array: torch.Tensor, paddings: Sequence[Tuple[int, int]], mode="constant", constant_values=0) -> torch.Tensor:
         return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
     @Autocast()
-    def convolution(self, array: torch.Tensor, filters: torch.Tensor, strides: Optional[List[int]] = None, padding='VALID', data_format='NWC', dilations: Optional[List[int]] = None) -> torch.Tensor:        
+    def convolution(
+        self,
+        array: torch.Tensor,
+        filters: torch.Tensor,
+        strides: Optional[List[int]] = None,
+        padding="VALID",
+        data_format="NWC",
+        dilations: Optional[List[int]] = None,
+    ) -> torch.Tensor:
         r"""
-        Wrapper for torch.nn.Conv1d and torch.nn.Conv2d. 
+        Wrapper for torch.nn.Conv1d and torch.nn.Conv2d.
 
         Args:
             1D convolution: Tensor of shape [batch_size, input_channels, signal_length].
             2D convolution: [batch_size, input_channels, input_height, input_width]
         Returns:
         """
-        
+
         batch_size = array.shape[0]
         input_channels = array.shape[1]
-        output_channels = ... #TODO: unsure of how to get output channels 
+        output_channels = ...  # TODO: unsure of how to get output channels
 
-        if array.dim() == 3: # 1D case
+        if array.dim() == 3:  # 1D case
             signal_length = array.shape[2]
-            
-            m = torch.nn.Conv1d(input_channels, output_channels, filters,stride=strides,padding=padding,dtype=data_format, dilation=dilations)
+
+            m = torch.nn.Conv1d(
+                input_channels, output_channels, filters, stride=strides, padding=padding, dtype=data_format, dilation=dilations
+            )
             return m(array)
-        elif array.dim() == 4: #2D case
+        elif array.dim() == 4:  # 2D case
             input_height = array.shape[2]
             input_width = array.shape[3]
 
-            m = torch.nn.Conv2d(input_channels, output_channels, filters,stride=strides,padding=padding,dtype=data_format, dilation=dilations)
+            m = torch.nn.Conv2d(
+                input_channels, output_channels, filters, stride=strides, padding=padding, dtype=data_format, dilation=dilations
+            )
             return m(array)
         else:
             raise NotImplementedError
@@ -154,7 +169,7 @@ class Backend(BackendInterface):
     def reshape(self, array: torch.Tensor, shape: Sequence[int]) -> torch.Tensor:
         return torch.reshape(array, shape)
 
-    def sum(self, array: torch.Tensor, axes: Sequence[int]=None):
+    def sum(self, array: torch.Tensor, axes: Sequence[int] = None):
         return torch.sum(array, axes)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64) -> torch.Tensor:
@@ -180,7 +195,7 @@ class Backend(BackendInterface):
         return torch.ones_like(array)
 
     def gather(self, array: torch.Tensor, indices: torch.Tensor, axis: int = None) -> torch.Tensor:
-        # TODO: gather works differently in Pytorch vs Tensorflow. 
+        # TODO: gather works differently in Pytorch vs Tensorflow.
 
         return torch.gather(array, axis, indices)
 
@@ -220,7 +235,9 @@ class Backend(BackendInterface):
     def hash_tensor(self, tensor: torch.Tensor) -> str:
         return hash(tensor)
 
-    def hermite_renormalized(self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]) -> torch.Tensor:  # TODO this is not ready
+    def hermite_renormalized(
+        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
+    ) -> torch.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
         of exp(Ax^2 + Bx + C) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
@@ -242,7 +259,9 @@ class Backend(BackendInterface):
         self.optimizer = torch.optim.Adam(params, lr=0.001)
         return self.optimizer
 
-    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
+    def loss_and_gradients(
+        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
+    ) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
         r"""
         Computes the loss and gradients of the given cost function.
 
@@ -256,14 +275,14 @@ class Backend(BackendInterface):
             The loss and the gradients.
         """
         self.optimizer.zero_grad()
-        loss = cost_fn() #TODO: I think this should be cost_fn(params), but if it works I think it is fine.
+        loss = cost_fn()  # TODO: I think this should be cost_fn(params), but if it works I think it is fine.
         loss.backward()
         self.optimizer.step()
-        
+
         grads = [p.grad for p in parameters]
 
         return loss, grads
-        
+
     def eigvals(self, tensor: torch.Tensor) -> Tensor:
         "Returns the eigenvalues of a matrix."
         return torch.linalg.eigvals(tensor)
