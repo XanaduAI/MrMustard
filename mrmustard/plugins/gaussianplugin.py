@@ -524,7 +524,7 @@ def fidelity(self, mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0,
     r"""
     Returns the fidelity of two gaussian states.         
     
-    Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99.
+    Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
     """
 
     cov1 = self._backend.cast(cov1/hbar, "complex128") # convert to units where hbar = 1
@@ -553,10 +553,10 @@ def fidelity(self, mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0,
     f0_top = self._backend.det((matsqrtm + I) @ (W @ (1j*J)))
     f0_bot = self._backend.det(cov1 + cov2)
 
-    f0 = (f0_top/f0_bot)**(1/4)
+    f0 = (f0_top/f0_bot)**(1/2)
 
     dot = self._backend.sum(self._backend.transpose(deltar)*self._backend.matvec(cov12_inv, deltar)) # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
-    fidelity = f0*self._backend.exp((-1/4)*dot)
+    fidelity = f0*self._backend.exp((-1/2)*dot)
 
-    return fidelity
+    return self._backend.cast(fidelity, "float64")
