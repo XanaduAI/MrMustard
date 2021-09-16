@@ -1,6 +1,4 @@
-import pytest
-
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 from hypothesis.extra.numpy import arrays
 
 import numpy as np
@@ -16,9 +14,8 @@ from mrmustard.plugins import gaussian
 np.random.seed(137)
 
 
-@pytest.mark.parametrize("alpha", np.random.rand(3) + 1j * np.random.rand(3))
-@pytest.mark.parametrize("eta", [0.0, 0.3, 1.0])
-@pytest.mark.parametrize("dc", [0.0, 0.2])
+@settings(deadline=500)
+@given(alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
     circ = Circuit()
@@ -30,10 +27,8 @@ def test_detector_coherent_state(alpha, eta, dc):
     assert np.allclose(ps, expected)
 
 
-@pytest.mark.parametrize("r", np.random.rand(3))
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
-@pytest.mark.parametrize("eta", [0, 0.3, 1.0])
-@pytest.mark.parametrize("dc", [0, 0.2])
+@settings(deadline=700)
+@given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
 def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
     circ = Circuit()
@@ -51,12 +46,15 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     assert np.allclose(variance, expected_variance, atol=1e-3)
 
 
-@pytest.mark.parametrize("r", 0.5 * np.random.rand(3))
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
-@pytest.mark.parametrize("eta_s", [0, 0.3, 1.0])
-@pytest.mark.parametrize("eta_i", [0, 0.3, 1.0])
-@pytest.mark.parametrize("dc_s", [0, 0.2])
-@pytest.mark.parametrize("dc_i", [0, 0.2])
+@settings(deadline=700)
+@given(
+    r=st.floats(0, 0.5),
+    phi=st.floats(0, 2 * np.pi),
+    eta_s=st.floats(0, 1),
+    eta_i=st.floats(0, 1),
+    dc_s=st.floats(0, 0.2),
+    dc_i=st.floats(0, 0.2),
+)
 def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
     circ = Circuit()
@@ -164,7 +162,8 @@ def test_postselection():
     assert np.allclose(proj_state, expected_state)
 
 
-@pytest.mark.parametrize("eta", [0.2, 0.5, 0.9, 1.0])
+@settings(deadline=2100)
+@given(eta=st.floats(0, 1))
 def test_loss_probs(eta):
     "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
     lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
@@ -179,8 +178,8 @@ def test_loss_probs(eta):
     assert np.allclose(dm_ideal, dm_lossy)
 
 
-@pytest.mark.parametrize("eta", [0.2, 0.5, 0.9, 1.0])
-@pytest.mark.parametrize("n", [0, 1, 2])
+@settings(deadline=2500)
+@given(eta=st.floats(0, 1), n=st.integers(0, 2))
 def test_projected(eta, n):
     "Checks that a lossy channel is equivalent to quantum efficiency on projected states"
     lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
