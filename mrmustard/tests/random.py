@@ -37,27 +37,27 @@ def random_int_list_modes(num_modes=None):
 
 @st.composite
 def random_Rgate(draw, num_modes=None):
-    return Rgate(modes=draw(random_int_or_int_list_modes(num_modes)), phi=draw(angle), angle_bounds=draw(random_angle_bounds), angle_trainable=draw(st.booleans()))
+    return Rgate(phi=draw(angle), angle_bounds=draw(random_angle_bounds), angle_trainable=draw(st.booleans()))
 
 @st.composite
 def random_Sgate(draw, num_modes=None):
-    return Rgate(modes=draw(random_int_or_int_list_modes(num_modes)), r=draw(positive), phi=draw(angle), r_bounds=draw(random_positive_bounds), phi_bounds=draw(random_angle_bounds), r_trainable=draw(st.booleans()), phi_trainable=draw(st.booleans()))
+    return Sgate(r=draw(positive), phi=draw(angle), r_bounds=draw(random_positive_bounds), phi_bounds=draw(random_angle_bounds), r_trainable=draw(st.booleans()), phi_trainable=draw(st.booleans()))
 
 @st.composite
 def random_Dgate(draw, num_modes=None):
-    return Dgate(modes=draw(random_int_or_int_list_modes(num_modes)), x=draw(real), y=draw(real), x_bounds=draw(random_real_bounds), y_bounds=draw(random_real_bounds), x_trainable=draw(st.booleans()), y_trainable=draw(st.booleans()))
+    return Dgate(x=draw(real), y=draw(real), x_bounds=draw(random_real_bounds), y_bounds=draw(random_real_bounds), x_trainable=draw(st.booleans()), y_trainable=draw(st.booleans()))
 
 @st.composite
 def random_S2gate(draw):
-    return S2gate(modes=[draw(random_int), draw(random_int)], r=draw(positive), phi=draw(angle), r_bounds=draw(random_positive_bounds), phi_bounds=draw(random_angle_bounds), r_trainable=draw(st.booleans()), phi_trainable=draw(st.booleans()))
+    return S2gate(r=draw(positive), phi=draw(angle), r_bounds=draw(random_positive_bounds), phi_bounds=draw(random_angle_bounds), r_trainable=draw(st.booleans()), phi_trainable=draw(st.booleans()))
 
 @st.composite
 def random_BSgate(draw):
-    return BSgate(modes=[draw(random_int), draw(random_int)], theta=draw(angle), phi=draw(angle), theta_bounds=draw(random_angle_bounds), phi_bounds=draw(random_angle_bounds), theta_trainable=draw(st.booleans()), phi_trainable=draw(st.booleans()))
+    return BSgate(theta=draw(angle), phi=draw(angle), theta_bounds=draw(random_angle_bounds), phi_bounds=draw(random_angle_bounds), theta_trainable=draw(st.booleans()), phi_trainable=draw(st.booleans()))
 
 @st.composite
 def random_MZgate(draw):
-    return MZgate(modes=[draw(random_int), draw(random_int)], phi_a=draw(angle), phi_b=draw(angle), phi_a_bounds=draw(random_angle_bounds), phi_b_bounds=draw(random_angle_bounds), phi_a_trainable=draw(st.booleans()), phi_b_trainable=draw(st.booleans()), internal=draw(st.booleans()))
+    return MZgate(phi_a=draw(angle), phi_b=draw(angle), phi_a_bounds=draw(random_angle_bounds), phi_b_bounds=draw(random_angle_bounds), phi_a_trainable=draw(st.booleans()), phi_b_trainable=draw(st.booleans()), internal=draw(st.booleans()))
 
 @st.composite
 def random_Interferometer(draw, num_modes=None):

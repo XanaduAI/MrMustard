@@ -7,8 +7,8 @@ backend = Backend()
 
 
 
-def CPTP(cov: XPTensor,
-         means: XPTensor,
+def CPTP(cov = XPTensor(multiplicative=True),
+         means = XPTensor(additive=True),
          X = XPTensor(multiplicative=True),
          Y = XPTensor(additive=True),
          d = XPTensor(additive=True),
@@ -33,7 +33,7 @@ def CPTP(cov: XPTensor,
     # if it's a single-mode channel we can apply to all modes indicated in modes
     if len(X.inmodes) == len(X.outmodes) == 1 and len(modes) > 1:
         X = X.clone_like(cov)
-    if len(Y.indmoes) == len(Y.outmodes) == 1 and len(modes) > 1:
+    if len(Y.inmodes) == len(Y.outmodes) == 1 and len(modes) > 1:
         Y = Y.clone_like(cov)
     if len(d.outmodes) == 1 and len(modes) > 1:
         d = d.clone_like(means)

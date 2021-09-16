@@ -11,8 +11,8 @@ from mrmustard.experimental import XPTensor
 
 class Circuit(MutableSequence):
     def __init__(self, ops: Sequence[Op] = []):
-        self.X = XPTensor(None, modes=[], additive=False)
-        self.Y = XPTensor(None, modes=[], additive=True)
+        self.X = XPTensor(None, additive=False)
+        self.Y = XPTensor(None, additive=True)
         self._ops: List[Op] = [o for o in ops]
         self._compiled = False
 
@@ -58,8 +58,8 @@ class Circuit(MutableSequence):
         self._compiled = True
 
     def recompile(self) -> None:
-        self.X = XPTensor(None, modes=[], additive=False)
-        self.Y = XPTensor(None, modes=[], additive=True)
+        self.X = XPTensor(None, additive=False)
+        self.Y = XPTensor(None, additive=True)
         self.compile()
         self._compiled = True
 

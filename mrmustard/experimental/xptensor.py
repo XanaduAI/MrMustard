@@ -27,24 +27,31 @@ class XPTensor:
                 modes: Tuple[Sequence[int], Sequence[int]] = ([], []),
                 additive=None, multiplicative=None
                 ):
-
         self.additive = bool(additive) or not bool(multiplicative)  # I love python
-        self.shape = None if tensor is None else tuple([t // 2 for t in tensor.shape])
-        self.ndim = None if tensor is None else len(self.shape)
-        self.isVector = None if tensor is None else self.ndim == 1
-        self.tensor = None if tensor is None else backend.reshape(tensor, [_ for n in self.shape for _ in (2, n)])
-        if modes == ([], []) and tensor is not None:
-            modes = [list(range(s)) for s in self.shape+(0,)*self.isVector]
-        assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])  # either a coherence or a diagonal block
+        if isinstance(tensor, XPTensor) and False:  # remove False when you're sure you are not abusing of this functionality
+            self.shape = tensor.shape
+            self.ndim = tensor.ndim
+            self.isVector = tensor.isVector
+            self.tensor = tensor.tensor
+        else:
+            self.shape = None if tensor is None else tuple([t // 2 for t in tensor.shape])
+            self.ndim = None if tensor is None else len(self.shape)
+            self.isVector = None if tensor is None else self.ndim == 1
+            self.tensor = None if tensor is None else backend.reshape(tensor, [_ for n in self.shape for _ in (2, n)])
+
+        if modes[0] == [] and modes[1] == [] and self.tensor is not None:
+            modes = tuple(list(range(s)) for s in (self.shape+(0,) if self.isVector else self.shape))
+        assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])
         self.modes = modes
 
+
     @property
-    def isMatrix(self) -> bool:
+    def isMatrix(self) -> Optional[bool]:
         return None if self.tensor is None else not self.isVector
 
     @property
-    def isCoherence(self) -> bool:
-        return self.isMatrix and self.modes[0] != self.modes[1]
+    def isCoherence(self) -> Optional[bool]:
+        return None if self.tensor is None else self.isMatrix and self.modes[0] != self.modes[1]
 
     @property
     def multiplicative(self) -> bool:
@@ -55,8 +62,8 @@ class XPTensor:
         if self.isVector:
             raise ValueError("Cannot transpose a vector")
         if self.tensor is None:
-            return XPTensor(None, [], self.additive)
-        return XPTensor(backend.reshape(backend.transpose(self.tensor, (0,3,2,1)), (2*self.modes[1], 2*self.modes[0])), (self.modes[1], self.modes[0]), self.additive)
+            return XPTensor(additive=self.additive)
+        return XPTensor.from_tensor(backend.transpose(self.tensor, (0,3,2,1)), modes=(self.modes[1], self.modes[0]), additive=self.additive)
 
     @property
     def outmodes(self) -> List[int]:
@@ -69,10 +76,10 @@ class XPTensor:
     @classmethod
     def from_tensor(cls,
     tensor: Union[Matrix, Vector],
-    modes: Union[Tuple[List[int], List[int]], List[int]] = None,
+    modes: Tuple[Sequence[int], Sequence[int]] = ([], []),
     additive=None, multiplicative=None) -> XPTensor:
         xptensor = cls()
-        xptensor.additive = bool(additive) or not bool(multiplicative)  # I love python
+        xptensor.additive = bool(additive) or not bool(multiplicative)
         xptensor.shape = tensor.shape[1::2]
         xptensor.ndim = tensor.ndim // 2
         xptensor.isVector = xptensor.ndim == 1

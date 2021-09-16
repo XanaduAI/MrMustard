@@ -1,6 +1,7 @@
 from mrmustard._typing import *
 from mrmustard import Backend
 backend = Backend()
+from mrmustard.experimental import XPTensor
 
 
 def is_mixed_cov(cov: Matrix) -> bool:
@@ -100,4 +101,4 @@ def join_covs(*covs: XPTensor) -> XPTensor:
     cov = backend.diag(covs)  # shape [2,2,N,N,T,T]
     cov = backend.transpose(cov, (0,1,2,4,3,5))  # shape [2,2,N,T,N,T]
     cov = backend.reshape(cov, (2,2,cov.shape[2]*cov.shape[3],cov.shape[4]*cov.shape[5]))  # shape [2,2,N*T,N*T]
-    return XPTensor(cov, additive
+    return XPTensor(cov, multiplicative=True)

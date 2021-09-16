@@ -1,3 +1,4 @@
+from __future__ import annotations
 from mrmustard._typing import *
 from mrmustard.functionality import fock, gaussian
 

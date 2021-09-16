@@ -238,6 +238,9 @@ class Backend(BackendInterface):
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.sqrt(x), dtype)
 
+    def stack(self, values: Sequence[tf.Tensor], axis=0) -> tf.Tensor:
+        return tf.stack(values, axis)
+
     def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)
 
