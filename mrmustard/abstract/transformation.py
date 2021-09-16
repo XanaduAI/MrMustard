@@ -39,13 +39,13 @@ class Transformation(ABC):
             lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
             return f"{self.__class__.__qualname__}, {', '.join(lst)})"
 
-    def X_matrix(self) -> XPTensor:
+    def X_matrix(self) -> Matrix:
         return None
 
-    def d_vector(self, hbar: float) -> XPTensor:
+    def d_vector(self, hbar: float) -> Vector:
         return None
 
-    def Y_matrix(self, hbar: float) -> XPTensor:
+    def Y_matrix(self, hbar: float) -> Matrix:
         return None
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:

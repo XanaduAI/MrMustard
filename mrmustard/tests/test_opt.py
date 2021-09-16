@@ -28,14 +28,14 @@ def test_hong_ou_mandel_optimizer():
     tf.random.set_seed(137)
     circ = Circuit()
     r = np.arcsinh(1.0)
-    circ.append(S2gate(modes=[0, 1], r=r, r_trainable=False, phi=0.0))
-    circ.append(S2gate(modes=[2, 3], r=r, r_trainable=False, phi=0.0))
-    circ.append(BSgate(modes=[1, 2], theta=np.random.normal(), phi=np.random.normal()))
+    S2 = S2gate(r=r, r_trainable=False, phi=0.0)
+    BS = BSgate(theta=np.random.normal(), phi=np.random.normal())
 
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
-        return tf.abs(circ(state_in).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        state_out = BS[1,2](S2[2,3](S2[0,1](state_in)))
+        return tf.abs(state_out.ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)

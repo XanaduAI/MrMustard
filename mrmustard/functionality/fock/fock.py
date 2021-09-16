@@ -1,4 +1,5 @@
 from mrmustard import Backend
+from mrmustard.experimental import XPTensor
 from mrmustard._typing import *
 import numpy as np
 
@@ -14,40 +15,7 @@ Implements:
 backend = Backend()
 
 
-def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
-    r"""
-    Returns the photon number means vector
-    given a Wigenr covariance matrix and a means vector.
-    Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        hbar: The value of the Planck constant.
-    Returns:
-        The photon number means vector.
-    """
-    N = means.shape[-1] // 2
-    return (means[:N] ** 2 + means[N:] ** 2 + backend.diag_part(cov[:N, :N]) + backend.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
-
-
-def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
-    r"""
-    Returns the photon number covariance matrix
-    given a Wigenr covariance matrix and a means vector.
-    Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        hbar: The value of the Planck constant.
-    Returns:
-        The photon number covariance matrix.
-    """
-    N = means.shape[-1] // 2
-    mCm = cov * means[:, None] * means[None, :]
-    dd = backend.diag(backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
-    CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
-    return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * backend.eye(N, dtype=CC.dtype)
-
-
-def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
+def fock_representation(cov: XPTensor, means: XPTensor, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
     r"""
     Returns the Fock representation of the phase space representation
     given a Wigner covariance matrix and a means vector. If the state is pure
@@ -61,8 +29,8 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
     Returns:
         The Fock representation of the phase space representation.
     """
-    assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
-    A, B, C = hermite_parameters(cov, means, mixed, hbar)
+    assert len(cutoffs) == means.shape[-1] == cov.shape[-1]
+    A, B, C = hermite_parameters(cov.to_xxpp(), means.to_xxpp(), mixed, hbar)
     return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs * mixed)
 
 

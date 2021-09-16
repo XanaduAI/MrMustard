@@ -47,6 +47,10 @@ class XPTensor:
         self.modes = modes
 
     @property
+    def dtype(self):
+        return None if self.tensor is None else self.tensor.dtype
+
+    @property
     def num_modes(self) -> int:
         return len(self.outmodes)
 
@@ -124,6 +128,9 @@ class XPTensor:
         if self.tensor is None:
             return None
         return backend.reshape(self.tensor, [2 * s for s in self.shape])
+
+    def __array__(self):
+        return self.to_xxpp()
 
     def modes_first(self) -> Optional[Tensor]:
         if self.tensor is None:

@@ -171,7 +171,7 @@ def test_loss_probs(eta):
     L = LossChannel(transmissivity=eta)
     # L and S in parallel
     dm_lossy = lossy_detector(B[0,1](S[[0,1]](Vacuum(2))), cutoffs=[20, 20])  
-    dm_ideal = ideal_detector(L[[0,1]](B[0,1](S[[0,1]](Vacuum(2)))), cutoffs=[20, 20])
+    dm_ideal = ideal_detector(L[0,1](B[0,1](S[0,1](Vacuum(2)))), cutoffs=[20, 20])
 
     assert np.allclose(dm_ideal, dm_lossy)
 

@@ -25,9 +25,9 @@ def test_hong_ou_mandel(n_mean, phi, varphi, cutoff):
     cutoff = 2
     circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=r, phi=phi+np.pi))
-    circ.append(S2gate(modes=[2, 3], r=r, phi=phi+np.pi))
-    circ.append(BSgate(modes=[1, 2], theta=np.pi / 4, phi=varphi))
+    circ.append(S2gate(r=r, phi=phi+np.pi)[0, 1])
+    circ.append(S2gate(r=r, phi=phi+np.pi)[2, 3])
+    circ.append(BSgate(theta=np.pi / 4, phi=varphi)[1, 2])
     amps = circ(Vacuum(num_modes=4)).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
     assert np.allclose(amps[1, 1, 1, 1], 0.0)
 

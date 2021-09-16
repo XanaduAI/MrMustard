@@ -4,64 +4,51 @@ backend = Backend()
 from mrmustard.experimental import XPTensor
 
 
-def is_mixed_cov(cov: Matrix) -> bool:
+def is_mixed_cov(cov: XPTensor) -> bool:
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """
     return not is_pure_cov(backend.asnumpy(cov.to_xxpp()))
 
 
-# def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
-#     r"""
-#     Returns the covariances and means after discarding the specified modes.
-#     Arguments:
-#         cov (Matrix): covariance matrix
-#         means (Vector): means vector
-#         Bmodes (Sequence[int]): modes to discard
-#     Returns:
-#         Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
-#     """
-#     N = len(cov) // 2
-#     Aindices = backend.astensor([i for i in range(N) if i not in Bmodes])
-#     A_cov_block = backend.gather(backend.gather(cov, Aindices, axis=0), Aindices, axis=1)
-#     A_means_vec = backend.gather(means, Aindices)
-#     return A_cov_block, A_means_vec
+def number_means(cov: XPTensor, means: XPTensor, hbar: float) -> Vector:
+    r"""
+    Returns the photon number means vector
+    given a Wigenr covariance matrix and a means vector.
+    Args:
+        cov: The Wigner covariance matrix.
+        means: The Wigner means vector.
+        hbar: The value of the Planck constant.
+    Returns:
+        The photon number means vector.
+    """
+    N = means.num_modes
+    means = means.to_xxpp()
+    cov = cov.to_xxpp()
+    return (means[:N] ** 2 + means[N:] ** 2 + backend.diag_part(cov[:N, :N]) + backend.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
 
 
-# def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
-#     r"""
-#     Partitions the covariance matrix into the A and B subsystems and the AB coherence block.
-#     Arguments:
-#         cov (Matrix): the covariance matrix
-#         Amodes (Sequence[int]): the modes of system A
-#     Returns:
-#         Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
-#     """
-#     N = cov.shape[-1] // 2
-#     Bindices = backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
-#     Aindices = backend.cast(Amodes + [i + N for i in Amodes], "int32")
-#     A_block = backend.gather(backend.gather(cov, Aindices, axis=1), Aindices, axis=0)
-#     B_block = backend.gather(backend.gather(cov, Bindices, axis=1), Bindices, axis=0)
-#     AB_block = backend.gather(backend.gather(cov, Bindices, axis=1), Aindices, axis=0)
-#     return A_block, B_block, AB_block
+def number_cov(cov: XPTensor, means: XPTensor, hbar: float) -> Matrix:
+    r"""
+    Returns the photon number covariance matrix
+    given a Wigenr covariance matrix and a means vector.
+    Args:
+        cov: The Wigner covariance matrix.
+        means: The Wigner means vector.
+        hbar: The value of the Planck constant.
+    Returns:
+        The photon number covariance matrix.
+    """
+    N = means.num_modes
+    means = means.to_xxpp()
+    cov = cov.to_xxpp()
+    mCm = cov * means[:, None] * means[None, :]
+    dd = backend.diag(backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
+    CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
+    return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * backend.eye(N, dtype=CC.dtype)
 
 
-# def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
-#     r"""
-#     Partitions the means vector into the A and B subsystems.
-#     Arguments:
-#         means (Vector): the means vector
-#         Amodes (Sequence[int]): the modes of system A
-#     Returns:
-#         Tuple[Vector, Vector]: the means of A and the means of B
-#     """
-#     N = len(means) // 2
-#     Bindices = backend.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
-#     Aindices = backend.cast(Amodes + [i + N for i in Amodes], "int32")
-#     return backend.gather(means, Aindices), backend.gather(means, Bindices)
-
-
-def purity(cov: Matrix, hbar: float) -> Scalar:
+def purity(cov: XPTensor, hbar: float) -> Scalar:
     r"""
     Returns the purity of the state with the given covariance matrix.
     Arguments:
