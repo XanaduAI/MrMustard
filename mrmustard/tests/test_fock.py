@@ -1,4 +1,5 @@
-import pytest
+from hypothesis import settings, given, strategies as st
+
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
@@ -7,7 +8,6 @@ from mrmustard import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
 from mrmustard import Circuit
 from mrmustard import Vacuum
 
-from hypothesis import settings, given, example, strategies as st
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2*np.pi)
