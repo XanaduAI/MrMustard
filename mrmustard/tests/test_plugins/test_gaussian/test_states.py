@@ -1,13 +1,8 @@
+import numpy as np
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
-
-import numpy as np
-
-np.random.seed(137)
-
-from mrmustard import GaussianPlugin, Coherent, Thermal, Sgate, Dgate, Vacuum
-
-gp = GaussianPlugin()
+from mrmustard import *
+from mrmustard.plugins import gaussian as gp
 
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
@@ -46,7 +41,7 @@ def test_displaced_squeezed_state(hbar, r, phi, x, y):
     S = Sgate(modes=[0], r=r, phi=phi)
     D = Dgate(modes=[0], x=x, y=y)
     state = D(S(Vacuum(num_modes=1, hbar=hbar)))
-    assert np.allclose(cov, state.cov, atol=1e-6)
+    assert np.allclose(cov, state.cov, atol=1e-4)
     assert np.allclose(means, state.means)
 
 

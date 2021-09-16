@@ -7,7 +7,11 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard import *
+from mrmustard import Dgate, Sgate, S2gate, LossChannel, BSgate
+from mrmustard import Circuit, Optimizer
+from mrmustard import Vacuum
+from mrmustard import PNRDetector, Homodyne, Heterodyne
+from mrmustard.plugins import gaussian
 
 np.random.seed(137)
 
@@ -95,7 +99,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         "n_modes": 2,
     }
     cutoff = 20
-    tfbe = S2gate._gaussian._backend
+    tfbe = gaussian.backend
     circc = Circuit()
     circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))

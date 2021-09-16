@@ -60,6 +60,14 @@ class BackendInterface(ABC):
     All methods are pure (no side effects) and are be used by the plugins.
     """
 
+    __instance = None
+
+    # all backends are singletons
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = object.__new__(cls)
+        return cls.__instance
+
     # ~~~~~~~~~
     # Basic ops
     # ~~~~~~~~~

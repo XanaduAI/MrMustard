@@ -7,6 +7,7 @@ __version__ = "0.1.0"
 
 def get_env(env_name: str):
     import importlib
+
     return importlib.import_module("mrmustard.backends." + env_name).Backend
 
 

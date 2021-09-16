@@ -5,16 +5,11 @@ from __future__ import annotations
 __all__ = ["Circuit"]
 
 from collections.abc import MutableSequence
-from mrmustard import FockPlugin, GaussianPlugin
 from mrmustard._typing import *
-from mrmustard import XPTensor
+from mrmustard.experimental import XPTensor
 
 
 class Circuit(MutableSequence):
-
-    _fock = FockPlugin()
-    _gaussian = GaussianPlugin()
-
     def __init__(self, ops: Sequence[Op] = []):
         self.X = XPTensor(None, modes=[], additive=False)
         self.Y = XPTensor(None, modes=[], additive=True)

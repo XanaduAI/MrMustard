@@ -1,6 +1,6 @@
 from abc import ABC
 from mrmustard._typing import *
-from mrmustard import FockPlugin, GaussianPlugin
+from mrmustard.plugins import fock, gaussian
 from mrmustard.abstract.state import State
 
 
@@ -15,7 +15,6 @@ class GaussianMeasurement(ABC):
     r"""
     A Gaussian general-dyne measurement.
     """
-    _gaussian = GaussianPlugin()
 
     def __call__(self, state: State, **kwargs) -> Tuple[Scalar, State]:
         r"""
@@ -32,14 +31,15 @@ class GaussianMeasurement(ABC):
         assert self._hbar == state.hbar
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
-        prob, cov, means = self._gaussian.general_dyne(
+        prob, cov, means = gaussian.general_dyne(
             state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto.hbar
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
-        remaining_state = State(len(remaining_modes), state.hbar, self._gaussian.is_mixed_cov(cov))
+
         if len(remaining_modes) > 0:
-            remaining_state.cov = cov
-            remaining_state.means = means
+            remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov), cov, means)
+        else:
+            remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov))
         return prob, remaining_state
 
     def recompute_project_onto(self, **kwargs) -> State:
@@ -55,8 +55,6 @@ class FockMeasurement(ABC):
     It outputs the measurement probabilities and the remaining post-measurement state (if any)
     in the Fock basis.
     """
-
-    _fock = FockPlugin()
 
     def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> Tuple[State, Tensor]:
         r"""
@@ -74,12 +72,12 @@ class FockMeasurement(ABC):
                 # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
                 last = [mode - measured, mode + state.num_modes - 2 * measured]
                 perm = list(set(range(dm.ndim)).difference(last)) + last
-                dm = self._fock._backend.transpose(dm, perm)
-                dm = self._fock._backend.diag_part(dm)
-                dm = self._fock._backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
+                dm = fock.backend.transpose(dm, perm)
+                dm = fock.backend.diag_part(dm)
+                dm = fock.backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
                 measured += 1
-        prob = self._fock._backend.sum(self._fock._backend.all_diagonals(dm, real=False))
-        return self._fock._backend.abs(prob), dm / prob
+        prob = fock.backend.sum(fock.backend.all_diagonals(dm, real=False))
+        return fock.backend.abs(prob), dm / prob
 
     def apply_stochastic_channel(self, stochastic_channel, fock_probs: Tensor) -> Tensor:
         cutoffs = [fock_probs.shape[m] for m in self._modes]
@@ -90,14 +88,14 @@ class FockMeasurement(ABC):
                 )
         detector_probs = fock_probs
         for i, mode in enumerate(self._modes):
-            detector_probs = self._fock._backend.tensordot(
+            detector_probs = fock.backend.tensordot(
                 detector_probs,
                 stochastic_channel[i][: cutoffs[mode], : cutoffs[mode]],
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
             indices.insert(mode, fock_probs.ndim - 1)
-            detector_probs = self._fock._backend.transpose(detector_probs, indices)
+            detector_probs = fock.backend.transpose(detector_probs, indices)
         return detector_probs
 
     def __call__(self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None) -> Tuple[Tensor, Tensor]:
