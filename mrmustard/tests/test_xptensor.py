@@ -1,8 +1,10 @@
 from mrmustard import Coherent, XPTensor
 import numpy as np
 
+
 def test_xp_creation():
-    xp = XPTensor.from_xxpp(Coherent([0.5, 0.5], [0.4, 0.4]).cov, modes = [1,2])
+    xp = XPTensor.from_xxpp(Coherent([0.5, 0.5], [0.4, 0.4]).cov, modes=[1, 2])
+
 
 # def test_xp_multiplication():
 #     a = XPTensor.from_xxpp(modes = [1,2], xxpp_matrix = Coherent([0.5, 0.5], [0.4, 0.4]).cov)

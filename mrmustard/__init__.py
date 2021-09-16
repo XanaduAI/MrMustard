@@ -5,7 +5,8 @@ install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
 
-from mrmustard.plugins import FockPlugin, GaussianPlugin, TrainPlugin, GraphicsPlugin, XPTensor
+from mrmustard.plugins import FockPlugin, GaussianPlugin, TrainPlugin, GraphicsPlugin
+from mrmustard.plugins.experimental import XPTensor
 
 
 def set_env(env_name: str):

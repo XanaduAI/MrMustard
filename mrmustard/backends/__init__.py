@@ -392,3 +392,7 @@ class BackendInterface(ABC):
         Jmat = self.J(len(s) // 2)
         Z = self.matmul(self.transpose(S), dS_riemann)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+
+    def rearrange_rows_and_columns(self, matrix, permutation):
+        "Rearrange the rows and the columns of a matrix without using self.gather"
+        return self.transpose(self.transpose(matrix)[permutation])
