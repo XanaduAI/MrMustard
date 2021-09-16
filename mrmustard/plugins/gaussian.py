@@ -483,68 +483,73 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     """
     return 1 / backend.sqrt(backend.det((2 / hbar) * cov))
 
+
 def sympletic_eigenvals(cov: Matrix) -> Any:
     r"""
-    Returns the sympletic eigenspectrum of a covariance matrix. 
+    Returns the sympletic eigenspectrum of a covariance matrix.
     For a pure state, we expect the sympletic eigenvalues to be 1.
     Arguments:
         cov (Matrix): the covariance matrix.
     Returns:
         List[float]: the sympletic eigenvalues
     """
-    cov = backend.cast(cov, "complex128") # cast to complex otherwise matmul will break
-    J = backend.J(cov.shape[0]//2) # create a sympletic form 
-    M = 1j*J @ cov # compute iJ*cov
-    vals = backend.eigvals(M) # compute the eigenspectrum
-    return backend.abs(vals[::2]) # return the even eigenvalues
+    cov = backend.cast(cov, "complex128")  # cast to complex otherwise matmul will break
+    J = backend.J(cov.shape[0] // 2)  # create a sympletic form
+    M = 1j * J @ cov  # compute iJ*cov
+    vals = backend.eigvals(M)  # compute the eigenspectrum
+    return backend.abs(vals[::2])  # return the even eigenvalues
+
 
 def von_neumann_entropy(cov: Matrix) -> float:
     r"""
-    Returns the Von Neumann entropy. 
+    Returns the Von Neumann entropy.
     For a pure state, we expect the Von Neumann entropy to be 0.
     Arguments:
         cov (Matrix): the covariance matrix
     Returns:
         List[float]: the sympletic eigenvalues
     Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
-    """     
+    """
     symp_vals = self.sympletic_eigenvals(cov)
-    g = lambda x: backend.xlogy((x+1)/2, (x+1)/2)-backend.xlogy((x-1)/2, (x-1)/2+1e-9)
+    g = lambda x: backend.xlogy((x + 1) / 2, (x + 1) / 2) - backend.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = backend.sum(g(symp_vals))
     return entropy
 
+
 def fidelity(mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
     r"""
-    Returns the fidelity of two gaussian states.         
-    
+    Returns the fidelity of two gaussian states.
+
     Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
     """
 
-    cov1 = backend.cast(cov1/hbar, "complex128") # convert to units where hbar = 1
-    cov2 = backend.cast(cov2/hbar, "complex128") # convert to units where hbar = 1
+    cov1 = backend.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
+    cov2 = backend.cast(cov2 / hbar, "complex128")  # convert to units where hbar = 1
 
     mu1 = backend.cast(mu1, "complex128")
     mu2 = backend.cast(mu2, "complex128")
     deltar = (mu2 - mu1) / backend.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
-    J = backend.J(cov1.shape[0]//2)
+    J = backend.J(cov1.shape[0] // 2)
     I = backend.eye(cov1.shape[0])
     J = backend.cast(J, "complex128")
     I = backend.cast(I, "complex128")
 
     cov12_inv = backend.inv(cov1 + cov2)
 
-    V = backend.transpose(J) @ cov12_inv @ ((1/4)*J + cov2 @ J @ cov1)
-    
-    W = -2*(V @ (1j*J))
+    V = backend.transpose(J) @ cov12_inv @ ((1 / 4) * J + cov2 @ J @ cov1)
+
+    W = -2 * (V @ (1j * J))
     W_inv = backend.inv(W)
-    matsqrtm = backend.sqrtm(I - W_inv @ W_inv) # this also handles the case where the input matrix is close to zero
-    f0_top = backend.det((matsqrtm + I) @ (W @ (1j*J)))
+    matsqrtm = backend.sqrtm(I - W_inv @ W_inv)  # this also handles the case where the input matrix is close to zero
+    f0_top = backend.det((matsqrtm + I) @ (W @ (1j * J)))
     f0_bot = backend.det(cov1 + cov2)
 
-    f0 = (f0_top/f0_bot)**(1/2) # square of equation 98
+    f0 = (f0_top / f0_bot) ** (1 / 2)  # square of equation 98
 
-    dot = backend.sum(backend.transpose(deltar)*backend.matvec(cov12_inv, deltar)) # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
+    dot = backend.sum(
+        backend.transpose(deltar) * backend.matvec(cov12_inv, deltar)
+    )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
-    fidelity = f0*backend.exp((-1/2)*dot) # square of equation 95
+    fidelity = f0 * backend.exp((-1 / 2) * dot)  # square of equation 95
 
     return backend.cast(fidelity, "float64")
