@@ -1,6 +1,7 @@
 from hypothesis import given, strategies as st
 from hypothesis.extra.numpy import arrays
 from mrmustard import *
+import numpy as np
 
 angle = st.floats(min_value=0, max_value=2 * np.pi)
 positive = st.floats(min_value=0, allow_infinity=False, allow_nan=False)

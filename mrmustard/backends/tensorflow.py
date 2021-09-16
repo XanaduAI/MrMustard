@@ -320,10 +320,7 @@ class Backend(BackendInterface):
         "Returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A."
 
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
-        if self.allclose(tensor, 0, rtol=rtol, atol=atol):
+        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
             return self.zeros_like(tensor)
         else:
             return tf.linalg.sqrtm(tensor)
-
-    def allclose(self, a: tf.Tensor, b: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
-        return tf.experimental.numpy.allclose(a, b, rtol=rtol, atol=atol).numpy()
