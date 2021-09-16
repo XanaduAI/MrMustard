@@ -606,9 +606,8 @@ class GaussianPlugin:
         r"""
         Returns the fidelity of two gaussian states.         
         
-        Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99.
+        Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
         """
-
 
         cov1 = self._backend.cast(cov1/hbar, "complex128") # convert to units where hbar = 1
         cov2 = self._backend.cast(cov2/hbar, "complex128") # convert to units where hbar = 1
@@ -624,7 +623,6 @@ class GaussianPlugin:
         J = self._backend.cast(J, "complex128")
         I = self._backend.cast(I, "complex128")
 
-        #print(mu1, mu2, cov1, cov2)
 
         cov12_inv = self._backend.inv(cov1 + cov2)
 
@@ -638,13 +636,13 @@ class GaussianPlugin:
         f0_top = self._backend.det((matsqrtm + I) @ (W @ (1j*J)))
         f0_bot = self._backend.det(cov1 + cov2)
 
-        f0 = (f0_top/f0_bot)**(1/4)
+        f0 = (f0_top/f0_bot)**(1/2) # square of equation 98
 
         dot = self._backend.sum(self._backend.transpose(deltar)*self._backend.matvec(cov12_inv, deltar)) # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
-        fidelity = f0*self._backend.exp((-1/4)*dot)
+        fidelity = f0*self._backend.exp((-1/2)*dot) # square of equation 95
 
-        return fidelity
+        return self._backend.cast(fidelity, "float64")
 
 
 
