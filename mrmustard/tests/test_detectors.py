@@ -10,7 +10,7 @@ from scipy.stats import poisson
 from mrmustard import Dgate, Sgate, S2gate, LossChannel, BSgate
 from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
-from mrmustard import PNRDetector, Homodyne
+from mrmustard import PNRDetector, Homodyne, Heterodyne
 
 np.random.seed(137)
 
@@ -193,11 +193,98 @@ def test_projected(eta, n):
 
     assert np.allclose(dm_ideal, dm_lossy)
 
-@given(x = st.floats(min_value=-2.0, max_value=2.0), angle=st.floats(min_value=0.0, max_value=2.0*np.pi))
-def test_homodyne_on_2mode_squeezed_vacuum(x, angle):
-    """Checks that measuring a two-mode squeezed vacuum (S2gate) measured in the first mode for a value of x
-    returns a state with means vector at x."""
-    tmsv = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(x)), phi=angle)(Vacuum(num_modes=2))
-    homodyne = Homodyne(modes=[0], quadrature_angles=[angle], results=[x])
+
+@given(s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0))
+def test_homodyne_on_2mode_squeezed_vacuum(s, X):
+    S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
+    tmsv = S(Vacuum(2))
+    homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
+    r = homodyne._squeezing
     prob, remaining_state = homodyne(tmsv)
-    assert np.allclose(remaining_state.means, [x, 0.0])
+    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * tmsv.hbar / 2.0
+    assert np.allclose(remaining_state.cov, cov)
+    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * tmsv.hbar)
+    assert np.allclose(remaining_state.means, means)
+
+
+@given(s=st.floats(1.0, 20.0), X=st.floats(-10.0, 10.0), angle=st.floats(0, np.pi * 2))
+def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
+    S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
+    tmsv = S(Vacuum(2))
+    homodyne = Homodyne(modes=[0], quadrature_angles=angle, results=X)
+    r = homodyne._squeezing
+    prob, remaining_state = homodyne(tmsv)
+    denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
+    cov = (
+        tmsv.hbar
+        / 2
+        * np.array(
+            [
+                [
+                    1 + 2 * s - 2 * s * (s + 1) * (1 + 2 * s + np.cosh(2 * r) + np.cos(angle) * np.sinh(2 * r)) / denom,
+                    2 * s * (1 + s) * np.sin(angle) * np.sinh(2 * r) / denom,
+                ],
+                [
+                    2 * s * (1 + s) * np.sin(angle) * np.sinh(2 * r) / denom,
+                    (1 + 2 * s + (1 + 2 * s * (1 + s)) * np.cosh(2 * r) + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r)) / denom,
+                ],
+            ]
+        )
+    )
+    assert np.allclose(remaining_state.cov, cov)
+    denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
+    means = (
+        np.array(
+            [
+                np.sqrt(s * (1 + s)) * X * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
+                -np.sqrt(s * (1 + s)) * X * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
+            ]
+        )
+        * np.sqrt(2 * tmsv.hbar)
+    )
+    assert np.allclose(remaining_state.means, means)
+
+
+@given(s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0), d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)))
+def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
+    S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
+    D = Dgate(modes=[0, 1], x=d[:2], y=d[2:])
+    tmsv = D(S(Vacuum(2)))
+    homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
+    r = homodyne._squeezing
+    prob, remaining_state = homodyne(tmsv)
+    xb, xa, pb, pa = d
+    means = (
+        np.array(
+            [
+                xa + (2 * np.sqrt(s * (s + 1)) * (X - xb)) / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
+                pa + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+            ]
+        )
+        * np.sqrt(2 * tmsv.hbar)
+    )
+    assert np.allclose(remaining_state.means, means)
+
+
+# Test heterodyne now
+@given(
+    s=st.floats(min_value=0.0, max_value=10.0),
+    x=st.floats(-10.0, 10.0),
+    y=st.floats(-10.0, 10.0),
+    d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
+)
+def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):
+    S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
+    D = Dgate(modes=[0, 1], x=d[:2], y=d[2:])
+    tmsv = D(S(Vacuum(2)))
+    heterodyne = Heterodyne(modes=[0], x=x, y=y, hbar=tmsv.hbar)
+    prob, remaining_state = heterodyne(tmsv)
+    cov = tmsv.hbar / 2 * np.array([[1, 0], [0, 1]])
+    assert np.allclose(remaining_state.cov, cov)
+    xb, xa, pb, pa = d
+    means = (
+        np.array([xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb), pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y)])
+        * np.sqrt(2 * tmsv.hbar)
+        / (1 + s)
+    )
+    assert np.allclose(remaining_state.means, means, atol=1e-5)
