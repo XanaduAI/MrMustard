@@ -98,7 +98,7 @@ class Backend(BackendInterface):
     def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
         return tf.eye(size, dtype=dtype)
 
-    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
+    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> Optional[tf.Tensor]:
         return tf.gather(array, indices, axis=axis)
 
     @tf.custom_gradient
@@ -256,7 +256,7 @@ class Backend(BackendInterface):
 
     def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
         if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
+            return None  # TODO: remove and address None inputs where transpose is used
         return tf.transpose(a, perm)
 
     @Autocast()

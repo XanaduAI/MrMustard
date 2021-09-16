@@ -1,6 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
+from itertools import product
 from mrmustard import Backend
+import numpy as np
 backend = Backend()
 from mrmustard._typing import *
 
@@ -39,11 +41,14 @@ class XPTensor:
             self.isVector = None if tensor is None else self.ndim == 1
             self.tensor = None if tensor is None else backend.reshape(tensor, [_ for n in self.shape for _ in (2, n)])
 
-        if modes[0] == [] and modes[1] == [] and self.tensor is not None:
+        if len(modes[0]) == 0 and len(modes[1]) == 0 and self.tensor is not None:
             modes = tuple(list(range(s)) for s in (self.shape+(0,) if self.isVector else self.shape))
         assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])
         self.modes = modes
 
+    @property
+    def num_modes(self) -> int:
+        return len(self.outmodes)
 
     @property
     def isMatrix(self) -> Optional[bool]:
@@ -62,8 +67,8 @@ class XPTensor:
         if self.isVector:
             raise ValueError("Cannot transpose a vector")
         if self.tensor is None:
-            return XPTensor(additive=self.additive)
-        return XPTensor.from_tensor(backend.transpose(self.tensor, (0,3,2,1)), modes=(self.modes[1], self.modes[0]), additive=self.additive)
+            return self
+        return XPTensor.from_tensor(backend.transpose(self.tensor, (0,3,2,1)), (self.modes[1], self.modes[0]), self.additive, self.multiplicative)
 
     @property
     def outmodes(self) -> List[int]:
@@ -83,10 +88,11 @@ class XPTensor:
         xptensor.shape = tensor.shape[1::2]
         xptensor.ndim = tensor.ndim // 2
         xptensor.isVector = xptensor.ndim == 1
-        if modes is None:
+        if len(modes[0])==0 and len(modes[1])==0:
             modes = [list(range(s)) for s in xptensor.shape+(0,)*xptensor.isVector]
         assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])  # either a coherence or a diagonal block
         xptensor.modes = modes
+        xptensor.tensor = tensor
         return xptensor
 
     @classmethod
@@ -119,6 +125,16 @@ class XPTensor:
             return None
         return backend.reshape(self.tensor, [2 * s for s in self.shape])
 
+    def modes_first(self) -> Optional[Tensor]:
+        if self.tensor is None:
+            return None
+        return backend.transpose(self.tensor, (1,3,0,2) if self.isMatrix else (1,0))  # NM22 or N2
+    
+    def modes_last(self) -> Optional[Tensor]:
+        if self.tensor is None:
+            return None
+        return backend.transpose(self.tensor, (0,2,1,3) if self.isMatrix else (0,1))  # 22NM or 2N
+
     def clone_like(self, other:XPTensor):
         r"""
         Create a new XPTensor with the same shape and modes as other. The new tensor
@@ -132,8 +148,7 @@ class XPTensor:
             raise ValueError(f"Cannot clone tensor of shape {self.shape} to tensor of shape {other.shape}")
         times = other.shape[0]//self.shape[0]
         if self.isMatrix and other.isMatrix:
-            tensor = backend.transpose(self.tensor, (0, 2, 1, 3))  # shape = [2,2,N,N]
-            tensor = backend.expand_dims(tensor, axis=4)  # shape = [2,2,N,N,1]
+            tensor = backend.expand_dims(self.modes_last(), axis=4)  # shape = [2,2,N,N,1]
             tensor = backend.tile(tensor, (1, 1, 1, 1, times))  # shape = [2,2,N,N,T]
             tensor = backend.diag(tensor) # shape = [2,2,N,N,T,T]
             tensor = backend.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
@@ -143,7 +158,7 @@ class XPTensor:
             tensor = backend.reshape(tensor, (2, -1))  # shape = [2,NT]
         else:
             raise ValueError("Cannot clone a vector to a matrix or viceversa")
-        return XPTensor.from_tensor(tensor, (other.modes[0], other.modes[1]), additive=self.additive)
+        return XPTensor.from_tensor(tensor, (other.modes[0], other.modes[1]), self.additive, self.multiplicative)
 
     def __rmul__(self, other: Scalar) -> XPTensor:
         if self.tensor is None:
@@ -157,7 +172,7 @@ class XPTensor:
     def __mul__(self, other: Scalar) -> Optional[XPTensor]:
         return other * self if self.tensor is not None else None
 
-    def _join_modes(other: XPTensor) -> Tuple[List[int], List[int], List[int]]:
+    def _join_modes_by_product(self, other: XPTensor) -> Tuple[List[int], List[int], List[int]]:
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
@@ -181,35 +196,47 @@ class XPTensor:
             tensor, modes = self._mode_aware_vecvec(other)
         return XPTensor.from_tensor(tensor, modes, multiplicative=self.multiplicative and other.multiplicative)
 
+    def sameModes(self, other: XPTensor) -> bool:
+        return list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(other.inmodes)
+
     def _mode_aware_matmul(self, other:XPTensor) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
         r"""Performs matrix multiplication only on the necessary modes and
         takes care of keeping only the modes that are needed, in case of mismatch.
+        See documentation for a visual explanation with coloured blocks.  #TODO: add link
         """
-        if self.inmodes == other.outmodes:
+        if self.sameModes(other):
             return backend.tensordot(self.tensor, other.tensor, ((2,3),(0,1))), (self.outmodes, other.inmodes)
-        contracted, uncontracted_other, uncontracted_self = self._join_modes(other)
+        contracted, uncontracted_other, uncontracted_self = self._join_modes_by_product(other)
         outmodes = self.outmodes + uncontracted_other if self.multiplicative else self.outmodes
         inmodes = other.inmodes + uncontracted_self if other.multiplicative else other.inmodes
-        if list(set(outmodes)) != list(outmodes) or list(set(inmodes)) != list(inmodes):
+        if len(set(outmodes)) != len(outmodes) or len(set(inmodes)) != len(inmodes):
             raise ValueError("modes are not disjoint")
-        blue = backend.tensordot(backend.gather(self.tensor, contracted, axis=3), backend.gather(other.tensor, contracted, axis=1), ((2,3),(0,1)))
-        green = backend.gather(other, uncontracted_other, axis=1) if self.multiplicative else None
-        purple = backend.gather(self, uncontracted_self, axis=3) if other.multiplicative else None
-        white = backend.zeros((2, green.shape[0], 2, purple.shape[1]), dtype=blue.dtype) if self.multiplicative and other.multiplicative else None
+        blue = green = purple = white = None
+        if len(contracted) > 0:
+            blue = backend.tensordot(backend.gather(self.tensor, contracted, axis=3), backend.gather(other.tensor, contracted, axis=1), ((2,3),(0,1)))
+        if self.multiplicative and len(uncontracted_other) > 0:
+            green = backend.gather(other.tensor, uncontracted_other, axis=1)
+        if other.multiplicative and len(uncontracted_self) > 0:
+            purple = backend.gather(self.tensor, uncontracted_self, axis=3)
+        if self.multiplicative and other.multiplicative and green is not None and purple is not None and blue is not None:
+            white = backend.zeros((2, green.shape[0], 2, purple.shape[1]), dtype=blue.dtype)
         if green is not None and purple is not None:
-            final = backend.concatenate((backend.concatenate((blue, green), axis=1), backend.concatenate((purple, white), axis=1)), axis=3)
+            final = backend.concat((backend.concatenate((blue, green), axis=1), backend.concatenate((purple, white), axis=1)), axis=3)
         elif green is not None and purple is None:
-            final = backend.concatenate((blue, green), axis=1)
+            final = backend.concat((blue, green), axis=1)
         elif green is None and purple is not None:
-            final = backend.concatenate((blue, purple), axis=3)
+            final = backend.concat((blue, purple), axis=3)
         else:
             final = blue
         tr_out = [outmodes.index(o) for o in sorted(outmodes)]
         tr_in = [inmodes.index(i) for i in sorted(inmodes)]
-        return backend.gather(backend.gather(final, tr_out, axis=1), tr_in, axis=3), (list(sorted(outmodes)), list(sorted(inmodes)))
+        final = backend.gather(final, tr_out, axis=1)
+        if self.isMatrix and len(tr_in) > 0:
+            final = backend.gather(final, tr_in, axis=3)
+        return final, (list(sorted(outmodes)), list(sorted(inmodes)))
 
     def _mode_aware_vecvec(self, other: XPTensor) -> Scalar:
-        if self.outmodes == other.outmodes:
+        if self.sameModes(other):
             return backend.sum(self.tensor * other.tensor)
         contracted = list(set(self.outmodes) & set(other.outmodes))  # only the common modes
         return backend.sum(backend.gather(self.tensor, contracted, axis=1) * backend.gather(other.tensor, contracted, axis=1))
@@ -227,18 +254,44 @@ class XPTensor:
             if other.additive:
                 return self
             return ValueError("self+1 not implemented 🥸")
-        if self.isVector == other.isVector:
-            tensor, modes = self._mode_aware_add(other)
+        if self.isVector != other.isVector:
             raise ValueError("Cannot add a matrix and a vector")
-        return XPTensor.from_tensor(tensor, modes, additive = self.additive and other.additive)
+        if self.isCoherence != other.isCoherence:
+            raise ValueError("Cannot add a coherence block and a diagonal block")
+        tensor, modes = self._mode_aware_add(other)
+        return XPTensor.from_tensor(tensor, modes, self.additive and other.additive, self.multiplicative or other.multiplicative)
+    
+    def contains(self, other: XPTensor) -> bool:
+        return set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(other.inmodes)
 
-    def _mode_aware_add(self, other: XPTensor) -> Tuple[Matrix, Tuple[List[int], List[int]]]:
-        if self.modes == other.modes:
+    def _mode_aware_add(self, other: XPTensor) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
+        if self.sameModes(other):
             return self.tensor + other.tensor, self.modes
-        raise NotImplementedError("Cannot add two xptensors with different modes yet")
+        outmodes = list(set(self.outmodes).union(other.outmodes))  # NOTE: beware of mode ordering
+        inmodes = list(set(self.inmodes).union(other.inmodes))
+        if self.contains(other):
+            to_update = self.modes_first()
+            to_add = [other]
+        elif other.contains(self):
+            to_update = other.modes_first()
+            to_add = [self]
+        else:  # need to add to an empty tensor
+            to_update = backend.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
+            to_add = [self, other]
+        for t in to_add:
+            if t.isMatrix:
+                indices = [t.outmodes.index(o) for o in t.outmodes], [t.inmodes.index(i) for i in t.inmodes]
+                indices = list(product(*indices))
+            else:
+                indices = [[t.outmodes.index(o)] for o in t.outmodes]
+            to_update = backend.update_add_tensor(to_update, indices, backend.reshape(t.modes_first(),(-1,2,2) if self.isMatrix else (-1,2)))
+        return backend.transpose(to_update, (2,0,3,1) if self.isMatrix else (1,0)), (outmodes, inmodes)
 
     def __sub__(self, other: XPTensor) -> Optional[XPTensor]:
         return self + (-1) * other
+
+    def __truediv__(self, other: Scalar) -> Optional[XPTensor]:
+        return (1/other) * self
 
     def __repr__(self) -> str:
         return f"XPTensor(modes={self.modes}, additive={self.additive}, tensor_xpxp={self.to_xpxp()})"
@@ -264,17 +317,7 @@ class XPTensor:
                 raise ValueError("Cannot index a vector with 2 indices")
         # the right indices (don't exceed 2 or 1 index)
 
-        # lst1 = self.__getitem_list(item)
-        # lst2 = lst1
-        # if isinstance(item, tuple) and len(item) == 2:
-        #     if self.ndim == 1:
-        #         raise ValueError("XPTensor is a vector")
-        #     lst1 = self.__getitem_list(item[0])
-        #     lst2 = self.__getitem_list(item[1])
-        # gather = self.backend.gather(self.tensor, lst1, axis=1)
-        # if self.ndim == 2:
-        #     gather = (self.backend.gather(gather, lst2, axis=3),)
-        # return gather  # self.backend.reshape(gather, (2*len(lst1), 2*len(lst2))[:self.ndim])
+
 
     def __setitem__(self, key, value: XPTensor):
         if self.isMatrix:

@@ -7,7 +7,7 @@ class State:  # NOTE: this is not an ABC
     def __init__(self, hbar: float, mixed: bool, cov: Optional[Matrix] = None, means: Optional[Vector] = None):
         self.cov: Optional[Matrix] = cov
         self.means: Optional[Vector] = means
-        self.num_modes = cov.shape[-1] // 2 if cov is not None else 0
+        self.num_modes = cov.num_modes
         self.hbar = hbar
         self.isMixed: bool = mixed
 

@@ -27,12 +27,9 @@ class Transformation(ABC):
         """
         if modes == []:
             modes = list(range(state.num_modes))
-        if (d := self.d_vector(state.hbar)) is not None:
-            d.modes = (modes,[])
-        if (X := self.X_matrix()) is not None:
-            X.modes = (modes,modes)
-        if (Y := self.Y_matrix(state.hbar)) is not None:
-            Y.modes = (modes,modes)
+        d = XPTensor(self.d_vector(state.hbar), modes=(modes,[]), additive=True)
+        X = XPTensor(self.X_matrix(), modes=(modes, modes), multiplicative=True)
+        Y = XPTensor(self.Y_matrix(state.hbar), modes=(modes, modes), additive=True)
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, modes)
         output = State(hbar=state.hbar, mixed=Y.tensor is not None, cov=cov, means=means)
         return output
@@ -43,15 +40,13 @@ class Transformation(ABC):
             return f"{self.__class__.__qualname__}, {', '.join(lst)})"
 
     def X_matrix(self) -> XPTensor:
-        return XPTensor(multiplicative=True)
+        return None
 
     def d_vector(self, hbar: float) -> XPTensor:
-        d = XPTensor(additive=True)
-        d.isVector = True
-        return d
+        return None
 
     def Y_matrix(self, hbar: float) -> XPTensor:
-        return XPTensor(additive=True)
+        return None
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
