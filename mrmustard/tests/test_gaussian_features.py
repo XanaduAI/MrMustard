@@ -1,12 +1,12 @@
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard import *
-
+from mrmustard.plugins import gaussian as gp
 import numpy as np
 
 import tensorflow as tf
 
-gp = GaussianPlugin()
+
 
 
 def test_von_neumann_entropy_is_zero_for_pure_states(x, y):
