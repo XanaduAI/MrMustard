@@ -9,7 +9,7 @@ class TrainPlugin:
     _backend: BackendInterface
 
     def __init__(self):
-        #TODO: fix this later
+        # TODO: fix this later
         try:
             self.euclidean_opt = self.__class__._backend.DefaultEuclideanOptimizer()
         except:

@@ -271,7 +271,7 @@ class Backend(BackendInterface):
     def svd(self, tensor: tf.Tensor) -> Tensor:
         "Returns the Singular Value Decomposition of a matrix."
         return tf.linalg.svd(tensor)
-    
+
     def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
         "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
         return tf.math.xlogy(x, y)
