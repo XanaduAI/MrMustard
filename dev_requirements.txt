@@ -1,3 +1,3 @@
 pytest
-thewalrus
+http://xanadu-wheels.s3-website-us-east-1.amazonaws.com/thewalrus-0.17.0.dev0+20210916183332-cp38-cp38-manylinux2010_x86_64.whl#sha256=8c4c5634746a34e9f59574cf08773354b5fca03113f7dd0a17a06d9a08bf301b
 hypothesis
