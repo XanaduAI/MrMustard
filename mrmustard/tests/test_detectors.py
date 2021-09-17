@@ -14,7 +14,6 @@ from mrmustard.plugins import gaussian
 np.random.seed(137)
 
 
-@settings(deadline=500)
 @given(alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
@@ -27,7 +26,6 @@ def test_detector_coherent_state(alpha, eta, dc):
     assert np.allclose(ps, expected)
 
 
-@settings(deadline=700)
 @given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
 def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
@@ -46,7 +44,6 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     assert np.allclose(variance, expected_variance, atol=1e-3)
 
 
-@settings(deadline=700)
 @given(
     r=st.floats(0, 0.5),
     phi=st.floats(0, 2 * np.pi),
@@ -162,7 +159,6 @@ def test_postselection():
     assert np.allclose(proj_state, expected_state)
 
 
-@settings(deadline=2100)
 @given(eta=st.floats(0, 1))
 def test_loss_probs(eta):
     "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
@@ -178,7 +174,6 @@ def test_loss_probs(eta):
     assert np.allclose(dm_ideal, dm_lossy)
 
 
-@settings(deadline=2500)
 @given(eta=st.floats(0, 1), n=st.integers(0, 2))
 def test_projected(eta, n):
     "Checks that a lossy channel is equivalent to quantum efficiency on projected states"

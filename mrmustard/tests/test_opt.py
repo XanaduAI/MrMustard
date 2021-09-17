@@ -10,7 +10,8 @@ from mrmustard import Vacuum
 
 
 # @pytest.mark.parametrize("n", [0, 1, 2, 3])
-@settings(deadline=10000)
+
+
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
