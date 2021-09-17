@@ -240,9 +240,9 @@ class BackendInterface(ABC):
     def dagger(self, array: Tensor) -> Tensor:
         return self.conj(self.transpose(array))
 
-    def block(self, blocks: List[List[Tensor]]) -> Tensor:
-        rows = [self.concat(row, axis=-1) for row in blocks]
-        return self.concat(rows, axis=-2)
+    def block(self, blocks: List[List[Tensor]], axes=(-2,-1)) -> Tensor:
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
