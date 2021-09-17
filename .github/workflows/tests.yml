@@ -22,6 +22,7 @@ jobs:
           pip install wheel pytest pytest-cov --upgrade
           python setup.py bdist_wheel
           pip install dist/*.whl
+          export HYPOTHESIS_PROFILE=ci
       - name: Run tests
         run: python -m pytest mrmustard/tests --cov=mrmustard --cov-report=term-missing -p no:warnings --tb=native
       - name: Upload coverage to Codecov
