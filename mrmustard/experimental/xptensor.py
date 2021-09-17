@@ -329,51 +329,20 @@ class XPTensor:
         return (1/other) * self
 
     def __repr__(self) -> str:
-        return (f"XPTensor(" + ("Matrix, " if self.isMatrix else "Vector, ") + ("coherence, " if self.isCoherence else "") +
-                f"modes={self.modes}, " +
+        return (f"XPTensor(modes={self.modes}, " +
                 f"like_0={self.like_0}, like_1={self.like_1},\n" +
                 f"tensor_xpxp={self.to_xpxp()})")
 
-    def __getitem__(self, item: Union[int, slice, List[int]]) -> Tensor:
+    def __getitem__(self, item: Union[int, slice, List[int]]) -> XPTensor:
         r"""
         Returns modes or subsets of modes from the XPTensor, or coherences between modes using an intuitive notation
         Examples:
-            T[M] = self.tensor[:,M,...]
-            T[M,N] = self.tensor[:,M,:,N]
-            T[:,N] = self.tensor[:,:,:,N]
-            T[[1,2,3],:] = self.tensor[:,[1,2,3],:,N]
-            T[[1,2,3],[4,5]] = self.tensor[:,[1,2,3],:,[4,5]]  # i.e. the rows [1,2,3] and columns [4,5]
+            T[M] = only the outmodes M (e.g. T[[1,2,3]])
+            T[M,N] = the coherence between the modes M and N (e.g. T[[1,2],[3,4]])
+            T[:,N] ~ self.tensor[:,N]
+            T[[1,2,3],:] ~ self.tensor[:,[1,2,3],:,N]
+            T[[1,2,3],[4,5]] ~ self.tensor[:,[1,2,3],:,[4,5]]  # i.e. the rows [1,2,3] and columns [4,5]
         """
-
-        _all = slice(None)
-        if isinstance(item, int):
-            return XPTensor.from_tensor(backend.expand_dims(self.tensor[:,item,...], axis=1), modes=(self.modes[0][item], self.modes[1]), like_0=self.like_0)
-        if self.tensor is None:
-            return XPTensor(like_0=self.like_0)
-        if isinstance(item, tuple) and len(item) == 2:
-            if self.isVector:
-                raise ValueError("Cannot index a vector with 2 indices")
-        # the right indices (don't exceed 2 or 1 index)
-
-
-
-    def __setitem__(self, key, value: XPTensor):
-        if self.isMatrix:
-            self._tensor = backend.setitem(self.tensor, (slice(), key[0], slice(), key[1]), value.tensor[:, key[0], :, key[1]])
-        else:
-            self._tensor = backend.setitem(self.tensor, (slice(), key), value.tensor[:, key])
-
-    def __getitem_tuple(self, item=None):
-        if isinstance(item, int):
-            lst = [item]
-        elif isinstance(item, slice):
-            lst = list(range(item.start or 0, item.stop or self.nmodes, item.step))
-        elif isinstance(item, List):
-            lst = np.array(item)
-        elif item is None:
-            lst = slice(None)
-        else:
-            raise ValueError(f"Invalid item: {item}")
-        return lst
+        raise NotImplementedError()
 
 
