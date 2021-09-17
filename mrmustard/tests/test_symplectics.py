@@ -8,8 +8,7 @@ from mrmustard import Sgate, BSgate, S2gate, Rgate, MZgate
 from mrmustard import Vacuum
 
 
-# @pytest.mark.parametrize("r", [0.1, 1, 2])
-@given(r=st.floats(0.1, 2))
+@given(r=st.floats(0, 2))
 def test_two_mode_squeezing(r):
     """Tests that the two-mode squeezing operation is implemented correctly"""
     S2 = S2gate(modes=[0, 1], r=r, phi=0.0)

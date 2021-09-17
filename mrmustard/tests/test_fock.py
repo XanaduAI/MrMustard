@@ -13,7 +13,7 @@ from mrmustard import Vacuum
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
 
 
-@given(n_mean=st.integers(0, 3), phi=st_angle)
+@given(n_mean=st.floats(0, 3), phi=st_angle)
 def test_two_mode_squeezing_fock(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
     Note that this is consistent with the Strawberryfields convention"""
@@ -27,7 +27,7 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     assert np.allclose(amps, expected)
 
 
-@given(n_mean=st.integers(0, 3), phi=st_angle, varphi=st_angle)
+@given(n_mean=st.floats(0, 3), phi=st_angle, varphi=st_angle)
 def test_hong_ou_mandel(n_mean, phi, varphi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     cutoff = 2
@@ -53,7 +53,7 @@ def test_coherent_state(alpha):
     assert np.allclose(amps, expected)
 
 
-@given(r=st_angle, phi=st_angle)
+@given(r=st.floats(0, 2), phi=st_angle)
 def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics
     Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
@@ -74,7 +74,7 @@ def test_squeezed_state(r, phi):
     assert np.allclose(non_zero_amps, amp_pairs)
 
 
-@given(n_mean=st.integers(0, 3), phi=st_angle)
+@given(n_mean=st.floats(0, 3), phi=st_angle)
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     circ = Circuit()
@@ -89,7 +89,7 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     assert np.allclose(covN, expectedCov)
 
 
-@given(n_mean=st.integers(0, 2), phi=st_angle, eta=st.floats(min_value=0, max_value=1))
+@given(n_mean=st.floats(0, 2), phi=st_angle, eta=st.floats(min_value=0, max_value=1))
 def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
@@ -103,7 +103,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
     assert np.allclose(ps, expected)
 
 
-@given(n_mean=st.integers(0, 2), phi=st_angle, eta_s=st.floats(min_value=0, max_value=1), eta_i=st.floats(min_value=0, max_value=1))
+@given(n_mean=st.floats(0, 2), phi=st_angle, eta_s=st.floats(0, 1), eta_i=st.floats(0, 1))
 def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
     """Tests the total photon number distribution of a lossy two-mode squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
