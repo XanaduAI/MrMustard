@@ -32,8 +32,8 @@ class XPTensor:
     Thanks to sparsity we can represent graph states and transformations on graph states as XPTensor objects.
 
     Arguments:
-        tensor: The tensor to be represented in (n,n,2,2) order.
-        modes: a list of modes for a diagonal matrix or a vector and a tuple of lists for a coherence
+        tensor: The tensor in (n,m,2,2) or (n,2) order.
+        modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
         like_0: Whether the null tensor behaves like 0 for addition
         like_1: Whether the null tensor behaves like 1 for multiplication
     """
@@ -49,7 +49,16 @@ class XPTensor:
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = None if tensor is None else self.ndim == 1
         self.tensor = tensor
-        self.modes = self.validate_modes(modes)
+        if all(isinstance(m, int) for m in modes):
+            modes = (modes,) if self.isVector else (modes, modes)
+        if len(modes[0]) == 0 and len(modes[1]) == 0 and self.tensor is not None:
+            if self.isMatrix:
+                if self.shape[0] != self.shape[1] or like_0:
+                    raise ValueError("Specify the modes for a coherence block")
+            modes = tuple(list(range(s)) for s in (self.shape if self.isMatrix else self.shape+(0,)))
+        if not(set(modes[0]) == set(modes[1]) or set(modes[0]).isdisjoint(modes[1])):
+            raise ValueError("The inmodes and outmodes should be either equal or disjoint")
+        self.modes = modes
 
     @property
     def dtype(self):
@@ -87,16 +96,6 @@ class XPTensor:
         if self.tensor is None:
             return self
         return XPTensor(backend.transpose(self.tensor, (1,0,3,2)), (self.inmodes, self.outmodes), self.like_0, self.like_1)
-
-    def validate_modes(self, modes:Optional[Union[Sequence[int], Sequence[Sequence[int], Sequence[int]]]]) -> Tuple(List[int], List[int]):  # NOTE: call after setting isVector and tensor
-        if modes is None:
-            modes = ([], [])
-        if all(isinstance(m, int) for m in modes):
-            modes = (modes,) if self.isVector else (modes, modes)
-        if len(modes[0]) == 0 and len(modes[1]) == 0 and self.tensor is not None:
-            modes = tuple(list(range(s)) for s in (self.shape+(0,) if self.isVector else self.shape))
-        assert set(modes[0]).isdisjoint(modes[1]) or set(modes[0]) == set(modes[1])
-        return modes
 
     @classmethod
     def from_xxpp(cls,

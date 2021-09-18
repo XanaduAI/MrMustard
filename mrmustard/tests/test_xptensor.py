@@ -1,70 +1,92 @@
 from hypothesis import strategies as st, given
+from hypothesis.extra.numpy import arrays
 from mrmustard import DisplacedSqueezed
 from mrmustard.experimental import XPTensor
 import numpy as np
 from mrmustard.tests.random import random_pure_state
 
+even = st.integers(min_value=2, max_value=10).filter(lambda x: x % 2 == 0)
 
-# TODO: replace fixed states with random ones using hypothesis
+@st.composite
+def matrix(draw):  # rectangular
+    return draw(arrays(np.float64, shape=(draw(even), draw(even)), elements=st.floats(allow_nan=False, allow_infinity=False)))
+
+@st.composite
+def square_matrix(draw):
+    e = draw(even)
+    return draw(arrays(np.float64, shape=(e, e), elements=st.floats(allow_nan=False, allow_infinity=False)))
+
+@st.composite
+def vector(draw):
+    return draw(arrays(np.float64, shape=(draw(even),), elements=st.floats(allow_nan=False, allow_infinity=False)))
 
 
-def test_from_xxpp_xpxp():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2])
-    xxpp_cov, xxpp_means = state.cov, state.means
-    
-    xp1 = XPTensor.from_xxpp(xxpp_cov, like_1=True)
-    xpxp_cov = np.reshape(np.transpose(np.reshape(xxpp_cov, (2,3,2,3)), (1,0,3,2)), (6,6))
-    xp2 = XPTensor.from_xpxp(xpxp_cov, like_1=True)
+
+@given(matrix=matrix())
+def test_from_xxpp_xpxp_matrix(matrix):
+    N = matrix.shape[0]//2
+    M = matrix.shape[1]//2
+    modes = (list(range(N)), list(range(M))) if N == M else (list(range(N)), list(range(N, M+N)))
+    x = XPTensor(matrix, modes=modes, like_1=N==M)
+    xp1 = XPTensor.from_xxpp(matrix, modes=modes, like_1=N==M)
+    xpxp_matrix = np.reshape(np.transpose(np.reshape(matrix, (2,N,2,M)), (1,0,3,2)), (2*N,2*M))
+    xp2 = XPTensor.from_xpxp(xpxp_matrix, modes=modes, like_1=N==M)
     assert np.allclose(xp1.tensor, xp2.tensor)
-    
-    xp1 = XPTensor.from_xxpp(xxpp_means, like_1=True)
-    xpxp_means = np.reshape(np.transpose(np.reshape(xxpp_means, (2,3)), (1,0)), (6,))
-    xp2 = XPTensor.from_xpxp(xpxp_means, like_1=True)
+
+@given(vector())
+def test_from_xpxp_xxpp_vector(vector):
+    N = vector.shape[0]//2
+    xp1 = XPTensor.from_xxpp(vector, like_0=True)
+    xpxp_vector = np.reshape(np.transpose(np.reshape(vector, (2,N)), (1,0)), (-1,))
+    xp2 = XPTensor.from_xpxp(xpxp_vector, like_0=True)
     assert np.allclose(xp1.tensor, xp2.tensor)
 
-def test_from_xpxp_to_xpxp():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2])
-    xxpp_cov, xxpp_means = state.cov, state.means
-    xpxp_cov = np.reshape(np.transpose(np.reshape(xxpp_cov, (2,3,2,3)), (1,0,3,2)), (6,6))
-    xp1 = XPTensor.from_xpxp(xpxp_cov, like_1=True)
-    assert np.allclose(xp1.to_xpxp(), xpxp_cov)
+@given(matrix())
+def test_from_xpxp_to_xpxp(matrix):
+    N = matrix.shape[0]//2
+    M = matrix.shape[1]//2
+    modes = (list(range(N)), list(range(M))) if N == M else (list(range(N)), list(range(N, M+N)))
+    xpxp_matrix = np.reshape(np.transpose(np.reshape(matrix, (2,N,2,M)), (1,0,3,2)), (2*N,2*M))
+    xp1 = XPTensor.from_xpxp(xpxp_matrix, modes=modes, like_1=N==M)
+    assert np.allclose(xp1.to_xpxp(), xpxp_matrix)
 
-def test_from_xxpp_to_xxpp():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2])
-    xxpp_cov = state.cov
-    xp1 = XPTensor.from_xxpp(xxpp_cov, like_1=True)
-    assert np.allclose(xp1.to_xxpp(), xxpp_cov)
+@given(matrix())
+def test_from_xxpp_to_xxpp(matrix):
+    N = matrix.shape[0]//2
+    M = matrix.shape[1]//2
+    modes = (list(range(N)), list(range(M))) if N == M else (list(range(N)), list(range(N, M+N)))
+    xp1 = XPTensor.from_xxpp(matrix, modes=modes, like_1=N==M)
+    assert np.allclose(xp1.to_xxpp(), matrix)
 
+@given(matrix())
+def test_xxpp_to_xpxp_to_xxpp_to_xpxp(matrix):
+    N = matrix.shape[0]//2
+    M = matrix.shape[1]//2
+    modes = (list(range(N)), list(range(M))) if N == M else (list(range(N)), list(range(N, M+N)))
+    xpxp_matrix = np.reshape(np.transpose(np.reshape(matrix, (2,N,2,M)), (1,0,3,2)), (2*N,2*M))
+    xp1 = XPTensor.from_xpxp(xpxp_matrix, modes=modes, like_1=N==M)
+    xp2 = XPTensor.from_xxpp(xp1.to_xxpp(), modes=modes, like_1=N==M)
+    xp3 = XPTensor.from_xpxp(xp2.to_xpxp(), modes=modes, like_1=N==M)
+    assert np.allclose(matrix, xp3.to_xxpp())
+    xp4 = XPTensor.from_xxpp(xp3.to_xxpp(), modes=modes, like_1=N==M)
+    assert np.allclose(xpxp_matrix, xp4.to_xpxp())
 
-def test_xxpp_to_xpxp_to_xxpp():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2])
-    xxpp_cov, xxpp_means = state.cov, state.means
-    xpxp_cov = np.reshape(np.transpose(np.reshape(xxpp_cov, (2,3,2,3)), (1,0,3,2)), (6,6))
-    xp1 = XPTensor.from_xpxp(xpxp_cov, like_1=True)
-    xp2 = XPTensor.from_xxpp(xp1.to_xxpp(), like_1=True)
-    xp3 = XPTensor.from_xpxp(xp2.to_xpxp(), like_1=True)
-    assert np.allclose(xxpp_cov, xp3.to_xxpp())
+@given(matrix())
+def test_matmul_same_modes(matrix):
+    N = matrix.shape[0]//2
+    M = matrix.shape[1]//2
+    modes = (list(range(N)), list(range(M))) if N == M else (list(range(N)), list(range(N, M+N)))
+    xp1 = XPTensor.from_xxpp(matrix, modes=modes, like_1=N==M)
+    assert np.allclose((xp1 @ xp1.T).to_xxpp(), matrix @ matrix.T)
 
-def test_xxpp_to_xpxp():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2])
-    xpxp_cov = XPTensor.from_xxpp(state.cov, like_1=True).to_xpxp()
-    expected_cov = np.reshape(np.transpose(np.reshape(state.cov, (2,3,2,3)), (1,0,3,2)), (6,6))
-    assert np.allclose(xpxp_cov, expected_cov)
-
-def test_matmul_same_modes():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2]) 
-    cov, means = state.cov, state.means
-    xp1 = XPTensor.from_xxpp(cov, like_1=True)
-    expected = cov @ cov
-    assert np.allclose((xp1 @ xp1).to_xxpp(), expected)
-
-def test_matmul_different_modes():
-    state = DisplacedSqueezed(r=[0.5, 0.5, 0.5], phi=[0.4, 0.4,0.4], x=[0.3, 0.3,0.3], y=[0.2, 0.2,0.2]) 
-    cov = np.reshape(np.transpose(np.reshape(state.cov, (2,3,2,3)), (1,0,3,2)), (6,6))  #  in xpxp order
-    xp1 = XPTensor.from_xpxp(cov, modes=[0,1,2], like_1=True)
-    xp2 = XPTensor.from_xpxp(cov, modes=[1,2,3], like_1=True)
-    cov1 = np.block([[cov, np.zeros((6,2))], [np.zeros((2,6)), np.eye(2)]])  # add one extra empty mode at the end
-    cov2 = np.block([[np.eye(2), np.zeros((2,6))], [np.zeros((6,2)), cov]])  # add one extra empty mode at the beginning
+@given(square_matrix())
+def test_matmul_different_modes(matrix):
+    N = matrix.shape[0]//2
+    xpxp_matrix = np.reshape(np.transpose(np.reshape(matrix, (2,N,2,N)), (1,0,3,2)), (2*N,2*N))  #  in xpxp order
+    matrix1 = np.block([[xpxp_matrix, np.zeros((2*N,2))], [np.zeros((2,2*N)), np.eye(2)]])  # add one extra empty mode at the end
+    matrix2 = np.block([[np.eye(2), np.zeros((2,2*N))], [np.zeros((2*N,2)), xpxp_matrix]])  # add one extra empty mode at the beginning
+    xp1 = XPTensor.from_xpxp(matrix1, modes=list(range(0,N+1)), like_1=True)
+    xp2 = XPTensor.from_xpxp(xpxp_matrix, modes=list(range(1,N+1)), like_1=True)
     prod = xp1 @ xp2
-    np.allclose(prod.to_xpxp(), cov1 @ cov2)
+    np.allclose(prod.to_xpxp(), matrix1 @ matrix2)
 
