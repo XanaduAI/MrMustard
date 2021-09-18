@@ -45,7 +45,7 @@ class XPTensor:
         if like_0 is None and like_1 is None:
             raise ValueError("At least one of like_0 or like_1 must be set")
         self.like_0 = bool(like_0) or not bool(like_1)  # I love python
-        self.shape = None if tensor is None else tensor.shape[:tensor.nmodes//2]  # only (n,m) or (n,)
+        self.shape = None if tensor is None else tensor.shape[:len(tensor.shape)//2]  # only (n,m) or (n,)
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = None if tensor is None else self.ndim == 1
         self.tensor = tensor
@@ -86,7 +86,7 @@ class XPTensor:
             raise ValueError("Cannot transpose a vector")
         if self.tensor is None:
             return self
-        return XPTensor.from_tensor(backend.transpose(self.tensor, (1,0,3,2)), (self.inmodes, self.outmodes), self.like_0, self.like_1)
+        return XPTensor(backend.transpose(self.tensor, (1,0,3,2)), (self.inmodes, self.outmodes), self.like_0, self.like_1)
 
     def validate_modes(self, modes:Optional[Union[Sequence[int], Sequence[Sequence[int], Sequence[int]]]]) -> Tuple(List[int], List[int]):  # NOTE: call after setting isVector and tensor
         if modes is None:
@@ -106,7 +106,7 @@ class XPTensor:
     like_1: bool = None) -> XPTensor:
         if tensor is not None:
             tensor = backend.reshape(tensor, [_ for n in tensor.shape for _ in (2, n//2)])
-            tensor = backend.transpose(tensor, (1, 3, 0, 2)[:tensor.ndim])
+            tensor = backend.transpose(tensor, (1,3,0,2) if len(tensor.shape) == 4 else (1,0))
         return XPTensor(tensor, modes, like_0, like_1)
 
     @classmethod
@@ -117,8 +117,8 @@ class XPTensor:
     like_1: bool = None) -> XPTensor:
         if tensor is not None:
             tensor = backend.reshape(tensor, [_ for n in tensor.shape for _ in (n//2, 2)])
-            tensor = backend.transpose(tensor, (0, 2, 1, 3)[:tensor.ndim])
-        return cls.from_tensor(tensor, modes, like_0, like_1)
+            tensor = backend.transpose(tensor, (0,2,1,3) if len(tensor.shape) == 4 else (0,1))
+        return cls(tensor, modes, like_0, like_1)
 
     def to_xpxp(self) -> Optional[Matrix]:
         if self.tensor is None:
@@ -130,7 +130,7 @@ class XPTensor:
         if self.tensor is None:
             return None
         tensor = backend.transpose(self.tensor, (2, 0, 3, 1) if self.isMatrix else (1, 0))
-        return backend.reshape(self.tensor, [2 * s for s in self.shape])
+        return backend.reshape(tensor, [2 * s for s in self.shape])
 
     def __array__(self):
         return self.to_xxpp()
@@ -230,42 +230,53 @@ class XPTensor:
         """
         modes_match = list(self.inmodes) == list(other.outmodes)  # NOTE: they match including the ordering
         if modes_match:
-            return backend.tensordot(self.tensor, other.tensor, ((2,3),(0,1))), (self.outmodes, other.inmodes)
+            prod = backend.tensordot(self.tensor, other.tensor, ((1,3),(0,2)))
+            return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
+
+        # mode index gymnastic
         contracted = [i for i in self.inmodes if i in other.outmodes]
-        uncontracted_other = [o for o in other.outmodes if o not in contracted]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
-        outmodes = sorted(self.outmodes + uncontracted_other) if self.like_1 else self.outmodes  # NOTE mind to the sorting
-        inmodes = sorted(other.inmodes + uncontracted_self) if other.like_1 else other.inmodes
-        outmodes_repeated = len(set(outmodes)) != len(outmodes)
-        inmodes_repeated = len(set(inmodes)) != len(inmodes)
+        uncontracted_other = [o for o in other.outmodes if o not in contracted]
+
+        contracted_self_index = [self.inmodes.index(i) for i in contracted]
+        contracted_other_index = [other.outmodes.index(o) for o in contracted]
+        uncontracted_self_index = [self.inmodes.index(i) for i in uncontracted_self]
+        uncontracted_other_index = [other.outmodes.index(o) for o in uncontracted_other]
+
+        outmodes_repeated = not set(uncontracted_other).isdisjoint(self.outmodes)
+        inmodes_repeated = not set(uncontracted_self).isdisjoint(other.inmodes)
         if outmodes_repeated or inmodes_repeated:
             raise ValueError("invalid modes")
-        blue = None  # shape = [N1,M2,2,2]
-        green = None # shape = [N1,M2,2,2]
+        outmodes = self.outmodes + uncontracted_other if self.like_1 else self.outmodes  # NOTE: unsorted
+        outmodes_index = [outmodes.index(o) for o in sorted(outmodes)]
+        inmodes = other.inmodes + uncontracted_self if other.like_1 else other.inmodes
+        inmodes_index = [inmodes.index(i) for i in sorted(inmodes)]
+
+        # actual multiplication
+        blue = None 
+        green = None
         purple = None
         white = None  
         if len(contracted) > 0:
-            blue = backend.tensordot(backend.gather(self.tensor, contracted, axis=1), backend.gather(other.tensor, contracted, axis=0), ((1,3),(0,2)))
+            blue = backend.tensordot(backend.gather(self.tensor, contracted_self_index, axis=1), backend.gather(other.tensor, contracted_other_index, axis=0), ((1,3),(0,2)))
+            blue = backend.transpose(blue, (0,2,1,3))
         if self.like_1 and len(uncontracted_other) > 0:
-            green = backend.gather(other.tensor, uncontracted_other, axis=0)
+            green = backend.gather(other.tensor, uncontracted_other_index, axis=0)
         if other.like_1 and len(uncontracted_self) > 0:
-            purple = backend.gather(self.tensor, uncontracted_self, axis=1)
+            purple = backend.gather(self.tensor, uncontracted_self_index, axis=1)
         if self.like_1 and other.like_1 and green is not None and purple is not None and blue is not None:
             white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=blue.dtype)
         if green is not None and purple is not None:
-            final = backend.block([[blue, green],[purple, white]], axes=[0,1])
+            final = backend.block([[blue, purple],[green, white]], axes=[0,1])
         elif green is not None and purple is None:
-            final = backend.block([[blue, green]], axes=[0,1])
+            final = backend.block([[blue], [green]], axes=[0,1])
         elif green is None and purple is not None:
-            final = backend.block([[blue],[purple]], axes=[0,1])
+            final = backend.block([[blue, purple]], axes=[0,1])
         else:
             final = blue
-        outmodes_transposition = [outmodes.index(o) for o in sorted(outmodes)]
-        inmodes_transposition = [inmodes.index(i) for i in sorted(inmodes)]
-        final = backend.gather(final, outmodes_transposition, axis=0)
-        if len(inmodes_transposition) > 0:
-            final = backend.gather(final, inmodes_transposition, axis=1)
-        # NOTE: the order that we return is not the same thing as the transposition that obtains that order
+        final = backend.gather(final, outmodes_index, axis=0)
+        if len(inmodes_index) > 0:
+            final = backend.gather(final, inmodes_index, axis=1)
         return final, (list(sorted(outmodes)), list(sorted(inmodes)))
 
     def _mode_aware_vecvec(self, other: XPTensor) -> Scalar:
