@@ -44,7 +44,9 @@ class XPTensor:
                 like_0=None, like_1=None):
         if like_0 is None and like_1 is None:
             raise ValueError("At least one of like_0 or like_1 must be set")
-        self.like_0 = bool(like_0) or not bool(like_1)  # I love python
+        if like_0 == like_1:
+            raise ValueError(f"like_0 and like_1 can't both be {like_0}")
+        self.like_0 = like_0 if like_0 is not None else not like_1  # I love Python
         self.shape = None if tensor is None else tensor.shape[:len(tensor.shape)//2]  # only (n,m) or (n,)
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = None if tensor is None else self.ndim == 1
@@ -252,7 +254,9 @@ class XPTensor:
         inmodes_index = [inmodes.index(i) for i in sorted(inmodes)]
 
         # actual multiplication
-        blue = None 
+        #[blue,purple]
+        #[green, white]
+        blue = None
         green = None
         purple = None
         white = None  
@@ -265,17 +269,18 @@ class XPTensor:
             purple = backend.gather(self.tensor, uncontracted_self_index, axis=1)
         if self.like_1 and other.like_1 and green is not None and purple is not None and blue is not None:
             white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=blue.dtype)
-        if green is not None and purple is not None:
+        if white is not None:
             final = backend.block([[blue, purple],[green, white]], axes=[0,1])
-        elif green is not None and purple is None:
+        elif purple is None:
             final = backend.block([[blue], [green]], axes=[0,1])
-        elif green is None and purple is not None:
+        elif green is None:
             final = backend.block([[blue, purple]], axes=[0,1])
         else:
-            final = blue
-        final = backend.gather(final, outmodes_index, axis=0)
-        if len(inmodes_index) > 0:
-            final = backend.gather(final, inmodes_index, axis=1)
+            final = blue  # NOTE: could be None
+        if final is not None:
+            final = backend.gather(final, outmodes_index, axis=0)
+            if len(inmodes_index) > 0:
+                final = backend.gather(final, inmodes_index, axis=1)
         return final, (list(sorted(outmodes)), list(sorted(inmodes)))
 
     def _mode_aware_vecvec(self, other: XPTensor) -> Scalar:
