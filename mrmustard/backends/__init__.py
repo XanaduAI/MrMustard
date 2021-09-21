@@ -319,8 +319,8 @@ class BackendInterface(ABC):
     @lru_cache()
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes"
-        idl = np.identity(num_modes)
-        return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
+        I = np.identity(num_modes)
+        return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
     @lru_cache()
