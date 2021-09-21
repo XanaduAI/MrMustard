@@ -209,7 +209,7 @@ class XPTensor:
             raise TypeError("unsupported operand type(s) for @: 'XPTensor' and '{}'".format(type(other)))
         # both None
         if self.tensor is None and other.tensor is None:
-            return XPTensor(like_1=self.like_1 * other.like_1)
+            return XPTensor(like_1=self.like_1 and other.like_1)
         # either None
         if self.tensor is None:
             return self if self.like_0 else other
@@ -222,7 +222,7 @@ class XPTensor:
             tensor, modes = other.T._mode_aware_matmul(self)
         else: # i.e. self.isVector and other.isVector:
             tensor, modes = self._mode_aware_vecvec(other)
-        return XPTensor(tensor, modes, like_1=self.like_1 * other.like_1)
+        return XPTensor(tensor, modes, like_1=self.like_1 and other.like_1)
 
     def _mode_aware_matmul(self, other:XPTensor) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
         r"""Performs matrix multiplication only on the necessary modes and
@@ -233,6 +233,7 @@ class XPTensor:
         if modes_match:
             prod = backend.tensordot(self.tensor, other.tensor, ((1,3),(0,2)))
             return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
+        
 
         # mode index gymnastic
         contracted = [i for i in self.inmodes if i in other.outmodes]
@@ -254,27 +255,27 @@ class XPTensor:
         inmodes_index = [inmodes.index(i) for i in sorted(inmodes)]
 
         # actual multiplication
-        #[blue,purple]
-        #[green, white]
+        #[purple,blue]
+        #[white, green]
         blue = None
         green = None
         purple = None
         white = None  
         if len(contracted) > 0:
-            blue = backend.tensordot(backend.gather(self.tensor, contracted_self_index, axis=1), backend.gather(other.tensor, contracted_other_index, axis=0), ((1,3),(0,2)))
-            blue = backend.transpose(blue, (0,2,1,3))
+            blue = backend.tensordot(self[:, contracted], other[contracted, :], ((1,3),(0,2)))  # shape (N,C,2,2) @ (C,M,2,2) -> (N,2,M,2)
+            blue = backend.transpose(blue, (0,2,1,3))  # shape (N,M,2,2)
         if self.like_1 and len(uncontracted_other) > 0:
-            green = backend.gather(other.tensor, uncontracted_other_index, axis=0)
+            green = other[uncontracted_other, :]  # shape (M,N,2,2)
         if other.like_1 and len(uncontracted_self) > 0:
-            purple = backend.gather(self.tensor, uncontracted_self_index, axis=1)
-        if self.like_1 and other.like_1 and green is not None and purple is not None and blue is not None:
-            white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=blue.dtype)
+            purple = self[:, uncontracted_self]
+        if self.like_1 and other.like_1 and green is not None and purple is not None:
+            white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=purple.dtype)
         if white is not None:
-            final = backend.block([[blue, purple],[green, white]], axes=[0,1])
+            final = backend.block([[purple, blue],[white, green]], axes=[0,1])
         elif purple is None:
             final = backend.block([[blue], [green]], axes=[0,1])
         elif green is None:
-            final = backend.block([[blue, purple]], axes=[0,1])
+            final = backend.block([[purple, blue]], axes=[0,1])
         else:
             final = blue  # NOTE: could be None
         if final is not None:
@@ -348,16 +349,31 @@ class XPTensor:
                 f"like_0={self.like_0}, like_1={self.like_1},\n" +
                 f"tensor_xpxp={self.to_xpxp()})")
 
-    def __getitem__(self, item: Union[int, slice, List[int]]) -> XPTensor:
+    def __getitem__(self, modes: Union[int, slice, List[int]]) -> XPTensor:
         r"""
-        Returns modes or subsets of modes from the XPTensor, or coherences between modes using an intuitive notation
+        Returns modes or subsets of modes from the XPTensor, or coherences between modes using an intuitive notation.
+        We handle mode indices and we get the corresponding tensor indices handled correctly.
         Examples:
-            T[M] = only the outmodes M (e.g. T[[1,2,3]])
-            T[M,N] = the coherence between the modes M and N (e.g. T[[1,2],[3,4]])
-            T[:,N] ~ self.tensor[:,N]
-            T[[1,2,3],:] ~ self.tensor[:,[1,2,3],:,N]
-            T[[1,2,3],[4,5]] ~ self.tensor[:,[1,2,3],:,[4,5]]  # i.e. the rows [1,2,3] and columns [4,5]
+            T[M] ~ implies T[M,M]
+            T[M,N] = the coherence between the modes M and N
+            T[:,N] ~ self.tensor[:,N,:,:]
+            T[[1,2,3],:] ~ self.tensor[[1,2,3],:,:,:] # i.e. the block with outmodes [1,2,3] and all inmodes
+            T[[1,2,3],[4,5]] ~ self.tensor[:,[1,2,3],:,[4,5]]  # i.e. the block with outmodes [1,2,3] and inmodes [4,5]
         """
-        raise NotImplementedError()
-
-
+        if isinstance(modes, int):
+            modes = ([modes], [modes])
+        elif isinstance(modes[0], int) and isinstance(modes[1], int):
+            modes = ([modes[0]], [modes[1]])
+        elif isinstance(modes, (Sequence, slice)):
+            modes = ([m for m in modes], [m for m in modes])
+        elif isintance(modes, tuple) and len(modes) == 2: 
+            if isinstance(modes[0], (Sequence, slice)) and isinstance(modes[1], (Sequence, slice)):
+                modes = ([m for m in modes[0]], [m for m in modes[1]])
+        else:
+            raise ValueError("Invalid modes")
+        rows = [self.outmodes.index(m) for m in modes[0]]
+        subtensor = backend.gather(self.tensor, rows, axis=0)    
+        if self.isMatrix:
+            columns = [self.inmodes.index(m) for m in modes[1]]
+            subtensor = backend.gather(subtensor, columns, axis=1)
+        return subtensor
