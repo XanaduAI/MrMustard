@@ -234,9 +234,6 @@ class XPTensor:
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
             prod = backend.tensordot(self.tensor, other.tensor, ((1,3),(0,2)))
             return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
-        elif sorted(self.inmodes) == sorted(other.inmodes):      # NOTE: they match once sorted
-            prod = backend.tensordot(self.tensor[:, sorted(self.inmodes)], other.tensor[sorted(other.outmodes), :], ((1,3),(0,2)))
-            return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
 
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
@@ -259,7 +256,7 @@ class XPTensor:
             if bulk is None:
                 bulk = backend.zeros((copied_rows.shape[1], copied_cols.shape[0], 2, 2), dtype=copied_cols.dtype)
             empty = backend.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
-            final = backend.block([[copied_cols, bulk],[empty, copied_rows]], axes=[0,1])
+            final = backend.block([[bulk, copied_cols],[copied_rows, empty]], axes=[0,1])
         elif copied_cols is None and copied_rows is not None:
             if bulk is None:
                 final = copied_rows
@@ -269,7 +266,7 @@ class XPTensor:
             if bulk is None:
                 final = copied_cols
             else:
-                final = backend.block([[copied_cols, bulk]], axes=[0,1])
+                final = backend.block([[bulk, copied_cols]], axes=[0,1])
         else:  # copied_rows and copied_cols are both None
             final = bulk  # NOTE: could be None
 
@@ -289,12 +286,12 @@ class XPTensor:
 
     def __add__(self, other: XPTensor) -> Optional[XPTensor]:
         if not isinstance(other, XPTensor):
-            raise TypeError("unsupported operand type(s) for +: 'XPTensor' and '{}'".format(type(other)))
+            raise TypeError(f"unsupported operand type(s) for +: 'XPTensor' and '{type(other)}'")
         if self.isVector != other.isVector:
-            raise ValueError("Cannot add a vector to a matrix or viceversa")
+            raise ValueError("Cannot add a vector and a matrix")
         if self.isCoherence != other.isCoherence:
             raise ValueError("Cannot add a coherence block and a diagonal block")
-        if self.tensor is None and other.tensor is None: # both are none
+        if self.tensor is None and other.tensor is None: # both are None
             if self.like_1 and other.like_1:
                 raise ValueError("Cannot add two like_1 null tensors yet")  # because 1+1 = 2
             return XPTensor(like_1= self.like_1 or other.like_1) # 0+0 = 0, 1+0 = 1, 0+1=1
@@ -307,12 +304,11 @@ class XPTensor:
                 return self
             return ValueError("self+1 not implemented 🥸")
         # now neither is None
-        modes_match = list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(other.inmodes)
-        if modes_match:
+        if list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(other.inmodes):
             self.tensor = self.tensor + other.tensor
             return self
-        outmodes = [o for o in self.outmodes if o not in other.outmodes]
-        inmodes = [i for i in self.inmodes if i not in other.inmodes]
+        outmodes = sorted(set(self.outmodes).union(other.outmodes))
+        inmodes = sorted(set(self.inmodes).union(other.inmodes))
         self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(other.inmodes)
         other_contains_self = set(other.outmodes).issuperset(self.outmodes) and set(other.inmodes).issuperset(self.inmodes)
         if self_contains_other:
@@ -325,6 +321,7 @@ class XPTensor:
             to_update = backend.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
             to_add = [self, other]
         for t in to_add:
+            import pdb; pdb.set_trace()
             outmodes_indices = [outmodes.index(o) for o in t.outmodes]
             inmodes_indices = [inmodes.index(i) for i in t.inmodes]
             if t.isMatrix: # e.g. outmodes of to_update are [self]+[other_new] = (e.g.) [9,1,2]+[0,20]
@@ -332,7 +329,7 @@ class XPTensor:
             else:
                 indices = [[o] for o in outmodes_indices]
             to_update = backend.update_add_tensor(to_update, indices, backend.reshape(t.modes_first(),(-1,2,2) if self.isMatrix else (-1,2)))
-        return XPTensor(to_update, modes, like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1)
+        return XPTensor(to_update, (outmodes, inmodes), like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1)
 
     def __sub__(self, other: XPTensor) -> Optional[XPTensor]:
         return self + (-1) * other
