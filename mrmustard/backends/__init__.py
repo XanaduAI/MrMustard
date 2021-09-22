@@ -266,8 +266,8 @@ class BackendInterface(ABC):
         r = np.random.uniform(size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
-        dd = self.concat([self.exp(-r), np.exp(r)], axis=0)
-        return self.einsum("ij,j,jk->ik", OW, dd, OV)
+        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
+        return OW @ dd @ OV
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
         "a random orthogonal matrix in O(2*num_modes)"

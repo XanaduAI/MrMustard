@@ -265,13 +265,16 @@ class XPTensor:
             blue = backend.tensordot(self[:, contracted], other[contracted, :], ((1,3),(0,2)))  # shape (N,C,2,2) @ (C,M,2,2) -> (N,2,M,2)
             blue = backend.transpose(blue, (0,2,1,3))  # shape (N,M,2,2)
         if self.like_1 and len(uncontracted_other) > 0:
-            green = other[uncontracted_other, :]  # shape (M,N,2,2)
+            green = other[uncontracted_other, :]  # shape (U,M,2,2)
         if other.like_1 and len(uncontracted_self) > 0:
-            purple = self[:, uncontracted_self]
+            purple = self[:, uncontracted_self]  # shape (N,V,2,2)
         if self.like_1 and other.like_1 and green is not None and purple is not None:
-            white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=purple.dtype)
-        if white is not None:
-            final = backend.block([[purple, blue],[white, green]], axes=[0,1])
+            white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=purple.dtype) # shape (U,V,2,2)
+            if blue is not None:
+                final = backend.block([[purple, blue],[white, green]], axes=[0,1])
+            else:
+                final = backend.diag([purple, green])  # shape 
+            
         elif purple is None:
             final = backend.block([[blue], [green]], axes=[0,1])
         elif green is None:
