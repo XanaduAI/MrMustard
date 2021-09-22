@@ -117,11 +117,10 @@ def test_matmul_different_modes_coherence(xpxp_matrix):
     matrix2 = np.block([[np.zeros((2*N,2)), xpxp_matrix]])  # add a column on the left
     assert np.allclose((coh1 @ coh2.T).to_xpxp(), matrix1 @ matrix2.T)
 
+@given(rectangular_matrix().filter(lambda x: x.shape[0] > 2 and x.shape[1] > 2))
 def test_matmul_all_different_modes_coherence(xpxp_matrix):
     N = xpxp_matrix.shape[0]//2
     M = xpxp_matrix.shape[1]//2
     coh1 = XPTensor.from_xpxp(xpxp_matrix, modes=[list(range(N)), list(range(N,N+M))], like_0=True)
-    coh2 = XPTensor.from_xpxp(xpxp_matrix, modes=[list(range(N)), list(range(N+M+1,N+2*M))], like_0=True)
-    matrix1 = np.block([[xpxp_matrix, np.zeros((2*N,2))]])  # add a column on the right
-    matrix2 = np.block([[np.zeros((2*N,2)), xpxp_matrix]])  # add a column on the left
+    coh2 = XPTensor.from_xpxp(xpxp_matrix, modes=[list(range(N)), list(range(N+M+1,N+M+M))], like_0=True)
     assert (coh1 @ coh2.T).to_xpxp() is None

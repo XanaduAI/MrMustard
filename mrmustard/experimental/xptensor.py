@@ -34,8 +34,8 @@ class XPTensor:
     Arguments:
         tensor: The tensor in (n,m,2,2) or (n,2) order.
         modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
-        like_0: Whether the null tensor behaves like 0 for addition
-        like_1: Whether the null tensor behaves like 1 for multiplication
+        like_0: Whether the null tensor behaves like 0 under addition (e.g. the noise matrix Y)
+        like_1: Whether the null tensor behaves like 1 under multiplication (e.g. a symplectic transformation matrix)
     """
 
     def __init__(self,
@@ -216,83 +216,76 @@ class XPTensor:
         if other.tensor is None:
             return other if other.like_0 else self
         # Now neither self nor other is None
-        if self.isMatrix:
+        if self.isMatrix and other.isMatrix:
             tensor, modes = self._mode_aware_matmul(other)
+        elif self.isMatrix and other.isVector:
+            tensor, modes = self._mode_aware_matvec(other)
         elif self.isVector and other.isMatrix:
-            tensor, modes = other.T._mode_aware_matmul(self)
-        else: # i.e. self.isVector and other.isVector:
+            tensor, modes = other.T._mode_aware_matvec(self)
+        else: # self.isVector and other.isVector:
             tensor, modes = self._mode_aware_vecvec(other)
         return XPTensor(tensor, modes, like_1=self.like_1 and other.like_1)
 
     def _mode_aware_matmul(self, other:XPTensor) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
         r"""Performs matrix multiplication only on the necessary modes and
         takes care of keeping only the modes that are needed, in case of mismatch.
-        See documentation for a visual explanation with coloured blocks.  #TODO: add link to figure
+        See documentation for a visual explanation with blocks.  #TODO: add link to figure
         """
-        modes_match = list(self.inmodes) == list(other.outmodes)  # NOTE: they match including the ordering
-        if modes_match:
+        if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
             prod = backend.tensordot(self.tensor, other.tensor, ((1,3),(0,2)))
             return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
-        
+        elif sorted(self.inmodes) == sorted(other.inmodes):      # NOTE: they match once sorted
+            prod = backend.tensordot(self.tensor[:, sorted(self.inmodes)], other.tensor[sorted(other.outmodes), :], ((1,3),(0,2)))
+            return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
 
-        # mode index gymnastic
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
+        if not (set(self.outmodes).isdisjoint(uncontracted_other) and set(other.inmodes).isdisjoint(uncontracted_self)):
+            raise ValueError("Invalid modes")
 
-        contracted_self_index = [self.inmodes.index(i) for i in contracted]
-        contracted_other_index = [other.outmodes.index(o) for o in contracted]
-        uncontracted_self_index = [self.inmodes.index(i) for i in uncontracted_self]
-        uncontracted_other_index = [other.outmodes.index(o) for o in uncontracted_other]
-
-        outmodes_repeated = not set(uncontracted_other).isdisjoint(self.outmodes)
-        inmodes_repeated = not set(uncontracted_self).isdisjoint(other.inmodes)
-        if outmodes_repeated or inmodes_repeated:
-            raise ValueError("invalid modes")
-        outmodes = self.outmodes + uncontracted_other if self.like_1 else self.outmodes  # NOTE: unsorted
-        outmodes_index = [outmodes.index(o) for o in sorted(outmodes)]
-        inmodes = other.inmodes + uncontracted_self if other.like_1 else other.inmodes
-        inmodes_index = [inmodes.index(i) for i in sorted(inmodes)]
-
-        # actual multiplication
-        #[purple,blue]
-        #[white, green]
-        blue = None
-        green = None
-        purple = None
-        white = None  
+        bulk = None
+        copied_rows = None
+        copied_cols = None
         if len(contracted) > 0:
-            blue = backend.tensordot(self[:, contracted], other[contracted, :], ((1,3),(0,2)))  # shape (N,C,2,2) @ (C,M,2,2) -> (N,2,M,2)
-            blue = backend.transpose(blue, (0,2,1,3))  # shape (N,M,2,2)
+            bulk = backend.tensordot(self[:, contracted], other[contracted, :], ((1,3),(0,2)) if other.isMatrix else ((1,3),(0,1)))
+            if len(bulk.shape) == 4:
+                bulk = backend.transpose(bulk, (0,2,1,3))
         if self.like_1 and len(uncontracted_other) > 0:
-            green = other[uncontracted_other, :]  # shape (U,M,2,2)
+            copied_rows = other[uncontracted_other, :]
         if other.like_1 and len(uncontracted_self) > 0:
-            purple = self[:, uncontracted_self]  # shape (N,V,2,2)
-        if self.like_1 and other.like_1 and green is not None and purple is not None:
-            white = backend.zeros((green.shape[0], purple.shape[1], 2, 2), dtype=purple.dtype) # shape (U,V,2,2)
-            if blue is not None:
-                final = backend.block([[purple, blue],[white, green]], axes=[0,1])
+            copied_cols = self[:, uncontracted_self]
+        if copied_rows is not None and copied_cols is not None:
+            if bulk is None:
+                bulk = backend.zeros((copied_rows.shape[1], copied_cols.shape[0], 2, 2), dtype=copied_cols.dtype)
+            empty = backend.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
+            final = backend.block([[copied_cols, bulk],[empty, copied_rows]], axes=[0,1])
+        elif copied_cols is None and copied_rows is not None:
+            if bulk is None:
+                final = copied_rows
             else:
-                final = backend.diag([purple, green])  # shape 
-            
-        elif purple is None:
-            final = backend.block([[blue], [green]], axes=[0,1])
-        elif green is None:
-            final = backend.block([[purple, blue]], axes=[0,1])
-        else:
-            final = blue  # NOTE: could be None
+                final = backend.block([[bulk], [copied_rows]], axes=[0,1])
+        elif copied_rows is None and copied_cols is not None:
+            if bulk is None:
+                final = copied_cols
+            else:
+                final = backend.block([[copied_cols, bulk]], axes=[0,1])
+        else:  # copied_rows and copied_cols are both None
+            final = bulk  # NOTE: could be None
+
+        outmodes = self.outmodes + uncontracted_other if self.like_1 else self.outmodes  # NOTE: unsorted
+        inmodes = other.inmodes + uncontracted_self if other.like_1 else other.inmodes
         if final is not None:
-            final = backend.gather(final, outmodes_index, axis=0)
-            if len(inmodes_index) > 0:
-                final = backend.gather(final, inmodes_index, axis=1)
-        return final, (list(sorted(outmodes)), list(sorted(inmodes)))
+            final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
+            if other.isMatrix:
+                final = backend.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
+        return final, (sorted(outmodes), sorted(inmodes))
 
     def _mode_aware_vecvec(self, other: XPTensor) -> Scalar:
-        modes_match = list(self.outmodes) == list(other.outmodes)
-        if modes_match:
+        if list(self.outmodes) == list(other.outmodes):
             return backend.sum(self.tensor * other.tensor)
         common = list(set(self.outmodes) & set(other.outmodes))  # only the common modes (the others are like 0)
-        return backend.sum(backend.gather(self.tensor, common, axis=0) * backend.gather(other.tensor, common, axis=0))
+        return backend.sum(self.tensor[common] * other.tensor[common])
 
     def __add__(self, other: XPTensor) -> Optional[XPTensor]:
         if not isinstance(other, XPTensor):
@@ -339,7 +332,7 @@ class XPTensor:
             else:
                 indices = [[o] for o in outmodes_indices]
             to_update = backend.update_add_tensor(to_update, indices, backend.reshape(t.modes_first(),(-1,2,2) if self.isMatrix else (-1,2)))
-        return XPTensor(to_update, modes, additive=self.like_0 and other.like_0, multiplicative=self.like_1 or other.like_1)
+        return XPTensor(to_update, modes, like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1)
 
     def __sub__(self, other: XPTensor) -> Optional[XPTensor]:
         return self + (-1) * other
@@ -352,10 +345,11 @@ class XPTensor:
                 f"like_0={self.like_0}, like_1={self.like_1},\n" +
                 f"tensor_xpxp={self.to_xpxp()})")
 
-    def __getitem__(self, modes: Union[int, slice, List[int]]) -> XPTensor:
+    def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPTensor:
         r"""
         Returns modes or subsets of modes from the XPTensor, or coherences between modes using an intuitive notation.
         We handle mode indices and we get the corresponding tensor indices handled correctly.
+        inmodes are ignored if the tensor is a vector.
         Examples:
             T[M] ~ implies T[M,M]
             T[M,N] = the coherence between the modes M and N
@@ -363,20 +357,29 @@ class XPTensor:
             T[[1,2,3],:] ~ self.tensor[[1,2,3],:,:,:] # i.e. the block with outmodes [1,2,3] and all inmodes
             T[[1,2,3],[4,5]] ~ self.tensor[:,[1,2,3],:,[4,5]]  # i.e. the block with outmodes [1,2,3] and inmodes [4,5]
         """
+        _modes = [None, None]
         if isinstance(modes, int):
-            modes = ([modes], [modes])
-        elif isinstance(modes[0], int) and isinstance(modes[1], int):
-            modes = ([modes[0]], [modes[1]])
-        elif isinstance(modes, (Sequence, slice)):
-            modes = ([m for m in modes], [m for m in modes])
-        elif isintance(modes, tuple) and len(modes) == 2: 
-            if isinstance(modes[0], (Sequence, slice)) and isinstance(modes[1], (Sequence, slice)):
-                modes = ([m for m in modes[0]], [m for m in modes[1]])
+            _modes = ([modes], [modes])
+        elif isinstance(modes, list):
+            _modes = ([m for m in modes], [m for m in modes])
+        elif modes == slice(None, None, None):
+            _modes = self.modes
+        elif isinstance(modes, tuple) and len(modes) == 2:
+            for i,M in enumerate(modes):
+                if isinstance(M, int):
+                    _modes[i] = [M]
+                elif isinstance(M, list):
+                    _modes[i] = M
+                # import pdb; pdb.set_trace()
+                elif M == slice(None, None, None):
+                    _modes[i] = self.modes[i]
+                else:
+                    raise ValueError(f"Invalid modes: {M} from {modes} (tensor has modes {self.modes})")
         else:
-            raise ValueError("Invalid modes")
-        rows = [self.outmodes.index(m) for m in modes[0]]
+            raise ValueError(f"Invalid modes: {M} from {modes} (tensor has modes {self.modes})")
+        rows = [self.outmodes.index(m) for m in _modes[0]]
         subtensor = backend.gather(self.tensor, rows, axis=0)    
         if self.isMatrix:
-            columns = [self.inmodes.index(m) for m in modes[1]]
+            columns = [self.inmodes.index(m) for m in _modes[1]]
             subtensor = backend.gather(subtensor, columns, axis=1)
         return subtensor
