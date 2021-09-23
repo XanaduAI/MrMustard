@@ -47,7 +47,7 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def wigner(self, state, hbar: float = 2.0, filename: str = ""):
+def wigner(state, hbar: float = 2.0, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     r"""
     Plots the wigner function of a single mode state.
     Arguments:
@@ -57,15 +57,16 @@ def wigner(self, state, hbar: float = 2.0, filename: str = ""):
     """
     assert state.ndim in {1, 2}
     scale = np.sqrt(hbar)
-    quad_axis = np.linspace(-6, 6, 200) * scale
+    x_axis = np.linspace(*xbounds, 200) * scale
+    y_axis = np.linspace(*ybounds, 200) * scale
     pure = state.ndim == 1  # if ndim=2, then it's density matrix
     state_sf = sf.backends.BaseFockState(state, 1, pure, len(state))  # TODO: remove dependency on strawberryfields
-    Wig = state_sf.wigner(mode=0, xvec=quad_axis, pvec=quad_axis)
+    Wig = state_sf.wigner(mode=0, xvec=x_axis, pvec=y_axis)
     scale = np.max(Wig.real)
     nrm = Normalize(-scale, scale)
     fig, ax = plt.subplots()
     ax.set_aspect("equal")
-    plt.contourf(quad_axis, quad_axis, Wig, 60, cmap=cm.RdBu, norm=nrm)
+    plt.contourf(x_axis, y_axis, Wig, 60, cmap=cm.RdBu, norm=nrm)
     plt.xlabel(r"q (units of $\sqrt{\hbar}$)", fontsize=15)
     plt.ylabel(r"p (units of $\sqrt{\hbar}$)", fontsize=15)
     plt.tight_layout()
