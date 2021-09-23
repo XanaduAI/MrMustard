@@ -52,7 +52,7 @@ class XPTensor:
         self.isVector = None if tensor is None else self.ndim == 1
         self.tensor = tensor
         if all(isinstance(m, int) for m in modes):
-            modes = (modes,) if self.isVector else (modes, modes)
+            modes = (modes,[]) if self.isVector else (modes, modes)
         if len(modes[0]) == 0 and len(modes[1]) == 0 and self.tensor is not None:
             if self.isMatrix:
                 if self.shape[0] != self.shape[1] or like_0:
@@ -216,12 +216,10 @@ class XPTensor:
         if other.tensor is None:
             return other if other.like_0 else self
         # Now neither self nor other is None
-        if self.isMatrix and other.isMatrix:
+        if self.isMatrix:
             tensor, modes = self._mode_aware_matmul(other)
-        elif self.isMatrix and other.isVector:
-            tensor, modes = self._mode_aware_matvec(other)
         elif self.isVector and other.isMatrix:
-            tensor, modes = other.T._mode_aware_matvec(self)
+            tensor, modes = other.T._mode_aware_matmul(self)
         else: # self.isVector and other.isVector:
             tensor, modes = self._mode_aware_vecvec(other)
         return XPTensor(tensor, modes, like_1=self.like_1 and other.like_1)
@@ -232,8 +230,8 @@ class XPTensor:
         See documentation for a visual explanation with blocks.  #TODO: add link to figure
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
-            prod = backend.tensordot(self.tensor, other.tensor, ((1,3),(0,2)))
-            return backend.transpose(prod, (0,2,1,3)), (self.outmodes, other.inmodes)
+            prod = backend.tensordot(self.tensor, other.tensor, ((1,3),(0,2)) if other.isMatrix else ((1,3),(0,1)))
+            return backend.transpose(prod, (0,2,1,3) if other.isMatrix else (0,1)), (self.outmodes, other.inmodes)
 
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
@@ -321,7 +319,6 @@ class XPTensor:
             to_update = backend.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
             to_add = [self, other]
         for t in to_add:
-            import pdb; pdb.set_trace()
             outmodes_indices = [outmodes.index(o) for o in t.outmodes]
             inmodes_indices = [inmodes.index(i) for i in t.inmodes]
             if t.isMatrix: # e.g. outmodes of to_update are [self]+[other_new] = (e.g.) [9,1,2]+[0,20]
@@ -367,7 +364,6 @@ class XPTensor:
                     _modes[i] = [M]
                 elif isinstance(M, list):
                     _modes[i] = M
-                # import pdb; pdb.set_trace()
                 elif M == slice(None, None, None):
                     _modes[i] = self.modes[i]
                 else:

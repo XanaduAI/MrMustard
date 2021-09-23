@@ -12,8 +12,8 @@ def matrix(draw):  # square or rectangular
     return draw(arrays(np.float64, shape=(draw(even), draw(even)), elements=st.floats(allow_nan=False, allow_infinity=False)))
 
 @st.composite
-def square_matrix(draw, min_size=2): # strictly square
-    e = draw(st.integers(min_value=min_size, max_value=10).filter(lambda x: x % 2 == 0))
+def square_matrix(draw, min_size=2, max_size=10): # strictly square
+    e = draw(st.integers(min_value=min_size, max_value=max_size).filter(lambda x: x % 2 == 0))
     return draw(arrays(np.float64, shape=(e, e), elements=st.floats(allow_nan=False, allow_infinity=False)))
 
 @st.composite
@@ -22,7 +22,9 @@ def rectangular_matrix(draw): # strictly rectangular
     return draw(arrays(np.float64, shape=(a, b), elements=st.floats(allow_nan=False, allow_infinity=False)))
 
 @st.composite
-def vector(draw):
+def vector(draw, size=None):
+    if size is not None:
+        return draw(arrays(np.float64, shape=(size,), elements=st.floats(allow_nan=False, allow_infinity=False)))
     return draw(arrays(np.float64, shape=(draw(even),), elements=st.floats(allow_nan=False, allow_infinity=False)))
 
 def test_like_1_like_0():
@@ -137,6 +139,23 @@ def test_matmul_all_different_modes_coherence(coherence):
     coh2 = XPTensor.from_xpxp(coherence, modes=[list(range(N)), list(range(N+M+1,N+M+M))], like_0=True)
     assert (coh1 @ coh2.T).to_xpxp() is None
 
+# TESTING MATVEC
+@st.composite
+def mat_vec(draw, compatible:bool):
+    mat = draw(square_matrix())
+    vec = draw(vector(mat.shape[1])) if compatible else draw(vector())
+    return mat, vec
+
+@given(mat_vec(compatible=True))
+def test_matvec_all_same_modes(mat_vec):
+    mat, vec = mat_vec
+    expected = mat @ vec
+    N = mat.shape[0]//2
+    mat = XPTensor.from_xpxp(mat, modes=[list(range(N)), list(range(N))], like_1=True)
+    vec = XPTensor.from_xpxp(vec, modes=list(range(N)), like_0=True)
+    assert np.allclose((mat @ vec).to_xpxp(), expected)
+
+
 
 # TESTING ADDITION
 
@@ -152,6 +171,6 @@ def test_addition_few_different_modes(xpxp_matrix):
     N = xpxp_matrix.shape[0]//2
     xp1 = XPTensor.from_xpxp(xpxp_matrix, modes=list(range(N)), like_1=True)
     xp2 = XPTensor.from_xpxp(xpxp_matrix, modes=list(range(1,N+1)), like_1=True)
-    matrix1 = np.block([[xpxp_matrix, np.zeros((2*N,2))], [np.zeros((2,2*N)), np.eye(2)]])
-    matrix2 = np.block([[np.eye(2), np.zeros((2,2*N))], [np.zeros((2*N,2)), xpxp_matrix]])
+    matrix1 = np.block([[xpxp_matrix, np.zeros((2*N,2))], [np.zeros((2,2*N)), 0*np.eye(2)]])
+    matrix2 = np.block([[0*np.eye(2), np.zeros((2,2*N))], [np.zeros((2*N,2)), xpxp_matrix]])
     assert np.allclose((xp1 + xp2).to_xpxp(), matrix1 + matrix2)
