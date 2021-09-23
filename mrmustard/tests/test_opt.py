@@ -1,4 +1,6 @@
-import pytest
+from hypothesis import settings, given, strategies as st
+from hypothesis.extra.numpy import arrays
+
 import numpy as np
 import tensorflow as tf
 
@@ -7,7 +9,10 @@ from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
 
 
-@pytest.mark.parametrize("n", [0, 1, 2, 3])
+# @pytest.mark.parametrize("n", [0, 1, 2, 3])
+
+
+@given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     tf.random.set_seed(137)
