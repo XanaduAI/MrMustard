@@ -50,6 +50,8 @@ class XPTensor:
         self.shape = None if tensor is None else tensor.shape[:len(tensor.shape)//2]  # only (n,m) or (n,)
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = None if tensor is None else self.ndim == 1
+        if self.isVector and self.like_1:
+            raise ValueError("vectors are like_0")
         self.tensor = tensor
         if all(isinstance(m, int) for m in modes):
             modes = (modes,[]) if self.isVector else (modes, modes)
@@ -204,7 +206,7 @@ class XPTensor:
     def __mul__(self, other: Scalar) -> Optional[XPTensor]:
         return other * self if self.tensor is not None else None
 
-    def __matmul__(self, other: XPTensor) -> Optional[XPTensor]:
+    def __matmul__(self, other: XPTensor) -> XPTensor:
         if not isinstance(other, XPTensor):
             raise TypeError("unsupported operand type(s) for @: 'XPTensor' and '{}'".format(type(other)))
         # both None
@@ -221,7 +223,7 @@ class XPTensor:
         elif self.isVector and other.isMatrix:
             tensor, modes = other.T._mode_aware_matmul(self)
         else: # self.isVector and other.isVector:
-            tensor, modes = self._mode_aware_vecvec(other)
+            return self._mode_aware_vecvec(other)  # NOTE: not an XPTensor
         return XPTensor(tensor, modes, like_1=self.like_1 and other.like_1)
 
     def _mode_aware_matmul(self, other:XPTensor) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
@@ -302,9 +304,12 @@ class XPTensor:
                 return self
             return ValueError("self+1 not implemented 🥸")
         # now neither is None
-        if list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(other.inmodes):
+        modes_match = list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(other.inmodes)
+        if modes_match:
             self.tensor = self.tensor + other.tensor
             return self
+        if not modes_match and self.like_1 and other.like_1:
+            raise ValueError("Cannot add two like_1 tensors on different modes yet")
         outmodes = sorted(set(self.outmodes).union(other.outmodes))
         inmodes = sorted(set(self.inmodes).union(other.inmodes))
         self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(other.inmodes)
