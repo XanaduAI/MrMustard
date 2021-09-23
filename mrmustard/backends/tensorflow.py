@@ -9,7 +9,6 @@ from mrmustard._typing import *
 #  of new backends with the rest of the library.
 
 
-
 class Backend(BackendInterface):
 
     float64 = tf.float64
@@ -104,10 +103,12 @@ class Backend(BackendInterface):
     @tf.custom_gradient
     def getitem(tensor, *, key):
         result = np.array(tensor)[key]
+
         def grad(dy):
             dL_dtensor = np.zeros_like(tensor)
             dL_dtensor[key] = dy
             return dL_dtensor
+
         return result, grad
 
     def hash_tensor(self, tensor: tf.Tensor) -> int:
@@ -135,9 +136,7 @@ class Backend(BackendInterface):
         poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3
-            )
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
@@ -216,16 +215,18 @@ class Backend(BackendInterface):
         tensor = np.array(tensor)
         value = np.array(value)
         tensor[key] = value
+
         def grad(dy):
             dL_dtensor = np.array(dy)
             dL_dtensor[key] = 0.0
             # unbroadcasting the gradient
             implicit_broadcast = list(range(tensor.ndim - value.ndim))
             explicit_broadcast = [tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1]
-            dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast+explicit_broadcast))
-            dL_dvalue = np.expand_dims(dL_dvalue, [i-len(implicit_broadcast) for i in explicit_broadcast])
+            dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast))
+            dL_dvalue = np.expand_dims(dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast])
             print(dL_dtensor, dL_dvalue)
             return dL_dtensor, dL_dvalue
+
         return tensor, grad
 
     def sin(self, array: tf.Tensor) -> tf.Tensor:
@@ -269,7 +270,7 @@ class Backend(BackendInterface):
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
 
-# TODO: reassess
+    # TODO: reassess
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:
         r"""
