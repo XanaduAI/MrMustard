@@ -25,7 +25,7 @@ def test_S2gate_coincidence_prob(n):
     opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
-    assert np.allclose(-cost_fn(), expected, atol=1e-4)
+    assert np.allclose(-cost_fn(), expected, atol=1e-3)
 
 
 def test_hong_ou_mandel_optimizer():
