@@ -1,7 +1,8 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from mrmustard._typing import *
 from mrmustard.plugins import fock, gaussian
 from mrmustard.abstract.state import State
+
 
 
 # TODO: the recompute_project_onto trick is there because measurements are treated differently from gates: the parameters
@@ -37,11 +38,12 @@ class GaussianMeasurement(ABC):
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
         if len(remaining_modes) > 0:
-            remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov), cov, means)
+            remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov), cov, means)  # TODO is_mixed_cov is heavy
         else:
             remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov))
         return prob, remaining_state
 
+    @abstractmethod
     def recompute_project_onto(self, **kwargs) -> State:
         ...
 
@@ -65,7 +67,7 @@ class FockMeasurement(ABC):
         """
         if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):
             raise ValueError("the length of cutoffs/measurements does not match the number of modes")
-        dm = state.dm(cutoffs=cutoffs)
+        dm = state.dm(cutoffs=cutoffs)  # TODO: use ket when you can
         measured = 0
         for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurement)):
             if meas is not None:

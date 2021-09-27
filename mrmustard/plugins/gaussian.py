@@ -2,6 +2,7 @@ from mrmustard import Backend
 from mrmustard._typing import *
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
+from mrmustard.experimental import XPMatrix, XPVector
 
 r"""
 A plugin for all things Gaussian.
@@ -22,7 +23,7 @@ backend = Backend()
 #  ~~~~~~
 
 
-def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
+def vacuum_state(num_modes: int, hbar: float) -> Tuple[XPMatrix, XPVector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
         num_modes (int): number of modes
@@ -33,10 +34,10 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     """
     cov = backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
     means = backend.zeros([num_modes * 2], dtype=backend.float64)
-    return cov, means
+    return XPMatrix.from_xxpp(cov, like_1=True), XPVector.from_xxpp(means)
 
 
-def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
     r"""Returns the real covariance matrix and real means vector of a coherent state.
     The dimension depends on the dimensions of x and y.
     Args:
@@ -47,15 +48,10 @@ def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: coherent state covariance matrix
         Vector: coherent state means vector
     """
-    x = backend.atleast_1d(x)
-    y = backend.atleast_1d(y)
-    num_modes = x.shape[-1]
-    cov = backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
-    means = backend.concat([x, y], axis=0) * backend.sqrt(2 * hbar, dtype=x.dtype)
-    return cov, means
+    return CPTP(d=displacement(x, y, hbar))
 
 
-def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
     r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
     Args:
@@ -66,13 +62,9 @@ def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, 
         Matrix: squeezed state covariance matrix
         Vector: squeezed state means vector
     """
-    S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return CPTP(X = squeezing_symplectic(r, phi))
 
-
-def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def thermal_state(nbar: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
     The dimension depends on the dimensions of nbar.
     Args:
@@ -88,7 +80,7 @@ def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     return cov, means
 
 
-def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
     r"""Returns the real covariance matrix and real means vector of a displaced squeezed state.
     The dimension depends on the dimensions of r, phi, x and y.
     Args:
@@ -101,13 +93,10 @@ def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar:
         Matrix: displaced squeezed state covariance matrix
         Vector: displaced squeezed state means vector
     """
-    S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = displacement(x, y, hbar)
-    return cov, means
+    return CPTP(X = squeezing_symplectic(r, phi), d = displacement(x, y, hbar))
 
 
-def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
     r"""Returns the real covariance matrix and real means vector of a two-mode squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
     Args:
@@ -118,10 +107,7 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
         Matrix: two-mode squeezed state covariance matrix
         Vector: two-mode squeezed state means vector
     """
-    S = two_mode_squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return CPTP(X = two_mode_squeezing_symplectic(r, phi))
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,7 +115,7 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
+def rotation_symplectic(angle: Union[Scalar, Vector]) -> XPMatrix:
     r"""Symplectic matrix of a rotation gate.
     The dimension depends on the dimension of the angle.
     Args:
@@ -141,10 +127,10 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     num_modes = angle.shape[-1]
     x = backend.cos(angle)
     y = backend.sin(angle)
-    return backend.diag(backend.concat([x, x], axis=0)) + backend.diag(-y, k=num_modes) + backend.diag(y, k=-num_modes)
+    return XPMatrix.from_xxpp(backend.diag(backend.concat([x, x], axis=0)) + backend.diag(-y, k=num_modes) + backend.diag(y, k=-num_modes), like_1=True)
 
 
-def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
+def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> XPMatrix:
     r"""Symplectic matrix of a squeezing gate.
     The dimension depends on the dimension of r and phi.
     Args:
@@ -162,12 +148,13 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     sh = backend.sinh(r)
     cpsh = cp * sh
     spsh = sp * sh
-    return (
-        backend.diag(backend.concat([ch - cpsh, ch + cpsh], axis=0)) + backend.diag(-spsh, k=num_modes) + backend.diag(-spsh, k=-num_modes)
-    )
+    return XPMatrix.from_xxpp(
+        backend.diag(backend.concat([ch - cpsh, ch + cpsh], axis=0)) + backend.diag(-spsh, k=num_modes) + backend.diag(-spsh, k=-num_modes),
+        like_1=True,
+        )
 
 
-def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
+def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> XPVector:
     r"""Returns the displacement vector for a displacement by alpha = x + iy.
     The dimension depends on the dimensions of x and y.
     Args:
@@ -183,7 +170,7 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
         x = backend.tile(x, y.shape)
     if y.shape[-1] == 1:
         y = backend.tile(y, x.shape)
-    return backend.sqrt(2 * hbar, dtype=x.dtype) * backend.concat([x, y], axis=0)
+    return XPVector.from_xxpp(backend.sqrt(2 * hbar, dtype=x.dtype) * backend.concat([x, y], axis=0))
 
 
 def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
@@ -200,14 +187,14 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
     cp = backend.cos(phi)
     sp = backend.sin(phi)
     zero = backend.zeros_like(theta)
-    return backend.astensor(
+    return XPMatrix.from_xxpp(backend.astensor(
         [
             [ct, -cp * st, zero, -sp * st],
             [cp * st, ct, -sp * st, zero],
             [zero, sp * st, ct, -cp * st],
             [sp * st, zero, cp * st, ct],
         ]
-    )
+    ), like_1=True)
 
 
 def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matrix:
@@ -232,23 +219,23 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
     sp = backend.sin(phi_a + phi_b)
 
     if internal:
-        return 0.5 * backend.astensor(
+        return XPMatrix.from_xxpp(0.5 * backend.astensor(
             [
                 [ca - cb, -sa - sb, sb - sa, -ca - cb],
                 [-sa - sb, cb - ca, -ca - cb, sa - sb],
                 [sa - sb, ca + cb, ca - cb, -sa - sb],
                 [ca + cb, sb - sa, -sa - sb, cb - ca],
             ]
-        )
+        ), like_1=True)
     else:
-        return 0.5 * backend.astensor(
+        return XPMatrix.from_xxpp(0.5 * backend.astensor(
             [
                 [cp - ca, -sb, sa - sp, -1 - cb],
                 [-sa - sp, 1 - cb, -ca - cp, sb],
                 [sp - sa, 1 + cb, cp - ca, -sb],
                 [cp + ca, -sb, -sa - sp, 1 - cb],
             ]
-        )
+        ), like_1=True)
 
 
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
@@ -265,14 +252,14 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     ch = backend.cosh(r)
     sh = backend.sinh(r)
     zero = backend.zeros_like(r)
-    return backend.astensor(
+    return XPMatrix.from_xxpp(backend.astensor(
         [
             [ch, cp * sh, zero, sp * sh],
             [cp * sh, ch, sp * sh, zero],
             [zero, sp * sh, ch, -cp * sh],
             [sp * sh, zero, -cp * sh, ch],
         ]
-    )
+    ), like_1=True)
 
 
 # ~~~~~~~~~~~~~
@@ -280,11 +267,15 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
 # ~~~~~~~~~~~~~
 
 
-def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
-    r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
-    and `d = X \cdot means + d`.
-    If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
-    otherwise it must contain as many modes as the number of modes in the channel.
+def CPTP(cov = XPMatrix(like_1=True),
+         means = XPVector(),
+         X = XPMatrix(like_1=True),
+         Y = XPMatrix(like_0=True),
+         d = XPVector(),
+         modes: Sequence[int] = []) -> Tuple[XPMatrix, XPVector]:
+    r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel,
+    computed as `cov = X \cdot cov \cdot X^T + Y` and `d = X \cdot means + d`.
+    Single-mode channels can be applied in parallel (i.e. `modes` can contain `M` modes to apply the channel to).
 
     Args:
         cov (Matrix): covariance matrix
@@ -292,23 +283,20 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
         X (Matrix): the X matrix of the CPTP channel
         Y (Matrix): noise matrix of the CPTP channel
         d (Vector): displacement vector of the CPTP channel
-        modes (Sequence[int]): modes on which the channel operates
+        modes (optional, Sequence[int]): modes on which the channel operates
         hbar (float): value of hbar
     Returns:
         Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
     """
     # if single-mode channel, apply to all modes indicated in `modes`
-    if X is not None and X.shape[-1] == 2:
-        X = backend.single_mode_to_multimode_mat(X, len(modes))
-    if Y is not None and Y.shape[-1] == 2:
-        Y = backend.single_mode_to_multimode_mat(Y, len(modes))
-    if d is not None and d.shape[-1] == 2:
-        d = backend.single_mode_to_multimode_vec(d, len(modes))
-    cov = backend.left_matmul_at_modes(X, cov, modes)
-    cov = backend.right_matmul_at_modes(cov, backend.transpose(X), modes)
-    cov = backend.add_at_modes(cov, Y, modes)
-    means = backend.matvec_at_modes(X, means, modes)
-    means = backend.add_at_modes(means, d, modes)
+    if len(X.inmodes) == len(X.outmodes) == 1 and len(modes) > 1:
+        X = X.clone_like(cov)
+    if len(Y.inmodes) == len(Y.outmodes) == 1 and len(modes) > 1:
+        Y = Y.clone_like(cov)
+    if len(d.outmodes) == 1 and len(modes) > 1:
+        d = d.clone_like(means)
+    cov = X @ cov @ X.T + Y
+    means = X @ means + d
     return cov, means
 
 
@@ -317,7 +305,7 @@ def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
     The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
     """
     D = backend.sqrt(transmissivity)
-    return backend.diag(backend.concat([D, D], axis=0))
+    return XPMatrix.from_xxpp(backend.diag(backend.concat([D, D], axis=0)), like_1=True)
 
 
 def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
@@ -325,7 +313,7 @@ def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
     The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
     """
     D = (1.0 - transmissivity) * hbar / 2
-    return backend.diag(backend.concat([D, D], axis=0))
+    return XPMatrix.from_xxpp(backend.diag(backend.concat([D, D], axis=0)), like_0=True)
 
 
 def thermal_X(nbar: Union[Scalar, Vector]) -> Matrix:
@@ -359,19 +347,19 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
     elif X2 is None:
         X = X1
     else:
-        X = backend.matmul(X2, X1)
+        X = X2 @ X1
     if Y1 is None:
         Y = Y2
     elif Y2 is None:
         Y = Y1
     else:
-        Y = backend.matmul(backend.matmul(X2, Y1), X2) + Y2
+        Y = X2 @ Y1 @ X2 + Y2
     if d1 is None:
         d = d2
     elif d2 is None:
         d = d1
     else:
-        d = backend.matmul(X2, d1) + d2
+        d = X2 @ d1 + d2
     return X, Y, d
 
 
@@ -382,7 +370,7 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
 
 def general_dyne(
     cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
-) -> Tuple[Scalar, Matrix, Vector]:
+) -> Tuple[Scalar, XPMatrix, XPVector]:
     r"""
     Returns the results of a general dyne measurement.
     Arguments:
@@ -394,20 +382,19 @@ def general_dyne(
     Returns:
         Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
     """
-    N = cov.shape[-1] // 2
-    nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    nA = N - nB  # A is the leftover
-    Amodes = [i for i in range(N) if i not in modes]
-    A, B, AB = partition_cov(cov, Amodes)
-    a, b = partition_means(means, Amodes)
-    proj_cov = backend.cast(proj_cov, B.dtype)
-    proj_means = backend.cast(proj_means, b.dtype)
-    inv = backend.inv(B + proj_cov)
-    new_cov = A - backend.matmul(backend.matmul(AB, inv), backend.transpose(AB))
-    new_means = a + backend.matvec(backend.matmul(AB, inv), proj_means - b)
-    prob = backend.exp(-backend.sum(backend.matvec(inv, proj_means - b) * proj_means - b)) / (
-        pi ** nB * (hbar ** -nB) * backend.sqrt(backend.det(B + proj_cov))
-    )  # TODO: check this (hbar part especially)
+    unmeasured_modes = [i for i in cov.inmodes if i not in modes]
+    A = cov[unmeasured_modes, unmeasured_modes]
+    B = cov[modes, modes]
+    AB = cov[unmeasured_modes, modes]
+    a = means[unmeasured_modes]
+    b = means[modes]
+
+    inv = XPMatrix.from_xxpp(backend.inv(B + proj_cov), modes=B.modes, like_1=True)   #NOTE: not really like 1, but it's not None...
+
+    new_cov = A - AB @ inv @ AB.T
+    new_means = a - AB @ inv @ (proj_means - b)
+
+    prob = backend.exp(-(proj_means - b) @ inv @ (proj_means - b))/(pi ** nB * (hbar ** -nB) * backend.sqrt(backend.det(B + proj_cov)))
     return prob, new_cov, new_means
 
 

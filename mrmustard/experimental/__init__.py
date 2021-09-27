@@ -1,1 +1,1 @@
-from .xptensor import XPTensor
+from .xptensor import XPMatrix, XPVector

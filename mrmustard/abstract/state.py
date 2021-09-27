@@ -1,12 +1,13 @@
 from mrmustard._typing import *
 from mrmustard.plugins import fock, gaussian
+from mrmustard.experimental import XPMatrix, XPVector
 
 
 class State:  # NOTE: this is not an ABC
-    def __init__(self, hbar: float, mixed: bool, cov: Optional[Matrix] = None, means: Optional[Vector] = None):
-        self.cov: Optional[Matrix] = cov
-        self.means: Optional[Vector] = means
-        self.num_modes = cov.shape[-1] // 2 if cov is not None else 0
+    def __init__(self, hbar: float, mixed: bool, cov: XPMatrix = XPMatrix(like_1=True), means: XPVector = XPVector()):
+        self.cov = cov
+        self.means = means
+        self.num_modes = cov.num_modes
         self.hbar = hbar
         self.isMixed: bool = mixed
 
@@ -31,7 +32,7 @@ class State:  # NOTE: this is not an ABC
             Tensor: the ket
         """
         if not self.isMixed:
-            return fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+            return fock.fock_representation(self.cov.to_xxpp(), self.means.to_xxpp(), cutoffs=cutoffs, mixed=False, hbar=self.hbar)
         else:
             return None
 
@@ -44,10 +45,10 @@ class State:  # NOTE: this is not an ABC
             Tensor: the density matrix
         """
         if not self.isMixed:
-            ket = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+            ket = fock.fock_representation(self.cov.to_xxpp(), self.means.to_xxpp(), cutoffs=cutoffs, mixed=False, hbar=self.hbar)
             return fock.ket_to_dm(ket)
         else:
-            return fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self.hbar)
+            return fock.fock_representation(self.cov.to_xxpp(), self.means.to_xxpp(), cutoffs=cutoffs, mixed=True, hbar=self.hbar)
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""

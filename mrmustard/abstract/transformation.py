@@ -1,5 +1,6 @@
 import numpy as np  # for repr
 from abc import ABC
+from mrmustard.experimental import XPMatrix, XPVector
 from mrmustard.plugins import gaussian
 from mrmustard.abstract import State
 from mrmustard._typing import *
@@ -15,11 +16,11 @@ class Transformation(ABC):
     """
 
     def __call__(self, state: State) -> State:
+        X = self.X_matrix()
         d = self.d_vector(state.hbar)
-        X = self.X_matrix()  # TODO: confirm with nico which ones depend on hbar
         Y = self.Y_matrix(state.hbar)
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self._modes)
-        output = State(hbar=state.hbar, mixed=Y is not None, cov=cov, means=means)
+        output = State(hbar=state.hbar, mixed=Y.tensor is not None, cov=cov, means=means)
         return output
 
     def __repr__(self):
@@ -28,13 +29,13 @@ class Transformation(ABC):
             return f"{self.__class__.__qualname__}(modes={self._modes}, {', '.join(lst)})"
 
     def X_matrix(self) -> Optional[Matrix]:
-        return None
+        return XPMatrix(like_1=True, modes = (self._modes, self._modes))
 
     def d_vector(self, hbar: float) -> Optional[Vector]:
-        return None
+        return XPVector()
 
     def Y_matrix(self, hbar: float) -> Optional[Matrix]:
-        return None
+        return XPMatrix(like_0=True, modes = (self._modes, self._modes))
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
