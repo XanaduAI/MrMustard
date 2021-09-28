@@ -90,6 +90,9 @@ class Backend(BackendInterface):
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
+    
+    def expand_dims(self, array: tf.Tensor, axis: int) -> tf.Tensor:
+        return tf.expand_dims(array, axis)
 
     def expm(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.expm(matrix)
