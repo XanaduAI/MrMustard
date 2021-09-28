@@ -289,17 +289,12 @@ class BackendInterface(ABC):
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
         r"""
-        Apply the same 2x2 matrix (i.e. single-mode) to a larger number of modes.
+        Apply the same 2x2 matrix (i.e. single-mode) to a larger number of modes in parallel.
         """
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
-        b = mat[..., 0, 1]
-        c = mat[..., 1, 0]
-        mat = (
-            self.diag(self.tile(self.diag_part(mat), [num_modes]))
-            + self.diag(self.tile([b], [num_modes]), k=num_modes)
-            + self.diag(self.tile([c], [num_modes]), k=-num_modes)
-        )
+        mat = self.diag(self.tile(self.expand_dims(mat, axis=-1), (1,1,num_modes))) # shape [2,2,N,N]
+        mat = self.reshape(self.transpose(mat, (0,2,1,3)), [2*num_modes, 2*num_modes])
         return mat
 
     @staticmethod
