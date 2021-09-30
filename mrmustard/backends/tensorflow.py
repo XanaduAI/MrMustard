@@ -1,7 +1,10 @@
 import numpy as np
 import tensorflow as tf
 from mrmustard.backends import BackendInterface, Autocast
-from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
+from thewalrus._hermite_multidimensional import (
+    hermite_multidimensional_numba,
+    grad_hermite_multidimensional_numba,
+)
 from mrmustard._typing import *
 
 #  NOTE: the reason why we have a class with methods and not a namespace with functions
@@ -83,11 +86,21 @@ class Backend(BackendInterface):
         return tf.linalg.norm(array)
 
     @Autocast()
-    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> tf.Tensor:
+    def matmul(
+        self,
+        a: tf.Tensor,
+        b: tf.Tensor,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
+    ) -> tf.Tensor:
         return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
 
     @Autocast()
-    def matvec(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, adjoint_a=False) -> tf.Tensor:
+    def matvec(
+        self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, adjoint_a=False
+    ) -> tf.Tensor:
         return tf.linalg.matvec(a, b, transpose_a, adjoint_a)
 
     @Autocast()
@@ -115,7 +128,13 @@ class Backend(BackendInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
-    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> tf.Tensor:
+    def pad(
+        self,
+        array: tf.Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="CONSTANT",
+        constant_values=0,
+    ) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
     @Autocast()
@@ -128,7 +147,9 @@ class Backend(BackendInterface):
         data_format="NWC",
         dilations: Optional[List[int]] = None,
     ) -> tf.Tensor:
-        return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
+        return tf.nn.convolution(
+            array, filters, strides, padding, data_format, dilations
+        )
 
     def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
         if a is None:
@@ -141,7 +162,9 @@ class Backend(BackendInterface):
     def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
+    def arange(
+        self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64
+    ) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=dtype)
 
     @Autocast()
@@ -163,7 +186,9 @@ class Backend(BackendInterface):
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.ones_like(array)
 
-    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
+    def gather(
+        self, array: tf.Tensor, indices: tf.Tensor, axis: int = None
+    ) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
     def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
@@ -181,19 +206,36 @@ class Backend(BackendInterface):
         return tf.tensor_scatter_nd_update(tensor, indices, values)
 
     @Autocast()
-    def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
+    def update_add_tensor(
+        self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor
+    ):
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
-    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
-        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
+    def constraint_func(
+        self, bounds: Tuple[Optional[float], Optional[float]]
+    ) -> Optional[Callable]:
+        bounds = (
+            -np.inf if bounds[0] is None else bounds[0],
+            np.inf if bounds[1] is None else bounds[1],
+        )
         if not bounds == (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+            constraint: Optional[Callable] = lambda x: tf.clip_by_value(
+                x, bounds[0], bounds[1]
+            )
         else:
             constraint = None
         return constraint
 
-    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
-        return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
+    def new_variable(
+        self,
+        value,
+        bounds: Tuple[Optional[float], Optional[float]],
+        name: str,
+        dtype=tf.float64,
+    ):
+        return tf.Variable(
+            value, name=name, dtype=dtype, constraint=self.constraint_func(bounds)
+        )
 
     def new_constant(self, value, name: str, dtype=tf.float64):
         return tf.constant(value, dtype=dtype, name=name)
@@ -209,7 +251,9 @@ class Backend(BackendInterface):
         return hash(REF)
 
     @tf.custom_gradient
-    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
+    def hermite_renormalized(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+    ) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
         of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
@@ -223,11 +267,15 @@ class Backend(BackendInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
+        poly = tf.numpy_function(
+            hermite_multidimensional_numba, [A, shape, B, C], A.dtype
+        )
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_numba, [poly, A, shape, B, C], [poly.dtype, poly.dtype, poly.dtype]
+                grad_hermite_multidimensional_numba,
+                [poly, A, shape, B, C],
+                [poly.dtype, poly.dtype, poly.dtype],
             )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
@@ -243,7 +291,9 @@ class Backend(BackendInterface):
         """
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
-    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
+    def loss_and_gradients(
+        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
+    ) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
         r"""
         Computes the loss and gradients of the given cost function.
 
