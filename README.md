@@ -1,6 +1,8 @@
 # MrMustard
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
+[![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
+
 
 MrMustard is a differentiable bridge between phase space and Fock space with rich functionality in both representations.
 

@@ -240,9 +240,9 @@ class BackendInterface(ABC):
     def dagger(self, array: Tensor) -> Tensor:
         return self.conj(self.transpose(array))
 
-    def block(self, blocks: List[List[Tensor]]) -> Tensor:
-        rows = [self.concat(row, axis=-1) for row in blocks]
-        return self.concat(rows, axis=-2)
+    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
@@ -266,8 +266,8 @@ class BackendInterface(ABC):
         r = np.random.uniform(size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
-        dd = self.concat([self.exp(-r), np.exp(r)], axis=0)
-        return self.einsum("ij,j,jk->ik", OW, dd, OV)
+        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
+        return OW @ dd @ OV
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
         "a random orthogonal matrix in O(2*num_modes)"
@@ -289,17 +289,12 @@ class BackendInterface(ABC):
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
         r"""
-        Apply the same 2x2 matrix (i.e. single-mode) to a larger number of modes.
+        Apply the same 2x2 matrix (i.e. single-mode) to a larger number of modes in parallel.
         """
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
-        b = mat[..., 0, 1]
-        c = mat[..., 1, 0]
-        mat = (
-            self.diag(self.tile(self.diag_part(mat), [num_modes]))
-            + self.diag(self.tile([b], [num_modes]), k=num_modes)
-            + self.diag(self.tile([c], [num_modes]), k=-num_modes)
-        )
+        mat = self.diag(self.tile(self.expand_dims(mat, axis=-1), (1,1,num_modes))) # shape [2,2,N,N]
+        mat = self.reshape(self.transpose(mat, (0,2,1,3)), [2*num_modes, 2*num_modes])
         return mat
 
     @staticmethod
@@ -319,8 +314,8 @@ class BackendInterface(ABC):
     @lru_cache()
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes"
-        idl = np.identity(num_modes)
-        return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
+        I = np.identity(num_modes)
+        return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
     @lru_cache()

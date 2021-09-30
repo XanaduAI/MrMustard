@@ -1,4 +1,6 @@
-import pytest
+from hypothesis import settings, given, strategies as st
+from hypothesis.extra.numpy import arrays
+
 import numpy as np
 import tensorflow as tf
 
@@ -7,7 +9,10 @@ from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
 
 
-@pytest.mark.parametrize("n", [0, 1, 2, 3])
+# @pytest.mark.parametrize("n", [0, 1, 2, 3])
+
+
+@given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     tf.random.set_seed(137)
@@ -20,7 +25,7 @@ def test_S2gate_coincidence_prob(n):
     opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
-    assert np.allclose(-cost_fn(), expected, atol=1e-4)
+    assert np.allclose(-cost_fn(), expected, atol=1e-3)
 
 
 def test_hong_ou_mandel_optimizer():
@@ -59,7 +64,7 @@ def test_learning_two_mode_squeezing():
     opt = Optimizer(euclidean_lr=0.05)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
 
 
 def test_learning_two_mode_Ggate():
@@ -75,7 +80,7 @@ def test_learning_two_mode_Ggate():
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=2000)
-    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
 
 
 def test_learning_two_mode_Interferometer():
@@ -94,7 +99,7 @@ def test_learning_two_mode_Interferometer():
     opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
 
 
 def test_learning_four_mode_Interferometer():
@@ -113,4 +118,4 @@ def test_learning_four_mode_Interferometer():
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.0625, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.0625, atol=1e-3)
