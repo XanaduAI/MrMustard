@@ -11,8 +11,8 @@ from mrmustard.experimental import XPTensor
 
 class Circuit(MutableSequence):
     def __init__(self, ops: Sequence[Op] = []):
-        self.X = XPTensor(None, modes=[], like_0=False)
-        self.Y = XPTensor(None, modes=[], like_0=True)
+        self.X = XPTensor(None, modes=[], additive=False)
+        self.Y = XPTensor(None, modes=[], additive=True)
         self._ops: List[Op] = [o for o in ops]
         self._compiled = False
 
@@ -58,15 +58,15 @@ class Circuit(MutableSequence):
         self._compiled = True
 
     def recompile(self) -> None:
-        self.X = XPTensor(None, modes=[], like_0=False)
-        self.Y = XPTensor(None, modes=[], like_0=True)
+        self.X = XPTensor(None, modes=[], additive=False)
+        self.Y = XPTensor(None, modes=[], additive=True)
         self.compile()
         self._compiled = True
 
     def update_channel(self, op):
         if hasattr(op, "X_matrix"):
-            Xprime = XPTensor.from_xxpp(op.X_matrix(), op._modes, like_0=False)
-            Yprime = XPTensor.from_xxpp(op.Y_matrix(hbar=2.0), op._modes, like_0=True)
+            Xprime = XPTensor.from_xxpp(op.X_matrix(), op._modes, additive=False)
+            Yprime = XPTensor.from_xxpp(op.Y_matrix(hbar=2.0), op._modes, additive=True)
             self.X = Xprime @ self.X
             self.Y = (Xprime @ self.Y) @ Xprime.T + Yprime
 
