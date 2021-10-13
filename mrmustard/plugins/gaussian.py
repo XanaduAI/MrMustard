@@ -77,7 +77,7 @@ def thermal_state(nbar: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
     g = (2 * backend.atleast_1d(nbar) + 1) * hbar / 2
     cov = backend.diag(backend.concat([g, g], axis=-1))
     means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return XPMatrix.from_xxpp(cov, like_1=True), XPVector.from_xxpp(means)
 
 
 def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[XPMatrix, XPVector]:
@@ -365,11 +365,11 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
 
 # ~~~~~~~~~~~~~~~
 # non-TP channels
-# ~~~~~~~~~~~~~~~98
+# ~~~~~~~~~~~~~~~
 
 
 def general_dyne(
-    cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
+    cov: XPMatrix, means: XPVector, proj_cov: XPMatrix, proj_means: XPVector, modes: Sequence[int], hbar: float
 ) -> Tuple[Scalar, XPMatrix, XPVector]:
     r"""
     Returns the results of a general dyne measurement.
@@ -380,7 +380,7 @@ def general_dyne(
         proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
         modes (Sequence[int]): modes being measured
     Returns:
-        Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
+        Tuple[Matrix, Vector]: the post-measurement cov and means vector
     """
     unmeasured_modes = [i for i in cov.inmodes if i not in modes]
     A = cov[unmeasured_modes, unmeasured_modes]
@@ -389,13 +389,13 @@ def general_dyne(
     a = means[unmeasured_modes]
     b = means[modes]
 
-    inv = XPMatrix.from_xxpp(backend.inv(B + proj_cov), modes=B.modes, like_1=True)   #NOTE: not really like 1, but it's not None...
+    inv = XPMatrix.from_xxpp(backend.inv((B + proj_cov).to_xxpp()), modes=B.modes, like_1=True)   #NOTE: not really like 1, but it's never None so it's ok
 
     new_cov = A - AB @ inv @ AB.T
     new_means = a - AB @ inv @ (proj_means - b)
 
-    prob = backend.exp(-(proj_means - b) @ inv @ (proj_means - b))/(pi ** nB * (hbar ** -nB) * backend.sqrt(backend.det(B + proj_cov)))
-    return prob, new_cov, new_means
+    # prob = backend.exp(-(proj_means - b) @ inv @ (proj_means - b))/(pi ** nB * (hbar ** -nB) * backend.sqrt(backend.det(B + proj_cov)))
+    return new_cov, new_means
 
 
 # ~~~~~~~~~
