@@ -114,7 +114,6 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
     def recompute_stochastic_channel(self):
         self._stochastic_channel = []
-
         if self._conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:

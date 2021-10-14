@@ -252,8 +252,6 @@ class Backend(BackendInterface):
         poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
 
         def grad(dLdpoly):
-            print('in grad')
-            print([poly, A, shape, B, C])
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
                 grad_hermite_multidimensional_numba,
                 [poly, A, B, C],
