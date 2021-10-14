@@ -36,7 +36,9 @@ class Dgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def d_vector(self, hbar: float):
-        return gaussian.displacement(self.x, self.y, hbar=hbar)
+        d = gaussian.displacement(self.x, self.y, hbar=hbar)
+        d.modes = self._modes
+        return d
 
 
 class Sgate(Parametrized, Transformation):
@@ -72,7 +74,9 @@ class Sgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return gaussian.squeezing_symplectic(self.r, self.phi)
+        X = gaussian.squeezing_symplectic(self.r, self.phi)
+        X.modes = self._modes
+        return X
 
 
 class Rgate(Parametrized, Transformation):
@@ -100,7 +104,9 @@ class Rgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return gaussian.rotation_symplectic(self.angle)
+        X = gaussian.rotation_symplectic(self.angle)
+        X.modes = self._modes
+        return X
 
 
 class BSgate(Parametrized, Transformation):
@@ -142,7 +148,9 @@ class BSgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return gaussian.beam_splitter_symplectic(self.theta, self.phi)
+        X = gaussian.beam_splitter_symplectic(self.theta, self.phi)
+        X.modes = self._modes
+        return X
 
 
 class MZgate(Parametrized, Transformation):
@@ -189,7 +197,9 @@ class MZgate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
+        X = gaussian.mz_symplectic(self.phi_a, self.phi_b, self.internal)
+        X.modes = self._modes
+        return X
 
 
 class S2gate(Parametrized, Transformation):
@@ -223,7 +233,9 @@ class S2gate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
+        X = gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
+        X.modes = self._modes
+        return X
 
 
 class Interferometer(Parametrized, Transformation):
@@ -243,7 +255,10 @@ class Interferometer(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self.orthogonal
+        X = XPMatrix.from_xxpp(self.orthogonal, like_1=True)
+        X.modes = self._modes
+        return X
+        # return self.orthogonal
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
@@ -287,10 +302,14 @@ class Ggate(Parametrized, Transformation):
         self.is_unitary = True
 
     def X_matrix(self):
-        return self.symplectic
+        X = XPMatrix.from_xxpp(self.symplectic, like_1=True)
+        X.modes = self._modes
+        return X
 
     def d_vector(self, hbar: float):
-        return self.displacement
+        d = XPVector.from_xxpp(self.displacement)
+        d.modes = self._modes
+        return d
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:

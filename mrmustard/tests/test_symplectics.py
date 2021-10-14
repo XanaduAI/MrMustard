@@ -65,6 +65,7 @@ def test_S2gate(r, phi):
     S2a = S2gate(modes=[0, 2], r=r_choi, phi=0.0)
     S2b = S2gate(modes=[1, 3], r=r_choi, phi=0.0)
     S2c = S2gate(modes=[0, 1], r=r, phi=phi)
+    import pdb; pdb.set_trace()
     cov = S2c(S2b(S2a(Vacuum(num_modes=4)))).cov
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
