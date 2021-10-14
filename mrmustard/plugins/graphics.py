@@ -47,7 +47,7 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def wigner(self, state, hbar: float = 2.0, filename: str = ""):
+def wigner(state, hbar: float = 2.0, filename: str = ""):
     r"""
     Plots the wigner function of a single mode state.
     Arguments:
