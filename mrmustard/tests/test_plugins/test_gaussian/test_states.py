@@ -108,9 +108,9 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     assert np.allclose((S1 & S2 & S3).cov, S123.cov)
 
 
-@given(s1=random_pure_state(), s2=random_pure_state())
-def test_join_random_states(s1, s2):
-    pass
+# @given(s1=random_pure_state(), s2=random_pure_state())
+# def test_join_random_states(s1, s2):
+#     pass
 
 
 def test_join_states_hbar_error():
