@@ -11,6 +11,8 @@ real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.0
 
 rand_num_modes = st.integers(min_value=0, max_value=10)
 random_int = st.integers(min_value=0, max_value=2 ** 32 - 1)
+
+random_modes = st.lists(st.integers(min_value=0, max_value=10), min_size=1, max_size=10)
 random_int_list = st.lists(random_int, min_size=0, max_size=10)
 random_int_or_int_list = st.one_of(random_int, random_int_list)
 
@@ -119,7 +121,7 @@ def random_Interferometer(draw, num_modes=None):
 def random_Ggate(draw, num_modes):
     displacement = st.one_of(random_vector.filter(lambda v: len(v) == 2 * num_modes), st.just(None))
     return Ggate(
-        modes=draw(random_int_list_modes(num_modes)),
+        modes=draw(random_modes.filter(lambda v: len(v) == num_modes)),
         displacement=draw(displacement),
         displacement_trainable=draw(st.booleans()) if displacement is not None else False,
     )
@@ -189,4 +191,5 @@ def random_pure_state(draw, num_modes=None):
     if num_modes is None:
         num_modes = draw(st.integers(min_value=1, max_value=10))
     G = draw(random_Ggate(num_modes))
-    return G(Vacuum(num_modes))
+    D = draw(random_Dgate(num_modes))
+    return D(G(Vacuum(1+max(G._modes))))
