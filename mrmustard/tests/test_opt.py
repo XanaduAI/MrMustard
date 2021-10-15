@@ -1,4 +1,6 @@
-import pytest
+from hypothesis import settings, given, strategies as st
+from hypothesis.extra.numpy import arrays
+
 import numpy as np
 import tensorflow as tf
 
@@ -7,7 +9,7 @@ from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
 
 
-@pytest.mark.parametrize("n", [0, 1, 2, 3])
+@given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     tf.random.set_seed(137)
@@ -20,7 +22,7 @@ def test_S2gate_coincidence_prob(n):
     opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
-    assert np.allclose(-cost_fn(), expected, atol=1e-4)
+    assert np.allclose(-cost_fn(), expected, atol=1e-3)
 
 
 def test_hong_ou_mandel_optimizer():
@@ -31,7 +33,6 @@ def test_hong_ou_mandel_optimizer():
     circ.append(S2gate(modes=[0, 1], r=r, r_trainable=False, phi=0.0))
     circ.append(S2gate(modes=[2, 3], r=r, r_trainable=False, phi=0.0))
     circ.append(BSgate(modes=[1, 2], theta=np.random.normal(), phi=np.random.normal()))
-
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
@@ -46,10 +47,9 @@ def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     tf.random.set_seed(137)
     circ = Circuit()
-    circ.append(Sgate(modes=[0, 1], r=np.random.normal(size=(2)), phi=np.random.normal(size=(2))))
+    circ.append(Sgate(modes=[0, 1], r=abs(np.random.normal(size=(2))), phi=np.random.normal(size=(2))))
     circ.append(BSgate(modes=[0, 1], theta=np.random.normal(), phi=np.random.normal()))
     tf.random.set_seed(20)
-
     state_in = Vacuum(num_modes=2)
 
     def cost_fn():
@@ -59,7 +59,7 @@ def test_learning_two_mode_squeezing():
     opt = Optimizer(euclidean_lr=0.05)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
 
 
 def test_learning_two_mode_Ggate():
@@ -75,7 +75,7 @@ def test_learning_two_mode_Ggate():
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=2000)
-    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
 
 
 def test_learning_two_mode_Interferometer():
@@ -84,7 +84,6 @@ def test_learning_two_mode_Interferometer():
     circ = Circuit()  # emtpy circuit with vacuum input state
     circ.append(Sgate(modes=[0, 1], r=np.random.normal(size=(2)) ** 2, phi=np.random.normal(size=(2))))
     circ.append(Interferometer(modes=[0, 1]))
-
     state_in = Vacuum(num_modes=2)
 
     def cost_fn():
@@ -94,7 +93,7 @@ def test_learning_two_mode_Interferometer():
     opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
 
 
 def test_learning_four_mode_Interferometer():
@@ -103,7 +102,6 @@ def test_learning_four_mode_Interferometer():
     circ = Circuit()
     circ.append(Sgate(modes=[0, 1, 2, 3], r=np.random.uniform(size=4), phi=np.random.normal(size=4)))
     circ.append(Interferometer(modes=[0, 1, 2, 3]))
-
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
@@ -113,4 +111,4 @@ def test_learning_four_mode_Interferometer():
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.0625, atol=2e-3)
+    assert np.allclose(-cost_fn(), 0.0625, atol=1e-3)

@@ -1,15 +1,18 @@
-import pytest
+from hypothesis import settings, given, strategies as st
+
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-
 from mrmustard import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
 from mrmustard import Circuit
 from mrmustard import Vacuum
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
+# helper strategies
+st_angle = st.floats(min_value=0, max_value=2 * np.pi)
+
+
+@given(n_mean=st.floats(0, 3), phi=st_angle)
 def test_two_mode_squeezing_fock(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
     Note that this is consistent with the Strawberryfields convention"""
@@ -23,9 +26,7 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     assert np.allclose(amps, expected)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
-@pytest.mark.parametrize("varphi", 2 * np.pi * np.random.rand(4))
+@given(n_mean=st.floats(0, 3), phi=st_angle, varphi=st_angle)
 def test_hong_ou_mandel(n_mean, phi, varphi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     cutoff = 2
@@ -38,21 +39,20 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     assert np.allclose(amps[1, 1, 1, 1], 0.0)
 
 
-@pytest.mark.parametrize("realpha", np.random.rand(4) - 0.5)
-@pytest.mark.parametrize("imalpha", np.random.rand(4) - 0.5)
-def test_coherent_state(realpha, imalpha):
+@given(alpha=st.complex_numbers(min_magnitude=0, max_magnitude=2))
+def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
+    realpha = alpha.real
+    imalpha = alpha.imag
     circ = Circuit()
     circ.append(Dgate(modes=[0], x=realpha, y=imalpha))
     amps = circ(Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
-    alpha = realpha + 1j * imalpha
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array([alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)])
     assert np.allclose(amps, expected)
 
 
-@pytest.mark.parametrize("r", 2 * np.random.rand(4))
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
+@given(r=st.floats(0, 2), phi=st_angle)
 def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics
     Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
@@ -73,8 +73,7 @@ def test_squeezed_state(r, phi):
     assert np.allclose(non_zero_amps, amp_pairs)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2, 3])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(4))
+@given(n_mean=st.floats(0, 3), phi=st_angle)
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     circ = Circuit()
@@ -89,9 +88,7 @@ def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     assert np.allclose(covN, expectedCov)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2])
-@pytest.mark.parametrize("phi", 2 * np.pi * np.random.rand(3))
-@pytest.mark.parametrize("eta", [0, 0.3, 0.7, 1])
+@given(n_mean=st.floats(0, 2), phi=st_angle, eta=st.floats(min_value=0, max_value=1))
 def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
@@ -105,10 +102,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
     assert np.allclose(ps, expected)
 
 
-@pytest.mark.parametrize("n_mean", [0, 1, 2])
-@pytest.mark.parametrize("phi", [0, 2.4])
-@pytest.mark.parametrize("eta_s", [0, 0.3, 0.7, 1])
-@pytest.mark.parametrize("eta_i", [0, 0.3, 0.7, 1])
+@given(n_mean=st.floats(0, 2), phi=st_angle, eta_s=st.floats(0, 1), eta_i=st.floats(0, 1))
 def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
     """Tests the total photon number distribution of a lossy two-mode squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
@@ -126,10 +120,13 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
     assert np.allclose(mean_i, n_mean * eta_i, atol=1e-2)
 
 
-def test_density_matrix():
+@given(num_modes=st.integers(1, 3))
+def test_density_matrix(num_modes):
     """Tests the density matrix of a pure state is equal to |psi><psi|"""
-    G = Ggate(modes=[0, 1, 2])
-    L = LossChannel(modes=[0, 1, 2], transmissivity=1.0)
-    rho_legit = L(G(Vacuum(num_modes=3))).dm(cutoffs=[4, 4, 4])
-    rho_built = G(Vacuum(num_modes=3)).dm(cutoffs=[4, 4, 4])
+    modes = [*range(num_modes)]
+    cutoffs = [num_modes + 1] * num_modes
+    G = Ggate(modes=modes)
+    L = LossChannel(modes=modes, transmissivity=1.0)
+    rho_legit = L(G(Vacuum(num_modes=num_modes))).dm(cutoffs=cutoffs)
+    rho_built = G(Vacuum(num_modes=num_modes)).dm(cutoffs=cutoffs)
     assert np.allclose(rho_legit, rho_built)
