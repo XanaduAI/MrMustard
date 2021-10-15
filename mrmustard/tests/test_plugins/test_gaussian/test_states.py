@@ -42,7 +42,7 @@ def test_displaced_squeezed_state(hbar, r, phi, x, y):
     S = Sgate(modes=[0], r=r, phi=phi)
     D = Dgate(modes=[0], x=x, y=y)
     state = D(S(Vacuum(num_modes=1, hbar=hbar)))
-    assert np.allclose(cov, state.cov, atol=1e-3)
+    assert np.allclose(cov, state.cov, rtol=1e-3)
     assert np.allclose(means, state.means)
 
 
