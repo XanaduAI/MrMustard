@@ -79,3 +79,14 @@ class State:  # NOTE: this is not an ABC
         Returns the complete photon number covariance matrix
         """
         return fock.number_cov(self.cov, self.means, self.hbar)
+
+    def __add__(self, other: "State"):
+        r"""
+        Concatenates two states.
+        """
+        if self.hbar != other.hbar:
+            raise ValueError("States must have the same hbar")
+        joined = State(self.hbar, self.isMixed)
+        joined.cov = gaussian.join_covs([self.cov, other.cov])
+        joined.means = gaussian.join_means([self.means, other.means])
+        return joined

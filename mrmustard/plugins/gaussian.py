@@ -2,6 +2,7 @@ from mrmustard import Backend
 from mrmustard._typing import *
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
+from mrmustard.experimental import XPMatrix, XPVector
 
 r"""
 A plugin for all things Gaussian.
@@ -482,3 +483,29 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
         float: the purity
     """
     return 1 / backend.sqrt(backend.det((2 / hbar) * cov))
+
+def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
+    r"""
+    Joins the given covariance matrices into a single covariance matrix.
+    Arguments:
+        covs (Sequence[Matrix]): the covariance matrices
+    Returns:
+        Matrix: the joined covariance matrix
+    """
+    cov = XPMatrix.from_xxpp(covs[0], modes=list(range(len(covs[0])//2)))
+    for i,c in enumerate(covs[1:]):
+        cov = cov @ XPMatrix.from_xxpp(c, modes=list(range(len(cov)//2, len(cov)//2 + len(c)//2)))
+    return cov.to_xxpp()
+
+def join_means(means: Sequence[Vector]) -> Vector:
+    r"""
+    Joins the given means vectors into a single means vector.
+    Arguments:
+        means (Sequence[Vector]): the means vectors
+    Returns:
+        Vector: the joined means vector
+    """
+    mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0])//2)))
+    for i,m in enumerate(means[1:]):
+        mean = mean + XPVector.from_xxpp(m, modes=list(range(len(mean)//2, len(mean)//2 + len(m)//2)))
+    return mean.to_xxpp()
