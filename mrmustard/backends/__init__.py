@@ -292,11 +292,10 @@ class BackendInterface(ABC):
         Apply the same 2x2 matrix (i.e. single-mode) to a larger number of modes.
         """
         if mat.shape[-2:] != (2, 2):
-             raise ValueError("mat must be a single-mode (2x2) matrix")
-        mat = self.diag(self.tile(self.expand_dims(mat, axis=-1), (1,1,num_modes))) # shape [2,2,N,N]
-        mat = self.reshape(self.transpose(mat, (0,2,1,3)), [2*num_modes, 2*num_modes])
+            raise ValueError("mat must be a single-mode (2x2) matrix")
+        mat = self.diag(self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)))  # shape [2,2,N,N]
+        mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
         return mat
-        
 
     @staticmethod
     @lru_cache()

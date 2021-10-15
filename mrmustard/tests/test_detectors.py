@@ -9,6 +9,7 @@ from mrmustard import Circuit, Optimizer
 from mrmustard import Vacuum
 from mrmustard import PNRDetector, Homodyne, Heterodyne
 from mrmustard.plugins import gaussian
+
 np.random.seed(137)
 
 
@@ -42,13 +43,13 @@ def test_detector_squeezed_state(r, phi, eta, dc):
 
 
 @given(
-     r=st.floats(0, 0.5),
-     phi=st.floats(0, 2 * np.pi),
-     eta_s=st.floats(0, 1),
-     eta_i=st.floats(0, 1),
-     dc_s=st.floats(0, 0.2),
-     dc_i=st.floats(0, 0.2),
- )
+    r=st.floats(0, 0.5),
+    phi=st.floats(0, 2 * np.pi),
+    eta_s=st.floats(0, 1),
+    eta_i=st.floats(0, 1),
+    dc_s=st.floats(0, 0.2),
+    dc_i=st.floats(0, 0.2),
+)
 def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
     circ = Circuit()
@@ -117,6 +118,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     psc = tdetector(outc, cutoffs=[cutoff, cutoff])
     psd = tdetector(outd, cutoffs=[cutoff, cutoff])
     fake_data = tfbe.convolve_probs(psc, psd)
+
     def loss_fn():
         outc = circc(Vacuum(num_modes=2))
         outd = circd(Vacuum(num_modes=2))
@@ -125,6 +127,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         psd = tdetector(outd, cutoffs=[cutoff, cutoff])
         ps = tfbe.convolve_probs(psc, psd)
         return tf.norm(fake_data - ps) ** 2
+
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
     assert np.allclose(guess["sq_0"], np.sinh(S2c.trainable_parameters["euclidean"][0].numpy()) ** 2)
