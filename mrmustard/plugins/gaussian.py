@@ -492,9 +492,11 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     Returns:
         Matrix: the joined covariance matrix
     """
-    cov = XPMatrix.from_xxpp(covs[0], modes=list(range(len(covs[0])//2)))
+    modes = list(range(len(covs[0])//2))
+    cov = XPMatrix.from_xxpp(covs[0], modes=(modes, modes), like_1=True)
     for i,c in enumerate(covs[1:]):
-        cov = cov @ XPMatrix.from_xxpp(c, modes=list(range(len(cov)//2, len(cov)//2 + len(c)//2)))
+        modes = list(range(cov.num_modes, cov.num_modes + c.shape[-1]//2))
+        cov = cov @ XPMatrix.from_xxpp(c, modes=(modes, modes), like_1=True)
     return cov.to_xxpp()
 
 def join_means(means: Sequence[Vector]) -> Vector:
@@ -507,5 +509,5 @@ def join_means(means: Sequence[Vector]) -> Vector:
     """
     mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0])//2)))
     for i,m in enumerate(means[1:]):
-        mean = mean + XPVector.from_xxpp(m, modes=list(range(len(mean)//2, len(mean)//2 + len(m)//2)))
+        mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m)//2)))
     return mean.to_xxpp()
