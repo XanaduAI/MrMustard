@@ -84,11 +84,21 @@ def test_the_purity_of_a_mixed_state(nbar, hbar):
 
 
 @given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi))
-def test_join_states(r1, phi1, r2, phi2):
+def test_join_two_states(r1, phi1, r2, phi2):
     S1 = Sgate(modes=[0], r=r1, phi=phi1)(Vacuum(num_modes=1))
     S2 = Sgate(modes=[0], r=r2, phi=phi2)(Vacuum(num_modes=1))
     S12 = Sgate(modes=[0, 1], r=[r1, r2], phi=[phi1, phi2])(Vacuum(num_modes=2))
     assert np.allclose((S1 + S2).cov, S12.cov)
+
+# test join 3 states
+@given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi), r3=st.floats(0.0, 1.0), phi3=st.floats(0.0, 2 * np.pi))
+def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
+    S1 = Sgate(modes=[0], r=r1, phi=phi1)(Vacuum(num_modes=1))
+    S2 = Sgate(modes=[0], r=r2, phi=phi2)(Vacuum(num_modes=1))
+    S3 = Sgate(modes=[0], r=r3, phi=phi3)(Vacuum(num_modes=1))
+    S123 = Sgate(modes=[0, 1, 2], r=[r1, r2, r3], phi=[phi1, phi2, phi3])(Vacuum(num_modes=3))
+    assert np.allclose((S1 + S2 + S3).cov, S123.cov)
+
 
 
 def test_join_states_hbar_error():

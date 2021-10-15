@@ -226,7 +226,6 @@ class XPTensor(ABC):
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
         if not (set(self.outmodes).isdisjoint(uncontracted_other) and set(other.inmodes).isdisjoint(uncontracted_self)):
             raise ValueError("Invalid modes")
-
         bulk = None
         copied_rows = None
         copied_cols = None
@@ -244,9 +243,9 @@ class XPTensor(ABC):
             copied_cols = backend.gather(self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1)
         if copied_rows is not None and copied_cols is not None:
             if bulk is None:
-                bulk = backend.zeros((copied_rows.shape[1], copied_cols.shape[0], 2, 2), dtype=copied_cols.dtype)
+                bulk = backend.zeros((copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype)
             empty = backend.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
-            final = backend.block([[bulk, copied_cols], [copied_rows, empty]], axes=[0, 1])
+            final = backend.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
         elif copied_cols is None and copied_rows is not None:
             if bulk is None:
                 final = copied_rows
@@ -256,12 +255,12 @@ class XPTensor(ABC):
             if bulk is None:
                 final = copied_cols
             else:
-                final = backend.block([[bulk, copied_cols]], axes=[0, 1])
+                final = backend.block([[copied_cols, bulk]], axes=[0, 1])
         else:  # copied_rows and copied_cols are both None
             final = bulk  # NOTE: could be None
 
         outmodes = self.outmodes + uncontracted_other if self.like_1 else self.outmodes  # NOTE: unsorted
-        inmodes = other.inmodes + uncontracted_self if other.like_1 else other.inmodes
+        inmodes = uncontracted_self + other.inmodes if other.like_1 else other.inmodes
         if final is not None:
             final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
             if other.isMatrix:
