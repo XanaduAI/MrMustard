@@ -4,6 +4,7 @@ from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard import *
 from mrmustard.plugins import gaussian as gp
+from mrmustard.tests.random import random_pure_state
 
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
@@ -84,15 +85,26 @@ def test_the_purity_of_a_mixed_state(nbar, hbar):
 
 
 @given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi))
-def test_join_states(r1, phi1, r2, phi2):
+def test_join_two_states(r1, phi1, r2, phi2):
     S1 = Sgate(modes=[0], r=r1, phi=phi1)(Vacuum(num_modes=1))
     S2 = Sgate(modes=[0], r=r2, phi=phi2)(Vacuum(num_modes=1))
     S12 = Sgate(modes=[0, 1], r=[r1, r2], phi=[phi1, phi2])(Vacuum(num_modes=2))
-    assert np.allclose((S1 + S2).cov, S12.cov)
+    assert np.allclose((S1 & S2).cov, S12.cov)
 
+@given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi), r3=st.floats(0.0, 1.0), phi3=st.floats(0.0, 2 * np.pi))
+def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
+    S1 = Sgate(modes=[0], r=r1, phi=phi1)(Vacuum(num_modes=1))
+    S2 = Sgate(modes=[0], r=r2, phi=phi2)(Vacuum(num_modes=1))
+    S3 = Sgate(modes=[0], r=r3, phi=phi3)(Vacuum(num_modes=1))
+    S123 = Sgate(modes=[0, 1, 2], r=[r1, r2, r3], phi=[phi1, phi2, phi3])(Vacuum(num_modes=3))
+    assert np.allclose((S1 & S2 & S3).cov, S123.cov)
+
+@given(s1 = random_pure_state(), s2 = random_pure_state())
+def test_join_random_states(s1, s2):
+    pass
 
 def test_join_states_hbar_error():
     S1 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=1))
     S2 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=2))
     with pytest.raises(ValueError):
-        S1 + S2
+        S1 & S2
