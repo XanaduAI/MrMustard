@@ -80,7 +80,7 @@ class State:  # NOTE: this is not an ABC
         """
         return fock.number_cov(self.cov, self.means, self.hbar)
 
-    def __add__(self, other: "State"):
+    def __and__(self, other: "State"):
         r"""
         Concatenates two states.
         """
