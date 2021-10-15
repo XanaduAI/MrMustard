@@ -240,9 +240,9 @@ class BackendInterface(ABC):
     def dagger(self, array: Tensor) -> Tensor:
         return self.conj(self.transpose(array))
 
-    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
+    def block(self, blocks: List[List[Tensor]]) -> Tensor:
+        rows = [self.concat(row, axis=-1) for row in blocks]
+        return self.concat(rows, axis=-2)
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
@@ -266,8 +266,8 @@ class BackendInterface(ABC):
         r = np.random.uniform(size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
-        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
-        return OW @ dd @ OV
+        dd = self.concat([self.exp(-r), np.exp(r)], axis=0)
+        return self.einsum("ij,j,jk->ik", OW, dd, OV)
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
         "a random orthogonal matrix in O(2*num_modes)"
@@ -319,8 +319,8 @@ class BackendInterface(ABC):
     @lru_cache()
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes"
-        I = np.identity(num_modes)
-        return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
+        idl = np.identity(num_modes)
+        return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
 
     @staticmethod
     @lru_cache()

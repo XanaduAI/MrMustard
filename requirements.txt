@@ -2,7 +2,6 @@ numpy>=1.19.2
 scipy
 numba
 repoze.lru
-thewalrus>=0.16.2
 tensorflow>=2.4.1
 rich
 tqdm

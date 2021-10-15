@@ -97,6 +97,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
     ):
         if not isinstance(max_cutoffs, Sequence):
             max_cutoffs = [max_cutoffs for m in modes]
+        if not isinstance(efficiency, Sequence):
+            efficiency = [efficiency for m in modes]
+        if not isinstance(dark_count_prob, Sequence):
+            dark_count_prob = [dark_count_prob for m in modes]
 
         super().__init__(
             modes=modes,
@@ -114,11 +118,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
     def recompute_stochastic_channel(self):
         self._stochastic_channel = []
-
         if self._conditional_probs is not None:
             self._stochastic_channel = self.conditional_probs
         else:
-            for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_probs[:]):
+            for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_prob[:]):
                 row1 = ((1.0 - qe) ** fock.backend.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
                 rest = fock.backend.zeros((cut - 2, cut), dtype=row1.dtype)

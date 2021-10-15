@@ -4,15 +4,10 @@ import pytest
 from mrmustard import DisplacedSqueezed
 from mrmustard.experimental import XPVector, XPMatrix
 import numpy as np
-from mrmustard.tests.random import random_pure_state
-
-even = st.integers(min_value=2, max_value=10).filter(lambda x: x % 2 == 0)
-floats = st.floats(min_value=-1e3, max_value=1e3, allow_nan=False, allow_infinity=False)
 
 
-@st.composite
-def matrix(draw):  # square or rectangular
-    return draw(arrays(np.float64, shape=(draw(even), draw(even)), elements=floats))
+def test_xp_creation():
+    xp = XPTensor.from_xxpp(Coherent([0.5, 0.5], [0.4, 0.4]).cov, modes=[1, 2])
 
 
 @st.composite

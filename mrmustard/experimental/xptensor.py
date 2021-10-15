@@ -1,10 +1,5 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod, abstractproperty
-from itertools import product
 from mrmustard import Backend
-import numpy as np
-
-backend = Backend()
 from mrmustard._typing import *
 
 
@@ -88,8 +83,8 @@ class XPTensor(ABC):
         return self.isMatrix and self.outmodes != self.inmodes
 
     @property
-    def like_1(self) -> bool:
-        return not self.like_0
+    def isMatrix(self) -> bool:
+        return not self.isVector
 
     @property
     def T(self) -> XPMatrix:
