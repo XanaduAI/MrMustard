@@ -82,12 +82,14 @@ def test_the_purity_of_a_mixed_state(nbar, hbar):
     expected = 1 / (2 * nbar + 1)
     assert np.isclose(purity, expected)
 
+
 @given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi))
 def test_join_states(r1, phi1, r2, phi2):
     S1 = Sgate(modes=[0], r=r1, phi=phi1)(Vacuum(num_modes=1))
     S2 = Sgate(modes=[0], r=r2, phi=phi2)(Vacuum(num_modes=1))
-    S12 = Sgate(modes=[0,1], r=[r1,r2], phi=[phi1, phi2])(Vacuum(num_modes=2))
+    S12 = Sgate(modes=[0, 1], r=[r1, r2], phi=[phi1, phi2])(Vacuum(num_modes=2))
     assert np.allclose((S1 + S2).cov, S12.cov)
+
 
 def test_join_states_hbar_error():
     S1 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=1))

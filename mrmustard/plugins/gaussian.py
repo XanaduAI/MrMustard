@@ -484,6 +484,7 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     """
     return 1 / backend.sqrt(backend.det((2 / hbar) * cov))
 
+
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     r"""
     Joins the given covariance matrices into a single covariance matrix.
@@ -492,12 +493,13 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     Returns:
         Matrix: the joined covariance matrix
     """
-    modes = list(range(len(covs[0])//2))
+    modes = list(range(len(covs[0]) // 2))
     cov = XPMatrix.from_xxpp(covs[0], modes=(modes, modes), like_1=True)
-    for i,c in enumerate(covs[1:]):
-        modes = list(range(cov.num_modes, cov.num_modes + c.shape[-1]//2))
+    for i, c in enumerate(covs[1:]):
+        modes = list(range(cov.num_modes, cov.num_modes + c.shape[-1] // 2))
         cov = cov @ XPMatrix.from_xxpp(c, modes=(modes, modes), like_1=True)
     return cov.to_xxpp()
+
 
 def join_means(means: Sequence[Vector]) -> Vector:
     r"""
@@ -507,7 +509,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
     Returns:
         Vector: the joined means vector
     """
-    mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0])//2)))
-    for i,m in enumerate(means[1:]):
-        mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m)//2)))
+    mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0]) // 2)))
+    for i, m in enumerate(means[1:]):
+        mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2)))
     return mean.to_xxpp()
