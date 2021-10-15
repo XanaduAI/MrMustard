@@ -240,9 +240,9 @@ class BackendInterface(ABC):
     def dagger(self, array: Tensor) -> Tensor:
         return self.conj(self.transpose(array))
 
-    def block(self, blocks: List[List[Tensor]]) -> Tensor:
-        rows = [self.concat(row, axis=-1) for row in blocks]
-        return self.concat(rows, axis=-2)
+    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.
@@ -266,8 +266,8 @@ class BackendInterface(ABC):
         r = np.random.uniform(size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
-        dd = self.concat([self.exp(-r), np.exp(r)], axis=0)
-        return self.einsum("ij,j,jk->ik", OW, dd, OV)
+        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
+        return OW @ dd @ OV
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
         "a random orthogonal matrix in O(2*num_modes)"
@@ -319,8 +319,8 @@ class BackendInterface(ABC):
     @lru_cache()
     def rotmat(num_modes: int):
         "Rotation matrix from quadratures to complex amplitudes"
-        idl = np.identity(num_modes)
-        return np.sqrt(0.5) * np.block([[idl, 1j * idl], [idl, -1j * idl]])
+        I = np.identity(num_modes)
+        return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
     @lru_cache()
@@ -343,7 +343,6 @@ class BackendInterface(ABC):
         Left matrix multiplication of a partial matrix and a full matrix.
         It assumes that that `a_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
         i.e. it will apply a_partial on the corresponding M modes of `b_full` from the left.
-
         Args:
             a_partial (array): :math:`2M\times 2M` array
             b_full (array): :math:`2N\times 2N` array
@@ -364,7 +363,6 @@ class BackendInterface(ABC):
         Right matrix multiplication of a full matrix and a partial matrix.
         It assumes that that `b_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
         i.e. it will apply b_partial on the corresponding M modes of `a_full` from the right.
-
         Args:
             a_full (array): :math:`2N\times 2N` array
             b_partial (array): :math:`2M\times 2M` array
@@ -442,11 +440,9 @@ class BackendInterface(ABC):
     def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:
         r"""
         Convert the Riemannian gradient to a symplectic gradient.
-
         Arguments:
             S (Matrix): symplectic matrix
             dS_riemann (Matrix): Riemannian gradient tensor
-
         Returns:
             Matrix: symplectic gradient tensor
         """
