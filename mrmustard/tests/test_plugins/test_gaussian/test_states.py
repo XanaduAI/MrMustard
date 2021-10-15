@@ -91,7 +91,6 @@ def test_join_two_states(r1, phi1, r2, phi2):
     S12 = Sgate(modes=[0, 1], r=[r1, r2], phi=[phi1, phi2])(Vacuum(num_modes=2))
     assert np.allclose((S1 & S2).cov, S12.cov)
 
-# test join 3 states
 @given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi), r3=st.floats(0.0, 1.0), phi3=st.floats(0.0, 2 * np.pi))
 def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     S1 = Sgate(modes=[0], r=r1, phi=phi1)(Vacuum(num_modes=1))
@@ -100,11 +99,9 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     S123 = Sgate(modes=[0, 1, 2], r=[r1, r2, r3], phi=[phi1, phi2, phi3])(Vacuum(num_modes=3))
     assert np.allclose((S1 & S2 & S3).cov, S123.cov)
 
-# test join random states
 @given(s1 = random_pure_state(), s2 = random_pure_state())
 def test_join_random_states(s1, s2):
     pass
-
 
 def test_join_states_hbar_error():
     S1 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=1))
