@@ -134,3 +134,17 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool, hbar: float) -> 
         B[:N],
         T ** (1.0 if mixed else 0.5),
     )  # will be off by global phase because T is real even for pure states
+
+
+def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
+    r"""computes the fidelity between two states in Fock representation"""
+    if a_pure and b_pure:
+        return backend.sum(backend.abs(state_a * state_b) ** 2)
+    elif a_pure:
+        a = state_a.reshape(-1)
+        return backend.real(backend.sum(backend.conj(a) * backend.matvec(backend.reshape(state_b, (len(a), len(a))), a)))
+    elif b_pure:
+        b = state_b.reshape(-1)
+        return backend.real(backend.sum(backend.conj(b) * backend.matvec(state_a, b)))
+    else:
+        return backend.sum(backend.abs(state_a * state_b))
