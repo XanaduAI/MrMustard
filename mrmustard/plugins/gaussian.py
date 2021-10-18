@@ -23,7 +23,18 @@ backend = Backend()
 #  ~~~~~~
 
 
-def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
+def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
+    r"""Returns the real covariance matrix of the vacuum state.
+    Args:
+        num_modes (int): number of modes
+        hbar (float): value of hbar
+    Returns:
+        Matrix: vacuum covariance matrix
+    """
+    return backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
+
+
+def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
         num_modes (int): number of modes
@@ -32,31 +43,10 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    cov = backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
-    means = backend.zeros([num_modes * 2], dtype=backend.float64)
-    return cov, means
+    return displacement([0.0] * num_modes, [0.0] * num_modes, hbar)
 
 
-def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-    r"""Returns the real covariance matrix and real means vector of a coherent state.
-    The dimension depends on the dimensions of x and y.
-    Args:
-        x (vector): real part of the means vector
-        y (vector): imaginary part of the means vector
-        hbar: value of hbar
-    Returns:
-        Matrix: coherent state covariance matrix
-        Vector: coherent state means vector
-    """
-    x = backend.atleast_1d(x)
-    y = backend.atleast_1d(y)
-    num_modes = x.shape[-1]
-    cov = backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
-    means = backend.concat([x, y], axis=0) * backend.sqrt(2 * hbar, dtype=x.dtype)
-    return cov, means
-
-
-def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
     Args:
@@ -68,12 +58,10 @@ def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, 
         Vector: squeezed state means vector
     """
     S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return backend.matmul(S, backend.transpose(S)) * hbar / 2
 
 
-def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def thermal_cov(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
     The dimension depends on the dimensions of nbar.
     Args:
@@ -84,31 +72,10 @@ def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Vector: thermal state means vector
     """
     g = (2 * backend.atleast_1d(nbar) + 1) * hbar / 2
-    cov = backend.diag(backend.concat([g, g], axis=-1))
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return backend.diag(backend.concat([g, g], axis=-1))
 
 
-def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-    r"""Returns the real covariance matrix and real means vector of a displaced squeezed state.
-    The dimension depends on the dimensions of r, phi, x and y.
-    Args:
-        r   (scalar or vector): squeezing magnitude
-        phi (scalar or vector): squeezing angle
-        x   (scalar or vector): real part of the means
-        y   (scalar or vector): imaginary part of the means
-        hbar: value of hbar
-    Returns:
-        Matrix: displaced squeezed state covariance matrix
-        Vector: displaced squeezed state means vector
-    """
-    S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = displacement(x, y, hbar)
-    return cov, means
-
-
-def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a two-mode squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
     Args:
@@ -120,9 +87,7 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
         Vector: two-mode squeezed state means vector
     """
     S = two_mode_squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return backend.matmul(S, backend.transpose(S)) * hbar / 2
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -378,7 +343,7 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
 
 # ~~~~~~~~~~~~~~~
 # non-TP channels
-# ~~~~~~~~~~~~~~~98
+# ~~~~~~~~~~~~~~~
 
 
 def general_dyne(
@@ -415,9 +380,40 @@ def general_dyne(
 # ~~~~~~~~~
 # utilities
 # ~~~~~~~~~
+def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
+    r"""
+    Returns the photon number means vector
+    given a Wigenr covariance matrix and a means vector.
+    Args:
+        cov: The Wigner covariance matrix.
+        means: The Wigner means vector.
+        hbar: The value of the Planck constant.
+    Returns:
+        The photon number means vector.
+    """
+    N = means.shape[-1] // 2
+    return (means[:N] ** 2 + means[N:] ** 2 + backend.diag_part(cov[:N, :N]) + backend.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
 
 
-def is_mixed_cov(cov: Matrix) -> bool:
+def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
+    r"""
+    Returns the photon number covariance matrix
+    given a Wigenr covariance matrix and a means vector.
+    Args:
+        cov: The Wigner covariance matrix.
+        means: The Wigner means vector.
+        hbar: The value of the Planck constant.
+    Returns:
+        The photon number covariance matrix.
+    """
+    N = means.shape[-1] // 2
+    mCm = cov * means[:, None] * means[None, :]
+    dd = backend.diag(backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
+    CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
+    return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * backend.eye(N, dtype=CC.dtype)
+
+
+def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """

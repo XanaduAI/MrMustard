@@ -239,7 +239,7 @@ class Backend(BackendInterface):
         return tf.math.sinh(array)
 
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
-        return self.cast(tf.sqrt(x), dtype)
+        return tf.sqrt(self.cast(x, dtype))
 
     def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)

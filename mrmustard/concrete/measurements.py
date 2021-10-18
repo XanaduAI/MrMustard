@@ -142,7 +142,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
 
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
-        super().__init__(modes=modes, project_onto=project_onto, hbar=project_onto.hbar)
+        super().__init__(modes=modes, project_onto=project_onto, hbar=project_onto._hbar)
 
     def recompute_project_onto(self, project_onto: State) -> State:
         return project_onto

@@ -15,12 +15,11 @@ class Transformation(ABC):
     """
 
     def __call__(self, state: State) -> State:
-        d = self.d_vector(state.hbar)
+        d = self.d_vector(state._hbar)
         X = self.X_matrix()  # TODO: confirm with nico which ones depend on hbar
-        Y = self.Y_matrix(state.hbar)
+        Y = self.Y_matrix(state._hbar)
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self._modes)
-        output = State(hbar=state.hbar, mixed=Y is not None, cov=cov, means=means)
-        return output
+        return State.from_gaussian(cov, means, mixed=state.is_mixed or Y is not None, hbar=state._hbar)
 
     def __repr__(self):
         with np.printoptions(precision=6, suppress=True):
