@@ -24,7 +24,7 @@ class Dgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         x: Union[Optional[float], Optional[List[float]]] = None,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_trainable: bool = True,
@@ -58,7 +58,7 @@ class Sgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         r: Union[Optional[float], Optional[List[float]]] = None,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = True,
@@ -91,7 +91,7 @@ class Rgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         angle: Union[Optional[float], Optional[List[float]]] = None,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         angle_trainable: bool = True,
@@ -120,7 +120,7 @@ class BSgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         theta: Optional[float] = None,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         theta_trainable: bool = True,
@@ -165,7 +165,7 @@ class MZgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         phi_a: Optional[float] = None,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_a_trainable: bool = True,
@@ -209,7 +209,7 @@ class S2gate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         r: Optional[float] = None,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = True,
@@ -236,7 +236,7 @@ class Interferometer(Parametrized, Transformation):
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
-    def __init__(self, modes: List[int], orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
+    def __init__(self, modes: List[int] = None, orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = True):
         if orthogonal is None:
             orthogonal = train.new_orthogonal(num_modes=len(modes))
         super().__init__(modes=modes, orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
@@ -265,7 +265,7 @@ class Ggate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         symplectic: Optional[Tensor] = None,
         symplectic_trainable: bool = True,
         displacement: Optional[Tensor] = None,

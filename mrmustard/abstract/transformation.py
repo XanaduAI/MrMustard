@@ -16,9 +16,9 @@ class Transformation(ABC):
 
     def __call__(self, state: State) -> State:
         d = self.d_vector(state._hbar)
-        X = self.X_matrix()  # TODO: confirm with nico which ones depend on hbar
+        X = self.X_matrix()
         Y = self.Y_matrix(state._hbar)
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self._modes)
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, list(range(state.num_modes)) if self._modes is None else self._modes)
         return State.from_gaussian(cov, means, mixed=state.is_mixed or Y is not None, hbar=state._hbar)
 
     def __repr__(self):
@@ -38,18 +38,18 @@ class Transformation(ABC):
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
 
-    def __getitem__(self, item) -> Callable:
+    def __getitem__(self, items) -> Callable:
         r"""
         Allows transformations to be used as:
-        op[0,1](input)  # acting on modes 0 and 1
+        output = op[0,1](input)  # e.g. acting on modes 0 and 1
         """
-        if isinstance(item, int):
-            modes = [item]
-        elif isinstance(item, slice):
-            modes = list(range(item.start, item.stop, item.step))
-        elif isinstance(item, Iterable):
-            modes = list(item)
+        if isinstance(items, int):
+            modes = [items]
+        elif isinstance(items, slice):
+            modes = list(range(items.start, items.stop, items.step))
+        elif isinstance(items, Iterable):
+            modes = list(items)
         else:
-            raise ValueError(f"{item} is not a valid slice or list of modes.")
+            raise ValueError(f"{items} is not a valid slice or list of modes.")
         self._modes = modes
-        return lambda *args, **kwargs: self(*args, **kwargs)
+        return self
