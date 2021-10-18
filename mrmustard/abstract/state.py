@@ -1,26 +1,30 @@
+from __future__ import annotations
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian
+from mrmustard.plugins import fock, gaussian, graphics
+from mrmustard.experimental import XPMatrix, XPVector
 
-
-class State:  # NOTE: this is not an ABC
-    def __init__(self, hbar: float, mixed: bool, cov: Optional[Matrix] = None, means: Optional[Vector] = None):
-        self.cov: Optional[Matrix] = cov
-        self.means: Optional[Vector] = means
-        self.num_modes = cov.shape[-1] // 2 if cov is not None else 0
-        self.hbar = hbar
-        self.isMixed: bool = mixed
+class State:
+    def __init__(self, mixed: bool, hbar: float, cov = None, means = None, fock = None):
+        self._num_modes = None
+        self._hbar = hbar
+        self.is_mixed: bool = mixed
+        self._fock = fock
+        self._means = means
+        self._cov = cov
 
     @property
-    def isPure(self):
-        return not self.isMixed
+    def cov(self) -> Optional[Matrix]:
+        r"""
+        Returns the covariance matrix of the state.
+        """
+        return self._cov
 
-    def __repr__(self):
-        info = f"num_modes={self.num_modes} | hbar={self.hbar} | pure={self.isPure}\n"
-        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-        if self.num_modes <= 4:
-            return info + "-" * len(info) + detailed_info
-        else:
-            return info
+    @property
+    def means(self) -> Optional[Vector]:
+        r"""
+        Returns the means vector of the state.
+        """
+        return self._means
 
     def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
         r"""
@@ -30,8 +34,10 @@ class State:  # NOTE: this is not an ABC
         Returns:
             Tensor: the ket
         """
-        if not self.isMixed:
-            return fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+        if not self.is_mixed:
+            if self._fock is None:
+                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self._hbar)
+            return self._fock
         else:
             return None
 
@@ -43,11 +49,40 @@ class State:  # NOTE: this is not an ABC
         Returns:
             Tensor: the density matrix
         """
-        if not self.isMixed:
-            ket = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self.hbar)
+        if self.is_pure:
+            ket = self.ket(cutoffs=cutoffs)
             return fock.ket_to_dm(ket)
         else:
-            return fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self.hbar)
+            if self._fock is None:
+                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self._hbar)
+            return self._fock
+
+    @property
+    def num_modes(self) -> int:
+        r"""
+        Returns the number of modes in the state.
+        """
+        if self._num_modes is None:
+            if self._fock is not None:
+                num_indices = len(self._fock.shape)
+                self._num_modes = num_indices if self.is_pure else num_indices // 2
+            else:
+                self._num_modes = self.cov.shape[-1] // 2
+        return self._num_modes
+
+    @property
+    def is_pure(self):
+        return not self.is_mixed
+
+    def __repr__(self):
+        info = f"num_modes={self._num_modes} | hbar={self._hbar} | pure={self.is_pure}\n"
+        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+        if self._num_modes == 1:
+            cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
+            detailed_info += f"fock={repr(self._fock)}\n"
+            detailed_info += f"fock_cutoffs={repr(cutoffs)}\n"
+            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
+        return info + "-" * len(info) + detailed_info
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""
@@ -59,7 +94,7 @@ class State:  # NOTE: this is not an ABC
         Returns:
             Tensor: the probabilities
         """
-        if self.isMixed:
+        if self.is_mixed:
             dm = self.dm(cutoffs=cutoffs)
             return fock.dm_to_probs(dm)
         else:
@@ -71,22 +106,54 @@ class State:  # NOTE: this is not an ABC
         r"""
         Returns the mean photon number for each mode
         """
-        return fock.number_means(self.cov, self.means, self.hbar)
+        try:
+            return gaussian.number_means(self.cov, self.means, self._hbar)
+        except ValueError:
+            return fock.number_means(self._fock, self._hbar)
 
     @property
     def number_cov(self):
         r"""
         Returns the complete photon number covariance matrix
         """
-        return fock.number_cov(self.cov, self.means, self.hbar)
+        try:
+            return gaussian.number_cov(self.cov, self.means, self._hbar)
+        except ValueError:
+            return fock.number_cov(self._fock, self._hbar)
 
-    def __and__(self, other: "State"):
+    def __and__(self, other: State) -> State:
         r"""
         Concatenates two states.
         """
-        if self.hbar != other.hbar:
+        if self._hbar != other._hbar:
             raise ValueError("States must have the same hbar")
-        joined = State(self.hbar, self.isMixed)
-        joined.cov = gaussian.join_covs([self.cov, other.cov])
-        joined.means = gaussian.join_means([self.means, other.means])
-        return joined
+        cov = gaussian.join_covs([self.cov, other.cov])
+        means = gaussian.join_means([self.means, other.means])
+        return State.from_gaussian(cov, means, self.is_mixed or other.is_mixed, self._hbar)
+
+    @classmethod
+    def from_gaussian(cls, cov: Matrix, means: Vector, mixed: bool, hbar: float = 2.0) -> State:
+        r"""
+        Returns a state from a Gaussian distribution.
+        Arguments:
+            cov Matrix: the covariance matrix
+            means Vector: the means vector
+            mixed bool: whether the state is mixed
+            hbar float: the hbar value
+        Returns:
+            State: the state
+        """
+        return cls(mixed, hbar, cov, means)
+
+    @staticmethod
+    def from_fock(fock: Tensor, mixed: bool) -> State:
+        r"""
+        Returns a state from a Fock representation.
+        Arguments:
+            fock Tensor: the Fock representation
+            mixed bool: whether the state is mixed
+            hbar float: the hbar value
+        Returns:
+            State: the state
+        """
+        return cls(mixed=mixed, hbar=2.0, fock=fock)

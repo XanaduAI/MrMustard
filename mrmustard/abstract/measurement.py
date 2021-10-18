@@ -28,19 +28,19 @@ class GaussianMeasurement(ABC):
             (float, state) The measurement probabilities and the remaining post-measurement state.
             Note that the post-measurement state is trivial if all modes are measured.
         """
-        assert self._hbar == state.hbar
+        assert self._hbar == state._hbar
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
         prob, cov, means = gaussian.general_dyne(
-            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto.hbar
+            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto._hbar
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
         if len(remaining_modes) > 0:
-            remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov), cov, means)  # TODO: avoid using is_mixed_cov from TW
+            remaining_state = State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov), self._hbar)  # TODO: avoid using is_mixed_cov from TW
+            return prob, remaining_state
         else:
-            remaining_state = State(state.hbar, gaussian.is_mixed_cov(cov))
-        return prob, remaining_state
+            return prob
 
     def recompute_project_onto(self, **kwargs) -> State:
         ...

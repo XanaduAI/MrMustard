@@ -31,7 +31,7 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     circ = Circuit()
     circ.append(Sgate(modes=[0], r=r, phi=phi))
     detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
-    cutoff = 40
+    cutoff = 50
     ps = detector(circ(Vacuum(num_modes=1)), cutoffs=[cutoff])
     assert np.allclose(np.sum(ps), 1.0, atol=1e-3)
     mean = np.arange(cutoff) @ ps.numpy()
@@ -186,9 +186,9 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
     r = homodyne._squeezing
     prob, remaining_state = homodyne(tmsv)
-    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * tmsv.hbar / 2.0
+    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * tmsv._hbar / 2.0
     assert np.allclose(remaining_state.cov, cov)
-    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * tmsv.hbar)
+    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * tmsv._hbar)
     assert np.allclose(remaining_state.means, means)
 
 
@@ -201,7 +201,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
     prob, remaining_state = homodyne(tmsv)
     denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
     cov = (
-        tmsv.hbar
+        tmsv._hbar
         / 2
         * np.array(
             [
@@ -225,7 +225,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
                 -np.sqrt(s * (1 + s)) * X * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
             ]
         )
-        * np.sqrt(2 * tmsv.hbar)
+        * np.sqrt(2 * tmsv._hbar)
     )
     assert np.allclose(remaining_state.means, means)
 
@@ -246,7 +246,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
                 pa + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         )
-        * np.sqrt(2 * tmsv.hbar)
+        * np.sqrt(2 * tmsv._hbar)
     )
     assert np.allclose(remaining_state.means, means)
 
@@ -261,14 +261,14 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):
     S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
     D = Dgate(modes=[0, 1], x=d[:2], y=d[2:])
     tmsv = D(S(Vacuum(2)))
-    heterodyne = Heterodyne(modes=[0], x=x, y=y, hbar=tmsv.hbar)
+    heterodyne = Heterodyne(modes=[0], x=x, y=y, hbar=tmsv._hbar)
     prob, remaining_state = heterodyne(tmsv)
-    cov = tmsv.hbar / 2 * np.array([[1, 0], [0, 1]])
+    cov = tmsv._hbar / 2 * np.array([[1, 0], [0, 1]])
     assert np.allclose(remaining_state.cov, cov)
     xb, xa, pb, pa = d
     means = (
         np.array([xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb), pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y)])
-        * np.sqrt(2 * tmsv.hbar)
+        * np.sqrt(2 * tmsv._hbar)
         / (1 + s)
     )
     assert np.allclose(remaining_state.means, means, atol=1e-5)

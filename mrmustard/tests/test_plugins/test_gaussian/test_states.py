@@ -71,7 +71,7 @@ def test_coherent_state_multiple(hbar, x, y):
 def test_the_purity_of_a_pure_state(xy):
     x, y = xy
     state = Coherent(x, y)
-    purity = gp.purity(state.cov, state.hbar)
+    purity = gp.purity(state.cov, state._hbar)
     expected = 1.0
     assert np.isclose(purity, expected)
 
@@ -79,7 +79,7 @@ def test_the_purity_of_a_pure_state(xy):
 @given(nbar=st.floats(0.0, 3.0), hbar=st.floats(0.5, 2.0))
 def test_the_purity_of_a_mixed_state(nbar, hbar):
     state = Thermal(nbar, hbar)
-    purity = gp.purity(state.cov, state.hbar)
+    purity = gp.purity(state.cov, state._hbar)
     expected = 1 / (2 * nbar + 1)
     assert np.isclose(purity, expected)
 

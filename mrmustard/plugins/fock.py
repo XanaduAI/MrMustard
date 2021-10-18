@@ -7,44 +7,10 @@ A plugin that interfaces the phase space representation with the Fock representa
 
 It implements:
 - fock_representation and its gradient
-- number cov and means
 - classical stochastic channels
 """
 
 backend = Backend()
-
-
-def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
-    r"""
-    Returns the photon number means vector
-    given a Wigenr covariance matrix and a means vector.
-    Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        hbar: The value of the Planck constant.
-    Returns:
-        The photon number means vector.
-    """
-    N = means.shape[-1] // 2
-    return (means[:N] ** 2 + means[N:] ** 2 + backend.diag_part(cov[:N, :N]) + backend.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
-
-
-def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
-    r"""
-    Returns the photon number covariance matrix
-    given a Wigenr covariance matrix and a means vector.
-    Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        hbar: The value of the Planck constant.
-    Returns:
-        The photon number covariance matrix.
-    """
-    N = means.shape[-1] // 2
-    mCm = cov * means[:, None] * means[None, :]
-    dd = backend.diag(backend.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
-    CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
-    return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * backend.eye(N, dtype=CC.dtype)
 
 
 def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
