@@ -23,6 +23,16 @@ backend = Backend()
 #  ~~~~~~
 
 
+def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
+    r"""Returns the real covariance matrix of the vacuum state.
+    Args:
+        num_modes (int): number of modes
+        hbar (float): value of hbar
+    Returns:
+        Matrix: vacuum covariance matrix
+    """
+    return backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
+
 def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
@@ -32,10 +42,7 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    cov = backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
-    means = backend.zeros([num_modes * 2], dtype=backend.float64)
-    return cov, means
-
+    return vacuum_cov(num_modes, hbar), displacement([0.0]*num_modes, [0.0]*num_modes, hbar)
 
 def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a coherent state.
@@ -48,11 +55,8 @@ def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: coherent state covariance matrix
         Vector: coherent state means vector
     """
-    x = backend.atleast_1d(x)
-    y = backend.atleast_1d(y)
-    num_modes = x.shape[-1]
-    cov = backend.eye(num_modes * 2, dtype=x.dtype) * hbar / 2
-    means = backend.concat([x, y], axis=0) * backend.sqrt(2 * hbar, dtype=x.dtype)
+    means = displacement(x, y, hbar)
+    cov = vacuum_cov(len(means)//2, hbar)
     return cov, means
 
 

@@ -46,9 +46,6 @@ def test_displaced_squeezed_state(hbar, r, phi, x, y):
     assert np.allclose(cov, state.cov, rtol=1e-3)
     assert np.allclose(means, state.means)
 
-
-# a hypothesis strategy to generate x and y as numpy arrays of the same length
-# using hypothesis.extra.numpy.arrays. The length can vary between 2 and 10
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
@@ -108,13 +105,8 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     assert np.allclose((S1 & S2 & S3).cov, S123.cov)
 
 
-# @given(s1=random_pure_state(), s2=random_pure_state())
-# def test_join_random_states(s1, s2):
-#     pass
-
-
 def test_join_states_hbar_error():
     S1 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=1))
-    S2 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=2))
+    S2 = Sgate(modes=[0], r=1, phi=0)(Vacuum(num_modes=1, hbar=2.0))
     with pytest.raises(ValueError):
         S1 & S2

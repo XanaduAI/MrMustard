@@ -25,23 +25,21 @@ class Coherent(Parametrized, State):
         x: Union[Optional[float], Optional[List[float]]],
         y: Union[Optional[float], Optional[List[float]]],
         hbar: float = 2.0,
-        x_trainable: bool = True,
-        y_trainable: bool = True,
+        x_trainable: bool = False,
+        y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-    ):
-        super().__init__(x=x, y=y, x_trainable=x_trainable, y_trainable=y_trainable, x_bounds=x_bounds, y_bounds=y_bounds, hbar=hbar)
-
+    ):  
+        super().__init__(x=x, y=y, x_trainable=x_trainable, y_trainable=y_trainable, x_bounds=x_bounds, y_bounds=y_bounds)
+        State.__init__(self, False, hbar)
 
     @property
     def cov(self):
-        cov, means = gaussian.coherent_state(self.x, self.y, self._hbar)  # TODO: split into cov and means functions
-        return cov
+        return gaussian.vacuum_cov(len(self.means)//2, self._hbar)
 
     @property
     def means(self):
-        cov, means = gaussian.coherent_state(self.x, self.y, self._hbar)  # TODO: split into cov and means functions
-        return means
+        return gaussian.displacement(self.x, self.y, self._hbar)
 
 
 class SqueezedVacuum(State):
