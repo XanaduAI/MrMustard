@@ -110,17 +110,20 @@ def test_join_states_hbar_error():
     with pytest.raises(ValueError):
         S1 & S2
 
+
 def test_coh_state_is_same_as_dgate_on_vacuum():
     state = Coherent(np.array([1.0, 0.0]), np.array([0.0, 1.0]))
     expected = Dgate(modes=[0, 1], x=[1.0, 0.0], y=[0.0, 1.0])(Vacuum(2))
     assert np.allclose(state.cov, expected.cov)
     assert np.allclose(state.means, expected.means)
 
+
 def test_sq_state_is_same_as_sgate_on_vacuum():
     state = SqueezedVacuum(0.1, 0.2)
     expected = Sgate(modes=[0], r=0.1, phi=0.2)(Vacuum(1))
     assert np.allclose(state.cov, expected.cov)
     assert np.allclose(state.means, expected.means)
+
 
 def test_dispsq_state_is_same_as_dsgate_on_vacuum():
     state = DisplacedSqueezed(0.3, 0.4, 0.1, 0.2)
