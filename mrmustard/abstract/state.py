@@ -5,10 +5,11 @@ from mrmustard.experimental import XPMatrix, XPVector
 
 
 class State:
-    def __init__(self, mixed: bool, hbar: float, cov=None, means=None, fock=None):
+    def __init__(self, hbar: float, mixed: bool = None, cov=None, means=None, fock=None):
         self._num_modes = None
         self._hbar = float(hbar)
-        self.is_mixed: bool = mixed
+        if mixed is not None:
+            self.is_mixed: bool = mixed
         self._fock = fock
         self._means = means
         self._cov = cov
@@ -142,7 +143,7 @@ class State:
         Returns:
             State: the state
         """
-        return cls(mixed, hbar, cov, means)
+        return cls(hbar, mixed, cov, means)
 
     @staticmethod
     def from_fock(fock: Tensor, mixed: bool) -> State:
@@ -155,4 +156,4 @@ class State:
         Returns:
             State: the state
         """
-        return cls(mixed=mixed, hbar=2.0, fock=fock)
+        return cls(hbar=2.0, mixed=mixed, fock=fock)

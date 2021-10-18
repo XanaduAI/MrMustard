@@ -21,7 +21,9 @@ MrMustard supports (fully differentiable):
 ## Basic API Reference
 
 ### 1: States
-States in MrMustard are very powerful objects. They have differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means vector in phase space, as well as photon number moments:
+States in MrMustard are very powerful objects. States, like gates, are trainable.
+They have differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means vector in phase space, as well as photon number moments:
+
 ```python
 from mrmustard import Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, Thermal
 
@@ -29,8 +31,8 @@ vac = Vacuum(num_modes=2, hbar = 2.0)
 coh = Coherent(x=[0.1, 0.2], y=[-0.4, 0.9], hbar=2.0)  # 2-mode coherent state
 sq  = SqueezedVacuum(r = 0.5, phi = 0.3)
 dsq = DisplacedSqueezed(r = 0.5, phi = 0.3, x = 0.3, y = 0.9, hbar=2.0)
-tmsv = TwoModeSqueezedVacuum(r = 0.5, phi = 0.3, x = 0.3, y = 0.9, hbar=2.0)
-thr = Thermal(num_modes=2, hbar=2.0)
+tmsv = TMSV(r = 0.5, phi = 0.3, x = 0.3, y = 0.9, hbar=2.0)
+th = Thermal(num_modes=2, hbar=2.0)
 
 # e.g. fock representation of coherent state
 coh.ket(cutoffs=[4,5])
@@ -45,8 +47,8 @@ coh.number_means  # photon number means
 
 
 ### 2. Gates
-Gates are callable objects. We have a variety of unitary Gaussian gates and non-unitary Gaussian channels.
-Note that if a parameter of a single-mode gate is a float or a list of length 1 its value is shared across all the modes the gate is operating on.
+We have a variety of unitary Gaussian gates and non-unitary Gaussian channels.
+Note that if a parameter of a single-mode gate is a float or a list of length 1, its value is shared across all the modes the gate is applied to.
 
 ```python
 from mrmustard import Vacuum
