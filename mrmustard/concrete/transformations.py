@@ -270,6 +270,7 @@ class Ggate(Parametrized, Transformation):
         symplectic_trainable: bool = True,
         displacement: Optional[Tensor] = None,
         displacement_trainable: bool = True,
+        displacement_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         if symplectic is None:
             symplectic = train.new_symplectic(num_modes=len(modes))
@@ -281,7 +282,7 @@ class Ggate(Parametrized, Transformation):
             symplectic_bounds=(None, None),
             symplectic_trainable=symplectic_trainable,
             displacement=displacement,
-            displacement_bounds=(None, None),
+            displacement_bounds=displacement_bounds,
             displacement_trainable=displacement_trainable,
         )
         self.is_unitary = True

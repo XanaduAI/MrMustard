@@ -1,6 +1,6 @@
 from mrmustard._typing import *
 from mrmustard.abstract import State, Parametrized
-from mrmustard.plugins import gaussian
+from mrmustard.plugins import gaussian, train
 
 __all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV"]
 
@@ -13,7 +13,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int = None, hbar: float = 2.0):
         cov = gaussian.vacuum_cov(num_modes, hbar)
         means = gaussian.vacuum_means(num_modes, hbar)
-        super().__init__(False, hbar, cov, means)
+        super().__init__(hbar, False, cov, means)
 
 
 class Coherent(Parametrized, State):
@@ -23,8 +23,8 @@ class Coherent(Parametrized, State):
 
     def __init__(
         self,
-        x: Union[Optional[float], Optional[List[float]]],
-        y: Union[Optional[float], Optional[List[float]]],
+        x: Union[Optional[float], Optional[List[float]]] = 0.0,
+        y: Union[Optional[float], Optional[List[float]]] = 0.0,
         hbar: float = 2.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
@@ -34,7 +34,7 @@ class Coherent(Parametrized, State):
         Parametrized.__init__(self, x=x, y=y, x_trainable=x_trainable, y_trainable=y_trainable, x_bounds=x_bounds, y_bounds=y_bounds)
         means = gaussian.displacement(x, y, hbar)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, hbar)
-        State.__init__(self, False, hbar, cov, means)
+        State.__init__(self, hbar, False, cov, means)
 
     @property
     def means(self):
@@ -48,8 +48,8 @@ class SqueezedVacuum(Parametrized, State):
 
     def __init__(
         self,
-        r: Union[Scalar, Vector],
-        phi: Union[Scalar, Vector],
+        r: Union[Scalar, Vector] = 0.0,
+        phi: Union[Scalar, Vector] = 0.0,
         hbar: float = 2.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
@@ -61,7 +61,7 @@ class SqueezedVacuum(Parametrized, State):
         )
         cov = gaussian.squeezed_vacuum_cov(r, phi, hbar)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, hbar)
-        State.__init__(self, False, hbar, cov=cov, means=means)
+        State.__init__(self, hbar, False, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -75,8 +75,8 @@ class TMSV(Parametrized, State):
 
     def __init__(
         self,
-        r: Union[Scalar, Vector],
-        phi: Union[Scalar, Vector],
+        r: Union[Scalar, Vector] = 0.0,
+        phi: Union[Scalar, Vector] = 0.0,
         hbar: float = 2.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
@@ -88,7 +88,7 @@ class TMSV(Parametrized, State):
         )
         cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi, hbar)
         means = gaussian.vacuum_means(2, hbar)
-        State.__init__(self, False, hbar, cov=cov, means=means)
+        State.__init__(self, hbar, False, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -102,7 +102,7 @@ class Thermal(Parametrized, State):
 
     def __init__(
         self,
-        nbar: Union[Scalar, Vector],
+        nbar: Union[Scalar, Vector] = 0.0,
         hbar: float = 2.0,
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
@@ -110,7 +110,7 @@ class Thermal(Parametrized, State):
         Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds)
         cov = gaussian.thermal_cov(nbar, hbar)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, hbar)
-        State.__init__(self, True, hbar, cov=cov, means=means)
+        State.__init__(self, hbar, True, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -124,10 +124,10 @@ class DisplacedSqueezed(Parametrized, State):
 
     def __init__(
         self,
-        r: Union[Scalar, Vector],
-        phi: Union[Scalar, Vector],
-        x: Union[Scalar, Vector],
-        y: Union[Scalar, Vector],
+        r: Union[Scalar, Vector] = 0.0,
+        phi: Union[Scalar, Vector] = 0.0,
+        x: Union[Scalar, Vector] = 0.0,
+        y: Union[Scalar, Vector] = 0.0,
         hbar: float = 2.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
@@ -155,7 +155,7 @@ class DisplacedSqueezed(Parametrized, State):
         )
         cov = gaussian.squeezed_vacuum_cov(r, phi, hbar)
         means = gaussian.displacement(x, y, hbar)
-        State.__init__(self, False, hbar, cov=cov, means=means)
+        State.__init__(self, hbar, False, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -164,3 +164,67 @@ class DisplacedSqueezed(Parametrized, State):
     @property
     def means(self):
         return gaussian.displacement(self.x, self.y, self._hbar)
+
+
+class Gaussian(Parametrized, State):
+    r"""
+    The N-mode Gaussian state.
+    """
+
+    def __init__(
+        self,
+        num_modes: int,
+        symplectic: Matrix = None,
+        displacement: Vector = None,
+        eigenvalues: Vector = None,
+        hbar: float = 2.0,
+        symplectic_trainable: bool = False,
+        displacement_trainable: bool = False,
+        eigenvalues_trainable: bool = False,
+        displacement_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        if symplectic is None:
+            symplectic = train.new_symplectic(num_modes=num_modes)
+        if displacement is None:
+            displacement = gaussian.vacuum_means(num_modes, hbar)
+        if eigenvalues is None:
+            eigenvalues = gaussian.backend.ones_like(displacement) * hbar / 2
+        Parametrized.__init__(
+            self,
+            symplectic=symplectic,
+            symplectic_trainable=symplectic_trainable,
+            symplectic_bounds=(None, None),
+            displacement=displacement,
+            displacement_trainable=displacement_trainable,
+            displacement_bounds=displacement_bounds,
+            eigenvalues=eigenvalues,
+            eigenvalues_trainable=eigenvalues_trainable,
+            eigenvalues_bounds=(hbar / 2, None),
+        )
+        cov = gaussian.gaussian_cov(symplectic, eigenvalues, hbar)
+        means = gaussian.vacuum_means(cov.shape[-1] // 2, hbar)
+        State.__init__(self, hbar, None, cov=cov, means=means)
+
+    @property
+    def cov(self):
+        return gaussian.gaussian_cov(self.symplectic, self.eigenvalues, self._hbar)
+
+    @property
+    def means(self):
+        return self.displacement
+
+    @property
+    def is_mixed(self):
+        return any(self.eigenvalues > self._hbar / 2)
+
+    @property
+    def is_pure(self):
+        return not self.is_mixed
+
+    @property
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {
+            "symplectic": [self.symplectic] * self._symplectic_trainable,
+            "orthogonal": [],
+            "euclidean": ([self.displacement] * self._displacement_trainable + [self.eigenvalues] * self._eigenvalues_trainable),
+        }

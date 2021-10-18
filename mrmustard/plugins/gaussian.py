@@ -43,7 +43,7 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement([0.0] * num_modes, [0.0] * num_modes, hbar)
+    return displacement(backend.zeros(num_modes), backend.zeros(num_modes), hbar)
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
@@ -88,6 +88,21 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     """
     S = two_mode_squeezing_symplectic(r, phi)
     return backend.matmul(S, backend.transpose(S)) * hbar / 2
+
+
+def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
+    r"""Returns the covariance matrix of a Gaussian state.
+    Args:
+        symplectic (Tensor): symplectic matrix of a channel
+        eigenvalues (vector): symplectic eigenvalues
+        hbar (float): value of hbar
+    Returns:
+        Tensor: covariance matrix of the Gaussian state
+    """
+    if eigenvalues is None:
+        return backend.matmul(symplectic, backend.transpose(symplectic))
+    else:
+        return backend.matmul(backend.matmul(symplectic, backend.diag(eigenvalues)), backend.transpose(symplectic))
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
