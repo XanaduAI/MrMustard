@@ -3,8 +3,9 @@ from mrmustard._typing import *
 from mrmustard.plugins import fock, gaussian, graphics
 from mrmustard.experimental import XPMatrix, XPVector
 
+
 class State:
-    def __init__(self, mixed: bool, hbar: float, cov = None, means = None, fock = None):
+    def __init__(self, mixed: bool, hbar: float, cov=None, means=None, fock=None):
         self._num_modes = None
         self._hbar = float(hbar)
         self.is_mixed: bool = mixed

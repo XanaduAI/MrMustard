@@ -7,6 +7,7 @@ from mrmustard.plugins import gaussian as gp
 from mrmustard.tests.random import random_pure_state
 from mrmustard import Backend
 
+
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
 def test_vacuum_state(num_modes, hbar):
     cov, disp = gp.vacuum_cov(num_modes, hbar), gp.vacuum_means(num_modes, hbar)
@@ -42,6 +43,7 @@ def test_displaced_squeezed_state(hbar, r, phi, x, y):
     state = D(S(Vacuum(num_modes=1, hbar=hbar)))
     assert np.allclose(cov, state.cov, rtol=1e-3)
     assert np.allclose(means, state.means)
+
 
 @st.composite
 def xy_arrays(draw):

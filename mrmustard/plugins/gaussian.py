@@ -33,6 +33,7 @@ def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
     """
     return backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
 
+
 def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
@@ -42,7 +43,7 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement([0.0]*num_modes, [0.0]*num_modes, hbar)
+    return displacement([0.0] * num_modes, [0.0] * num_modes, hbar)
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
