@@ -33,7 +33,7 @@ def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
     """
     return backend.eye(num_modes * 2, dtype=backend.float64) * hbar / 2
 
-def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
+def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
     Args:
         num_modes (int): number of modes
@@ -42,25 +42,10 @@ def vacuum_state(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return vacuum_cov(num_modes, hbar), displacement([0.0]*num_modes, [0.0]*num_modes, hbar)
-
-def coherent_state(x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-    r"""Returns the real covariance matrix and real means vector of a coherent state.
-    The dimension depends on the dimensions of x and y.
-    Args:
-        x (vector): real part of the means vector
-        y (vector): imaginary part of the means vector
-        hbar: value of hbar
-    Returns:
-        Matrix: coherent state covariance matrix
-        Vector: coherent state means vector
-    """
-    means = displacement(x, y, hbar)
-    cov = vacuum_cov(len(means)//2, hbar)
-    return cov, means
+    return displacement([0.0]*num_modes, [0.0]*num_modes, hbar)
 
 
-def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
     Args:
@@ -72,12 +57,10 @@ def squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, 
         Vector: squeezed state means vector
     """
     S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return backend.matmul(S, backend.transpose(S)) * hbar / 2
 
 
-def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def thermal_cov(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
     The dimension depends on the dimensions of nbar.
     Args:
@@ -88,31 +71,10 @@ def thermal_state(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
         Vector: thermal state means vector
     """
     g = (2 * backend.atleast_1d(nbar) + 1) * hbar / 2
-    cov = backend.diag(backend.concat([g, g], axis=-1))
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return backend.diag(backend.concat([g, g], axis=-1))
 
 
-def displaced_squeezed_state(r: Vector, phi: Vector, x: Vector, y: Vector, hbar: float) -> Tuple[Matrix, Vector]:
-    r"""Returns the real covariance matrix and real means vector of a displaced squeezed state.
-    The dimension depends on the dimensions of r, phi, x and y.
-    Args:
-        r   (scalar or vector): squeezing magnitude
-        phi (scalar or vector): squeezing angle
-        x   (scalar or vector): real part of the means
-        y   (scalar or vector): imaginary part of the means
-        hbar: value of hbar
-    Returns:
-        Matrix: displaced squeezed state covariance matrix
-        Vector: displaced squeezed state means vector
-    """
-    S = squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = displacement(x, y, hbar)
-    return cov, means
-
-
-def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple[Matrix, Vector]:
+def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a two-mode squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
     Args:
@@ -124,9 +86,7 @@ def two_mode_squeezed_vacuum_state(r: Vector, phi: Vector, hbar: float) -> Tuple
         Vector: two-mode squeezed state means vector
     """
     S = two_mode_squeezing_symplectic(r, phi)
-    cov = backend.matmul(S, backend.transpose(S)) * hbar / 2
-    means = backend.zeros(cov.shape[-1], dtype=cov.dtype)
-    return cov, means
+    return backend.matmul(S, backend.transpose(S)) * hbar / 2
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~

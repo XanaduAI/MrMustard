@@ -35,8 +35,7 @@ class State:
             Tensor: the ket
         """
         if not self.is_mixed:
-            if self._fock is None:
-                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self._hbar)
+            self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self._hbar)
             return self._fock
         else:
             return None
@@ -53,8 +52,7 @@ class State:
             ket = self.ket(cutoffs=cutoffs)
             return fock.ket_to_dm(ket)
         else:
-            if self._fock is None:
-                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self._hbar)
+            self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self._hbar)
             return self._fock
 
     @property
@@ -67,7 +65,7 @@ class State:
                 num_indices = len(self._fock.shape)
                 self._num_modes = num_indices if self.is_pure else num_indices // 2
             else:
-                self._num_modes = self.cov.shape[-1] // 2
+                self._num_modes = self.means.shape[-1] // 2
         return self._num_modes
 
     @property

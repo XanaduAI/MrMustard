@@ -5,41 +5,38 @@ from hypothesis.extra.numpy import arrays
 from mrmustard import *
 from mrmustard.plugins import gaussian as gp
 from mrmustard.tests.random import random_pure_state
-
+from mrmustard import Backend
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
-def test_vacuum_state(nmodes, hbar):
-    cov, disp = gp.vacuum_state(nmodes, hbar)
-    assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
+def test_vacuum_state(num_modes, hbar):
+    cov, disp = gp.vacuum_cov(num_modes, hbar), gp.vacuum_means(num_modes, hbar)
+    assert np.allclose(cov, np.eye(2 * num_modes) * hbar / 2)
     assert np.allclose(disp, np.zeros_like(disp))
 
 
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_single(hbar, x, y):
-    cov, disp = gp.coherent_state(x, y, hbar)
-    assert np.allclose(cov, np.eye(2) * hbar / 2)
-    assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
+    state = Coherent(x, y, hbar=hbar)
+    assert np.allclose(state.cov, np.array([[hbar / 2, 0], [0, hbar / 2]]))
+    assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * hbar))
 
 
 # a test like test_coherent_state_single but with x and y being lists of a single float each
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_list(hbar, x, y):
-    cov, disp = gp.coherent_state([x], [y], hbar)
-    assert np.allclose(cov, np.eye(2) * hbar / 2)
-    assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
+    assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
 # a test like test_coherent_state_list but with x and y being numpy arrays of length 1
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_array(hbar, x, y):
-    cov, disp = gp.coherent_state(np.array([x]), np.array([y]), hbar)
-    assert np.allclose(cov, np.eye(2) * hbar / 2)
-    assert np.allclose(disp, np.array([x, y]) * np.sqrt(2 * hbar))
+    assert np.allclose(gp.displacement(np.array([x]), np.array([y]), hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
 @given(hbar=st.floats(0.5, 2.0), r=st.floats(0.0, 10.0), phi=st.floats(0.0, 2 * np.pi), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_displaced_squeezed_state(hbar, r, phi, x, y):
-    cov, means = gp.displaced_squeezed_state(r, phi, x, y, hbar)
+    state = DisplacedSqueezed(r, phi, x, y, hbar)
+    cov, means = state.cov, state.means
     S = Sgate(modes=[0], r=r, phi=phi)
     D = Dgate(modes=[0], x=x, y=y)
     state = D(S(Vacuum(num_modes=1, hbar=hbar)))
@@ -58,10 +55,10 @@ arr = arrays(dtype=np.float, shape=(n), elements=st.floats(-5.0, 5.0))
 
 @given(hbar=st.floats(0.5, 2.0), x=arr, y=arr)
 def test_coherent_state_multiple(hbar, x, y):
-    cov, disp = gp.coherent_state(x, y, hbar)
-    assert np.allclose(cov, np.eye(2 * len(x)) * hbar / 2)
+    state = Coherent(x, y, hbar=hbar)
+    assert np.allclose(state.cov, np.eye(2 * len(x)) * hbar / 2)
     assert len(x) == len(y)
-    assert np.allclose(disp, np.concatenate([x, y], axis=-1) * np.sqrt(2 * hbar))
+    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * hbar))
 
 
 @given(xy=xy_arrays())
