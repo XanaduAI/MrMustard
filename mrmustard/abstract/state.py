@@ -143,7 +143,7 @@ class State:
         Returns:
             State: the state
         """
-        return cls(mixed, hbar, cov, means)
+        return cls(hbar, mixed, cov, means)
 
     @staticmethod
     def from_fock(fock: Tensor, mixed: bool) -> State:
@@ -156,4 +156,4 @@ class State:
         Returns:
             State: the state
         """
-        return cls(mixed=mixed, hbar=2.0, fock=fock)
+        return cls(hbar=2.0, mixed=mixed, fock=fock)
