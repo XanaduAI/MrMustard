@@ -4,6 +4,7 @@ from mrmustard.plugins import fock, gaussian, graphics
 from mrmustard.experimental import XPMatrix, XPVector
 from numpy import allclose
 
+
 class State:
     def __init__(self, hbar: float, mixed: bool = None, cov=None, means=None, fock=None):
         self._num_modes = None
@@ -163,7 +164,7 @@ class State:
         cov, _, _ = gaussian.partition_cov(self.cov, item)
         means, _ = gaussian.partition_means(self.means, item)
         return State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov), self._hbar)
-    
+
     def __eq__(self, other):
         r"""
         Returns whether the states are equal.
@@ -175,7 +176,7 @@ class State:
         if not allclose(self.cov, other.cov):
             return False
         return True
-        
+
     def __repr__(self):
         info = f"num_modes={self.num_modes} | hbar={self._hbar} | pure={self.is_pure}\n"
         detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
