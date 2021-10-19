@@ -107,10 +107,10 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
     if a_pure and b_pure:
         return backend.sum(backend.abs(state_a * state_b) ** 2)
     elif a_pure:
-        a = state_a.reshape(-1)
+        a = backend.reshape(state_a, -1)
         return backend.real(backend.sum(backend.conj(a) * backend.matvec(backend.reshape(state_b, (len(a), len(a))), a)))
     elif b_pure:
-        b = state_b.reshape(-1)
-        return backend.real(backend.sum(backend.conj(b) * backend.matvec(state_a, b)))
+        b = backend.reshape(state_b, -1)
+        return backend.real(backend.sum(backend.conj(b) * backend.matvec(backend.reshape(state_a, (len(b), len(b))), b)))
     else:
-        return backend.sum(backend.abs(state_a * state_b))
+        raise NotImplementedError("Fidelity between mixed states is not implemented")

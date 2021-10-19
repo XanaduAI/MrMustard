@@ -2,7 +2,7 @@ from mrmustard._typing import *
 from mrmustard.abstract import State, Parametrized
 from mrmustard.plugins import gaussian, train
 
-__all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV"]
+__all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV", "Gaussian"]
 
 
 class Vacuum(State):
