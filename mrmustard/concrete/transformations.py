@@ -323,7 +323,7 @@ class LossChannel(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int],
+        modes: List[int] = None,
         transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         transmissivity_trainable: bool = False,
