@@ -131,6 +131,21 @@ class State:
         means = gaussian.join_means([self.means, other.means])
         return State.from_gaussian(cov, means, self.is_mixed or other.is_mixed, self._hbar)
 
+    def __getitem__(self, item):
+        r"""
+        Returns the state on the given modes.
+        """
+        if isinstance(item, int):
+            item = [item]
+        elif isinstance(item, Iterable):
+            item = list(item)
+        else:
+            raise TypeError("item must be int or iterable")
+        cov, _, _ = gaussian.partition_cov(self.cov, item)
+        means, _ = gaussian.partition_means(self.means, item)
+        return State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov), self._hbar)
+        
+
     @classmethod
     def from_gaussian(cls, cov: Matrix, means: Vector, mixed: bool, hbar: float = 2.0) -> State:
         r"""
