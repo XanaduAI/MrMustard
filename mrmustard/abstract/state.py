@@ -14,48 +14,32 @@ class State:
         self._means = means
         self._cov = cov
 
-    @property
-    def cov(self) -> Optional[Matrix]:
+    @classmethod
+    def from_gaussian(cls, cov: Matrix, means: Vector, mixed: bool, hbar: float = 2.0) -> State:
         r"""
-        Returns the covariance matrix of the state.
-        """
-        return self._cov
-
-    @property
-    def means(self) -> Optional[Vector]:
-        r"""
-        Returns the means vector of the state.
-        """
-        return self._means
-
-    def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
-        r"""
-        Returns the ket of the state in Fock representation or `None` if the state is mixed.
+        Returns a state from a Gaussian distribution.
         Arguments:
-            cutoffs List[int]: the cutoff dimensions for each mode
+            cov Matrix: the covariance matrix
+            means Vector: the means vector
+            mixed bool: whether the state is mixed
+            hbar float: the hbar value
         Returns:
-            Tensor: the ket
+            State: the state
         """
-        if not self.is_mixed:
-            self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self._hbar)
-            return self._fock
-        else:
-            return None
+        return cls(hbar, mixed, cov, means)
 
-    def dm(self, cutoffs: List[int]) -> Tensor:
+    @classmethod
+    def from_fock(cls, fock: Tensor, mixed: bool) -> State:
         r"""
-        Returns the density matrix of the state in Fock representation.
+        Returns a state from a Fock representation.
         Arguments:
-            cutoffs List[int]: the cutoff dimensions for each mode
+            fock Tensor: the Fock representation
+            mixed bool: whether the state is mixed
+            hbar float: the hbar value
         Returns:
-            Tensor: the density matrix
+            State: the state
         """
-        if self.is_pure:
-            ket = self.ket(cutoffs=cutoffs)
-            return fock.ket_to_dm(ket)
-        else:
-            self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self._hbar)
-            return self._fock
+        return cls(hbar=2.0, mixed=mixed, fock=fock)
 
     @property
     def num_modes(self) -> int:
@@ -74,32 +58,19 @@ class State:
     def is_pure(self):
         return not self.is_mixed
 
-    def __repr__(self):
-        info = f"num_modes={self._num_modes} | hbar={self._hbar} | pure={self.is_pure}\n"
-        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-        if self._num_modes == 1:
-            cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
-            detailed_info += f"fock={repr(self._fock)}\n"
-            detailed_info += f"fock_cutoffs={repr(cutoffs)}\n"
-            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
-        return info + "-" * len(info) + detailed_info
-
-    def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
+    @property
+    def means(self) -> Optional[Vector]:
         r"""
-        Returns the probabilities in Fock representation. If the state is pure, they are
-        the absolute value squared of the ket amplitudes. If the state is mixed they are
-        the diagonals of the density matrix.
-        Arguments:
-            cutoffs List[int]: the cutoff dimensions for each mode
-        Returns:
-            Tensor: the probabilities
+        Returns the means vector of the state.
         """
-        if self.is_mixed:
-            dm = self.dm(cutoffs=cutoffs)
-            return fock.dm_to_probs(dm)
-        else:
-            ket = self.ket(cutoffs=cutoffs)
-            return fock.ket_to_probs(ket)
+        return self._means
+
+    @property
+    def cov(self) -> Optional[Matrix]:
+        r"""
+        Returns the covariance matrix of the state.
+        """
+        return self._cov
 
     @property
     def number_means(self):
@@ -120,6 +91,54 @@ class State:
             return gaussian.number_cov(self.cov, self.means, self._hbar)
         except ValueError:
             return fock.number_cov(self._fock, self._hbar)
+
+    def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
+        r"""
+        Returns the ket of the state in Fock representation or `None` if the state is mixed.
+        Arguments:
+            cutoffs List[int]: the cutoff dimensions for each mode
+        Returns:
+            Tensor: the ket
+        """
+        if self.is_pure:
+            if self.means is not None:  # TODO: this may trigger recomputation of means: find a better way
+                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self._hbar)
+            return self._fock
+        else:
+            return None
+
+    def dm(self, cutoffs: List[int]) -> Tensor:
+        r"""
+        Returns the density matrix of the state in Fock representation.
+        Arguments:
+            cutoffs List[int]: the cutoff dimensions for each mode
+        Returns:
+            Tensor: the density matrix
+        """
+        if self.is_pure:
+            ket = self.ket(cutoffs=cutoffs)
+            return fock.ket_to_dm(ket)
+        else:
+            if self.means is not None:  # TODO: this may trigger recomputation of means: find a better way
+                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self._hbar)
+            return self._fock
+
+    def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
+        r"""
+        Returns the probabilities in Fock representation. If the state is pure, they are
+        the absolute value squared of the ket amplitudes. If the state is mixed they are
+        the diagonals of the density matrix.
+        Arguments:
+            cutoffs List[int]: the cutoff dimensions for each mode
+        Returns:
+            Tensor: the probabilities
+        """
+        if self.is_mixed:
+            dm = self.dm(cutoffs=cutoffs)
+            return fock.dm_to_probs(dm)
+        else:
+            ket = self.ket(cutoffs=cutoffs)
+            return fock.ket_to_probs(ket)
 
     def __and__(self, other: State) -> State:
         r"""
@@ -157,30 +176,13 @@ class State:
             return False
         return True
         
-
-    @classmethod
-    def from_gaussian(cls, cov: Matrix, means: Vector, mixed: bool, hbar: float = 2.0) -> State:
-        r"""
-        Returns a state from a Gaussian distribution.
-        Arguments:
-            cov Matrix: the covariance matrix
-            means Vector: the means vector
-            mixed bool: whether the state is mixed
-            hbar float: the hbar value
-        Returns:
-            State: the state
-        """
-        return cls(hbar, mixed, cov, means)
-
-    @staticmethod
-    def from_fock(fock: Tensor, mixed: bool) -> State:
-        r"""
-        Returns a state from a Fock representation.
-        Arguments:
-            fock Tensor: the Fock representation
-            mixed bool: whether the state is mixed
-            hbar float: the hbar value
-        Returns:
-            State: the state
-        """
-        return cls(hbar=2.0, mixed=mixed, fock=fock)
+    def __repr__(self):
+        info = f"num_modes={self.num_modes} | hbar={self._hbar} | pure={self.is_pure}\n"
+        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+        if self.num_modes == 1:
+            if self._fock is not None:
+                cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
+            else:
+                cutoffs = [20]
+            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
+        return info + "-" * len(info) + detailed_info
