@@ -2,7 +2,7 @@ from __future__ import annotations
 from mrmustard._typing import *
 from mrmustard.plugins import fock, gaussian, graphics
 from mrmustard.experimental import XPMatrix, XPVector
-
+from numpy import allclose
 
 class State:
     def __init__(self, hbar: float, mixed: bool = None, cov=None, means=None, fock=None):
@@ -144,6 +144,18 @@ class State:
         cov, _, _ = gaussian.partition_cov(self.cov, item)
         means, _ = gaussian.partition_means(self.means, item)
         return State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov), self._hbar)
+    
+    def __eq__(self, other):
+        r"""
+        Returns whether the states are equal.
+        """
+        if self._hbar != other._hbar:
+            return False
+        if not allclose(self.means, other.means):
+            return False
+        if not allclose(self.cov, other.cov):
+            return False
+        return True
         
 
     @classmethod
