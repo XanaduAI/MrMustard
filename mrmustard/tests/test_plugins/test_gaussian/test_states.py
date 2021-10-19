@@ -4,8 +4,8 @@ from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard import *
 from mrmustard.plugins import gaussian as gp
-from mrmustard.tests.random import random_pure_state
 from mrmustard import Backend
+from mrmustard.concrete.states import Gaussian
 
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
@@ -130,3 +130,10 @@ def test_dispsq_state_is_same_as_dsgate_on_vacuum():
     expected = Dgate(modes=[0], x=0.1, y=0.2)(Sgate(modes=[0], r=0.3, phi=0.4)(Vacuum(1)))
     assert np.allclose(state.cov, expected.cov)
     assert np.allclose(state.means, expected.means)
+
+
+def test_state_getitem():
+    a = Gaussian(2)
+    b = Gaussian(2)
+    assert a == (a & b)[0,1]
+    assert b == (a & b)[2,3]
