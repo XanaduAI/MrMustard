@@ -135,5 +135,5 @@ def test_dispsq_state_is_same_as_dsgate_on_vacuum():
 def test_state_getitem():
     a = Gaussian(2)
     b = Gaussian(2)
-    assert a == (a & b)[0,1]
-    assert b == (a & b)[2,3]
+    assert a == (a & b)[0, 1]
+    assert b == (a & b)[2, 3]
