@@ -40,7 +40,7 @@ class GaussianMeasurement(ABC):
             remaining_state = State.from_gaussian(
                 cov, means, gaussian.is_mixed_cov(cov), self._hbar
             )  # TODO: avoid using is_mixed_cov from TW
-            return prob, remaining_state
+            return prob, remaining_state  # TODO: return remaining_state, prob to match FockMeasurement
         else:
             return prob
 

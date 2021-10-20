@@ -74,10 +74,10 @@ def wigner(state, hbar: float = 2.0, filename: str = "", xbounds=(-6, 6), ybound
         plt.savefig(filename, dpi=300)
 
 
-def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
+def mikkel_plot(dm: np.ndarray, hbar: float = 2.0, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     rho = dm.numpy()
+    sf.hbar = hbar
     s = sf.ops.BaseFockState(rho, 1, False, rho.shape[0])
-
     X = np.linspace(xbounds[0], xbounds[1], 200)
     P = np.linspace(ybounds[0], ybounds[1], 200)
     W = s.wigner(0, X, P)

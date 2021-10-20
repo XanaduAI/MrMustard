@@ -11,32 +11,32 @@ from mrmustard._typing import *
 class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 
-    Tensors in phase space have a (2n, 2n) or (2n,) shape where n is the number of modes.
+    Tensor batches in phase space have shape `(b, 2n, 2n)` (matrices) or `(b, 2n)` (vectors) where n is the number of modes and b is the batch size.
     There are two main orderings:
-        - xxpp: matrix is a `2\times 2` block matrix where each block is an `xx`, `xp`, `px`, `pp` block on all modes.
-        - xpxp: matrix is a `n\times n` block matrix of `2\times 2` blocks each corresponding to a mode or a coherence between modes
+        - xxpp: each matrix in the batch is a `2\times 2` block matrix where each block is an `xx`, `xp`, `px`, `pp` block on all `n` modes.
+        - xpxp: each matrix in the batch is a `n\times n` block matrix of `2\times 2` blocks each corresponding to the `xx`, `xp`, `px`, `pp` values.
     This creates some difficulties when we need to work in a mode-wise fashion, especially whith coherences.
-    We solve this problem by reshaping the matrices to `(n,m,2,2)` and vectors to `(n,2)`.
+    We solve this problem by reshaping the matrices to `(b,n,m,2,2)` and vectors to `(b,n,2)`.
 
     We call `n` the outmodes and `m` the inmodes.
-    Off-diagonal matrices like coherences have all the outmodes different than the inmodes.
+    Off-diagonal matrices like coherences have the outmodes all different than the inmodes.
     Diagonal matrices like coviariances and symplectic transformations have the same outmodes as the inmodes.
     Vectors have only outmodes.
 
-    XPTensor objects are sparse, in the sense that they support implicit operations between modes where one or more tensors are undefined.
+    XPTensor objects support sparse operations between modes even in case one or more tensors are undefined in those modes.
     There are two types of behaviour:
-        - like_0 (default): in modes where the tensor is undefined, it's like having a zero (a zero matrix)
+        - like_0 (default): in modes where the tensor is undefined, it's like having a zero (a zero matrix/vector)
         - like_1: in modes where the tensor is undefined, it's like having a one (an identity matrix)
     For example, in the expression X @ means + d where X is a symplectic matrix and d is a displacement vector,
     if X is undefined it's like having the identity and the matrix product simply returns means, while in the expression
-    means + d if d is undefined it simply returns means. In this example no operation was actually computed.
-    Thanks to sparsity we can represent graph states and transformations on graph states as XPTensor objects.
+    means + d if d is undefined, the addition simply returns means. In this example no operation was actually computed.
+    Thanks to sparsity we can represent graph states and transformations on graph states using XPTensor objects.
 
     Arguments:
-        tensor: The tensor in (n,m,2,2) or (n,2) order.
-        modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
+        tensor: The tensor in (b,n,m,2,2) or (b,n,2) order.
         like_0: Whether the null tensor behaves like 0 under addition (e.g. the noise matrix Y)
-        like_1: Whether the null tensor behaves like 1 under multiplication (e.g. a symplectic transformation matrix)
+        isVector: Whether the tensor is a vector
+        modes: a tuple of two lists with outmodes and inmodes
     """
 
     @abstractmethod  # so that XPTensor can't be instantiated directly
@@ -49,7 +49,7 @@ class XPTensor(ABC):
     ):
 
         self.like_0 = like_0
-        self.shape = None if tensor is None else tensor.shape[: len(tensor.shape) // 2]  # only (N,M) or (N,)
+        self.shape = None if tensor is None else tensor.shape[:(len(tensor.shape) + 1) // 2]  # (b,N,M) or (b,N)
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = isVector
         if self.ndim == 1 and not self.isVector:
@@ -62,6 +62,10 @@ class XPTensor(ABC):
         if not (set(modes[0]) == set(modes[1]) or set(modes[0]).isdisjoint(modes[1])):
             raise ValueError("The inmodes and outmodes should either contain the same modes or be disjoint")
         self.modes = modes
+
+    @property
+    def batch_size(self) -> int:
+        return self.shape[0] if self.shape is not None else 0
 
     @property
     def dtype(self):

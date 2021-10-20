@@ -185,5 +185,5 @@ class State:
                 cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
             else:
                 cutoffs = [20]
-            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
+            graphics.mikkel_plot(self.dm(cutoffs=cutoffs), hbar=self._hbar)
         return info + "-" * len(info) + detailed_info
