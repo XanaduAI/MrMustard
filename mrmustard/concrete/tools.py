@@ -7,36 +7,45 @@ __all__ = ["Circuit"]
 from collections.abc import MutableSequence
 from mrmustard._typing import *
 from mrmustard.experimental import XPMatrix, XPVector
+from mrmustard.abstract import Transformation
 
-
-class Circuit(MutableSequence):
+class Circuit(Transformation):
     def __init__(self, ops: Sequence[Op] = []):
-        self.X = XPMatrix(like_1=True)
-        self.Y = XPMatrix(like_0=True)
+        self._modes = []
         self._ops: List[Op] = [o for o in ops]
         self._compiled = False
 
-    def __call__(self, state: State) -> State:
-        state_ = state  # NOTE: otherwise state will be mutated (is this true?)
+    def X_matrix(self) -> Optional[Matrix]:
+        X = XPMatrix(like_1=True)
         for op in self._ops:
-            state_ = op(state_)
-        return state_
+            modes = [] if op._modes is None else op._modes
+            X = XPMatrix.from_xxpp(op.X_matrix(), like_1=True, modes=(modes, modes)) @ X
+        return X.to_xxpp()
 
-    def __getitem__(self, key):
-        return self._ops.__getitem__(key)
+    def Y_matrix(self, hbar: float) -> Optional[Matrix]:
+        Y = XPMatrix(like_0=True)
+        for op in self._ops:
+            modes = [] if op._modes is None else op._modes
+            opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(modes, modes), like_1=True)
+            opY = XPMatrix.from_xxpp(op.Y_matrix(hbar=hbar), modes=(modes, modes), like_0=True)
+            Y = opX @ Y @ opX.T + opY
+        return Y.to_xxpp()
 
-    def __setitem__(self, key, value):
-        try:
-            result = self._ops.__setitem__(key, value)
-        except Exception as e:
-            raise e
+    def d_vector(self, hbar: float) -> Optional[Vector]:
+        d = XPVector()
+        for op in self._ops:
+            modes = [] if op._modes is None else op._modes
+            opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(modes, modes), like_1=True)
+            opd = XPVector.from_xxpp(op.d_vector(hbar=hbar), modes=modes)
+            d = opX @ d + opd
+        return d.to_xxpp()
+
+    def extend(self, obj):
+        result = self._ops.extend(obj)
         self._compiled = False
 
-    def __delitem__(self, key):
-        try:
-            result = self._ops.__delitem__(key)
-        except Exception as e:
-            raise e
+    def append(self, obj):
+        result = self._ops.append(obj)
         self._compiled = False
 
     def __len__(self):
@@ -44,31 +53,6 @@ class Circuit(MutableSequence):
 
     def __repr__(self) -> str:
         return f"Circuit | {len(self._ops)} ops | compiled = {self._compiled}"
-
-    def insert(self, index, obj):
-        try:
-            result = self._ops.insert(index, obj)
-        except Exception as e:
-            raise e
-        self._compiled = False
-
-    def compile(self) -> None:
-        for obj in self._ops:  # TODO: make this not redo the same thing
-            self.update_channel(obj)
-        self._compiled = True
-
-    def recompile(self) -> None:
-        self.X = XPMatrix(like_1=True)
-        self.Y = XPMatrix(like_0=True)
-        self.compile()
-        self._compiled = True
-
-    def update_channel(self, op):
-        if hasattr(op, "X_matrix"):
-            Xprime = XPMatrix.from_xxpp(op.X_matrix(), op._modes, like_1=True)
-            Yprime = XPMatrix.from_xxpp(op.Y_matrix(hbar=2.0), op._modes, like_0=True)
-            self.X = Xprime @ self.X
-            self.Y = (Xprime @ self.Y) @ Xprime.T + Yprime
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
