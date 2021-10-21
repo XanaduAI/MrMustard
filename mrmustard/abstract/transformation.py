@@ -1,5 +1,5 @@
 import numpy as np  # for repr
-from abc import ABC
+from abc import ABC, abstractclassmethod
 from mrmustard.plugins import gaussian
 from mrmustard.abstract import State
 from mrmustard._typing import *
@@ -18,7 +18,7 @@ class Transformation(ABC):
         d = self.d_vector(state._hbar)
         X = self.X_matrix()
         Y = self.Y_matrix(state._hbar)
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, list(range(state.num_modes)) if self._modes is None else self._modes)
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, list(range(state.num_modes)) if self._modes in (None,[]) else self._modes)
         return State.from_gaussian(cov, means, mixed=state.is_mixed or Y is not None, hbar=state._hbar)
 
     def __repr__(self):
@@ -29,10 +29,10 @@ class Transformation(ABC):
     def X_matrix(self) -> Optional[Matrix]:
         return None
 
-    def d_vector(self, hbar: float) -> Optional[Vector]:
+    def Y_matrix(self, hbar: float) -> Optional[Matrix]:
         return None
 
-    def Y_matrix(self, hbar: float) -> Optional[Matrix]:
+    def d_vector(self, hbar: float) -> Optional[Vector]:
         return None
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
