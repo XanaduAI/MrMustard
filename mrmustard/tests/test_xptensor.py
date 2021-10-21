@@ -184,7 +184,7 @@ def test_matvec_all_same_modes(mat_vec):
 def test_matvec_few_different_modes(mat_vec):
     mat, vec = mat_vec
     N = mat.shape[0] // 2
-    expected = mat[:, 2:] @ vec[2:]
+    expected = mat[:, 1:] @ vec[1:]
     mat = XPMatrix.from_xpxp(mat, modes=(list(range(N)), [1000] + list(range(N, 2 * N - 1))), like_0=True)
     vec = XPVector.from_xpxp(vec, modes=[500] + list(range(N, 2 * N - 1)))
     assert np.allclose((mat @ vec).to_xpxp(), expected)

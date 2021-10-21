@@ -264,7 +264,7 @@ class XPTensor(ABC):
         if self.like_0:
             outmodes = [m for m in outmodes if m in self.outmodes]
 
-        inmodes = other.inmodes + uncontracted_self
+        inmodes = uncontracted_self + other.inmodes
         if other.like_0:
             inmodes = [m for m in inmodes if m in other.inmodes]
         if self.like_0:
