@@ -29,8 +29,26 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
     """
     assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
     A, B, C = hermite_parameters(cov, means, mixed, hbar)
-    return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs * mixed)
+    return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
 
+def bell_norm(r: float, cutoff: int) -> Scalar:
+    return ((np.tanh(r)**np.arange(cutoff))/np.cosh(r)).astype(np.complex128)
+
+def normalize_choi_trick(unnormalized: Tensor, r: float) -> Tensor:
+    r"""
+    Normalizes the columns of an operator obtained by applying it to TMSV(r).
+    Args:
+        unnormalized: The unnormalized operator
+        r: The value of the Choi squeezing
+    Returns:
+        The normalized operator.
+    """
+    col_cutoffs = unnormalized.shape[1::2]
+    norm = backend.reshape(bell_norm(r, col_cutoffs[0]), -1)
+    for i,c in enumerate(col_cutoffs[1:]):
+        norm = backend.reshape(backend.outer(norm, bell_norm(r, c)), -1)
+    normalized = backend.reshape(unnormalized, (-1, np.prod(col_cutoffs))) / norm[None, :]
+    return backend.reshape(normalized, unnormalized.shape)
 
 def ket_to_dm(ket: Tensor) -> Tensor:
     r"""

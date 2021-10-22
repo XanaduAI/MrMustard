@@ -1,5 +1,5 @@
 from .measurements import *
 from .optimizers import *
 from .states import *
-from .tools import *
+from .circuit import *
 from .transformations import *

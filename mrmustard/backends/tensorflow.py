@@ -227,7 +227,6 @@ class Backend(BackendInterface):
             explicit_broadcast = [tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1]
             dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast))
             dL_dvalue = np.expand_dims(dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast])
-            print(dL_dtensor, dL_dvalue)
             return dL_dtensor, dL_dvalue
 
         return tensor, grad

@@ -188,7 +188,9 @@ class XPTensor(ABC):
     def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector, Scalar]:
         if not isinstance(other, (XPMatrix, XPVector)):
             raise TypeError(f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'")
-        # both None
+        # TODO: move mode-check at beginning?
+
+        # both are None
         if self.tensor is None and other.tensor is None:
             if self.isMatrix and other.isMatrix:
                 return XPMatrix(None, like_1=self.like_1 and other.like_1)
@@ -259,16 +261,16 @@ class XPTensor(ABC):
             final = bulk  # NOTE: could be None
 
         outmodes = self.outmodes + uncontracted_other
-        if other.like_0:
-            outmodes = [m for m in outmodes if m in other.outmodes]
+        if other.like_0 and len(contracted) == 0:
+            outmodes = uncontracted_other
         if self.like_0:
             outmodes = [m for m in outmodes if m in self.outmodes]
 
         inmodes = uncontracted_self + other.inmodes
+        if self.like_0 and len(contracted) == 0:
+            inmodes = uncontracted_self
         if other.like_0:
             inmodes = [m for m in inmodes if m in other.inmodes]
-        if self.like_0:
-            inmodes = [m for m in inmodes if m in self.inmodes]
 
         if final is not None:
             final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
