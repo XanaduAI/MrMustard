@@ -1,15 +1,6 @@
-from mrmustard import Backend
-from mrmustard._typing import *
 import numpy as np
-
-r"""
-A plugin that interfaces the phase space representation with the Fock representation.
-
-It implements:
-- fock_representation and its gradient
-- classical stochastic channels
-"""
-
+from mrmustard._typing import *
+from mrmustard import Backend
 backend = Backend()
 
 
@@ -32,7 +23,7 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
     return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
 
 def bell_norm(r: float, cutoff: int) -> Scalar:
-    return ((np.tanh(r)**np.arange(cutoff))/np.cosh(r)).astype(np.complex128)
+    return (np.tanh(r)**np.arange(cutoff))/np.cosh(r) + 0.0j
 
 def normalize_choi_trick(unnormalized: Tensor, r: float) -> Tensor:
     r"""

@@ -38,6 +38,8 @@ class Circuit(Transformation):
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
+    # NOTE: op.X_matrix() is called three times per op in the following methods, so circuits are composable but with an exponential cost.
+    # TODO: Find a way around it?
     def X_matrix(self) -> Optional[Matrix]:
         X = XPMatrix(like_1=True)
         for op in self._ops:
