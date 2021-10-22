@@ -39,12 +39,14 @@ class Circuit(Transformation):
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
-    # NOTE: op.X_matrix() is called three times per op in the following methods, so circuits are composable but with an exponential cost.
-    # TODO: Find a way around it?
+    # NOTE: op.X_matrix() is called repeatedly in the following methods, so circuits are composable but with an exponential cost.
+    # TODO: Find a way around it
     def X_matrix(self) -> Optional[Matrix]:
         X = XPMatrix(like_1=True)
         for op in self._ops:
             opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
+            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
+                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
             X = opX @ X
         return X.to_xxpp()
 
@@ -53,6 +55,9 @@ class Circuit(Transformation):
         for op in self._ops:
             opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
             opY = XPMatrix.from_xxpp(op.Y_matrix(hbar=hbar), modes=(op.modes, op.modes), like_0=True)
+            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
+                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
+                opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
             Y = opX @ Y @ opX.T + opY
         return Y.to_xxpp()
 
@@ -61,6 +66,9 @@ class Circuit(Transformation):
         for op in self._ops:
             opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
             opd = XPVector.from_xxpp(op.d_vector(hbar=hbar), modes=op.modes)
+            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
+                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
+                opd = opd.clone(len(op.modes), modes=op.modes)
             d = opX @ d + opd
         return d.to_xxpp()
 

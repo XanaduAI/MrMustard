@@ -123,11 +123,13 @@ class XPTensor(ABC):
             return None
         return backend.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
-    def clone(self, times: int, modes=([], [])) -> Union[Matrix, Vector]:
+    def clone(self, times: int, modes=None) -> XPtensor:
         r"""Create a new XPTensor made by cloning the system a given number of times.
         The modes are reset by default unless specified.
         """
         if self.tensor is None:
+            return self
+        if times == 1:
             return self
         if self.isMatrix:
             tensor = backend.expand_dims(self.modes_last(), axis=4)  # shape = [2,2,N,N,1]
@@ -136,11 +138,12 @@ class XPTensor(ABC):
             tensor = backend.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
             tensor = backend.reshape(tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times))  # shape = [2,2,NT,NT] = [2,2,O,O]
             tensor = backend.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
+            return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
         else:
             tensor = backend.tile(self.expand_dims(self.modes_last(), axis=2), (1, 1, times))  # shape = [2,N,T]
             tensor = backend.reshape(tensor, (2, -1))  # shape = [2,NT] = [2,O]
             tensor = backend.transpose(tensor, (1, 0))  # shape = [NT,2] = [O,2]
-        return tensor
+            return XPVector(tensor, [] if modes is None else modes)
 
     def clone_like(self, other: XPTensor):
         r"""
@@ -160,7 +163,7 @@ class XPTensor(ABC):
             raise ValueError(f"No integer multiple of {self.num_modes} modes fits into {other.num_modes} modes")
         times = other.num_modes // self.num_modes
         if self.isVector == other.isVector:
-            tensor = self.clone(times, modes=other.modes)
+            tensor = self.clone(times, modes=other.modes).tensor
         else:
             raise ValueError("Cannot clone a vector into a matrix or viceversa")
         if self.isMatrix:
