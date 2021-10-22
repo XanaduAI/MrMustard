@@ -187,11 +187,13 @@ class XPTensor(ABC):
 
     def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector, Scalar]:
         if not isinstance(other, (XPMatrix, XPVector)):
-            raise TypeError(f"unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'")
-        # both None
+            raise TypeError(f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'")
+        # TODO: move mode-check at beginning?
+
+        # both are None
         if self.tensor is None and other.tensor is None:
             if self.isMatrix and other.isMatrix:
-                return XPMatrix(None, self.like_0, self.like_1)
+                return XPMatrix(None, like_1=self.like_1 and other.like_1)
             elif self.isVector or other.isVector:
                 return XPVector(None)
         # either is None
@@ -202,7 +204,7 @@ class XPTensor(ABC):
         # Now neither self nor other is None
         if self.isMatrix and other.isMatrix:
             tensor, modes = self._mode_aware_matmul(other)
-            return XPMatrix(tensor, like_1=self.like_0 and self.like_1, modes=modes)
+            return XPMatrix(tensor, like_1=self.like_1 and other.like_1, modes=modes)
         elif self.isMatrix and other.isVector:
             tensor, modes = self._mode_aware_matmul(other)
             return XPVector(tensor, modes[0])  # TODO: check if we can output modes as a list in _mode_aware_matmul
@@ -220,7 +222,6 @@ class XPTensor(ABC):
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
             prod = backend.tensordot(self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)))
             return backend.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (self.outmodes, other.inmodes)
-
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
@@ -259,8 +260,18 @@ class XPTensor(ABC):
         else:  # copied_rows and copied_cols are both None
             final = bulk  # NOTE: could be None
 
-        outmodes = self.outmodes + uncontracted_other if self.like_1 else self.outmodes  # NOTE: unsorted
-        inmodes = uncontracted_self + other.inmodes if other.like_1 else other.inmodes
+        outmodes = self.outmodes + uncontracted_other
+        if other.like_0 and len(contracted) == 0:
+            outmodes = uncontracted_other
+        if self.like_0:
+            outmodes = [m for m in outmodes if m in self.outmodes]
+
+        inmodes = uncontracted_self + other.inmodes
+        if self.like_0 and len(contracted) == 0:
+            inmodes = uncontracted_self
+        if other.like_0:
+            inmodes = [m for m in inmodes if m in other.inmodes]
+
         if final is not None:
             final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
             if other.isMatrix:
@@ -433,7 +444,7 @@ class XPMatrix(XPTensor):
         return XPMatrix(tensor, like_0, like_1, modes)
 
     def __repr__(self) -> str:
-        return f"XPMatrix(like_0={self.like_0}, modes={self.modes}, tensor_xpxp={self.to_xpxp()})"
+        return f"XPMatrix(like_0={self.like_0}, modes={self.modes}, tensor_xpxp=\n{self.to_xpxp()})"
 
 
 class XPVector(XPTensor):
@@ -470,4 +481,4 @@ class XPVector(XPTensor):
         return XPVector(tensor, modes)
 
     def __repr__(self) -> str:
-        return f"XPVector(modes={self.outmodes}, tensor_xpxp={self.to_xpxp()})"
+        return f"XPVector(modes={self.outmodes}, tensor_xpxp=\n{self.to_xpxp()})"
