@@ -11,6 +11,7 @@ from mrmustard import Backend
 
 backend = Backend()
 
+
 class Circuit(Transformation):
     def __init__(self, ops: Sequence = []):
         self._ops: List = [o for o in ops]
@@ -27,7 +28,7 @@ class Circuit(Transformation):
             bell = bell_single = TMSV(r=2.5)
             for n in range(self.num_modes):
                 bell = bell & bell_single
-            order = tuple(range(0, 2*self.num_modes, 2)) + tuple(range(1, 2*self.num_modes, 2))
+            order = tuple(range(0, 2 * self.num_modes, 2)) + tuple(range(1, 2 * self.num_modes, 2))
             self._bell = bell[order]
         return self._bell
 
@@ -46,7 +47,7 @@ class Circuit(Transformation):
             opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
             X = opX @ X
         return X.to_xxpp()
-    
+
     def Y_matrix(self, hbar: float) -> Optional[Matrix]:
         Y = XPMatrix(like_0=True)
         for op in self._ops:

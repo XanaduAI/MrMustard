@@ -1,6 +1,7 @@
 import numpy as np
 from mrmustard._typing import *
 from mrmustard import Backend
+
 backend = Backend()
 
 
@@ -22,8 +23,10 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
     A, B, C = hermite_parameters(cov, means, mixed, hbar)
     return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
 
+
 def bell_norm(r: float, cutoff: int) -> Scalar:
-    return (np.tanh(r)**np.arange(cutoff))/np.cosh(r) + 0.0j
+    return (np.tanh(r) ** np.arange(cutoff)) / np.cosh(r) + 0.0j
+
 
 def normalize_choi_trick(unnormalized: Tensor, r: float) -> Tensor:
     r"""
@@ -36,10 +39,11 @@ def normalize_choi_trick(unnormalized: Tensor, r: float) -> Tensor:
     """
     col_cutoffs = unnormalized.shape[1::2]
     norm = backend.reshape(bell_norm(r, col_cutoffs[0]), -1)
-    for i,c in enumerate(col_cutoffs[1:]):
+    for i, c in enumerate(col_cutoffs[1:]):
         norm = backend.reshape(backend.outer(norm, bell_norm(r, c)), -1)
     normalized = backend.reshape(unnormalized, (-1, np.prod(col_cutoffs))) / norm[None, :]
     return backend.reshape(normalized, unnormalized.shape)
+
 
 def ket_to_dm(ket: Tensor) -> Tensor:
     r"""
@@ -114,7 +118,7 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool, hbar: float) -> 
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
     r"""computes the fidelity between two states in Fock representation"""
     if a_pure and b_pure:
-        return backend.abs(backend.sum(backend.conj(state_a) * state_b))**2
+        return backend.abs(backend.sum(backend.conj(state_a) * state_b)) ** 2
     elif a_pure:
         a = backend.reshape(state_a, -1)
         return backend.real(backend.sum(backend.conj(a) * backend.matvec(backend.reshape(state_b, (len(a), len(a))), a)))

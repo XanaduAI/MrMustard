@@ -4,6 +4,7 @@ from mrmustard.plugins import gaussian, fock
 from mrmustard.abstract import State
 from mrmustard._typing import *
 
+
 class Transformation(ABC):
     r"""
     Base class for all transformations.
@@ -29,16 +30,16 @@ class Transformation(ABC):
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
             if (d := self.d_vector(hbar=2.0)) is not None:
-                self._modes = list(range(d.shape[-1]//2))
+                self._modes = list(range(d.shape[-1] // 2))
             elif (X := self.X_matrix()) is not None:
-                self._modes = list(range(X.shape[-1]//2))
+                self._modes = list(range(X.shape[-1] // 2))
             elif (Y := self.Y_matrix(hbar=2.0)) is not None:
-                self._modes = list(range(Y.shape[-1]//2))
+                self._modes = list(range(Y.shape[-1] // 2))
         return self._modes
 
     @property
     def bell(self):
-        'N pairs of two-mode squeezed vacuum where N is the number of modes of the circuit'
+        "N pairs of two-mode squeezed vacuum where N is the number of modes of the circuit"
         pass
 
     def X_matrix(self) -> Optional[Matrix]:

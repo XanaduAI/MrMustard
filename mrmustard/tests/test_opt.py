@@ -47,7 +47,9 @@ def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     tf.random.set_seed(137)
     circ = Circuit()
-    circ.append(Sgate(modes=[0, 1], r=abs(np.random.normal(size=(2))), phi=np.random.normal(size=(2)), r_trainable=True, phi_trainable=True))
+    circ.append(
+        Sgate(modes=[0, 1], r=abs(np.random.normal(size=(2))), phi=np.random.normal(size=(2)), r_trainable=True, phi_trainable=True)
+    )
     circ.append(BSgate(modes=[0, 1], theta=np.random.normal(), phi=np.random.normal(), theta_trainable=True, phi_trainable=True))
     tf.random.set_seed(20)
     state_in = Vacuum(num_modes=2)
@@ -82,7 +84,9 @@ def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
     np.random.seed(11)
     circ = Circuit()  # emtpy circuit with vacuum input state
-    circ.append(Sgate(modes=[0, 1], r=np.random.normal(size=(2)) ** 2, phi=np.random.normal(size=(2)), r_trainable=True, phi_trainable=True))
+    circ.append(
+        Sgate(modes=[0, 1], r=np.random.normal(size=(2)) ** 2, phi=np.random.normal(size=(2)), r_trainable=True, phi_trainable=True)
+    )
     circ.append(Interferometer(num_modes=2, orthogonal_trainable=True))
     state_in = Vacuum(num_modes=2)
 

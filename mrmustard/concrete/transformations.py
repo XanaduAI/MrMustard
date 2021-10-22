@@ -239,7 +239,9 @@ class Interferometer(Parametrized, Transformation):
     def __init__(self, num_modes: int, orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = False):
         if orthogonal is None:
             orthogonal = train.new_orthogonal(num_modes=num_modes)
-        super().__init__(modes=list(range(num_modes)), orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable)
+        super().__init__(
+            modes=list(range(num_modes)), orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable
+        )
         self.is_unitary = True
 
     def X_matrix(self):
