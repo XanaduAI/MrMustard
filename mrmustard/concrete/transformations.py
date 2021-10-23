@@ -34,6 +34,7 @@ class Dgate(Parametrized, Transformation):
     ):
         super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
         self.is_unitary = True
+        self.single_mode = True
 
     def d_vector(self, hbar: float):
         return gaussian.displacement(self.x, self.y, hbar=hbar)
@@ -70,6 +71,7 @@ class Sgate(Parametrized, Transformation):
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
         )
         self.is_unitary = True
+        self.single_mode = True
 
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r, self.phi)
@@ -98,6 +100,7 @@ class Rgate(Parametrized, Transformation):
     ):
         super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
         self.is_unitary = True
+        self.single_mode = True
 
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle)
@@ -140,6 +143,7 @@ class BSgate(Parametrized, Transformation):
             phi_trainable=phi_trainable,
         )
         self.is_unitary = True
+        self.single_mode = False
 
     def X_matrix(self):
         return gaussian.beam_splitter_symplectic(self.theta, self.phi)
@@ -187,6 +191,7 @@ class MZgate(Parametrized, Transformation):
             internal=internal,
         )
         self.is_unitary = True
+        self.single_mode = False
 
     def X_matrix(self):
         return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
@@ -221,6 +226,7 @@ class S2gate(Parametrized, Transformation):
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
         )
         self.is_unitary = True
+        self.single_mode = False
 
     def X_matrix(self):
         return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
@@ -243,6 +249,7 @@ class Interferometer(Parametrized, Transformation):
             modes=list(range(num_modes)), orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable
         )
         self.is_unitary = True
+        self.single_mode = False
 
     def X_matrix(self):
         return self.orthogonal
@@ -288,6 +295,7 @@ class Ggate(Parametrized, Transformation):
             displacement_trainable=displacement_trainable,
         )
         self.is_unitary = True
+        self.single_mode = False
 
     def X_matrix(self):
         return self.symplectic
@@ -337,6 +345,7 @@ class LossChannel(Parametrized, Transformation):
             transmissivity_trainable=transmissivity_trainable,
         )
         self.is_unitary = False
+        self.single_mode = True
 
     def X_matrix(self):
         return gaussian.loss_X(self.transmissivity)

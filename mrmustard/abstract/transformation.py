@@ -3,6 +3,7 @@ from abc import ABC, abstractproperty
 from mrmustard.plugins import gaussian, fock
 from mrmustard.abstract import State
 from mrmustard._typing import *
+from mrmustard import tmsv_r
 
 
 class Transformation(ABC):
@@ -53,7 +54,7 @@ class Transformation(ABC):
 
     def fock(self, cutoffs=Sequence[int]):  # only single-mode for now
         unnormalized = self(self.bell).ket(cutoffs=cutoffs)
-        return fock.normalize_choi_trick(unnormalized, 2.5)
+        return fock.normalize_choi_trick(unnormalized, tmsv_r)
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
