@@ -31,7 +31,7 @@ from mrmustard import Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, TMSV,
 vac  = Vacuum(num_modes=2)
 coh  = Coherent(x=0.1, y=-0.4)  # e.g. 2-mode coherent state
 sq   = SqueezedVacuum(r = 0.5, phi = 0.3)
-dsq. = DisplacedSqueezed(r = 0.5, phi = 0.3, x = 0.3, y = 0.9)
+dsq  = DisplacedSqueezed(r = 0.5, phi = 0.3, x = 0.3, y = 0.9)
 tmsv = TMSV(r = 0.5, phi = 0.3, x = 0.3, y = 0.9)
 th   = Thermal(nbar = 2.0)
 g    = Gaussian(num_modes = 2)
