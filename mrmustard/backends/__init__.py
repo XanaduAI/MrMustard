@@ -10,7 +10,7 @@ from functools import lru_cache, wraps
 
 class Autocast:
     r"""
-    A decorator that casts all castable arguments of a method to the dtype with highest precision. # TODO: cast to lowest precision?
+    A decorator that casts all castable arguments of a method to the dtype with highest precision.
     """
 
     def __init__(self):

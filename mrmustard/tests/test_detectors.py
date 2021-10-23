@@ -96,8 +96,8 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
     circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))
     r2 = np.arcsinh(np.sqrt(guess["sq_1"]))
-    S2c = S2gate(modes=[0, 1], r=r1, phi=0.0)
-    S2d = S2gate(modes=[0, 1], r=r2, phi=0.0)
+    S2c = S2gate(modes=[0, 1], r=r1, phi=0.0, r_trainable=True, phi_trainable=True)
+    S2d = S2gate(modes=[0, 1], r=r2, phi=0.0, r_trainable=True, phi_trainable=True)
     circc.append(S2c)
     circd.append(S2d)
     tetas = [guess["eta_s"], guess["eta_i"]]

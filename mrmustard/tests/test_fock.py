@@ -123,9 +123,9 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
 @given(num_modes=st.integers(1, 3))
 def test_density_matrix(num_modes):
     """Tests the density matrix of a pure state is equal to |psi><psi|"""
-    modes = [*range(num_modes)]
+    modes = list(range(num_modes))
     cutoffs = [num_modes + 1] * num_modes
-    G = Ggate(modes=modes)
+    G = Ggate(num_modes=num_modes)
     L = LossChannel(modes=modes, transmissivity=1.0)
     rho_legit = L(G(Vacuum(num_modes=num_modes))).dm(cutoffs=cutoffs)
     rho_built = G(Vacuum(num_modes=num_modes)).dm(cutoffs=cutoffs)

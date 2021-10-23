@@ -74,7 +74,7 @@ def wigner(state, hbar: float = 2.0, filename: str = "", xbounds=(-6, 6), ybound
         plt.savefig(filename, dpi=300)
 
 
-def mikkel_plot(dm: np.ndarray, hbar: float = 2.0, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
+def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6), hbar=2.0):
     rho = dm.numpy()
     sf.hbar = hbar
     s = sf.ops.BaseFockState(rho, 1, False, rho.shape[0])
