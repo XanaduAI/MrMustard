@@ -16,11 +16,11 @@ class Transformation(ABC):
     """
 
     def __call__(self, state: State) -> State:
-        d = self.d_vector(state._hbar)
+        d = self.d_vector()
         X = self.X_matrix()
-        Y = self.Y_matrix(state._hbar)
+        Y = self.Y_matrix()
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
-        return State.from_gaussian(cov, means, mixed=state.is_mixed or Y is not None, hbar=state._hbar)
+        return State.from_gaussian(cov, means, mixed=state.is_mixed or Y is not None)
 
     def __repr__(self):
         with np.printoptions(precision=6, suppress=True):
@@ -30,11 +30,11 @@ class Transformation(ABC):
     @property
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
-            if (d := self.d_vector(hbar=2.0)) is not None:
+            if (d := self.d_vector()) is not None:
                 self._modes = list(range(d.shape[-1] // 2))
             elif (X := self.X_matrix()) is not None:
                 self._modes = list(range(X.shape[-1] // 2))
-            elif (Y := self.Y_matrix(hbar=2.0)) is not None:
+            elif (Y := self.Y_matrix()) is not None:
                 self._modes = list(range(Y.shape[-1] // 2))
         return self._modes
 
@@ -46,10 +46,10 @@ class Transformation(ABC):
     def X_matrix(self) -> Optional[Matrix]:
         return None
 
-    def Y_matrix(self, hbar: float) -> Optional[Matrix]:
+    def Y_matrix(self) -> Optional[Matrix]:
         return None
 
-    def d_vector(self, hbar: float) -> Optional[Vector]:
+    def d_vector(self) -> Optional[Vector]:
         return None
 
     def fock(self, cutoffs=Sequence[int]):  # only single-mode for now

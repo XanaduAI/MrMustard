@@ -142,7 +142,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
 
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
-        super().__init__(modes=modes, project_onto=project_onto, hbar=project_onto._hbar)
+        super().__init__(modes=modes, project_onto=project_onto)
 
     def recompute_project_onto(self, project_onto: State) -> State:
         return project_onto
@@ -159,7 +159,6 @@ class Homodyne(Parametrized, GaussianMeasurement):
         quadrature_angles: Union[Scalar, Vector],
         results: Union[Scalar, Vector],
         squeezing: float = 10.0,
-        hbar: float = 2.0,
     ):
         r"""
         Args:
@@ -174,7 +173,6 @@ class Homodyne(Parametrized, GaussianMeasurement):
             quadrature_angles=quadrature_angles,
             results=results,
             squeezing=gaussian.backend.astensor(squeezing, "float64"),
-            hbar=hbar,
         )
         self._project_onto = self.recompute_project_onto(quadrature_angles, results)
 
@@ -183,7 +181,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
         results = gaussian.backend.astensor(results, "float64")
         x = results * gaussian.backend.cos(quadrature_angles)
         y = results * gaussian.backend.sin(quadrature_angles)
-        return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y, hbar=self._hbar)
+        return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y)
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
@@ -191,15 +189,15 @@ class Heterodyne(Parametrized, GaussianMeasurement):
     Heterodyne measurement on a given mode.
     """
 
-    def __init__(self, modes: List[int], x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float = 2.0):
+    def __init__(self, modes: List[int], x: Union[Scalar, Vector], y: Union[Scalar, Vector]):
         r"""
         Args:
             mode: modes of the measurement
             x: x-coordinates of the measurement
             y: y-coordinates of the measurement
         """
-        super().__init__(modes=modes, x=x, y=y, hbar=hbar)
+        super().__init__(modes=modes, x=x, y=y)
         self._project_onto = self.recompute_project_onto(x, y)
 
     def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
-        return Coherent(x=x, y=y, hbar=self._hbar)
+        return Coherent(x=x, y=y)

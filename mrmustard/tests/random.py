@@ -161,7 +161,7 @@ def random_n_mode_gate(draw, num_modes=None):
 def random_squeezed_vacuum(draw, num_modes):
     r = array_of_(positive, num_modes, num_modes)
     phi = array_of_(angle, num_modes, num_modes)
-    return SqueezedVacuum(r=draw(r), phi=draw(phi), hbar=draw(real_not_zero))
+    return SqueezedVacuum(r=draw(r), phi=draw(phi))
 
 
 @st.composite
@@ -170,27 +170,27 @@ def random_displacedsqueezed(draw, num_modes):
     phi = array_of_(angle, num_modes, num_modes)
     x = array_of_(real, num_modes, num_modes)
     y = array_of_(real, num_modes, num_modes)
-    return DisplacedSqueezed(r=draw(r), phi=draw(phi), x=draw(x), y=draw(x), hbar=draw(real_not_zero))
+    return DisplacedSqueezed(r=draw(r), phi=draw(phi), x=draw(x), y=draw(x))
 
 
 @st.composite
 def random_coherent(draw, num_modes):
     x = array_of_(real, num_modes, num_modes)
     y = array_of_(real, num_modes, num_modes)
-    return Coherent(x=draw(x), y=draw(y), hbar=draw(real_not_zero))
+    return Coherent(x=draw(x), y=draw(y))
 
 
 @st.composite
 def random_TMSV(draw):
     r = array_of_(positive, 2, 2)
     phi = array_of_(angle, 2, 2)
-    return TMSV(r=draw(r), phi=draw(phi), hbar=draw(real_not_zero))
+    return TMSV(r=draw(r), phi=draw(phi))
 
 
 @st.composite
 def random_thermal(draw, num_modes):
     n_mean = array_of_(positive, num_modes, num_modes)
-    return Thermal(n_mean=draw(n_mean), hbar=draw(real_not_zero))
+    return Thermal(n_mean=draw(n_mean))
 
 
 @st.composite

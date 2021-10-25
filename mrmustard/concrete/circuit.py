@@ -50,22 +50,22 @@ class Circuit(Transformation):
             X = opX @ X
         return X.to_xxpp()
 
-    def Y_matrix(self, hbar: float) -> Optional[Matrix]:
+    def Y_matrix(self) -> Optional[Matrix]:
         Y = XPMatrix(like_0=True)
         for op in self._ops:
             opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
-            opY = XPMatrix.from_xxpp(op.Y_matrix(hbar=hbar), modes=(op.modes, op.modes), like_0=True)
+            opY = XPMatrix.from_xxpp(op.Y_matrix(), modes=(op.modes, op.modes), like_0=True)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
                 opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
             Y = opX @ Y @ opX.T + opY
         return Y.to_xxpp()
 
-    def d_vector(self, hbar: float) -> Optional[Vector]:
+    def d_vector(self) -> Optional[Vector]:
         d = XPVector()
         for op in self._ops:
             opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
-            opd = XPVector.from_xxpp(op.d_vector(hbar=hbar), modes=op.modes)
+            opd = XPVector.from_xxpp(op.d_vector(), modes=op.modes)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
                 opd = opd.clone(len(op.modes), modes=op.modes)
