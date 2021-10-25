@@ -5,7 +5,7 @@ from matplotlib import cm
 import numpy as np
 import strawberryfields as sf  # TODO: remove dependency on strawberryfields
 from mrmustard._typing import *
-import mrmustard as mrm
+import mrmustard as mm
 
 
 class Progressbar:
@@ -47,7 +47,7 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def wigner(state, hbar: float = mrm.hbar, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
+def wigner(state, hbar: float = mm.hbar, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     r"""
     Plots the wigner function of a single mode state.
     Arguments:
@@ -74,7 +74,7 @@ def wigner(state, hbar: float = mrm.hbar, filename: str = "", xbounds=(-6, 6), y
         plt.savefig(filename, dpi=300)
 
 
-def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6), hbar=2.0):
+def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6), hbar=mm.hbar):
     rho = dm.numpy()
     sf.hbar = hbar
     s = sf.ops.BaseFockState(rho, 1, False, rho.shape[0])

@@ -1,7 +1,7 @@
 import numpy as np
 from mrmustard._typing import *
 from mrmustard import Backend
-import mrmustard as mrm
+import mrmustard as mm
 
 backend = Backend()
 
@@ -96,8 +96,8 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix,
 
     # cov and means in the amplitude basis
     R = backend.rotmat(num_indices // 2)
-    sigma = backend.matmul(backend.matmul(R, cov / mrm.hbar), backend.dagger(R))
-    beta = backend.matvec(R, means / backend.sqrt(mrm.hbar, dtype=means.dtype))
+    sigma = backend.matmul(backend.matmul(R, cov / mm.hbar), backend.dagger(R))
+    beta = backend.matvec(R, means / backend.sqrt(mm.hbar, dtype=means.dtype))
 
     sQ = sigma + 0.5 * backend.eye(num_indices, dtype=sigma.dtype)
     sQinv = backend.inv(sQ)

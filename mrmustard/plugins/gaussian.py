@@ -3,6 +3,7 @@ from mrmustard._typing import *
 from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 from mrmustard.experimental import XPMatrix, XPVector
+import mrmustard as mm
 
 r"""
 A plugin for all things Gaussian.
@@ -432,7 +433,7 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """
-    return not is_pure_cov(backend.asnumpy(cov))
+    return not is_pure_cov(backend.asnumpy(cov), hbar = mm.hbar)
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
