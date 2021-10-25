@@ -3,12 +3,12 @@ from mrmustard._typing import *
 from mrmustard.plugins import fock, gaussian, graphics
 from mrmustard.experimental import XPMatrix, XPVector
 from numpy import allclose
+import mrmustard as mm
 
 
 class State:
-    def __init__(self, hbar: float, mixed: bool = None, cov=None, means=None, fock=None):
+    def __init__(self, mixed: bool = None, cov=None, means=None, fock=None):
         self._num_modes = None
-        self._hbar = float(hbar)
         if mixed is not None:
             self.is_mixed: bool = mixed
         self._fock = fock
@@ -16,18 +16,17 @@ class State:
         self._cov = cov
 
     @classmethod
-    def from_gaussian(cls, cov: Matrix, means: Vector, mixed: bool, hbar: float = 2.0) -> State:
+    def from_gaussian(cls, cov: Matrix, means: Vector, mixed: bool) -> State:
         r"""
         Returns a state from a Gaussian distribution.
         Arguments:
             cov Matrix: the covariance matrix
             means Vector: the means vector
             mixed bool: whether the state is mixed
-            hbar float: the hbar value
         Returns:
             State: the state
         """
-        return cls(hbar, mixed, cov, means)
+        return cls(mixed, cov, means)
 
     @classmethod
     def from_fock(cls, fock: Tensor, mixed: bool) -> State:
@@ -36,11 +35,10 @@ class State:
         Arguments:
             fock Tensor: the Fock representation
             mixed bool: whether the state is mixed
-            hbar float: the hbar value
         Returns:
             State: the state
         """
-        return cls(hbar=2.0, mixed=mixed, fock=fock)
+        return cls(mixed=mixed, fock=fock)
 
     @property
     def num_modes(self) -> int:
@@ -79,9 +77,9 @@ class State:
         Returns the mean photon number for each mode
         """
         try:
-            return gaussian.number_means(self.cov, self.means, self._hbar)
+            return gaussian.number_means(self.cov, self.means, mm.hbar)
         except ValueError:
-            return fock.number_means(self._fock, self._hbar)
+            return fock.number_means(self._fock)
 
     @property
     def number_cov(self):
@@ -89,9 +87,9 @@ class State:
         Returns the complete photon number covariance matrix
         """
         try:
-            return gaussian.number_cov(self.cov, self.means, self._hbar)
+            return gaussian.number_cov(self.cov, self.means, mm.hbar)
         except ValueError:
-            return fock.number_cov(self._fock, self._hbar)
+            return fock.number_cov(self._fock)
 
     def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
         r"""
@@ -103,7 +101,7 @@ class State:
         """
         if self.is_pure:
             if self.means is not None:  # TODO: this may trigger recomputation of means: find a better way
-                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False, hbar=self._hbar)
+                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=False)
             return self._fock
         else:
             return None
@@ -121,7 +119,7 @@ class State:
             return fock.ket_to_dm(ket)
         else:
             if self.means is not None:  # TODO: this may trigger recomputation of means: find a better way
-                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True, hbar=self._hbar)
+                self._fock = fock.fock_representation(self.cov, self.means, cutoffs=cutoffs, mixed=True)
             return self._fock
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
@@ -145,11 +143,9 @@ class State:
         r"""
         Concatenates two states.
         """
-        if self._hbar != other._hbar:
-            raise ValueError("States must have the same hbar")
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
-        return State.from_gaussian(cov, means, self.is_mixed or other.is_mixed, self._hbar)
+        return State.from_gaussian(cov, means, self.is_mixed or other.is_mixed)
 
     def __getitem__(self, item):
         r"""
@@ -163,14 +159,12 @@ class State:
             raise TypeError("item must be int or iterable")
         cov, _, _ = gaussian.partition_cov(self.cov, item)
         means, _ = gaussian.partition_means(self.means, item)
-        return State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov), self._hbar)
+        return State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov))
 
     def __eq__(self, other):
         r"""
         Returns whether the states are equal.
         """
-        if self._hbar != other._hbar:
-            return False
         if not allclose(self.means, other.means):
             return False
         if not allclose(self.cov, other.cov):
@@ -178,12 +172,12 @@ class State:
         return True
 
     def __repr__(self):
-        info = f"num_modes={self.num_modes} | hbar={self._hbar} | pure={self.is_pure}\n"
+        info = f"num_modes={self.num_modes} | pure={self.is_pure}\n"
         detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
         if self.num_modes == 1:
             if self._fock is not None:
                 cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
             else:
                 cutoffs = [20]
-            graphics.mikkel_plot(self.dm(cutoffs=cutoffs), hbar=self._hbar)
+            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
         return info + "-" * len(info) + detailed_info
