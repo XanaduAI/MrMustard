@@ -2,6 +2,7 @@ from abc import ABC
 from mrmustard._typing import *
 from mrmustard.plugins import fock, gaussian
 from mrmustard.abstract.state import State
+import mrmustard as mm
 
 
 # TODO: the recompute_project_onto trick is there because measurements are treated differently from gates: the parameters
@@ -28,19 +29,16 @@ class GaussianMeasurement(ABC):
             (float, state) The measurement probabilities and the remaining post-measurement state.
             Note that the post-measurement state is trivial if all modes are measured.
         """
-        assert self._hbar == state._hbar
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
         prob, cov, means = gaussian.general_dyne(
-            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, self._project_onto._hbar
+            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, mm.hbar
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
         if len(remaining_modes) > 0:
-            remaining_state = State.from_gaussian(
-                cov, means, gaussian.is_mixed_cov(cov), self._hbar
-            )  # TODO: avoid using is_mixed_cov from TW
-            return prob, remaining_state  # TODO: return remaining_state, prob to match FockMeasurement
+            remaining_state = State.from_gaussian(cov, means, gaussian.is_mixed_cov(cov))  # TODO: avoid using is_mixed_cov from TW
+            return prob, remaining_state
         else:
             return prob
 

@@ -1,11 +1,12 @@
 import numpy as np
 from mrmustard._typing import *
 from mrmustard import Backend
+import mrmustard as mm
 
 backend = Backend()
 
 
-def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool, hbar: float) -> Tensor:
+def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool) -> Tensor:
     r"""
     Returns the Fock representation of the phase space representation
     given a Wigner covariance matrix and a means vector. If the state is pure
@@ -15,12 +16,11 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
         means: The Wigner means vector.
         cutoffs: The shape of the tensor.
         mixed: Whether the state vector is mixed or not.
-        hbar: The value of the Planck constant.
     Returns:
         The Fock representation of the phase space representation.
     """
     assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
-    A, B, C = hermite_parameters(cov, means, mixed, hbar)
+    A, B, C = hermite_parameters(cov, means, mixed)
     return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
 
 
@@ -78,7 +78,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     return backend.all_diagonals(dm, real=True)
 
 
-def hermite_parameters(cov: Matrix, means: Vector, mixed: bool, hbar: float) -> Tuple[Matrix, Vector, Scalar]:
+def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix, Vector, Scalar]:
     r"""
     Returns the A matrix, B vector and C scalar given a Wigner covariance matrix and a means vector of an N-mode state.
     The A, B, C triple is needed to compute the Fock representation of the state.
@@ -88,7 +88,6 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool, hbar: float) -> 
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         mixed: Whether the state vector is mixed or not.
-        hbar: The value of the Planck constant.
     Returns:
         The A matrix, B vector and C scalar.
     """
@@ -97,8 +96,8 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool, hbar: float) -> 
 
     # cov and means in the amplitude basis
     R = backend.rotmat(num_indices // 2)
-    sigma = backend.matmul(backend.matmul(R, cov / hbar), backend.dagger(R))
-    beta = backend.matvec(R, means / backend.sqrt(hbar, dtype=means.dtype))
+    sigma = backend.matmul(backend.matmul(R, cov / mm.hbar), backend.dagger(R))
+    beta = backend.matvec(R, means / backend.sqrt(mm.hbar, dtype=means.dtype))
 
     sQ = sigma + 0.5 * backend.eye(num_indices, dtype=sigma.dtype)
     sQinv = backend.inv(sQ)
