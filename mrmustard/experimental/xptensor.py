@@ -114,8 +114,7 @@ class XPTensor(ABC):
     def to_xxpp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
             return None
-        tensor = backend.transpose(self.tensor, (0, 3, 1, 4, 2) if self.isMatrix else (0, 2, 1))  # from NN22 to 2N2N or from N2 to 2N
-        return backend.reshape(tensor, [self.batch_size]+[2 * s for s in self.shape])
+        return backend.reshape(self.modes_last(), [self.batch_size]+[2 * s for s in self.shape])
 
     def __array__(self):
         return self.to_xxpp()
@@ -126,7 +125,7 @@ class XPTensor(ABC):
     def modes_last(self) -> Optional[Tensor]:
         if self.tensor is None:
             return None
-        return backend.transpose(self.tensor, (3, 4, 1, 2) if self.isMatrix else (0, 1, 2))  # 22NM or 2N
+        return backend.transpose(self.tensor, (0, 3, 4, 1, 2) if self.isMatrix else (0, 1, 2))  # 22NM or 2N
 
     def clone(self, times: int, modes=None) -> XPtensor:
         r"""Create a new XPTensor made by cloning the system a given number of times.
