@@ -21,7 +21,7 @@ class Optimizer:
         self.euclidean_lr: float = euclidean_lr
         self.loss_history: List[float] = [0]
 
-    def minimize(self, cost_fn: Callable, by_optimizing: Union[Trainable, Sequence[Trainable]], max_steps: int = 1000):
+    def minimize(self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000):
         r"""
         Minimizes the given cost function by optimizing circuits and/or detectors.
         Arguments:
