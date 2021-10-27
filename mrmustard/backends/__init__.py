@@ -19,53 +19,7 @@ from functools import lru_cache
 from scipy.special import binom
 from scipy.stats import unitary_group
 from itertools import product
-from functools import lru_cache, wraps
-
-
-class Autocast:
-    r"""
-    A decorator that casts all castable arguments of a method to the dtype with highest precision.
-    """
-
-    def __init__(self):
-        self.dtype_order = ("float16", "float32", "float64", "complex64", "complex128")
-        self.no_cast = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64")
-
-    def can_cast(self, arg):
-        return hasattr(arg, "dtype") and arg.dtype.name not in self.no_cast
-
-    def get_dtypes(self, *args, **kwargs) -> List:
-        r"""
-        Returns the dtypes of the arguments.
-        """
-        args_dtypes = [arg.dtype.name for arg in args if self.can_cast(arg)]
-        kwargs_dtypes = [v.dtype.name for v in kwargs.values() if self.can_cast(v)]
-        return args_dtypes + kwargs_dtypes
-
-    def max_dtype(self, dtypes: List):
-        r"""
-        Returns the dtype with the highest precision.
-        """
-        if dtypes == []:
-            return None
-        return max(dtypes, key=lambda dtype: self.dtype_order.index(dtype))
-
-    def cast_all(self, backend, *args, **kwargs):
-        r"""
-        Cast all arguments to the highest precision.
-        """
-        max_dtype = self.max_dtype(self.get_dtypes(*args, **kwargs))
-        args = [backend.cast(arg, max_dtype) if self.can_cast(arg) else arg for arg in args]
-        kwargs = {k: backend.cast(v, max_dtype) if self.can_cast(v) else v for k, v in kwargs.items()}
-        return args, kwargs
-
-    def __call__(self, func):
-        @wraps(func)
-        def wrapper(backend, *args, **kwargs):
-            args, kwargs = self.cast_all(backend, *args, **kwargs)
-            return func(backend, *args, **kwargs)
-
-        return wrapper
+from .autocast import Autocast
 
 
 class BackendInterface(ABC):
