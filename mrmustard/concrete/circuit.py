@@ -21,9 +21,7 @@ from mrmustard._typing import *
 from mrmustard.experimental import XPMatrix, XPVector
 from mrmustard.abstract import Transformation
 from mrmustard.concrete import TMSV
-from mrmustard import Backend, tmsv_r
-
-backend = Backend()
+import mrmustard.constants as const
 
 
 class Circuit(Transformation):
@@ -39,7 +37,7 @@ class Circuit(Transformation):
     @property
     def bell(self):
         if self._bell is None:
-            bell = bell_single = TMSV(r=tmsv_r)
+            bell = bell_single = TMSV(r=const.TMSV_DEFAULT_R)
             for n in range(self.num_modes):
                 bell = bell & bell_single
             order = tuple(range(0, 2 * self.num_modes, 2)) + tuple(range(1, 2 * self.num_modes, 2))

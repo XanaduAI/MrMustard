@@ -14,10 +14,10 @@
 
 from __future__ import annotations
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian, graphics
+from mrmustard.core import fock, gaussian, graphics
 from mrmustard.experimental import XPMatrix, XPVector
 from numpy import allclose
-import mrmustard as mm
+import mrmustard.constants as const
 
 
 class State:
@@ -91,7 +91,7 @@ class State:
         Returns the mean photon number for each mode
         """
         try:
-            return gaussian.number_means(self.cov, self.means, mm.hbar)
+            return gaussian.number_means(self.cov, self.means, const.HBAR)
         except ValueError:
             return fock.number_means(self._fock)
 
@@ -101,7 +101,7 @@ class State:
         Returns the complete photon number covariance matrix
         """
         try:
-            return gaussian.number_cov(self.cov, self.means, mm.hbar)
+            return gaussian.number_cov(self.cov, self.means, const.HBAR)
         except ValueError:
             return fock.number_cov(self._fock)
 

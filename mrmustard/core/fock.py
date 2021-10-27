@@ -14,11 +14,7 @@
 
 import numpy as np
 from mrmustard._typing import *
-from mrmustard import Backend
-import mrmustard as mm
-
-backend = Backend()
-
+import mrmustard.constants as const
 
 def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool) -> Tensor:
     r"""
@@ -110,8 +106,8 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix,
 
     # cov and means in the amplitude basis
     R = backend.rotmat(num_indices // 2)
-    sigma = backend.matmul(backend.matmul(R, cov / mm.hbar), backend.dagger(R))
-    beta = backend.matvec(R, means / backend.sqrt(mm.hbar, dtype=means.dtype))
+    sigma = backend.matmul(backend.matmul(R, cov / const.HBAR), backend.dagger(R))
+    beta = backend.matvec(R, means / backend.sqrt(const.HBAR, dtype=means.dtype))
 
     sQ = sigma + 0.5 * backend.eye(num_indices, dtype=sigma.dtype)
     sQinv = backend.inv(sQ)

@@ -14,9 +14,9 @@
 
 from abc import ABC
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian
+from mrmustard.core import fock, gaussian
 from mrmustard.abstract.state import State
-import mrmustard as mm
+import mrmustard.constants as const
 
 
 # TODO: the recompute_project_onto trick is there because measurements are treated differently from gates: the parameters
@@ -46,7 +46,7 @@ class GaussianMeasurement(ABC):
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
         prob, cov, means = gaussian.general_dyne(
-            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, mm.hbar
+            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, const.HBAR
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
@@ -60,7 +60,7 @@ class GaussianMeasurement(ABC):
         ...
 
 
-# TODO: push backend methods into the fock plugin
+# TODO: push backend methods into the fock core module
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.

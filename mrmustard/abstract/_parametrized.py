@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractproperty
-from mrmustard.plugins import train
+from mrmustard.core import train
 from mrmustard._typing import *
 
 

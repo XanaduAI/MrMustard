@@ -17,11 +17,9 @@ import pytest
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard import *
-from mrmustard.plugins import gaussian as gp
-from mrmustard import Backend
+from mrmustard.core import gaussian as gp
 from mrmustard.concrete.states import Gaussian
-import mrmustard as mm
-
+import mrmustard.constants as const
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
 def test_vacuum_state(num_modes, hbar):
@@ -33,8 +31,8 @@ def test_vacuum_state(num_modes, hbar):
 @given(x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
-    assert np.allclose(state.cov, np.array([[mm.hbar / 2, 0], [0, mm.hbar / 2]]))
-    assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * mm.hbar))
+    assert np.allclose(state.cov, np.array([[const.HBAR / 2, 0], [0, const.HBAR / 2]]))
+    assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * const.HBAR))
 
 
 # a test like test_coherent_state_single but with x and y being lists of a single float each
@@ -73,16 +71,16 @@ arr = arrays(dtype=np.float, shape=(n), elements=st.floats(-5.0, 5.0))
 @given(x=arr, y=arr)
 def test_coherent_state_multiple(x, y):
     state = Coherent(x, y)
-    assert np.allclose(state.cov, np.eye(2 * len(x)) * mm.hbar / 2)
+    assert np.allclose(state.cov, np.eye(2 * len(x)) * const.HBAR / 2)
     assert len(x) == len(y)
-    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * mm.hbar))
+    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * const.HBAR))
 
 
 @given(xy=xy_arrays())
 def test_the_purity_of_a_pure_state(xy):
     x, y = xy
     state = Coherent(x, y)
-    purity = gp.purity(state.cov, mm.hbar)
+    purity = gp.purity(state.cov, const.HBAR)
     expected = 1.0
     assert np.isclose(purity, expected)
 
@@ -90,7 +88,7 @@ def test_the_purity_of_a_pure_state(xy):
 @given(nbar=st.floats(0.0, 3.0))
 def test_the_purity_of_a_mixed_state(nbar):
     state = Thermal(nbar)
-    purity = gp.purity(state.cov, mm.hbar)
+    purity = gp.purity(state.cov, const.HBAR)
     expected = 1 / (2 * nbar + 1)
     assert np.isclose(purity, expected)
 

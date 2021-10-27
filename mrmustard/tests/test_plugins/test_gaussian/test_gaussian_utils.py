@@ -15,8 +15,8 @@
 import numpy as np
 from hypothesis import given, strategies as st
 from mrmustard import *
-from mrmustard.plugins import gaussian as gp
-
+from mrmustard.core import gaussian as gp
+import mrmustard.constants as const
 
 def test_partition_means():
     A, B = gp.partition_means(gp.backend.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[0, 2])

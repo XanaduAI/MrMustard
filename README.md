@@ -181,7 +181,7 @@ Here we use a default TensorFlow optimizer (no `Ggate`s or `Interferometer`s)):
 ```python
 import tensorflow as tf
 from mrmustard import Dgate, LossChannel, Vacuum
-from mrmustard.plugins.gaussian import fidelity
+from mrmustard.core.gaussian import fidelity
 
 D = Dgate(x = 0.1, y = -0.5, x_bounds=(0.0, 1.0), x_trainable=True)
 L = LossChannel(transmissivity=0.5)

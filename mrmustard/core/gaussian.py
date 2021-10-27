@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard import Backend
 from mrmustard._typing import *
-from math import pi, sqrt
 from thewalrus.quantum import is_pure_cov
 from mrmustard.experimental import XPMatrix, XPVector
-import mrmustard as mm
+import mrmustard.constants as const
+from math import pi
 
 r"""
-A plugin for all things Gaussian.
+A module for all things Gaussian.
 
 The GaussianPlugin implements:
     - Gaussian states (pure and mixed)
@@ -31,7 +30,6 @@ The GaussianPlugin implements:
     - Gaussian entropies [upcoming]
     - Gaussian entanglement [upcoming]
 """
-backend = Backend()
 
 #  ~~~~~~
 #  States
@@ -447,7 +445,7 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """
-    return not is_pure_cov(backend.asnumpy(cov), hbar = mm.hbar)
+    return not is_pure_cov(backend.asnumpy(cov), hbar = const.HBAR)
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:

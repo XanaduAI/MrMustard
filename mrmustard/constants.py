@@ -12,13 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC
-from mrmustard._typing import *
-import numpy as np
-from functools import lru_cache
-from scipy.special import binom
-from scipy.stats import unitary_group
-from itertools import product
-from .autocast import Autocast
-
-
+HBAR = 2.0
+TMSV_DEFAULT_R = 3.0
