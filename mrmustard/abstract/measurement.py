@@ -20,8 +20,8 @@ import mrmustard.constants as const
 
 
 # TODO: the recompute_project_onto trick is there because measurements are treated differently from gates: the parameters
-# are assumed to be mostly constant and they can be called with additional kwargs if we want the internal representation to be recomputed.
-# However, we should find the how to make them work the same way, i.e. use xxx_trainable and xxx_bounds for all of the measurement parameters.
+# are assumed to be constant unless they are passed as additional kwargs, in which case the internal representation is going to be recomputed.
+# However, we should find how to make them work the same way, i.e. use xxx_trainable and xxx_bounds for all of the measurement parameters.
 # This is a problem due to the generality of Generaldyne: for homodyne and heterodyne we could already do it, as they
 # depend on euclidean parameters, rather than on a Gaussian state.
 
