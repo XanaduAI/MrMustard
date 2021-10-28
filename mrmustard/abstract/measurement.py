@@ -14,14 +14,14 @@
 
 from abc import ABC
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian
+from mrmustard.core import fock, gaussian
 from mrmustard.abstract.state import State
-import mrmustard as mm
+import mrmustard.constants as const
 
 
 # TODO: the recompute_project_onto trick is there because measurements are treated differently from gates: the parameters
-# are assumed to be mostly constant and they can be called with additional kwargs if we want the internal representation to be recomputed.
-# However, we should find the how to make them work the same way, i.e. use xxx_trainable and xxx_bounds for all of the measurement parameters.
+# are assumed to be constant unless they are passed as additional kwargs, in which case the internal representation is going to be recomputed.
+# However, we should find how to make them work the same way, i.e. use xxx_trainable and xxx_bounds for all of the measurement parameters.
 # This is a problem due to the generality of Generaldyne: for homodyne and heterodyne we could already do it, as they
 # depend on euclidean parameters, rather than on a Gaussian state.
 
@@ -46,7 +46,7 @@ class GaussianMeasurement(ABC):
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
         prob, cov, means = gaussian.general_dyne(
-            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, mm.hbar
+            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, const.HBAR
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
@@ -60,7 +60,7 @@ class GaussianMeasurement(ABC):
         ...
 
 
-# TODO: push backend methods into the fock plugin
+# TODO: push backend methods into the fock core module
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.

@@ -13,13 +13,10 @@
 # limitations under the License.
 
 from __future__ import annotations
+from mrmustard._typing import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
-from mrmustard import Backend
 import numpy as np
-
-backend = Backend()
-from mrmustard._typing import *
 
 
 class XPTensor(ABC):

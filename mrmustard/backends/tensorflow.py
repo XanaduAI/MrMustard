@@ -14,7 +14,8 @@
 
 import numpy as np
 import tensorflow as tf
-from mrmustard.backends import BackendInterface, Autocast
+from mrmustard.backends.autocast import Autocast
+from mrmustard.core.backend_interface import BackendInterface
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
 from mrmustard._typing import *
 
@@ -117,50 +118,12 @@ class Backend(BackendInterface):
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
-    @tf.custom_gradient
-    def getitem(tensor, *, key):
-        result = np.array(tensor)[key]
-
-        def grad(dy):
-            dL_dtensor = np.zeros_like(tensor)
-            dL_dtensor[key] = dy
-            return dL_dtensor
-
-        return result, grad
-
     def hash_tensor(self, tensor: tf.Tensor) -> int:
         try:
             REF = tensor.ref()
         except AttributeError:
             raise TypeError(f"Cannot hash tensor")
         return hash(REF)
-
-    @tf.custom_gradient
-    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
-        r"""
-        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
-        Note the minus sign in front of A.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The shape of the final tensor.
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
-
-        def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3)
-            ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            return dLdA, dLdB, dLdC
-
-        return poly, grad
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
@@ -226,25 +189,6 @@ class Backend(BackendInterface):
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
-    @tf.custom_gradient
-    def setitem(tensor, value, *, key):
-        "A differentiable pure equivalent of numpy's tensor[key] = value."
-        tensor = np.array(tensor)
-        value = np.array(value)
-        tensor[key] = value
-
-        def grad(dy):
-            dL_dtensor = np.array(dy)
-            dL_dtensor[key] = 0.0
-            # unbroadcasting the gradient
-            implicit_broadcast = list(range(tensor.ndim - value.ndim))
-            explicit_broadcast = [tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1]
-            dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast))
-            dL_dvalue = np.expand_dims(dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast])
-            return dL_dtensor, dL_dvalue
-
-        return tensor, grad
-
     def sin(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sin(array)
 
@@ -286,9 +230,11 @@ class Backend(BackendInterface):
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
 
-    # TODO: reassess
+    # ~~~~~~~~~~~~~~~~~
+    # Special functions
+    # ~~~~~~~~~~~~~~~~~
 
-    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:
+    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer: # TODO: a wrapper class is better?
         r"""
         Default optimizer for the Euclidean parameters.
         """
@@ -310,3 +256,65 @@ class Backend(BackendInterface):
             loss = cost_fn()
         gradients = tape.gradient(loss, list(parameters.values()))
         return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
+
+    @tf.custom_gradient
+    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
+        r"""
+        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
+        of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        Note the minus sign in front of A.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
+
+        def grad(dLdpoly):
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3)
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly, grad
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Extras (not in the Interface)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    @tf.custom_gradient
+    def getitem(tensor, *, key):
+        "A differentiable pure equivalent of numpy's `value = tensor[key]`."
+        value = np.array(tensor)[key]
+
+        def grad(dy):
+            dL_dtensor = np.zeros_like(tensor)
+            dL_dtensor[key] = dy
+            return dL_dtensor
+
+        return value, grad
+
+    @tf.custom_gradient
+    def setitem(tensor, value, *, key):
+        "A differentiable pure equivalent of numpy's `tensor[key] = value`."
+        tensor = np.array(tensor)
+        value = np.array(value)
+        tensor[key] = value
+
+        def grad(dy):
+            dL_dtensor = np.array(dy)
+            dL_dtensor[key] = 0.0
+            # unbroadcasting the gradient
+            implicit_broadcast = list(range(tensor.ndim - value.ndim))
+            explicit_broadcast = [tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1]
+            dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast))
+            dL_dvalue = np.expand_dims(dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast])
+            return dL_dtensor, dL_dvalue
+
+        return tensor, grad

@@ -14,14 +14,26 @@
 
 from __future__ import annotations
 from mrmustard._typing import *
-from mrmustard.plugins import fock, gaussian, graphics
+from mrmustard.core import fock, gaussian, graphics
 from mrmustard.experimental import XPMatrix, XPVector
 from numpy import allclose
-import mrmustard as mm
+import mrmustard.constants as const
 
+# TODO: integrate (cov,means) and fock representations seamlessly
 
 class State:
+    r"""Base class for quantum states"""
     def __init__(self, mixed: bool = None, cov=None, means=None, fock=None):
+        r"""
+        Initializes the state. Either supply the cov,means pair of the fock tensor.
+        Arguments:
+            mixed (bool): whether the state is mixed
+            cov (Matrix): the covariance matrix
+            means (Vector): the means vector
+            fock (Array): the Fock representation
+        """
+        if (cov is None) != (means is None) or (cov is None) != (fock is None):
+            raise ValueError("either cov and means or fock must be supplied")
         self._num_modes = None
         if mixed is not None:
             self.is_mixed: bool = mixed
@@ -34,21 +46,21 @@ class State:
         r"""
         Returns a state from a Gaussian distribution.
         Arguments:
-            cov Matrix: the covariance matrix
-            means Vector: the means vector
-            mixed bool: whether the state is mixed
+            cov (Matrix): the covariance matrix
+            means (Vector): the means vector
+            mixed (bool): whether the state is mixed
         Returns:
             State: the state
         """
         return cls(mixed, cov, means)
 
     @classmethod
-    def from_fock(cls, fock: Tensor, mixed: bool) -> State:
+    def from_fock(cls, fock: Array, mixed: bool) -> State:
         r"""
         Returns a state from a Fock representation.
         Arguments:
-            fock Tensor: the Fock representation
-            mixed bool: whether the state is mixed
+            fock (Array): the Fock representation
+            mixed (bool): whether the state is mixed
         Returns:
             State: the state
         """
@@ -86,24 +98,24 @@ class State:
         return self._cov
 
     @property
-    def number_means(self):
+    def number_means(self) -> Vector:
         r"""
         Returns the mean photon number for each mode
         """
         try:
-            return gaussian.number_means(self.cov, self.means, mm.hbar)
+            return gaussian.number_means(self.cov, self.means, const.HBAR)
         except ValueError:
-            return fock.number_means(self._fock)
+            return gaussian.number_means(self._fock)
 
     @property
-    def number_cov(self):
+    def number_cov(self) -> Matrix:
         r"""
         Returns the complete photon number covariance matrix
         """
         try:
-            return gaussian.number_cov(self.cov, self.means, mm.hbar)
+            return gaussian.number_cov(self.cov, self.means, const.HBAR)
         except ValueError:
-            return fock.number_cov(self._fock)
+            return gaussian.number_cov(self._fock)
 
     def ket(self, cutoffs: Sequence[int]) -> Optional[Tensor]:
         r"""
@@ -144,7 +156,7 @@ class State:
         Arguments:
             cutoffs List[int]: the cutoff dimensions for each mode
         Returns:
-            Tensor: the probabilities
+            Array: the probabilities
         """
         if self.is_mixed:
             dm = self.dm(cutoffs=cutoffs)

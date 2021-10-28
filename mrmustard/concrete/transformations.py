@@ -14,8 +14,8 @@
 
 from mrmustard._typing import *
 from mrmustard.abstract import Parametrized, Transformation
-from mrmustard.plugins import gaussian, train
-import mrmustard as mm
+from mrmustard.core import gaussian, train
+import mrmustard.constants as const
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
@@ -52,7 +52,7 @@ class Dgate(Parametrized, Transformation):
         self.single_mode = True
 
     def d_vector(self):
-        return gaussian.displacement(self.x, self.y, mm.hbar)
+        return gaussian.displacement(self.x, self.y, const.HBAR)
 
 
 class Sgate(Parametrized, Transformation):
@@ -366,4 +366,4 @@ class LossChannel(Parametrized, Transformation):
         return gaussian.loss_X(self.transmissivity)
 
     def Y_matrix(self):
-        return gaussian.loss_Y(self.transmissivity, mm.hbar)
+        return gaussian.loss_Y(self.transmissivity, const.HBAR)

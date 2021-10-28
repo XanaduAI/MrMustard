@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractproperty
-from mrmustard.plugins import train
+from mrmustard.core import train
 from mrmustard._typing import *
 
 
@@ -49,5 +49,5 @@ class Parametrized(ABC):
                 self.__dict__["_" + key] = val  # making other values available as gate._val_name
 
     @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as needed
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as needed in child classes
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}

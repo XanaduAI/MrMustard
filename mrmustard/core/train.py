@@ -14,11 +14,12 @@
 
 import numpy as np
 from scipy.linalg import expm
-from mrmustard import Backend
 from mrmustard._typing import *
 
-backend = Backend()
-euclidean_opt = backend.DefaultEuclideanOptimizer()
+try:
+    euclidean_opt = backend.DefaultEuclideanOptimizer()
+except NameError:
+    euclidean_opt = None
 
 
 def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
