@@ -14,8 +14,8 @@
 
 from mrmustard.utils.types import *
 from mrmustard.physics.abstract import State
-from mrmustard.utils import Parametrized
-from mrmustard.physics import gaussian, train
+from mrmustard.utils import Parametrized, training
+from mrmustard.physics import gaussian
 import mrmustard.constants as const
 
 __all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV", "Gaussian"]
@@ -26,7 +26,7 @@ class Vacuum(State):
     The N-mode vacuum state.
     """
 
-    def __init__(self, num_modes: int = None):
+    def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, const.HBAR)
         means = gaussian.vacuum_means(num_modes, const.HBAR)
         super().__init__(False, cov, means)

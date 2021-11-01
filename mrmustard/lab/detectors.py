@@ -14,8 +14,9 @@
 
 from mrmustard.utils.types import *
 from mrmustard.utils import Parametrized
-from mrmustard.physics import State, fock, gaussian
-from mrmustard.lab import DisplacedSqueezed, Coherent
+from mrmustard.physics import fock, gaussian
+from mrmustard.physics.abstract import State
+from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from math import pi
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
