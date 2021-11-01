@@ -237,9 +237,12 @@ class XPTensor(ABC):
         takes care of keeping only the modes that are needed, in case of mismatch.
         See documentation for a visual explanation with blocks.  #TODO: add link to figure
         """
-        if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
-            prod = backend.tensordot(self.tensor, other.tensor, ((2, 4), (1, 3)) if other.isMatrix else ((2, 4), (1, 2)))
-            return backend.transpose(prod, (0, 1, 3, 2, 4) if other.isMatrix else (0, 1, 2)), (self.outmodes, other.inmodes)
+        if list(self.inmodes) == list(other.outmodes) and self.batch_size == other.batch_size:  # NOTE: they match including the mode ordering
+            if other.isMatrix:
+                prod = self.from_xxpp(backend.matmul(self.to_xxpp(), other.to_xxpp())).tensor
+            else:
+                prod = self.from_xxpp(backend.matvec(self.to_xxpp(), other.to_xxpp())).tensor
+            return prod, (self.outmodes, other.inmodes)
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
@@ -251,30 +254,32 @@ class XPTensor(ABC):
         if len(contracted) > 0:
             subtensor1 = backend.gather(self.tensor, [self.inmodes.index(m) for m in contracted], axis=2)
             subtensor2 = backend.gather(other.tensor, [other.outmodes.index(m) for m in contracted], axis=1)
+            a = backend.reshape(subtensor1, (self.batch_size, 2*self.num_modes, 2*self.num_modes))
             if other.isMatrix:
-                bulk = backend.tensordot(subtensor1, subtensor2, ((2, 4), (1, 3)))
-                bulk = backend.transpose(bulk, (0, 1, 3, 2, 4))
+                b = backend.reshape(subtensor2, (self.batch_size, 2*self.num_modes, 2*self.num_modes))
+                bulk = self.from_xxpp(backend.matmul(a, b)).tensor
             else:
-                bulk = backend.tensordot(subtensor1, subtensor2, ((2, 4), (1, 2)))
+                b = backend.reshape(subtensor2, (self.batch_size, 2*self.num_modes))
+                bulk = other.from_xxpp(backend.matvec(a, b)).tensor
         if self.like_1 and len(uncontracted_other) > 0:
-            copied_rows = backend.gather(other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0)
-        if other.like_1 and len(uncontracted_self) > 0:
-            copied_cols = backend.gather(self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1)
-        if copied_rows is not None and copied_cols is not None:
+            copied_rows = backend.gather(other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=1)
+        if other.like_1 and len(uncontracted_self) > 0: # never the case if other is Vector
+            copied_cols = backend.gather(self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=2)
+        if copied_rows is not None and copied_cols is not None: # never the case if other is Vector (copied_cols would be None)
             if bulk is None:
-                bulk = backend.zeros((copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype)
-            empty = backend.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
-            final = backend.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
+                bulk = backend.zeros((self.batch_size, copied_cols.shape[1], copied_rows.shape[2], 2, 2), dtype=copied_cols.dtype)
+            empty = backend.zeros((self.batch_size, copied_rows.shape[1], copied_cols.shape[2], 2, 2), dtype=copied_cols.dtype)
+            final = backend.block([[copied_cols, bulk], [empty, copied_rows]], axes=[1, 2])
         elif copied_cols is None and copied_rows is not None:
             if bulk is None:
                 final = copied_rows
             else:
-                final = backend.block([[bulk], [copied_rows]], axes=[0, 1])
-        elif copied_rows is None and copied_cols is not None:
+                final = backend.block([[bulk], [copied_rows]], axes=[1, 2])
+        elif copied_rows is None and copied_cols is not None: # never the case if other is Vector (copied_cols would be None)
             if bulk is None:
                 final = copied_cols
             else:
-                final = backend.block([[copied_cols, bulk]], axes=[0, 1])
+                final = backend.block([[copied_cols, bulk]], axes=[1, 2])
         else:  # copied_rows and copied_cols are both None
             final = bulk  # NOTE: could be None
 
@@ -291,24 +296,24 @@ class XPTensor(ABC):
             inmodes = [m for m in inmodes if m in other.inmodes]
 
         if final is not None:
-            final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
+            final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=1)
             if other.isMatrix:
-                final = backend.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
+                final = backend.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=2)
         return final, (sorted(outmodes), sorted(inmodes))
 
     def _mode_aware_vecvec(self, other: XPVector) -> Scalar:
-        if list(self.outmodes) == list(other.outmodes):
-            return backend.sum(self.tensor * other.tensor)
+        if list(self.outmodes) == list(other.outmodes) and self.batch_size == other.batch_size:
+            return backend.sum(self.tensor * other.tensor, axis=1)
         common = list(set(self.outmodes) & set(other.outmodes))  # only the common modes (the others are like 0)
         return backend.sum(self.tensor[common] * other.tensor[common])
 
     def __add__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
         if not isinstance(other, (XPMatrix, XPVector)):
-            raise TypeError(f"unsupported operand type(s) for +: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'")
+            raise TypeError(f"unsupported operand type(s): '{self.__class__.__qualname__}' + '{other.__class__.__qualname__}'")
         if self.isVector != other.isVector:
             raise ValueError("Cannot add a vector and a matrix")
         if self.isCoherence != other.isCoherence:
-            raise ValueError("Cannot add a coherence block and a diagonal block")
+            raise ValueError("Cannot add coherence blocks with non-coherence blocks")
         if self.tensor is None and other.tensor is None:  # both are None
             if self.like_1 and other.like_1:
                 raise ValueError("Cannot add two like_1 null tensors yet")  # because 1+1 = 2
@@ -319,9 +324,10 @@ class XPTensor(ABC):
         if self.tensor is None:  # only self is None
             if self.like_0:
                 return other
-            elif self.like_1:  # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
-                indices = [[i, i] for i in range(other.num_modes)]  # TODO: check if this is always correct
-                updates = backend.tile(backend.expand_dims(backend.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1))
+            elif self.like_1:  # other must be a like_0 non-coherence matrix here
+                single = [ind for ind in [(m, m, 0, 0), (m, m, 1, 1)] for m in [other.outmodes.index(i) for i in self.outmodes]]
+                indices = backend.tile(single, (self.batch_size, 1))
+                updates = backend.ones(other.batch_size * other.num_modes * 2, dtype=other.dtype)
                 other.tensor = backend.update_add_tensor(other.tensor, indices, updates)
                 return other
         if other.tensor is None:  # only other is None
@@ -332,11 +338,11 @@ class XPTensor(ABC):
             self.tensor = self.tensor + other.tensor
             return self
         if not modes_match and self.like_1 and other.like_1:
-            raise ValueError("Cannot add two like_1 tensors on different modes yet")
-        outmodes = sorted(set(self.outmodes).union(other.outmodes))
-        inmodes = sorted(set(self.inmodes).union(other.inmodes))
+            raise ValueError("Cannot add two like_1 tensors with unmatched modes yet")
         self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(other.inmodes)
         other_contains_self = set(other.outmodes).issuperset(self.outmodes) and set(other.inmodes).issuperset(self.inmodes)
+        outmodes = sorted(set(self.outmodes).union(other.outmodes))
+        inmodes = sorted(set(self.inmodes).union(other.inmodes))
         if self_contains_other:
             to_update = self.tensor
             to_add = [other]
@@ -344,7 +350,7 @@ class XPTensor(ABC):
             to_update = other.tensor
             to_add = [self]
         else:  # need to add both to a new empty tensor
-            to_update = backend.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
+            to_update = backend.zeros((self.batch_size, len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (self.batch_size, len(outmodes), 2), dtype=self.tensor.dtype)
             to_add = [self, other]
         for t in to_add:
             outmodes_indices = [outmodes.index(o) for o in t.outmodes]
@@ -354,7 +360,7 @@ class XPTensor(ABC):
             else:
                 indices = [[o] for o in outmodes_indices]
             to_update = backend.update_add_tensor(
-                to_update, indices, backend.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2))
+                to_update, indices, backend.reshape(t.modes_first(), (self.batch, -1, 2, 2) if self.isMatrix else (self.batch, -1, 2))
             )
         if self.isMatrix and other.isMatrix:
             return XPMatrix(to_update, like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1, modes=(outmodes, inmodes))
