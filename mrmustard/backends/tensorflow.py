@@ -106,8 +106,15 @@ class Backend(BackendInterface):
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
 
-    def expand_dims(self, array: tf.Tensor, axis: int) -> tf.Tensor:
-        return tf.expand_dims(array, axis)
+    def expand_dims(self, array: tf.Tensor, axis: Union[int, Sequence[int]]) -> tf.Tensor:
+        shape = list(array.shape)
+        if isinstance(axis, int):
+            axis = [axis]
+        axis = sorted([a if a >= 0 else a + len(array.shape) for a in axis])
+        for i,a in enumerate(axis):
+            array = tf.expand_dims(array, axis = a + i)
+            shape.insert(a, 1)
+        return array
 
     def expm(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.expm(matrix)
