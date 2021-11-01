@@ -59,7 +59,7 @@ class BackendInterface(ABC):
     def cast(self, array: Tensor, dtype) -> Tensor:
         ...
 
-    def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
+    def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:  # TODO: test that this works batch-wise
         ...
 
     def conj(self, array: Tensor) -> Tensor:
@@ -94,7 +94,7 @@ class BackendInterface(ABC):
     def exp(self, array: Tensor) -> Tensor:
         ...
     
-    def expand_dims(self, array: Tensor, axis: int) -> Tensor:
+    def expand_dims(self, array: Tensor, axis: Union[int, Sequence()[int]]) -> Tensor:
         ...
 
     def expm(self, matrix: Tensor) -> Tensor:
@@ -121,10 +121,10 @@ class BackendInterface(ABC):
     def log(self, x: Tensor) -> Tensor:
         ...
 
-    def matmul(self, a: Tensor, b: Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> Tensor:
+    def matmul(self, a: Tensor, b: Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> Tensor: # TODO: test that this works batch-wise
         ...
 
-    def matvec(self, a: Tensor, b: Tensor, transpose_a=False, adjoint_a=False) -> Tensor:
+    def matvec(self, a: Tensor, b: Tensor, transpose_a=False, adjoint_a=False) -> Tensor: # TODO: test that this works batch-wise
         ...
 
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
@@ -212,9 +212,9 @@ class BackendInterface(ABC):
     def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         ...
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Methods that build on the basic ops and don't need to be overridden in the concrete implementation
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
