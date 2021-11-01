@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard._typing import *
-from mrmustard.abstract import Parametrized, Transformation
-from mrmustard.core import gaussian, train
+from mrmustard.utils.types import *
+from mrmustard.utils import Parametrized, train
+from mrmustard.physics import gaussian, fock
+from mrmustard.physics.abstract import Transformation
 import mrmustard.constants as const
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]

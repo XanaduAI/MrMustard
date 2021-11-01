@@ -14,7 +14,7 @@
 
 import numpy as np
 from scipy.linalg import expm
-from mrmustard._typing import *
+from mrmustard.utils.types import *
 
 try:
     euclidean_opt = backend.DefaultEuclideanOptimizer()

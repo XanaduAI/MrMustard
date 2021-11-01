@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard._typing import *
-from mrmustard.core import train, graphics
+from mrmustard.utils.types import *
+from mrmustard.utils import training, graphics
 
 __all__ = ["Optimizer"]
 
@@ -43,16 +43,16 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-        params = {kind: train.extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
+        params = {kind: training.extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
         bar = graphics.Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                loss, grads = train.loss_and_gradients(cost_fn, params)
-                train.update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
-                train.update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
-                train.update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
+                loss, grads = training.loss_and_gradients(cost_fn, params)
+                training.update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
+                training.update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                training.update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                 self.loss_history.append(loss)
-                bar.step(train.numeric(loss))  # TODO
+                bar.step(training.numeric(loss))  # TODO
 
     def should_stop(self, max_steps: int) -> bool:
         r"""

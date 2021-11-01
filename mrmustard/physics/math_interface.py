@@ -13,17 +13,17 @@
 # limitations under the License.
 
 from abc import ABC
-from mrmustard._typing import *
+from mrmustard.utils.types import *
 import numpy as np
 from functools import lru_cache
 from scipy.special import binom
 from scipy.stats import unitary_group
 from itertools import product
 
-class BackendInterface(ABC):
+class MathInterface(ABC):
     r"""
-    The interface that all backends must implement.
-    All methods are pure (no side effects) and are be used by the core modules (hence the interface is defined in the core).
+    The interface that all math backends must implement.
+    All methods are pure (no side effects) and are be used by the physics modules.
     """
 
     __instance = None

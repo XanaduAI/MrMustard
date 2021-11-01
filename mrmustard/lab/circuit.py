@@ -17,11 +17,11 @@ from __future__ import annotations
 __all__ = ["Circuit"]
 
 from collections.abc import MutableSequence
-from mrmustard._typing import *
-from mrmustard.experimental import XPMatrix, XPVector
-from mrmustard.abstract import Transformation
-from mrmustard.concrete import TMSV
+from mrmustard.utils.types import *
 import mrmustard.constants as const
+from mrmustard.utils.xptensor import XPMatrix, XPVector
+from mrmustard.physics.abstract import Transformation
+from mrmustard.lab import TMSV
 
 
 class Circuit(Transformation):

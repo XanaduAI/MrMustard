@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from mrmustard._typing import *
+from mrmustard.utils.types import *
 from functools import lru_cache
 from scipy.special import binom
 from scipy.stats import unitary_group

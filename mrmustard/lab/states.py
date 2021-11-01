@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard._typing import *
-from mrmustard.abstract import State, Parametrized
-from mrmustard.core import gaussian, train
+from mrmustard.utils.types import *
+from mrmustard.physics.abstract import State
+from mrmustard.utils import Parametrized
+from mrmustard.physics import gaussian, train
 import mrmustard.constants as const
 
 __all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV", "Gaussian"]

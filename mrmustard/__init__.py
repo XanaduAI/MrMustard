@@ -7,27 +7,25 @@ install()  # NOTE: just for the looks, not stricly required
 __version__ = "0.1.0"
 
 def activate_backend(backend_name: str):
-    "Activates the backend in the core"
-    Backend = importlib.import_module("mrmustard.backends." + backend_name).Backend
-    from mrmustard.core import fock;
-    fock.backend = Backend()
+    "Activates the math backend in the physics module"
+    Math = importlib.import_module("mrmustard.math." + backend_name).Math
+    from mrmustard.physics import fock
+    fock.math = Math()
     
-    from mrmustard.core import gaussian;
-    gaussian.backend = Backend()
+    from mrmustard.physics import gaussian
+    gaussian.math = Math()
 
-    from mrmustard.core import train;
-    train.backend = Backend();
-    train.euclidean_opt = train.backend.DefaultEuclideanOptimizer()
+    from mrmustard.utils import train
+    train.math = Math()
+    train.euclidean_opt = train.math.DefaultEuclideanOptimizer()
 
     from mrmustard.concrete import circuit
-    circuit.backend = Backend()
+    circuit.math = Math()
     
     from mrmustard.experimental import xptensor
-    xptensor.backend = Backend()
-    
-    return 
+    xptensor.math = Math()
 
 activate_backend("tensorflow")
 
-from mrmustard.concrete import *
-from mrmustard.abstract import State
+# from mrmustard.lab import *
+#from mrmustard.abstract import State

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard._typing import *
-from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized, State
-from mrmustard.concrete.states import DisplacedSqueezed, Coherent
-from mrmustard.core import fock, gaussian
+from mrmustard.utils.types import *
+from mrmustard.utils import Parametrized
+from mrmustard.physics import State, fock, gaussian
+from mrmustard.lab import DisplacedSqueezed, Coherent
 from math import pi
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
