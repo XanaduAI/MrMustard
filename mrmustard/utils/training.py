@@ -16,11 +16,61 @@ import numpy as np
 from scipy.linalg import expm
 from mrmustard.utils.types import *
 
-try:
-    euclidean_opt = backend.DefaultEuclideanOptimizer()
-except NameError:
-    euclidean_opt = None
+def _set_backend(backend_name: str):
+    "This private function is called by the Settings object to set the math backend in this module"
+    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+    globals()["math"] = Math()  # setting global variable only in this module's scope
 
+class Optimizer:
+    r"""An optimizer for any parametrized object.
+    It can optimize euclidean, orthogonal and symplectic parameters.
+
+    NOTE: In the future it will also include a compiler, so that it will be possible to
+    simplify the circuit/detector/gate/etc before the optimization and also
+    compile other types of structures like error correcting codes and encoders/decoders.
+    """
+
+    def __init__(self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001):
+        self.symplectic_lr: float = symplectic_lr
+        self.orthogonal_lr: float = orthogonal_lr
+        self.euclidean_lr: float = euclidean_lr
+        self.loss_history: List[float] = [0]
+
+    def minimize(self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000):
+        r"""
+        Minimizes the given cost function by optimizing circuits and/or detectors.
+        Arguments:
+            cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
+            by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
+            max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
+        """
+        params = {kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
+        bar = graphics.Progressbar(max_steps)
+        with bar:
+            while not self.should_stop(max_steps):
+                loss, grads = loss_and_gradients(cost_fn, params)
+                update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
+                update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
+                self.loss_history.append(loss)
+                bar.step(numeric(loss))  # TODO
+
+    def should_stop(self, max_steps: int) -> bool:
+        r"""
+        Returns True if the optimization should stop
+        (either because the loss is stable or because the maximum number of steps is reached)
+        """
+        if max_steps != 0 and len(self.loss_history) > max_steps:
+            return True
+        if len(self.loss_history) > 20:  # if loss varies less than 10e-6 over 20 steps
+            if sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 20)) < 1e-6:
+                print("Loss looks stable, stopping here.")
+                return True
+        return False
+
+#~~~~~~~~~~~~~~~~~
+# Static functions
+#~~~~~~~~~~~~~~~~~
 
 def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
     r"""
