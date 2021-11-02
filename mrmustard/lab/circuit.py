@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 __all__ = ["Circuit"]
 
 from mrmustard.utils.types import *

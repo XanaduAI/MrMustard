@@ -2,9 +2,11 @@
 
 import importlib
 from rich.pretty import install
+
 install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
+
 
 class Settings:
     def __init__(self):
@@ -15,7 +17,7 @@ class Settings:
     @property
     def backend(self):
         return self._backend
-    
+
     # property setter for backend
     @backend.setter
     def backend(self, backend_name: str):
@@ -27,12 +29,13 @@ class Settings:
     def __activate_backend(self):
         "Activates the math backend in the modules where it is used"
         from mrmustard.physics import fock, gaussian
-        from mrmustard.utils import training, xptensor 
+        from mrmustard.utils import training, xptensor
 
         fock._set_backend(self.backend)
         gaussian._set_backend(self.backend)
         training._set_backend(self.backend)
         xptensor._set_backend(self.backend)
+
 
 settings = Settings()
 settings.backend = "tensorflow"

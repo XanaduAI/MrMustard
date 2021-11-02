@@ -21,6 +21,7 @@ from mrmustard.lab.states import *
 from mrmustard.lab.gates import *
 from mrmustard import settings
 
+
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
 def test_vacuum_state(num_modes, hbar):
     cov, disp = gp.vacuum_cov(num_modes, hbar), gp.vacuum_means(num_modes, hbar)

@@ -18,10 +18,12 @@ from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 import importlib
 
+
 def _set_backend(backend_name: str):
     "This private function is called by the Settings object to set the math backend in this module"
     Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
     globals()["math"] = Math()  # setting global variable only in this module's scope
+
 
 class Optimizer:
     r"""An optimizer for any parametrized object.
@@ -70,9 +72,11 @@ class Optimizer:
                 return True
         return False
 
-#~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~
 # Static functions
-#~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~
+
 
 def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
     r"""

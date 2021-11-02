@@ -17,6 +17,7 @@ from hypothesis import given, strategies as st
 from mrmustard import *
 from mrmustard.physics import gaussian as gp
 
+
 def test_partition_means():
     A, B = gp.partition_means(gp.math.astensor(np.array([1, 2, 3, 4, 5, 6])), Amodes=[0, 2])
     assert np.allclose(A, [1, 3, 4, 6])

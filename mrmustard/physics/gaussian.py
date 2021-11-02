@@ -19,10 +19,12 @@ from mrmustard import settings
 import importlib
 from numpy import pi
 
+
 def _set_backend(backend_name: str):
     "This private function is called by the Settings object to set the math backend in this module"
     Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
     globals()["math"] = Math()  # setting global variable only in this module's scope
+
 
 #  ~~~~~~
 #  States
@@ -149,9 +151,7 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     sh = math.sinh(r)
     cpsh = cp * sh
     spsh = sp * sh
-    return (
-        math.diag(math.concat([ch - cpsh, ch + cpsh], axis=0)) + math.diag(-spsh, k=num_modes) + math.diag(-spsh, k=-num_modes)
-    )
+    return math.diag(math.concat([ch - cpsh, ch + cpsh], axis=0)) + math.diag(-spsh, k=num_modes) + math.diag(-spsh, k=-num_modes)
 
 
 def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
@@ -438,7 +438,7 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """
-    return not is_pure_cov(math.asnumpy(cov), hbar = settings.HBAR)
+    return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:

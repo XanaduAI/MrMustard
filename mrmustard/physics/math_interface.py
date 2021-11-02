@@ -20,13 +20,14 @@ from scipy.special import binom
 from scipy.stats import unitary_group
 from itertools import product
 
+
 class MathInterface(ABC):
     r"""
     The interface that all math backends must implement.
     All methods are pure (no side effects) and are be used by the physics modules.
     """
     _euclidean_opt = None
-    
+
     __instance = None
     # backend is a singleton
     def __new__(cls, *args, **kwargs):
@@ -93,7 +94,7 @@ class MathInterface(ABC):
 
     def exp(self, array: Tensor) -> Tensor:
         ...
-    
+
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
         ...
 

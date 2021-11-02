@@ -356,9 +356,7 @@ class XPTensor(ABC):
                 indices = [[o, i] for o in outmodes_indices for i in inmodes_indices]
             else:
                 indices = [[o] for o in outmodes_indices]
-            to_update = math.update_add_tensor(
-                to_update, indices, math.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2))
-            )
+            to_update = math.update_add_tensor(to_update, indices, math.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2)))
         if self.isMatrix and other.isMatrix:
             return XPMatrix(to_update, like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1, modes=(outmodes, inmodes))
         else:

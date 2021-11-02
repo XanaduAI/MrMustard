@@ -20,6 +20,7 @@ from scipy.stats import unitary_group
 from itertools import product
 from functools import lru_cache, wraps
 
+
 class Autocast:
     r"""
     A decorator that casts all castable arguments of a method to the dtype with highest precision.

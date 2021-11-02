@@ -24,8 +24,10 @@ import numpy as np
 # ~~~~~~~~~~~~~~~~~~~~~ State ~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 class State:
     r"""Base class for quantum states"""
+
     def __init__(self, mixed: bool = None, cov=None, means=None, fock=None):
         r"""
         Initializes the state. Either supply the cov,means pair of the fock tensor.
@@ -35,8 +37,8 @@ class State:
             means (Vector): the means vector
             fock (Array): the Fock representation
         """
-        _covmeans = (cov is not None and means is not None)
-        _fock = (fock is not None)
+        _covmeans = cov is not None and means is not None
+        _fock = fock is not None
         if not _covmeans and not _fock:
             raise ValueError("either cov and means or fock must be supplied")
         self._num_modes = None
@@ -218,6 +220,7 @@ class State:
 # ~~~~~~~~~~~~~~~~~ Transformation ~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 class Transformation(ABC):
     r"""
     Base class for all transformations.
@@ -287,9 +290,11 @@ class Transformation(ABC):
         self._modes = modes
         return self
 
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~ Measurement ~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 class GaussianMeasurement(ABC):
     r"""

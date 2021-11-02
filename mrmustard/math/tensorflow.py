@@ -231,7 +231,7 @@ class Math(MathInterface):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer: # TODO: a wrapper class is better?
+    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
         r"""
         Default optimizer for the Euclidean parameters.
         """
