@@ -14,9 +14,10 @@
 
 from mrmustard.utils.types import *
 from thewalrus.quantum import is_pure_cov
-from mrmustard.utils import XPMatrix, XPVector
+from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
-from math import pi
+import importlib
+from numpy import pi
 
 def _set_backend(backend_name: str):
     "This private function is called by the Settings object to set the math backend in this module"

@@ -16,7 +16,8 @@ from mrmustard.utils.types import *
 from mrmustard import settings
 
 from mrmustard.utils import training, Parametrized
-from mrmustard.physics import gaussian, fock, Transformation
+from mrmustard.physics import gaussian, fock
+from mrmustard.physics.abstract import Transformation
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
@@ -300,7 +301,7 @@ class Ggate(Parametrized, Transformation):
         if symplectic is None:
             symplectic = training.new_symplectic(num_modes=num_modes)
         if displacement is None:
-            displacement = training.backend.zeros(num_modes * 2)  # TODO: gates should not know about the backend
+            displacement = training.math.zeros(num_modes * 2)  # TODO: gates should not know about the backend
         super().__init__(
             modes=list(range(num_modes)),
             symplectic=symplectic,

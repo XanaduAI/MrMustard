@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils.types import *
@@ -346,12 +347,12 @@ class FockMeasurement(ABC):
                 # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
                 last = [mode - measured, mode + state.num_modes - 2 * measured]
                 perm = list(set(range(dm.ndim)).difference(last)) + last
-                dm = fock.backend.transpose(dm, perm)
-                dm = fock.backend.diag_part(dm)
-                dm = fock.backend.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
+                dm = fock.math.transpose(dm, perm)
+                dm = fock.math.diag_part(dm)
+                dm = fock.math.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
                 measured += 1
-        prob = fock.backend.sum(fock.backend.all_diagonals(dm, real=False))
-        return fock.backend.abs(prob), dm / prob
+        prob = fock.math.sum(fock.math.all_diagonals(dm, real=False))
+        return fock.math.abs(prob), dm / prob
 
     def apply_stochastic_channel(self, stochastic_channel, fock_probs: Tensor) -> Tensor:
         cutoffs = [fock_probs.shape[m] for m in self._modes]
@@ -362,14 +363,14 @@ class FockMeasurement(ABC):
                 )
         detector_probs = fock_probs
         for i, mode in enumerate(self._modes):
-            detector_probs = fock.backend.tensordot(
+            detector_probs = fock.math.tensordot(
                 detector_probs,
                 stochastic_channel[i][: cutoffs[mode], : cutoffs[mode]],
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
             indices.insert(mode, fock_probs.ndim - 1)
-            detector_probs = fock.backend.transpose(detector_probs, indices)
+            detector_probs = fock.math.transpose(detector_probs, indices)
         return detector_probs
 
     def __call__(self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None) -> Tuple[Tensor, Tensor]:

@@ -41,7 +41,7 @@ Plugins add functionality to the concrete classes by composition, without commit
 - [`train`](https://github.com/XanaduAI/MrMustard/mrmustard/core/train.py) (optimization functionality)
 - [`graphics`](https://github.com/XanaduAI/MrMustard/mrmustard/core/graphics.py) (plots and visualizations)
 
-To develop the existing core (or to add new modules to it), make sure that the backend is used when calling numerical math methods, e.g. `backend.transpose(M)`.
+To develop the existing core (or to add new modules to it), make sure that the math backend is used when calling numerical math methods, e.g. `math.transpose(M)`.
 
 ### 4. Backends
 The numerical functionality (be it with autodiff or not) is supplied by the backends.

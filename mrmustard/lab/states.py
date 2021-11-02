@@ -15,7 +15,8 @@
 from mrmustard.utils.types import *
 from mrmustard import settings
 
-from mrmustard.physics import State, gaussian
+from mrmustard.physics.abstract import State
+from mrmustard.physics import gaussian
 from mrmustard.utils import Parametrized, training
 
 __all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV", "Gaussian"]
@@ -198,7 +199,7 @@ class Gaussian(Parametrized, State):
         if displacement is None:
             displacement = gaussian.vacuum_means(num_modes, settings.HBAR)
         if eigenvalues is None:
-            eigenvalues = gaussian.backend.ones_like(displacement) * settings.HBAR / 2  # TODO: concrete classes should not use the backend
+            eigenvalues = gaussian.math.ones_like(displacement) * settings.HBAR / 2  # TODO: concrete classes should not use the backend
         Parametrized.__init__(
             self,
             symplectic=symplectic,

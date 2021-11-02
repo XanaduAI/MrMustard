@@ -18,8 +18,8 @@ __all__ = ["Circuit"]
 from mrmustard.utils.types import *
 from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from mrmustard.physics import Transformation
-from mrmustard.lab import TMSV
+from mrmustard.physics.abstract import Transformation
+from mrmustard.lab.states import TMSV
 
 
 class Circuit(Transformation):

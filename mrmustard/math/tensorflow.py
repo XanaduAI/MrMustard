@@ -16,8 +16,8 @@ import numpy as np
 import tensorflow as tf
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
 
-from mrmustard.physics import MathInterface
-from mrmustard.utils import Autocast
+from mrmustard.physics.math_interface import MathInterface
+from mrmustard.utils.autocast import Autocast
 from mrmustard.utils.types import *
 
 

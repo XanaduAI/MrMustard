@@ -17,6 +17,7 @@ from mrmustard.utils.types import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
+import importlib
 
 
 def _set_backend(backend_name: str):
@@ -115,19 +116,19 @@ class XPTensor(ABC):
             raise ValueError("Cannot transpose a vector")
         if self.tensor is None:
             return self
-        return XPMatrix(backend.transpose(self.tensor, (1, 0, 3, 2)), self.like_0, self.like_1, (self.inmodes, self.outmodes))
+        return XPMatrix(math.transpose(self.tensor, (1, 0, 3, 2)), self.like_0, self.like_1, (self.inmodes, self.outmodes))
 
     def to_xpxp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
             return None
-        tensor = backend.transpose(self.tensor, (0, 2, 1, 3) if self.isMatrix else (0, 1))  # from NN22 to N2N2 or from N2 to N2
-        return backend.reshape(tensor, [2 * s for s in self.shape])
+        tensor = math.transpose(self.tensor, (0, 2, 1, 3) if self.isMatrix else (0, 1))  # from NN22 to N2N2 or from N2 to N2
+        return math.reshape(tensor, [2 * s for s in self.shape])
 
     def to_xxpp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
             return None
-        tensor = backend.transpose(self.tensor, (2, 0, 3, 1) if self.isMatrix else (1, 0))  # from NN22 to 2N2N or from N2 to 2N
-        return backend.reshape(tensor, [2 * s for s in self.shape])
+        tensor = math.transpose(self.tensor, (2, 0, 3, 1) if self.isMatrix else (1, 0))  # from NN22 to 2N2N or from N2 to 2N
+        return math.reshape(tensor, [2 * s for s in self.shape])
 
     def __array__(self):
         return self.to_xxpp()
@@ -138,7 +139,7 @@ class XPTensor(ABC):
     def modes_last(self) -> Optional[Tensor]:
         if self.tensor is None:
             return None
-        return backend.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
+        return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
     def clone(self, times: int, modes=None) -> XPtensor:
         r"""Create a new XPTensor made by cloning the system a given number of times.
@@ -149,17 +150,17 @@ class XPTensor(ABC):
         if times == 1:
             return self
         if self.isMatrix:
-            tensor = backend.expand_dims(self.modes_last(), axis=4)  # shape = [2,2,N,N,1]
-            tensor = backend.tile(tensor, (1, 1, 1, 1, times))  # shape = [2,2,N,N,T]
-            tensor = backend.diag(tensor)  # shape = [2,2,N,N,T,T]
-            tensor = backend.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
-            tensor = backend.reshape(tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times))  # shape = [2,2,NT,NT] = [2,2,O,O]
-            tensor = backend.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
+            tensor = math.expand_dims(self.modes_last(), axis=4)  # shape = [2,2,N,N,1]
+            tensor = math.tile(tensor, (1, 1, 1, 1, times))  # shape = [2,2,N,N,T]
+            tensor = math.diag(tensor)  # shape = [2,2,N,N,T,T]
+            tensor = math.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
+            tensor = math.reshape(tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times))  # shape = [2,2,NT,NT] = [2,2,O,O]
+            tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
             return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
         else:
-            tensor = backend.tile(self.expand_dims(self.modes_last(), axis=2), (1, 1, times))  # shape = [2,N,T]
-            tensor = backend.reshape(tensor, (2, -1))  # shape = [2,NT] = [2,O]
-            tensor = backend.transpose(tensor, (1, 0))  # shape = [NT,2] = [O,2]
+            tensor = math.tile(self.expand_dims(self.modes_last(), axis=2), (1, 1, times))  # shape = [2,N,T]
+            tensor = math.reshape(tensor, (2, -1))  # shape = [2,NT] = [2,O]
+            tensor = math.transpose(tensor, (1, 0))  # shape = [NT,2] = [O,2]
             return XPVector(tensor, [] if modes is None else modes)
 
     def clone_like(self, other: XPTensor):
@@ -240,8 +241,8 @@ class XPTensor(ABC):
         See documentation for a visual explanation with blocks.  #TODO: add link to figure
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
-            prod = backend.tensordot(self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)))
-            return backend.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (self.outmodes, other.inmodes)
+            prod = math.tensordot(self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)))
+            return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (self.outmodes, other.inmodes)
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
@@ -251,32 +252,32 @@ class XPTensor(ABC):
         copied_rows = None
         copied_cols = None
         if len(contracted) > 0:
-            subtensor1 = backend.gather(self.tensor, [self.inmodes.index(m) for m in contracted], axis=1)
-            subtensor2 = backend.gather(other.tensor, [other.outmodes.index(m) for m in contracted], axis=0)
+            subtensor1 = math.gather(self.tensor, [self.inmodes.index(m) for m in contracted], axis=1)
+            subtensor2 = math.gather(other.tensor, [other.outmodes.index(m) for m in contracted], axis=0)
             if other.isMatrix:
-                bulk = backend.tensordot(subtensor1, subtensor2, ((1, 3), (0, 2)))
-                bulk = backend.transpose(bulk, (0, 2, 1, 3))
+                bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 2)))
+                bulk = math.transpose(bulk, (0, 2, 1, 3))
             else:
-                bulk = backend.tensordot(subtensor1, subtensor2, ((1, 3), (0, 1)))
+                bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 1)))
         if self.like_1 and len(uncontracted_other) > 0:
-            copied_rows = backend.gather(other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0)
+            copied_rows = math.gather(other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0)
         if other.like_1 and len(uncontracted_self) > 0:
-            copied_cols = backend.gather(self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1)
+            copied_cols = math.gather(self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1)
         if copied_rows is not None and copied_cols is not None:
             if bulk is None:
-                bulk = backend.zeros((copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype)
-            empty = backend.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
-            final = backend.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
+                bulk = math.zeros((copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype)
+            empty = math.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
+            final = math.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
         elif copied_cols is None and copied_rows is not None:
             if bulk is None:
                 final = copied_rows
             else:
-                final = backend.block([[bulk], [copied_rows]], axes=[0, 1])
+                final = math.block([[bulk], [copied_rows]], axes=[0, 1])
         elif copied_rows is None and copied_cols is not None:
             if bulk is None:
                 final = copied_cols
             else:
-                final = backend.block([[copied_cols, bulk]], axes=[0, 1])
+                final = math.block([[copied_cols, bulk]], axes=[0, 1])
         else:  # copied_rows and copied_cols are both None
             final = bulk  # NOTE: could be None
 
@@ -293,16 +294,16 @@ class XPTensor(ABC):
             inmodes = [m for m in inmodes if m in other.inmodes]
 
         if final is not None:
-            final = backend.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
+            final = math.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
             if other.isMatrix:
-                final = backend.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
+                final = math.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
         return final, (sorted(outmodes), sorted(inmodes))
 
     def _mode_aware_vecvec(self, other: XPVector) -> Scalar:
         if list(self.outmodes) == list(other.outmodes):
-            return backend.sum(self.tensor * other.tensor)
+            return math.sum(self.tensor * other.tensor)
         common = list(set(self.outmodes) & set(other.outmodes))  # only the common modes (the others are like 0)
-        return backend.sum(self.tensor[common] * other.tensor[common])
+        return math.sum(self.tensor[common] * other.tensor[common])
 
     def __add__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
         if not isinstance(other, (XPMatrix, XPVector)):
@@ -323,8 +324,8 @@ class XPTensor(ABC):
                 return other
             elif self.like_1:  # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
                 indices = [[i, i] for i in range(other.num_modes)]  # TODO: check if this is always correct
-                updates = backend.tile(backend.expand_dims(backend.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1))
-                other.tensor = backend.update_add_tensor(other.tensor, indices, updates)
+                updates = math.tile(math.expand_dims(math.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1))
+                other.tensor = math.update_add_tensor(other.tensor, indices, updates)
                 return other
         if other.tensor is None:  # only other is None
             return other + self
@@ -346,7 +347,7 @@ class XPTensor(ABC):
             to_update = other.tensor
             to_add = [self]
         else:  # need to add both to a new empty tensor
-            to_update = backend.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
+            to_update = math.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
             to_add = [self, other]
         for t in to_add:
             outmodes_indices = [outmodes.index(o) for o in t.outmodes]
@@ -355,8 +356,8 @@ class XPTensor(ABC):
                 indices = [[o, i] for o in outmodes_indices for i in inmodes_indices]
             else:
                 indices = [[o] for o in outmodes_indices]
-            to_update = backend.update_add_tensor(
-                to_update, indices, backend.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2))
+            to_update = math.update_add_tensor(
+                to_update, indices, math.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2))
             )
         if self.isMatrix and other.isMatrix:
             return XPMatrix(to_update, like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1, modes=(outmodes, inmodes))
@@ -390,7 +391,7 @@ class XPTensor(ABC):
             else:
                 raise ValueError(f"Usage: V[1], V[[1,2,3]] or V[:]")
             rows = [self.outmodes.index(m) for m in modes]
-            return XPVector(backend.gather(self.tensor, rows, axis=0), modes)
+            return XPVector(math.gather(self.tensor, rows, axis=0), modes)
         else:
             _modes = [None, None]
             if isinstance(modes, int):
@@ -413,8 +414,8 @@ class XPTensor(ABC):
                 raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
             rows = [self.outmodes.index(m) for m in _modes[0]]
             columns = [self.inmodes.index(m) for m in _modes[1]]
-            subtensor = backend.gather(self.tensor, rows, axis=0)
-            subtensor = backend.gather(subtensor, columns, axis=1)
+            subtensor = math.gather(self.tensor, rows, axis=0)
+            subtensor = math.gather(subtensor, columns, axis=1)
             return XPMatrix(subtensor, like_1=_modes[0] == _modes[1] if self.like_1 else False, modes=tuple(_modes))
 
 
@@ -446,8 +447,8 @@ class XPMatrix(XPTensor):
         modes: Tuple[List[int], List[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
-            tensor = backend.transpose(tensor, (1, 3, 0, 2))
+            tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
+            tensor = math.transpose(tensor, (1, 3, 0, 2))
         return XPMatrix(tensor, like_0, like_1, modes)
 
     @classmethod
@@ -459,8 +460,8 @@ class XPMatrix(XPTensor):
         modes: Tuple[List[int], List[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
-            tensor = backend.transpose(tensor, (0, 2, 1, 3))
+            tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
+            tensor = math.transpose(tensor, (0, 2, 1, 3))
         return XPMatrix(tensor, like_0, like_1, modes)
 
     def __repr__(self) -> str:
@@ -486,8 +487,8 @@ class XPVector(XPTensor):
         modes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, (2, -1))
-            tensor = backend.transpose(tensor, (1, 0))
+            tensor = bmathackend.reshape(tensor, (2, -1))
+            tensor = math.transpose(tensor, (1, 0))
         return XPVector(tensor, modes)
 
     @classmethod
@@ -497,7 +498,7 @@ class XPVector(XPTensor):
         modes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, (-1, 2))
+            tensor = math.reshape(tensor, (-1, 2))
         return XPVector(tensor, modes)
 
     def __repr__(self) -> str:
