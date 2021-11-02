@@ -7,7 +7,7 @@ MrMustard is a differentiable bridge between phase space and Fock space with ric
 
 MrMustard supports in fully differentiable way:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
-- Fock representation of Gaussian states and Gaussian channels with mode-wise dimensionality cutoffs
+- Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
 - Beam splitter, MZ interferometer, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, [more to come...]
 - General Gaussian N-mode gate and general N-mode Interferometer with dedicated symplectic and orthogonal optimization routines
 - Photon number moments
@@ -26,7 +26,7 @@ States in MrMustard are very powerful objects. States, like gates, are trainable
 They have differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means vector in phase space, as well as photon number moments:
 
 ```python
-from mrmustard import Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, TMSV, Thermal, Gaussian
+from mrmustard.lab import Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, TMSV, Thermal, Gaussian
 
 vac  = Vacuum(num_modes=2)
 coh  = Coherent(x=0.1, y=-0.4)  # e.g. 2-mode coherent state
@@ -72,10 +72,10 @@ We have a variety of unitary Gaussian gates and non-unitary Gaussian channels.
 Note that if a parameter of a single-mode gate is a float or a list of length 1, its value is shared across all the modes the gate is applied to.
 
 ```python
-from mrmustard import Vacuum
-from mrmustard import Dgate, Sgate, Rgate, LossChannel  # 1-mode gates ; parallelizable
-from mrmustard import BSgate, MZgate, S2gate  # 2-mode gates
-from mrmustard import Ggate, Interferometer  # N-mode gates
+from mrmustard.lab import Vacuum
+from mrmustard.lab import Dgate, Sgate, Rgate, LossChannel  # 1-mode gates ; parallelizable
+from mrmustard.lab import BSgate, MZgate, S2gate  # 2-mode gates
+from mrmustard.lab import Ggate, Interferometer  # N-mode gates
 
 # a single-mode squeezer with bounded squeezing magnitude
 S = Sgate(r = 0.1, phi = 0.9, r_bounds=(0.0, 1.0))
@@ -125,7 +125,7 @@ In order to build a circuit we create an empty circuit object `circ = Circuit()`
 Circuits are callable and trainable.
 
 ```python
-from mrmustard import Circuit, Vacuum, Sgate, Interferometer, LossChannel
+from mrmustard.lab import Circuit, Vacuum, Sgate, Interferometer, LossChannel
 
 modes = [0,1,2,3]
 
@@ -134,15 +134,15 @@ X4.append(Sgate(r = 1.0, phi = np.random.uniform(0.0, 2*np.pi, size=4)), r_bound
 X4.append(LossChannel(transmissivity=0.8))  # automatically parallelized over all modes
 X4.append(Interferometer(len(modes)))
 L = LossChannel(transmissivity=0.9, transmissivity_trainable=False)
-X8.append(L[modes])    # shared over all modes
+X4.append(L[modes])    # shared over all modes
 
-output = X8(Vacuum(4))  # differentiable output state
+output = X4(Vacuum(4))  # differentiable output state
 ```
 
 Circuits are great for modelling realistic components:
 
 ``` python
-from mrmustard import Circuit, MZgate, LossChannel
+from mrmustard.lab import Circuit, MZgate, LossChannel
 
 lossy_MZ = circuit().append([
     LossChannel([0,1], transmissivity=[0.4, 0.45], transmissivity_trainable=False)  # in-couplings
@@ -161,7 +161,7 @@ Note that measurements require the outcome to be specified.
 
 
 ```python
-from mrmustard import Circuit, Vacuum, Sgate, BSgate, LossChannel, PNRDetector, ThresholdDetector
+from mrmustard.lab import Circuit, Vacuum, Sgate, BSgate, LossChannel, PNRDetector, ThresholdDetector
 
 circ = Circuit()
 circ.append(Sgate(r=0.2, phi=[0.9,1.9]))  # a mix of shared and independent parameters is allowed
@@ -177,11 +177,11 @@ detection_probs = detector(state_out, cutoffs=[2,3])
 ### 5. Optimization
 MrMustard implements a dedicated optimizer that can perform symplectic and orthogonal optimization, on top of the usual Euclidean optimization.
 
-Here we use a default TensorFlow optimizer (no `Ggate`s or `Interferometer`s)):
+Here we could use a default TensorFlow optimizer (no `Ggate`s or `Interferometer`s)):
 ```python
 import tensorflow as tf
-from mrmustard import Dgate, LossChannel, Vacuum
-from mrmustard.core.gaussian import fidelity
+from mrmustard.lab import Dgate, LossChannel, Vacuum
+from mrmustard.physics.gaussian import fidelity
 
 D = Dgate(x = 0.1, y = -0.5, x_bounds=(0.0, 1.0), x_trainable=True)
 L = LossChannel(transmissivity=0.5)
@@ -198,10 +198,12 @@ for i in trange(100):
     adam.minimize(cost_fn, displacement.trainable_parameters['euclidean'])
 ```
 
-Here we use MrMustard's optimizer (which calls Adam when needed):
+But we can also always use MrMustard's optimizer (which calls Adam if needed):
 ```python
 import tensorflow as tf
-from mrmustard import Circuit, Optimizer, Ggate, LossChannel, Vacuum, DisplacedSqueezed
+from mrmustard.lab import Circuit, Ggate, LossChannel, Vacuum, DisplacedSqueezed
+from mrmustard.utils import Optimizer
+from mrmustard.physics.gaussian import fidelity
 
 circ = Circuit()
 
