@@ -18,12 +18,12 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
-from mrmustard.concrete.transformations import Dgate, Sgate, S2gate, LossChannel, BSgate
-from mrmustard.concrete.circuit import Circuit
-from mrmustard.concrete.optimizers import Optimizer
-from mrmustard.concrete.states import Vacuum
-from mrmustard.concrete.measurements import PNRDetector, Homodyne, Heterodyne
-from mrmustard.core import gaussian
+from mrmustard.lab.gates import Dgate, Sgate, S2gate, LossChannel, BSgate
+from mrmustard.lab.circuit import Circuit
+from mrmustard.utils.training import Optimizer
+from mrmustard.lab.states import Vacuum
+from mrmustard.lab.detectors import PNRDetector, Homodyne, Heterodyne
+from mrmustard.physics import gaussian
 from mrmustard import settings
 
 np.random.seed(137)
@@ -107,7 +107,7 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         "n_modes": 2,
     }
     cutoff = 20
-    tfbe = gaussian.backend
+    tfbe = gaussian.math
     circc = Circuit()
     circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))

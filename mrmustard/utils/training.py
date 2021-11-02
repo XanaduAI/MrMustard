@@ -15,6 +15,7 @@
 import numpy as np
 from scipy.linalg import expm
 from mrmustard.utils.types import *
+from mrmustard.utils import graphics
 import importlib
 
 def _set_backend(backend_name: str):
@@ -136,8 +137,8 @@ def update_orthogonal(orthogonal_params: Sequence[Trainable], orthogonal_grads: 
 
 
 def update_euclidean(euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
-    euclidean_opt.lr = euclidean_lr
-    euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
+    math.euclidean_opt.lr = euclidean_lr
+    math.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 
 
 def extract_parameters(items: Sequence, kind: str) -> List[Trainable]:

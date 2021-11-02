@@ -16,9 +16,9 @@ import numpy as np
 import pytest
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
-from mrmustard import *
-from mrmustard.core import gaussian as gp
-from mrmustard.concrete.states import Gaussian
+from mrmustard.physics import gaussian as gp
+from mrmustard.lab.states import *
+from mrmustard.lab.gates import *
 from mrmustard import settings
 
 @given(st.integers(0, 10), st.floats(0.1, 5.0))

@@ -16,7 +16,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils.types import *
+from mrmustard.utils import graphics
 from mrmustard import settings
+import numpy as np
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~ State ~~~~~~~~~~~~~~~~~~~~~
@@ -33,7 +35,9 @@ class State:
             means (Vector): the means vector
             fock (Array): the Fock representation
         """
-        if (cov is None) != (means is None) or (cov is None) != (fock is None):
+        _covmeans = (cov is not None and means is not None)
+        _fock = (fock is not None)
+        if not _covmeans and not _fock:
             raise ValueError("either cov and means or fock must be supplied")
         self._num_modes = None
         if mixed is not None:
@@ -192,9 +196,9 @@ class State:
         r"""
         Returns whether the states are equal.
         """
-        if not allclose(self.means, other.means):
+        if not np.allclose(self.means, other.means):
             return False
-        if not allclose(self.cov, other.cov):
+        if not np.allclose(self.cov, other.cov):
             return False
         return True
 

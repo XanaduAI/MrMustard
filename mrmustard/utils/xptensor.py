@@ -487,7 +487,7 @@ class XPVector(XPTensor):
         modes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = bmathackend.reshape(tensor, (2, -1))
+            tensor = math.reshape(tensor, (2, -1))
             tensor = math.transpose(tensor, (1, 0))
         return XPVector(tensor, modes)
 

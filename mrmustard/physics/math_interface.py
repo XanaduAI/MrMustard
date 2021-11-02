@@ -25,8 +25,9 @@ class MathInterface(ABC):
     The interface that all math backends must implement.
     All methods are pure (no side effects) and are be used by the physics modules.
     """
+    _euclidean_opt = None
+    
     __instance = None
-
     # backend is a singleton
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
@@ -205,8 +206,11 @@ class MathInterface(ABC):
     def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: Sequence[int]) -> Tensor:
         ...
 
-    def DefaultEuclideanOptimizer(self):
-        ...
+    @property
+    def euclidean_opt(self):
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
 
     def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         ...

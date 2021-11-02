@@ -42,10 +42,10 @@ class Dgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        x: Union[Optional[float], Optional[List[float]]] = None,
+        x: Union[Optional[float], Optional[List[float]]] = 0.0,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_trainable: bool = False,
-        y: Union[Optional[float], Optional[List[float]]] = None,
+        y: Union[Optional[float], Optional[List[float]]] = 0.0,
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = False,
     ):
@@ -77,10 +77,10 @@ class Sgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        r: Union[Optional[float], Optional[List[float]]] = None,
+        r: Union[Optional[float], Optional[List[float]]] = 0.0,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = False,
-        phi: Union[Optional[float], Optional[List[float]]] = None,
+        phi: Union[Optional[float], Optional[List[float]]] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
     ):
@@ -111,7 +111,7 @@ class Rgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        angle: Union[Optional[float], Optional[List[float]]] = None,
+        angle: Union[Optional[float], Optional[List[float]]] = 0.0,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         angle_trainable: bool = False,
     ):
@@ -141,10 +141,10 @@ class BSgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        theta: Optional[float] = None,
+        theta: Optional[float] = 0.0,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         theta_trainable: bool = False,
-        phi: Optional[float] = None,
+        phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
     ):
@@ -187,10 +187,10 @@ class MZgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        phi_a: Optional[float] = None,
+        phi_a: Optional[float] = 0.0,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_a_trainable: bool = False,
-        phi_b: Optional[float] = None,
+        phi_b: Optional[float] = 0.0,
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_b_trainable: bool = False,
         internal: bool = False,
@@ -232,10 +232,10 @@ class S2gate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        r: Optional[float] = None,
+        r: Optional[float] = 0.0,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = False,
-        phi: Optional[float] = None,
+        phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
     ):
