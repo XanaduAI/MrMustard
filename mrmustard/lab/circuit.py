@@ -13,14 +13,12 @@
 # limitations under the License.
 
 from __future__ import annotations
-
 __all__ = ["Circuit"]
 
-from collections.abc import MutableSequence
 from mrmustard.utils.types import *
-import mrmustard.constants as const
+from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from mrmustard.physics.abstract import Transformation
+from mrmustard.physics import Transformation
 from mrmustard.lab import TMSV
 
 
@@ -37,7 +35,7 @@ class Circuit(Transformation):
     @property
     def bell(self):
         if self._bell is None:
-            bell = bell_single = TMSV(r=const.TMSV_DEFAULT_R)
+            bell = bell_single = TMSV(r=settings.TMSV_DEFAULT_R)
             for n in range(self.num_modes):
                 bell = bell & bell_single
             order = tuple(range(0, 2 * self.num_modes, 2)) + tuple(range(1, 2 * self.num_modes, 2))

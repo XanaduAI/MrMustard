@@ -25,10 +25,9 @@ class MathInterface(ABC):
     The interface that all math backends must implement.
     All methods are pure (no side effects) and are be used by the physics modules.
     """
-
     __instance = None
 
-    # all backends are singletons
+    # backend is a singleton
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = object.__new__(cls)

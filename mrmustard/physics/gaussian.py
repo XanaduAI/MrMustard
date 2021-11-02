@@ -15,21 +15,13 @@
 from mrmustard.utils.types import *
 from thewalrus.quantum import is_pure_cov
 from mrmustard.utils import XPMatrix, XPVector
-import mrmustard.constants as const
+from mrmustard import settings
 from math import pi
 
-r"""
-A module for all things Gaussian.
-
-The GaussianPlugin implements:
-    - Gaussian states (pure and mixed)
-    - Gaussian mixture states [upcoming]
-    - Gaussian unitary transformations
-    - Gaussian CPTP channels
-    - Gaussian CP channels [upcoming]
-    - Gaussian entropies [upcoming]
-    - Gaussian entanglement [upcoming]
-"""
+def _set_backend(backend_name: str):
+    "This private function is called by the Settings object to set the math backend in this module"
+    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+    globals()["math"] = Math()  # setting global variable only in this module's scope
 
 #  ~~~~~~
 #  States
@@ -445,7 +437,7 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""
     Returns True if the covariance matrix is mixed, False otherwise.
     """
-    return not is_pure_cov(math.asnumpy(cov), hbar = const.HBAR)
+    return not is_pure_cov(math.asnumpy(cov), hbar = settings.HBAR)
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:

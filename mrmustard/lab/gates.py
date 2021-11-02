@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from mrmustard.utils.types import *
-from mrmustard.utils import Parametrized, train
-from mrmustard.physics import gaussian, fock
-from mrmustard.physics.abstract import Transformation
-import mrmustard.constants as const
+from mrmustard import settings
+
+from mrmustard.utils import training, Parametrized
+from mrmustard.physics import gaussian, fock, Transformation
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
@@ -53,7 +53,7 @@ class Dgate(Parametrized, Transformation):
         self.single_mode = True
 
     def d_vector(self):
-        return gaussian.displacement(self.x, self.y, const.HBAR)
+        return gaussian.displacement(self.x, self.y, settings.HBAR)
 
 
 class Sgate(Parametrized, Transformation):
@@ -260,7 +260,7 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(self, num_modes: int, orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = False):
         if orthogonal is None:
-            orthogonal = train.new_orthogonal(num_modes=num_modes)
+            orthogonal = training.new_orthogonal(num_modes=num_modes)
         super().__init__(
             modes=list(range(num_modes)), orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable
         )
@@ -298,9 +298,9 @@ class Ggate(Parametrized, Transformation):
         displacement_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         if symplectic is None:
-            symplectic = train.new_symplectic(num_modes=num_modes)
+            symplectic = training.new_symplectic(num_modes=num_modes)
         if displacement is None:
-            displacement = train.backend.zeros(num_modes * 2)  # TODO: gates should not know about the backend
+            displacement = training.backend.zeros(num_modes * 2)  # TODO: gates should not know about the backend
         super().__init__(
             modes=list(range(num_modes)),
             symplectic=symplectic,
@@ -367,4 +367,4 @@ class LossChannel(Parametrized, Transformation):
         return gaussian.loss_X(self.transmissivity)
 
     def Y_matrix(self):
-        return gaussian.loss_Y(self.transmissivity, const.HBAR)
+        return gaussian.loss_Y(self.transmissivity, settings.HBAR)

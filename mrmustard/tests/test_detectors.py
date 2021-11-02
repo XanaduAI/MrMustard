@@ -24,7 +24,7 @@ from mrmustard.concrete.optimizers import Optimizer
 from mrmustard.concrete.states import Vacuum
 from mrmustard.concrete.measurements import PNRDetector, Homodyne, Heterodyne
 from mrmustard.core import gaussian
-import mrmustard.constants as const
+from mrmustard import settings
 
 np.random.seed(137)
 
@@ -202,9 +202,9 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
     r = homodyne._squeezing
     prob, remaining_state = homodyne(tmsv)
-    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * const.HBAR / 2.0
+    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * settings.HBAR / 2.0
     assert np.allclose(remaining_state.cov, cov)
-    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * const.HBAR)
+    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * settings.HBAR)
     assert np.allclose(remaining_state.means, means)
 
 
@@ -217,7 +217,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
     prob, remaining_state = homodyne(tmsv)
     denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
     cov = (
-        const.HBAR
+        settings.HBAR
         / 2
         * np.array(
             [
@@ -241,7 +241,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
                 -np.sqrt(s * (1 + s)) * X * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
             ]
         )
-        * np.sqrt(2 * const.HBAR)
+        * np.sqrt(2 * settings.HBAR)
     )
     assert np.allclose(remaining_state.means, means)
 
@@ -262,7 +262,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
                 pa + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         )
-        * np.sqrt(2 * const.HBAR)
+        * np.sqrt(2 * settings.HBAR)
     )
     assert np.allclose(remaining_state.means, means)
 
@@ -279,12 +279,12 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):
     tmsv = D(S(Vacuum(2)))
     heterodyne = Heterodyne(modes=[0], x=x, y=y)
     prob, remaining_state = heterodyne(tmsv)
-    cov = const.HBAR / 2 * np.array([[1, 0], [0, 1]])
+    cov = settings.HBAR / 2 * np.array([[1, 0], [0, 1]])
     assert np.allclose(remaining_state.cov, cov)
     xb, xa, pb, pa = d
     means = (
         np.array([xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb), pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y)])
-        * np.sqrt(2 * const.HBAR)
+        * np.sqrt(2 * settings.HBAR)
         / (1 + s)
     )
     assert np.allclose(remaining_state.means, means, atol=1e-5)

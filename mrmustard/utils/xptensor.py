@@ -19,6 +19,12 @@ from itertools import product
 import numpy as np
 
 
+def _set_backend(backend_name: str):
+    "This private function is called by the Settings object to set the math backend in this module"
+    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+    globals()["math"] = Math()  # setting global variable only in this module's scope
+
+
 class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 

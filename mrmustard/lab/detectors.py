@@ -14,8 +14,7 @@
 
 from mrmustard.utils.types import *
 from mrmustard.utils import Parametrized
-from mrmustard.physics import fock, gaussian
-from mrmustard.physics.abstract import State
+from mrmustard.physics import State, fock, gaussian
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from math import pi
 
@@ -194,6 +193,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
     def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
         quadrature_angles = gaussian.backend.astensor(quadrature_angles, "float64")
         results = gaussian.backend.astensor(results, "float64")
+        # TODO: check! I think the rotation should be the other way (this angle is not the same as an Rgate angle)
         x = results * gaussian.backend.cos(quadrature_angles)
         y = results * gaussian.backend.sin(quadrature_angles)
         return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y)

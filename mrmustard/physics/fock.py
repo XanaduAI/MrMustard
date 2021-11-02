@@ -14,8 +14,17 @@
 
 import numpy as np
 from mrmustard.utils.types import *
-import mrmustard.constants as const
+from mrmustard import settings
+import importlib
+
+def _set_backend(backend_name: str):
+    "This private function is called by the Settings object to set the math backend in this module"
+    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+    globals()["math"] = Math()  # setting global variable only in this module's scope
     
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool) -> Tensor:
     r"""
@@ -107,8 +116,8 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix,
 
     # cov and means in the amplitude basis
     R = math.rotmat(num_indices // 2)
-    sigma = math.matmul(math.matmul(R, cov / const.HBAR), math.dagger(R))
-    beta = math.matvec(R, means / math.sqrt(const.HBAR, dtype=means.dtype))
+    sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
+    beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
 
     sQ = sigma + 0.5 * math.eye(num_indices, dtype=sigma.dtype)
     sQinv = math.inv(sQ)
