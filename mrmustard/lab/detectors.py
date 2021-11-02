@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard._typing import *
-from mrmustard.abstract import GaussianMeasurement, FockMeasurement, Parametrized, State
-from mrmustard.concrete.states import DisplacedSqueezed, Coherent
-from mrmustard.core import fock, gaussian
-from math import pi
+from mrmustard.utils.types import *
+from mrmustard.utils import Parametrized
+from mrmustard.physics.abstract import State, FockMeasurement, GaussianMeasurement
+from mrmustard.physics import fock, gaussian
+from mrmustard.lab.states import DisplacedSqueezed, Coherent
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
 
@@ -75,11 +75,9 @@ class PNRDetector(Parametrized, FockMeasurement):
             self._stochastic_channel = self._conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
-                dark_prior = fock.backend.poisson(max_k=cut, rate=dc)
-                condprob = fock.backend.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
-                self._stochastic_channel.append(
-                    fock.backend.convolve_probs_1d(condprob, [dark_prior, fock.backend.eye(condprob.shape[1])[0]])
-                )
+                dark_prior = fock.math.poisson(max_k=cut, rate=dc)
+                condprob = fock.math.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
+                self._stochastic_channel.append(fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]]))
 
 
 class ThresholdDetector(Parametrized, FockMeasurement):
@@ -136,10 +134,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             self._stochastic_channel = self.conditional_probs
         else:
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_prob[:]):
-                row1 = ((1.0 - qe) ** fock.backend.arange(cut))[None, :] - dc
+                row1 = ((1.0 - qe) ** fock.math.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
-                rest = fock.backend.zeros((cut - 2, cut), dtype=row1.dtype)
-                condprob = fock.backend.concat([row1, row2, rest], axis=0)
+                rest = fock.math.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = fock.math.concat([row1, row2, rest], axis=0)
                 self._stochastic_channel.append(condprob)
 
     @property
@@ -186,15 +184,16 @@ class Homodyne(Parametrized, GaussianMeasurement):
             modes=modes,
             quadrature_angles=quadrature_angles,
             results=results,
-            squeezing=gaussian.backend.astensor(squeezing, "float64"),
+            squeezing=gaussian.math.astensor(squeezing, "float64"),
         )
         self._project_onto = self.recompute_project_onto(quadrature_angles, results)
 
     def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
-        quadrature_angles = gaussian.backend.astensor(quadrature_angles, "float64")
-        results = gaussian.backend.astensor(results, "float64")
-        x = results * gaussian.backend.cos(quadrature_angles)
-        y = results * gaussian.backend.sin(quadrature_angles)
+        quadrature_angles = gaussian.math.astensor(quadrature_angles, "float64")
+        results = gaussian.math.astensor(results, "float64")
+        # TODO: check! I think the rotation should be the other way (this angle is not the same as an Rgate angle)
+        x = results * gaussian.math.cos(quadrature_angles)
+        y = results * gaussian.math.sin(quadrature_angles)
         return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y)
 
 

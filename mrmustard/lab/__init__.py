@@ -12,4 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .xptensor import XPMatrix, XPVector
+from .circuit import *
+from .states import *
+from .gates import *
+from .detectors import *

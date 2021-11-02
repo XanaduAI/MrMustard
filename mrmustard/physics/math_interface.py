@@ -13,22 +13,23 @@
 # limitations under the License.
 
 from abc import ABC
-from mrmustard._typing import *
+from mrmustard.utils.types import *
 import numpy as np
 from functools import lru_cache
 from scipy.special import binom
 from scipy.stats import unitary_group
 from itertools import product
 
-class BackendInterface(ABC):
+
+class MathInterface(ABC):
     r"""
-    The interface that all backends must implement.
-    All methods are pure (no side effects) and are be used by the core modules (hence the interface is defined in the core).
+    The interface that all math backends must implement.
+    All methods are pure (no side effects) and are be used by the physics modules.
     """
+    _euclidean_opt = None
 
     __instance = None
-
-    # all backends are singletons
+    # backend is a singleton
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = object.__new__(cls)
@@ -93,7 +94,7 @@ class BackendInterface(ABC):
 
     def exp(self, array: Tensor) -> Tensor:
         ...
-    
+
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
         ...
 
@@ -206,8 +207,11 @@ class BackendInterface(ABC):
     def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: Sequence[int]) -> Tensor:
         ...
 
-    def DefaultEuclideanOptimizer(self):
-        ...
+    @property
+    def euclidean_opt(self):
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
 
     def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         ...

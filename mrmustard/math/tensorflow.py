@@ -14,17 +14,14 @@
 
 import numpy as np
 import tensorflow as tf
-from mrmustard.backends.autocast import Autocast
-from mrmustard.core.backend_interface import BackendInterface
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
-from mrmustard._typing import *
 
-#  NOTE: the reason why we have a class with methods and not a namespace with functions
-#  is that we want to enforce the interface, in order to ensure compatibility
-#  of new backends with the rest of the library.
+from mrmustard.physics.math_interface import MathInterface
+from mrmustard.utils.autocast import Autocast
+from mrmustard.utils.types import *
 
 
-class Backend(BackendInterface):
+class Math(MathInterface):
 
     float64 = tf.float64
     float32 = tf.float32
@@ -234,7 +231,7 @@ class Backend(BackendInterface):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer: # TODO: a wrapper class is better?
+    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
         r"""
         Default optimizer for the Euclidean parameters.
         """

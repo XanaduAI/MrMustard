@@ -18,9 +18,10 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 
-from mrmustard import Sgate, BSgate, S2gate, Ggate, Interferometer
-from mrmustard import Circuit, Optimizer
-from mrmustard import Vacuum
+from mrmustard.lab.gates import Sgate, BSgate, S2gate, Ggate, Interferometer
+from mrmustard.lab.circuit import Circuit
+from mrmustard.utils.training import Optimizer
+from mrmustard.lab.states import Vacuum
 
 
 @given(n=st.integers(0, 3))

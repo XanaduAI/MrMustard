@@ -13,8 +13,21 @@
 # limitations under the License.
 
 import numpy as np
-from mrmustard._typing import *
-import mrmustard.constants as const
+from mrmustard.utils.types import *
+from mrmustard import settings
+import importlib
+
+
+def _set_backend(backend_name: str):
+    "This private function is called by the Settings object to set the math backend in this module"
+    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+    globals()["math"] = Math()  # setting global variable only in this module's scope
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool) -> Tensor:
     r"""
@@ -31,7 +44,7 @@ def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixe
     """
     assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
     A, B, C = hermite_parameters(cov, means, mixed)
-    return backend.hermite_renormalized(backend.conj(-A), backend.conj(B), backend.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
+    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
 
 
 def bell_norm(r: float, cutoff: int) -> Scalar:
@@ -48,11 +61,11 @@ def normalize_choi_trick(unnormalized: Tensor, r: float) -> Tensor:
         The normalized operator.
     """
     col_cutoffs = unnormalized.shape[1::2]
-    norm = backend.reshape(bell_norm(r, col_cutoffs[0]), -1)
+    norm = math.reshape(bell_norm(r, col_cutoffs[0]), -1)
     for i, c in enumerate(col_cutoffs[1:]):
-        norm = backend.reshape(backend.outer(norm, bell_norm(r, c)), -1)
-    normalized = backend.reshape(unnormalized, (-1, np.prod(col_cutoffs))) / norm[None, :]
-    return backend.reshape(normalized, unnormalized.shape)
+        norm = math.reshape(math.outer(norm, bell_norm(r, c)), -1)
+    normalized = math.reshape(unnormalized, (-1, np.prod(col_cutoffs))) / norm[None, :]
+    return math.reshape(normalized, unnormalized.shape)
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -63,7 +76,7 @@ def ket_to_dm(ket: Tensor) -> Tensor:
     Returns:
         The density matrix.
     """
-    return backend.outer(ket, backend.conj(ket))
+    return math.outer(ket, math.conj(ket))
 
 
 def ket_to_probs(ket: Tensor) -> Tensor:
@@ -74,7 +87,7 @@ def ket_to_probs(ket: Tensor) -> Tensor:
     Returns:
         The probabilities vector.
     """
-    return backend.abs(ket) ** 2
+    return math.abs(ket) ** 2
 
 
 def dm_to_probs(dm: Tensor) -> Tensor:
@@ -85,7 +98,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     Returns:
         The probabilities vector.
     """
-    return backend.all_diagonals(dm, real=True)
+    return math.all_diagonals(dm, real=True)
 
 
 def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix, Vector, Scalar]:
@@ -105,17 +118,17 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix,
     num_modes = num_indices // 2
 
     # cov and means in the amplitude basis
-    R = backend.rotmat(num_indices // 2)
-    sigma = backend.matmul(backend.matmul(R, cov / const.HBAR), backend.dagger(R))
-    beta = backend.matvec(R, means / backend.sqrt(const.HBAR, dtype=means.dtype))
+    R = math.rotmat(num_indices // 2)
+    sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
+    beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
 
-    sQ = sigma + 0.5 * backend.eye(num_indices, dtype=sigma.dtype)
-    sQinv = backend.inv(sQ)
-    X = backend.Xmat(num_modes)
-    A = backend.matmul(X, backend.eye(num_indices, dtype=sQinv.dtype) - sQinv)
-    B = backend.matvec(backend.transpose(sQinv), backend.conj(beta))
-    exponent = -0.5 * backend.sum(backend.conj(beta)[:, None] * sQinv * beta[None, :])
-    T = backend.exp(exponent) / backend.sqrt(backend.det(sQ))
+    sQ = sigma + 0.5 * math.eye(num_indices, dtype=sigma.dtype)
+    sQinv = math.inv(sQ)
+    X = math.Xmat(num_modes)
+    A = math.matmul(X, math.eye(num_indices, dtype=sQinv.dtype) - sQinv)
+    B = math.matvec(math.transpose(sQinv), math.conj(beta))
+    exponent = -0.5 * math.sum(math.conj(beta)[:, None] * sQinv * beta[None, :])
+    T = math.exp(exponent) / math.sqrt(math.det(sQ))
     N = 2 * num_modes if mixed else num_modes
     return (
         A[:N, :N],
@@ -127,12 +140,12 @@ def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix,
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
     r"""computes the fidelity between two states in Fock representation"""
     if a_pure and b_pure:
-        return backend.abs(backend.sum(backend.conj(state_a) * state_b)) ** 2
+        return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
     elif a_pure:
-        a = backend.reshape(state_a, -1)
-        return backend.real(backend.sum(backend.conj(a) * backend.matvec(backend.reshape(state_b, (len(a), len(a))), a)))
+        a = math.reshape(state_a, -1)
+        return math.real(math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a)))
     elif b_pure:
-        b = backend.reshape(state_b, -1)
-        return backend.real(backend.sum(backend.conj(b) * backend.matvec(backend.reshape(state_a, (len(b), len(b))), b)))
+        b = math.reshape(state_b, -1)
+        return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
     else:
         raise NotImplementedError("Fidelity between mixed states is not implemented")

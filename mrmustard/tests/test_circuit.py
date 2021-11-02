@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard import *
+from mrmustard.lab.circuit import Circuit
+from mrmustard.lab.gates import Dgate, Sgate, BSgate
 from hypothesis import given, strategies as st
 from thewalrus.fock_gradients import displacement, squeezing, beamsplitter
 import numpy as np

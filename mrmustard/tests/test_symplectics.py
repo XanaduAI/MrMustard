@@ -18,8 +18,8 @@ from hypothesis import settings, given, strategies as st
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
 
-from mrmustard import Sgate, BSgate, S2gate, Rgate, MZgate
-from mrmustard import Vacuum
+from mrmustard.lab.gates import Sgate, BSgate, S2gate, Rgate, MZgate
+from mrmustard.lab.states import Vacuum
 
 
 @given(r=st.floats(0, 2))

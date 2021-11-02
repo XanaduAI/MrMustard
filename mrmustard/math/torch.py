@@ -14,16 +14,14 @@
 
 import numpy as np
 import torch
-from mrmustard.backends import BackendInterface, Autocast
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
-from mrmustard._typing import *
 
-#  NOTE: the reason why we have a class with methods and not a namespace with functions
-#  is that we want to enforce the interface, in order to ensure compatibility
-#  of new backends with the rest of the codebase.
+from mrmustard.physics.math_interface import MathInterface
+from mrmustard.utils.autocast import Autocast
+from mrmustard.utils.types import *
 
 
-class Backend(BackendInterface):
+class Math(MathInterface):
 
     float64 = torch.float64
     float32 = torch.float32
@@ -284,7 +282,7 @@ class Backend(BackendInterface):
                 - Output: The output tensor of the model.
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
-            optimizer: The optimizer to be used by the backend.
+            optimizer: The optimizer to be used by the math backend.
         Returns:
             The loss and the gradients.
         """

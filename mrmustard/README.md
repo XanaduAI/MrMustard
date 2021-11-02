@@ -1,7 +1,7 @@
 ## Contribution guidelines
 
 - Always write new [tests](https://github.com/XanaduAI/MrMustard/tree/abstract_backend/mrmustard/tests) if you add new functionality or fix a bug.
-- Always type-hint the code (quantum-specific and math-specific type hints (like `Covmat` or `Tensor`) are in `mrmustard._typing`). 
+- Always type-hint the code (quantum-specific and math-specific type hints (like `Covmat` or `Tensor`) are in `mrmustard.utils.types`). 
 - Always write informative docstrings using the Args/Returns pattern.
 
 You can raise [issues](https://github.com/XanaduAI/MrMustard/issues) to keep track of bugs. We also have a [kanban board](https://github.com/XanaduAI/MrMustard/projects/1) to keep track of projects (you can [make your own](https://github.com/XanaduAI/MrMustard/projects) too).
@@ -41,7 +41,7 @@ Plugins add functionality to the concrete classes by composition, without commit
 - [`train`](https://github.com/XanaduAI/MrMustard/mrmustard/core/train.py) (optimization functionality)
 - [`graphics`](https://github.com/XanaduAI/MrMustard/mrmustard/core/graphics.py) (plots and visualizations)
 
-To develop the existing core (or to add new modules to it), make sure that the backend is used when calling numerical math methods, e.g. `backend.transpose(M)`.
+To develop the existing core (or to add new modules to it), make sure that the math backend is used when calling numerical math methods, e.g. `math.transpose(M)`.
 
 ### 4. Backends
 The numerical functionality (be it with autodiff or not) is supplied by the backends.
