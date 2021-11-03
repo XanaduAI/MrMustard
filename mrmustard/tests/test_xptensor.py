@@ -15,8 +15,8 @@
 from hypothesis import strategies as st, given, assume
 from hypothesis.extra.numpy import arrays
 import pytest
-from mrmustard import DisplacedSqueezed
-from mrmustard.experimental import XPVector, XPMatrix
+from mrmustard.lab.states import DisplacedSqueezed
+from mrmustard.utils.xptensor import XPVector, XPMatrix
 import numpy as np
 from mrmustard.tests.random import random_pure_state
 

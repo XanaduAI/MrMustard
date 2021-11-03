@@ -14,32 +14,40 @@
 
 import importlib
 from rich.pretty import install
+
 install()  # NOTE: just for the looks, not stricly required
 
 __version__ = "0.1.0"
 
-def activate_backend(backend_name: str):
-    "Activates the backend in the core"
-    Backend = importlib.import_module("mrmustard.backends." + backend_name).Backend
-    from mrmustard.core import fock;
-    fock.backend = Backend()
-    
-    from mrmustard.core import gaussian;
-    gaussian.backend = Backend()
 
-    from mrmustard.core import train;
-    train.backend = Backend();
-    train.euclidean_opt = train.backend.DefaultEuclideanOptimizer()
+class Settings:
+    def __init__(self):
+        self._backend = "tensorflow"
+        self.HBAR = 2.0
+        self.TMSV_DEFAULT_R = 3.0
 
-    from mrmustard.concrete import circuit
-    circuit.backend = Backend()
-    
-    from mrmustard.experimental import xptensor
-    xptensor.backend = Backend()
-    
-    return 
+    @property
+    def backend(self):
+        return self._backend
 
-activate_backend("tensorflow")
+    # property setter for backend
+    @backend.setter
+    def backend(self, backend_name: str):
+        if backend_name not in ["tensorflow", "pytorch"]:
+            raise ValueError("Backend must be either 'tensorflow' or 'pytorch'")
+        self._backend = backend_name
+        self.__activate_backend()
 
-from mrmustard.concrete import *
-from mrmustard.abstract import State
+    def __activate_backend(self):
+        "Activates the math backend in the modules where it is used"
+        from mrmustard.physics import fock, gaussian
+        from mrmustard.utils import training, xptensor
+
+        fock._set_backend(self.backend)
+        gaussian._set_backend(self.backend)
+        training._set_backend(self.backend)
+        xptensor._set_backend(self.backend)
+
+
+settings = Settings()
+settings.backend = "tensorflow"

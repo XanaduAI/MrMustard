@@ -16,12 +16,11 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from collections.abc import MutableSequence
-from mrmustard._typing import *
-from mrmustard.experimental import XPMatrix, XPVector
-from mrmustard.abstract import Transformation
-from mrmustard.concrete import TMSV
-import mrmustard.constants as const
+from mrmustard.utils.types import *
+from mrmustard import settings
+from mrmustard.utils.xptensor import XPMatrix, XPVector
+from mrmustard.physics.abstract import Transformation
+from mrmustard.lab.states import TMSV
 
 
 class Circuit(Transformation):
@@ -37,7 +36,7 @@ class Circuit(Transformation):
     @property
     def bell(self):
         if self._bell is None:
-            bell = bell_single = TMSV(r=const.TMSV_DEFAULT_R)
+            bell = bell_single = TMSV(r=settings.TMSV_DEFAULT_R)
             for n in range(self.num_modes):
                 bell = bell & bell_single
             order = tuple(range(0, 2 * self.num_modes, 2)) + tuple(range(1, 2 * self.num_modes, 2))
@@ -51,33 +50,36 @@ class Circuit(Transformation):
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
-    # NOTE: op.X_matrix() is called repeatedly in the following methods, so circuits are composable but with an exponential cost.
+    # NOTE: op.X_matrix is called repeatedly in the following methods, so circuits are composable but with an exponential cost.
     # TODO: Find a way around it
+    @property
     def X_matrix(self) -> Optional[Matrix]:
         X = XPMatrix(like_1=True)
         for op in self._ops:
-            opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
+            opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
             X = opX @ X
         return X.to_xxpp()
 
+    @property
     def Y_matrix(self) -> Optional[Matrix]:
         Y = XPMatrix(like_0=True)
         for op in self._ops:
-            opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
-            opY = XPMatrix.from_xxpp(op.Y_matrix(), modes=(op.modes, op.modes), like_0=True)
+            opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
+            opY = XPMatrix.from_xxpp(op.Y_matrix, modes=(op.modes, op.modes), like_0=True)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
                 opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
             Y = opX @ Y @ opX.T + opY
         return Y.to_xxpp()
 
+    @property
     def d_vector(self) -> Optional[Vector]:
         d = XPVector()
         for op in self._ops:
-            opX = XPMatrix.from_xxpp(op.X_matrix(), modes=(op.modes, op.modes), like_1=True)
-            opd = XPVector.from_xxpp(op.d_vector(), modes=op.modes)
+            opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
+            opd = XPVector.from_xxpp(op.d_vector, modes=op.modes)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
                 opd = opd.clone(len(op.modes), modes=op.modes)

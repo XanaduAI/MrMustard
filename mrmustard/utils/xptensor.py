@@ -13,10 +13,17 @@
 # limitations under the License.
 
 from __future__ import annotations
-from mrmustard._typing import *
+from mrmustard.utils.types import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
+import importlib
+
+
+def _set_backend(backend_name: str):
+    "This private function is called by the Settings object to set the math backend in this module"
+    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+    globals()["math"] = Math()  # setting global variable only in this module's scope
 
 
 class XPTensor(ABC):
@@ -305,7 +312,7 @@ class XPTensor(ABC):
         if list(self.outmodes) == list(other.outmodes) and self.batch_size == other.batch_size:
             return backend.sum(self.tensor * other.tensor, axis=1)
         common = list(set(self.outmodes) & set(other.outmodes))  # only the common modes (the others are like 0)
-        return backend.sum(self.tensor[common] * other.tensor[common])
+        return math.sum(self.tensor[common] * other.tensor[common])
 
     def __add__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
         if not isinstance(other, (XPMatrix, XPVector)):
@@ -394,7 +401,7 @@ class XPTensor(ABC):
             else:
                 raise ValueError(f"Usage: V[1], V[[1,2,3]] or V[:]")
             rows = [self.outmodes.index(m) for m in modes]
-            return XPVector(backend.gather(self.tensor, rows, axis=0), modes)
+            return XPVector(math.gather(self.tensor, rows, axis=0), modes)
         else:
             _modes = [None, None]
             if isinstance(modes, int):
@@ -417,8 +424,8 @@ class XPTensor(ABC):
                 raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
             rows = [self.outmodes.index(m) for m in _modes[0]]
             columns = [self.inmodes.index(m) for m in _modes[1]]
-            subtensor = backend.gather(self.tensor, rows, axis=0)
-            subtensor = backend.gather(subtensor, columns, axis=1)
+            subtensor = math.gather(self.tensor, rows, axis=0)
+            subtensor = math.gather(subtensor, columns, axis=1)
             return XPMatrix(subtensor, like_1=_modes[0] == _modes[1] if self.like_1 else False, modes=tuple(_modes))
 
 
@@ -450,8 +457,8 @@ class XPMatrix(XPTensor):
         modes: Tuple[List[int], List[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
-            tensor = backend.transpose(tensor, (1, 3, 0, 2))
+            tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
+            tensor = math.transpose(tensor, (1, 3, 0, 2))
         return XPMatrix(tensor, like_0, like_1, modes)
 
     @classmethod
@@ -463,8 +470,8 @@ class XPMatrix(XPTensor):
         modes: Tuple[List[int], List[int]] = ([], []),
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
-            tensor = backend.transpose(tensor, (0, 2, 1, 3))
+            tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
+            tensor = math.transpose(tensor, (0, 2, 1, 3))
         return XPMatrix(tensor, like_0, like_1, modes)
 
     def __repr__(self) -> str:
@@ -490,8 +497,8 @@ class XPVector(XPTensor):
         modes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, (2, -1))
-            tensor = backend.transpose(tensor, (1, 0))
+            tensor = math.reshape(tensor, (2, -1))
+            tensor = math.transpose(tensor, (1, 0))
         return XPVector(tensor, modes)
 
     @classmethod
@@ -501,7 +508,7 @@ class XPVector(XPTensor):
         modes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
-            tensor = backend.reshape(tensor, (-1, 2))
+            tensor = math.reshape(tensor, (-1, 2))
         return XPVector(tensor, modes)
 
     def __repr__(self) -> str:

@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard._typing import *
-from mrmustard.abstract import Parametrized, Transformation
-from mrmustard.core import gaussian, train
-import mrmustard.constants as const
+from mrmustard.utils.types import *
+from mrmustard import settings
+
+from mrmustard.utils import training, Parametrized
+from mrmustard.physics import gaussian, fock
+from mrmustard.physics.abstract import Transformation
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 
@@ -40,10 +42,10 @@ class Dgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        x: Union[Optional[float], Optional[List[float]]] = None,
+        x: Union[Optional[float], Optional[List[float]]] = 0.0,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_trainable: bool = False,
-        y: Union[Optional[float], Optional[List[float]]] = None,
+        y: Union[Optional[float], Optional[List[float]]] = 0.0,
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = False,
     ):
@@ -51,8 +53,9 @@ class Dgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = True
 
+    @property
     def d_vector(self):
-        return gaussian.displacement(self.x, self.y, const.HBAR)
+        return gaussian.displacement(self.x, self.y, settings.HBAR)
 
 
 class Sgate(Parametrized, Transformation):
@@ -75,10 +78,10 @@ class Sgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        r: Union[Optional[float], Optional[List[float]]] = None,
+        r: Union[Optional[float], Optional[List[float]]] = 0.0,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = False,
-        phi: Union[Optional[float], Optional[List[float]]] = None,
+        phi: Union[Optional[float], Optional[List[float]]] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
     ):
@@ -88,6 +91,7 @@ class Sgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = True
 
+    @property
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r, self.phi)
 
@@ -109,7 +113,7 @@ class Rgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        angle: Union[Optional[float], Optional[List[float]]] = None,
+        angle: Union[Optional[float], Optional[List[float]]] = 0.0,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         angle_trainable: bool = False,
     ):
@@ -117,6 +121,7 @@ class Rgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = True
 
+    @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle)
 
@@ -139,10 +144,10 @@ class BSgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        theta: Optional[float] = None,
+        theta: Optional[float] = 0.0,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         theta_trainable: bool = False,
-        phi: Optional[float] = None,
+        phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
     ):
@@ -160,6 +165,7 @@ class BSgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return gaussian.beam_splitter_symplectic(self.theta, self.phi)
 
@@ -185,10 +191,10 @@ class MZgate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        phi_a: Optional[float] = None,
+        phi_a: Optional[float] = 0.0,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_a_trainable: bool = False,
-        phi_b: Optional[float] = None,
+        phi_b: Optional[float] = 0.0,
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_b_trainable: bool = False,
         internal: bool = False,
@@ -208,6 +214,7 @@ class MZgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
@@ -230,10 +237,10 @@ class S2gate(Parametrized, Transformation):
     def __init__(
         self,
         modes: List[int] = None,
-        r: Optional[float] = None,
+        r: Optional[float] = 0.0,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = False,
-        phi: Optional[float] = None,
+        phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
     ):
@@ -243,6 +250,7 @@ class S2gate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
 
@@ -259,13 +267,14 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(self, num_modes: int, orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = False):
         if orthogonal is None:
-            orthogonal = train.new_orthogonal(num_modes=num_modes)
+            orthogonal = training.new_orthogonal(num_modes=num_modes)
         super().__init__(
             modes=list(range(num_modes)), orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable
         )
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return self.orthogonal
 
@@ -297,9 +306,9 @@ class Ggate(Parametrized, Transformation):
         displacement_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         if symplectic is None:
-            symplectic = train.new_symplectic(num_modes=num_modes)
+            symplectic = training.new_symplectic(num_modes=num_modes)
         if displacement is None:
-            displacement = train.backend.zeros(num_modes * 2)  # TODO: gates should not know about the backend
+            displacement = training.math.zeros(num_modes * 2)  # TODO: gates should not know about the backend
         super().__init__(
             modes=list(range(num_modes)),
             symplectic=symplectic,
@@ -312,9 +321,11 @@ class Ggate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return self.symplectic
 
+    @property
     def d_vector(self):
         return self.displacement
 
@@ -362,8 +373,10 @@ class LossChannel(Parametrized, Transformation):
         self.is_unitary = False
         self.single_mode = True
 
+    @property
     def X_matrix(self):
         return gaussian.loss_X(self.transmissivity)
 
+    @property
     def Y_matrix(self):
-        return gaussian.loss_Y(self.transmissivity, const.HBAR)
+        return gaussian.loss_Y(self.transmissivity, settings.HBAR)

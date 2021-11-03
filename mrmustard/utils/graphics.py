@@ -18,8 +18,8 @@ from matplotlib.colors import Normalize
 from matplotlib import cm
 import numpy as np
 import strawberryfields as sf  # TODO: remove dependency on strawberryfields
-from mrmustard._typing import *
-import mrmustard.constants as const
+from mrmustard.utils.types import *
+from mrmustard import settings
 
 
 class Progressbar:
@@ -61,16 +61,15 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def wigner(state, hbar: float = const.HBAR, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
+def wigner(state, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     r"""
     Plots the wigner function of a single mode state.
     Arguments:
         state (complex array): the state in Fock representation (can be pure or mixed)
-        hbar (float): sets the scale of phase space (default 2.0)
         filename (str): optional filename for saving the plot of the wigner function
     """
     assert state.ndim in {1, 2}
-    scale = np.sqrt(hbar)
+    scale = np.sqrt(settings.HBAR)
     x_axis = np.linspace(*xbounds, 200) * scale
     y_axis = np.linspace(*ybounds, 200) * scale
     pure = state.ndim == 1  # if ndim=2, then it's density matrix
@@ -88,9 +87,9 @@ def wigner(state, hbar: float = const.HBAR, filename: str = "", xbounds=(-6, 6),
         plt.savefig(filename, dpi=300)
 
 
-def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6), hbar=const.HBAR):
+def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     rho = dm.numpy()
-    sf.hbar = hbar
+    sf.hbar = settings.HBAR
     s = sf.ops.BaseFockState(rho, 1, False, rho.shape[0])
     X = np.linspace(xbounds[0], xbounds[1], 200)
     P = np.linspace(ybounds[0], ybounds[1], 200)
