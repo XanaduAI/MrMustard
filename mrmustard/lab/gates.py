@@ -53,6 +53,7 @@ class Dgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = True
 
+    @property
     def d_vector(self):
         return gaussian.displacement(self.x, self.y, settings.HBAR)
 
@@ -90,6 +91,7 @@ class Sgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = True
 
+    @property
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r, self.phi)
 
@@ -119,6 +121,7 @@ class Rgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = True
 
+    @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle)
 
@@ -162,6 +165,7 @@ class BSgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return gaussian.beam_splitter_symplectic(self.theta, self.phi)
 
@@ -210,6 +214,7 @@ class MZgate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
 
@@ -245,6 +250,7 @@ class S2gate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
 
@@ -268,6 +274,7 @@ class Interferometer(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return self.orthogonal
 
@@ -314,9 +321,11 @@ class Ggate(Parametrized, Transformation):
         self.is_unitary = True
         self.single_mode = False
 
+    @property
     def X_matrix(self):
         return self.symplectic
 
+    @property
     def d_vector(self):
         return self.displacement
 
@@ -364,8 +373,10 @@ class LossChannel(Parametrized, Transformation):
         self.is_unitary = False
         self.single_mode = True
 
+    @property
     def X_matrix(self):
         return gaussian.loss_X(self.transmissivity)
 
+    @property
     def Y_matrix(self):
         return gaussian.loss_Y(self.transmissivity, settings.HBAR)

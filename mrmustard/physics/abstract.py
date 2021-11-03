@@ -231,9 +231,9 @@ class Transformation(ABC):
     """
 
     def __call__(self, state: State) -> State:
-        d = self.d_vector()
-        X = self.X_matrix()
-        Y = self.Y_matrix()
+        d = self.d_vector
+        X = self.X_matrix
+        Y = self.Y_matrix
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
         return State.from_gaussian(cov, means, mixed=state.is_mixed or Y is not None)
 
@@ -245,11 +245,11 @@ class Transformation(ABC):
     @property
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
-            if (d := self.d_vector()) is not None:
+            if (d := self.d_vector) is not None:
                 self._modes = list(range(d.shape[-1] // 2))
-            elif (X := self.X_matrix()) is not None:
+            elif (X := self.X_matrix) is not None:
                 self._modes = list(range(X.shape[-1] // 2))
-            elif (Y := self.Y_matrix()) is not None:
+            elif (Y := self.Y_matrix) is not None:
                 self._modes = list(range(Y.shape[-1] // 2))
         return self._modes
 
@@ -258,12 +258,15 @@ class Transformation(ABC):
         "N pairs of two-mode squeezed vacuum where N is the number of modes of the circuit"
         pass
 
+    @property
     def X_matrix(self) -> Optional[Matrix]:
         return None
 
+    @property
     def Y_matrix(self) -> Optional[Matrix]:
         return None
 
+    @property
     def d_vector(self) -> Optional[Vector]:
         return None
 
