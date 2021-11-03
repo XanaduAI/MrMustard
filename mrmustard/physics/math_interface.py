@@ -95,7 +95,7 @@ class MathInterface(ABC):
     def exp(self, array: Tensor) -> Tensor:
         ...
 
-    def expand_dims(self, array: Tensor, axis: Union[int, Sequence()[int]]) -> Tensor:
+    def expand_dims(self, array: Tensor, axis: Union[int, Sequence[int]]) -> Tensor:
         ...
 
     def expm(self, matrix: Tensor) -> Tensor:
