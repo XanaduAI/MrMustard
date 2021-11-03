@@ -13,5 +13,6 @@
 # limitations under the License.
 
 from .parametrized import Parametrized
+from .training import Optimizer
 
 __all__ = ["GaussianMeasurement", "FockMeasurement", "State", "Transformation", "Parametrized"]
