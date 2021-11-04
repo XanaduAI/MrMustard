@@ -229,10 +229,6 @@ class Gaussian(Parametrized, State):
         return any(self.eigenvalues > settings.HBAR / 2)
 
     @property
-    def is_pure(self):
-        return not self.is_mixed
-
-    @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {
             "symplectic": [self.symplectic] * self._symplectic_trainable,

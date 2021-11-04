@@ -13,6 +13,7 @@ class Settings:
         self._backend = "tensorflow"
         self.HBAR = 2.0
         self.TMSV_DEFAULT_R = 3.0
+        self.DEBUG = False
 
     @property
     def backend(self):
@@ -24,17 +25,13 @@ class Settings:
         if backend_name not in ["tensorflow", "pytorch"]:
             raise ValueError("Backend must be either 'tensorflow' or 'pytorch'")
         self._backend = backend_name
-        self.__activate_backend()
-
-    def __activate_backend(self):
-        "Activates the math backend in the modules where it is used"
         from mrmustard.physics import fock, gaussian
         from mrmustard.utils import training, xptensor
-
-        fock._set_backend(self.backend)
-        gaussian._set_backend(self.backend)
-        training._set_backend(self.backend)
-        xptensor._set_backend(self.backend)
+        Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
+        vars(fock)['math'] = Math()
+        vars(gaussian)['math'] = Math()
+        vars(training)['math'] = Math()
+        vars(xptensor)['math'] = Math()
 
 
 settings = Settings()

@@ -30,18 +30,7 @@ class Circuit(Transformation):
 
     def reset(self):
         self._compiled: bool = False
-        self._bell: Optional[State] = None
         self._modes: List[int] = []
-
-    @property
-    def bell(self):
-        if self._bell is None:
-            bell = bell_single = TMSV(r=settings.TMSV_DEFAULT_R)
-            for n in range(self.num_modes):
-                bell = bell & bell_single
-            order = tuple(range(0, 2 * self.num_modes, 2)) + tuple(range(1, 2 * self.num_modes, 2))
-            self._bell = bell[order]
-        return self._bell
 
     @property
     def num_modes(self) -> int:
@@ -50,7 +39,7 @@ class Circuit(Transformation):
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
-    # NOTE: op.X_matrix is called repeatedly in the following methods, so circuits are composable but with an exponential cost.
+    # NOTE: op.X_matrix, op.Y_matrix and op.d_vector are called repeatedly in the following methods, so circuits are composable but with an exponential cost.
     # TODO: Find a way around it
     @property
     def X_matrix(self) -> Optional[Matrix]:

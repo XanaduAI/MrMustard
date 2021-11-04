@@ -158,7 +158,7 @@ class Math(MathInterface):
     def new_constant(self, value, name: str, dtype=tf.float64):
         if value is None:
             value = np.random.normal(0, 1)
-        return tf.constant(value, dtype=dtype, name=name)
+        return tf.constant(np.float64(value), dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
         "Note that the norm preserves the type of array"

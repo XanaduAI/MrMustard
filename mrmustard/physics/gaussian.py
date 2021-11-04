@@ -51,7 +51,7 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement(math.zeros(num_modes), math.zeros(num_modes), hbar)
+    return displacement(math.zeros(num_modes, dtype='float64'), math.zeros(num_modes, dtype='float64'), hbar)
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:

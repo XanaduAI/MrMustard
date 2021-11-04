@@ -149,3 +149,34 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
         return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
     else:
         raise NotImplementedError("Fidelity between mixed states is not implemented")
+
+
+def CPTP(transformation, state, unitary: bool, state_mixed: bool) -> Tensor:
+    r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
+    It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
+    Arguments:
+        transformation: The transformation tensor.
+        state: The state to transform.
+        unitary: Whether the transformation is a unitary matrix or a Choi operator.
+        state_mixed: Whether the state is mixed or not.
+    Returns:
+        The transformed state.
+    """
+    state_indices = list(range(len(state.shape)))
+    out_indices = state_indices if not state_mixed else list(range(len(state.shape) // 2))
+    if unitary:
+        U = transformation
+        Us = math.tensordot(U, state, axes=([len(out_indices) + s for s in out_indices], out_indices))
+        if state_mixed:
+            UsU = math.tensordot(Us, math.conj(U), axes=([len(out_indices) + s for s in out_indices], out_indices))
+            return UsU
+        else:
+            return Us
+    else:
+        C = transformation
+        Cs = math.tensordot(C, state, axes=([-s for s in reversed(state_indices)], state_indices))
+        if state_mixed:
+            return Cs
+        else:
+            Css = math.tensordot(Cstate, state, axes=([-s for s in reversed(state_indices)], math.conj(state_indices)))
+            return Css
