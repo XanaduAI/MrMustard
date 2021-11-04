@@ -511,11 +511,11 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
     Returns:
         List[float]: the sympletic eigenvalues
     """
-    cov = backend.cast(cov, "complex128")  # cast to complex otherwise matmul will break
-    J = backend.J(cov.shape[0] // 2)  # create a sympletic form
+    cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
+    J = math.J(cov.shape[0] // 2)  # create a sympletic form
     M = 1j * J @ cov  # compute iJ*cov
-    vals = backend.eigvals(M)  # compute the eigenspectrum
-    return backend.abs(vals[::2])  # return the even eigenvalues
+    vals = math.eigvals(M)  # compute the eigenspectrum
+    return math.abs(vals[::2])  # return the even eigenvalues
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
@@ -529,8 +529,8 @@ def von_neumann_entropy(cov: Matrix) -> float:
     Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
     """
     symp_vals = self.sympletic_eigenvals(cov)
-    g = lambda x: backend.xlogy((x + 1) / 2, (x + 1) / 2) - backend.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
-    entropy = backend.sum(g(symp_vals))
+    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+    entropy = math.sum(g(symp_vals))
     return entropy
 
 
@@ -541,36 +541,36 @@ def fidelity(mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0, rtol=
     Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
     """
 
-    cov1 = backend.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
-    cov2 = backend.cast(cov2 / hbar, "complex128")  # convert to units where hbar = 1
+    cov1 = math.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
+    cov2 = math.cast(cov2 / hbar, "complex128")  # convert to units where hbar = 1
 
-    mu1 = backend.cast(mu1, "complex128")
-    mu2 = backend.cast(mu2, "complex128")
-    deltar = (mu2 - mu1) / backend.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
-    J = backend.J(cov1.shape[0] // 2)
-    I = backend.eye(cov1.shape[0])
-    J = backend.cast(J, "complex128")
-    I = backend.cast(I, "complex128")
+    mu1 = math.cast(mu1, "complex128")
+    mu2 = math.cast(mu2, "complex128")
+    deltar = (mu2 - mu1) / math.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
+    J = math.J(cov1.shape[0] // 2)
+    I = math.eye(cov1.shape[0])
+    J = math.cast(J, "complex128")
+    I = math.cast(I, "complex128")
 
-    cov12_inv = backend.inv(cov1 + cov2)
+    cov12_inv = math.inv(cov1 + cov2)
 
-    V = backend.transpose(J) @ cov12_inv @ ((1 / 4) * J + cov2 @ J @ cov1)
+    V = math.transpose(J) @ cov12_inv @ ((1 / 4) * J + cov2 @ J @ cov1)
 
     W = -2 * (V @ (1j * J))
-    W_inv = backend.inv(W)
-    matsqrtm = backend.sqrtm(I - W_inv @ W_inv)  # this also handles the case where the input matrix is close to zero
-    f0_top = backend.det((matsqrtm + I) @ (W @ (1j * J)))
-    f0_bot = backend.det(cov1 + cov2)
+    W_inv = math.inv(W)
+    matsqrtm = math.sqrtm(I - W_inv @ W_inv)  # this also handles the case where the input matrix is close to zero
+    f0_top = math.det((matsqrtm + I) @ (W @ (1j * J)))
+    f0_bot = math.det(cov1 + cov2)
 
     f0 = (f0_top / f0_bot) ** (1 / 2)  # square of equation 98
 
-    dot = backend.sum(
-        backend.transpose(deltar) * backend.matvec(cov12_inv, deltar)
+    dot = math.sum(
+        math.transpose(deltar) * math.matvec(cov12_inv, deltar)
     )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
-    fidelity = f0 * backend.exp((-1 / 2) * dot)  # square of equation 95
+    fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
 
-    return backend.cast(fidelity, "float64")
+    return math.cast(fidelity, "float64")
 
 def log_negativity(cov: Matrix) -> float:
     r"""
@@ -582,9 +582,9 @@ def log_negativity(cov: Matrix) -> float:
     vals = sympletic_eigenvals(cov)
     mask = 2*vals < 1
 
-    vals_filtered = backend.boolean_mask(vals, mask) # Get rid of terms that would lead to zero contribution.
+    vals_filtered = math.boolean_mask(vals, mask) # Get rid of terms that would lead to zero contribution.
 
-    return backend.sum(-backend.log(2*vals_filtered)/backend.log(2))
+    return math.sum(-math.log(2*vals_filtered)/math.log(2))
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:

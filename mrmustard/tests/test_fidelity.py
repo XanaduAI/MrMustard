@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from thewalrus.random import random_covariance
 from thewalrus.quantum import real_to_complex_displacements
-from mrmustard.plugins import gaussian as gp
+from mrmustard.physics import gaussian as gp
 
 
 @pytest.mark.parametrize("hbar", [1 / 2, 1.0, 2.0, 1.6])
