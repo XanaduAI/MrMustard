@@ -572,6 +572,7 @@ def fidelity(mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0, rtol=
 
     return math.cast(fidelity, "float64")
 
+
 def log_negativity(cov: Matrix) -> float:
     r"""
     Returns the log_negativity of a Gaussian state.
@@ -580,11 +581,11 @@ def log_negativity(cov: Matrix) -> float:
     """
 
     vals = sympletic_eigenvals(cov)
-    mask = 2*vals < 1
+    mask = 2 * vals < 1
 
-    vals_filtered = math.boolean_mask(vals, mask) # Get rid of terms that would lead to zero contribution.
+    vals_filtered = math.boolean_mask(vals, mask)  # Get rid of terms that would lead to zero contribution.
 
-    return math.sum(-math.log(2*vals_filtered)/math.log(2))
+    return math.sum(-math.log(2 * vals_filtered) / math.log(2))
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
