@@ -18,7 +18,7 @@ from mrmustard import settings
 import importlib
 
 
-def _set_backend(backend_name: str):
+def _load_backend(backend_name: str):
     "This private function is called by the Settings object to set the math backend in this module"
     Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
     globals()["math"] = Math()  # setting global variable only in this module's scope
@@ -148,4 +148,4 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
         b = math.reshape(state_b, -1)
         return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
     else:
-        raise NotImplementedError("Fidelity between mixed states is not implemented")
+        raise NotImplementedError("Fidelity between mixed states is not implemented yet")
