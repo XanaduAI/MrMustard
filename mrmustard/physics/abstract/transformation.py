@@ -43,6 +43,7 @@ class Transformation(ABC):
 
     @property
     def bell(self):
+        r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
         if self._bell is None:
             cov = gaussian.two_mode_squeezed_vacuum_cov(np.float64(settings.TMSV_DEFAULT_R), np.float64(0.0), settings.HBAR)
             means = gaussian.vacuum_means(2, settings.HBAR)
@@ -56,7 +57,7 @@ class Transformation(ABC):
 
     def transform_gaussian(self, state: State) -> State:
         r"""
-        Transforms a Gaussian state.
+        Transforms a state in Gaussian representation.
         """
         d = self.d_vector
         X = self.X_matrix
@@ -66,7 +67,7 @@ class Transformation(ABC):
 
     def transform_fock(self, state: State) -> State:
         r"""
-        Transforms a Fock state.
+        Transforms a state in Fock representation.
         """
         transformation = self.fock(cutoffs = state.cutoffs + state.cutoffs if state.is_pure else state.cutoffs)
         new_state = fock.CPTP(transformation=transformation, state=state.fock, unitary=self.is_unitary, state_mixed=state.is_mixed)
