@@ -43,10 +43,10 @@ class Settings:
         from mrmustard.physics import fock, gaussian
         from mrmustard.utils import training, xptensor
 
-        fock._set_backend(self.backend)
-        gaussian._set_backend(self.backend)
-        training._set_backend(self.backend)
-        xptensor._set_backend(self.backend)
+        fock._load_backend(self.backend)
+        gaussian._load_backend(self.backend)
+        training._load_backend(self.backend)
+        xptensor._load_backend(self.backend)
 
 
 settings = Settings()
