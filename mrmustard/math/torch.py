@@ -310,3 +310,9 @@ class Math(MathInterface):
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
         "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
         return torch.xlogy(x, y)
+
+    def sqrtm(self, tensor: torch.Tensor) -> Tensor:
+        raise NotImplementedError
+
+    def boolean_mask(self, tensor: torch.Tensor, mask: torch.Tensor) -> Tensor:
+        return torch.masked_select(tensor, mask)
