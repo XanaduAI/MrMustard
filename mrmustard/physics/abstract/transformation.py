@@ -23,7 +23,6 @@ from mrmustard.utils import graphics
 from mrmustard import settings
 
 
-
 class Transformation(ABC):
     r"""
     Base class for all transformations.
@@ -50,7 +49,7 @@ class Transformation(ABC):
             bell = bell_single = State.from_gaussian(cov=cov, means=means, mixed=False)
             for _ in self.modes[1:]:
                 bell = bell & bell_single
-            tot = 2*len(self.modes)
+            tot = 2 * len(self.modes)
             order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
             self._bell = bell[order]
         return self._bell
@@ -69,7 +68,7 @@ class Transformation(ABC):
         r"""
         Transforms a state in Fock representation.
         """
-        transformation = self.fock(cutoffs = state.cutoffs + state.cutoffs if state.is_pure else state.cutoffs)
+        transformation = self.fock(cutoffs=state.cutoffs + state.cutoffs if state.is_pure else state.cutoffs)
         new_state = fock.CPTP(transformation=transformation, state=state.fock, unitary=self.is_unitary, state_mixed=state.is_mixed)
         return State.from_fock(new_state, mixed=not self.is_unitary or state.is_mixed)
 

@@ -21,7 +21,6 @@ from mrmustard import settings
 import numpy as np
 
 
-
 class State:
     r"""Base class for quantum states"""
 

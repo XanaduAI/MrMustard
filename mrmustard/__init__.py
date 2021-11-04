@@ -27,11 +27,12 @@ class Settings:
         self._backend = backend_name
         from mrmustard.physics import fock, gaussian
         from mrmustard.utils import training, xptensor
+
         Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-        vars(fock)['math'] = Math()
-        vars(gaussian)['math'] = Math()
-        vars(training)['math'] = Math()
-        vars(xptensor)['math'] = Math()
+        vars(fock)["math"] = Math()
+        vars(gaussian)["math"] = Math()
+        vars(training)["math"] = Math()
+        vars(xptensor)["math"] = Math()
 
 
 settings = Settings()

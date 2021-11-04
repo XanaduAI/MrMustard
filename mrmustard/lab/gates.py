@@ -143,7 +143,7 @@ class BSgate(Parametrized, Transformation):
         phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
-        modes: List[int] = [0,1],
+        modes: List[int] = [0, 1],
     ):
         if modes is not None and len(modes) > 2:
             raise ValueError("Beam splitter works on 2 modes. Perhaps you are looking for Interferometer.")
@@ -193,7 +193,7 @@ class MZgate(Parametrized, Transformation):
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_b_trainable: bool = False,
         internal: bool = False,
-        modes: List[int] = [0,1],
+        modes: List[int] = [0, 1],
     ):
         if modes is not None and len(modes) > 2:
             raise ValueError("The Mach-Zehnder gate works on 2 modes. Perhaps you are looking for Interferometer.")
@@ -240,7 +240,7 @@ class S2gate(Parametrized, Transformation):
         phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
-        modes: List[int] = [0,1],
+        modes: List[int] = [0, 1],
     ):
         super().__init__(
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
