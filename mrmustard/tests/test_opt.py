@@ -45,8 +45,8 @@ def test_S2gate_coincidence_prob(n):
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
     assert np.allclose(-cost_fn(), expected, atol=1e-3)
 
-
-def test_hong_ou_mandel_optimizer():
+@given(i=st.integers(1, 5), k=st.integers(1, 5))
+def test_hong_ou_mandel_optimizer(i, k):
     """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip"""
     tf.random.set_seed(137)
     circ = Circuit()
@@ -56,20 +56,20 @@ def test_hong_ou_mandel_optimizer():
     circ.append(
         BSgate(
             modes=[1, 2],
-            theta=np.random.normal(),
+            theta=np.arccos(np.sqrt(k/(i+k))) + 0.1 * np.random.normal(),
             phi=np.random.normal(),
             theta_trainable=True,
             phi_trainable=True,
         )
     )
     state_in = Vacuum(num_modes=4)
-
+    cutoff = 1 + i + k
     def cost_fn():
-        return tf.abs(circ(state_in).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        return tf.abs(circ(state_in).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])[i, 1, i + k - 1, k]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, 0.5, atol=1e-2)
+    assert np.allclose(np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i+k), atol=1e-2)
 
 
 def test_squeezing_hong_ou_mandel_optimizer():
