@@ -22,62 +22,43 @@ angle = st.floats(min_value=0, max_value=2 * np.pi)
 positive = st.floats(min_value=0, allow_infinity=False, allow_nan=False)
 real = st.floats(allow_infinity=False, allow_nan=False)
 real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.00001))
+integer = st.integers(min_value=0, max_value=2 ** 32 - 1)
 
-rand_num_modes = st.integers(min_value=0, max_value=10)
-random_int = st.integers(min_value=0, max_value=2 ** 32 - 1)
-
-random_modes = st.lists(st.integers(min_value=0, max_value=9), min_size=1, max_size=10)
-random_int_list = st.lists(random_int, min_size=0, max_size=10)
-random_int_or_int_list = st.one_of(random_int, random_int_list)
-
+num_modes = st.integers(min_value=0, max_value=10)
+modes = st.lists(st.integers(min_value=0, max_value=9), min_size=1, max_size=10).filter(lambda x: len(set(x)) == len(x))
 
 def array_of_(strategy, minlen=0, maxlen=None):
     return arrays(dtype=np.float64, shape=(st.integers(minlen, maxlen),), elements=strategy)
 
-
 def none_or_(strategy):
     return st.one_of(st.just(None), strategy)
 
-
-random_angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
+angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
-random_positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(
+positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
-random_real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
+real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
 
-random_vector = st.lists(st.floats(min_value=-1, max_value=1), min_size=0, max_size=10)
-
-
-def random_vector_of_length(length):
-    return st.lists(st.floats(min_value=-1, max_value=1), min_size=0, max_size=length)
-
-
-def random_int_or_int_list_modes(num_modes=None):
-    return random_int_or_int_list if num_modes is None else st.lists(random_int, min_size=num_modes, max_size=num_modes)
-
-
-def random_int_list_modes(num_modes=None):
-    return random_int_list if num_modes is None else st.lists(random_int, min_size=num_modes, max_size=num_modes)
+vector = st.lists(st.floats(min_value=-1, max_value=1), min_size=0, max_size=10)
 
 
 @st.composite
-def random_Rgate(draw, num_modes=None):
+def random_Rgate(draw, num_modes=None, trainable=False):
     return Rgate(
-        modes=draw(random_int_or_int_list_modes(num_modes)),
+        modes=draw(modes),
         phi=draw(angle),
         angle_bounds=draw(random_angle_bounds),
-        angle_trainable=draw(st.booleans()),
-    )
-
+        angle_trainable=trainable,
+        )
 
 @st.composite
 def random_Sgate(draw, num_modes=None):
     return Sgate(
-        modes=draw(random_int_or_int_list_modes(num_modes)),
+        modes=draw(modes),
         r=draw(positive),
         phi=draw(angle),
         r_bounds=draw(random_positive_bounds),
