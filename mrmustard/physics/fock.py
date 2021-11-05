@@ -15,18 +15,11 @@
 import numpy as np
 from mrmustard.utils.types import *
 from mrmustard import settings
-import importlib
 
 
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#  NOTE: the math backend is loaded automatically by the settings object
+#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool) -> Tensor:

@@ -16,13 +16,10 @@ import numpy as np
 from scipy.linalg import expm
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
-import importlib
 
-
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
+#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#  NOTE: the math backend is loaded automatically by the settings object
+#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 class Optimizer:
