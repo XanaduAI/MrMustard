@@ -46,7 +46,7 @@ def test_S2gate_coincidence_prob(n):
     assert np.allclose(-cost_fn(), expected, atol=1e-3)
 
 
-@given(i=st.integers(0, 5), k=st.integers(0, 5))
+@given(i=st.integers(1, 5), k=st.integers(1, 5))
 def test_hong_ou_mandel_optimizer(i, k):
     """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip
     This generalized the single photon Hong-Ou-Mandel effect to the many photon setting
