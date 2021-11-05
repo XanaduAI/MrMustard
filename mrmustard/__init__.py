@@ -30,6 +30,7 @@ class Settings:
         "Activates the math backend in the modules where it is used"
         from mrmustard.physics import fock, gaussian
         from mrmustard.utils import training, xptensor
+
         math = importlib.import_module(f"mrmustard.math.{self.backend}").Math()
         vars(fock)["math"] = math
         vars(gaussian)["math"] = math
