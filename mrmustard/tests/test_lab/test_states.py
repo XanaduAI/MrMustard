@@ -36,13 +36,11 @@ def test_coherent_state_single(x, y):
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
-# a test like test_coherent_state_single but with x and y being lists of a single float each
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_list(hbar, x, y):
     assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
-# a test like test_coherent_state_list but with x and y being numpy arrays of length 1
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_array(hbar, x, y):
     assert np.allclose(gp.displacement(np.array([x]), np.array([y]), hbar), np.array([x, y]) * np.sqrt(2 * hbar))
