@@ -18,23 +18,20 @@ from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian
 from mrmustard.lab.states import *
+from mrmustard.physics.abstract import State
 from mrmustard.lab.gates import *
 from mrmustard import settings
+from mrmustard.tests import random
 
+@given(input = random.random_pure_state(num_modes=1))
+def test_Dgate_1mode_vacuum(input):
+    state = Dgate()(input)
 
-# a strategy to generate pure coherent states 
-
-def test_Dgate_1mode_vacuum(state):
-    state = Dgate()(Vacuum(1))
-
-
-# test that Dgate can be applied to 2 mode vacuum state
 def test_Dgate_2mode_vacuum():
     D = Dgate()
     state = D[0,1](Vacuum(2))
 
-# test that Dgate can be applied to vacuum in fock representation
 def test_Dgate_2mode_vacuum():
     D = Dgate()
-    vac = State.from_fock(D[0,1](Vacuum(2).fock(cutoffs=[4,4])))
+    vac = State.from_fock(fock=D[0,1](Vacuum(2)).ket(cutoffs=[4,4]), mixed=False)
     state = D(vac)
