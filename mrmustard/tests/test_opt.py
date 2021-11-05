@@ -47,7 +47,11 @@ def test_S2gate_coincidence_prob(n):
 
 @given(i=st.integers(1, 5), k=st.integers(1, 5))
 def test_hong_ou_mandel_optimizer(i, k):
-    """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip"""
+    """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip
+    This generalized the single photon Hong-Ou-Mandel effect to the many photon setting
+    see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
+    which lacks a square root in the right hand side.
+    """
     tf.random.set_seed(137)
     circ = Circuit()
     r = np.arcsinh(1.0)
