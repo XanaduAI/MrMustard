@@ -57,6 +57,26 @@ def test_hong_ou_mandel_optimizer():
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
     assert np.allclose(np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, 0.5, atol=1e-2)
 
+def test_squeezing_hong_ou_mandel_optimizer():
+    """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
+    see https://www.pnas.org/content/117/52/33107/tab-article-info
+    """
+    tf.random.set_seed(137)
+    circ = Circuit()
+    r = np.arcsinh(1.0)
+    circ.append(S2gate(modes=[0, 1], r=r, phi=0.0, phi_trainable=True))
+    circ.append(S2gate(modes=[2, 3], r=r, phi=0.0, phi_trainable=True))
+    circ.append(S2gate(modes=[1, 2], r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True))
+    state_in = Vacuum(num_modes=4)
+
+    def cost_fn():
+        return tf.abs(circ(state_in).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+
+    opt = Optimizer(euclidean_lr=0.001)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+
+
 
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
