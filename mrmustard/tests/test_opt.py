@@ -81,9 +81,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     r = np.arcsinh(1.0)
     circ.append(S2gate(modes=[0, 1], r=r, phi=0.0, phi_trainable=True))
     circ.append(S2gate(modes=[2, 3], r=r, phi=0.0, phi_trainable=True))
-    circ.append(
-        S2gate(modes=[1, 2], r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)
-    )
+    circ.append(S2gate(modes=[1, 2], r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True))
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
@@ -188,15 +186,7 @@ def test_learning_four_mode_Interferometer():
 
     def cost_fn():
         amps = circ(state_in).ket(cutoffs=[3, 3, 3, 3])
-        return (
-            -tf.abs(
-                tf.reduce_sum(
-                    amps[1, 1]
-                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
-                )
-            )
-            ** 2
-        )
+        return -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]]))) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
@@ -213,9 +203,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     r = np.arcsinh(1.0)
     circ.append(S2gate(modes=[0, 1], r=r, phi=0.0, phi_trainable=True))
     circ.append(S2gate(modes=[2, 3], r=r, phi=0.0, phi_trainable=True))
-    circ.append(
-        S2gate(modes=[1, 2], r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)
-    )
+    circ.append(S2gate(modes=[1, 2], r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True))
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
