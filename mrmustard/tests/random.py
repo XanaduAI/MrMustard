@@ -23,7 +23,6 @@ positive = st.floats(min_value=0, allow_infinity=False, allow_nan=False)
 real = st.floats(allow_infinity=False, allow_nan=False)
 real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.00001))
 integer = st.integers(min_value=0, max_value=2 ** 32 - 1)
-
 num_modes = st.integers(min_value=0, max_value=10)
 
 
