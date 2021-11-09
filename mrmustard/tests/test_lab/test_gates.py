@@ -23,15 +23,26 @@ from mrmustard.lab.gates import *
 from mrmustard import settings
 from mrmustard.tests import random
 
-@given(input = random.random_pure_state(num_modes=1))
-def test_Dgate_1mode_vacuum(input):
-    state = Dgate()(input)
+@given(state = random.random_pure_state(num_modes=1), xy = random.vector(2))
+def test_Dgate_1mode(state, xy):
+    x, y = xy
+    state_out = Dgate(x=x, y=y)(state)
+    state_out = Dgate(x=-x, y=-y)(state_out)
+    assert state_out == state
 
-def test_Dgate_2mode_vacuum():
-    D = Dgate()
-    state = D[0,1](Vacuum(2))
+@given(state = random.random_pure_state(num_modes=2), xxyy = random.vector(4))
+def test_Dgate_2mode(state, xxyy):
+    x1, x2, y1, y2 = xxyy
+    state_out = Dgate(x=[x1,x2], y=[y1,y2])(state)
+    state_out = Dgate(x=[-x1,-x2], y=[-y1,-y2])(state_out)
+    assert state_out == state
 
-def test_Dgate_2mode_vacuum():
-    D = Dgate()
-    vac = State.from_fock(fock=D[0,1](Vacuum(2)).ket(cutoffs=[4,4]), mixed=False)
-    state = D(vac)
+@given(gate = random.single_mode_unitary(), state = random.random_pure_state(num_modes=1))
+def test_1mode_fock_equals_gaussian(gate, state):
+    expected = gate[0](state).ket(cutoffs=[50])
+    # replace representation
+    state.ket(cutoffs = expected.shape)
+    state._cov = None
+    state._means = None
+    computed = gate[0](state).ket(cutoffs=[50])
+    assert np.allclose(computed, expected)

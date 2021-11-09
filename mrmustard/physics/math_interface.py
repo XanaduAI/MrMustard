@@ -238,15 +238,16 @@ class MathInterface(ABC):
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int = 1) -> Tensor:
-        "a random symplectic matrix in Sp(2*num_modes)"
+    def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
+        r"""A random symplectic matrix in Sp(2*num_modes).
+           Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default)."""
         if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))
             V = np.exp(1j * np.random.uniform(size=(1, 1)))
         else:
             W = unitary_group.rvs(dim=num_modes)
             V = unitary_group.rvs(dim=num_modes)
-        r = np.random.uniform(size=num_modes)
+        r = np.random.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
@@ -411,13 +412,14 @@ class MathInterface(ABC):
         return self.convolution(
             prob_padded[None, ..., None],
             other_reversed[..., None, None],
-            padding="VALID",
-            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",
+            padding="VALID", # TODO: do we need to specify this? 
+            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC", #TODO: rewrite this to be more readable (do we need it?)
         )[0, ..., 0]
 
     def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:
         r"""
         Convert the Riemannian gradient to a symplectic gradient.
+        TODO: add citation (S.Fiori)
         Arguments:
             S (Matrix): symplectic matrix
             dS_riemann (Matrix): Riemannian gradient tensor
