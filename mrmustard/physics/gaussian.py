@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
 from thewalrus.quantum import is_pure_cov
+
+from mrmustard.utils.types import *
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
-import importlib
 from numpy import pi
-
-
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
+from mrmustard.math import Math
+math = Math()
 
 
 #  ~~~~~~

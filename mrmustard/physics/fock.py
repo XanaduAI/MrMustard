@@ -13,15 +13,11 @@
 # limitations under the License.
 
 import numpy as np
+
 from mrmustard.utils.types import *
 from mrmustard import settings
-import importlib
-
-
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
+from mrmustard.math import Math
+math = Math()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,11 +47,11 @@ def fock_representation(cov: Matrix, means: Vector, shape: Sequence[int], is_mix
         raise ValueError("Must specify either mixed or unitary.")
     if is_unitary is not None and choi_r is None:
         raise ValueError("Must specify the choi_r value.")
-    if is_mixed is not None:
-        A, B, C = state_hermite_parameters(cov, means, is_mixed)
-    elif is_unitary is not None and choi_r is not None:
-        A, B, C = transformation_hermite_parameters(cov, means, is_unitary, choi_r)
-    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: conj may not be needed in the future
+    if is_mixed is not None:  # i.e. it's a state
+        A, B, C = ABC(cov, means, full=is_mixed)
+    elif is_unitary is not None and choi_r is not None:  # i.e. it's a transformation
+        A, B, C = renormalized_ABC(cov, means, choi_r, full = not is_unitary)
+    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -67,20 +63,6 @@ def ket_to_dm(ket: Tensor) -> Tensor:
         The density matrix.
     """
     return math.outer(ket, math.conj(ket))
-
-def U_to_choi(U: Tensor) -> Tensor:
-    r"""
-    Converts a unitary transformation to a Choi tensor.
-    Args:
-        U: The unitary transformation.
-    Returns:
-        The Choi tensor.
-    """
-    cutoffs = U.shape[:len(U.shape)//2]
-    N = len(cutoffs)
-    outer = math.outer(U, math.conj(U))
-    choi = math.transpose(outer, list(range(0, N)) + list(range(2*N, 3*N)) + list(range(N, 2*N)) + list(range(3*N, 4*N)))
-    return choi
 
 
 def ket_to_probs(ket: Tensor) -> Tensor:
@@ -105,9 +87,28 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     return math.all_diagonals(dm, real=True)
 
 
-def ABC(cov, means):
+def U_to_choi(U: Tensor) -> Tensor:
+    r"""
+    Converts a unitary transformation to a Choi tensor.
+    Args:
+        U: The unitary transformation.
+    Returns:
+        The Choi tensor.
+    """
+    cutoffs = U.shape[:len(U.shape)//2]
+    N = len(cutoffs)
+    outer = math.outer(U, math.conj(U))
+    choi = math.transpose(outer, list(range(0, N)) + list(range(2*N, 3*N)) + list(range(N, 2*N)) + list(range(3*N, 4*N)))
+    return choi
+
+
+def ABC(cov, means, full: bool):
     r"""
     Returns the full-size A matrix, B vector and C scalar.
+    Arguments:
+        cov: The Wigner covariance matrix.
+        means: The Wigner means vector.
+        full: Whether to return the full-size A, B and C or the half-size A, B and C.
     """
     N = means.shape[-1] // 2
     R = math.rotmat(N)
@@ -117,7 +118,7 @@ def ABC(cov, means):
     sQinv = math.inv(sQ)
     A = math.matmul(math.Xmat(N), math.eye(2*N, dtype=sQinv.dtype) - sQinv)
     B = math.matvec(math.transpose(sQinv), math.conj(beta))
-    exponent = -0.5 * math.sum(math.conj(beta)[:, None] * sQinv * beta[None, :])
+    exponent = -0.5 * math.sum(math.conj(beta)[:, None] * sQinv * beta[None, :])  #TODO: mu^T cov mu
     C = math.exp(exponent) / math.sqrt(math.det(sQ))
     return A, B, C
 

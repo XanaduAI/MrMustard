@@ -16,17 +16,20 @@ import numpy as np
 import tensorflow as tf
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
 
-from mrmustard.physics.math_interface import MathInterface
+from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
 from mrmustard.utils.types import *
 
 
-class Math(MathInterface):
+class TFMath(MathInterface):
 
     float64 = tf.float64
     float32 = tf.float32
     complex64 = tf.complex64
     complex128 = tf.complex128
+
+    def __getattr__(self, name):
+        return getattr(tf, name)
 
     # ~~~~~~~~~
     # Basic ops

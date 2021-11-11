@@ -17,13 +17,8 @@ from mrmustard.utils.types import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
-import importlib
-
-
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
+from mrmustard.math import Math
+math = Math()
 
 
 class XPTensor(ABC):

@@ -196,7 +196,7 @@ class State:
             means = gaussian.join_means([self.means, other.means])
             return State(cov=cov, means=means, is_mixed=self.is_mixed or other.is_mixed)
         else:
-            fock = fock.join_focks([self.fock, other.fock])  # TODO
+            fock = fock.join_focks([self.fock, other.fock])  # TODO: write this method
             return State(fock=fock, is_mixed=self.is_mixed or other.is_mixed)
 
     def __getitem__(self, item):
@@ -232,10 +232,8 @@ class State:
         else:
             return np.allclose(self.dm(cutoffs = other.cutoffs, from_cache=True), other.dm(cutoffs = other.cutoffs, from_cache=True))
 
-    def __repr__(self):  # TODO use rich table to make a nice representation
-
-        table = Table()  # title?
-
+    def __repr__(self):
+        table = Table(title=str(self.__class__.__qualname__))
         table.add_column("Purity", justify="center")
         table.add_column("Num modes", justify="center")
         table.add_column("Bosonic size", justify="center")

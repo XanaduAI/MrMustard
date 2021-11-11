@@ -20,20 +20,11 @@ class Settings:
     def backend(self):
         return self._backend
 
-    # property setter for backend
     @backend.setter
     def backend(self, backend_name: str):
         if backend_name not in ["tensorflow", "pytorch"]:
             raise ValueError("Backend must be either 'tensorflow' or 'pytorch'")
         self._backend = backend_name
-        from mrmustard.physics import fock, gaussian
-        from mrmustard.utils import training, xptensor
-
-        Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-        vars(fock)["math"] = Math()
-        vars(gaussian)["math"] = Math()
-        vars(training)["math"] = Math()
-        vars(xptensor)["math"] = Math()
 
 
 settings = Settings()
