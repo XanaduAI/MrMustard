@@ -12,7 +12,7 @@ class Settings:
     def __init__(self):
         self._backend = "tensorflow"
         self.HBAR = 2.0
-        self.TMSV_DEFAULT_R = 3.0
+        self.CHOI_R = 1.0
         self.DEBUG = False
         self.N_SIGMA_CUTOFF = 4  # 4 sigma when auto-detecting the cutoff
 

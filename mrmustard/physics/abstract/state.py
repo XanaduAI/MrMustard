@@ -148,6 +148,13 @@ class State:
             return self._fock
         if self.is_gaussian:
             self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs, is_mixed=False)
+        elif cutoffs != self.cutoffs:
+            try:
+                shape = cutoffs if self.is_pure else cutoffs*2
+                shape_tuple = [slice(s) for s in shape]
+                return self._fock.__getitem__(shape_tuple)
+            except IndexError:
+                raise IndexError(f"This state does not have amplitudes of shape {shape}")
         return self._fock
 
     def dm(self, cutoffs: List[int], from_cache=False) -> Tensor:
@@ -166,6 +173,12 @@ class State:
         else:
             if self.is_gaussian:
                 self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs*2, is_mixed=True)
+            elif cutoffs != self.cutoffs:
+                try:
+                    shape_tuple = [slice(s) for s in cutoffs*2]  # NOTE: we know it's mixed
+                    return self._fock.__getitem__(shape_tuple)
+                except IndexError:
+                    raise IndexError(f"This state does not have amplitudes of shape {shape}")
         return self._fock
             
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:

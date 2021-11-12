@@ -37,12 +37,9 @@ def test_Dgate_2mode(state, xxyy):
     state_out = Dgate(x=[-x1,-x2], y=[-y1,-y2])(state_out)
     assert state_out == state
 
-@given(gate = random.single_mode_unitary(), state = random.random_pure_state(num_modes=1))
-def test_1mode_fock_equals_gaussian(gate, state):
-    expected = gate[0](state).ket(cutoffs=[50])
-    # replace representation
-    state.ket(cutoffs = expected.shape)
-    state._cov = None
-    state._means = None
-    computed = gate[0](state).ket(cutoffs=[50])
-    assert np.allclose(computed, expected)
+@given(gate = random.single_mode_unitary(), gstate = random.random_pure_state(num_modes=1))
+def test_1mode_fock_equals_gaussian(gate, gstate):
+    fstate = State(fock = gstate.ket(cutoffs=[50]), is_mixed=False)
+    expected = gate(gstate)
+    computed = gate(fstate)
+    assert expected == computed
