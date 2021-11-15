@@ -427,3 +427,11 @@ class MathInterface(ABC):
         Jmat = self.J(S.shape[-1] // 2)
         Z = self.matmul(self.transpose(S), dS_riemann)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+
+    def eigvals(self, tensor: Tensor) -> Tensor:
+        r"Returns the eigenvalues of a matrix."
+        ...
+
+    def sqrtm(self, tensor: Tensor) -> Tensor:
+        r"Returns the matrix squart root."
+        ...
