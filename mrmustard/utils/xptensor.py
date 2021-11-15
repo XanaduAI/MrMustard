@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
 from mrmustard.math import Math
+
 math = Math()
 
 

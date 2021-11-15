@@ -17,6 +17,7 @@ import numpy as np
 from mrmustard.utils.types import *
 from mrmustard import settings
 from mrmustard.math import Math
+
 math = Math()
 
 
@@ -25,14 +26,16 @@ math = Math()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_representation(cov: Matrix, means: Vector, shape: Sequence[int], is_mixed: bool = None, is_unitary: bool = None,  choi_r: float = None) -> Tensor:
+def fock_representation(
+    cov: Matrix, means: Vector, shape: Sequence[int], is_mixed: bool = None, is_unitary: bool = None, choi_r: float = None
+) -> Tensor:
     r"""
     Returns the Fock representation of a state or Choi state.
     If the state is pure it returns the state vector (ket).
     If the state is mixed it returns the density matrix.
     If the transformation is unitary it returns the unitary transformation matrix.
     If the transformation is not unitary it returns the Choi matrix.
-    Args:   
+    Args:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         shape: The shape of the tensor.
@@ -51,7 +54,7 @@ def fock_representation(cov: Matrix, means: Vector, shape: Sequence[int], is_mix
     if is_mixed is not None:  # i.e. it's a state
         A, B, C = ABC(cov, means, full=is_mixed)
     elif is_unitary is not None and choi_r is not None:  # i.e. it's a transformation
-        A, B, C = ABC(cov, means, full = not is_unitary, choi_r = choi_r)
+        A, B, C = ABC(cov, means, full=not is_unitary, choi_r=choi_r)
     return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
 
 
@@ -96,10 +99,10 @@ def U_to_choi(U: Tensor) -> Tensor:
     Returns:
         The Choi tensor.
     """
-    cutoffs = U.shape[:len(U.shape)//2]
+    cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
     outer = math.outer(U, math.conj(U))
-    choi = math.transpose(outer, list(range(0, N)) + list(range(2*N, 3*N)) + list(range(N, 2*N)) + list(range(3*N, 4*N)))
+    choi = math.transpose(outer, list(range(0, N)) + list(range(2 * N, 3 * N)) + list(range(N, 2 * N)) + list(range(3 * N, 4 * N)))
     return choi
 
 
@@ -117,9 +120,9 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
     R = math.rotmat(N)
     sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
     beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
-    Q = sigma + 0.5 * math.eye(2*N, dtype=sigma.dtype)  # Husimi covariance matrix
+    Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)  # Husimi covariance matrix
     Qinv = math.inv(Q)
-    A = math.matmul(math.Xmat(N), math.eye(2*N, dtype=Qinv.dtype) - Qinv)
+    A = math.matmul(math.Xmat(N), math.eye(2 * N, dtype=Qinv.dtype) - Qinv)
     denom = math.sqrt(math.det(Q)) if is_state else math.sqrt(math.det(Q / np.cosh(choi_r)))
     if full:
         B = math.matvec(math.transpose(Qinv), math.conj(beta))
@@ -137,7 +140,7 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
             rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
         else:
             rescaling = math.concat([ones, factor * ones], axis=0)
-        A = rescaling[:,None] * rescaling[None,:] * A
+        A = rescaling[:, None] * rescaling[None, :] * A
         B = rescaling * B
     return A, B, C
 

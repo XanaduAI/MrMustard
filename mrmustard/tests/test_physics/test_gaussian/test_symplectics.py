@@ -96,7 +96,7 @@ def test_MZgate_external_tms(phi_ex, phi_in):
     cov = MZ(bell).cov
 
     bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
-    
+
     ex_expanded = expand(rotation(phi_ex), [0], 4)
     in_expanded = expand(rotation(phi_in), [0], 4)
     BS_expanded = expand(beam_splitter(np.pi / 4, np.pi / 2), [0, 1], 4)

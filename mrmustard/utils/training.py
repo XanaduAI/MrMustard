@@ -17,6 +17,7 @@ from scipy.linalg import expm
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 from mrmustard.math import Math
+
 math = Math()
 
 

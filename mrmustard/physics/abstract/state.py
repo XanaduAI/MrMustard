@@ -48,7 +48,7 @@ class State:
         self._cutoffs = None
 
     @property
-    def purity(self)-> float:
+    def purity(self) -> float:
         r"""
         Returns the purity of the state.
         """
@@ -58,7 +58,6 @@ class State:
             else:
                 self._purity = fock.purity(self._fock)  # dm
         return self._purity
-
 
     @property
     def is_gaussian(self) -> bool:
@@ -74,7 +73,7 @@ class State:
         """
         if self._num_modes is None:
             if self.is_gaussian:
-                self._num_modes = self._means.shape[-1]//2
+                self._num_modes = self._means.shape[-1] // 2
             else:
                 num_indices = len(self._fock.shape)
                 self._num_modes = num_indices if self.is_pure else num_indices // 2
@@ -112,7 +111,7 @@ class State:
         if self._fock is None:
             return None  # TODO: fock.autocutoffs(self.number_cov, self.number_means)  NOTE: <-- should we?
         else:
-            return [s for s in self._fock.shape[:self.num_modes]]
+            return [s for s in self._fock.shape[: self.num_modes]]
 
     @property
     def number_means(self) -> Vector:
@@ -150,7 +149,7 @@ class State:
             self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs, is_mixed=False)
         elif cutoffs != self.cutoffs:
             try:
-                shape = cutoffs if self.is_pure else cutoffs*2
+                shape = cutoffs if self.is_pure else cutoffs * 2
                 shape_tuple = [slice(s) for s in shape]
                 return self._fock.__getitem__(shape_tuple)
             except IndexError:
@@ -172,15 +171,15 @@ class State:
             self._fock = fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs*2, is_mixed=True)
+                self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs * 2, is_mixed=True)
             elif cutoffs != self.cutoffs:
                 try:
-                    shape_tuple = [slice(s) for s in cutoffs*2]  # NOTE: we know it's mixed
+                    shape_tuple = [slice(s) for s in cutoffs * 2]  # NOTE: we know it's mixed
                     return self._fock.__getitem__(shape_tuple)
                 except IndexError:
                     raise IndexError(f"This state does not have amplitudes of shape {shape}")
         return self._fock
-            
+
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""
         Returns the probabilities in Fock representation.
@@ -200,7 +199,7 @@ class State:
                 self._fock_probabilities = fock.ket_to_probs(ket)
         return self._fock_probabilities
 
-    def __and__(self, other: State) -> State: # TODO: keep lazy variables when mixed-representation is supported
+    def __and__(self, other: State) -> State:  # TODO: keep lazy variables when mixed-representation is supported
         r"""
         Concatenates two states.
         """
@@ -241,9 +240,9 @@ class State:
                 return False
             return True
         if self.is_pure and other.is_pure:
-            return np.allclose(self.ket(cutoffs = other.cutoffs, from_cache=True), other.ket(cutoffs = other.cutoffs, from_cache=True))
+            return np.allclose(self.ket(cutoffs=other.cutoffs, from_cache=True), other.ket(cutoffs=other.cutoffs, from_cache=True))
         else:
-            return np.allclose(self.dm(cutoffs = other.cutoffs, from_cache=True), other.dm(cutoffs = other.cutoffs, from_cache=True))
+            return np.allclose(self.dm(cutoffs=other.cutoffs, from_cache=True), other.dm(cutoffs=other.cutoffs, from_cache=True))
 
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))
@@ -252,7 +251,13 @@ class State:
         table.add_column("Bosonic size", justify="center")
         table.add_column("Gaussian", justify="center")
         table.add_column("Fock", justify="center")
-        table.add_row(f"{(self.purity):.3f}", str(self.num_modes), "1" if self.is_gaussian else "N/A", "✅" if self.is_gaussian else "❌", "✅" if self._fock is not None else "❌")
+        table.add_row(
+            f"{(self.purity):.3f}",
+            str(self.num_modes),
+            "1" if self.is_gaussian else "N/A",
+            "✅" if self.is_gaussian else "❌",
+            "✅" if self._fock is not None else "❌",
+        )
         rprint(table)
         if self.num_modes == 1:
             if self._fock is not None:

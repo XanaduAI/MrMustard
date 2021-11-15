@@ -29,30 +29,35 @@ medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, al
 large_float = st.floats(min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False)
 num_modes = st.integers(min_value=0, max_value=10)
 
+
 @st.composite
 def vector(draw, length):
     return draw(st.lists(st.floats(min_value=-1, max_value=1), min_size=length, max_size=length))
 
+
 # a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes
 @st.composite
 def modes(draw, num_modes):
-    return draw(st.lists(st.integers(min_value=0, max_value=num_modes), min_size=num_modes, max_size=num_modes).filter(lambda x: len(set(x)) == len(x)))
+    return draw(
+        st.lists(st.integers(min_value=0, max_value=num_modes), min_size=num_modes, max_size=num_modes).filter(
+            lambda x: len(set(x)) == len(x)
+        )
+    )
+
 
 def array_of_(strategy, minlen=0, maxlen=None):
     return arrays(dtype=np.float64, shape=(st.integers(minlen, maxlen),), elements=strategy)
 
+
 def none_or_(strategy):
     return st.one_of(st.just(None), strategy)
 
-angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
+
+angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True)
 positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
-real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
+real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True)
 
 
 @st.composite
@@ -61,7 +66,8 @@ def random_Rgate(draw, num_modes=None, trainable=False):
         angle=draw(angle),
         angle_bounds=draw(angle_bounds),
         angle_trainable=trainable,
-        )
+    )
+
 
 @st.composite
 def random_Sgate(draw, num_modes=None, trainable=False):
@@ -193,20 +199,20 @@ def thermal(draw, num_modes):
 
 @st.composite
 def default_state(draw, num_modes):
-    return draw(st.one_of(
-        squeezed_vacuum(num_modes),
-        displacedsqueezed(num_modes),
-        coherent(num_modes),
-        tmsv(num_modes),
-        thermal(num_modes),
-    ))
+    return draw(
+        st.one_of(
+            squeezed_vacuum(num_modes),
+            displacedsqueezed(num_modes),
+            coherent(num_modes),
+            tmsv(num_modes),
+            thermal(num_modes),
+        )
+    )
 
 
 @st.composite
 def default_pure_state(draw, num_modes):
-    return draw(st.one_of(
-        squeezed_vacuum(num_modes), displacedsqueezed(num_modes), coherent(num_modes), tmsv(num_modes)
-    ))
+    return draw(st.one_of(squeezed_vacuum(num_modes), displacedsqueezed(num_modes), coherent(num_modes), tmsv(num_modes)))
 
 
 @st.composite

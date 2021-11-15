@@ -22,7 +22,8 @@ from mrmustard.tests.random import single_mode_unitary
 
 @given(gates=st.lists(single_mode_unitary(), min_size=1, max_size=5))
 def test_gate_compositions(gates):
-    pass # TODO test that the gate composition is correct
+    pass  # TODO test that the gate composition is correct
+
 
 @given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
 def test_fock_representation_displacement(x, y):
@@ -30,11 +31,13 @@ def test_fock_representation_displacement(x, y):
     expected = displacement(r=np.sqrt(x ** 2 + y ** 2), phi=np.arctan2(y, x), cutoff=20)
     assert np.allclose(expected, D.U(cutoffs=[20]))
 
+
 @given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
 def test_fock_representation_squeezing(r, phi):
     S = Sgate(r=r, phi=phi)
     expected = squeezing(r=r, theta=phi, cutoff=20)
     assert np.allclose(expected, S.U(cutoffs=[20]))
+
 
 @given(theta=st.floats(min_value=0, max_value=2 * np.pi), phi=st.floats(min_value=0, max_value=2 * np.pi))
 def test_fock_representation_beamsplitter(theta, phi):
@@ -42,15 +45,16 @@ def test_fock_representation_beamsplitter(theta, phi):
     expected = beamsplitter(theta=theta, phi=phi, cutoff=20)
     assert np.allclose(expected, BS.U(cutoffs=[20, 20]))
 
+
 @given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
     expected = two_mode_squeezing(r=r, theta=phi, cutoff=20)
-    assert np.allclose(expected, S2.U(cutoffs=[20,20]))
+    assert np.allclose(expected, S2.U(cutoffs=[20, 20]))
+
 
 @given(phi_a=st.floats(min_value=0, max_value=2 * np.pi), phi_b=st.floats(min_value=0, max_value=2 * np.pi))
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
-    assert np.allclose(expected, MZ.U(cutoffs=[20,20]))
-
+    assert np.allclose(expected, MZ.U(cutoffs=[20, 20]))

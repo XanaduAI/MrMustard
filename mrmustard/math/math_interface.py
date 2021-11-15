@@ -25,10 +25,11 @@ class MathInterface(ABC):
     r"""
     The interface that all backends must implement.
     """
-    _euclidean_opt: type = None  # NOTE this is an object that 
+    _euclidean_opt: type = None  # NOTE this is an object that
 
     # backend is a singleton
     __instance = None
+
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
@@ -130,7 +131,7 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def gather(self , array: Tensor, indices: Tensor, axis: int) -> Tensor:
+    def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
         ...
 
     @abstractmethod
@@ -295,7 +296,7 @@ class MathInterface(ABC):
 
     def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
         r"""A random symplectic matrix in Sp(2*num_modes).
-           Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default)."""
+        Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default)."""
         if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))
             V = np.exp(1j * np.random.uniform(size=(1, 1)))
@@ -467,8 +468,8 @@ class MathInterface(ABC):
         return self.convolution(
             prob_padded[None, ..., None],
             other_reversed[..., None, None],
-            padding="VALID", # TODO: do we need to specify this? 
-            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC", #TODO: rewrite this to be more readable (do we need it?)
+            padding="VALID",  # TODO: do we need to specify this?
+            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",  # TODO: rewrite this to be more readable (do we need it?)
         )[0, ..., 0]
 
     def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:

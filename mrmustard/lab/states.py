@@ -30,7 +30,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        super().__init__(cov=cov, means=means, is_mixed = False)
+        super().__init__(cov=cov, means=means, is_mixed=False)
 
 
 class Coherent(Parametrized, State):
@@ -123,7 +123,7 @@ class Thermal(Parametrized, State):
         Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds)
         cov = gaussian.thermal_cov(nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed = False)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def cov(self):
@@ -167,7 +167,7 @@ class DisplacedSqueezed(Parametrized, State):
         )
         cov = gaussian.squeezed_vacuum_cov(r, phi, settings.HBAR)
         means = gaussian.displacement(x, y, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed = False)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def cov(self):

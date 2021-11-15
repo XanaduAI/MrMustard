@@ -19,6 +19,7 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from numpy import pi
 from mrmustard.math import Math
+
 math = Math()
 
 
@@ -436,6 +437,7 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     """
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
 
+
 def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
     r"""
     Automatically determines reasonable cutoffs.
@@ -446,8 +448,9 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
     Returns:
         A list of cutoff indices.
     """
-    cutoffs = number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar)))*settings.N_SIGMA_CUTOFF
+    cutoffs = number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
     return [max(1, int(i)) for i in cutoffs]
+
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
     r"""
