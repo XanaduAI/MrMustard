@@ -216,6 +216,14 @@ class MathInterface(ABC):
     def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         ...
 
+    def eigvals(self, tensor: Tensor) -> Tensor:
+        r"Returns the eigenvalues of a matrix."
+        ...
+
+    def sqrtm(self, tensor: Tensor) -> Tensor:
+        r"Returns the matrix squart root."
+        ...
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -427,11 +435,3 @@ class MathInterface(ABC):
         Jmat = self.J(S.shape[-1] // 2)
         Z = self.matmul(self.transpose(S), dS_riemann)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
-
-    def eigvals(self, tensor: Tensor) -> Tensor:
-        r"Returns the eigenvalues of a matrix."
-        ...
-
-    def sqrtm(self, tensor: Tensor) -> Tensor:
-        r"Returns the matrix squart root."
-        ...
