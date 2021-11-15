@@ -221,7 +221,7 @@ class MathInterface(ABC):
         ...
 
     def sqrtm(self, tensor: Tensor) -> Tensor:
-        r"Returns the matrix squart root."
+        r"Returns the matrix square root."
         ...
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
