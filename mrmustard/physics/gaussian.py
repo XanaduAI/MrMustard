@@ -294,6 +294,17 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
 def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the lossy bosonic channel.
     The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
+
+    This channel couples mode a to a thermal state b with the transformation
+
+    a -> sqrt(t) a + \sqrt(1-t) b
+
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+
+    Arguments: 
+        transmissivity (float): value of the transmissivity, must be between 0 and 1
+    Returns:
+        Tuple[Matrix, Vector]: the X matrix of the loss channel.
     """
     D = math.sqrt(transmissivity)
     return math.diag(math.concat([D, D], axis=0))
@@ -302,23 +313,107 @@ def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
 def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the Y (noise) matrix for the lossy bosonic channel.
     The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
+
+    This channel couples mode a to a thermal state b with the transformation
+
+    a -> sqrt(t) a + \sqrt(1-t) b
+
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+
+    Arguments: 
+        transmissivity (float): value of the transmissivity, must be between 0 and 1
+        hbar (float): value of hbar
+    Returns:
+        Tuple[Matrix, Vector]: the Y matrix of the loss channel.
     """
     D = (1.0 - transmissivity) * hbar / 2
     return math.diag(math.concat([D, D], axis=0))
 
 
-def thermal_X(nbar: Union[Scalar, Vector]) -> Matrix:
+def thermal_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the thermal lossy channel.
     The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
+
+    Note that if nbar = 0, the thermal loss channel reduces to the loss channel. 
+
+    This channel couples mode a to a thermal state b with the transformation
+
+    a -> sqrt(t) a + \sqrt(1-t) b
+
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+
+    Arguments: 
+        transmissivity (float): value of the transmissivity, must be between 0 and 1
+    Returns:
+        Tuple[Matrix, Vector]: the X matrix of the thermal loss channel.
     """
-    raise NotImplementedError
+
+    D = math.sqrt(transmissivity)
+    return math.diag(math.concat([D, D], axis=0))
 
 
-def thermal_Y(nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
+def thermal_Y(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the Y (noise) matrix for the thermal lossy channel.
     The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
+
+    Note that if nbar = 0, the thermal loss channel reduces to the loss channel. 
+
+    This channel couples mode a to a thermal state b with the transformation
+
+    a -> sqrt(t) a + \sqrt(1-t) b
+
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+
+    Arguments: 
+        transmissivity (float): value of the transmissivity, must be between 0 and 1
+        nbar (float): average number of photons per mode 
+        hbar (float): value of hbar
+    Returns:
+        Tuple[Matrix, Vector]: the Y matrix of the thermal loss channel.
     """
-    raise NotImplementedError
+    D = (1.0 - transmissivity) * (hbar / 2) * (2*nbar + 1)
+    return math.diag(math.concat([D, D], axis=0))
+
+
+def amp_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
+    r"""Returns the X matrix for the amplification channel.
+    The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
+
+    This channel couples mode a to a thermal state b with the transformation
+
+    a -> sqrt(t) a + \sqrt(t-1) b
+
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+
+    Arguments: 
+        transmissivity (float): value of the transmissivity > 1
+        nbar (float): average number of photons per mode 
+    Returns:
+        Tuple[Matrix, Vector]: the Y matrix of the amplification channel.
+    """
+    D = math.sqrt(transmissivity)
+    return math.diag(math.concat([D, D], axis=0))
+
+
+def amp_Y(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
+    r"""Returns the X matrix for the amplification channel.
+    The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
+
+    This channel couples mode a to a thermal state b with the transformation
+
+    a -> sqrt(t) a + \sqrt(1-t) b
+
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+
+    Arguments: 
+        transmissivity (float): value of the transmissivity > 1
+        nbar (float): average number of photons per mode 
+        hbar (float): value of hbar
+    Returns:
+        Tuple[Matrix, Vector]: the Y matrix of the amplification channel.
+    """
+    D = (transmissivity - 1) * (hbar / 2) * (2*nbar + 1)
+    return math.diag(math.concat([D, D], axis=0))
 
 
 def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector) -> Tuple[Matrix, Matrix, Vector]:
