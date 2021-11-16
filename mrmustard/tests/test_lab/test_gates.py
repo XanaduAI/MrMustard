@@ -24,7 +24,7 @@ from mrmustard import settings
 from mrmustard.tests import random
 
 
-@given(state=random.random_pure_state(num_modes=1), xy=random.vector(2))
+@given(state=random.pure_state(num_modes=1), xy=random.vector(2))
 def test_Dgate_1mode(state, xy):
     x, y = xy
     state_out = Dgate(x=x, y=y)(state)
@@ -32,7 +32,7 @@ def test_Dgate_1mode(state, xy):
     assert state_out == state
 
 
-@given(state=random.random_pure_state(num_modes=2), xxyy=random.vector(4))
+@given(state=random.pure_state(num_modes=2), xxyy=random.vector(4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
     state_out = Dgate(x=[x1, x2], y=[y1, y2])(state)
@@ -40,9 +40,9 @@ def test_Dgate_2mode(state, xxyy):
     assert state_out == state
 
 
-@given(gate=random.single_mode_unitary(), gstate=random.random_pure_state(num_modes=1))
+@given(gate=random.single_mode_unitary(small=True), gstate=random.pure_state(num_modes=1, small=True))
 def test_1mode_fock_equals_gaussian(gate, gstate):
-    fstate = State(fock=gstate.ket(cutoffs=[50]), is_mixed=False)
-    expected = gate(gstate)
-    computed = gate(fstate)
-    assert expected == computed
+    fstate = State(fock=gstate.ket(cutoffs=[40]), is_mixed=False)
+    via_phase_space = gate(gstate)
+    via_fock_space = gate(fstate)
+    assert via_phase_space == via_fock_space

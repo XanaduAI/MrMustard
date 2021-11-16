@@ -42,7 +42,7 @@ class TFMath(MathInterface):
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
-        return tensor.numpy()
+        return np.array(tensor)
 
     def assign(self, array: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
         array.assign(value)

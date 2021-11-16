@@ -70,9 +70,9 @@ def random_Rgate(draw, num_modes=None, trainable=False):
 
 
 @st.composite
-def random_Sgate(draw, num_modes=None, trainable=False):
+def random_Sgate(draw, num_modes=None, trainable=False, small=False):
     return Sgate(
-        r=draw(r),
+        r=np.abs(draw(small_float)) if small else draw(r),
         phi=draw(angle),
         r_bounds=draw(positive_bounds),
         phi_bounds=draw(angle_bounds),
@@ -82,10 +82,16 @@ def random_Sgate(draw, num_modes=None, trainable=False):
 
 
 @st.composite
-def random_Dgate(draw, num_modes=None, trainable=False):
+def random_Dgate(draw, num_modes=None, trainable=False, small=False):
+    if small:
+        x = draw(small_float)
+        y = draw(small_float)
+    else:
+        x = draw(medium_float)
+        y = draw(medium_float)
     return Dgate(
-        x=draw(medium_float),
-        y=draw(medium_float),
+        x=x,
+        y=y,
         x_bounds=draw(real_bounds),
         y_bounds=draw(real_bounds),
         x_trainable=trainable,
@@ -132,7 +138,7 @@ def random_MZgate(draw, trainable=False):
 
 @st.composite
 def random_Interferometer(draw, num_modes, trainable=False):
-    return Interferometer(modes=draw(modes(num_modes)), orthogonal_trainable=trainable)
+    return Interferometer(num_modes=num_modes, orthogonal_trainable=trainable)
 
 
 @st.composite
@@ -146,8 +152,8 @@ def random_Ggate(draw, num_modes, trainable=False):
 
 
 @st.composite
-def single_mode_unitary(draw):
-    return draw(st.one_of(random_Rgate(1), random_Sgate(1), random_Dgate(1)))
+def single_mode_unitary(draw, small=False):
+    return draw(st.one_of(random_Rgate(1), random_Sgate(1, small=small), random_Dgate(1, small=small)))
 
 
 @st.composite
@@ -216,7 +222,8 @@ def default_pure_state(draw, num_modes):
 
 
 @st.composite
-def random_pure_state(draw, num_modes=1):
-    G = draw(random_Ggate(num_modes))
-    D = draw(random_Dgate(num_modes))
-    return D(G(Vacuum(len(G.modes))))
+def pure_state(draw, num_modes=1, small=False):
+    S = draw(random_Sgate(num_modes, small=small))
+    I = draw(random_Interferometer(num_modes))
+    D = draw(random_Dgate(num_modes, small=small))
+    return D(I(S(Vacuum(num_modes))))

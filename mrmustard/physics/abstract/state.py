@@ -147,13 +147,14 @@ class State:
             return self._fock
         if self.is_gaussian:
             self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs, is_mixed=False)
-        elif cutoffs != self.cutoffs:
-            try:
-                shape = cutoffs if self.is_pure else cutoffs * 2
-                shape_tuple = [slice(s) for s in shape]
-                return self._fock.__getitem__(shape_tuple)
-            except IndexError:
-                raise IndexError(f"This state does not have amplitudes of shape {shape}")
+        else:  # only fock representation is available
+            if cutoffs != self.cutoffs:
+                try:
+                    shape = cutoffs if self.is_pure else cutoffs * 2
+                    shape_tuple = [slice(s) for s in shape]
+                    return self._fock.__getitem__(shape_tuple)
+                except IndexError:
+                    raise IndexError(f"This state in Fock representation does not have a ket of shape {shape}")
         return self._fock
 
     def dm(self, cutoffs: List[int], from_cache=False) -> Tensor:
@@ -234,15 +235,15 @@ class State:
         if self.is_mixed != other.is_mixed:
             return False
         if self.is_gaussian and other.is_gaussian:
-            if not np.allclose(self.means, other.means):
+            if not np.allclose(self.means, other.means, atol=1e-6):
                 return False
-            if not np.allclose(self.cov, other.cov):
+            if not np.allclose(self.cov, other.cov, atol=1e-6):
                 return False
             return True
         if self.is_pure and other.is_pure:
-            return np.allclose(self.ket(cutoffs=other.cutoffs, from_cache=True), other.ket(cutoffs=other.cutoffs, from_cache=True))
+            return np.allclose(self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6)
         else:
-            return np.allclose(self.dm(cutoffs=other.cutoffs, from_cache=True), other.dm(cutoffs=other.cutoffs, from_cache=True))
+            return np.allclose(self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6)
 
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))
@@ -255,15 +256,17 @@ class State:
             f"{(self.purity):.3f}",
             str(self.num_modes),
             "1" if self.is_gaussian else "N/A",
-            "✅" if self.is_gaussian else "❌",
-            "✅" if self._fock is not None else "❌",
+            "✅ " if self.is_gaussian else "❌ ",
+            "✅ " if self._fock is not None else "❌ ",
         )
-        rprint(table)
-        if self.num_modes == 1:
-            if self._fock is not None:
-                cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
-            else:
-                cutoffs = [20]
-            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
-        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
-        return detailed_info
+        # rprint(table)
+        # if self.num_modes == 1:
+        #     if self._fock is not None:
+        #         cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
+        #     else:
+        #         cutoffs = [20]
+        #     graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
+        # detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
+        # return detailed_info
+        if self.is_gaussian:
+            return repr(self.cov) + "\n" + repr(self.means)
