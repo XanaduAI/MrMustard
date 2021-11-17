@@ -119,7 +119,7 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     """Tests the photon number distribution of a lossy two-mode squeezed state"""
     cutoff = 40
     n = np.arange(cutoff)
-    L = LossChannel(modes=[0,1], transmissivity=[eta_0, eta_1])
+    L = LossChannel(modes=[0, 1], transmissivity=[eta_0, eta_1])
     state = L(TMSV(r=np.arcsinh(np.sqrt(n_mean)), phi=phi))
     ps0 = state[0].fock_probabilities(cutoffs=[cutoff])
     ps1 = state[1].fock_probabilities(cutoffs=[cutoff])

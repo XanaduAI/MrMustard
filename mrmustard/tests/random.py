@@ -29,6 +29,7 @@ medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, al
 large_float = st.floats(min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False)
 num_modes = st.integers(min_value=0, max_value=10)
 
+
 @st.composite
 def vector(draw, length):
     return draw(st.lists(st.floats(min_value=-1, max_value=1), min_size=length, max_size=length))

@@ -166,6 +166,7 @@ def purity(dm: Tensor) -> Scalar:
     dm = math.reshape(dm, (d, d))
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
+
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool) -> Tensor:
     r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
     It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.

@@ -74,7 +74,7 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
-def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype = math.float64) -> Trainable:
+def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64) -> Trainable:
     r"""
     Returns a new trainable variable from the current math backend
     with initial value set by `value` and bounds set by `bounds`.
@@ -89,7 +89,7 @@ def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: s
     return math.new_variable(value, bounds, name, dtype)
 
 
-def new_constant(value, name: str, dtype = math.float64) -> Tensor:
+def new_constant(value, name: str, dtype=math.float64) -> Tensor:
     r"""
     Returns a new constant (non-trainable) tensor from the current math backend
     with initial value set by `value`.

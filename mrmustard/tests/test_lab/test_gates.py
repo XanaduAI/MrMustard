@@ -41,7 +41,7 @@ def test_Dgate_2mode(state, xxyy):
 
 
 def test_1mode_fock_equals_gaussian():
-    pass # TODO: implement with weak states and gates
+    pass  # TODO: implement with weak states and gates
     # gate = Ggate(num_modes=1)  # too much squeezing probably
     # gstate = Gaussian(num_modes=1)  # too much squeezing probably
     # fstate = State(fock=gstate.ket(cutoffs=[40]), is_mixed=False)
