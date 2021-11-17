@@ -13,52 +13,49 @@
 # limitations under the License.
 
 import numpy as np
+
 from mrmustard.utils.types import *
 from mrmustard import settings
+from mrmustard.math import Math
+
+math = Math()
 
 
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  NOTE: the math backend is loaded automatically by the settings object
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_representation(cov: Matrix, means: Vector, cutoffs: Sequence[int], mixed: bool) -> Tensor:
+def fock_representation(
+    cov: Matrix, means: Vector, shape: Sequence[int], is_mixed: bool = None, is_unitary: bool = None, choi_r: float = None
+) -> Tensor:
     r"""
-    Returns the Fock representation of the phase space representation
-    given a Wigner covariance matrix and a means vector. If the state is pure
-    it returns the ket, if it is mixed it returns the density matrix.
+    Returns the Fock representation of a state or Choi state.
+    If the state is pure it returns the state vector (ket).
+    If the state is mixed it returns the density matrix.
+    If the transformation is unitary it returns the unitary transformation matrix.
+    If the transformation is not unitary it returns the Choi matrix.
     Args:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
-        cutoffs: The shape of the tensor.
-        mixed: Whether the state vector is mixed or not.
+        shape: The shape of the tensor.
+        is_mixed: Whether the state vector is mixed or not.
+        is_unitary: Whether the transformation is unitary or not.
+        choi_r: The TMSV squeezing magnitude.
     Returns:
-        The Fock representation of the phase space representation.
+        The Fock representation.
     """
-    assert len(cutoffs) == means.shape[-1] // 2 == cov.shape[-1] // 2
-    A, B, C = hermite_parameters(cov, means, mixed)
-    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=cutoffs + cutoffs if mixed else cutoffs)
-
-
-def bell_norm(r: float, cutoff: int) -> Scalar:
-    return (np.tanh(r) ** np.arange(cutoff)) / np.cosh(r) + 0.0j
-
-
-def normalize_choi_trick(unnormalized: Tensor, r: float) -> Tensor:
-    r"""
-    Normalizes the columns of an operator obtained by applying it to TMSV(r).
-    Args:
-        unnormalized: The unnormalized operator
-        r: The value of the Choi squeezing
-    Returns:
-        The normalized operator.
-    """
-    col_cutoffs = unnormalized.shape[1::2]
-    norm = math.reshape(bell_norm(r, col_cutoffs[0]), -1)
-    for i, c in enumerate(col_cutoffs[1:]):
-        norm = math.reshape(math.outer(norm, bell_norm(r, c)), -1)
-    normalized = math.reshape(unnormalized, (-1, np.prod(col_cutoffs))) / norm[None, :]
-    return math.reshape(normalized, unnormalized.shape)
+    if is_mixed is not None and is_unitary is not None:
+        raise ValueError("Cannot specify both mixed and unitary.")
+    if is_mixed is None and is_unitary is None:
+        raise ValueError("Must specify either mixed or unitary.")
+    if is_unitary is not None and choi_r is None:
+        raise ValueError("Must specify the choi_r value.")
+    if is_mixed is not None:  # i.e. it's a state
+        A, B, C = ABC(cov, means, full=is_mixed)
+    elif is_unitary is not None and choi_r is not None:  # i.e. it's a transformation
+        A, B, C = ABC(cov, means, full=not is_unitary, choi_r=choi_r)
+    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -94,40 +91,58 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     return math.all_diagonals(dm, real=True)
 
 
-def hermite_parameters(cov: Matrix, means: Vector, mixed: bool) -> Tuple[Matrix, Vector, Scalar]:
+def U_to_choi(U: Tensor) -> Tensor:
     r"""
-    Returns the A matrix, B vector and C scalar given a Wigner covariance matrix and a means vector of an N-mode state.
-    The A, B, C triple is needed to compute the Fock representation of the state.
-    If the state is pure, then A has shape (N, N), B has shape (N) and C has shape ().
-    If the state is mixed, then A has shape (2N, 2N), B has shape (2N) and C has shape ().
+    Converts a unitary transformation to a Choi tensor.
     Args:
+        U: The unitary transformation.
+    Returns:
+        The Choi tensor.
+    """
+    cutoffs = U.shape[: len(U.shape) // 2]
+    N = len(cutoffs)
+    outer = math.outer(U, math.conj(U))
+    choi = math.transpose(outer, list(range(0, N)) + list(range(2 * N, 3 * N)) + list(range(N, 2 * N)) + list(range(3 * N, 4 * N)))
+    return choi
+
+
+def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
+    r"""
+    Returns the full-size A matrix, B vector and C scalar.
+    Arguments:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
-        mixed: Whether the state vector is mixed or not.
-    Returns:
-        The A matrix, B vector and C scalar.
+        full: Whether to return the full-size A, B and C or the half-size A, B and C.
+        choi_r: The TMSV squeezing magnitude if not None we consider ABC of a Choi state.
     """
-    num_indices = means.shape[-1]
-    num_modes = num_indices // 2
-
-    # cov and means in the amplitude basis
-    R = math.rotmat(num_indices // 2)
+    is_state = choi_r is None
+    N = cov.shape[-1] // 2
+    R = math.rotmat(N)
     sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
     beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
-
-    sQ = sigma + 0.5 * math.eye(num_indices, dtype=sigma.dtype)
-    sQinv = math.inv(sQ)
-    X = math.Xmat(num_modes)
-    A = math.matmul(X, math.eye(num_indices, dtype=sQinv.dtype) - sQinv)
-    B = math.matvec(math.transpose(sQinv), math.conj(beta))
-    exponent = -0.5 * math.sum(math.conj(beta)[:, None] * sQinv * beta[None, :])
-    T = math.exp(exponent) / math.sqrt(math.det(sQ))
-    N = 2 * num_modes if mixed else num_modes
-    return (
-        A[:N, :N],
-        B[:N],
-        T ** (1.0 if mixed else 0.5),
-    )  # will be off by global phase because T is real even for pure states
+    Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)  # Husimi covariance matrix
+    Qinv = math.inv(Q)
+    A = math.matmul(math.Xmat(N), math.eye(2 * N, dtype=Qinv.dtype) - Qinv)
+    denom = math.sqrt(math.det(Q)) if is_state else math.sqrt(math.det(Q / np.cosh(choi_r)))
+    if full:
+        B = math.matvec(math.transpose(Qinv), math.conj(beta))
+        exponent = -0.5 * math.sum(math.conj(beta)[:, None] * Qinv * beta[None, :])
+        C = math.exp(exponent) / denom
+    else:
+        A = A[:N, :N]  # TODO: find a way to compute the half-size A without computing the full-size A first
+        B = beta[N:] - math.matvec(A, beta[:N])
+        exponent = -0.5 * math.sum(beta[:N] * B)
+        C = math.exp(exponent) / math.sqrt(denom)
+    if choi_r is not None:
+        ones = math.ones(N // 2, dtype=A.dtype)  # N//2 is the actual number of modes because of the choi trick
+        factor = 1.0 / np.tanh(choi_r)
+        if full:
+            rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
+        else:
+            rescaling = math.concat([ones, factor * ones], axis=0)
+        A = rescaling[:, None] * rescaling[None, :] * A
+        B = rescaling * B
+    return A, B, C
 
 
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
@@ -141,4 +156,43 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
         b = math.reshape(state_b, -1)
         return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
     else:
-        raise NotImplementedError("Fidelity between mixed states is not implemented")
+        raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
+
+
+def purity(dm: Tensor) -> Scalar:
+    r"""Computes the purity of a state in Fock representation."""
+    cutoffs = dm.shape[: len(dm.shape) // 2]
+    d = np.prod(cutoffs)  # combined cutoffs in all modes
+    dm = math.reshape(dm, (d, d))
+    return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
+
+
+def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool) -> Tensor:
+    r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
+    It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
+    Arguments:
+        transformation: The transformation tensor.
+        fock_state: The state to transform.
+        transformation_is_unitary: Whether the transformation is a unitary matrix or a Choi operator.
+        state_is_mixed: Whether the state is mixed or not.
+    Returns:
+        The transformed state.
+    """
+    num_modes = len(fock_state.shape) // 2 if state_is_mixed else len(fock_state.shape)
+    indices = list(range(num_modes))
+    if transformation_is_unitary:
+        U = transformation
+        Us = math.tensordot(U, fock_state, axes=([num_modes + s for s in indices], indices))
+        if state_is_mixed:
+            UsU = math.tensordot(Us, math.dagger(U), axes=([num_modes + s for s in indices], indices))
+            return UsU
+        else:
+            return Us
+    else:
+        C = transformation
+        Cs = math.tensordot(C, fock_state, axes=([-s for s in reversed(indices)], indices))
+        if state_is_mixed:
+            return Cs
+        else:
+            Css = math.tensordot(Cs, math.conj(fock_state), axes=([-s for s in reversed(indices)], indices))
+            return Css

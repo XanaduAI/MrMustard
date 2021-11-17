@@ -16,17 +16,20 @@ import numpy as np
 import tensorflow as tf
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
 
-from mrmustard.physics.math_interface import MathInterface
+from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
 from mrmustard.utils.types import *
 
 
-class Math(MathInterface):
+class TFMath(MathInterface):
 
     float64 = tf.float64
     float32 = tf.float32
     complex64 = tf.complex64
     complex128 = tf.complex128
+
+    def __getattr__(self, name):
+        return getattr(tf, name)
 
     # ~~~~~~~~~
     # Basic ops
@@ -39,7 +42,7 @@ class Math(MathInterface):
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
-        return tensor.numpy()
+        return np.array(tensor)
 
     def assign(self, array: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
         array.assign(value)
@@ -151,13 +154,11 @@ class Math(MathInterface):
         return tf.minimum(a, b)
 
     def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
-        if value is None:
-            value = np.random.normal(0, 1)
+        value = self.cast(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=tf.float64):
-        if value is None:
-            value = np.random.normal(0, 1)
+        value = self.cast(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:

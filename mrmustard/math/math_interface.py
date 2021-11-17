@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC
+from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.utils.types import *
 import numpy as np
 from functools import lru_cache
@@ -23,202 +23,258 @@ from itertools import product
 
 class MathInterface(ABC):
     r"""
-    The interface that all math backends must implement.
-    All methods are pure (no side effects) and are be used by the physics modules.
+    The interface that all backends must implement.
     """
-    _euclidean_opt = None
+    _euclidean_opt: type = None  # NOTE this is an object that
 
-    __instance = None
     # backend is a singleton
+    __instance = None
+
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
-            cls.__instance = object.__new__(cls)
+            cls.__instance = super().__new__(cls)
         return cls.__instance
+
+    @abstractmethod
+    def __getattr__(self, name):
+        ...  # pass the call to the actual backend
 
     # ~~~~~~~~~
     # Basic ops
     # ~~~~~~~~~
 
+    @abstractmethod
     def abs(self, array: Tensor) -> Tensor:
+        "fill me"
         ...
 
+    @abstractmethod
     def arange(self, start: int, limit: int = None, delta: int = 1) -> Tensor:
         ...  # NOTE: is float64 by default
 
+    @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def astensor(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
         ...
 
+    @abstractmethod
     def cast(self, array: Tensor, dtype) -> Tensor:
         ...
 
+    @abstractmethod
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
         ...
 
+    @abstractmethod
     def conj(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
         ...
 
+    @abstractmethod
     def convolution(
         self, array: Tensor, filters: Tensor, strides: List[int], padding="VALID", data_format="NWC", dilations: Optional[List[int]] = None
-    ) -> Tensor:
+    ) -> Tensor:  # TODO: remove strides and data_format?
         ...
 
+    @abstractmethod
     def cos(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def cosh(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def det(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def diag(self, array: Tensor, k: int) -> Tensor:
         ...
 
+    @abstractmethod
     def diag_part(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def einsum(self, string: str, *tensors) -> Tensor:
         ...
 
+    @abstractmethod
     def exp(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
         ...
 
+    @abstractmethod
     def expm(self, matrix: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def eye(self, size: int, dtype) -> Tensor:
         ...
 
+    @abstractmethod
     def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
         ...
 
+    @abstractmethod
     def hash_tensor(self, tensor: Tensor) -> int:
         ...
 
+    @abstractmethod
+    def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: Sequence[int]) -> Tensor:
+        ...
+
+    @abstractmethod
     def imag(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def inv(self, tensor: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def lgamma(self, x: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def log(self, x: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
+    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+        ...
+
+    @abstractmethod
     def matmul(self, a: Tensor, b: Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> Tensor:
         ...
 
+    @abstractmethod
     def matvec(self, a: Tensor, b: Tensor, transpose_a=False, adjoint_a=False) -> Tensor:
         ...
 
+    @abstractmethod
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def new_variable(self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Tensor:
         ...
 
+    @abstractmethod
     def new_constant(self, value: Tensor, name: str) -> Tensor:
         ...
 
+    @abstractmethod
     def norm(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def ones(self, shape: Sequence[int], dtype) -> Tensor:
-        ...  # NOTE: should be float64 by default
+        ...  # NOTE : should be float64 by default
 
+    @abstractmethod
     def ones_like(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def pad(self, array: Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> Tensor:
         ...
 
+    @abstractmethod
     def pinv(self, matrix: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def real(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
         ...
 
+    @abstractmethod
     def sin(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def sinh(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         ...
 
+    @abstractmethod
     def sum(self, array: Tensor, axes: Sequence[int] = None):
         ...
 
+    @abstractmethod
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         ...
 
+    @abstractmethod
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
         ...
 
+    @abstractmethod
     def trace(self, array: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
         ...
 
+    @abstractmethod
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         ...
 
+    @abstractmethod
     def zeros(self, shape: Sequence[int], dtype) -> Tensor:
         ...  # NOTE: should be float64 by default
 
+    @abstractmethod
     def zeros_like(self, array: Tensor) -> Tensor:
         ...
 
-    # ~~~~~~~~~~~~~~~~~
-    # Special functions
-    # ~~~~~~~~~~~~~~~~~
-
-    def hermite_renormalized(self, A: Tensor, B: Tensor, C: Tensor, shape: Sequence[int]) -> Tensor:
-        ...
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @property
     def euclidean_opt(self):
         if not self._euclidean_opt:
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
-
-    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
-        ...
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
@@ -238,15 +294,16 @@ class MathInterface(ABC):
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int = 1) -> Tensor:
-        "a random symplectic matrix in Sp(2*num_modes)"
+    def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
+        r"""A random symplectic matrix in Sp(2*num_modes).
+        Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default)."""
         if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))
             V = np.exp(1j * np.random.uniform(size=(1, 1)))
         else:
             W = unitary_group.rvs(dim=num_modes)
             V = unitary_group.rvs(dim=num_modes)
-        r = np.random.uniform(size=num_modes)
+        r = np.random.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
@@ -411,13 +468,14 @@ class MathInterface(ABC):
         return self.convolution(
             prob_padded[None, ..., None],
             other_reversed[..., None, None],
-            padding="VALID",
-            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",
+            padding="VALID",  # TODO: do we need to specify this?
+            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",  # TODO: rewrite this to be more readable (do we need it?)
         )[0, ..., 0]
 
     def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:
         r"""
         Convert the Riemannian gradient to a symplectic gradient.
+        TODO: add citation (S.Fiori)
         Arguments:
             S (Matrix): symplectic matrix
             dS_riemann (Matrix): Riemannian gradient tensor

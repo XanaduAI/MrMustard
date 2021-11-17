@@ -30,7 +30,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        super().__init__(False, cov, means)
+        super().__init__(cov=cov, means=means, is_mixed=False)
 
 
 class Coherent(Parametrized, State):
@@ -48,9 +48,9 @@ class Coherent(Parametrized, State):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         Parametrized.__init__(self, x=x, y=y, x_trainable=x_trainable, y_trainable=y_trainable, x_bounds=x_bounds, y_bounds=y_bounds)
-        means = gaussian.displacement(x, y, settings.HBAR)
+        means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, False, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def means(self):
@@ -74,9 +74,9 @@ class SqueezedVacuum(Parametrized, State):
         Parametrized.__init__(
             self, r=r, phi=phi, r_trainable=r_trainable, phi_trainable=phi_trainable, r_bounds=r_bounds, phi_bounds=phi_bounds
         )
-        cov = gaussian.squeezed_vacuum_cov(r, phi, settings.HBAR)
+        cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, False, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def cov(self):
@@ -100,9 +100,9 @@ class TMSV(Parametrized, State):
         Parametrized.__init__(
             self, r=r, phi=phi, r_trainable=r_trainable, phi_trainable=phi_trainable, r_bounds=r_bounds, phi_bounds=phi_bounds
         )
-        cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi, settings.HBAR)
+        cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
-        State.__init__(self, False, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def cov(self):
@@ -121,9 +121,9 @@ class Thermal(Parametrized, State):
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
     ):
         Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds)
-        cov = gaussian.thermal_cov(nbar, settings.HBAR)
+        cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, True, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def cov(self):
@@ -165,9 +165,9 @@ class DisplacedSqueezed(Parametrized, State):
             x_bounds=x_bounds,
             y_bounds=y_bounds,
         )
-        cov = gaussian.squeezed_vacuum_cov(r, phi, settings.HBAR)
-        means = gaussian.displacement(x, y, settings.HBAR)
-        State.__init__(self, False, cov=cov, means=means)
+        cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
+        means = gaussian.displacement(self.x, self.y, settings.HBAR)
+        State.__init__(self, cov=cov, means=means, is_mixed=False)
 
     @property
     def cov(self):
@@ -212,9 +212,9 @@ class Gaussian(Parametrized, State):
             eigenvalues_trainable=eigenvalues_trainable,
             eigenvalues_bounds=(settings.HBAR / 2, None),
         )
-        cov = gaussian.gaussian_cov(symplectic, eigenvalues, settings.HBAR)
+        cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, None, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, is_mixed=any(eigenvalues > settings.HBAR / 2))
 
     @property
     def cov(self):
@@ -227,10 +227,6 @@ class Gaussian(Parametrized, State):
     @property
     def is_mixed(self):
         return any(self.eigenvalues > settings.HBAR / 2)
-
-    @property
-    def is_pure(self):
-        return not self.is_mixed
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:

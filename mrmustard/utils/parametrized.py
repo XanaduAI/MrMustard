@@ -35,7 +35,7 @@ class Parametrized(ABC):
         self.param_names = [key for key in kwargs if key + "_trainable" in kwargs]  # every parameter can be trainable! 🚀
 
         for name in self.param_names:
-            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # making "is trainable" available as param._trainable
+            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # defining ._param_trainable: bool
             if kwargs[name + "_trainable"]:
                 var = training.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)
@@ -46,7 +46,7 @@ class Parametrized(ABC):
                 self.__dict__[name] = const
         for key, val in kwargs.items():
             if not any(word in key for word in self.param_names):
-                self.__dict__["_" + key] = val  # making other values available as gate._val_name
+                self.__dict__["_" + key] = val  # making other values available as gate._blah
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as needed in child classes

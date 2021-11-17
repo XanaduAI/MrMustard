@@ -30,28 +30,26 @@ class Dgate(Parametrized, Transformation):
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
-        modes (List[int]): the list of modes this gate is applied to
         x (float or List[float]): the list of displacements along the x axis
         x_bounds (float, float): bounds for the displacement along the x axis
         x_trainable (bool): whether x is a trainable variable
         y (float or List[float]): the list of displacements along the y axis
         y_bounds (float, float): bounds for the displacement along the y axis
         y_trainable bool: whether y is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
     """
 
     def __init__(
         self,
-        modes: List[int] = None,
         x: Union[Optional[float], Optional[List[float]]] = 0.0,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_trainable: bool = False,
         y: Union[Optional[float], Optional[List[float]]] = 0.0,
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_trainable: bool = False,
+        modes: List[int] = [],
     ):
         super().__init__(modes=modes, x=x, x_bounds=x_bounds, x_trainable=x_trainable, y=y, y_bounds=y_bounds, y_trainable=y_trainable)
-        self.is_unitary = True
-        self.single_mode = True
 
     @property
     def d_vector(self):
@@ -77,19 +75,17 @@ class Sgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int] = None,
         r: Union[Optional[float], Optional[List[float]]] = 0.0,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = False,
         phi: Union[Optional[float], Optional[List[float]]] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
+        modes: List[int] = [],
     ):
         super().__init__(
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
         )
-        self.is_unitary = True
-        self.single_mode = True
 
     @property
     def X_matrix(self):
@@ -112,14 +108,12 @@ class Rgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int] = None,
         angle: Union[Optional[float], Optional[List[float]]] = 0.0,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         angle_trainable: bool = False,
+        modes: List[int] = [],
     ):
         super().__init__(modes=modes, angle=angle, angle_bounds=angle_bounds, angle_trainable=angle_trainable)
-        self.is_unitary = True
-        self.single_mode = True
 
     @property
     def X_matrix(self):
@@ -143,13 +137,13 @@ class BSgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int] = None,
         theta: Optional[float] = 0.0,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         theta_trainable: bool = False,
         phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
+        modes: List[int] = [0, 1],
     ):
         if modes is not None and len(modes) > 2:
             raise ValueError("Beam splitter works on 2 modes. Perhaps you are looking for Interferometer.")
@@ -162,12 +156,14 @@ class BSgate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
             phi_trainable=phi_trainable,
         )
-        self.is_unitary = True
-        self.single_mode = False
 
     @property
     def X_matrix(self):
         return gaussian.beam_splitter_symplectic(self.theta, self.phi)
+
+    def _validate_modes(self, modes):
+        if len(modes) != 2:
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
 class MZgate(Parametrized, Transformation):
@@ -190,7 +186,6 @@ class MZgate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int] = None,
         phi_a: Optional[float] = 0.0,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_a_trainable: bool = False,
@@ -198,6 +193,7 @@ class MZgate(Parametrized, Transformation):
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_b_trainable: bool = False,
         internal: bool = False,
+        modes: List[int] = [0, 1],
     ):
         if modes is not None and len(modes) > 2:
             raise ValueError("The Mach-Zehnder gate works on 2 modes. Perhaps you are looking for Interferometer.")
@@ -211,12 +207,14 @@ class MZgate(Parametrized, Transformation):
             phi_b_trainable=phi_b_trainable,
             internal=internal,
         )
-        self.is_unitary = True
-        self.single_mode = False
 
     @property
     def X_matrix(self):
         return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
+
+    def _validate_modes(self, modes):
+        if len(modes) != 2:
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
 class S2gate(Parametrized, Transformation):
@@ -236,23 +234,25 @@ class S2gate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int] = None,
         r: Optional[float] = 0.0,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         r_trainable: bool = False,
         phi: Optional[float] = 0.0,
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_trainable: bool = False,
+        modes: List[int] = [0, 1],
     ):
         super().__init__(
             modes=modes, r=r, r_bounds=r_bounds, r_trainable=r_trainable, phi=phi, phi_bounds=phi_bounds, phi_trainable=phi_trainable
         )
-        self.is_unitary = True
-        self.single_mode = False
 
     @property
     def X_matrix(self):
         return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
+
+    def _validate_modes(self, modes):
+        if len(modes) != 2:
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
 class Interferometer(Parametrized, Transformation):
@@ -271,12 +271,14 @@ class Interferometer(Parametrized, Transformation):
         super().__init__(
             modes=list(range(num_modes)), orthogonal=orthogonal, orthogonal_bounds=(None, None), orthogonal_trainable=orthogonal_trainable
         )
-        self.is_unitary = True
-        self.single_mode = False
 
     @property
     def X_matrix(self):
         return self.orthogonal
+
+    def _validate_modes(self, modes):
+        if len(modes) != self.orthogonal.shape[1] // 2:
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})")
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
@@ -308,7 +310,7 @@ class Ggate(Parametrized, Transformation):
         if symplectic is None:
             symplectic = training.new_symplectic(num_modes=num_modes)
         if displacement is None:
-            displacement = training.math.zeros(num_modes * 2)  # TODO: gates should not know about the backend
+            displacement = gaussian.displacement(0.0, 0.0, settings.HBAR)
         super().__init__(
             modes=list(range(num_modes)),
             symplectic=symplectic,
@@ -318,8 +320,6 @@ class Ggate(Parametrized, Transformation):
             displacement_bounds=displacement_bounds,
             displacement_trainable=displacement_trainable,
         )
-        self.is_unitary = True
-        self.single_mode = False
 
     @property
     def X_matrix(self):
@@ -328,6 +328,10 @@ class Ggate(Parametrized, Transformation):
     @property
     def d_vector(self):
         return self.displacement
+
+    def _validate_modes(self, modes):
+        if len(modes) != self.symplectic.shape[1] // 2:
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})")
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
@@ -359,10 +363,10 @@ class LossChannel(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: List[int] = None,
         transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         transmissivity_trainable: bool = False,
+        modes: List[int] = [],
     ):
         super().__init__(
             modes=modes,
@@ -371,7 +375,6 @@ class LossChannel(Parametrized, Transformation):
             transmissivity_trainable=transmissivity_trainable,
         )
         self.is_unitary = False
-        self.single_mode = True
 
     @property
     def X_matrix(self):

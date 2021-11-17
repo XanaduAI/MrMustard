@@ -17,10 +17,9 @@ from mrmustard.utils.types import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
+from mrmustard.math import Math
 
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  NOTE: the math backend is loaded automatically by the settings object
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+math = Math()
 
 
 class XPTensor(ABC):

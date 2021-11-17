@@ -145,8 +145,8 @@ def test_learning_two_mode_Ggate():
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
-    opt.minimize(cost_fn, by_optimizing=[G], max_steps=2000)
-    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
+    opt.minimize(cost_fn, by_optimizing=[G], max_steps=500)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-4)
 
 
 def test_learning_two_mode_Interferometer():
