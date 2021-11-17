@@ -1,9 +1,8 @@
 # this is the topmost __init__.py file of the mrmustard package
 
 import importlib
-from rich.pretty import install
-
-install()  # NOTE: just for the looks, not stricly required
+from rich.pretty import install  # NOTE: just for the looks
+install()
 
 __version__ = "0.1.0"
 
@@ -12,9 +11,9 @@ class Settings:
     def __init__(self):
         self._backend = "tensorflow"
         self.HBAR = 2.0
-        self.CHOI_R = 1.0
+        self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        self.N_SIGMA_CUTOFF = 4  # 4 sigma when auto-detecting the cutoff
+        self.N_SIGMA_CUTOFF = 4  # 4x the sqrt of the photon number variance when auto-detecting the Fock cutoff for a mode
 
     @property
     def backend(self):

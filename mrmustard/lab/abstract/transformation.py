@@ -19,7 +19,7 @@ from rich.table import Table
 from rich import print as rprint
 
 from mrmustard.physics import gaussian, fock
-from mrmustard.physics.abstract.state import State
+from mrmustard.lab.abstract.state import State
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings

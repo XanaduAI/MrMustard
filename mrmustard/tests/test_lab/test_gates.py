@@ -18,7 +18,7 @@ from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian
 from mrmustard.lab.states import *
-from mrmustard.physics.abstract import State
+from mrmustard.lab.abstract import State
 from mrmustard.lab.gates import *
 from mrmustard import settings
 from mrmustard.tests import random

@@ -15,7 +15,7 @@
 from mrmustard.utils.types import *
 from mrmustard import settings
 
-from mrmustard.physics.abstract import State
+from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian
 from mrmustard.utils import Parametrized, training
 

@@ -14,10 +14,9 @@
 
 from mrmustard.utils.types import *
 from mrmustard import settings
-
+from mrmustard.lab.abstract import Transformation
 from mrmustard.utils import training, Parametrized
 from mrmustard.physics import gaussian, fock
-from mrmustard.physics.abstract import Transformation
 
 __all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
 

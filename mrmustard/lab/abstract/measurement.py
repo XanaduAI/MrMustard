@@ -15,7 +15,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.physics import gaussian, fock
-from mrmustard.physics.abstract.state import State
+from mrmustard.lab.abstract.state import State
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings
