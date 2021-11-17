@@ -19,7 +19,7 @@ from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 from mrmustard.lab.gates import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
 from mrmustard.lab.circuit import Circuit
-from mrmustard.lab.states import Vacuum
+from mrmustard.lab.states import Vacuum, TMSV, SqueezedVacuum
 
 
 # helper strategies
@@ -50,7 +50,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     circ.append(S2gate(modes=[2, 3], r=r, phi=phi))
     circ.append(BSgate(modes=[1, 2], theta=np.pi / 4, phi=varphi))
     amps = circ(Vacuum(num_modes=4)).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
-    assert np.allclose(amps[1, 1, 1, 1], 0.0)
+    assert np.allclose(amps[1, 1, 1, 1], 0.0, atol=1e-6)
 
 
 @given(alpha=st.complex_numbers(min_magnitude=0, max_magnitude=2))
@@ -107,31 +107,26 @@ def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
-    circ = Circuit()
-    r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(Sgate(modes=[0], r=-r, phi=0.0))
-    circ.append(LossChannel(modes=[0], transmissivity=eta))
-    ps = circ(Vacuum(num_modes=1)).fock_probabilities(cutoffs=[cutoff])
+    sq = SqueezedVacuum(r=r, phi=phi)
+    L = LossChannel(modes=[0], transmissivity=eta)
+    ps = L(sq).fock_probabilities(cutoffs=[cutoff])
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
-    assert np.allclose(ps, expected)
+    assert np.allclose(ps, expected, atol=1e-6)
 
 
-@given(n_mean=st.floats(0, 2), phi=st_angle, eta_s=st.floats(0, 1), eta_i=st.floats(0, 1))
-def test_lossy_two_mode_squeezing(n_mean, phi, eta_s, eta_i):
-    """Tests the total photon number distribution of a lossy two-mode squeezed state"""
-    r = np.arcsinh(np.sqrt(n_mean))
-    cutoff = 20
-    circ = Circuit()
-    r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(modes=[0, 1], r=-r, phi=0.0))
-    circ.append(LossChannel(modes=[0], transmissivity=eta_s))
-    circ.append(LossChannel(modes=[1], transmissivity=eta_i))
-    ps = circ(Vacuum(num_modes=2)).fock_probabilities(cutoffs=[cutoff, cutoff])
+@given(n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1))
+def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
+    """Tests the photon number distribution of a lossy two-mode squeezed state"""
+    cutoff = 40
     n = np.arange(cutoff)
-    mean_s = n @ np.sum(ps, axis=1)
-    mean_i = n @ np.sum(ps, axis=0)
-    assert np.allclose(mean_s, n_mean * eta_s, atol=1e-2)
-    assert np.allclose(mean_i, n_mean * eta_i, atol=1e-2)
+    L = LossChannel(modes=[0,1], transmissivity=[eta_0, eta_1])
+    state = L(TMSV(r=np.arcsinh(np.sqrt(n_mean)), phi=phi))
+    ps0 = state[0].fock_probabilities(cutoffs=[cutoff])
+    ps1 = state[1].fock_probabilities(cutoffs=[cutoff])
+    mean_0 = np.sum(n * ps0)
+    mean_1 = np.sum(n * ps1)
+    assert np.allclose(mean_0, n_mean * eta_0, atol=1e-5)
+    assert np.allclose(mean_1, n_mean * eta_1, atol=1e-5)
 
 
 @given(num_modes=st.integers(1, 3))

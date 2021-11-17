@@ -156,8 +156,15 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
         b = math.reshape(state_b, -1)
         return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
     else:
-        raise NotImplementedError("Fidelity between mixed states is not implemented")
+        raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
 
+
+def purity(dm: Tensor) -> Scalar:
+    r"""Computes the purity of a state in Fock representation."""
+    cutoffs = dm.shape[: len(dm.shape) // 2]
+    d = np.prod(cutoffs)  # combined cutoffs in all modes
+    dm = math.reshape(dm, (d, d))
+    return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool) -> Tensor:
     r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.

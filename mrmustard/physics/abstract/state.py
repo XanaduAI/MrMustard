@@ -54,7 +54,7 @@ class State:
         """
         if self._purity is None:
             if self.is_gaussian:
-                self._purity = gaussian.purity(self.cov)
+                self._purity = gaussian.purity(self.cov, settings.HBAR)
             else:
                 self._purity = fock.purity(self._fock)  # dm
         return self._purity
@@ -259,14 +259,14 @@ class State:
             "✅ " if self.is_gaussian else "❌ ",
             "✅ " if self._fock is not None else "❌ ",
         )
-        # rprint(table)
-        # if self.num_modes == 1:
-        #     if self._fock is not None:
-        #         cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
-        #     else:
-        #         cutoffs = [20]
-        #     graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
-        # detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
-        # return detailed_info
-        if self.is_gaussian:
-            return repr(self.cov) + "\n" + repr(self.means)
+        rprint(table)
+        if self.num_modes == 1:
+            if self._fock is not None:
+                cutoffs = self._fock.shape if self.is_pure else self._fock.shape[:1]
+            else:
+                cutoffs = [20]
+            graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
+        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
+        return detailed_info
+        # if self.is_gaussian:
+        #     return repr(self.cov) + "\n" + repr(self.means)

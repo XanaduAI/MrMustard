@@ -28,7 +28,7 @@ def test_two_mode_squeezing(r):
     S2 = S2gate(modes=[0, 1], r=r, phi=0.0)
     cov = S2(Vacuum(num_modes=2)).cov
     expected = two_mode_squeezing(2 * r, 0.0)
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(r=st.floats(0, 1), phi=st.floats(0, 1))
@@ -41,7 +41,7 @@ def test_Sgate(r, phi):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(squeezing(r, phi), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(theta=st.floats(0, 2 * np.pi))
@@ -54,7 +54,7 @@ def test_Rgate(theta):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(rotation(theta), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(theta=st.floats(0, 2 * np.pi), phi=st.floats(0, 2 * np.pi))
@@ -68,7 +68,7 @@ def test_BSgate(theta, phi):
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi))
@@ -82,7 +82,7 @@ def test_S2gate(r, phi):
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(phi_ex=st.floats(0, 2 * np.pi), phi_in=st.floats(0, 2 * np.pi))
@@ -105,7 +105,7 @@ def test_MZgate_external_tms(phi_ex, phi_in):
     after_BS1 = BS_expanded @ after_ex @ BS_expanded.T
     after_in = in_expanded @ after_BS1 @ in_expanded.T
     expected = BS_expanded @ after_in @ BS_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(phi_a=st.floats(0, 2 * np.pi), phi_b=st.floats(0, 2 * np.pi))
@@ -127,4 +127,4 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     BS = beam_splitter(np.pi / 4, np.pi / 2)
     S_expanded = expand(BS, [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)

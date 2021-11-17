@@ -18,7 +18,7 @@ import pytest
 from mrmustard.lab.states import DisplacedSqueezed
 from mrmustard.utils.xptensor import XPVector, XPMatrix
 import numpy as np
-from mrmustard.tests.random import random_pure_state
+from mrmustard.tests.random import pure_state
 
 even = st.integers(min_value=2, max_value=10).filter(lambda x: x % 2 == 0)
 floats = st.floats(min_value=-1e3, max_value=1e3, allow_nan=False, allow_infinity=False)

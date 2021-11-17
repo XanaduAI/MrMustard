@@ -16,3 +16,4 @@ from .circuit import *
 from .states import *
 from .gates import *
 from .detectors import *
+from mrmustard.physics.abstract import State
