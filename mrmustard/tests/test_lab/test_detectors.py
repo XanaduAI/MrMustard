@@ -273,7 +273,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     y=st.floats(-10.0, 10.0),
     d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
 )
-def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):
+def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):  # TODO: check if this is correct
     S = S2gate(modes=[0, 1], r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
     D = Dgate(modes=[0, 1], x=d[:2], y=d[2:])
     tmsv = D(S(Vacuum(2)))

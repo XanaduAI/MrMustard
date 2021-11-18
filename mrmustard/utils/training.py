@@ -16,13 +16,9 @@ import numpy as np
 from scipy.linalg import expm
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
-import importlib
+from mrmustard.math import Math
 
-
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
+math = Math()
 
 
 class Optimizer:
@@ -78,7 +74,7 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
-def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
+def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64) -> Trainable:
     r"""
     Returns a new trainable variable from the current math backend
     with initial value set by `value` and bounds set by `bounds`.
@@ -86,23 +82,25 @@ def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: s
         value (float): The initial value of the variable
         bounds (Tuple[float, float]): The bounds of the variable
         name (str): The name of the variable
+        dtype: The dtype of the variable
     Returns:
         variable (Trainable): The new variable
     """
-    return math.new_variable(value, bounds, name)
+    return math.new_variable(value, bounds, name, dtype)
 
 
-def new_constant(value, name: str) -> Tensor:
+def new_constant(value, name: str, dtype=math.float64) -> Tensor:
     r"""
     Returns a new constant (non-trainable) tensor from the current math backend
     with initial value set by `value`.
     Arguments:
         value (numeric): The initial value of the tensor
         name (str): The name of the constant
+        dtype: The dtype of the constant
     Returns:
         tensor (Tensor): The new constant tensor
     """
-    return math.new_constant(value, name)
+    return math.new_constant(value, name, dtype)
 
 
 def new_symplectic(num_modes: int) -> Tensor:

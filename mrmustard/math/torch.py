@@ -16,17 +16,20 @@ import numpy as np
 import torch
 from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
 
-from mrmustard.physics.math_interface import MathInterface
+from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
 from mrmustard.utils.types import *
 
 
-class Math(MathInterface):
+class TorchMath(MathInterface):
 
     float64 = torch.float64
     float32 = torch.float32
     complex64 = torch.complex64
     complex128 = torch.complex128
+
+    def __getattr__(self, name):
+        return getattr(torch, name)
 
     # ~~~~~~~~~
     # Basic ops

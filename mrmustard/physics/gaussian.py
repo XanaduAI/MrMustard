@@ -12,18 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
 from thewalrus.quantum import is_pure_cov
+
+from mrmustard.utils.types import *
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
-import importlib
 from numpy import pi
+from mrmustard.math import Math
 
-
-def _set_backend(backend_name: str):
-    "This private function is called by the Settings object to set the math backend in this module"
-    Math = importlib.import_module(f"mrmustard.math.{backend_name}").Math
-    globals()["math"] = Math()  # setting global variable only in this module's scope
+math = Math()
 
 
 #  ~~~~~~
@@ -51,7 +48,7 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement(math.zeros(num_modes), math.zeros(num_modes), hbar)
+    return displacement(math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar)
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
@@ -439,6 +436,20 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     Returns True if the covariance matrix is mixed, False otherwise.
     """
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
+
+
+def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
+    r"""
+    Automatically determines reasonable cutoffs.
+    Args:
+        cov: The covariance matrix.
+        means: The means vector.
+        hbar: The value of the Planck constant.
+    Returns:
+        A list of cutoff indices.
+    """
+    cutoffs = number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
+    return [max(1, int(i)) for i in cutoffs]
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:

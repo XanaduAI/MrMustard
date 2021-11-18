@@ -28,7 +28,7 @@ def test_two_mode_squeezing(r):
     S2 = S2gate(modes=[0, 1], r=r, phi=0.0)
     cov = S2(Vacuum(num_modes=2)).cov
     expected = two_mode_squeezing(2 * r, 0.0)
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(r=st.floats(0, 1), phi=st.floats(0, 1))
@@ -41,7 +41,7 @@ def test_Sgate(r, phi):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(squeezing(r, phi), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(theta=st.floats(0, 2 * np.pi))
@@ -54,7 +54,7 @@ def test_Rgate(theta):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(rotation(theta), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(theta=st.floats(0, 2 * np.pi), phi=st.floats(0, 2 * np.pi))
@@ -68,7 +68,7 @@ def test_BSgate(theta, phi):
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi))
@@ -82,29 +82,30 @@ def test_S2gate(r, phi):
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
-@given(phi_a=st.floats(0, 2 * np.pi), phi_b=st.floats(0, 2 * np.pi))
-def test_MZgate_external_tms(phi_a, phi_b):
+@given(phi_ex=st.floats(0, 2 * np.pi), phi_in=st.floats(0, 2 * np.pi))
+def test_MZgate_external_tms(phi_ex, phi_in):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
     S2a = S2gate(modes=[0, 2], r=r_choi, phi=0.0)
     S2b = S2gate(modes=[1, 3], r=r_choi, phi=0.0)
-    MZ = MZgate(modes=[0, 1], phi_a=phi_a, phi_b=phi_b, internal=False)
-    cov = MZ(S2b(S2a(Vacuum(num_modes=4)))).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
-    S_expanded = expand(rotation(phi_a), [0], 4)
-    expected = S_expanded @ expected @ S_expanded.T
-    BS = beam_splitter(np.pi / 4, np.pi / 2)
-    S_expanded = expand(BS, [0, 1], 4)
-    expected = S_expanded @ expected @ S_expanded.T
-    S_expanded = expand(rotation(phi_b), [0], 4)
-    expected = S_expanded @ expected @ S_expanded.T
-    BS = beam_splitter(np.pi / 4, np.pi / 2)
-    S_expanded = expand(BS, [0, 1], 4)
-    expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    bell = S2b(S2a(Vacuum(num_modes=4)))
+    MZ = MZgate(modes=[0, 1], phi_a=phi_ex, phi_b=phi_in, internal=False)
+    cov = MZ(bell).cov
+
+    bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+
+    ex_expanded = expand(rotation(phi_ex), [0], 4)
+    in_expanded = expand(rotation(phi_in), [0], 4)
+    BS_expanded = expand(beam_splitter(np.pi / 4, np.pi / 2), [0, 1], 4)
+
+    after_ex = ex_expanded @ bell @ ex_expanded.T
+    after_BS1 = BS_expanded @ after_ex @ BS_expanded.T
+    after_in = in_expanded @ after_BS1 @ in_expanded.T
+    expected = BS_expanded @ after_in @ BS_expanded.T
+    assert np.allclose(cov, expected, atol=1e-6)
 
 
 @given(phi_a=st.floats(0, 2 * np.pi), phi_b=st.floats(0, 2 * np.pi))
@@ -126,4 +127,4 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     BS = beam_splitter(np.pi / 4, np.pi / 2)
     S_expanded = expand(BS, [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
-    assert np.allclose(cov, expected)
+    assert np.allclose(cov, expected, atol=1e-6)

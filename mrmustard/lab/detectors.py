@@ -14,7 +14,7 @@
 
 from mrmustard.utils.types import *
 from mrmustard.utils import Parametrized
-from mrmustard.physics.abstract import State, FockMeasurement, GaussianMeasurement
+from mrmustard.lab.abstract import State, FockMeasurement, GaussianMeasurement
 from mrmustard.physics import fock, gaussian
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 
