@@ -522,11 +522,13 @@ def von_neumann_entropy(cov: Matrix) -> float:
     r"""
     Returns the Von Neumann entropy.
     For a pure state, we expect the Von Neumann entropy to be 0.
+
+    Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
+
     Arguments:
         cov (Matrix): the covariance matrix
     Returns:
-        List[float]: the sympletic eigenvalues
-    Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
+        float: the von neumann entropy
     """
     symp_vals = self.sympletic_eigenvals(cov)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
@@ -534,11 +536,19 @@ def von_neumann_entropy(cov: Matrix) -> float:
     return entropy
 
 
-def fidelity(mu1: float, cov1: Matrix, mu2: float, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
+def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
     r"""
     Returns the fidelity of two gaussian states.
 
     Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
+
+    Arguments:
+        mu1 (Vector): the means vector of state 1
+        mu2 (Vector): the means vector of state 2
+        cov1 (Matrix): the covariance matrix of state 1
+        cov1 (Matrix): the covariance matrix of state 2
+    Returns:
+        float: the fidelity
     """
 
     cov1 = math.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
@@ -578,6 +588,11 @@ def log_negativity(cov: Matrix) -> float:
     Returns the log_negativity of a Gaussian state.
 
     Reference: https://arxiv.org/pdf/quant-ph/0102117.pdf, Equation 57, 61.
+
+    Arguments:
+        cov (Matrix): the covariance matrix
+    Returns:
+        float: the log-negativity
     """
 
     vals = sympletic_eigenvals(cov)
