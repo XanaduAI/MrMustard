@@ -39,6 +39,12 @@ class Circuit(Transformation):
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
+    def __call__(self, state: State) -> State:
+        "Overriding Transformation.__call__"
+        for op in self._ops:
+            state = op(state)
+        return state
+
     # NOTE: op.X_matrix, op.Y_matrix and op.d_vector are called repeatedly in the following methods, so circuits are composable but with an exponential cost.
     # TODO: Find a way around it
     @property

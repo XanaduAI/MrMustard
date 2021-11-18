@@ -25,7 +25,7 @@ from mrmustard.utils import graphics
 from mrmustard import settings
 
 
-class Transformation(ABC):
+class Transformation:
     r"""
     Base class for all transformations.
     Note that measurements are CP but not TP, so they have their own abstract class.
@@ -33,6 +33,7 @@ class Transformation(ABC):
         * unitary transformations
         * non-unitary CPTP channels
     """
+
     _bell = None  # single-mode TMSV state for gaussian to fock transformation
     is_unitary = True  # whether the transformation is unitary
 
@@ -46,9 +47,7 @@ class Transformation(ABC):
     def bell(self):
         r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
         if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(
-                np.float64(settings.CHOI_R), np.float64(0.0), settings.HBAR
-            )  # TODO casting to np.float64 shouldn't be necessary
+            cov = gaussian.two_mode_squeezed_vacuum_cov(r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR)
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means, is_mixed=False)
             for _ in self.modes[1:]:
@@ -76,10 +75,10 @@ class Transformation(ABC):
         new_state = fock.CPTP(
             transformation=transformation, fock_state=state._fock, transformation_is_unitary=self.is_unitary, state_is_mixed=state.is_mixed
         )
-        return State(fock=new_state, is_mixed=not self.is_unitary or state.is_mixed)
+        return State(fock=new_state, is_mixed=not self.is_unitary or state.is_mixed)  # TODO: is_mixed is not computed correctly (non-unitary maps can return pure states)
 
     def __repr__(self):
-        table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
+        table = Table(title=f"{self.__class__.__qualname__}")
         table.add_column("Parameters")
         table.add_column("dtype")
         table.add_column("Value")
@@ -88,9 +87,14 @@ class Transformation(ABC):
         with np.printoptions(precision=6, suppress=True):
             for name in self.param_names:
                 par = self.__dict__[name]
-                table.add_row(name, par.dtype.name, str(np.array(par)), str(par.shape), str(self.__dict__["_" + name + "_trainable"]))
+                table.add_row(name,
+                              par.dtype.name,
+                              f"{np.array(par)}",
+                              f"{par.shape}",
+                              str(self.__dict__["_" + name + "_trainable"]),
+                            )
             lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
-            repr_string = f"{self.__class__.__qualname__}(modes={self.modes}, {', '.join(lst)})"
+            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (f"[{self._modes}]" if self._modes is not None else "")
         rprint(table)
         return repr_string
 
@@ -108,13 +112,13 @@ class Transformation(ABC):
     @modes.setter
     def modes(self, modes: List[int]):
         r"""
-        Sets the modes of the input state.
+        Sets the modes on which the transformation acts.
         """
         self._validate_modes(modes)
         self._modes = modes
 
     def _validate_modes(self, modes):
-        pass  # override as needed
+        pass  # override in subclasses as needed
 
     @property
     def X_matrix(self) -> Optional[Matrix]:
@@ -152,6 +156,8 @@ class Transformation(ABC):
         Allows transformations to be used as:
         output = op[0,1](input)  # e.g. acting on modes 0 and 1
         """
+        #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
+        # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
         if isinstance(items, int):
             modes = [items]
         elif isinstance(items, slice):
@@ -162,3 +168,16 @@ class Transformation(ABC):
             raise ValueError(f"{items} is not a valid slice or list of modes.")
         self.modes = modes
         return self
+
+    def __rshift__(self, other):
+        r"""
+        Concatenates self with other.
+        E.g.
+        `circ = Sgate[0,1] >> Dgate[0] >> BSgate[0,1] >> PNRdetector[0]`  # TODO: use __class_getitem__ for compiler stuff
+        Arguments:
+            other: another transformation
+        Returns:
+            A new transformation that is the concatenation of the two.
+        """
+        from mrmustard.lab import Circuit  # this is called at runtime
+        return Circuit([self, other])

@@ -245,6 +245,14 @@ class State:
         else:
             return np.allclose(self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6)
 
+
+    def __rshift__(self, other):
+        r"""
+        Implements piping a state through a transformation or a measurement.
+        """
+        return other(self)
+
+
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))
         table.add_column("Purity", justify="center")
@@ -256,8 +264,8 @@ class State:
             f"{(self.purity):.3f}",
             str(self.num_modes),
             "1" if self.is_gaussian else "N/A",
-            "✅ " if self.is_gaussian else "❌ ",
-            "✅ " if self._fock is not None else "❌ ",
+            "✅" if self.is_gaussian else "❌",
+            "✅" if self._fock is not None else "❌",
         )
         rprint(table)
         if self.num_modes == 1:
@@ -268,5 +276,3 @@ class State:
             graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
         detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
         return detailed_info
-        # if self.is_gaussian:
-        #     return repr(self.cov) + "\n" + repr(self.means)

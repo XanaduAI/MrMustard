@@ -32,7 +32,7 @@ num_modes = st.integers(min_value=0, max_value=10)
 
 @st.composite
 def vector(draw, length):
-    return draw(st.lists(st.floats(min_value=-1, max_value=1), min_size=length, max_size=length))
+    return draw(st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length))
 
 
 # a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes

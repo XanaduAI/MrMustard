@@ -30,23 +30,28 @@ class PNRDetector(Parametrized, FockMeasurement):
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (possonian).
     Arguments:
-        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         efficiency (float or List[float]): list of quantum efficiencies for each detector
+        efficiency_trainable (bool): whether the efficiency is trainable
+        efficiency_bounds (Tuple[float, float]): bounds for the efficiency
         dark_counts (float or List[float]): list of expected dark counts
+        dark_counts_trainable (bool): whether the dark counts are trainable
+        dark_counts_bounds (Tuple[float, float]): bounds for the dark counts
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
+        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
+        modes (Optional List[int]): list of modes to apply the detector to
     """
 
     def __init__(
         self,
-        modes: List[int],
-        conditional_probs=None,
         efficiency: Union[float, List[float]] = 1.0,
-        efficiency_trainable: bool = False,
-        efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_counts: Union[float, List[float]] = 0.0,
+        efficiency_trainable: bool = False,
         dark_counts_trainable: bool = False,
+        efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         max_cutoffs: Union[int, List[int]] = 50,
+        conditional_probs=None,
+        modes: List[int] = None,
     ):
         if not isinstance(max_cutoffs, Sequence):
             max_cutoffs = [max_cutoffs for m in modes]
@@ -56,15 +61,15 @@ class PNRDetector(Parametrized, FockMeasurement):
             dark_counts = [dark_counts for m in modes]
 
         super().__init__(
-            modes=modes,
-            conditional_probs=conditional_probs,
             efficiency=efficiency,
-            efficiency_trainable=efficiency_trainable,
-            efficiency_bounds=efficiency_bounds,
             dark_counts=dark_counts,
+            efficiency_trainable=efficiency_trainable,
             dark_counts_trainable=dark_counts_trainable,
+            efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
             max_cutoffs=max_cutoffs,
+            conditional_probs=conditional_probs,
+            modes=modes,
         )
 
         self.recompute_stochastic_channel()
@@ -100,10 +105,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         modes: List[int],
         conditional_probs=None,
         efficiency: Union[float, List[float]] = 1.0,
-        efficiency_trainable: bool = False,
-        efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_count_prob: Union[float, List[float]] = 0.0,
+        efficiency_trainable: bool = False,
         dark_count_prob_trainable: bool = False,
+        efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_count_prob_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         max_cutoffs: Union[int, List[int]] = 50,
     ):
@@ -118,10 +123,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             modes=modes,
             conditional_probs=conditional_probs,
             efficiency=efficiency,
-            efficiency_trainable=efficiency_trainable,
-            efficiency_bounds=efficiency_bounds,
             dark_count_prob=dark_count_prob,
+            efficiency_trainable=efficiency_trainable,
             dark_count_prob_trainable=dark_count_prob_trainable,
+            efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
             max_cutoffs=max_cutoffs,
         )
@@ -189,9 +194,8 @@ class Homodyne(Parametrized, GaussianMeasurement):
         self._project_onto = self.recompute_project_onto(quadrature_angles, results)
 
     def recompute_project_onto(self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]) -> State:
-        quadrature_angles = gaussian.math.astensor(quadrature_angles, "float64")
-        results = gaussian.math.astensor(results, "float64")
-        # TODO: check! I think the rotation should be the other way (this angle is not the same as an Rgate angle)
+        quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype=math.float64)
+        results = gaussian.math.astensor(results, dtype=math.float64)
         x = results * gaussian.math.cos(quadrature_angles)
         y = results * gaussian.math.sin(quadrature_angles)
         return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y)
@@ -202,14 +206,14 @@ class Heterodyne(Parametrized, GaussianMeasurement):
     Heterodyne measurement on a given mode.
     """
 
-    def __init__(self, modes: List[int], x: Union[Scalar, Vector], y: Union[Scalar, Vector]):
+    def __init__(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], modes: List[int]):
         r"""
         Args:
             mode: modes of the measurement
             x: x-coordinates of the measurement
             y: y-coordinates of the measurement
         """
-        super().__init__(modes=modes, x=x, y=y)
+        super().__init__(x=x, y=y, modes=modes)
         self._project_onto = self.recompute_project_onto(x, y)
 
     def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:

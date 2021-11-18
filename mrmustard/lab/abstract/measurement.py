@@ -33,8 +33,8 @@ class GaussianMeasurement(ABC):
         onto the state with given cov and outcome means vector.
         Args:
             state (State): the state to be measured.
-            kwargs (optional): same arguments as in the init, but specify if they are different
-            from the arguments supplied at init time (e.g. for training the measurement).
+            kwargs (optional): same arguments as in the init, use them only if they are different
+            from the arguments supplied at init time (e.g. for training a measurement using a state to project onto).
         Returns:
             (float, state) The measurement probabilities and the remaining post-measurement state.
             Note that the post-measurement state is trivial if all modes are measured.
@@ -47,13 +47,29 @@ class GaussianMeasurement(ABC):
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
         if len(remaining_modes) > 0:
-            remaining_state = State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))  # TODO: avoid using is_mixed_cov from TW?
+            remaining_state = State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
             return prob, remaining_state
         else:
             return prob
 
     def recompute_project_onto(self, **kwargs) -> State:
         ...
+
+    def __getitem__(self, items) -> Callable:
+        r"""
+        Allows measurements to be used as:
+        output = meas[0,1](input)  # e.g. measuring modes 0 and 1
+        """
+        if isinstance(items, int):
+            modes = [items]
+        elif isinstance(items, slice):
+            modes = list(range(items.start, items.stop, items.step))
+        elif isinstance(items, (Sequence, Iterable)):
+            modes = list(items)
+        else:
+            raise ValueError(f"{items} is not a valid slice or list of modes.")
+        self.modes = modes
+        return self
 
 
 # TODO: push all math methods into the physics module
