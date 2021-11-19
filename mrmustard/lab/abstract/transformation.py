@@ -47,7 +47,9 @@ class Transformation:
     def bell(self):
         r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
         if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR)
+            cov = gaussian.two_mode_squeezed_vacuum_cov(
+                r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
+            )
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means, is_mixed=False)
             for _ in self.modes[1:]:
@@ -71,11 +73,19 @@ class Transformation:
         r"""
         Transforms a state in Fock representation.
         """
-        transformation = self.U(cutoffs=state.cutoffs)
+        if self.is_unitary:
+            transformation = self.U(cutoffs=state.cutoffs)
+        else:
+            transformation = self.choi(cutoffs=state.cutoffs)
         new_state = fock.CPTP(
-            transformation=transformation, fock_state=state._fock, transformation_is_unitary=self.is_unitary, state_is_mixed=state.is_mixed
+            transformation=transformation,
+            fock_state=state._fock,
+            transformation_is_unitary=self.is_unitary,
+            state_is_mixed=state.is_mixed,
         )
-        return State(fock=new_state, is_mixed=not self.is_unitary or state.is_mixed)  # TODO: is_mixed is not computed correctly (non-unitary maps can return pure states)
+        return State(
+            fock=new_state, is_mixed=not self.is_unitary or state.is_mixed
+        )  # TODO: is_mixed is not computed correctly (non-unitary maps can return pure states)
 
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__}")
@@ -87,14 +97,20 @@ class Transformation:
         with np.printoptions(precision=6, suppress=True):
             for name in self.param_names:
                 par = self.__dict__[name]
-                table.add_row(name,
-                              par.dtype.name,
-                              f"{np.array(par)}",
-                              f"{par.shape}",
-                              str(self.__dict__["_" + name + "_trainable"]),
-                            )
-            lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
-            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (f"[{self._modes}]" if self._modes is not None else "")
+                table.add_row(
+                    name,
+                    par.dtype.name,
+                    f"{np.array(par)}",
+                    f"{par.shape}",
+                    str(self.__dict__["_" + name + "_trainable"]),
+                )
+            lst = [
+                f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}"
+                for name in self.param_names
+            ]
+            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
+                f"[{self._modes}]" if self._modes is not None else ""
+            )
         rprint(table)
         return repr_string
 
@@ -137,7 +153,13 @@ class Transformation:
         if not self.is_unitary:
             return None
         choi_state = self(self.bell)
-        return fock.fock_representation(choi_state.cov, choi_state.means, shape=cutoffs * 2, is_unitary=True, choi_r=settings.CHOI_R)
+        return fock.fock_representation(
+            choi_state.cov,
+            choi_state.means,
+            shape=cutoffs * 2,
+            is_unitary=True,
+            choi_r=settings.CHOI_R,
+        )
 
     def choi(self, cutoffs: Sequence[int]):
         "Returns the Choi representation of the transformation"
@@ -146,7 +168,13 @@ class Transformation:
             return fock.U_to_choi(U)
         else:
             choi_state = self(self.bell)
-            return fock.fock_representation(choi_state.cov, choi_state.means, shape=cutoffs * 4, is_unitary=False, choi_r=settings.CHOI_R)
+            return fock.fock_representation(
+                choi_state.cov,
+                choi_state.means,
+                shape=cutoffs * 4,
+                is_unitary=False,
+                choi_r=settings.CHOI_R,
+            )
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
@@ -180,4 +208,5 @@ class Transformation:
             A new transformation that is the concatenation of the two.
         """
         from mrmustard.lab import Circuit  # this is called at runtime
+
         return Circuit([self, other])

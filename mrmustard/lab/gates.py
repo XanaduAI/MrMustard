@@ -18,7 +18,17 @@ from mrmustard.lab.abstract import Transformation
 from mrmustard.utils import training, Parametrized
 from mrmustard.physics import gaussian, fock
 
-__all__ = ["Dgate", "Sgate", "Rgate", "Ggate", "BSgate", "MZgate", "S2gate", "Interferometer", "LossChannel"]
+__all__ = [
+    "Dgate",
+    "Sgate",
+    "Rgate",
+    "Ggate",
+    "BSgate",
+    "MZgate",
+    "S2gate",
+    "Interferometer",
+    "LossChannel",
+]
 
 
 class Dgate(Parametrized, Transformation):
@@ -49,13 +59,13 @@ class Dgate(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-        x=x,
-        y=y,
-        x_trainable=x_trainable,
-        y_trainable=y_trainable,
-        x_bounds=x_bounds,
-        y_bounds=y_bounds,
-        modes=modes,
+            x=x,
+            y=y,
+            x_trainable=x_trainable,
+            y_trainable=y_trainable,
+            x_bounds=x_bounds,
+            y_bounds=y_bounds,
+            modes=modes,
         )
 
     @property
@@ -132,7 +142,7 @@ class Rgate(Parametrized, Transformation):
             angle_trainable=angle_trainable,
             angle_bounds=angle_bounds,
             modes=modes,
-            )
+        )
 
     @property
     def X_matrix(self):
@@ -180,7 +190,9 @@ class BSgate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer.")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer."
+            )
 
 
 class MZgate(Parametrized, Transformation):
@@ -229,7 +241,9 @@ class MZgate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer?")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer?"
+            )
 
 
 class S2gate(Parametrized, Transformation):
@@ -264,7 +278,7 @@ class S2gate(Parametrized, Transformation):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            modes=modes, 
+            modes=modes,
         )
 
     @property
@@ -285,14 +299,19 @@ class Interferometer(Parametrized, Transformation):
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
-    def __init__(self, num_modes: int, orthogonal: Optional[Tensor] = None, orthogonal_trainable: bool = False):
+    def __init__(
+        self,
+        num_modes: int,
+        orthogonal: Optional[Tensor] = None,
+        orthogonal_trainable: bool = False,
+    ):
         if orthogonal is None:
             orthogonal = training.new_orthogonal(num_modes=num_modes)
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
             orthogonal_bounds=(None, None),
-            modes=list(range(num_modes)), 
+            modes=list(range(num_modes)),
         )
 
     @property
@@ -301,11 +320,17 @@ class Interferometer(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != self.orthogonal.shape[1] // 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})"
+            )
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {"symplectic": [], "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [], "euclidean": []}
+        return {
+            "symplectic": [],
+            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
+            "euclidean": [],
+        }
 
 
 class Ggate(Parametrized, Transformation):
@@ -342,7 +367,9 @@ class Ggate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != self.symplectic.shape[1] // 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})"
+            )
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
@@ -353,9 +380,9 @@ class Ggate(Parametrized, Transformation):
         }
 
 
-#~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~
 # NON-UNITARY
-#~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~
 
 
 class LossChannel(Parametrized, Transformation):

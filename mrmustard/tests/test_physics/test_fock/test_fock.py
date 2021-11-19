@@ -46,9 +46,9 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     cutoff = 2
     circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(r=r, phi=phi)[0,1])
-    circ.append(S2gate(r=r, phi=phi)[2,3])
-    circ.append(BSgate(theta=np.pi / 4, phi=varphi)[1,2])
+    circ.append(S2gate(r=r, phi=phi)[0, 1])
+    circ.append(S2gate(r=r, phi=phi)[2, 3])
+    circ.append(BSgate(theta=np.pi / 4, phi=varphi)[1, 2])
     amps = circ(Vacuum(num_modes=4)).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
     assert np.allclose(amps[1, 1, 1, 1], 0.0, atol=1e-6)
 
@@ -62,7 +62,9 @@ def test_coherent_state(alpha):
     circ = Circuit()
     circ.append(Dgate(x=realpha, y=imalpha)[0])
     amps = circ(Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
-    expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array([alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)])
+    expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
+        [alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)]
+    )
     assert np.allclose(amps, expected)
 
 
@@ -79,7 +81,12 @@ def test_squeezed_state(r, phi):
         1
         / np.sqrt(np.cosh(r))
         * np.array(
-            [(-np.exp(1j * phi) * np.tanh(r)) ** n * np.sqrt(factorial(2 * n)) / (2 ** n * factorial(n)) for n in range(len_non_zero)]
+            [
+                (-np.exp(1j * phi) * np.tanh(r)) ** n
+                * np.sqrt(factorial(2 * n))
+                / (2 ** n * factorial(n))
+                for n in range(len_non_zero)
+            ]
         )
     )
     assert np.allclose(non_zero_amps, amp_pairs)

@@ -63,9 +63,11 @@ def test_BSgate(theta, phi):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     BS = BSgate(theta=theta, phi=phi)
-    cov = ((Vacuum(4) >> S2[0,2]) >> S2[1,3] >> BS[0,1]).cov
+    cov = ((Vacuum(4) >> S2[0, 2]) >> S2[1, 3] >> BS[0, 1]).cov
     # cov = BS(S2b(S2a(Vacuum(num_modes=4)))).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
@@ -76,9 +78,11 @@ def test_S2gate(r, phi):
     """Tests the S2gate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r, phi=phi)
-    bell = (TMSV(r_choi) & TMSV(r_choi))[0,2,1,3]
-    cov = (bell >> S2[0,1]).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+    bell = (TMSV(r_choi) & TMSV(r_choi))[0, 2, 1, 3]
+    cov = (bell >> S2[0, 1]).cov
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
     S_expanded = expand(two_mode_squeezing(r, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
@@ -88,11 +92,13 @@ def test_S2gate(r, phi):
 def test_MZgate_external_tms(phi_ex, phi_in):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
-    bell = (TMSV(r_choi) & TMSV(r_choi))[0,2,1,3]
+    bell = (TMSV(r_choi) & TMSV(r_choi))[0, 2, 1, 3]
     MZ = MZgate(phi_a=phi_ex, phi_b=phi_in, internal=False)
     cov = MZ[0, 1](bell).cov
 
-    bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+    bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
 
     ex_expanded = expand(rotation(phi_ex), [0], 4)
     in_expanded = expand(rotation(phi_in), [0], 4)
@@ -109,10 +115,12 @@ def test_MZgate_external_tms(phi_ex, phi_in):
 def test_MZgate_internal_tms(phi_a, phi_b):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = np.arcsinh(1.0)
-    bell = (TMSV(r_choi) & TMSV(r_choi))[0,2,1,3]
+    bell = (TMSV(r_choi) & TMSV(r_choi))[0, 2, 1, 3]
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=True)
-    cov = MZ[0,1](bell).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+    cov = MZ[0, 1](bell).cov
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
     BS = beam_splitter(np.pi / 4, np.pi / 2)
     S_expanded = expand(BS, [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T

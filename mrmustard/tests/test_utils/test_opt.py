@@ -69,11 +69,16 @@ def test_hong_ou_mandel_optimizer(i, k):
     cutoff = 1 + i + k
 
     def cost_fn():
-        return tf.abs(circ(state_in).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])[i, 1, i + k - 1, k]) ** 2
+        return (
+            tf.abs(circ(state_in).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])[i, 1, i + k - 1, k])
+            ** 2
+        )
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i + k), atol=1e-2)
+    assert np.allclose(
+        np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i + k), atol=1e-2
+    )
 
 
 def test_squeezing_hong_ou_mandel_optimizer():
@@ -187,7 +192,15 @@ def test_learning_four_mode_Interferometer():
 
     def cost_fn():
         amps = circ(state_in).ket(cutoffs=[3, 3, 3, 3])
-        return -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]]))) ** 2
+        return (
+            -tf.abs(
+                tf.reduce_sum(
+                    amps[1, 1]
+                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
+                )
+            )
+            ** 2
+        )
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 

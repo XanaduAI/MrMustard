@@ -19,7 +19,15 @@ from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian
 from mrmustard.utils import Parametrized, training
 
-__all__ = ["Vacuum", "SqueezedVacuum", "Coherent", "Thermal", "DisplacedSqueezed", "TMSV", "Gaussian"]
+__all__ = [
+    "Vacuum",
+    "SqueezedVacuum",
+    "Coherent",
+    "Thermal",
+    "DisplacedSqueezed",
+    "TMSV",
+    "Gaussian",
+]
 
 
 class Vacuum(State):
@@ -47,7 +55,15 @@ class Coherent(Parametrized, State):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
-        Parametrized.__init__(self, x=x, y=y, x_trainable=x_trainable, y_trainable=y_trainable, x_bounds=x_bounds, y_bounds=y_bounds)
+        Parametrized.__init__(
+            self,
+            x=x,
+            y=y,
+            x_trainable=x_trainable,
+            y_trainable=y_trainable,
+            x_bounds=x_bounds,
+            y_bounds=y_bounds,
+        )
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, is_mixed=False)
@@ -72,7 +88,13 @@ class SqueezedVacuum(Parametrized, State):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         Parametrized.__init__(
-            self, r=r, phi=phi, r_trainable=r_trainable, phi_trainable=phi_trainable, r_bounds=r_bounds, phi_bounds=phi_bounds
+            self,
+            r=r,
+            phi=phi,
+            r_trainable=r_trainable,
+            phi_trainable=phi_trainable,
+            r_bounds=r_bounds,
+            phi_bounds=phi_bounds,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -98,7 +120,13 @@ class TMSV(Parametrized, State):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
     ):
         Parametrized.__init__(
-            self, r=r, phi=phi, r_trainable=r_trainable, phi_trainable=phi_trainable, r_bounds=r_bounds, phi_bounds=phi_bounds
+            self,
+            r=r,
+            phi=phi,
+            r_trainable=r_trainable,
+            phi_trainable=phi_trainable,
+            r_bounds=r_bounds,
+            phi_bounds=phi_bounds,
         )
         cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
@@ -120,7 +148,9 @@ class Thermal(Parametrized, State):
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
     ):
-        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds)
+        Parametrized.__init__(
+            self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds
+        )
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, is_mixed=False)
@@ -199,7 +229,9 @@ class Gaussian(Parametrized, State):
         if displacement is None:
             displacement = gaussian.vacuum_means(num_modes, settings.HBAR)
         if eigenvalues is None:
-            eigenvalues = gaussian.math.ones_like(displacement) * settings.HBAR / 2  # TODO: concrete classes should not use the backend
+            eigenvalues = (
+                gaussian.math.ones_like(displacement) * settings.HBAR / 2
+            )  # TODO: concrete classes should not use the backend
         Parametrized.__init__(
             self,
             symplectic=symplectic,
@@ -233,5 +265,8 @@ class Gaussian(Parametrized, State):
         return {
             "symplectic": [self.symplectic] * self._symplectic_trainable,
             "orthogonal": [],
-            "euclidean": ([self.displacement] * self._displacement_trainable + [self.eigenvalues] * self._eigenvalues_trainable),
+            "euclidean": (
+                [self.displacement] * self._displacement_trainable
+                + [self.eigenvalues] * self._eigenvalues_trainable
+            ),
         }

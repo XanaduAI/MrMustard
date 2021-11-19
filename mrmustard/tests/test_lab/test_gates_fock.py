@@ -15,10 +15,17 @@
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import Dgate, Sgate, BSgate, MZgate, S2gate
 from hypothesis import given, strategies as st
-from thewalrus.fock_gradients import displacement, squeezing, beamsplitter, two_mode_squeezing, mzgate
+from thewalrus.fock_gradients import (
+    displacement,
+    squeezing,
+    beamsplitter,
+    two_mode_squeezing,
+    mzgate,
+)
 import numpy as np
 from mrmustard.tests.random import single_mode_unitary
 from mrmustard.tests import random
+
 
 @given(state=random.pure_state(num_modes=1), xy=random.vector(2))
 def test_Dgate_1mode(state, xy):
@@ -31,8 +38,8 @@ def test_Dgate_1mode(state, xy):
 @given(state=random.pure_state(num_modes=2), xxyy=random.vector(4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
-    state_out = Dgate(x=[x1, x2], y=[y1, y2])[0,1](state)
-    state_out = Dgate(x=[-x1, -x2], y=[-y1, -y2])[0,1](state_out)
+    state_out = Dgate(x=[x1, x2], y=[y1, y2])[0, 1](state)
+    state_out = Dgate(x=[-x1, -x2], y=[-y1, -y2])[0, 1](state_out)
     assert state_out == state
 
 
@@ -44,6 +51,7 @@ def test_1mode_fock_equals_gaussian():
     # via_phase_space = gate(gstate)
     # via_fock_space = gate(fstate)
     # assert via_phase_space == via_fock_space
+
 
 @given(gates=st.lists(single_mode_unitary(), min_size=1, max_size=5))
 def test_gate_compositions(gates):
@@ -64,7 +72,10 @@ def test_fock_representation_squeezing(r, phi):
     assert np.allclose(expected, S.U(cutoffs=[20]), atol=1e-5)
 
 
-@given(theta=st.floats(min_value=0, max_value=2 * np.pi), phi=st.floats(min_value=0, max_value=2 * np.pi))
+@given(
+    theta=st.floats(min_value=0, max_value=2 * np.pi),
+    phi=st.floats(min_value=0, max_value=2 * np.pi),
+)
 def test_fock_representation_beamsplitter(theta, phi):
     BS = BSgate(theta=theta, phi=phi)
     expected = beamsplitter(theta=theta, phi=phi, cutoff=20)
@@ -78,7 +89,10 @@ def test_fock_representation_two_mode_squeezing(r, phi):
     assert np.allclose(expected, S2.U(cutoffs=[20, 20]), atol=1e-5)
 
 
-@given(phi_a=st.floats(min_value=0, max_value=2 * np.pi), phi_b=st.floats(min_value=0, max_value=2 * np.pi))
+@given(
+    phi_a=st.floats(min_value=0, max_value=2 * np.pi),
+    phi_b=st.floats(min_value=0, max_value=2 * np.pi),
+)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)

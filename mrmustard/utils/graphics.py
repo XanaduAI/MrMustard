@@ -73,7 +73,9 @@ def wigner(state, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     x_axis = np.linspace(*xbounds, 200) * scale
     y_axis = np.linspace(*ybounds, 200) * scale
     pure = state.ndim == 1  # if ndim=2, then it's density matrix
-    state_sf = sf.backends.BaseFockState(state, 1, pure, len(state))  # TODO: remove dependency on strawberryfields
+    state_sf = sf.backends.BaseFockState(
+        state, 1, pure, len(state)
+    )  # TODO: remove dependency on strawberryfields
     Wig = state_sf.wigner(mode=0, xvec=x_axis, pvec=y_axis)
     scale = np.max(Wig.real)
     nrm = Normalize(-scale, scale)
@@ -99,7 +101,9 @@ def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6
 
     ### PLOTTING ###
 
-    fig, ax = plt.subplots(2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]})
+    fig, ax = plt.subplots(
+        2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
+    )
     ticks = [-5, 0, 5]
     xlim = [X[0], X[-1]]
     plim = [P[0], P[-1]]

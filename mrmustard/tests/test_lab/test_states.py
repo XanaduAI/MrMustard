@@ -23,6 +23,20 @@ from mrmustard import settings
 from mrmustard.tests import random
 
 
+@st.composite
+def xy_arrays(draw):
+    length = draw(st.integers(2, 10))
+    return arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0))
+
+
+@st.composite
+def rphi_arrays(draw):
+    length = draw(st.integers(2, 10))
+    r = arrays(dtype=np.float, shape=(2, length), elements=st.floats(0.0, 1.0))
+    phi = arrays(dtype=np.float, shape=(2, length), elements=st.floats(0.0, 2 * np.pi))
+    return r, phi
+
+
 @given(st.integers(0, 10), st.floats(0.1, 5.0))
 def test_vacuum_state(num_modes, hbar):
     cov, disp = gp.vacuum_cov(num_modes, hbar), gp.vacuum_means(num_modes, hbar)
@@ -44,28 +58,9 @@ def test_coherent_state_list(hbar, x, y):
 
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_array(hbar, x, y):
-    assert np.allclose(gp.displacement(np.array([x]), np.array([y]), hbar), np.array([x, y]) * np.sqrt(2 * hbar))
-
-
-@given(r=st.floats(0.0, 10.0), phi=st.floats(0.0, 2 * np.pi), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
-def test_displaced_squeezed_state(r, phi, x, y):
-    state = DisplacedSqueezed(r, phi, x, y)
-    cov, means = state.cov, state.means
-    S = Sgate(r=r, phi=phi)
-    D = Dgate(x=x, y=y)
-    state = D[0](S[0](Vacuum(num_modes=1)))
-    assert np.allclose(cov, state.cov, rtol=1e-3)
-    assert np.allclose(means, state.means)
-
-
-@st.composite
-def xy_arrays(draw):
-    length = draw(st.integers(2, 10))
-    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
-
-
-n = st.shared(st.integers(2, 10))
-arr = arrays(dtype=np.float, shape=(n), elements=st.floats(-5.0, 5.0))
+    assert np.allclose(
+        gp.displacement(np.array([x]), np.array([y]), hbar), np.array([x, y]) * np.sqrt(2 * hbar)
+    )
 
 
 @given(x=arr, y=arr)
@@ -93,11 +88,16 @@ def test_the_purity_of_a_mixed_state(nbar):
     assert np.isclose(purity, expected)
 
 
-@given(r1=st.floats(0.0, 1.0), phi1=st.floats(0.0, 2 * np.pi), r2=st.floats(0.0, 1.0), phi2=st.floats(0.0, 2 * np.pi))
+@given(
+    r1=st.floats(0.0, 1.0),
+    phi1=st.floats(0.0, 2 * np.pi),
+    r2=st.floats(0.0, 1.0),
+    phi2=st.floats(0.0, 2 * np.pi),
+)
 def test_join_two_states(r1, phi1, r2, phi2):
     S1 = Sgate(r=r1, phi=phi1)[0](Vacuum(1))
     S2 = Sgate(r=r2, phi=phi2)[0](Vacuum(1))
-    S12 = Sgate(r=[r1, r2], phi=[phi1, phi2])[0,1](Vacuum(2))
+    S12 = Sgate(r=[r1, r2], phi=[phi1, phi2])[0, 1](Vacuum(2))
     assert np.allclose((S1 & S2).cov, S12.cov)
 
 
@@ -110,33 +110,32 @@ def test_join_two_states(r1, phi1, r2, phi2):
     phi3=st.floats(0.0, 2 * np.pi),
 )
 def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
-    S1 = Sgate(r=r1, phi=phi1)[0](Vacuum(1))
-    S2 = Sgate(r=r2, phi=phi2)[0](Vacuum(1))
-    S3 = Sgate(r=r3, phi=phi3)[0](Vacuum(1))
-    S123 = Sgate(r=[r1, r2, r3], phi=[phi1, phi2, phi3])[0, 1, 2](Vacuum(3))
-    assert np.allclose((S1 & S2 & S3).cov, S123.cov)
-
-@given(x=random.array_of_(random.medium_float, 2), y=random.array_of_(random.medium_float, 2))
-def test_coh_state_is_same_as_dgate_on_vacuum(x, y):
-    state = Coherent(np.array(x), np.array(y))
-    expected = Vacuum(2) >> Dgate(x=x, y=y)
-    assert np.allclose(state.cov, expected.cov)
-    assert np.allclose(state.means, expected.means)
+    S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
+    S2 = Vacuum(1) >> Sgate(r=r2, phi=phi2)
+    S3 = Vacuum(1) >> Sgate(r=r3, phi=phi3)
+    S123 = Vacuum(3) >> Sgate(r=[r1, r2, r3], phi=[phi1, phi2, phi3])
+    assert S123 == S1 & S2 & S3
 
 
-@given(r = st.floats(0.0, 1.0), phi = st.floats(0.0, 2 * np.pi))
-def test_sq_state_is_same_as_sgate_on_vacuum(r, phi):
-    state = SqueezedVacuum(r, phi)
-    expected = Vacuum(1) >> Sgate(r=r, phi=phi)
-    assert np.allclose(state.cov, expected.cov)
-    assert np.allclose(state.means, expected.means)
+@given(xy=xy_arrays())
+def test_coh_state(xy):
+    x, y = xy
+    assert Vacuum(2) >> Dgate(x, y) == Coherent(x, y)
 
-@given(x=st.floats(-1.0, 1.0), y=st.floats(-1.0, 1.0), r = st.floats(0.0, 1.0), phi = st.floats(0.0, 2 * np.pi))
-def test_dispsq_state_is_same_as_dsgate_on_vacuum(x, y, r, phi):
-    state = DisplacedSqueezed(r,phi,x,y)
-    expected = Vacuum(1) >> Sgate(r=r, phi=phi) >> Dgate(x=x, y=y)
-    assert np.allclose(state.cov, expected.cov)
-    assert np.allclose(state.means, expected.means)
+
+@given(r=st.floats(0.0, 1.0), phi=st.floats(0.0, 2 * np.pi))
+def test_sq_state(r, phi):
+    assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
+
+
+@given(
+    x=st.floats(-1.0, 1.0),
+    y=st.floats(-1.0, 1.0),
+    r=st.floats(0.0, 1.0),
+    phi=st.floats(0.0, 2 * np.pi),
+)
+def test_dispsq_state(x, y, r, phi):
+    assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
 
 
 def test_state_getitem():

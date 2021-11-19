@@ -14,7 +14,10 @@
 
 import numpy as np
 import tensorflow as tf
-from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
+from thewalrus._hermite_multidimensional import (
+    hermite_multidimensional_numba,
+    grad_hermite_multidimensional_numba,
+)
 
 from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
@@ -65,8 +68,13 @@ class TFMath(MathInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
-    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
-        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
+    def constraint_func(
+        self, bounds: Tuple[Optional[float], Optional[float]]
+    ) -> Optional[Callable]:
+        bounds = (
+            -np.inf if bounds[0] is None else bounds[0],
+            np.inf if bounds[1] is None else bounds[1],
+        )
         if not bounds == (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
@@ -138,7 +146,15 @@ class TFMath(MathInterface):
         return tf.math.log(x)
 
     @Autocast()
-    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> tf.Tensor:
+    def matmul(
+        self,
+        a: tf.Tensor,
+        b: tf.Tensor,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
+    ) -> tf.Tensor:
         return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
 
     @Autocast()
@@ -153,7 +169,9 @@ class TFMath(MathInterface):
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
 
-    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
+    def new_variable(
+        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64
+    ):
         value = self.cast(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
@@ -175,7 +193,13 @@ class TFMath(MathInterface):
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(array1, array2, [[], []])
 
-    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> tf.Tensor:
+    def pad(
+        self,
+        array: tf.Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="CONSTANT",
+        constant_values=0,
+    ) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
     def pinv(self, array: tf.Tensor) -> tf.Tensor:
@@ -232,13 +256,17 @@ class TFMath(MathInterface):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
+    def DefaultEuclideanOptimizer(
+        self,
+    ) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
         r"""
         Default optimizer for the Euclidean parameters.
         """
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
-    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
+    def loss_and_gradients(
+        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
+    ) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
         r"""
         Computes the loss and gradients of the given cost function.
 
@@ -256,7 +284,9 @@ class TFMath(MathInterface):
         return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
 
     @tf.custom_gradient
-    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
+    def hermite_renormalized(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+    ) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
         of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
@@ -273,7 +303,9 @@ class TFMath(MathInterface):
         poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3)
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3
+            )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
@@ -310,9 +342,15 @@ class TFMath(MathInterface):
             dL_dtensor[key] = 0.0
             # unbroadcasting the gradient
             implicit_broadcast = list(range(tensor.ndim - value.ndim))
-            explicit_broadcast = [tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1]
-            dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast))
-            dL_dvalue = np.expand_dims(dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast])
+            explicit_broadcast = [
+                tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
+            ]
+            dL_dvalue = np.sum(
+                np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)
+            )
+            dL_dvalue = np.expand_dims(
+                dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast]
+            )
             return dL_dtensor, dL_dvalue
 
         return tensor, grad

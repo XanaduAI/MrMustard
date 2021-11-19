@@ -42,7 +42,12 @@ class GaussianMeasurement(ABC):
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
         prob, cov, means = gaussian.general_dyne(
-            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, settings.HBAR
+            state.cov,
+            state.means,
+            self._project_onto.cov,
+            self._project_onto.means,
+            self._modes,
+            settings.HBAR,
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
@@ -82,7 +87,9 @@ class FockMeasurement(ABC):
     in the Fock basis.
     """
 
-    def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> Tuple[State, Tensor]:
+    def project(
+        self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]
+    ) -> Tuple[State, Tensor]:
         r"""
         Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
         indicate the Fock measurement on that mode and None indicates no projection on that mode.
@@ -90,7 +97,9 @@ class FockMeasurement(ABC):
         Returns the measurement probability and the renormalized state (in the Fock basis) in the unmeasured modes.
         """
         if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):
-            raise ValueError("the length of cutoffs/measurements does not match the number of modes")
+            raise ValueError(
+                "the length of cutoffs/measurements does not match the number of modes"
+            )
         dm = state.dm(cutoffs=cutoffs)
         measured = 0
         for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurement)):
@@ -124,7 +133,9 @@ class FockMeasurement(ABC):
             detector_probs = fock.math.transpose(detector_probs, indices)
         return detector_probs
 
-    def __call__(self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None) -> Tuple[Tensor, Tensor]:
+    def __call__(
+        self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None
+    ) -> Tuple[Tensor, Tensor]:
         fock_probs = state.fock_probabilities(cutoffs)
         all_probs = self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
         if outcomes is None:

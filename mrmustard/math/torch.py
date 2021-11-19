@@ -14,7 +14,10 @@
 
 import numpy as np
 import torch
-from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
+from thewalrus._hermite_multidimensional import (
+    hermite_multidimensional_numba,
+    grad_hermite_multidimensional_numba,
+)
 
 from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
@@ -99,12 +102,20 @@ class TorchMath(MathInterface):
 
     @Autocast()
     def matmul(
-        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False
+        self,
+        a: torch.Tensor,
+        b: torch.Tensor,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
     ) -> torch.Tensor:
         return torch.matmul(a, b)
 
     @Autocast()
-    def matvec(self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False) -> torch.Tensor:
+    def matvec(
+        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False
+    ) -> torch.Tensor:
         return torch.mv(a, b)
 
     @Autocast()
@@ -132,7 +143,13 @@ class TorchMath(MathInterface):
     def diag_part(self, array: torch.Tensor) -> torch.Tensor:
         return torch.diag_embed(array)
 
-    def pad(self, array: torch.Tensor, paddings: Sequence[Tuple[int, int]], mode="constant", constant_values=0) -> torch.Tensor:
+    def pad(
+        self,
+        array: torch.Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="constant",
+        constant_values=0,
+    ) -> torch.Tensor:
         return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
     @Autocast()
@@ -162,7 +179,13 @@ class TorchMath(MathInterface):
             signal_length = array.shape[2]
 
             m = torch.nn.Conv1d(
-                input_channels, output_channels, filters, stride=strides, padding=padding, dtype=data_format, dilation=dilations
+                input_channels,
+                output_channels,
+                filters,
+                stride=strides,
+                padding=padding,
+                dtype=data_format,
+                dilation=dilations,
             )
             return m(array)
         elif array.dim() == 4:  # 2D case
@@ -170,7 +193,13 @@ class TorchMath(MathInterface):
             input_width = array.shape[3]
 
             m = torch.nn.Conv2d(
-                input_channels, output_channels, filters, stride=strides, padding=padding, dtype=data_format, dilation=dilations
+                input_channels,
+                output_channels,
+                filters,
+                stride=strides,
+                padding=padding,
+                dtype=data_format,
+                dilation=dilations,
             )
             return m(array)
         else:
@@ -187,7 +216,9 @@ class TorchMath(MathInterface):
     def sum(self, array: torch.Tensor, axes: Sequence[int] = None):
         return torch.sum(array, axes)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64) -> torch.Tensor:
+    def arange(
+        self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64
+    ) -> torch.Tensor:
         return torch.arange(start, limit, delta, dtype=dtype)
 
     @Autocast()
@@ -220,25 +251,36 @@ class TorchMath(MathInterface):
     def concat(self, values: Sequence[torch.Tensor], axis: int) -> torch.Tensor:
         return torch.cat(values, axis)
 
-    def update_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0):
+    def update_tensor(
+        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+    ):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
         return tensor.scatter_(dims, indices, values)
 
-    def update_add_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0):
+    def update_add_tensor(
+        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+    ):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
         return tensor.scatter_add_(dims, indices, values)
 
-    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
-        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
+    def constraint_func(
+        self, bounds: Tuple[Optional[float], Optional[float]]
+    ) -> Optional[Callable]:
+        bounds = (
+            -np.inf if bounds[0] is None else bounds[0],
+            np.inf if bounds[1] is None else bounds[1],
+        )
         if not bounds == (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
         else:
             constraint = None
         return constraint
 
-    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64):
+    def new_variable(
+        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64
+    ):
         return torch.tensor(value, requires_grad=True)
 
     def new_constant(self, value, name: str, dtype=torch.float64):
@@ -290,7 +332,9 @@ class TorchMath(MathInterface):
             The loss and the gradients.
         """
         self.optimizer.zero_grad()
-        loss = cost_fn()  # TODO: I think this should be cost_fn(params), but if it works I think it is fine.
+        loss = (
+            cost_fn()
+        )  # TODO: I think this should be cost_fn(params), but if it works I think it is fine.
         loss.backward()
         self.optimizer.step()
 

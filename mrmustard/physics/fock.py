@@ -27,7 +27,12 @@ math = Math()
 
 
 def fock_representation(
-    cov: Matrix, means: Vector, shape: Sequence[int], is_mixed: bool = None, is_unitary: bool = None, choi_r: float = None
+    cov: Matrix,
+    means: Vector,
+    shape: Sequence[int],
+    is_mixed: bool = None,
+    is_unitary: bool = None,
+    choi_r: float = None,
 ) -> Tensor:
     r"""
     Returns the Fock representation of a state or Choi state.
@@ -55,7 +60,9 @@ def fock_representation(
         A, B, C = ABC(cov, means, full=is_mixed)
     elif is_unitary is not None and choi_r is not None:  # i.e. it's a transformation
         A, B, C = ABC(cov, means, full=not is_unitary, choi_r=choi_r)
-    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
+    return math.hermite_renormalized(
+        math.conj(-A), math.conj(B), math.conj(C), shape=shape
+    )  # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -102,7 +109,13 @@ def U_to_choi(U: Tensor) -> Tensor:
     cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
     outer = math.outer(U, math.conj(U))
-    choi = math.transpose(outer, list(range(0, N)) + list(range(2 * N, 3 * N)) + list(range(N, 2 * N)) + list(range(3 * N, 4 * N)))
+    choi = math.transpose(
+        outer,
+        list(range(0, N))
+        + list(range(2 * N, 3 * N))
+        + list(range(N, 2 * N))
+        + list(range(3 * N, 4 * N)),
+    )
     return choi
 
 
@@ -129,12 +142,16 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
         exponent = -0.5 * math.sum(math.conj(beta)[:, None] * Qinv * beta[None, :])
         C = math.exp(exponent) / denom
     else:
-        A = A[:N, :N]  # TODO: find a way to compute the half-size A without computing the full-size A first
+        A = A[
+            :N, :N
+        ]  # TODO: find a way to compute the half-size A without computing the full-size A first
         B = beta[N:] - math.matvec(A, beta[:N])
         exponent = -0.5 * math.sum(beta[:N] * B)
         C = math.exp(exponent) / math.sqrt(denom)
     if choi_r is not None:
-        ones = math.ones(N // 2, dtype=A.dtype)  # N//2 is the actual number of modes because of the choi trick
+        ones = math.ones(
+            N // 2, dtype=A.dtype
+        )  # N//2 is the actual number of modes because of the choi trick
         factor = 1.0 / np.tanh(choi_r)
         if full:
             rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
@@ -151,10 +168,14 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
     elif a_pure:
         a = math.reshape(state_a, -1)
-        return math.real(math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a)))
+        return math.real(
+            math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
+        )
     elif b_pure:
         b = math.reshape(state_b, -1)
-        return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
+        return math.real(
+            math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
+        )
     else:
         raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
 
@@ -162,12 +183,14 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
 def purity(dm: Tensor) -> Scalar:
     r"""Computes the purity of a state in Fock representation."""
     cutoffs = dm.shape[: len(dm.shape) // 2]
-    d = np.prod(cutoffs)  # combined cutoffs in all modes
+    d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool) -> Tensor:
+def CPTP(
+    transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool
+) -> Tensor:
     r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
     It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
     Arguments:
@@ -184,7 +207,9 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_m
         U = transformation
         Us = math.tensordot(U, fock_state, axes=([num_modes + s for s in indices], indices))
         if state_is_mixed:
-            UsU = math.tensordot(Us, math.dagger(U), axes=([num_modes + s for s in indices], indices))
+            UsU = math.tensordot(
+                Us, math.dagger(U), axes=([num_modes + s for s in indices], indices)
+            )
             return UsU
         else:
             return Us
@@ -194,5 +219,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_m
         if state_is_mixed:
             return Cs
         else:
-            Css = math.tensordot(Cs, math.conj(fock_state), axes=([-s for s in reversed(indices)], indices))
+            Css = math.tensordot(
+                Cs, math.conj(fock_state), axes=([-s for s in reversed(indices)], indices)
+            )
             return Css

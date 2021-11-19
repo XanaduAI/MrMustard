@@ -21,12 +21,15 @@ from mrmustard import settings
 import numpy as np
 from rich.table import Table
 from rich import print as rprint
+from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 
 class State:
     r"""Base class for quantum states"""
 
-    def __init__(self, cov: Matrix = None, means: Vector = None, fock: Array = None, is_mixed: bool = None):
+    def __init__(
+        self, cov: Matrix = None, means: Vector = None, fock: Array = None, is_mixed: bool = None
+    ):
         r"""
         Initializes the state. Either supply the fock tensor or the cov and means.
         Arguments:
@@ -35,17 +38,26 @@ class State:
             fock (Array): the Fock representation
             is_mixed (optional, bool): whether the state is mixed
         """
+
         _fock = fock is not None
         if (cov is None or means is None) and not _fock:
-            raise ValueError("Please supply either (cov and means) or fock")
+            raise ValueError("Please supply either (S, eig), (cov and means) or fock")
         self._num_modes = None
         self._is_mixed = is_mixed
         self._purity = 1.0 if not is_mixed else None
         self._fock = fock
         self._means = means
-        self._cov = cov
         self._fock_probabilities = None
         self._cutoffs = None
+        self.__maybe_modes = None
+        self._eigenvalues = None
+
+    @property
+    def symplectic(self) -> XPMatrix:
+        r"""
+        Returns the symplectic matrix of the state.
+        """
+        return self._symplectic
 
     @property
     def purity(self) -> float:
@@ -146,15 +158,19 @@ class State:
         if from_cache and self._fock is not None:
             return self._fock
         if self.is_gaussian:
-            self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs, is_mixed=False)
+            self._fock = fock.fock_representation(
+                self.cov, self.means, shape=cutoffs, is_mixed=False
+            )
         else:  # only fock representation is available
             if cutoffs != self.cutoffs:
                 try:
                     shape = cutoffs if self.is_pure else cutoffs * 2
                     shape_tuple = [slice(s) for s in shape]
-                    return self._fock.__getitem__(shape_tuple)
+                    return self._fock.__getitem__(*shape_tuple)
                 except IndexError:
-                    raise IndexError(f"This state in Fock representation does not have a ket of shape {shape}")
+                    raise IndexError(
+                        f"This state in Fock representation does not have a ket of shape {shape}"
+                    )
         return self._fock
 
     def dm(self, cutoffs: List[int], from_cache=False) -> Tensor:
@@ -172,7 +188,9 @@ class State:
             self._fock = fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs * 2, is_mixed=True)
+                self._fock = fock.fock_representation(
+                    self.cov, self.means, shape=cutoffs * 2, is_mixed=True
+                )
             elif cutoffs != self.cutoffs:
                 try:
                     shape_tuple = [slice(s) for s in cutoffs * 2]  # NOTE: we know it's mixed
@@ -200,7 +218,21 @@ class State:
                 self._fock_probabilities = fock.ket_to_probs(ket)
         return self._fock_probabilities
 
-    def __and__(self, other: State) -> State:  # TODO: keep lazy variables when mixed-representation is supported
+    def __call__(self, other: State) -> State:
+        r"""
+        Returns the post-measurement state after other is projected onto self.
+        I.e. self acts as a measurement.
+        """
+        if isinstance(other, State):
+            if self.is_gaussian:
+                Sinv = XPMatrix(gaussian.symplectic_inverse(other.symplectic), modes=([], []))
+            self.symplectic = Sinv @ self.symplectic
+        else:
+            raise TypeError(f"Cannot project {type(other)} onto {type(self)}")
+
+    def __and__(
+        self, other: State
+    ) -> State:  # TODO: keep lazy variables when mixed-representation is supported
         r"""
         Concatenates two states.
         """
@@ -222,6 +254,7 @@ class State:
             item = list(item)
         else:
             raise TypeError("item must be int or iterable")
+        self.__maybe_modes = item
         cov, _, _ = gaussian.partition_cov(self.cov, item)
         means, _ = gaussian.partition_means(self.means, item)
         return State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
@@ -232,7 +265,7 @@ class State:
         """
         if self.num_modes != other.num_modes:
             return False
-        if self.is_mixed != other.is_mixed:
+        if self.purity != other.purity:
             return False
         if self.is_gaussian and other.is_gaussian:
             if not np.allclose(self.means, other.means, atol=1e-6):
@@ -241,17 +274,21 @@ class State:
                 return False
             return True
         if self.is_pure and other.is_pure:
-            return np.allclose(self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6)
+            return np.allclose(
+                self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
+            )
         else:
-            return np.allclose(self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6)
-
+            print("here")
+            return np.allclose(
+                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
+            )
 
     def __rshift__(self, other):
         r"""
         Implements piping a state through a transformation or a measurement.
+        e.g. psi >> Dgate or psi >> Coherent
         """
         return other(self)
-
 
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))
@@ -274,5 +311,7 @@ class State:
             else:
                 cutoffs = [20]
             graphics.mikkel_plot(self.dm(cutoffs=cutoffs))
-        detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
+        detailed_info = (
+            f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
+        )
         return detailed_info

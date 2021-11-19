@@ -29,7 +29,11 @@ from mrmustard import settings
 np.random.seed(137)
 
 
-@given(alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
+@given(
+    alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1),
+    eta=st.floats(0, 1),
+    dc=st.floats(0, 0.2),
+)
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
     cutoff = 20
@@ -143,8 +147,12 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
-    assert np.allclose(guess["sq_0"], np.sinh(S2c.trainable_parameters["euclidean"][0].numpy()) ** 2)
-    assert np.allclose(guess["sq_1"], np.sinh(S2d.trainable_parameters["euclidean"][0].numpy()) ** 2)
+    assert np.allclose(
+        guess["sq_0"], np.sinh(S2c.trainable_parameters["euclidean"][0].numpy()) ** 2
+    )
+    assert np.allclose(
+        guess["sq_1"], np.sinh(S2d.trainable_parameters["euclidean"][0].numpy()) ** 2
+    )
     assert np.allclose(tdetector.efficiency, [guess["eta_s"], guess["eta_i"]])
     assert np.allclose(tdetector.dark_counts, [guess["noise_s"], guess["noise_i"]])
 
@@ -158,7 +166,9 @@ def test_postselection():
     cutoff = 3
     n_measured = 1
     # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
-    proj_state, success_prob = detector(my_state, cutoffs=[cutoff, cutoff], outcomes=[n_measured, None])
+    proj_state, success_prob = detector(
+        my_state, cutoffs=[cutoff, cutoff], outcomes=[n_measured, None]
+    )
     expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
     assert np.allclose(success_prob, expected_prob)
     expected_state = np.zeros([cutoff, cutoff])
@@ -171,7 +181,7 @@ def test_loss_probs(eta):
     "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
     lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
     ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
-    S = Sgate(r=0.3, phi=[0.0, 0.7])[0,1]
+    S = Sgate(r=0.3, phi=[0.0, 0.7])[0, 1]
     B = BSgate(theta=1.4, phi=0.0)[0, 1]
     L = LossChannel(transmissivity=eta)[0, 1]
     dm_lossy = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20])
@@ -188,7 +198,9 @@ def test_projected(eta, n):
     B = BSgate(theta=1.0, phi=0.0)
     L = LossChannel(transmissivity=eta)
     dm_lossy, _ = lossy_detector(B[0, 1](S[0, 1](Vacuum(2))), cutoffs=[20, 20], outcomes=[n, None])
-    dm_ideal, _ = ideal_detector(L[0](B[0, 1](S[0, 1](Vacuum(2)))), cutoffs=[20, 20], outcomes=[n, None])
+    dm_ideal, _ = ideal_detector(
+        L[0](B[0, 1](S[0, 1](Vacuum(2)))), cutoffs=[20, 20], outcomes=[n, None]
+    )
     assert np.allclose(dm_ideal, dm_lossy)
 
 
@@ -199,9 +211,17 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
     r = homodyne._squeezing
     prob, remaining_state = homodyne(tmsv)
-    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * settings.HBAR / 2.0
+    cov = (
+        np.diag(
+            [1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]
+        )
+        * settings.HBAR
+        / 2.0
+    )
     assert np.allclose(remaining_state.cov, cov)
-    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * settings.HBAR)
+    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(
+        2 * settings.HBAR
+    )
     assert np.allclose(remaining_state.means, means)
 
 
@@ -219,12 +239,24 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
         * np.array(
             [
                 [
-                    1 + 2 * s - 2 * s * (s + 1) * (1 + 2 * s + np.cosh(2 * r) + np.cos(angle) * np.sinh(2 * r)) / denom,
+                    1
+                    + 2 * s
+                    - 2
+                    * s
+                    * (s + 1)
+                    * (1 + 2 * s + np.cosh(2 * r) + np.cos(angle) * np.sinh(2 * r))
+                    / denom,
                     2 * s * (1 + s) * np.sin(angle) * np.sinh(2 * r) / denom,
                 ],
                 [
                     2 * s * (1 + s) * np.sin(angle) * np.sinh(2 * r) / denom,
-                    (1 + 2 * s + (1 + 2 * s * (1 + s)) * np.cosh(2 * r) + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r)) / denom,
+                    (
+                        1
+                        + 2 * s
+                        + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
+                        + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r)
+                    )
+                    / denom,
                 ],
             ]
         )
@@ -234,7 +266,10 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
     means = (
         np.array(
             [
-                np.sqrt(s * (1 + s)) * X * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
+                np.sqrt(s * (1 + s))
+                * X
+                * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r))
+                / denom,
                 -np.sqrt(s * (1 + s)) * X * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
             ]
         )
@@ -243,7 +278,11 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
     assert np.allclose(remaining_state.means, means)
 
 
-@given(s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0), d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)))
+@given(
+    s=st.floats(min_value=0.0, max_value=10.0),
+    X=st.floats(-10.0, 10.0),
+    d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
+)
 def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)[0, 1]
     D = Dgate(x=d[:2], y=d[2:])[0, 1]
@@ -255,8 +294,11 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     means = (
         np.array(
             [
-                xa + (2 * np.sqrt(s * (s + 1)) * (X - xb)) / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
-                pa + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+                xa
+                + (2 * np.sqrt(s * (s + 1)) * (X - xb))
+                / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
+                pa
+                + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         )
         * np.sqrt(2 * settings.HBAR)
@@ -270,17 +312,24 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     y=st.floats(-10.0, 10.0),
     d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
 )
-def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):  # TODO: check if this is correct
+def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
+    s, x, y, d
+):  # TODO: check if this is correct
     S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
     D = Dgate(x=d[:2], y=d[2:])
-    tmsv = D[0,1](S[0,1](Vacuum(2)))
+    tmsv = D[0, 1](S[0, 1](Vacuum(2)))
     heterodyne = Heterodyne(modes=[0], x=x, y=y)
     prob, remaining_state = heterodyne(tmsv)
     cov = settings.HBAR / 2 * np.array([[1, 0], [0, 1]])
     assert np.allclose(remaining_state.cov, cov)
     xb, xa, pb, pa = d
     means = (
-        np.array([xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb), pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y)])
+        np.array(
+            [
+                xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
+                pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
+            ]
+        )
         * np.sqrt(2 * settings.HBAR)
         / (1 + s)
     )
