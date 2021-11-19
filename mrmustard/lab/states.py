@@ -16,7 +16,7 @@ from mrmustard.utils.types import *
 from mrmustard import settings
 
 from mrmustard.lab.abstract import State
-from mrmustard.physics import gaussian
+from mrmustard.physics import gaussian, fock
 from mrmustard.utils import Parametrized, training
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "DisplacedSqueezed",
     "TMSV",
     "Gaussian",
+    "Fock",
 ]
 
 
@@ -54,6 +55,7 @@ class Coherent(Parametrized, State):
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        **kwargs,
     ):
         Parametrized.__init__(
             self,
@@ -63,6 +65,7 @@ class Coherent(Parametrized, State):
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
+            **kwargs,
         )
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
@@ -86,6 +89,7 @@ class SqueezedVacuum(Parametrized, State):
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        **kwargs,
     ):
         Parametrized.__init__(
             self,
@@ -95,6 +99,7 @@ class SqueezedVacuum(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
+            **kwargs,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -118,6 +123,7 @@ class TMSV(Parametrized, State):
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        **kwargs,
     ):
         Parametrized.__init__(
             self,
@@ -127,6 +133,7 @@ class TMSV(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
+            **kwargs,
         )
         cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
@@ -147,9 +154,10 @@ class Thermal(Parametrized, State):
         nbar: Union[Scalar, Vector] = 0.0,
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
+        **kwargs,
     ):
         Parametrized.__init__(
-            self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds
+            self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs
         )
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -179,6 +187,7 @@ class DisplacedSqueezed(Parametrized, State):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        **kwargs,
     ):
         Parametrized.__init__(
             self,
@@ -194,6 +203,7 @@ class DisplacedSqueezed(Parametrized, State):
             phi_bounds=phi_bounds,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
+            **kwargs,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
@@ -223,6 +233,7 @@ class Gaussian(Parametrized, State):
         displacement_trainable: bool = False,
         eigenvalues_trainable: bool = False,
         displacement_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        **kwargs,
     ):
         if symplectic is None:
             symplectic = training.new_symplectic(num_modes=num_modes)
@@ -231,7 +242,7 @@ class Gaussian(Parametrized, State):
         if eigenvalues is None:
             eigenvalues = (
                 gaussian.math.ones_like(displacement) * settings.HBAR / 2
-            )  # TODO: concrete classes should not use the backend
+            )  # TODO: fix this (eigenvalues are not all independent)
         Parametrized.__init__(
             self,
             symplectic=symplectic,
@@ -243,6 +254,7 @@ class Gaussian(Parametrized, State):
             eigenvalues=eigenvalues,
             eigenvalues_trainable=eigenvalues_trainable,
             eigenvalues_bounds=(settings.HBAR / 2, None),
+            **kwargs,
         )
         cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -270,3 +282,13 @@ class Gaussian(Parametrized, State):
                 + [self.eigenvalues] * self._eigenvalues_trainable
             ),
         }
+
+
+class Fock(Parametrized, State):
+    r"""
+    The N-mode Fock state.
+    """
+
+    def __init__(self, n: int, **kwargs):
+        Parametrized.__init__(self, n=n, **kwargs)
+        State.__init__(self, fock=fock.fock_state(n), is_mixed=False)

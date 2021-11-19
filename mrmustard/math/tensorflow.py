@@ -62,6 +62,9 @@ class TFMath(MathInterface):
             return x
         return tf.cast(x, dtype)
 
+    def clip(self, array, a_min, a_max) -> tf.Tensor:
+        return tf.clip_by_value(array, a_min, a_max)
+
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
         return tf.concat(values, axis)
 

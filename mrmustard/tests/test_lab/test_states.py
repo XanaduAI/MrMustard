@@ -26,7 +26,7 @@ from mrmustard.tests import random
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0))
+    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 
 @st.composite
@@ -63,8 +63,9 @@ def test_coherent_state_array(hbar, x, y):
     )
 
 
-@given(x=arr, y=arr)
-def test_coherent_state_multiple(x, y):
+@given(xy=xy_arrays())
+def test_coherent_state_multiple(xy):
+    x, y = xy
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
     assert len(x) == len(y)
@@ -120,7 +121,7 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
 @given(xy=xy_arrays())
 def test_coh_state(xy):
     x, y = xy
-    assert Vacuum(2) >> Dgate(x, y) == Coherent(x, y)
+    assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
 
 
 @given(r=st.floats(0.0, 1.0), phi=st.floats(0.0, 2 * np.pi))

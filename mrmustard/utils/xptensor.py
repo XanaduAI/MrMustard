@@ -445,7 +445,8 @@ class XPTensor(ABC):
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> Union[XPMatrix, XPVector]:
         r"""
-        Returns modes or subsets of modes from the XPTensor, or coherences between modes using an intuitive notation.
+        Returns modes or subsets of modes from the XPTensor,
+        or coherences between modes using an intuitive notation.
         We handle mode indices and we get the corresponding tensor indices handled correctly.
         Examples:
             T[N] ~ self.tensor[N,:,:,:]
@@ -501,6 +502,8 @@ class XPTensor(ABC):
 class XPMatrix(XPTensor):
     r"""
     A convenience class for a matrix in the XPTensor format.
+
+    # TODO: write docstring
     """
 
     def __init__(

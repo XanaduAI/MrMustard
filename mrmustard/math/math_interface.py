@@ -73,6 +73,10 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
+    def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
+        ...
+
+    @abstractmethod
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
         ...
 

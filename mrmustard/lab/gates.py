@@ -28,6 +28,7 @@ __all__ = [
     "S2gate",
     "Interferometer",
     "LossChannel",
+    "Normalize",
 ]
 
 
@@ -421,3 +422,16 @@ class LossChannel(Parametrized, Transformation):
     @property
     def Y_matrix(self):
         return gaussian.loss_Y(self.transmissivity, settings.HBAR)
+
+
+class Normalize:
+    r"""
+    Normalize a fock state.
+    """
+
+    def __call__(self, state) -> Tensor:
+        if state.is_pure:
+            state._fock / fock.math.norm(state._fock)
+        else:
+            state._fock / fock.math.sum(fock.math.all_diagonals(state._fock, real=False))
+        return state

@@ -46,18 +46,12 @@ class State:
         self._is_mixed = is_mixed
         self._purity = 1.0 if not is_mixed else None
         self._fock = fock
+        self._cov = cov
         self._means = means
         self._fock_probabilities = None
         self._cutoffs = None
         self.__maybe_modes = None
         self._eigenvalues = None
-
-    @property
-    def symplectic(self) -> XPMatrix:
-        r"""
-        Returns the symplectic matrix of the state.
-        """
-        return self._symplectic
 
     @property
     def purity(self) -> float:
@@ -121,7 +115,7 @@ class State:
         Returns the cutoff dimensions for each mode.
         """
         if self._fock is None:
-            return None  # TODO: fock.autocutoffs(self.number_cov, self.number_means)  NOTE: <-- should we?
+            return fock.autocutoffs(self.number_cov, self.number_means)
         else:
             return [s for s in self._fock.shape[: self.num_modes]]
 
@@ -145,11 +139,12 @@ class State:
         else:
             raise NotImplementedError("number_cov not implemented for non-gaussian states")
 
-    def ket(self, cutoffs: Sequence[int], from_cache=False) -> Optional[Tensor]:
+    def ket(self, cutoffs: Sequence[Optional[int]], from_cache=False) -> Optional[Tensor]:
         r"""
         Returns the ket of the state in Fock representation or `None` if the state is mixed.
         Arguments:
-            cutoffs List[int]: the cutoff dimensions for each mode
+            cutoffs List[int or None]: the cutoff dimensions for each mode. If mode cutoff is None,
+                it's automatically computed.
         Returns:
             Tensor: the ket
         """
@@ -157,6 +152,7 @@ class State:
             return None
         if from_cache and self._fock is not None:
             return self._fock
+        cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_gaussian:
             self._fock = fock.fock_representation(
                 self.cov, self.means, shape=cutoffs, is_mixed=False
@@ -220,15 +216,70 @@ class State:
 
     def __call__(self, other: State) -> State:
         r"""
-        Returns the post-measurement state after other is projected onto self.
+        Returns the post-measurement state after `other` is projected onto `self`.
         I.e. self acts as a measurement.
         """
         if isinstance(other, State):
-            if self.is_gaussian:
-                Sinv = XPMatrix(gaussian.symplectic_inverse(other.symplectic), modes=([], []))
-            self.symplectic = Sinv @ self.symplectic
+            remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
+
+            if self.is_gaussian and other.is_gaussian:
+                prob, cov, means = gaussian.general_dyne(
+                    other.cov,
+                    other.means,
+                    self.cov,
+                    self.means,
+                    self._modes,
+                    settings.HBAR,
+                )
+                if len(remaining_modes) > 0:
+                    return State(
+                        means=means,
+                        cov=cov,
+                        is_mixed=gaussian.is_mixed_cov(cov),
+                    )
+                else:
+                    return prob
+            elif self.is_gaussian and not other.is_gaussian:
+                out_fock = fock.POVM(
+                    fock_state=other._fock,
+                    is_state_dm=other.is_mixed,
+                    POVM_effect=self.ket(cutoffs=other.cutoffs[self._modes]),
+                    modes=self._modes,
+                )
+            elif not self.is_gaussian and other.is_gaussian:
+                if self.is_mixed:
+                    raise NotImplementedError("Projection onto Fock mixed state not implemented.")
+                out_fock = fock.POVM(
+                    fock_state=other.ket(
+                        cutoffs=[
+                            None if m not in self._modes else self.cutoffs[m]
+                            for m in range(other.num_modes)
+                        ]
+                    ),
+                    is_state_dm=other.is_mixed,
+                    POVM_effect=self._fock,
+                    modes=self._modes,
+                )
+            elif not self.is_gaussian and not other.is_gaussian:
+                if self.is_mixed:
+                    raise NotImplementedError("Projection onto Fock mixed state not implemented.")
+                out_fock = fock.POVM(
+                    fock_state=other._fock,
+                    is_state_dm=other.is_mixed,
+                    POVM_effect=self._fock,
+                    modes=self._modes,
+                )
+            if len(remaining_modes) > 0:
+                return State(
+                    fock=out_fock,
+                    is_mixed=fock.is_mixed_dm(fock) if other.is_mixed else False,
+                )
+            else:
+                return fock.math.abs(out_fock) ** 2 if other.is_mixed else fock.math.abs(out_fock)
         else:
-            raise TypeError(f"Cannot project {type(other)} onto {type(self)}")
+            raise TypeError(
+                f"Cannot project {other.__class__.__qualname__} onto {self.__class__.__qualname__}"
+            )
 
     def __and__(
         self, other: State

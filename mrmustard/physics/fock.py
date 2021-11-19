@@ -26,6 +26,39 @@ math = Math()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+def fock_state(n: int) -> Tensor:
+    r"""
+    Returns a pure or mixed Fock state.
+    Args:
+        n: The number of modes.
+    Returns:
+        The Fock state up to cutoff n+1
+    """
+    psi = np.zeros(n + 1, dtype="complex128")
+    psi[n] = 1
+    return psi
+
+
+def autocutoffs(
+    number_cov: Matrix, number_means: Vector, max_cutoff: int = None
+) -> Tuple[int, ...]:
+    r"""
+    Returns the autocutoffs of a Wigner state.
+    Arguments:
+        number_cov: The number covariance matrix.
+        number_means: The number means vector.
+        max_cutoff: The maximum cutoff.
+    Returns:
+        The suggested cutoffs.
+    """
+    if max_cutoff is None:
+        max_cutoff = int(100 / len(number_means))
+    autocutoffs = math.cast(
+        number_means + math.sqrt(math.diag_part(number_cov)) * settings.AUTOCUTOFF_FACTOR, "int32"
+    )
+    return math.clip(autocutoffs, 1, max_cutoff)
+
+
 def fock_representation(
     cov: Matrix,
     means: Vector,
@@ -223,3 +256,34 @@ def CPTP(
                 Cs, math.conj(fock_state), axes=([-s for s in reversed(indices)], indices)
             )
             return Css
+
+
+def POVM(
+    fock_state: Tensor,
+    is_state_dm: bool,
+    POVM_effect: Sequence[Optional[int]],
+    modes: Sequence[int],
+) -> Union[Tensor, Scalar]:
+    r"""
+    Computes <POVM_effect|fock_state> if fock_state is a ket or <POVM_effect|fock_state|POVM_effect> if it is a dm.
+    Arguments:
+        fock_state: The state to project.
+        is_state_dm: Whether fock_state is a density matrix or not.
+        POVM_effect: The POVM effect to apply.
+        modes: The modes of the state on which to apply the POVM effect.
+    Returns:
+        The unnormalized projected state or the projection probability if there is no leftover state.
+    """
+    POVM_modes = list(range(len(POVM_effect.shape)))
+    if not is_state_dm:
+        return math.tensordot(math.conj(POVM_effect), fock_state, axes=(POVM_modes, modes))
+    else:
+        return math.tensordot(
+            math.conj(POVM_effect),
+            math.tensordot(
+                fock_state,
+                POVM_effect,
+                axes=(POVM_modes, [m + len(fock_state.shape) // 2 for m in modes]),
+            ),
+            axes=(POVM_modes, modes),
+        )

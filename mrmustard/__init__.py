@@ -14,7 +14,7 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        self.N_SIGMA_CUTOFF = 4  # 4x the sqrt of the photon number variance when auto-detecting the Fock cutoff for a mode
+        self.AUTOCUTOFF_FACTOR = 5  # 5x the sqrt of the photon number variance when auto-detecting the Fock cutoff for a mode
 
     @property
     def backend(self):
