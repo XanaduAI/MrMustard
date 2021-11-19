@@ -260,6 +260,9 @@ def controlled_phase(g=1, xpxp=True):
     If xpxp = True (default), the matrix will be returned as xpxp format.
     If xpxp = False, the matrix will be returned as xxpp format.
     
+    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
+    https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
+
     Args: 
         g (float): interaction strength
     Returns:
@@ -290,6 +293,8 @@ def controlled_not(g=1, xpxp=True):
     If xpxp = True (default), the matrix will be returned as xpxp format.
     If xpxp = False, the matrix will be returned as xxpp format.
     
+    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
+
     Args: 
         g (float): interaction strength
     Returns:
