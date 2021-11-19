@@ -513,6 +513,107 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     return 1 / math.sqrt(math.det((2 / hbar) * cov))
 
 
+def sympletic_eigenvals(cov: Matrix) -> Any:
+    r"""
+    Returns the sympletic eigenspectrum of a covariance matrix.
+    For a pure state, we expect the sympletic eigenvalues to be 1.
+    Arguments:
+        cov (Matrix): the covariance matrix.
+    Returns:
+        List[float]: the sympletic eigenvalues
+    """
+    cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
+    J = math.J(cov.shape[0] // 2)  # create a sympletic form
+    M = 1j * J @ cov  # compute iJ*cov
+    vals = math.eigvals(M)  # compute the eigenspectrum
+    return math.abs(vals[::2])  # return the even eigenvalues
+
+
+def von_neumann_entropy(cov: Matrix) -> float:
+    r"""
+    Returns the Von Neumann entropy.
+    For a pure state, we expect the Von Neumann entropy to be 0.
+
+    Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
+
+    Arguments:
+        cov (Matrix): the covariance matrix
+    Returns:
+        float: the von neumann entropy
+    """
+    symp_vals = self.sympletic_eigenvals(cov)
+    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+    entropy = math.sum(g(symp_vals))
+    return entropy
+
+
+def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
+    r"""
+    Returns the fidelity of two gaussian states.
+
+    Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
+
+    Arguments:
+        mu1 (Vector): the means vector of state 1
+        mu2 (Vector): the means vector of state 2
+        cov1 (Matrix): the covariance matrix of state 1
+        cov1 (Matrix): the covariance matrix of state 2
+    Returns:
+        float: the fidelity
+    """
+
+    cov1 = math.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
+    cov2 = math.cast(cov2 / hbar, "complex128")  # convert to units where hbar = 1
+
+    mu1 = math.cast(mu1, "complex128")
+    mu2 = math.cast(mu2, "complex128")
+    deltar = (mu2 - mu1) / math.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
+    J = math.J(cov1.shape[0] // 2)
+    I = math.eye(cov1.shape[0])
+    J = math.cast(J, "complex128")
+    I = math.cast(I, "complex128")
+
+    cov12_inv = math.inv(cov1 + cov2)
+
+    V = math.transpose(J) @ cov12_inv @ ((1 / 4) * J + cov2 @ J @ cov1)
+
+    W = -2 * (V @ (1j * J))
+    W_inv = math.inv(W)
+    matsqrtm = math.sqrtm(I - W_inv @ W_inv)  # this also handles the case where the input matrix is close to zero
+    f0_top = math.det((matsqrtm + I) @ (W @ (1j * J)))
+    f0_bot = math.det(cov1 + cov2)
+
+    f0 = (f0_top / f0_bot) ** (1 / 2)  # square of equation 98
+
+    dot = math.sum(
+        math.transpose(deltar) * math.matvec(cov12_inv, deltar)
+    )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
+
+    fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
+
+    return math.cast(fidelity, "float64")
+
+
+def log_negativity(cov: Matrix) -> float:
+    r"""
+    Returns the log_negativity of a Gaussian state.
+
+    Reference: https://arxiv.org/pdf/quant-ph/0102117.pdf, Equation 57, 61.
+
+    Arguments:
+        cov (Matrix): the covariance matrix
+    Returns:
+        float: the log-negativity
+    """
+
+    vals = sympletic_eigenvals(cov)
+    mask = 2 * vals < 1
+
+    vals_filtered = math.boolean_mask(vals, mask)  # Get rid of terms that would lead to zero contribution.
+
+    return math.sum(-math.log(2 * vals_filtered) / math.log(2))
+
+
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     r"""
     Joins the given covariance matrices into a single covariance matrix.

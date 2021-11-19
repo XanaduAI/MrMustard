@@ -276,6 +276,21 @@ class MathInterface(ABC):
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
 
+    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+        ...
+
+    def eigvals(self, tensor: Tensor) -> Tensor:
+        r"Returns the eigenvalues of a matrix."
+        ...
+
+    def sqrtm(self, tensor: Tensor) -> Tensor:
+        r"Returns the matrix square root."
+        ...
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Methods that build on the basic ops and don't need to be overridden in the backend implementation
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])

@@ -282,6 +282,39 @@ class TFMath(MathInterface):
 
         return poly, grad
 
+    def eigvals(self, tensor: tf.Tensor) -> Tensor:
+        "Returns the eigenvalues of a matrix."
+        return tf.linalg.eigvals(tensor)
+
+    def eigvalsh(self, tensor: tf.Tensor) -> Tensor:
+        "Returns the eigenvalues of a Real Symmetric or Hermitian matrix."
+        return tf.linalg.eigvalsh(tensor)
+
+    def svd(self, tensor: tf.Tensor) -> Tensor:
+        "Returns the Singular Value Decomposition of a matrix."
+        return tf.linalg.svd(tensor)
+
+    def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
+        "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
+        return tf.math.xlogy(x, y)
+
+    def eigh(self, tensor: tf.Tensor) -> Tensor:
+        "Returns the eigenvalues and eigenvectors of a matrix."
+        return tf.linalg.eigh(tensor)
+
+    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+        "Returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A."
+
+        # The sqrtm function has issues with matrices that are close to zero, hence we branch
+        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
+            return self.zeros_like(tensor)
+        else:
+            return tf.linalg.sqrtm(tensor)
+
+    def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
+        "Returns a tensor based on the truth value of the boolean mask."
+        return tf.boolean_mask(tensor, mask)
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -2,6 +2,7 @@
 
 import importlib
 from rich.pretty import install  # NOTE: just for the looks
+
 install()
 
 __version__ = "0.1.0"
