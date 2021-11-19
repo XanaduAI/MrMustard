@@ -254,6 +254,66 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
+def controlled_phase(g=1, xpxp=True):
+    r"""Controlled PHASE gate of two-gaussian modes. 
+
+    If xpxp = True (default), the matrix will be returned as xpxp format.
+    If xpxp = False, the matrix will be returned as xxpp format.
+    
+    Args: 
+        g (float): interaction strength
+    Returns:
+        the C_z controlled phase matrix
+    """
+    if xpxp:
+        return math.astensor(
+            [
+                [1 ,0, 0, 0],
+                [0, 1, g, 0],
+                [0, 0, 1, 0],
+                [g, 0, 0, 1],
+            ]
+        )
+    if not xpxp:
+        return math.astensor(
+            [
+                [1 ,0, 0, 0],
+                [0, 1, 0, 0],
+                [0, g, 1, 0],
+                [g, 0, 0, 1],
+            ]
+        )
+
+def controlled_not(g=1, xpxp=True):
+    r"""Controlled phase gate of two-gaussian modes. 
+
+    If xpxp = True (default), the matrix will be returned as xpxp format.
+    If xpxp = False, the matrix will be returned as xxpp format.
+    
+    Args: 
+        g (float): interaction strength
+    Returns:
+        the C_x controlled NOT matrix
+    """
+    if xpxp:
+        return math.astensor(
+            [
+                [1 ,0, 0, 0],
+                [0, 1, 0, -g],
+                [g, 0, 1, 0],
+                [0, 0, 0, 1],
+            ]
+        )
+    if not xpxp:
+        return math.astensor(
+            [
+                [1 ,0, 0, 0],
+                [g, 1, 0, 0],
+                [0, 0, 1, -g],
+                [0, 0, 0, 1],
+            ]
+        )
+
 # ~~~~~~~~~~~~~
 # CPTP channels
 # ~~~~~~~~~~~~~
