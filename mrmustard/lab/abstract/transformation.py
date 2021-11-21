@@ -38,10 +38,7 @@ class Transformation:
     is_unitary = True  # whether the transformation is unitary
 
     def __call__(self, state: State) -> State:
-        if state.is_gaussian:
-            return self.transform_gaussian(state)
-        else:
-            return self.transform_fock(state)
+        return self.transform_gaussian(state) if state.is_gaussian else self.transform_fock(state)
 
     @property
     def bell(self):
@@ -63,10 +60,7 @@ class Transformation:
         r"""
         Transforms a state in Gaussian representation.
         """
-        d = self.d_vector
-        X = self.X_matrix
-        Y = self.Y_matrix
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
+        cov, means = gaussian.CPTP(state.cov, state.means, *self.XYd, self.modes)
         return State(cov=cov, means=means, is_mixed=state.is_mixed or not self.is_unitary)
 
     def transform_fock(self, state: State) -> State:
@@ -117,11 +111,12 @@ class Transformation:
     @property
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
-            if (d := self.d_vector) is not None:
+            X,Y,d = self.XYd
+            if d is not None:
                 self._modes = list(range(d.shape[-1] // 2))
-            elif (X := self.X_matrix) is not None:
+            elif X is not None:
                 self._modes = list(range(X.shape[-1] // 2))
-            elif (Y := self.Y_matrix) is not None:
+            elif Y is not None:
                 self._modes = list(range(Y.shape[-1] // 2))
         return self._modes
 
@@ -148,6 +143,23 @@ class Transformation:
     def d_vector(self) -> Optional[Vector]:
         return None
 
+    @property
+    def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
+        return [self.X_matrix, self.Y_matrix, self.d_vector]
+
+    @property
+    def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
+        r"""
+        Returns the (X, Y, d) triple of the dual of the current transformation.
+        """
+        X, Y, d = self.XYd
+        X_dual = math.inv(X) if X is not None else None
+        Y_dual = Y
+        if Y is not None:
+            Y_dual = math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+        d_dual = math.matvec(X_dual, d)
+        return X_dual, Y_dual, d_dual
+            
     def U(self, cutoffs: Sequence[int]):
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
@@ -207,6 +219,20 @@ class Transformation:
         Returns:
             A new transformation that is the concatenation of the two.
         """
-        from mrmustard.lab import Circuit  # this is called at runtime
-
+        from mrmustard.lab import Circuit  # this is called at runtime so it's ok
         return Circuit([self, other])
+
+    def __eq__(self, other):
+        r"""
+        Returns True if the two transformations are equal.
+        """
+        if not isinstance(other, Transformation):
+            return False
+        if self.is_gaussian and other.is_gaussian:
+            for s,o in zip(self.XYd, other.XYd):
+                if not np.allclose(s, o, rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS):
+                    return False
+            return True
+        else:
+            return np.allclose(self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF]*self.num_modes),
+            other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF]*self.num_modes), rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK)

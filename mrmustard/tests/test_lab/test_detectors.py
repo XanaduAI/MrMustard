@@ -162,7 +162,7 @@ def test_postselection():
     n_mean = 1.0
     detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
     S2 = S2gate(r=np.arcsinh(np.sqrt(n_mean)), phi=0.0)
-    my_state = S2(Vacuum(2))
+    my_state = Vacuum(2) >> S2
     cutoff = 3
     n_measured = 1
     # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
@@ -184,8 +184,8 @@ def test_loss_probs(eta):
     S = Sgate(r=0.3, phi=[0.0, 0.7])[0, 1]
     B = BSgate(theta=1.4, phi=0.0)[0, 1]
     L = LossChannel(transmissivity=eta)[0, 1]
-    dm_lossy = lossy_detector(B(S(Vacuum(2))), cutoffs=[20, 20])
-    dm_ideal = ideal_detector(L(B(S(Vacuum(2)))), cutoffs=[20, 20])
+    dm_lossy = lossy_detector(Vacuum(2) >> S >> B, cutoffs=[20, 20])
+    dm_ideal = ideal_detector(Vacuum(2) >> S >> B >> L, cutoffs=[20, 20])
     assert np.allclose(dm_ideal, dm_lossy)
 
 
@@ -197,20 +197,16 @@ def test_projected(eta, n):
     S = Sgate(r=0.3, phi=[0.0, 1.5])
     B = BSgate(theta=1.0, phi=0.0)
     L = LossChannel(transmissivity=eta)
-    dm_lossy, _ = lossy_detector(B[0, 1](S[0, 1](Vacuum(2))), cutoffs=[20, 20], outcomes=[n, None])
-    dm_ideal, _ = ideal_detector(
-        L[0](B[0, 1](S[0, 1](Vacuum(2)))), cutoffs=[20, 20], outcomes=[n, None]
-    )
+    dm_lossy, _ = lossy_detector(Vacuum(2) >> S[0,1] >> B, cutoffs=[20, 20], outcomes=[n, None])
+    dm_ideal, _ = ideal_detector(Vacuum(2) >> S[0,1] >> B >> L[0], cutoffs=[20, 20], outcomes=[n, None])
     assert np.allclose(dm_ideal, dm_lossy)
 
 
 @given(s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0))
 def test_homodyne_on_2mode_squeezed_vacuum(s, X):
-    S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)[0, 1]
-    tmsv = S(Vacuum(2))
     homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
     r = homodyne._squeezing
-    prob, remaining_state = homodyne(tmsv)
+    prob, remaining_state = homodyne(TMSV(r=np.arcsinh(np.sqrt(abs(s)))))
     cov = (
         np.diag(
             [1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]
@@ -227,11 +223,9 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
 
 @given(s=st.floats(1.0, 20.0), X=st.floats(-10.0, 10.0), angle=st.floats(0, np.pi * 2))
 def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
-    S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)[0, 1]
-    tmsv = S(Vacuum(2))
     homodyne = Homodyne(modes=[0], quadrature_angles=angle, results=X)
     r = homodyne._squeezing
-    prob, remaining_state = homodyne(tmsv)
+    prob, remaining_state = homodyne(TMSV(r=np.arcsinh(np.sqrt(abs(s)))))
     denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
     cov = (
         settings.HBAR
@@ -286,7 +280,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
 def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)[0, 1]
     D = Dgate(x=d[:2], y=d[2:])[0, 1]
-    tmsv = D(S(Vacuum(2)))
+    tmsv = Vacuum(2) >> S >> D
     homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
     r = homodyne._squeezing
     prob, remaining_state = homodyne(tmsv)
@@ -317,7 +311,7 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
 ):  # TODO: check if this is correct
     S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
     D = Dgate(x=d[:2], y=d[2:])
-    tmsv = D[0, 1](S[0, 1](Vacuum(2)))
+    tmsv = Vacuum(2) > S[0, 1] >> D[0, 1]
     heterodyne = Heterodyne(modes=[0], x=x, y=y)
     prob, remaining_state = heterodyne(tmsv)
     cov = settings.HBAR / 2 * np.array([[1, 0], [0, 1]])

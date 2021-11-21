@@ -26,37 +26,33 @@ math = Math()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: int) -> Tensor:
+def fock_state(n: Sequence[int]) -> Tensor:
     r"""
     Returns a pure or mixed Fock state.
     Args:
-        n: The number of modes.
+        n: a list of photon numbers.
     Returns:
-        The Fock state up to cutoff n+1
+        The Fock state up to cutoffs n+1
     """
-    psi = np.zeros(n + 1, dtype="complex128")
-    psi[n] = 1
+    psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
+    psi[tuple(np.atleast_1d(n))] = 1
     return psi
 
 
 def autocutoffs(
-    number_cov: Matrix, number_means: Vector, max_cutoff: int = None
+    number_variances: Matrix, number_means: Vector, max_cutoff: int = settings.AUTOCUTOFF_MAX_CUTOFF
 ) -> Tuple[int, ...]:
     r"""
     Returns the autocutoffs of a Wigner state.
     Arguments:
-        number_cov: The number covariance matrix.
+        number_vars: The number variances in each mode (i.e. the diagonal of the covariance matrix)
         number_means: The number means vector.
         max_cutoff: The maximum cutoff.
     Returns:
         The suggested cutoffs.
     """
-    if max_cutoff is None:
-        max_cutoff = int(100 / len(number_means))
-    autocutoffs = math.cast(
-        number_means + math.sqrt(math.diag_part(number_cov)) * settings.AUTOCUTOFF_FACTOR, "int32"
-    )
-    return math.clip(autocutoffs, 1, max_cutoff)
+    autocutoffs = math.cast(number_means + math.sqrt(number_variances) * settings.AUTOCUTOFF_SIGMA_FACTOR, "int32")
+    return [int(n) for n in math.clip(autocutoffs, 1, max_cutoff)]
 
 
 def fock_representation(
@@ -198,19 +194,68 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
     r"""computes the fidelity between two states in Fock representation"""
     if a_pure and b_pure:
+        min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)])
+        state_a = state_a[min_cutoffs]
+        state_b = state_b[min_cutoffs]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
     elif a_pure:
+        min_cutoffs = tuple(
+            [
+                slice(min(a, b))
+                for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])
+            ]
+        )
+        state_a = state_a[min_cutoffs]
+        state_b = state_b[min_cutoffs]
         a = math.reshape(state_a, -1)
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
         )
     elif b_pure:
+        min_cutoffs = tuple(
+            [
+                slice(min(a, b))
+                for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
+            ]
+        )
+        state_a = state_a[min_cutoffs]
+        state_b = state_b[min_cutoffs]
         b = math.reshape(state_b, -1)
         return math.real(
             math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
         )
     else:
         raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
+
+
+def number_means(tensor, is_dm: bool):
+    r"""
+    returns the first moment of the number operator
+    """
+    probs = math.all_diagonals(tensor) if is_dm else math.abs(tensor) ** 2
+    modes = [m for m in range(len(probs.shape))]
+    marginals = [math.sum(probs, axes=modes[:k] + modes[k+1:]) for k in range(len(modes))]
+    return math.astensor(
+        [
+            math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
+            for marginal in marginals
+        ]
+    )
+
+def number_variances(tensor, is_dm: bool):
+    r"""
+    returns the second moment of the number operator in each mode
+    """
+    probs = math.all_diagonals(tensor) if is_dm else math.abs(tensor) ** 2
+    modes = [m for m in range(len(probs.shape))]
+    marginals = [math.sum(probs, axes=modes[:k] + modes[k+1:]) for k in range(len(modes))]
+    return math.astensor(
+            [
+                (math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)**2) - 
+                 math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype))**2)
+                for marginal in marginals
+            ]
+    )
 
 
 def purity(dm: Tensor) -> Scalar:
@@ -283,7 +328,19 @@ def POVM(
             math.tensordot(
                 fock_state,
                 POVM_effect,
-                axes=(POVM_modes, [m + len(fock_state.shape) // 2 for m in modes]),
+                axes=([m + len(fock_state.shape) // 2 for m in modes], POVM_modes),
             ),
             axes=(POVM_modes, modes),
         )
+
+
+def normalize(fock: Tensor, is_mixed: bool):
+    if is_mixed:
+        return fock / math.sum(math.all_diagonals(fock, real=False))
+    else:
+        return fock / math.sum(math.norm(fock))
+
+def is_mixed_dm(dm):
+    cutoffs = dm.shape[: len(dm.shape) // 2]
+    square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
+    return not np.isclose(math.sum(square * math.transpose(square)), 1.0)

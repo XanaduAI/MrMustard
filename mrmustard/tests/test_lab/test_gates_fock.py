@@ -30,16 +30,14 @@ from mrmustard.tests import random
 @given(state=random.pure_state(num_modes=1), xy=random.vector(2))
 def test_Dgate_1mode(state, xy):
     x, y = xy
-    state_out = Dgate(x=x, y=y)[0](state)
-    state_out = Dgate(x=-x, y=-y)[0](state_out)
+    state_out = state >> Dgate(x, y) >> Dgate(-x, -y)
     assert state_out == state
 
 
 @given(state=random.pure_state(num_modes=2), xxyy=random.vector(4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
-    state_out = Dgate(x=[x1, x2], y=[y1, y2])[0, 1](state)
-    state_out = Dgate(x=[-x1, -x2], y=[-y1, -y2])[0, 1](state_out)
+    state_out = state >> Dgate([x1, x2], [y1, y2]) >> Dgate([-x1, -x2], [-y1, -y2])
     assert state_out == state
 
 

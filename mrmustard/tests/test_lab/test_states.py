@@ -96,10 +96,10 @@ def test_the_purity_of_a_mixed_state(nbar):
     phi2=st.floats(0.0, 2 * np.pi),
 )
 def test_join_two_states(r1, phi1, r2, phi2):
-    S1 = Sgate(r=r1, phi=phi1)[0](Vacuum(1))
-    S2 = Sgate(r=r2, phi=phi2)[0](Vacuum(1))
-    S12 = Sgate(r=[r1, r2], phi=[phi1, phi2])[0, 1](Vacuum(2))
-    assert np.allclose((S1 & S2).cov, S12.cov)
+    S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
+    S2 = Vacuum(1) >> Sgate(r=r2, phi=phi2)
+    S12 = Vacuum(2) >> Sgate(r=[r1, r2], phi=[phi1, phi2])
+    assert S1 & S2 == S12
 
 
 @given(

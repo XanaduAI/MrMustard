@@ -28,7 +28,6 @@ __all__ = [
     "S2gate",
     "Interferometer",
     "LossChannel",
-    "Normalize",
 ]
 
 
@@ -68,6 +67,7 @@ class Dgate(Parametrized, Transformation):
             y_bounds=y_bounds,
             modes=modes,
         )
+        self.is_gaussian = True
 
     @property
     def d_vector(self):
@@ -110,6 +110,7 @@ class Sgate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
             modes=modes,
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -144,6 +145,7 @@ class Rgate(Parametrized, Transformation):
             angle_bounds=angle_bounds,
             modes=modes,
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -184,6 +186,7 @@ class BSgate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
             modes=modes,
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -235,6 +238,7 @@ class MZgate(Parametrized, Transformation):
             internal=internal,
             modes=modes,
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -281,6 +285,7 @@ class S2gate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
             modes=modes,
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -314,6 +319,7 @@ class Interferometer(Parametrized, Transformation):
             orthogonal_bounds=(None, None),
             modes=list(range(num_modes)),
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -361,10 +367,15 @@ class Ggate(Parametrized, Transformation):
             symplectic_bounds=(None, None),
             modes=list(range(num_modes)),
         )
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
         return self.symplectic
+
+    @property
+    def d_vector(self):
+        return self.displacement
 
     def _validate_modes(self, modes):
         if len(modes) != self.symplectic.shape[1] // 2:
@@ -377,7 +388,7 @@ class Ggate(Parametrized, Transformation):
         return {
             "symplectic": [self.symplectic] if self._symplectic_trainable else [],
             "orthogonal": [],
-            "euclidean": [],
+            "euclidean": [self.displacement] if self._displacement_trainable else [],
         }
 
 
@@ -414,6 +425,7 @@ class LossChannel(Parametrized, Transformation):
             modes=modes,
         )
         self.is_unitary = False
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -423,15 +435,3 @@ class LossChannel(Parametrized, Transformation):
     def Y_matrix(self):
         return gaussian.loss_Y(self.transmissivity, settings.HBAR)
 
-
-class Normalize:
-    r"""
-    Normalize a fock state.
-    """
-
-    def __call__(self, state) -> Tensor:
-        if state.is_pure:
-            state._fock / fock.math.norm(state._fock)
-        else:
-            state._fock / fock.math.sum(fock.math.all_diagonals(state._fock, real=False))
-        return state

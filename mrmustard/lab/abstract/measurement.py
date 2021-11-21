@@ -110,9 +110,9 @@ class FockMeasurement(ABC):
                 dm = fock.math.transpose(dm, perm)
                 dm = fock.math.diag_part(dm)
                 dm = fock.math.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
-                measured += 1
-        prob = fock.math.sum(fock.math.all_diagonals(dm, real=False))
-        return fock.math.abs(prob), dm / prob
+            measured += 1
+        probs = fock.math.sum(fock.math.all_diagonals(dm, real=False))
+        return dm / probs, fock.math.abs(probs)
 
     def apply_stochastic_channel(self, stochastic_channel, fock_probs: Tensor) -> Tensor:
         cutoffs = [fock_probs.shape[m] for m in self._modes]
@@ -129,20 +129,17 @@ class FockMeasurement(ABC):
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
-            indices.insert(mode, fock_probs.ndim - 1)
-            detector_probs = fock.math.transpose(detector_probs, indices)
+            detector_probs = fock.math.transpose(detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:])
         return detector_probs
 
     def __call__(
         self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None
     ) -> Tuple[Tensor, Tensor]:
-        fock_probs = state.fock_probabilities(cutoffs)
-        all_probs = self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
         if outcomes is None:
-            return all_probs
+            fock_probs = state.fock_probabilities(cutoffs)
+            return self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
         else:
-            probs, dm = self.project(state, cutoffs, outcomes)
-            return dm, probs
+            return self.project(state, cutoffs, outcomes)
 
     def recompute_stochastic_channel(self, **kwargs) -> State:
         ...

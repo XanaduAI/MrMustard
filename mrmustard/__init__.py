@@ -14,7 +14,13 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        self.AUTOCUTOFF_FACTOR = 5  # 5x the sqrt of the photon number variance when auto-detecting the Fock cutoff for a mode
+        # 7x the sqrt of the photon number variance when auto-detecting the Fock cutoff for a mode
+        self.AUTOCUTOFF_SIGMA_FACTOR = 7
+        self.AUTOCUTOFF_MAX_CUTOFF = 100
+        # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
+        self.EQ_TRANSFORMATION_CUTOFF = 5
+        self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
+        self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
 
     @property
     def backend(self):
