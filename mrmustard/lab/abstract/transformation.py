@@ -34,11 +34,20 @@ class Transformation:
         * non-unitary CPTP channels
     """
 
-    _bell = None  # single-mode TMSV state for gaussian to fock transformation
-    is_unitary = True  # whether the transformation is unitary
+    _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
+    is_unitary = True  # whether the transformation is unitary (True by default)
 
     def __call__(self, state: State) -> State:
-        return self.transform_gaussian(state) if state.is_gaussian else self.transform_fock(state)
+        r"""
+        Applies the channel of self to other.
+        """
+        return self.transform_gaussian(state, dual=False) if state.is_gaussian else self.transform_fock(state, dual=False)
+
+    def dual_channel(self, state: State) -> State:
+        r"""
+        Applies the dual channel of self to other.
+        """
+        return self.transform_gaussian(state, dual=True) if state.is_gaussian else self.transform_fock(state, dual=True)
 
     @property
     def bell(self):
@@ -56,30 +65,57 @@ class Transformation:
             self._bell = bell[order]
         return self._bell
 
-    def transform_gaussian(self, state: State) -> State:
+    def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""
         Transforms a state in Gaussian representation.
         """
-        cov, means = gaussian.CPTP(state.cov, state.means, *self.XYd, self.modes)
-        return State(cov=cov, means=means, is_mixed=state.is_mixed or not self.is_unitary)
+        X, Y, d = self.XYd if not dual else self.XYd_dual
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
+        new_state = State(cov=cov, means=means, is_mixed=state.is_mixed or not self.is_unitary)
+        try:
+            new_state._modes = state._modes
+            new_state._normalize = state._normalize
+        except AttributeError:
+            pass
+        return new_state
 
-    def transform_fock(self, state: State) -> State:
+    def transform_fock(self, state: State, dual: bool) -> State:
         r"""
         Transforms a state in Fock representation.
+        Arguments:
+            state (State): the state to transform
+            dual (bool): whether to apply the dual channel
+        Returns:
+            State: the transformed state
         """
         if self.is_unitary:
-            transformation = self.U(cutoffs=state.cutoffs)
+            U = self.U(cutoffs=state.cutoffs)
+            transformation = fock.math.dagger(U) if dual else U
         else:
             transformation = self.choi(cutoffs=state.cutoffs)
-        new_state = fock.CPTP(
+            if dual:
+                n = len(state.cutoffs)
+                N0 = list(range(0, n))
+                N1 = list(range(n, 2 * n))
+                N2 = list(range(2 * n, 3 * n))
+                N3 = list(range(3 * n, 4 * n))
+                transformation = fock.math.transpose(transformation, N3 + N0 + N1 + N2)
+        new_fock = fock.CPTP(
             transformation=transformation,
-            fock_state=state._fock,
+            fock_state=state.ket(state.cutoffs) if state.is_pure else state.dm(state.cutoffs),
             transformation_is_unitary=self.is_unitary,
             state_is_mixed=state.is_mixed,
         )
-        return State(
-            fock=new_state, is_mixed=not self.is_unitary or state.is_mixed
-        )  # TODO: is_mixed is not computed correctly (non-unitary maps can return pure states)
+        new_state = State(
+            fock=new_fock, is_mixed=not self.is_unitary or state.is_mixed
+        )  # TODO: is_mixed is too conservative (non-unitary maps could return pure states)
+        try:
+            new_state._modes = state._modes
+            new_state._normalize = state._normalize
+        except AttributeError:
+            pass
+        return new_state
+
 
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__}")
@@ -152,13 +188,7 @@ class Transformation:
         r"""
         Returns the (X, Y, d) triple of the dual of the current transformation.
         """
-        X, Y, d = self.XYd
-        X_dual = math.inv(X) if X is not None else None
-        Y_dual = Y
-        if Y is not None:
-            Y_dual = math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
-        d_dual = math.matvec(X_dual, d)
-        return X_dual, Y_dual, d_dual
+        return gaussian.XYd_dual(*self.XYd)
             
     def U(self, cutoffs: Sequence[int]):
         "Returns the unitary representation of the transformation"
@@ -180,13 +210,14 @@ class Transformation:
             return fock.U_to_choi(U)
         else:
             choi_state = self(self.bell)
-            return fock.fock_representation(
+            choi_op = fock.fock_representation(
                 choi_state.cov,
                 choi_state.means,
                 shape=cutoffs * 4,
                 is_unitary=False,
                 choi_r=settings.CHOI_R,
             )
+            return choi_op
 
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
@@ -219,8 +250,11 @@ class Transformation:
         Returns:
             A new transformation that is the concatenation of the two.
         """
-        from mrmustard.lab import Circuit  # this is called at runtime so it's ok
-        return Circuit([self, other])
+        if isinstance(other, Transformation):
+            from mrmustard.lab import Circuit  # this is called at runtime so it's ok
+            return Circuit([self, other])
+        elif isinstance(other, State):
+            return other(self)
 
     def __eq__(self, other):
         r"""

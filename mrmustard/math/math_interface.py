@@ -45,44 +45,114 @@ class MathInterface(ABC):
 
     @abstractmethod
     def abs(self, array: Tensor) -> Tensor:
-        "fill me"
+        r"""Returns the absolute value of array.
+        Arguments:
+            array (array): array to take the absolute value of
+        Returns:
+            array: absolute value of array
+        """
         ...
 
     @abstractmethod
     def arange(self, start: int, limit: int = None, delta: int = 1) -> Tensor:
+        r"""
+        Returns an array of evenly spaced values within a given interval.
+        Arguments:
+            start (int): start of the interval
+            limit (int): end of the interval
+            delta (int): step size
+        Returns:
+            array: array of evenly spaced values
+        """
         ...  # NOTE: is float64 by default
 
     @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
+        r"""Converts a tensor to a numpy array.
+        Arguments:
+            tensor (array): tensor to convert
+        Returns:
+            array: numpy array
+        """
         ...
 
     @abstractmethod
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
+        r"""Assigns value to tensor.
+        Arguments:
+            tensor (array): tensor to assign to
+            value (array): value to assign
+        Returns:
+            array: tensor with value assigned
+        """
         ...
 
     @abstractmethod
     def astensor(self, array: Tensor) -> Tensor:
+        r"""Converts a numpy array to a tensor.
+        Arguments:
+            array (array): numpy array to convert
+        Returns:
+            array: tensor
+        """
         ...
 
     @abstractmethod
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""
+        Returns an array with at least one dimension.
+        Arguments:
+            array (array): array to convert
+            dtype (dtype): data type of the array
+        Returns:
+            array: array with at least one dimension
+        """
         ...
 
     @abstractmethod
     def cast(self, array: Tensor, dtype) -> Tensor:
+        r"""Casts array to dtype.
+        Arguments:
+            array (array): array to cast
+            dtype (dtype): data type to cast to
+        Returns:
+            array: array cast to dtype
+        """
         ...
 
     @abstractmethod
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
+        r"""Clips array to the interval [a_min, a_max].
+        Arguments:
+            array (array): array to clip
+            a_min (float): minimum value
+            a_max (float): maximum value
+        Returns:
+            array: clipped array
+        """
         ...
 
     @abstractmethod
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
+        r"""Concatenates values along the given axis.
+        Arguments:
+            values (array): values to concatenate
+            axis (int): axis along which to concatenate
+        Returns:
+            array: concatenated values
+        """
         ...
 
     @abstractmethod
     def conj(self, array: Tensor) -> Tensor:
+        r"""Returns the complex conjugate of array.
+        Arguments:
+            array (array): array to take the complex conjugate of
+        Returns:
+            array: complex conjugate of array
+        """
         ...
+
 
     @abstractmethod
     def constraint_func(

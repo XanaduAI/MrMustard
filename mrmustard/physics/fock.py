@@ -138,14 +138,13 @@ def U_to_choi(U: Tensor) -> Tensor:
     cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
     outer = math.outer(U, math.conj(U))
-    choi = math.transpose(
+    return math.transpose(
         outer,
         list(range(0, N))
         + list(range(2 * N, 3 * N))
         + list(range(N, 2 * N))
         + list(range(3 * N, 4 * N)),
-    )
-    return choi
+    )  # NOTE: mode blocks 1 and 3 are at the end so we can tensordot dm with them
 
 
 def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
@@ -230,7 +229,7 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
 
 def number_means(tensor, is_dm: bool):
     r"""
-    returns the first moment of the number operator
+    returns the first moment of the number operator in each mode
     """
     probs = math.all_diagonals(tensor) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
@@ -259,7 +258,7 @@ def number_variances(tensor, is_dm: bool):
 
 
 def purity(dm: Tensor) -> Scalar:
-    r"""Computes the purity of a state in Fock representation."""
+    r"""Returns the purity of a density matrix."""
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
@@ -280,58 +279,55 @@ def CPTP(
         The transformed state.
     """
     num_modes = len(fock_state.shape) // 2 if state_is_mixed else len(fock_state.shape)
-    indices = list(range(num_modes))
+    N0 = list(range(0, num_modes))
+    N1 = list(range(num_modes, 2 * num_modes))
+    N2 = list(range(2 * num_modes, 3 * num_modes))
+    N3 = list(range(3 * num_modes, 4 * num_modes))
     if transformation_is_unitary:
         U = transformation
-        Us = math.tensordot(U, fock_state, axes=([num_modes + s for s in indices], indices))
-        if state_is_mixed:
-            UsU = math.tensordot(
-                Us, math.dagger(U), axes=([num_modes + s for s in indices], indices)
-            )
-            return UsU
-        else:
+        if state.is_pure:
+            Us = math.tensordot(U, fock_state, axes=(N1, N0))
             return Us
+        else:  # is state is dm, the input indices of dm are still at the end of Us
+            return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
     else:
-        C = transformation
-        Cs = math.tensordot(C, fock_state, axes=([-s for s in reversed(indices)], indices))
+        C = transformation  # choi operator
         if state_is_mixed:
-            return Cs
+            return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
         else:
-            Css = math.tensordot(
-                Cs, math.conj(fock_state), axes=([-s for s in reversed(indices)], indices)
-            )
-            return Css
+            Cs = math.tensordot(C, fock_state, axes=(N1, N0))
+            return math.tensordot(Cs, math.conj(fock_state), axes=(N2, N0))  # N2 is the last set of indices now
 
 
-def POVM(
-    fock_state: Tensor,
-    is_state_dm: bool,
-    POVM_effect: Sequence[Optional[int]],
-    modes: Sequence[int],
-) -> Union[Tensor, Scalar]:
+def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: List[int], normalize: bool):
     r"""
-    Computes <POVM_effect|fock_state> if fock_state is a ket or <POVM_effect|fock_state|POVM_effect> if it is a dm.
+    Contracts two states in the specified modes.
+    It assumes that the modes spanned by B are a subset of the modes spanned by A.
     Arguments:
-        fock_state: The state to project.
-        is_state_dm: Whether fock_state is a density matrix or not.
-        POVM_effect: The POVM effect to apply.
-        modes: The modes of the state on which to apply the POVM effect.
-    Returns:
-        The unnormalized projected state or the projection probability if there is no leftover state.
+        stateA: The first state
+        stateB: The second state (assumed to be on a subset of the modes of stateA)
+        a_is_mixed: Whether the first state is mixed or not.
+        b_is_mixed: Whether the second state is mixed or not.
+        modes: The modes on which to contract the states.
+        normalize: Whether to normalize the result
     """
-    POVM_modes = list(range(len(POVM_effect.shape)))
-    if not is_state_dm:
-        return math.tensordot(math.conj(POVM_effect), fock_state, axes=(POVM_modes, modes))
-    else:
-        return math.tensordot(
-            math.conj(POVM_effect),
-            math.tensordot(
-                fock_state,
-                POVM_effect,
-                axes=([m + len(fock_state.shape) // 2 for m in modes], POVM_modes),
-            ),
-            axes=(POVM_modes, modes),
-        )
+    indices = list(range(len(modes)))
+    if not a_is_mixed and not b_is_mixed:
+        out = math.tensordot(math.conj(stateB), stateA, axes=(indices, modes))
+        if normalize:
+            out = out / math.norm(out)
+        return out
+    elif a_is_mixed and not b_is_mixed:
+        Ab = math.tensordot(stateA, stateB, axes=([m+len(stateA.shape)//2 for m in modes], indices))
+        out = math.tensordot(math.conj(stateB), Ab, axes=(indices, modes))
+    elif not a_is_mixed and b_is_mixed:
+        Ba = math.tensordot(stateB, stateA, axes=(indices, modes))   # now B indices are all first
+        out = math.tensordot(math.conj(stateA), Ba, axes=(modes, indices))
+    elif a_is_mixed and b_is_mixed:
+        out = math.tensordot(stateA, math.conj(stateB), axes=(modes+[m+len(stateA.shape)//2 for m in modes], indices+[i+len(stateB.shape)//2 for i in indices]))
+    if normalize:
+        out = out / math.sum(math.all_diagonals(out, real=False))
+    return out
 
 
 def normalize(fock: Tensor, is_mixed: bool):

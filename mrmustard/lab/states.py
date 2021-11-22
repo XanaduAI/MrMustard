@@ -290,7 +290,7 @@ class Fock(Parametrized, State):
     """
 
     def __init__(self, n: Sequence[int], **kwargs):
-        Parametrized.__init__(self, n=n, **kwargs)
         State.__init__(self, fock=fock.fock_state(n), is_mixed=False)
+        Parametrized.__init__(self, n=n, **kwargs)
 
 

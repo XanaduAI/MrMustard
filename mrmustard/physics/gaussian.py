@@ -601,3 +601,23 @@ def symplectic_inverse(S: Matrix) -> Matrix:
             [-math.transpose(S[1, 0]), math.transpose(S[0, 0])],
         ]
     )
+
+
+def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
+    r"""
+    Returns the dual channel (X,Y,d)
+    Arguments:
+        X (Matrix): the X matrix
+        Y (Matrix): the Y noise matrix
+        d (Vector): the displacement vector
+    Returns:
+        (Matrix, Matrix, Vector): (X_dual, Y_dual, d_dual)
+    """
+    X_dual = math.inv(X) if X is not None else None
+    Y_dual = Y
+    d_dual = d
+    if Y is not None:
+        Y_dual = math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+    if d is not None:
+        d_dual = math.matvec(X_dual, d) if X_dual is not None else d
+    return X_dual, Y_dual, d_dual

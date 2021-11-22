@@ -144,3 +144,4 @@ def test_state_getitem():
     b = Gaussian(2)
     assert a == (a & b)[0, 1]
     assert b == (a & b)[2, 3]
+
