@@ -201,7 +201,7 @@ class Transformation:
         if Xdual is None:
             return Y
         elif Y is not None:
-            return math.matmul(math.matmul(X, self.Y_matrix), X)
+            return math.matmul(math.matmul(Xdual, self.Y_matrix), Xdual)
         return None
 
     @property

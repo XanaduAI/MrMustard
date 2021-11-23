@@ -44,7 +44,7 @@ class State:
             len(means) // 2 if means is not None else (len(fock.shape) // 2 if is_mixed else len(fock.shape))
         )
         self._is_mixed = is_mixed
-        self._purity = 1.0 if not is_mixed else None
+        self._purity = 1.0 is not is_mixed
         self._fock = fock
         self._cov = cov
         self._means = means
