@@ -53,51 +53,6 @@ class State:
         self._eigenvalues = None
 
     @property
-    def modes(self) -> List[int]:
-        r"""
-        Returns the modes of the state.
-        By default states are in modes 0, ..., num_modes-1
-        """
-        try:
-            if self._modes is None:
-                self._modes = list(range(self.num_modes))
-            return self._modes
-        except AttributeError:
-            return list(range(self.num_modes))
-
-    @property
-    def purity(self) -> float:
-        r"""
-        Returns the purity of the state.
-        """
-        if self._purity is None:
-            if self.is_gaussian:
-                self._purity = gaussian.purity(self.cov, settings.HBAR)
-            else:
-                self._purity = fock.purity(self._fock)  # dm
-        return self._purity
-
-    @property
-    def is_gaussian(self) -> bool:
-        r"""
-        Returns `True` if the state is Gaussian.
-        """
-        return self._cov is not None and self._means is not None
-
-    @property
-    def num_modes(self) -> int:
-        r"""
-        Returns the number of modes in the state.
-        """
-        if self._num_modes is None:
-            if self.is_gaussian:
-                self._num_modes = self._means.shape[-1] // 2
-            else:
-                num_indices = len(self._fock.shape)
-                self._num_modes = num_indices if self.is_pure else num_indices // 2
-        return self._num_modes
-
-    @property
     def is_mixed(self):
         if self._is_mixed is None:
             self._is_mixed = gaussian.is_mixed_cov(self.cov)
@@ -120,6 +75,51 @@ class State:
         Returns the covariance matrix of the state.
         """
         return self._cov
+
+    @property
+    def is_gaussian(self) -> bool:
+        r"""
+        Returns `True` if the state is Gaussian.
+        """
+        return self._cov is not None and self._means is not None
+
+    @property
+    def num_modes(self) -> int:
+        r"""
+        Returns the number of modes in the state.
+        """
+        if self._num_modes is None:
+            if self.is_gaussian:
+                self._num_modes = self._means.shape[-1] // 2
+            else:
+                num_indices = len(self._fock.shape)
+                self._num_modes = num_indices if self.is_pure else num_indices // 2
+        return self._num_modes
+
+    @property
+    def purity(self) -> float:
+        r"""
+        Returns the purity of the state.
+        """
+        if self._purity is None:
+            if self.is_gaussian:
+                self._purity = gaussian.purity(self.cov, settings.HBAR)
+            else:
+                self._purity = fock.purity(self._fock)  # dm
+        return self._purity
+
+    @property
+    def modes(self) -> List[int]:
+        r"""
+        Returns the modes of the state.
+        By default states are in modes 0, ..., num_modes-1
+        """
+        try:
+            if self._modes is None:
+                self._modes = list(range(self.num_modes))
+            return self._modes
+        except AttributeError:
+            return list(range(self.num_modes))
 
     @property
     def number_variances(self) -> Vector:
@@ -172,7 +172,7 @@ class State:
         if self.is_gaussian:
             return gaussian.number_means(self.cov, self.means, settings.HBAR)
         else:
-            return fock.number_means(tensor=self._fock, is_dm=self.is_mixed)
+            return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
 
     @property
     def number_cov(self) -> Matrix:
@@ -256,9 +256,9 @@ class State:
     def __call__(self, other: Union[State, Transformation]) -> State:
         r"""
         Returns the post-measurement state after `other` is projected onto `self`:
-        self(other: State) -> other projected onto self.
+        self(state) -> state projected onto self.
         If `other` is a `Transformation`, it returns the dual of the transformation applied to `self`:
-        self(other: Transformation) -> other^dual(self)
+        self(transformation) -> transformation^dual(self)
         """
         if issubclass(other.__class__, State):
             remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
