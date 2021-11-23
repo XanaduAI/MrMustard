@@ -275,17 +275,20 @@ class State:
                 other_cutoffs = [
                     self.cutoffs[m] if m in self._modes else other.cutoffs[m] for m in range(other.num_modes)
                 ]
-                other_fock = other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)
-                self_cutoffs = [other_cutoffs[m] for m in range(self.num_modes)]
-                self_fock = self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs)
-                out_fock = fock.contract_states(
-                    stateA=other_fock,
-                    stateB=self_fock if self.is_pure else self.dm(self_cutoffs),
-                    a_is_mixed=other.is_mixed,
-                    b_is_mixed=self.is_mixed,
-                    modes=self._modes,
-                    normalize=self._normalize,
-                )
+                try:
+                    out_fock = self.__preferred_projection(other, other_cutoffs, self._modes)
+                except AttributeError:
+                    other_fock = other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)
+                    self_cutoffs = [other_cutoffs[m] for m in range(self.num_modes)]
+                    self_fock = self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs)
+                    out_fock = fock.contract_states(
+                        stateA=other_fock,
+                        stateB=self_fock if self.is_pure else self.dm(self_cutoffs),
+                        a_is_mixed=other.is_mixed,
+                        b_is_mixed=self.is_mixed,
+                        modes=self._modes,
+                        normalize=self._normalize,
+                    )
                 if len(remaining_modes) > 0:
                     output_is_mixed = not (self.is_pure and other.is_pure)
                     return State(
@@ -321,6 +324,8 @@ class State:
             item = list(item)
         else:
             raise TypeError("item must be int or iterable")
+        if len(item) != self.num_modes:
+            raise ValueError(f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)")
         self._modes = item
         return self
 

@@ -289,3 +289,21 @@ class Fock(Parametrized, State):
     def __init__(self, n: Sequence[int], **kwargs):
         State.__init__(self, fock=fock.fock_state(n), is_mixed=False)
         Parametrized.__init__(self, n=n, **kwargs)
+
+    def __preferred_projection(other: State, other_cutoffs: Sequence[int], modes: Sequence[int]):
+        r"""
+        Preferred method to perform a projection onto this state (rather than the default one).
+        Args:
+            other: The state to project onto this state.
+            other_cutoffs: The cutoffs of the other state.
+            modes: The modes of this state (self) to project onto.
+        """
+        getitem = []
+        used = 0
+        for mode,c in enumerate(other_cutoffs):
+            if mode in modes:
+                getitem.append(self._n[used])
+                used += 1 
+            else:
+                getitem.append(slice(None))
+        return other.fock[tuple(getitem)] if self.is_pure else other.fock[tuple(getitem)*2]
