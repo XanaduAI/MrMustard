@@ -48,9 +48,7 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement(
-        math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar
-    )
+    return displacement(math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar)
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
@@ -109,9 +107,7 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
     else:
-        return math.matmul(
-            math.matmul(symplectic, math.diag(eigenvalues)), math.transpose(symplectic)
-        )
+        return math.matmul(math.matmul(symplectic, math.diag(eigenvalues)), math.transpose(symplectic))
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,11 +127,7 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     num_modes = angle.shape[-1]
     x = math.cos(angle)
     y = math.sin(angle)
-    return (
-        math.diag(math.concat([x, x], axis=0))
-        + math.diag(-y, k=num_modes)
-        + math.diag(y, k=-num_modes)
-    )
+    return math.diag(math.concat([x, x], axis=0)) + math.diag(-y, k=num_modes) + math.diag(y, k=-num_modes)
 
 
 def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
@@ -276,9 +268,7 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
 # ~~~~~~~~~~~~~
 
 
-def CPTP(
-    cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]
-) -> Tuple[Matrix, Vector]:
+def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
@@ -431,13 +421,9 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
         The photon number means vector.
     """
     N = means.shape[-1] // 2
-    return (
-        means[:N] ** 2
-        + means[N:] ** 2
-        + math.diag_part(cov[:N, :N])
-        + math.diag_part(cov[N:, N:])
-        - hbar
-    ) / (2 * hbar)
+    return (means[:N] ** 2 + means[N:] ** 2 + math.diag_part(cov[:N, :N]) + math.diag_part(cov[N:, N:]) - hbar) / (
+        2 * hbar
+    )
 
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
@@ -453,13 +439,9 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     """
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
-    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-        2 * hbar ** 2
-    )
+    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
     CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
-    return (
-        CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
-    )
+    return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
 
 
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
@@ -480,8 +462,7 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
         A list of cutoff indices.
     """
     cutoffs = (
-        number_means(cov, means, hbar)
-        + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
+        number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
     )
     return [max(1, int(i)) for i in cutoffs]
 
@@ -579,9 +560,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
     """
     mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0]) // 2)))
     for i, m in enumerate(means[1:]):
-        mean = mean + XPVector.from_xxpp(
-            m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2))
-        )
+        mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2)))
     return mean.to_xxpp()
 
 

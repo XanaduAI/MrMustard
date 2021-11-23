@@ -62,9 +62,7 @@ def test_coherent_state(alpha):
     circ = Circuit()
     circ.append(Dgate(x=realpha, y=imalpha)[0])
     amps = circ(Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
-    expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array(
-        [alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)]
-    )
+    expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array([alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)])
     assert np.allclose(amps, expected)
 
 
@@ -82,9 +80,7 @@ def test_squeezed_state(r, phi):
         / np.sqrt(np.cosh(r))
         * np.array(
             [
-                (-np.exp(1j * phi) * np.tanh(r)) ** n
-                * np.sqrt(factorial(2 * n))
-                / (2 ** n * factorial(n))
+                (-np.exp(1j * phi) * np.tanh(r)) ** n * np.sqrt(factorial(2 * n)) / (2 ** n * factorial(n))
                 for n in range(len_non_zero)
             ]
         )

@@ -113,9 +113,7 @@ class TorchMath(MathInterface):
         return torch.matmul(a, b)
 
     @Autocast()
-    def matvec(
-        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False
-    ) -> torch.Tensor:
+    def matvec(self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False) -> torch.Tensor:
         return torch.mv(a, b)
 
     @Autocast()
@@ -216,9 +214,7 @@ class TorchMath(MathInterface):
     def sum(self, array: torch.Tensor, axes: Sequence[int] = None):
         return torch.sum(array, axes)
 
-    def arange(
-        self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64
-    ) -> torch.Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64) -> torch.Tensor:
         return torch.arange(start, limit, delta, dtype=dtype)
 
     @Autocast()
@@ -251,23 +247,17 @@ class TorchMath(MathInterface):
     def concat(self, values: Sequence[torch.Tensor], axis: int) -> torch.Tensor:
         return torch.cat(values, axis)
 
-    def update_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
-    ):
+    def update_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
         return tensor.scatter_(dims, indices, values)
 
-    def update_add_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
-    ):
+    def update_add_tensor(self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
         return tensor.scatter_add_(dims, indices, values)
 
-    def constraint_func(
-        self, bounds: Tuple[Optional[float], Optional[float]]
-    ) -> Optional[Callable]:
+    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
         bounds = (
             -np.inf if bounds[0] is None else bounds[0],
             np.inf if bounds[1] is None else bounds[1],
@@ -278,9 +268,7 @@ class TorchMath(MathInterface):
             constraint = None
         return constraint
 
-    def new_variable(
-        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64
-    ):
+    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64):
         return torch.tensor(value, requires_grad=True)
 
     def new_constant(self, value, name: str, dtype=torch.float64):
@@ -332,9 +320,7 @@ class TorchMath(MathInterface):
             The loss and the gradients.
         """
         self.optimizer.zero_grad()
-        loss = (
-            cost_fn()
-        )  # TODO: I think this should be cost_fn(params), but if it works I think it is fine.
+        loss = cost_fn()  # TODO: I think this should be cost_fn(params), but if it works I think it is fine.
         loss.backward()
         self.optimizer.step()
 

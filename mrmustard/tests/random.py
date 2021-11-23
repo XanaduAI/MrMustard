@@ -21,9 +21,7 @@ from mrmustard.lab import *
 angle = st.floats(min_value=0, max_value=2 * np.pi)
 positive = st.floats(min_value=0, allow_infinity=False, allow_nan=False)
 real = st.floats(allow_infinity=False, allow_nan=False)
-r = st.floats(
-    min_value=0, max_value=0.5, allow_infinity=False, allow_nan=False
-)  # reasonable squeezing magnitude
+r = st.floats(min_value=0, max_value=0.5, allow_infinity=False, allow_nan=False)  # reasonable squeezing magnitude
 real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.00001))
 integer = st.integers(min_value=0, max_value=2 ** 32 - 1)
 small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
@@ -34,18 +32,16 @@ num_modes = st.integers(min_value=0, max_value=10)
 
 @st.composite
 def vector(draw, length):
-    return draw(
-        st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length)
-    )
+    return draw(st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length))
 
 
 # a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes
 @st.composite
 def modes(draw, num_modes):
     return draw(
-        st.lists(
-            st.integers(min_value=0, max_value=num_modes), min_size=num_modes, max_size=num_modes
-        ).filter(lambda x: len(set(x)) == len(x))
+        st.lists(st.integers(min_value=0, max_value=num_modes), min_size=num_modes, max_size=num_modes).filter(
+            lambda x: len(set(x)) == len(x)
+        )
     )
 
 
@@ -161,9 +157,7 @@ def random_Ggate(draw, num_modes, trainable=False):
 
 @st.composite
 def single_mode_unitary(draw, small=False):
-    return draw(
-        st.one_of(random_Rgate(1), random_Sgate(1, small=small), random_Dgate(1, small=small))
-    )
+    return draw(st.one_of(random_Rgate(1), random_Sgate(1, small=small), random_Dgate(1, small=small)))
 
 
 @st.composite

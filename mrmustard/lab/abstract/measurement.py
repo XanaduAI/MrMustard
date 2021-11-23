@@ -97,9 +97,7 @@ class FockMeasurement(ABC):
         Returns the measurement probability and the renormalized state (in the Fock basis) in the unmeasured modes.
         """
         if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):
-            raise ValueError(
-                "the length of cutoffs/measurements does not match the number of modes"
-            )
+            raise ValueError("the length of cutoffs/measurements does not match the number of modes")
         dm = state.dm(cutoffs=cutoffs)
         measured = 0
         for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurement)):
@@ -129,7 +127,9 @@ class FockMeasurement(ABC):
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
-            detector_probs = fock.math.transpose(detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:])
+            detector_probs = fock.math.transpose(
+                detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:]
+            )
         return detector_probs
 
     def __call__(

@@ -62,7 +62,6 @@ class Circuit(Transformation):
             d = opX @ d + opd
         return X.to_xxpp(), Y.to_xxpp(), d.to_xxpp()
 
-
     @property
     def is_gaussian(self):
         return all(op.is_gaussian for op in self._ops)
@@ -87,21 +86,12 @@ class Circuit(Transformation):
         Returns the dictionary of trainable parameters
         """
         symp = [
-            p
-            for op in self._ops
-            for p in op.trainable_parameters["symplectic"]
-            if hasattr(op, "trainable_parameters")
+            p for op in self._ops for p in op.trainable_parameters["symplectic"] if hasattr(op, "trainable_parameters")
         ]
         orth = [
-            p
-            for op in self._ops
-            for p in op.trainable_parameters["orthogonal"]
-            if hasattr(op, "trainable_parameters")
+            p for op in self._ops for p in op.trainable_parameters["orthogonal"] if hasattr(op, "trainable_parameters")
         ]
         eucl = [
-            p
-            for op in self._ops
-            for p in op.trainable_parameters["euclidean"]
-            if hasattr(op, "trainable_parameters")
+            p for op in self._ops for p in op.trainable_parameters["euclidean"] if hasattr(op, "trainable_parameters")
         ]
         return {"symplectic": symp, "orthogonal": orth, "euclidean": eucl}

@@ -58,9 +58,7 @@ def test_coherent_state_list(hbar, x, y):
 
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_array(hbar, x, y):
-    assert np.allclose(
-        gp.displacement(np.array([x]), np.array([y]), hbar), np.array([x, y]) * np.sqrt(2 * hbar)
-    )
+    assert np.allclose(gp.displacement(np.array([x]), np.array([y]), hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
 @given(xy=xy_arrays())
@@ -144,4 +142,3 @@ def test_state_getitem():
     b = Gaussian(2)
     assert a == (a & b)[0, 1]
     assert b == (a & b)[2, 3]
-

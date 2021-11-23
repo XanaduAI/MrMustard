@@ -156,9 +156,7 @@ class Thermal(Parametrized, State):
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         **kwargs,
     ):
-        Parametrized.__init__(
-            self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs
-        )
+        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs)
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, is_mixed=False)
@@ -278,8 +276,7 @@ class Gaussian(Parametrized, State):
             "symplectic": [self.symplectic] * self._symplectic_trainable,
             "orthogonal": [],
             "euclidean": (
-                [self.displacement] * self._displacement_trainable
-                + [self.eigenvalues] * self._eigenvalues_trainable
+                [self.displacement] * self._displacement_trainable + [self.eigenvalues] * self._eigenvalues_trainable
             ),
         }
 
@@ -292,5 +289,3 @@ class Fock(Parametrized, State):
     def __init__(self, n: Sequence[int], **kwargs):
         State.__init__(self, fock=fock.fock_state(n), is_mixed=False)
         Parametrized.__init__(self, n=n, **kwargs)
-
-

@@ -30,17 +30,13 @@ class Optimizer:
     compile other types of structures like error correcting codes and encoders/decoders.
     """
 
-    def __init__(
-        self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001
-    ):
+    def __init__(self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001):
         self.symplectic_lr: float = symplectic_lr
         self.orthogonal_lr: float = orthogonal_lr
         self.euclidean_lr: float = euclidean_lr
         self.loss_history: List[float] = [0]
 
-    def minimize(
-        self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000
-    ):
+    def minimize(self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000):
         r"""
         Minimizes the given cost function by optimizing circuits and/or detectors.
         Arguments:
@@ -48,10 +44,7 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-        params = {
-            kind: extract_parameters(by_optimizing, kind)
-            for kind in ("symplectic", "orthogonal", "euclidean")
-        }
+        params = {kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
         bar = graphics.Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
@@ -70,10 +63,7 @@ class Optimizer:
         if max_steps != 0 and len(self.loss_history) > max_steps:
             return True
         if len(self.loss_history) > 20:  # if loss varies less than 10e-6 over 20 steps
-            if (
-                sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 20))
-                < 1e-6
-            ):
+            if sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 20)) < 1e-6:
                 print("Loss looks stable, stopping here.")
                 return True
         return False
@@ -84,9 +74,7 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
-def new_variable(
-    value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64
-) -> Trainable:
+def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64) -> Trainable:
     r"""
     Returns a new trainable variable from the current math backend
     with initial value set by `value` and bounds set by `bounds`.
@@ -135,30 +123,22 @@ def numeric(tensor: Tensor) -> Tensor:
     return math.asnumpy(tensor)
 
 
-def update_symplectic(
-    symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float
-):
+def update_symplectic(symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float):
     for S, dS_riemann in zip(symplectic_params, symplectic_grads):
         Y = math.riemann_to_symplectic(S, dS_riemann)
         YT = math.transpose(Y)
-        new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
-        )
+        new_value = math.matmul(S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT)))
         math.assign(S, new_value)
 
 
-def update_orthogonal(
-    orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float
-):
+def update_orthogonal(orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float):
     for O, dO_riemann in zip(orthogonal_params, orthogonal_grads):
         D = 0.5 * (dO_riemann - math.matmul(math.matmul(O, math.transpose(dO_riemann)), O))
         new_value = math.matmul(O, math.expm(orthogonal_lr * math.matmul(math.transpose(D), O)))
         math.assign(O, new_value)
 
 
-def update_euclidean(
-    euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float
-):
+def update_euclidean(euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
     math.euclidean_opt.lr = euclidean_lr
     math.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
 

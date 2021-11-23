@@ -23,60 +23,72 @@ from mrmustard.lab.abstract.state import State
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings
+from mrmustard.math import Math
+
+math = Math()
 
 
 class Transformation:
     r"""
-    Base class for all transformations.
-    Note that measurements are CP but not TP, so they have their own abstract class.
-    Transformations include:
-        * unitary transformations
-        * non-unitary CPTP channels
+    Base class for all Transformations.
     """
-
-    _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
+    __bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def __call__(self, state: State) -> State:
         r"""
-        Applies the channel of self to other.
+        Applies self (a Transformation) to other (a State) and returns the transformed state.
+        Arguments:
+            state (State): the state to transform
+        Returns:
+            State: the transformed state
         """
-        return self.transform_gaussian(state, dual=False) if state.is_gaussian else self.transform_fock(state, dual=False)
+        if state.is_gaussian:
+            new_state = self.transform_gaussian(state, dual=False)
+        else:
+            new_state = self.transform_fock(state.fock, dual=False)
+        return new_state
 
-    def dual_channel(self, state: State) -> State:
+    def dual(self, state: State) -> State:
         r"""
-        Applies the dual channel of self to other.
+        Applies the dual of self (dual of a Transformation) to other (a State) and returns the transformed state.
+        Arguments:
+            state (State): the state to transform
+        Returns:
+            State: the transformed state
         """
-        return self.transform_gaussian(state, dual=True) if state.is_gaussian else self.transform_fock(state, dual=True)
+        if state.is_gaussian:
+            new_state = self.transform_gaussian(state, dual=True)
+        else:
+            new_state = self.transform_fock(state, dual=True)
+        return new_state
 
     @property
-    def bell(self):
+    def _bell(self):
         r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
-        if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(
-                r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
-            )
+        if self.__bell is None:
+            cov = gaussian.two_mode_squeezed_vacuum_cov(r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR)
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means, is_mixed=False)
             for _ in self.modes[1:]:
                 bell = bell & bell_single
             tot = 2 * len(self.modes)
             order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
-            self._bell = bell[order]
-        return self._bell
+            self.__bell = bell[order]
+        return self.__bell
 
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""
-        Transforms a state in Gaussian representation.
+        Transforms a Gaussian state into a Gaussian state.
+        Arguments:
+            state (State): the state to transform
+            dual (bool): whether to apply the dual channel
+        Returns:
+            State: the transformed state
         """
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
         new_state = State(cov=cov, means=means, is_mixed=state.is_mixed or not self.is_unitary)
-        try:
-            new_state._modes = state._modes
-            new_state._normalize = state._normalize
-        except AttributeError:
-            pass
         return new_state
 
     def transform_fock(self, state: State, dual: bool) -> State:
@@ -116,7 +128,6 @@ class Transformation:
             pass
         return new_state
 
-
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__}")
         table.add_column("Parameters")
@@ -134,10 +145,7 @@ class Transformation:
                     f"{par.shape}",
                     str(self.__dict__["_" + name + "_trainable"]),
                 )
-            lst = [
-                f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}"
-                for name in self.param_names
-            ]
+            lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
             repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
                 f"[{self._modes}]" if self._modes is not None else ""
             )
@@ -147,7 +155,7 @@ class Transformation:
     @property
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
-            X,Y,d = self.XYd
+            X, Y, d = self.XYd
             if d is not None:
                 self._modes = list(range(d.shape[-1] // 2))
             elif X is not None:
@@ -165,7 +173,7 @@ class Transformation:
         self._modes = modes
 
     def _validate_modes(self, modes):
-        pass  # override in subclasses as needed
+        pass
 
     @property
     def X_matrix(self) -> Optional[Matrix]:
@@ -180,26 +188,56 @@ class Transformation:
         return None
 
     @property
+    def X_matrix_dual(self) -> Optional[Matrix]:
+        if self.X_matrix is not None:
+            return gaussian.math.inv(self.X_matrix)
+        else:
+            return None
+
+    @property
+    def Y_matrix_dual(self) -> Optional[Matrix]:
+        Xdual = self.X_matrix_dual
+        Y = self.Y_matrix
+        if Xdual is None:
+            return Y
+        elif Y is not None:
+            return math.matmul(math.matmul(X, self.Y_matrix), X)
+        return None
+
+    @property
+    def d_vector_dual(self) -> Optional[Vector]:
+        Xdual = self.X_matrix_dual
+        d = self.d_vector
+        if Xdual is None:
+            return -d
+        elif d is not None:
+            return -math.matvec(Xdual, d)
+        return None
+
+    @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        return [self.X_matrix, self.Y_matrix, self.d_vector]
+        r"""
+        Returns the (X, Y, d) triple.
+        """
+        return self.X_matrix, self.Y_matrix, self.d_vector
 
     @property
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
         r"""
         Returns the (X, Y, d) triple of the dual of the current transformation.
         """
-        return gaussian.XYd_dual(*self.XYd)
-            
+        return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
+
     def U(self, cutoffs: Sequence[int]):
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
             return None
-        choi_state = self(self.bell)
+        choi_state = self(self._bell)
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
             shape=cutoffs * 2,
-            is_unitary=True,
+            return_unitary=True,
             choi_r=settings.CHOI_R,
         )
 
@@ -209,12 +247,12 @@ class Transformation:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
         else:
-            choi_state = self(self.bell)
+            choi_state = self(self._bell)
             choi_op = fock.fock_representation(
                 choi_state.cov,
                 choi_state.means,
                 shape=cutoffs * 4,
-                is_unitary=False,
+                return_unitary=False,
                 choi_r=settings.CHOI_R,
             )
             return choi_op
@@ -240,21 +278,44 @@ class Transformation:
         self.modes = modes
         return self
 
-    def __rshift__(self, other):
+    # TODO: use __class_getitem__ for compiler stuff
+
+    def __rshift__(self, other: Transformation):
         r"""
-        Concatenates self with other.
+        Concatenates self with other (other after self).
+        If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
         E.g.
-        `circ = Sgate[0,1] >> Dgate[0] >> BSgate[0,1] >> PNRdetector[0]`  # TODO: use __class_getitem__ for compiler stuff
+        `circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]`
         Arguments:
             other: another transformation
         Returns:
-            A new transformation that is the concatenation of the two.
+            A circuit that concatenates self with other
         """
-        if isinstance(other, Transformation):
-            from mrmustard.lab import Circuit  # this is called at runtime so it's ok
-            return Circuit([self, other])
-        elif isinstance(other, State):
-            return other(self)
+        from mrmustard.lab import Circuit  # this is called at runtime so it's ok
+
+        ops1 = self._ops if isinstance(self, Circuit) else [self]
+        ops2 = other._ops if isinstance(other, Circuit) else [other]
+        return Circuit(ops1 + ops2)
+
+    def __lshift__(self, other: Union[State, Transformation]):
+        r"""
+        Applies the dual of self to other.
+        If other is a state, the dual of self is applied to the state.
+        If other is a transformation, the dual of self is concatenated after other (in the dual sense).
+        E.g.
+        Sgate(0.1) << Coherent(0.5)   # state
+        Sgate(0.1) << Dgate(0.2)      # transformation
+        Arguments:
+            other: a state or a transformation
+        Returns:
+            the state transformed via the dual transformation or the transformation concatenated after other
+        """
+        if isinstance(other, State):
+            return self.dual(other)
+        elif isinstance(other, Transformation):
+            return self >> other  # so that the dual is self.dual(other.dual(x))
+        else:
+            raise ValueError(f"{other} is not a valid state or transformation.")
 
     def __eq__(self, other):
         r"""
@@ -263,10 +324,16 @@ class Transformation:
         if not isinstance(other, Transformation):
             return False
         if self.is_gaussian and other.is_gaussian:
-            for s,o in zip(self.XYd, other.XYd):
-                if not np.allclose(s, o, rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS):
+            for s, o in zip(self.XYd, other.XYd):
+                if (s is not None) != (o is not None):
                     return False
+                if s is not None and o is not None:
+                    if not np.allclose(s, o, rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS):
+                        return False
             return True
         else:
-            return np.allclose(self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF]*self.num_modes),
-            other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF]*self.num_modes), rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK)
+            return np.allclose(
+                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
+                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
+                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
+            )

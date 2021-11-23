@@ -37,9 +37,7 @@ class Parametrized(ABC):
         ]  # every parameter can be trainable! 🚀
 
         for name in self.param_names:
-            self.__dict__["_" + name + "_trainable"] = kwargs[
-                name + "_trainable"
-            ]  # defining ._param_trainable: bool
+            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # defining ._param_trainable: bool
             if kwargs[name + "_trainable"]:
                 var = training.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
                 self._trainable_parameters.append(var)

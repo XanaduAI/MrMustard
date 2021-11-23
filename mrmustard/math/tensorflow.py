@@ -71,9 +71,7 @@ class TFMath(MathInterface):
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
 
-    def constraint_func(
-        self, bounds: Tuple[Optional[float], Optional[float]]
-    ) -> Optional[Callable]:
+    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
         bounds = (
             -np.inf if bounds[0] is None else bounds[0],
             np.inf if bounds[1] is None else bounds[1],
@@ -172,9 +170,7 @@ class TFMath(MathInterface):
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
 
-    def new_variable(
-        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64
-    ):
+    def new_variable(self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64):
         value = self.cast(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
@@ -345,15 +341,9 @@ class TFMath(MathInterface):
             dL_dtensor[key] = 0.0
             # unbroadcasting the gradient
             implicit_broadcast = list(range(tensor.ndim - value.ndim))
-            explicit_broadcast = [
-                tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
-            ]
-            dL_dvalue = np.sum(
-                np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)
-            )
-            dL_dvalue = np.expand_dims(
-                dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast]
-            )
+            explicit_broadcast = [tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1]
+            dL_dvalue = np.sum(np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast))
+            dL_dvalue = np.expand_dims(dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast])
             return dL_dtensor, dL_dvalue
 
         return tensor, grad

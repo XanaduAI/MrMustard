@@ -327,9 +327,7 @@ class Interferometer(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != self.orthogonal.shape[1] // 2:
-            raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})"
-            )
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})")
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
@@ -344,7 +342,7 @@ class Ggate(Parametrized, Transformation):
     r"""
     A generic N-mode Gaussian unitary transformation with zero displacement.
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
-    strength between 0 and 1 in each mode.
+    strength r in [0,1] for each mode.
 
     Arguments:
         num_modes (int): the number of modes this gate is acting on.
@@ -356,7 +354,6 @@ class Ggate(Parametrized, Transformation):
         self,
         num_modes: int,
         symplectic: Optional[Tensor] = None,
-        displacement: Optional[Tensor] = None,
         symplectic_trainable: bool = False,
     ):
         if symplectic is None:
@@ -373,22 +370,16 @@ class Ggate(Parametrized, Transformation):
     def X_matrix(self):
         return self.symplectic
 
-    @property
-    def d_vector(self):
-        return self.displacement
-
     def _validate_modes(self, modes):
         if len(modes) != self.symplectic.shape[1] // 2:
-            raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})"
-            )
+            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})")
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
         return {
             "symplectic": [self.symplectic] if self._symplectic_trainable else [],
             "orthogonal": [],
-            "euclidean": [self.displacement] if self._displacement_trainable else [],
+            "euclidean": [],
         }
 
 
@@ -434,4 +425,3 @@ class LossChannel(Parametrized, Transformation):
     @property
     def Y_matrix(self):
         return gaussian.loss_Y(self.transmissivity, settings.HBAR)
-
