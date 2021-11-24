@@ -32,7 +32,7 @@ class Transformation:
     r"""
     Base class for all Transformations.
     """
-    __bell = None  # single-mode TMSV state for gaussian-to-fock conversion
+    _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def __call__(self, state: State) -> State:
@@ -46,7 +46,7 @@ class Transformation:
         if state.is_gaussian:
             new_state = self.transform_gaussian(state, dual=False)
         else:
-            new_state = self.transform_fock(state.fock, dual=False)
+            new_state = self.transform_fock(state, dual=False)
         return new_state
 
     def dual(self, state: State) -> State:
@@ -64,9 +64,9 @@ class Transformation:
         return new_state
 
     @property
-    def _bell(self):
+    def bell(self):
         r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
-        if self.__bell is None:
+        if self._bell is None:
             cov = gaussian.two_mode_squeezed_vacuum_cov(r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR)
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means, is_mixed=False)
@@ -74,8 +74,8 @@ class Transformation:
                 bell = bell & bell_single
             tot = 2 * len(self.modes)
             order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
-            self.__bell = bell[order]
-        return self.__bell
+            self._bell = bell.get_modes(order)
+        return self._bell
 
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""
@@ -232,7 +232,7 @@ class Transformation:
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
             return None
-        choi_state = self(self._bell)
+        choi_state = self(self.bell)
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
@@ -247,7 +247,7 @@ class Transformation:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
         else:
-            choi_state = self(self._bell)
+            choi_state = self(self.bell)
             choi_op = fock.fock_representation(
                 choi_state.cov,
                 choi_state.means,
