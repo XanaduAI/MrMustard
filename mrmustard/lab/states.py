@@ -225,33 +225,23 @@ class Gaussian(Parametrized, State):
         self,
         num_modes: int,
         symplectic: Matrix = None,
-        displacement: Vector = None,
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
-        displacement_trainable: bool = False,
         eigenvalues_trainable: bool = False,
-        displacement_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         **kwargs,
     ):
         if symplectic is None:
             symplectic = training.new_symplectic(num_modes=num_modes)
-        if displacement is None:
-            displacement = gaussian.vacuum_means(num_modes, settings.HBAR)
         if eigenvalues is None:
-            eigenvalues = (
-                gaussian.math.ones_like(displacement) * settings.HBAR / 2
-            )  # TODO: fix this (eigenvalues are not all independent)
+            eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
         Parametrized.__init__(
             self,
             symplectic=symplectic,
-            symplectic_trainable=symplectic_trainable,
-            symplectic_bounds=(None, None),
-            displacement=displacement,
-            displacement_trainable=displacement_trainable,
-            displacement_bounds=displacement_bounds,
             eigenvalues=eigenvalues,
             eigenvalues_trainable=eigenvalues_trainable,
+            symplectic_trainable=symplectic_trainable,
             eigenvalues_bounds=(settings.HBAR / 2, None),
+            symplectic_bounds=(None, None),
             **kwargs,
         )
         cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
@@ -263,10 +253,6 @@ class Gaussian(Parametrized, State):
         return gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
 
     @property
-    def means(self):
-        return self.displacement
-
-    @property
     def is_mixed(self):
         return any(self.eigenvalues > settings.HBAR / 2)
 
@@ -276,7 +262,7 @@ class Gaussian(Parametrized, State):
             "symplectic": [self.symplectic] * self._symplectic_trainable,
             "orthogonal": [],
             "euclidean": (
-                [self.displacement] * self._displacement_trainable + [self.eigenvalues] * self._eigenvalues_trainable
+                [self.eigenvalues] * self._eigenvalues_trainable
             ),
         }
 
