@@ -261,9 +261,7 @@ class Gaussian(Parametrized, State):
         return {
             "symplectic": [self.symplectic] * self._symplectic_trainable,
             "orthogonal": [],
-            "euclidean": (
-                [self.eigenvalues] * self._eigenvalues_trainable
-            ),
+            "euclidean": ([self.eigenvalues] * self._eigenvalues_trainable),
         }
 
 
@@ -286,10 +284,10 @@ class Fock(Parametrized, State):
         """
         getitem = []
         used = 0
-        for mode,c in enumerate(other_cutoffs):
+        for mode, c in enumerate(other_cutoffs):
             if mode in modes:
                 getitem.append(self._n[used])
-                used += 1 
+                used += 1
             else:
                 getitem.append(slice(None))
-        return other.fock[tuple(getitem)] if self.is_pure else other.fock[tuple(getitem)*2]
+        return other.fock[tuple(getitem)] if self.is_pure else other.fock[tuple(getitem) * 2]

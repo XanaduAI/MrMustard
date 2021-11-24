@@ -16,6 +16,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
+
 math = Math()
 
 from mrmustard.utils.types import *
@@ -331,7 +332,9 @@ class State:
         else:
             raise TypeError("item must be int or iterable")
         if len(item) != self.num_modes:
-            raise ValueError(f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)")
+            raise ValueError(
+                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
+            )
         self._modes = item
         return self
 
