@@ -15,6 +15,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.physics import gaussian, fock
+from mrmustard.math import Math
+math = Math()
+
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings
@@ -122,17 +125,15 @@ class State:
             return list(range(self.num_modes))
 
     @property
-    def number_variances(self) -> Vector:
+    def number_stdev(self) -> Vector:
         r"""
-        Returns the photon number variances in each mode.
+        Returns the square root of the photon number variances
+        (standard deviation) in each mode.
         """
         if self.is_gaussian:
-            return (
-                gaussian.math.diag_part(self.cov)[: self.num_modes]
-                + gaussian.math.diag_part(self.cov)[self.num_modes :]
-            )
+            return math.sqrt(math.diag_part(self.number_cov))
         else:
-            return fock.number_variances(self.fock, is_dm=self.is_mixed)
+            return math.sqrt(fock.number_variances(self.fock, is_dm=self.is_mixed))
 
     @property
     def cutoffs(self) -> List[int]:
@@ -140,7 +141,7 @@ class State:
         Returns the cutoff dimensions for each mode.
         """
         if self._fock is None:
-            return fock.autocutoffs(self.number_variances, self.number_means)
+            return fock.autocutoffs(self.number_stdev, self.number_means)
         else:
             if self._cutoffs is not None:
                 return self._cutoffs
@@ -272,9 +273,14 @@ class State:
                 else:
                     return prob
             else:  # either self or other is not gaussian
-                other_cutoffs = [
-                    self.cutoffs[m] if m in self._modes else other.cutoffs[m] for m in range(other.num_modes)
-                ]
+                other_cutoffs = []
+                used = 0
+                for m in range(other.num_modes):
+                    if m in self._modes:
+                        other_cutoffs.append(self.cutoffs[used])
+                        used += 1
+                    else:
+                        other_cutoffs.append(other.cutoffs[m])
                 try:
                     out_fock = self.__preferred_projection(other, other_cutoffs, self._modes)
                 except AttributeError:
@@ -369,7 +375,7 @@ class State:
         """
         if issubclass(other.__class__, State):
             raise TypeError(
-                "Cannot apply a state to a state. But we can measure a state with a state: are you looking for the << operator ?"
+                f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
             )
         return other(self)
 
