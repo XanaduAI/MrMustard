@@ -17,7 +17,6 @@ import numpy as np
 from mrmustard.utils.types import *
 from mrmustard import settings
 from mrmustard.math import Math
-
 math = Math()
 
 
@@ -40,19 +39,24 @@ def fock_state(n: Sequence[int]) -> Tensor:
 
 
 def autocutoffs(
-    number_variances: Matrix, number_means: Vector, max_cutoff: int = settings.AUTOCUTOFF_MAX_CUTOFF
+    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
 ) -> Tuple[int, ...]:
     r"""
     Returns the autocutoffs of a Wigner state.
     Arguments:
-        number_vars: The number variances in each mode (i.e. the diagonal of the covariance matrix)
-        number_means: The number means vector.
+        number_stdev: The photon number standard deviation in each mode
+            (i.e. the square root of the diagonal of the covariance matrix)
+        number_means: The photon number means vector.
         max_cutoff: The maximum cutoff.
     Returns:
         The suggested cutoffs.
     """
-    autocutoffs = math.cast(number_means + math.sqrt(number_variances) * settings.AUTOCUTOFF_SIGMA_FACTOR, "int32")
-    return [int(n) for n in math.clip(autocutoffs, 1, max_cutoff)]
+    if max_cutoff is None:
+        max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
+    if min_cutoff is None:
+        min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
+    autocutoffs = math.cast(number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32")
+    return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
 
 
 def fock_representation(
@@ -208,9 +212,9 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
 
 def number_means(tensor, is_dm: bool):
     r"""
-    returns the first moment of the number operator in each mode
+    returns the mean of the number operator in each mode
     """
-    probs = math.all_diagonals(tensor) if is_dm else math.abs(tensor) ** 2
+    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
@@ -220,9 +224,9 @@ def number_means(tensor, is_dm: bool):
 
 def number_variances(tensor, is_dm: bool):
     r"""
-    returns the second moment of the number operator in each mode
+    returns the variance of the number operator in each mode
     """
-    probs = math.all_diagonals(tensor) if is_dm else math.abs(tensor) ** 2
+    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
@@ -262,8 +266,8 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_m
     N3 = list(range(3 * num_modes, 4 * num_modes))
     if transformation_is_unitary:
         U = transformation
-        if state.is_pure:
-            Us = math.tensordot(U, fock_state, axes=(N1, N0))
+        Us = math.tensordot(U, fock_state, axes=(N1, N0))
+        if not state_is_mixed:
             return Us
         else:  # is state is dm, the input indices of dm are still at the end of Us
             return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
