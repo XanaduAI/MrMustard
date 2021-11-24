@@ -137,8 +137,8 @@ def test_dispsq_state(x, y, r, phi):
     assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
 
 
-def test_state_getitem():
+def test_get_modes():
     a = Gaussian(2)
     b = Gaussian(2)
-    assert a == (a & b)[0, 1]
-    assert b == (a & b)[2, 3]
+    assert a == (a & b).get_modes([0, 1])
+    assert b == (a & b).get_modes([2, 3])

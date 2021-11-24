@@ -18,11 +18,9 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
-from mrmustard.lab.gates import Dgate, Sgate, S2gate, LossChannel, BSgate
-from mrmustard.lab.circuit import Circuit
-from mrmustard.utils.training import Optimizer
-from mrmustard.lab.states import Vacuum
-from mrmustard.lab.detectors import PNRDetector, Homodyne, Heterodyne
+
+from mrmustard.lab import *
+from mrmustard.utils import Optimizer
 from mrmustard.physics import gaussian
 from mrmustard import settings
 
@@ -287,7 +285,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
 def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(s, x, y, d):  # TODO: check if this is correct
     S = S2gate(r=np.arcsinh(np.sqrt(abs(s))), phi=0.0)
     D = Dgate(x=d[:2], y=d[2:])
-    tmsv = Vacuum(2) > S[0, 1] >> D[0, 1]
+    tmsv = Vacuum(2) >> S[0, 1] >> D[0, 1]
     heterodyne = Heterodyne(modes=[0], x=x, y=y)
     prob, remaining_state = heterodyne(tmsv)
     cov = settings.HBAR / 2 * np.array([[1, 0], [0, 1]])

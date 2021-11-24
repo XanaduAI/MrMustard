@@ -77,7 +77,7 @@ class GaussianMeasurement(ABC):
         return self
 
 
-# TODO: push all math methods into the physics module
+# TODO: push all math methods into the physics module?
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.
