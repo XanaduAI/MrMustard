@@ -48,7 +48,7 @@ class State:
             len(means) // 2 if means is not None else (len(fock.shape) // 2 if is_mixed else len(fock.shape))
         )
         self._is_mixed = is_mixed
-        self._purity = 1.0 is not is_mixed
+        self._purity = 1.0 if not is_mixed else None
         self._fock = fock
         self._cov = cov
         self._means = means
@@ -297,7 +297,7 @@ class State:
                         normalize=self._normalize,
                     )
                 if len(remaining_modes) > 0:
-                    output_is_mixed = not (self.is_pure and other.is_pure)
+                    output_is_mixed = not (self.is_pure and other.is_pure)  # if either is mixed
                     return State(
                         fock=out_fock
                         if self._normalize == False
