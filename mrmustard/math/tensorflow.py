@@ -140,6 +140,12 @@ class TFMath(MathInterface):
     def inv(self, a: tf.Tensor) -> tf.Tensor:
         return tf.linalg.inv(a)
 
+    def istensor(self, tensor) -> bool:
+        return isinstance(tensor, (tf.Tensor, tf.Variable))
+
+    def istrainable(self, tensor: tf.Tensor) -> bool:
+        return tensor.trainable
+
     def lgamma(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.lgamma(x)
 

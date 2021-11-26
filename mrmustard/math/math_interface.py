@@ -344,6 +344,16 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
+    def istensor(self, tensor: Tensor) -> bool:
+        r"""Returns whether the given tensor is a tensor of the concrete backend."""
+        ...
+
+    @abstractmethod
+    def istrainable(self, tensor: Tensor) -> bool:
+        r"""Returns whether the given tensor is trainable."""
+        ...
+
+    @abstractmethod
     def lgamma(self, x: Tensor) -> Tensor:
         r"""Returns the natural logarithm of the gamma function of x.
         Arguments:

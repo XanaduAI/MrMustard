@@ -191,13 +191,16 @@ class State:
         Returns the ket of the state in Fock representation or `None` if the state is mixed.
         Arguments:
             cutoffs List[int or None]: the cutoff dimensions for each mode. If a mode cutoff is None,
-                it's automatically computed.
+                it's guessed automatically.
         Returns:
             Tensor: the ket
         """
+        if cutoffs is None:
+            cutoffs = self.cutoffs
+        else:
+            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_mixed:
             return None
-        cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_gaussian:
             self._fock = fock.fock_representation(self.cov, self.means, shape=cutoffs, return_dm=False)
         else:  # only fock representation is available
@@ -211,7 +214,7 @@ class State:
                 return padded[tuple([slice(s) for s in cutoffs])]
         return self._fock
 
-    def dm(self, cutoffs: List[int]) -> Tensor:
+    def dm(self, cutoffs: List[int] = None) -> Tensor:
         r"""
         Returns the density matrix of the state in Fock representation.
         Arguments:
@@ -220,7 +223,10 @@ class State:
         Returns:
             Tensor: the density matrix
         """
-        cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+        if cutoffs is None:
+            cutoffs = self.cutoffs
+        else:
+            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_pure:
             ket = self.ket(cutoffs=cutoffs)
             return fock.ket_to_dm(ket)
@@ -297,7 +303,7 @@ class State:
                         normalize=self._normalize,
                     )
                 if len(remaining_modes) > 0:
-                    output_is_mixed = not (self.is_pure and other.is_pure)  # if either is mixed
+                    output_is_mixed = not (self.is_pure and other.is_pure)  # TODO: this may fail?
                     return State(
                         fock=out_fock
                         if self._normalize == False
@@ -348,9 +354,13 @@ class State:
             item = list(item)
         else:
             raise TypeError("item must be int or iterable")
-        cov, _, _ = gaussian.partition_cov(self.cov, item)
-        means, _ = gaussian.partition_means(self.means, item)
-        return State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
+        if self.is_gaussian:
+            cov, _, _ = gaussian.partition_cov(self.cov, item)
+            means, _ = gaussian.partition_means(self.means, item)
+            return State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
+        else:
+            fock_partitioned = fock.trace(self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item])
+            return State(fock=fock_partitioned, is_mixed=fock.is_mixed_dm(fock_partitioned))
 
     def __eq__(self, other):
         r"""
@@ -388,6 +398,26 @@ class State:
         e.g. Dgate << psi
         """
         return other(self)
+
+    def __add__(self, other: State):
+        r"""
+        Implements a mixture of states.
+        """
+        if not isinstance(other, State):
+            raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
+        return State(fock = self.dm(self.cutoffs) + other.dm(self.cutoffs), is_mixed = True)  # TODO: gaussian implementation
+
+    def __rmul__(self, other):
+        r"""
+        Implements multiplication by a scalar from the right.
+        e.g. 0.5 * psi
+        """
+        if not isinstance(other, (int, float)):
+            raise TypeError(f"Cannot multiply {other.__class__.__qualname__} by a state")
+        if self.is_gaussian:
+            return State(cov=self.cov * other, means=self.means, is_mixed=True)
+        else:
+            return State(fock = self.dm() * other, is_mixed = True)
 
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))
