@@ -255,14 +255,14 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
 
 
 def two_mode_controlled_phase(g=1):
-    r"""Controlled PHASE gate of two-gaussian modes. 
+    r"""Controlled PHASE gate of two-gaussian modes.
 
-    C_Z = \exp(ig q_1 \otimes q_2). 
-    
+    C_Z = \exp(ig q_1 \otimes q_2).
+
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
     https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
 
-    Args: 
+    Args:
         g (float): interaction strength
     Returns:
         the C_Z controlled phase matrix (in xpxp format)
@@ -270,21 +270,22 @@ def two_mode_controlled_phase(g=1):
 
     return math.astensor(
         [
-            [1 ,0, 0, 0],
+            [1, 0, 0, 0],
             [0, 1, g, 0],
             [0, 0, 1, 0],
             [g, 0, 0, 1],
         ]
     )
 
-def two_mode_controlled_not(g=1):
-    r"""Controlled NOT gate of two-gaussian modes. 
 
-    C_X = \exp(ig q_1 \otimes p_2). 
-    
+def two_mode_controlled_not(g=1):
+    r"""Controlled NOT gate of two-gaussian modes.
+
+    C_X = \exp(ig q_1 \otimes p_2).
+
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
 
-    Args: 
+    Args:
         g (float): interaction strength
     Returns:
         the C_X controlled NOT matrix (in xpxp format)
@@ -292,7 +293,7 @@ def two_mode_controlled_not(g=1):
 
     return math.astensor(
         [
-            [1 ,0, 0, 0],
+            [1, 0, 0, 0],
             [0, 1, 0, -g],
             [g, 0, 1, 0],
             [0, 0, 0, 1],
@@ -301,14 +302,14 @@ def two_mode_controlled_not(g=1):
 
 
 def controlled_phase(N: Scalar, a: Scalar, b: Scalar, g=1):
-    r"""Controlled PHASE gate of N-mode gaussian. 
+    r"""Controlled PHASE gate of N-mode gaussian.
 
-    C_Z = \exp(ig q_A \otimes q_B). 
+    C_Z = \exp(ig q_A \otimes q_B).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
 
-    Args: 
-        N (int): number of modes  
+    Args:
+        N (int): number of modes
         a (int): mode number A between (1, N)
         b (int): mode number B between (1, N)
         g (float): interaction strength
@@ -317,21 +318,20 @@ def controlled_phase(N: Scalar, a: Scalar, b: Scalar, g=1):
     """
 
     S = math.eye(N)
-    S[2*a-1, 2*b-2] = g
-    S[2*b-1, 2*a-2] = g
+    S[2 * a - 1, 2 * b - 2] = g
+    S[2 * b - 1, 2 * a - 2] = g
     return math.astensor(S)
 
 
-
 def controlled_NOT(N: Scalar, a: Scalar, b: Scalar, g=1):
-    r"""Controlled NOT gate of N-mode gaussian. 
+    r"""Controlled NOT gate of N-mode gaussian.
 
-    C_X = \exp(ig q_A \otimes p_B). 
+    C_X = \exp(ig q_A \otimes p_B).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
 
-    Args: 
-        N (int): number of modes  
+    Args:
+        N (int): number of modes
         a (int): mode number A between (1, N)
         b (int): mode number B between (1, N)
         g (float): interaction strength
@@ -340,9 +340,10 @@ def controlled_NOT(N: Scalar, a: Scalar, b: Scalar, g=1):
     """
 
     S = math.eye(N)
-    S[2*a-1, 2*b-1] = -g
-    S[2*b-2, 2*a-2] = g
+    S[2 * a - 1, 2 * b - 1] = -g
+    S[2 * b - 2, 2 * a - 2] = g
     return math.astensor(S)
+
 
 # ~~~~~~~~~~~~~
 # CPTP channels
@@ -389,9 +390,9 @@ def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
 
     a -> sqrt(t) a + \sqrt(1-t) b
 
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
 
-    Arguments: 
+    Arguments:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
     Returns:
         Tuple[Matrix, Vector]: the X matrix of the loss channel.
@@ -408,9 +409,9 @@ def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
 
     a -> sqrt(t) a + \sqrt(1-t) b
 
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
 
-    Arguments: 
+    Arguments:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
         hbar (float): value of hbar
     Returns:
@@ -424,15 +425,15 @@ def thermal_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the thermal lossy channel.
     The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
 
-    Note that if nbar = 0, the thermal loss channel reduces to the loss channel. 
+    Note that if nbar = 0, the thermal loss channel reduces to the loss channel.
 
     This channel couples mode a to a thermal state b with the transformation
 
     a -> sqrt(t) a + \sqrt(1-t) b
 
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
 
-    Arguments: 
+    Arguments:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
     Returns:
         Tuple[Matrix, Vector]: the X matrix of the thermal loss channel.
@@ -446,22 +447,22 @@ def thermal_Y(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector]
     r"""Returns the Y (noise) matrix for the thermal lossy channel.
     The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
 
-    Note that if nbar = 0, the thermal loss channel reduces to the loss channel. 
+    Note that if nbar = 0, the thermal loss channel reduces to the loss channel.
 
     This channel couples mode a to a thermal state b with the transformation
 
     a -> sqrt(t) a + \sqrt(1-t) b
 
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
 
-    Arguments: 
+    Arguments:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
-        nbar (float): average number of photons per mode 
+        nbar (float): average number of photons per mode
         hbar (float): value of hbar
     Returns:
         Tuple[Matrix, Vector]: the Y matrix of the thermal loss channel.
     """
-    D = (1.0 - transmissivity) * (hbar / 2) * (2*nbar + 1)
+    D = (1.0 - transmissivity) * (hbar / 2) * (2 * nbar + 1)
     return math.diag(math.concat([D, D], axis=0))
 
 
@@ -473,11 +474,11 @@ def amp_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
 
     a -> sqrt(t) a + \sqrt(t-1) b
 
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
 
-    Arguments: 
+    Arguments:
         transmissivity (float): value of the transmissivity > 1
-        nbar (float): average number of photons per mode 
+        nbar (float): average number of photons per mode
     Returns:
         Tuple[Matrix, Vector]: the Y matrix of the amplification channel.
     """
@@ -493,16 +494,16 @@ def amp_Y(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hb
 
     a -> sqrt(t) a + \sqrt(1-t) b
 
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113. 
+    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
 
-    Arguments: 
+    Arguments:
         transmissivity (float): value of the transmissivity > 1
-        nbar (float): average number of photons per mode 
+        nbar (float): average number of photons per mode
         hbar (float): value of hbar
     Returns:
         Tuple[Matrix, Vector]: the Y matrix of the amplification channel.
     """
-    D = (transmissivity - 1) * (hbar / 2) * (2*nbar + 1)
+    D = (transmissivity - 1) * (hbar / 2) * (2 * nbar + 1)
     return math.diag(math.concat([D, D], axis=0))
 
 
