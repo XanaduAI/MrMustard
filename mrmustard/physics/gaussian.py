@@ -254,11 +254,10 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
-def controlled_phase(g=1, xpxp=True):
+def two_mode_controlled_phase(g=1):
     r"""Controlled PHASE gate of two-gaussian modes. 
 
-    If xpxp = True (default), the matrix will be returned as xpxp format.
-    If xpxp = False, the matrix will be returned as xxpp format.
+    C_Z = \exp(ig q_1 \otimes q_2). 
     
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
     https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
@@ -266,58 +265,84 @@ def controlled_phase(g=1, xpxp=True):
     Args: 
         g (float): interaction strength
     Returns:
-        the C_z controlled phase matrix
+        the C_Z controlled phase matrix (in xpxp format)
     """
-    if xpxp:
-        return math.astensor(
-            [
-                [1 ,0, 0, 0],
-                [0, 1, g, 0],
-                [0, 0, 1, 0],
-                [g, 0, 0, 1],
-            ]
-        )
-    if not xpxp:
-        return math.astensor(
-            [
-                [1 ,0, 0, 0],
-                [0, 1, 0, 0],
-                [0, g, 1, 0],
-                [g, 0, 0, 1],
-            ]
-        )
 
-def controlled_not(g=1, xpxp=True):
-    r"""Controlled phase gate of two-gaussian modes. 
+    return math.astensor(
+        [
+            [1 ,0, 0, 0],
+            [0, 1, g, 0],
+            [0, 0, 1, 0],
+            [g, 0, 0, 1],
+        ]
+    )
 
-    If xpxp = True (default), the matrix will be returned as xpxp format.
-    If xpxp = False, the matrix will be returned as xxpp format.
+def two_mode_controlled_not(g=1):
+    r"""Controlled NOT gate of two-gaussian modes. 
+
+    C_X = \exp(ig q_1 \otimes p_2). 
     
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
 
     Args: 
         g (float): interaction strength
     Returns:
-        the C_x controlled NOT matrix
+        the C_X controlled NOT matrix (in xpxp format)
     """
-    if xpxp:
-        return math.astensor(
-            [
-                [1 ,0, 0, 0],
-                [0, 1, 0, -g],
-                [g, 0, 1, 0],
-                [0, 0, 0, 1],
-            ]
-        )
-    if not xpxp:
-        return math.astensor(
-            [
-                [1 ,0, 0, 0],
-                [g, 1, 0, 0],
-                [0, 0, 1, -g],
-                [0, 0, 0, 1],
-            ]
-        )
+
+    return math.astensor(
+        [
+            [1 ,0, 0, 0],
+            [0, 1, 0, -g],
+            [g, 0, 1, 0],
+            [0, 0, 0, 1],
+        ]
+    )
+
+
+def controlled_phase(N: Scalar, a: Scalar, b: Scalar, g=1):
+    r"""Controlled PHASE gate of N-mode gaussian. 
+
+    C_Z = \exp(ig q_A \otimes q_B). 
+
+    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
+
+    Args: 
+        N (int): number of modes  
+        a (int): mode number A between (1, N)
+        b (int): mode number B between (1, N)
+        g (float): interaction strength
+    Returns:
+        the C_Z controlled PHASE matrix (in xpxp format)
+    """
+
+    S = math.eye(N)
+    S[2*a-1, 2*b-2] = g
+    S[2*b-1, 2*a-2] = g
+    return math.astensor(S)
+
+
+
+def controlled_NOT(N: Scalar, a: Scalar, b: Scalar, g=1):
+    r"""Controlled NOT gate of N-mode gaussian. 
+
+    C_X = \exp(ig q_A \otimes p_B). 
+
+    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
+
+    Args: 
+        N (int): number of modes  
+        a (int): mode number A between (1, N)
+        b (int): mode number B between (1, N)
+        g (float): interaction strength
+    Returns:
+        the C_X controlled NOT matrix (in xpxp format)
+    """
+
+    S = math.eye(N)
+    S[2*a-1, 2*b-1] = -g
+    S[2*b-2, 2*a-2] = g
+    return math.astensor(S)
 
 # ~~~~~~~~~~~~~
 # CPTP channels
