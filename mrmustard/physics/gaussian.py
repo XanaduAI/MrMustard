@@ -107,7 +107,10 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
     else:
-        return math.matmul(math.matmul(symplectic, math.diag(eigenvalues)), math.transpose(symplectic))
+        return math.matmul(
+            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+            math.transpose(symplectic),
+        )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -365,7 +368,12 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
 
 
 def general_dyne(
-    cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
+    cov: Matrix,
+    means: Vector,
+    proj_cov: Matrix,
+    proj_means: Vector,
+    modes: Sequence[int],
+    hbar: float,
 ) -> Tuple[Scalar, Matrix, Vector]:
     r"""
     Returns the results of a general dyne measurement.
@@ -479,7 +487,10 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
         Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
     """
     N = cov.shape[-1] // 2
-    Bindices = math.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+    Bindices = math.cast(
+        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+        "int32",
+    )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
     A_block = math.gather(math.gather(cov, Aindices, axis=1), Aindices, axis=0)
     B_block = math.gather(math.gather(cov, Bindices, axis=1), Bindices, axis=0)
@@ -497,7 +508,10 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
         Tuple[Vector, Vector]: the means of A and the means of B
     """
     N = len(means) // 2
-    Bindices = math.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+    Bindices = math.cast(
+        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+        "int32",
+    )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
     return math.gather(means, Aindices), math.gather(means, Bindices)
 
@@ -642,3 +656,41 @@ def join_means(means: Sequence[Vector]) -> Vector:
     for i, m in enumerate(means[1:]):
         mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2)))
     return mean.to_xxpp()
+
+
+def symplectic_inverse(S: Matrix) -> Matrix:
+    r"""
+    Returns the inverse of a symplectic matrix.
+    Arguments:
+        S (Matrix): the symplectic matrix
+    Returns:
+        Matrix: the inverse of the symplectic matrix
+    """
+    S = math.reshape(S, (S.shape[0] // 2, 2, S.shape[1] // 2, 2))
+    S = math.transpose(S, (1, 3, 0, 2))
+    return math.block(
+        [
+            [math.transpose(S[1, 1]), -math.transpose(S[0, 1])],
+            [-math.transpose(S[1, 0]), math.transpose(S[0, 0])],
+        ]
+    )
+
+
+def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
+    r"""
+    Returns the dual channel (X,Y,d)
+    Arguments:
+        X (Matrix): the X matrix
+        Y (Matrix): the Y noise matrix
+        d (Vector): the displacement vector
+    Returns:
+        (Matrix, Matrix, Vector): (X_dual, Y_dual, d_dual)
+    """
+    X_dual = math.inv(X) if X is not None else None
+    Y_dual = Y
+    d_dual = d
+    if Y is not None:
+        Y_dual = math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+    if d is not None:
+        d_dual = math.matvec(X_dual, d) if X_dual is not None else d
+    return X_dual, Y_dual, d_dual

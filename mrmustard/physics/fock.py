@@ -26,8 +26,45 @@ math = Math()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+def fock_state(n: Sequence[int]) -> Tensor:
+    r"""
+    Returns a pure or mixed Fock state.
+    Args:
+        n: a list of photon numbers.
+    Returns:
+        The Fock state up to cutoffs n+1
+    """
+    psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
+    psi[tuple(np.atleast_1d(n))] = 1
+    return psi
+
+
+def autocutoffs(number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None) -> Tuple[int, ...]:
+    r"""
+    Returns the autocutoffs of a Wigner state.
+    Arguments:
+        number_stdev: The photon number standard deviation in each mode
+            (i.e. the square root of the diagonal of the covariance matrix)
+        number_means: The photon number means vector.
+        max_cutoff: The maximum cutoff.
+    Returns:
+        The suggested cutoffs.
+    """
+    if max_cutoff is None:
+        max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
+    if min_cutoff is None:
+        min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
+    autocutoffs = math.cast(number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32")
+    return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
+
+
 def fock_representation(
-    cov: Matrix, means: Vector, shape: Sequence[int], is_mixed: bool = None, is_unitary: bool = None, choi_r: float = None
+    cov: Matrix,
+    means: Vector,
+    shape: Sequence[int],
+    return_dm: bool = None,
+    return_unitary: bool = None,
+    choi_r: float = None,
 ) -> Tensor:
     r"""
     Returns the Fock representation of a state or Choi state.
@@ -39,22 +76,22 @@ def fock_representation(
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         shape: The shape of the tensor.
-        is_mixed: Whether the state vector is mixed or not.
-        is_unitary: Whether the transformation is unitary or not.
+        return_dm: Whether the state vector is mixed or not.
+        return_unitary: Whether the transformation is unitary or not.
         choi_r: The TMSV squeezing magnitude.
     Returns:
         The Fock representation.
     """
-    if is_mixed is not None and is_unitary is not None:
+    if return_dm is not None and return_unitary is not None:
         raise ValueError("Cannot specify both mixed and unitary.")
-    if is_mixed is None and is_unitary is None:
+    if return_dm is None and return_unitary is None:
         raise ValueError("Must specify either mixed or unitary.")
-    if is_unitary is not None and choi_r is None:
+    if return_unitary is not None and choi_r is None:
         raise ValueError("Must specify the choi_r value.")
-    if is_mixed is not None:  # i.e. it's a state
-        A, B, C = ABC(cov, means, full=is_mixed)
-    elif is_unitary is not None and choi_r is not None:  # i.e. it's a transformation
-        A, B, C = ABC(cov, means, full=not is_unitary, choi_r=choi_r)
+    if return_dm is not None:  # i.e. it's a state
+        A, B, C = ABC(cov, means, full=return_dm)
+    elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
+        A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
     return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
 
 
@@ -102,8 +139,10 @@ def U_to_choi(U: Tensor) -> Tensor:
     cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
     outer = math.outer(U, math.conj(U))
-    choi = math.transpose(outer, list(range(0, N)) + list(range(2 * N, 3 * N)) + list(range(N, 2 * N)) + list(range(3 * N, 4 * N)))
-    return choi
+    return math.transpose(
+        outer,
+        list(range(0, N)) + list(range(2 * N, 3 * N)) + list(range(N, 2 * N)) + list(range(3 * N, 4 * N)),
+    )  # NOTE: mode blocks 1 and 3 are at the end so we can tensordot dm with them
 
 
 def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
@@ -148,21 +187,58 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
     r"""computes the fidelity between two states in Fock representation"""
     if a_pure and b_pure:
+        min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)])
+        state_a = state_a[min_cutoffs]
+        state_b = state_b[min_cutoffs]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
     elif a_pure:
+        min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])])
+        state_a = state_a[min_cutoffs]
+        state_b = state_b[min_cutoffs]
         a = math.reshape(state_a, -1)
         return math.real(math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a)))
     elif b_pure:
+        min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)])
+        state_a = state_a[min_cutoffs]
+        state_b = state_b[min_cutoffs]
         b = math.reshape(state_b, -1)
         return math.real(math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)))
     else:
         raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
 
 
+def number_means(tensor, is_dm: bool):
+    r"""
+    returns the mean of the number operator in each mode
+    """
+    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
+    modes = [m for m in range(len(probs.shape))]
+    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+    return math.astensor([math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype)) for marginal in marginals])
+
+
+def number_variances(tensor, is_dm: bool):
+    r"""
+    returns the variance of the number operator in each mode
+    """
+    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
+    modes = [m for m in range(len(probs.shape))]
+    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+    return math.astensor(
+        [
+            (
+                math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
+                - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
+            )
+            for marginal in marginals
+        ]
+    )
+
+
 def purity(dm: Tensor) -> Scalar:
-    r"""Computes the purity of a state in Fock representation."""
+    r"""Returns the purity of a density matrix."""
     cutoffs = dm.shape[: len(dm.shape) // 2]
-    d = np.prod(cutoffs)  # combined cutoffs in all modes
+    d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
@@ -179,20 +255,89 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_m
         The transformed state.
     """
     num_modes = len(fock_state.shape) // 2 if state_is_mixed else len(fock_state.shape)
-    indices = list(range(num_modes))
+    N0 = list(range(0, num_modes))
+    N1 = list(range(num_modes, 2 * num_modes))
+    N2 = list(range(2 * num_modes, 3 * num_modes))
+    N3 = list(range(3 * num_modes, 4 * num_modes))
     if transformation_is_unitary:
         U = transformation
-        Us = math.tensordot(U, fock_state, axes=([num_modes + s for s in indices], indices))
-        if state_is_mixed:
-            UsU = math.tensordot(Us, math.dagger(U), axes=([num_modes + s for s in indices], indices))
-            return UsU
-        else:
+        Us = math.tensordot(U, fock_state, axes=(N1, N0))
+        if not state_is_mixed:
             return Us
+        else:  # is state is dm, the input indices of dm are still at the end of Us
+            return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
     else:
-        C = transformation
-        Cs = math.tensordot(C, fock_state, axes=([-s for s in reversed(indices)], indices))
+        C = transformation  # choi operator
         if state_is_mixed:
-            return Cs
+            return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
         else:
-            Css = math.tensordot(Cs, math.conj(fock_state), axes=([-s for s in reversed(indices)], indices))
-            return Css
+            Cs = math.tensordot(C, fock_state, axes=(N1, N0))
+            return math.tensordot(Cs, math.conj(fock_state), axes=(N2, N0))  # N2 is the last set of indices now
+
+
+def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: List[int], normalize: bool):
+    r"""
+    Contracts two states in the specified modes.
+    It assumes that the modes spanned by B are a subset of the modes spanned by A.
+    Arguments:
+        stateA: The first state
+        stateB: The second state (assumed to be on a subset of the modes of stateA)
+        a_is_mixed: Whether the first state is mixed or not.
+        b_is_mixed: Whether the second state is mixed or not.
+        modes: The modes on which to contract the states.
+        normalize: Whether to normalize the result
+    """
+    indices = list(range(len(modes)))
+    if not a_is_mixed and not b_is_mixed:
+        out = math.tensordot(math.conj(stateB), stateA, axes=(indices, modes))
+        if normalize:
+            out = out / math.norm(out)
+        return out
+    elif a_is_mixed and not b_is_mixed:
+        Ab = math.tensordot(stateA, stateB, axes=([m + len(stateA.shape) // 2 for m in modes], indices))
+        out = math.tensordot(math.conj(stateB), Ab, axes=(indices, modes))
+    elif not a_is_mixed and b_is_mixed:
+        Ba = math.tensordot(stateB, stateA, axes=(indices, modes))  # now B indices are all first
+        out = math.tensordot(math.conj(stateA), Ba, axes=(modes, indices))
+    elif a_is_mixed and b_is_mixed:
+        out = math.tensordot(
+            stateA,
+            math.conj(stateB),
+            axes=(
+                modes + [m + len(stateA.shape) // 2 for m in modes],
+                indices + [i + len(stateB.shape) // 2 for i in indices],
+            ),
+        )
+    if normalize:
+        out = out / math.sum(math.all_diagonals(out, real=False))
+    return out
+
+
+def normalize(fock: Tensor, is_mixed: bool):
+    if is_mixed:
+        return fock / math.sum(math.all_diagonals(fock, real=False))
+    else:
+        return fock / math.sum(math.norm(fock))
+
+
+def is_mixed_dm(dm):
+    cutoffs = dm.shape[: len(dm.shape) // 2]
+    square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
+    return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
+
+
+def trace(dm, keep: List[int]):
+    r"""
+    Computes the partial trace of a density matrix.
+    Arguments:
+        dm: The density matrix
+        keep: The modes to keep
+    """
+    N = len(dm.shape) // 2
+    trace = [m for m in range(N) if m not in keep]
+    # put at the end all of the indices to trace over
+    dm = math.transpose(dm, [i for pair in [(k, k + N) for k in keep] + [(t, t + N) for t in trace] for i in pair])
+    d = int(np.prod(dm.shape[-len(trace) :]))
+    # make it square on those indices
+    dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
+    return math.trace(dm)

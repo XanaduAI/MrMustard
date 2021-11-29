@@ -32,7 +32,7 @@ num_modes = st.integers(min_value=0, max_value=10)
 
 @st.composite
 def vector(draw, length):
-    return draw(st.lists(st.floats(min_value=-1, max_value=1), min_size=length, max_size=length))
+    return draw(st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length))
 
 
 # a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes
@@ -158,7 +158,15 @@ def single_mode_unitary(draw, small=False):
 
 @st.composite
 def two_mode_gate(draw):
-    return draw(st.one_of(random_S2gate(), random_BSgate(), random_MZgate(), random_Ggate(num_modes=2), random_Interferometer(num_modes=2)))
+    return draw(
+        st.one_of(
+            random_S2gate(),
+            random_BSgate(),
+            random_MZgate(),
+            random_Ggate(num_modes=2),
+            random_Interferometer(num_modes=2),
+        )
+    )
 
 
 @st.composite
@@ -218,7 +226,14 @@ def default_state(draw, num_modes):
 
 @st.composite
 def default_pure_state(draw, num_modes):
-    return draw(st.one_of(squeezed_vacuum(num_modes), displacedsqueezed(num_modes), coherent(num_modes), tmsv(num_modes)))
+    return draw(
+        st.one_of(
+            squeezed_vacuum(num_modes),
+            displacedsqueezed(num_modes),
+            coherent(num_modes),
+            tmsv(num_modes),
+        )
+    )
 
 
 @st.composite

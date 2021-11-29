@@ -49,5 +49,7 @@ class Parametrized(ABC):
                 self.__dict__["_" + key] = val  # making other values available as gate._blah
 
     @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:  # override as needed in child classes
+    def trainable_parameters(
+        self,
+    ) -> Dict[str, List[Trainable]]:  # override as needed in child classes
         return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}

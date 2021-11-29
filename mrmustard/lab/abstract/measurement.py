@@ -33,8 +33,8 @@ class GaussianMeasurement(ABC):
         onto the state with given cov and outcome means vector.
         Args:
             state (State): the state to be measured.
-            kwargs (optional): same arguments as in the init, but specify if they are different
-            from the arguments supplied at init time (e.g. for training the measurement).
+            kwargs (optional): same arguments as in the init, use them only if they are different
+            from the arguments supplied at init time (e.g. for training a measurement using a state to project onto).
         Returns:
             (float, state) The measurement probabilities and the remaining post-measurement state.
             Note that the post-measurement state is trivial if all modes are measured.
@@ -42,12 +42,17 @@ class GaussianMeasurement(ABC):
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
         prob, cov, means = gaussian.general_dyne(
-            state.cov, state.means, self._project_onto.cov, self._project_onto.means, self._modes, settings.HBAR
+            state.cov,
+            state.means,
+            self._project_onto.cov,
+            self._project_onto.means,
+            self._modes,
+            settings.HBAR,
         )
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
         if len(remaining_modes) > 0:
-            remaining_state = State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))  # TODO: avoid using is_mixed_cov from TW?
+            remaining_state = State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
             return prob, remaining_state
         else:
             return prob
@@ -55,8 +60,24 @@ class GaussianMeasurement(ABC):
     def recompute_project_onto(self, **kwargs) -> State:
         ...
 
+    def __getitem__(self, items) -> Callable:
+        r"""
+        Allows measurements to be used as:
+        output = meas[0,1](input)  # e.g. measuring modes 0 and 1
+        """
+        if isinstance(items, int):
+            modes = [items]
+        elif isinstance(items, slice):
+            modes = list(range(items.start, items.stop, items.step))
+        elif isinstance(items, (Sequence, Iterable)):
+            modes = list(items)
+        else:
+            raise ValueError(f"{items} is not a valid slice or list of modes.")
+        self.modes = modes
+        return self
 
-# TODO: push all math methods into the physics module
+
+# TODO: push all math methods into the physics module?
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.
@@ -85,16 +106,16 @@ class FockMeasurement(ABC):
                 dm = fock.math.transpose(dm, perm)
                 dm = fock.math.diag_part(dm)
                 dm = fock.math.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
-                measured += 1
-        prob = fock.math.sum(fock.math.all_diagonals(dm, real=False))
-        return fock.math.abs(prob), dm / prob
+            measured += 1
+        probs = fock.math.sum(fock.math.all_diagonals(dm, real=False))
+        return dm / probs, fock.math.abs(probs)
 
     def apply_stochastic_channel(self, stochastic_channel, fock_probs: Tensor) -> Tensor:
         cutoffs = [fock_probs.shape[m] for m in self._modes]
         for i, mode in enumerate(self._modes):
             if cutoffs[mode] > stochastic_channel[i].shape[1]:
                 raise IndexError(
-                    f"This detector does not support so many input photons in mode {mode} (you could increase max_input_photons or reduce the cutoff)"
+                    f"Internal cutoff ({stochastic_channel[i].shape[1]}) too low in mode {mode} (state cutoff {cutoffs[mode]}).\nYou can increase max_input_photons or reduce the cutoff of the state."
                 )
         detector_probs = fock_probs
         for i, mode in enumerate(self._modes):
@@ -104,18 +125,15 @@ class FockMeasurement(ABC):
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
-            indices.insert(mode, fock_probs.ndim - 1)
-            detector_probs = fock.math.transpose(detector_probs, indices)
+            detector_probs = fock.math.transpose(detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:])
         return detector_probs
 
     def __call__(self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None) -> Tuple[Tensor, Tensor]:
-        fock_probs = state.fock_probabilities(cutoffs)
-        all_probs = self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
         if outcomes is None:
-            return all_probs
+            fock_probs = state.fock_probabilities(cutoffs)
+            return self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
         else:
-            probs, dm = self.project(state, cutoffs, outcomes)
-            return dm, probs
+            return self.project(state, cutoffs, outcomes)
 
     def recompute_stochastic_channel(self, **kwargs) -> State:
         ...

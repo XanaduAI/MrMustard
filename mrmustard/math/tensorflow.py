@@ -14,7 +14,7 @@
 
 import numpy as np
 import tensorflow as tf
-from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
+from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
@@ -59,6 +59,9 @@ class TFMath(MathInterface):
             return x
         return tf.cast(x, dtype)
 
+    def clip(self, array, a_min, a_max) -> tf.Tensor:
+        return tf.clip_by_value(array, a_min, a_max)
+
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
         return tf.concat(values, axis)
 
@@ -66,7 +69,10 @@ class TFMath(MathInterface):
         return tf.math.conj(array)
 
     def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
-        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
+        bounds = (
+            -np.inf if bounds[0] is None else bounds[0],
+            np.inf if bounds[1] is None else bounds[1],
+        )
         if not bounds == (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
@@ -131,6 +137,12 @@ class TFMath(MathInterface):
     def inv(self, a: tf.Tensor) -> tf.Tensor:
         return tf.linalg.inv(a)
 
+    def istensor(self, tensor) -> bool:
+        return isinstance(tensor, (tf.Tensor, tf.Variable))
+
+    def istrainable(self, tensor: tf.Tensor) -> bool:
+        return tensor.trainable
+
     def lgamma(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.lgamma(x)
 
@@ -138,7 +150,15 @@ class TFMath(MathInterface):
         return tf.math.log(x)
 
     @Autocast()
-    def matmul(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False) -> tf.Tensor:
+    def matmul(
+        self,
+        a: tf.Tensor,
+        b: tf.Tensor,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
+    ) -> tf.Tensor:
         return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
 
     @Autocast()
@@ -175,7 +195,13 @@ class TFMath(MathInterface):
     def outer(self, array1: tf.Tensor, array2: tf.Tensor) -> tf.Tensor:
         return tf.tensordot(array1, array2, [[], []])
 
-    def pad(self, array: tf.Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> tf.Tensor:
+    def pad(
+        self,
+        array: tf.Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="CONSTANT",
+        constant_values=0,
+    ) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
     def pinv(self, array: tf.Tensor) -> tf.Tensor:
@@ -232,7 +258,9 @@ class TFMath(MathInterface):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
+    def DefaultEuclideanOptimizer(
+        self,
+    ) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
         r"""
         Default optimizer for the Euclidean parameters.
         """
@@ -270,10 +298,10 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
+        poly = tf.numpy_function(hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3)
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
