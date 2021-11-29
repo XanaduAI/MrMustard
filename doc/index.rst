@@ -12,3 +12,4 @@ Mr. Mustard's Documentation
 
    code/lab
    code/physics
+   code/math
