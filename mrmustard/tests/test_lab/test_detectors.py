@@ -198,11 +198,7 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     homodyne = Homodyne(modes=[0], quadrature_angles=0.0, results=X)
     r = homodyne._squeezing
     prob, remaining_state = homodyne(TMSV(r=np.arcsinh(np.sqrt(abs(s)))))
-    cov = (
-        np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)])
-        * settings.HBAR
-        / 2.0
-    )
+    cov = np.diag([1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]) * settings.HBAR / 2.0
     assert np.allclose(remaining_state.cov, cov)
     means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(2 * settings.HBAR)
     assert np.allclose(remaining_state.means, means)
@@ -225,13 +221,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
                 ],
                 [
                     2 * s * (1 + s) * np.sin(angle) * np.sinh(2 * r) / denom,
-                    (
-                        1
-                        + 2 * s
-                        + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
-                        + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r)
-                    )
-                    / denom,
+                    (1 + 2 * s + (1 + 2 * s * (1 + s)) * np.cosh(2 * r) + 2 * s * (s + 1) * np.cos(angle) * np.sinh(2 * r)) / denom,
                 ],
             ]
         )

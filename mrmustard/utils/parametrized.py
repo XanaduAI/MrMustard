@@ -32,9 +32,7 @@ class Parametrized(ABC):
     def __init__(self, **kwargs):
         self._trainable_parameters = []
         self._constant_parameters = []
-        self.param_names = [
-            key for key in kwargs if key + "_trainable" in kwargs
-        ]  # every parameter can be trainable! 🚀
+        self.param_names = [key for key in kwargs if key + "_trainable" in kwargs]  # every parameter can be trainable! 🚀
 
         for name in self.param_names:
             self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # defining ._param_trainable: bool

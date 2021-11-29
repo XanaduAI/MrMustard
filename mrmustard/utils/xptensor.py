@@ -67,13 +67,9 @@ class XPTensor(ABC):
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = isVector
         if self.ndim == 1 and not self.isVector:
-            raise ValueError(
-                f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==4, got {len(tensor.shape)})"
-            )
+            raise ValueError(f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==4, got {len(tensor.shape)})")
         if self.ndim == 2 and self.isVector:
-            raise ValueError(
-                f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==2, got {len(tensor.shape)})"
-            )
+            raise ValueError(f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==2, got {len(tensor.shape)})")
         if self.isVector and self.like_1:
             raise ValueError("vectors should be like_0")
         self.tensor = tensor
@@ -126,17 +122,13 @@ class XPTensor(ABC):
     def to_xpxp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
             return None
-        tensor = math.transpose(
-            self.tensor, (0, 2, 1, 3) if self.isMatrix else (0, 1)
-        )  # from NN22 to N2N2 or from N2 to N2
+        tensor = math.transpose(self.tensor, (0, 2, 1, 3) if self.isMatrix else (0, 1))  # from NN22 to N2N2 or from N2 to N2
         return math.reshape(tensor, [2 * s for s in self.shape])
 
     def to_xxpp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
             return None
-        tensor = math.transpose(
-            self.tensor, (2, 0, 3, 1) if self.isMatrix else (1, 0)
-        )  # from NN22 to 2N2N or from N2 to 2N
+        tensor = math.transpose(self.tensor, (2, 0, 3, 1) if self.isMatrix else (1, 0))  # from NN22 to 2N2N or from N2 to 2N
         return math.reshape(tensor, [2 * s for s in self.shape])
 
     def __array__(self):
@@ -163,9 +155,7 @@ class XPTensor(ABC):
             tensor = math.tile(tensor, (1, 1, 1, 1, times))  # shape = [2,2,N,N,T]
             tensor = math.diag(tensor)  # shape = [2,2,N,N,T,T]
             tensor = math.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
-            tensor = math.reshape(
-                tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times)
-            )  # shape = [2,2,NT,NT] = [2,2,O,O]
+            tensor = math.reshape(tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times))  # shape = [2,2,NT,NT] = [2,2,O,O]
             tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
             return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
         else:
@@ -219,9 +209,7 @@ class XPTensor(ABC):
 
     def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector, Scalar]:
         if not isinstance(other, (XPMatrix, XPVector)):
-            raise TypeError(
-                f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
-            )
+            raise TypeError(f"Unsupported operand type(s) for @: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'")
         # TODO: move mode-check at beginning?
 
         # both are None
@@ -323,9 +311,7 @@ class XPTensor(ABC):
 
     def __add__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
         if not isinstance(other, (XPMatrix, XPVector)):
-            raise TypeError(
-                f"unsupported operand type(s) for +: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
-            )
+            raise TypeError(f"unsupported operand type(s) for +: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'")
         if self.isVector != other.isVector:
             raise ValueError("Cannot add a vector and a matrix")
         if self.isCoherence != other.isCoherence:
@@ -340,9 +326,7 @@ class XPTensor(ABC):
         if self.tensor is None:  # only self is None
             if self.like_0:
                 return other
-            elif (
-                self.like_1
-            ):  # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
+            elif self.like_1:  # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
                 indices = [[i, i] for i in range(other.num_modes)]  # TODO: check if this is always correct
                 updates = math.tile(math.expand_dims(math.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1))
                 other.tensor = math.update_add_tensor(other.tensor, indices, updates)
@@ -358,12 +342,8 @@ class XPTensor(ABC):
             raise ValueError("Cannot add two like_1 tensors on different modes yet")
         outmodes = sorted(set(self.outmodes).union(other.outmodes))
         inmodes = sorted(set(self.inmodes).union(other.inmodes))
-        self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(
-            other.inmodes
-        )
-        other_contains_self = set(other.outmodes).issuperset(self.outmodes) and set(other.inmodes).issuperset(
-            self.inmodes
-        )
+        self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(other.inmodes)
+        other_contains_self = set(other.outmodes).issuperset(self.outmodes) and set(other.inmodes).issuperset(self.inmodes)
         if self_contains_other:
             to_update = self.tensor
             to_add = [other]
@@ -479,9 +459,7 @@ class XPMatrix(XPTensor):
         if not (isinstance(modes, tuple) and len(modes) == 2 and all(type(m) == list for m in modes)):
             raise ValueError("modes should be a tuple containing two lists (outmodes and inmodes)")
         if len(modes[0]) == 0 and len(modes[1]) == 0 and tensor is not None:
-            if (
-                tensor.shape[0] != tensor.shape[1] and like_0
-            ):  # NOTE: we can't catch square coherences if no modes are specified
+            if tensor.shape[0] != tensor.shape[1] and like_0:  # NOTE: we can't catch square coherences if no modes are specified
                 raise ValueError("Must specify the modes for a coherence block")
             modes = tuple(list(range(s)) for s in tensor.shape[:2])  # NOTE assuming that it isn't a coherence block
         like_0 = like_0 if like_0 is not None else not like_1

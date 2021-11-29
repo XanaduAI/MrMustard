@@ -266,9 +266,7 @@ class TFMath(MathInterface):
         """
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
-    def loss_and_gradients(
-        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
-    ) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
+    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
         r"""
         Computes the loss and gradients of the given cost function.
 
@@ -286,9 +284,7 @@ class TFMath(MathInterface):
         return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
 
     @tf.custom_gradient
-    def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
-    ) -> tf.Tensor:  # TODO this is not ready
+    def hermite_renormalized(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:  # TODO this is not ready
         r"""
         Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
         of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
@@ -305,9 +301,7 @@ class TFMath(MathInterface):
         poly = tf.numpy_function(hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
-            )
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)

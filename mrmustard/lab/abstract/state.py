@@ -44,9 +44,7 @@ class State:
         _fock = fock is not None
         if (cov is None or means is None) and not _fock:
             raise ValueError("Please supply either (S, eig), (cov and means) or fock")
-        self._num_modes = (
-            len(means) // 2 if means is not None else (len(fock.shape) // 2 if is_mixed else len(fock.shape))
-        )
+        self._num_modes = len(means) // 2 if means is not None else (len(fock.shape) // 2 if is_mixed else len(fock.shape))
         self._is_mixed = is_mixed
         self._purity = 1.0 if not is_mixed else None
         self._fock = fock
@@ -272,9 +270,7 @@ class State:
             remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
 
             if self.is_gaussian and other.is_gaussian:
-                prob, cov, means = gaussian.general_dyne(
-                    other.cov, other.means, self.cov, self.means, self._modes, settings.HBAR
-                )
+                prob, cov, means = gaussian.general_dyne(other.cov, other.means, self.cov, self.means, self._modes, settings.HBAR)
                 if len(remaining_modes) > 0:
                     return State(means=means, cov=cov, is_mixed=gaussian.is_mixed_cov(cov))
                 else:
@@ -305,9 +301,7 @@ class State:
                 if len(remaining_modes) > 0:
                     output_is_mixed = not (self.is_pure and other.is_pure)  # TODO: this may fail?
                     return State(
-                        fock=out_fock
-                        if self._normalize == False
-                        else fock.normalize(out_fock, is_mixed=output_is_mixed),
+                        fock=out_fock if self._normalize == False else fock.normalize(out_fock, is_mixed=output_is_mixed),
                         is_mixed=output_is_mixed,
                     )
                 else:
@@ -338,9 +332,7 @@ class State:
         else:
             raise TypeError("item must be int or iterable")
         if len(item) != self.num_modes:
-            raise ValueError(
-                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
-            )
+            raise ValueError(f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)")
         self._modes = item
         return self
 
@@ -405,9 +397,7 @@ class State:
         """
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
-        return State(
-            fock=self.dm(self.cutoffs) + other.dm(self.cutoffs), is_mixed=True
-        )  # TODO: gaussian implementation
+        return State(fock=self.dm(self.cutoffs) + other.dm(self.cutoffs), is_mixed=True)  # TODO: gaussian implementation
 
     def __rmul__(self, other):
         r"""

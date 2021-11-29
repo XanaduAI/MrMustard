@@ -126,9 +126,7 @@ def test_matmul_few_different_modes(xpxp_matrix):
     N = xpxp_matrix.shape[0] // 2
     xp1 = XPMatrix.from_xpxp(xpxp_matrix, modes=(list(range(N)), list(range(N))), like_1=True)
     xp2 = XPMatrix.from_xpxp(xpxp_matrix, modes=(list(range(1, N + 1)), list(range(1, N + 1))), like_1=True)
-    matrix1 = np.block(
-        [[xpxp_matrix, np.zeros((2 * N, 2))], [np.zeros((2, 2 * N)), np.eye(2)]]
-    )  # add one extra empty mode at the end
+    matrix1 = np.block([[xpxp_matrix, np.zeros((2 * N, 2))], [np.zeros((2, 2 * N)), np.eye(2)]])  # add one extra empty mode at the end
     matrix2 = np.block(
         [[np.eye(2), np.zeros((2, 2 * N))], [np.zeros((2 * N, 2)), xpxp_matrix]]
     )  # add one extra empty mode at the beginning
@@ -142,9 +140,7 @@ def test_matmul_all_different_modes(a, b):
     Nb = b.shape[0] // 2
     xp1 = XPMatrix.from_xpxp(a, modes=(list(range(Na)), list(range(Na))), like_1=True)
     xp2 = XPMatrix.from_xpxp(b, modes=(list(range(Na, Na + Nb)), list(range(Na, Na + Nb))), like_1=True)
-    matrix1 = np.block(
-        [[a, np.zeros((2 * Na, 2 * Nb))], [np.zeros((2 * Nb, 2 * Na)), np.eye(2 * Nb)]]
-    )  # add N empty modes at the end
+    matrix1 = np.block([[a, np.zeros((2 * Na, 2 * Nb))], [np.zeros((2 * Nb, 2 * Na)), np.eye(2 * Nb)]])  # add N empty modes at the end
     matrix2 = np.block(
         [[np.eye(2 * Na), np.zeros((2 * Na, 2 * Nb))], [np.zeros((2 * Nb, 2 * Na)), b]]
     )  # add N empty modes at the beginning

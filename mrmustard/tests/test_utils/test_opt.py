@@ -187,10 +187,7 @@ def test_learning_four_mode_Interferometer():
 
     def cost_fn():
         amps = circ(state_in).ket(cutoffs=[3, 3, 3, 3])
-        return (
-            -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])))
-            ** 2
-        )
+        return -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]]))) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
