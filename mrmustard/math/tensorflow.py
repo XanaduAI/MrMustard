@@ -14,10 +14,7 @@
 
 import numpy as np
 import tensorflow as tf
-from thewalrus._hermite_multidimensional import (
-    hermite_multidimensional_numba,
-    grad_hermite_multidimensional_numba,
-)
+from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
@@ -305,11 +302,11 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(hermite_multidimensional_numba, [A, shape, B, C], A.dtype)
+        poly = tf.numpy_function(hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype)
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_numba, [poly, A, B, C], [poly.dtype] * 3
+                grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
             )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)

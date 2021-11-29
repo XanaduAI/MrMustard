@@ -14,10 +14,7 @@
 
 import numpy as np
 import torch
-from thewalrus._hermite_multidimensional import (
-    hermite_multidimensional_numba,
-    grad_hermite_multidimensional_numba,
-)
+from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast

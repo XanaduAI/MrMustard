@@ -42,7 +42,7 @@ def test_S2gate_coincidence_prob(n):
     opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
 
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
-    assert np.allclose(-cost_fn(), expected, atol=1e-3)
+    assert np.allclose(-cost_fn(), expected, atol=1e-5)
 
 
 @given(i=st.integers(1, 5), k=st.integers(1, 5))
@@ -126,7 +126,7 @@ def test_learning_two_mode_squeezing():
     opt = Optimizer(euclidean_lr=0.05)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
 
 def test_learning_two_mode_Ggate():
@@ -167,7 +167,7 @@ def test_learning_two_mode_Interferometer():
     opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=1e-3)
+    assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
 
 def test_learning_four_mode_Interferometer():
@@ -195,7 +195,7 @@ def test_learning_four_mode_Interferometer():
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.0625, atol=1e-3)
+    assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
 def test_squeezing_hong_ou_mandel_optimizer():

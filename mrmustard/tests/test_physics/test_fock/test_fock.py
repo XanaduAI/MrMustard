@@ -17,9 +17,7 @@ from hypothesis import settings, given, strategies as st
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-from mrmustard.lab.gates import Dgate, Sgate, LossChannel, BSgate, S2gate, Ggate
-from mrmustard.lab.circuit import Circuit
-from mrmustard.lab.states import Vacuum, TMSV, SqueezedVacuum
+from mrmustard.lab import *
 
 
 # helper strategies
@@ -57,13 +55,9 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
 def test_coherent_state(alpha):
     """Test that coherent states have the correct photon number statistics"""
     cutoff = 10
-    realpha = alpha.real
-    imalpha = alpha.imag
-    circ = Circuit()
-    circ.append(Dgate(x=realpha, y=imalpha)[0])
-    amps = circ(Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
+    amps = Coherent(x=alpha.real, y=alpha.imag).ket(cutoffs=[cutoff])
     expected = np.exp(-0.5 * np.abs(alpha) ** 2) * np.array([alpha ** n / np.sqrt(factorial(n)) for n in range(cutoff)])
-    assert np.allclose(amps, expected)
+    assert np.allclose(amps, expected, atol=1e-6)
 
 
 @given(r=st.floats(0, 2), phi=st_angle)
@@ -71,7 +65,7 @@ def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics
     Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
     cutoff = 10
-    amps = Sgate(r=r, phi=phi)[0](Vacuum(num_modes=1)).ket(cutoffs=[cutoff])
+    amps = SqueezedVacuum(r=r, phi=phi).ket(cutoffs=[cutoff])
     assert np.allclose(amps[1::2], 0.0)
     non_zero_amps = amps[0::2]
     len_non_zero = len(non_zero_amps)

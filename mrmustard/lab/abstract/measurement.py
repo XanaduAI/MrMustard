@@ -117,7 +117,7 @@ class FockMeasurement(ABC):
         for i, mode in enumerate(self._modes):
             if cutoffs[mode] > stochastic_channel[i].shape[1]:
                 raise IndexError(
-                    f"This detector does not support so many input photons in mode {mode} (you could increase max_input_photons or reduce the cutoff)"
+                    f"Internal cutoff ({stochastic_channel[i].shape[1]}) too low in mode {mode} (state cutoff {cutoffs[mode]}).\nYou can increase max_input_photons or reduce the cutoff of the state."
                 )
         detector_probs = fock_probs
         for i, mode in enumerate(self._modes):
