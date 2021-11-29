@@ -1,9 +1,8 @@
 numpy>=1.20
 scipy
 numba
-repoze.lru
-thewalrus>=0.17.0
-tensorflow>=2.6.2
+thewalrus>=0.17
+tensorflow>=2.4
 rich
 tqdm
 matplotlib
