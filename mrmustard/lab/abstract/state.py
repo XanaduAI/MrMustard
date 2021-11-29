@@ -264,7 +264,8 @@ class State:
         Returns the post-measurement state after `other` is projected onto `self`:
         self(state) -> state projected onto self.
         If `other` is a `Transformation`, it returns the dual of the transformation applied to `self`:
-        self(transformation) -> transformation^dual(self)
+        self(transformation) -> transformation^dual(self).
+        Note that the returned state is not normalized unless the state has attribute `_normalize` set.
         """
         if issubclass(other.__class__, State):
             remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
@@ -296,7 +297,7 @@ class State:
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
                         modes=self._modes,
-                        normalize=self._normalize,
+                        normalize=self._normalize if hasattr(self, '_normalize') else False,
                     )
                 if len(remaining_modes) > 0:
                     output_is_mixed = not (self.is_pure and other.is_pure)  # TODO: this may fail?
