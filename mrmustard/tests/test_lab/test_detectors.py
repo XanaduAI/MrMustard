@@ -35,9 +35,8 @@ np.random.seed(137)
 def test_detector_coherent_state(alpha, eta, dc):
     """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
     cutoff = 20
-    D = Dgate(x=alpha.real, y=alpha.imag)
     detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
-    ps = detector(Vacuum(1) >> D[0], cutoffs=[cutoff])
+    ps = detector(Coherent(x=alpha.real, y=alpha.imag), cutoffs=[cutoff])
     expected = poisson.pmf(k=np.arange(cutoff), mu=eta * np.abs(alpha) ** 2 + dc)
     assert np.allclose(ps, expected)
 
@@ -49,13 +48,13 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     detector = PNRDetector(modes=[0], efficiency=eta, dark_counts=dc)
     cutoff = 50
     ps = detector(Vacuum(1) >> S[0], cutoffs=[cutoff])
-    assert np.allclose(np.sum(ps), 1.0, atol=1e-3)
+    assert np.allclose(np.sum(ps), 1.0)
     mean = np.arange(cutoff) @ ps.numpy()
     expected_mean = eta * np.sinh(r) ** 2 + dc
-    assert np.allclose(mean, expected_mean, atol=1e-3)
+    assert np.allclose(mean, expected_mean)
     variance = np.arange(cutoff) ** 2 @ ps.numpy() - mean ** 2
     expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
-    assert np.allclose(variance, expected_variance, atol=1e-3)
+    assert np.allclose(variance, expected_variance)
 
 
 @given(
@@ -86,11 +85,11 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     expected_var_i = n_i * (n_i + 1) + dc_i
     covar = n @ ps.numpy() @ n - mean_s * mean_i
     expected_covar = eta_s * eta_i * (np.sinh(r) * np.cosh(r)) ** 2
-    assert np.allclose(mean_s, expected_mean_s, atol=1e-3)
-    assert np.allclose(mean_i, expected_mean_i, atol=1e-3)
-    assert np.allclose(var_s, expected_var_s, atol=1e-3)
-    assert np.allclose(var_i, expected_var_i, atol=1e-3)
-    assert np.allclose(covar, expected_covar, atol=1e-3)
+    assert np.allclose(mean_s, expected_mean_s)
+    assert np.allclose(mean_i, expected_mean_i)
+    assert np.allclose(var_s, expected_var_s)
+    assert np.allclose(var_i, expected_var_i)
+    assert np.allclose(covar, expected_covar)
 
 
 def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
