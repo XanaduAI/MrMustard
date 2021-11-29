@@ -17,6 +17,7 @@ from scipy.linalg import expm
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
 from mrmustard.math import Math
+
 math = Math()
 
 
@@ -44,7 +45,9 @@ class Optimizer:
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
         try:
-            params = {kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
+            params = {
+                kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")
+            }
             bar = graphics.Progressbar(max_steps)
             with bar:
                 while not self.should_stop(max_steps):

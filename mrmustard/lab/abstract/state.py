@@ -405,7 +405,9 @@ class State:
         """
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
-        return State(fock = self.dm(self.cutoffs) + other.dm(self.cutoffs), is_mixed = True)  # TODO: gaussian implementation
+        return State(
+            fock=self.dm(self.cutoffs) + other.dm(self.cutoffs), is_mixed=True
+        )  # TODO: gaussian implementation
 
     def __rmul__(self, other):
         r"""
@@ -417,7 +419,7 @@ class State:
         if self.is_gaussian:
             return State(cov=self.cov * other, means=self.means, is_mixed=True)
         else:
-            return State(fock = self.dm() * other, is_mixed = True)
+            return State(fock=self.dm() * other, is_mixed=True)
 
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))

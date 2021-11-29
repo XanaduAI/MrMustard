@@ -331,6 +331,7 @@ def is_mixed_dm(dm):
     square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
 
+
 def trace(dm, keep: List[int]):
     r"""
     Computes the partial trace of a density matrix.
@@ -338,11 +339,11 @@ def trace(dm, keep: List[int]):
         dm: The density matrix
         keep: The modes to keep
     """
-    N = len(dm.shape)//2
+    N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]
     # put at the end all of the indices to trace over
-    dm = math.transpose(dm, [i for pair in [(k,k+N) for k in keep] + [(t,t+N) for t in trace] for i in pair])
-    d = int(np.prod(dm.shape[-len(trace):]))
+    dm = math.transpose(dm, [i for pair in [(k, k + N) for k in keep] + [(t, t + N) for t in trace] for i in pair])
+    d = int(np.prod(dm.shape[-len(trace) :]))
     # make it square on those indices
-    dm = math.reshape(dm, dm.shape[:2*len(keep)] + (d, d))
+    dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
     return math.trace(dm)
