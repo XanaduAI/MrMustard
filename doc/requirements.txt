@@ -1,0 +1,7 @@
+sphinx
+docutils
+m2r2
+sphinx-autodoc-typehints
+sphinx-copybutton
+sphinx-automodapi
+sphinxcontrib-bibtex
