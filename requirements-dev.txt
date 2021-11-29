@@ -1,3 +1,2 @@
 pytest
-thewalrus>=0.16.2
 hypothesis

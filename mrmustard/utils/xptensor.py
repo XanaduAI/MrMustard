@@ -17,10 +17,9 @@ from mrmustard.utils.types import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
+from mrmustard.math import Math
 
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  NOTE: the math backend is loaded automatically by the settings object
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+math = Math()
 
 
 class XPTensor(ABC):
@@ -113,7 +112,12 @@ class XPTensor(ABC):
             raise ValueError("Cannot transpose a vector")
         if self.tensor is None:
             return self
-        return XPMatrix(math.transpose(self.tensor, (1, 0, 3, 2)), self.like_0, self.like_1, (self.inmodes, self.outmodes))
+        return XPMatrix(
+            math.transpose(self.tensor, (1, 0, 3, 2)),
+            self.like_0,
+            self.like_1,
+            (self.inmodes, self.outmodes),
+        )
 
     def to_xpxp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
@@ -239,7 +243,10 @@ class XPTensor(ABC):
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
             prod = math.tensordot(self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)))
-            return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (self.outmodes, other.inmodes)
+            return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (
+                self.outmodes,
+                other.inmodes,
+            )
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
@@ -344,7 +351,10 @@ class XPTensor(ABC):
             to_update = other.tensor
             to_add = [self]
         else:  # need to add both to a new empty tensor
-            to_update = math.zeros((len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2), dtype=self.tensor.dtype)
+            to_update = math.zeros(
+                (len(outmodes), len(inmodes), 2, 2) if self.isMatrix else (len(outmodes), 2),
+                dtype=self.tensor.dtype,
+            )
             to_add = [self, other]
         for t in to_add:
             outmodes_indices = [outmodes.index(o) for o in t.outmodes]
@@ -353,9 +363,18 @@ class XPTensor(ABC):
                 indices = [[o, i] for o in outmodes_indices for i in inmodes_indices]
             else:
                 indices = [[o] for o in outmodes_indices]
-            to_update = math.update_add_tensor(to_update, indices, math.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2)))
+            to_update = math.update_add_tensor(
+                to_update,
+                indices,
+                math.reshape(t.modes_first(), (-1, 2, 2) if self.isMatrix else (-1, 2)),
+            )
         if self.isMatrix and other.isMatrix:
-            return XPMatrix(to_update, like_0=self.like_0 and other.like_0, like_1=self.like_1 or other.like_1, modes=(outmodes, inmodes))
+            return XPMatrix(
+                to_update,
+                like_0=self.like_0 and other.like_0,
+                like_1=self.like_1 or other.like_1,
+                modes=(outmodes, inmodes),
+            )
         else:
             return XPVector(to_update, outmodes)
 
@@ -367,7 +386,8 @@ class XPTensor(ABC):
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> Union[XPMatrix, XPVector]:
         r"""
-        Returns modes or subsets of modes from the XPTensor, or coherences between modes using an intuitive notation.
+        Returns modes or subsets of modes from the XPTensor,
+        or coherences between modes using an intuitive notation.
         We handle mode indices and we get the corresponding tensor indices handled correctly.
         Examples:
             T[N] ~ self.tensor[N,:,:,:]
@@ -411,15 +431,27 @@ class XPTensor(ABC):
             columns = [self.inmodes.index(m) for m in _modes[1]]
             subtensor = math.gather(self.tensor, rows, axis=0)
             subtensor = math.gather(subtensor, columns, axis=1)
-            return XPMatrix(subtensor, like_1=_modes[0] == _modes[1] if self.like_1 else False, modes=tuple(_modes))
+            return XPMatrix(
+                subtensor,
+                like_1=_modes[0] == _modes[1] if self.like_1 else False,
+                modes=tuple(_modes),
+            )
 
 
 class XPMatrix(XPTensor):
     r"""
     A convenience class for a matrix in the XPTensor format.
+
+    # TODO: write docstring
     """
 
-    def __init__(self, tensor: Tensor = None, like_0: bool = None, like_1: bool = None, modes: Tuple[List[int], List[int]] = ([], [])):
+    def __init__(
+        self,
+        tensor: Tensor = None,
+        like_0: bool = None,
+        like_1: bool = None,
+        modes: Tuple[List[int], List[int]] = ([], []),
+    ):
         if like_0 is None and like_1 is None:
             raise ValueError("At least one of like_0 or like_1 must be set")
         if like_0 == like_1:

@@ -14,19 +14,22 @@
 
 import numpy as np
 import torch
-from thewalrus._hermite_multidimensional import hermite_multidimensional_numba, grad_hermite_multidimensional_numba
+from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
-from mrmustard.physics.math_interface import MathInterface
+from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
 from mrmustard.utils.types import *
 
 
-class Math(MathInterface):
+class TorchMath(MathInterface):
 
     float64 = torch.float64
     float32 = torch.float32
     complex64 = torch.complex64
     complex128 = torch.complex128
+
+    def __getattr__(self, name):
+        return getattr(torch, name)
 
     # ~~~~~~~~~
     # Basic ops
@@ -96,7 +99,13 @@ class Math(MathInterface):
 
     @Autocast()
     def matmul(
-        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, transpose_b=False, adjoint_a=False, adjoint_b=False
+        self,
+        a: torch.Tensor,
+        b: torch.Tensor,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
     ) -> torch.Tensor:
         return torch.matmul(a, b)
 
@@ -129,7 +138,13 @@ class Math(MathInterface):
     def diag_part(self, array: torch.Tensor) -> torch.Tensor:
         return torch.diag_embed(array)
 
-    def pad(self, array: torch.Tensor, paddings: Sequence[Tuple[int, int]], mode="constant", constant_values=0) -> torch.Tensor:
+    def pad(
+        self,
+        array: torch.Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="constant",
+        constant_values=0,
+    ) -> torch.Tensor:
         return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
     @Autocast()
@@ -159,7 +174,13 @@ class Math(MathInterface):
             signal_length = array.shape[2]
 
             m = torch.nn.Conv1d(
-                input_channels, output_channels, filters, stride=strides, padding=padding, dtype=data_format, dilation=dilations
+                input_channels,
+                output_channels,
+                filters,
+                stride=strides,
+                padding=padding,
+                dtype=data_format,
+                dilation=dilations,
             )
             return m(array)
         elif array.dim() == 4:  # 2D case
@@ -167,7 +188,13 @@ class Math(MathInterface):
             input_width = array.shape[3]
 
             m = torch.nn.Conv2d(
-                input_channels, output_channels, filters, stride=strides, padding=padding, dtype=data_format, dilation=dilations
+                input_channels,
+                output_channels,
+                filters,
+                stride=strides,
+                padding=padding,
+                dtype=data_format,
+                dilation=dilations,
             )
             return m(array)
         else:
@@ -228,7 +255,10 @@ class Math(MathInterface):
         return tensor.scatter_add_(dims, indices, values)
 
     def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
-        bounds = (-np.inf if bounds[0] is None else bounds[0], np.inf if bounds[1] is None else bounds[1])
+        bounds = (
+            -np.inf if bounds[0] is None else bounds[0],
+            np.inf if bounds[1] is None else bounds[1],
+        )
         if not bounds == (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
         else:
@@ -310,3 +340,9 @@ class Math(MathInterface):
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
         "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
         return torch.xlogy(x, y)
+
+    def sqrtm(self, tensor: torch.Tensor) -> Tensor:
+        raise NotImplementedError
+
+    def boolean_mask(self, tensor: torch.Tensor, mask: torch.Tensor) -> Tensor:
+        return torch.masked_select(tensor, mask)

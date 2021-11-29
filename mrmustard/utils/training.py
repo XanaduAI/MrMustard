@@ -16,10 +16,9 @@ import numpy as np
 from scipy.linalg import expm
 from mrmustard.utils.types import *
 from mrmustard.utils import graphics
+from mrmustard.math import Math
 
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  NOTE: the math backend is loaded automatically by the settings object
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+math = Math()
 
 
 class Optimizer:
@@ -45,16 +44,19 @@ class Optimizer:
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
-        params = {kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
-        bar = graphics.Progressbar(max_steps)
-        with bar:
-            while not self.should_stop(max_steps):
-                loss, grads = loss_and_gradients(cost_fn, params)
-                update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
-                update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
-                update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
-                self.loss_history.append(loss)
-                bar.step(numeric(loss))  # TODO
+        try:
+            params = {kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")}
+            bar = graphics.Progressbar(max_steps)
+            with bar:
+                while not self.should_stop(max_steps):
+                    loss, grads = loss_and_gradients(cost_fn, params)
+                    update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
+                    update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                    update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
+                    self.loss_history.append(loss)
+                    bar.step(math.asnumpy(loss))
+        except KeyboardInterrupt:  # graceful exit
+            return
 
     def should_stop(self, max_steps: int) -> bool:
         r"""
@@ -75,7 +77,7 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
-def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Trainable:
+def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64) -> Trainable:
     r"""
     Returns a new trainable variable from the current math backend
     with initial value set by `value` and bounds set by `bounds`.
@@ -83,23 +85,27 @@ def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: s
         value (float): The initial value of the variable
         bounds (Tuple[float, float]): The bounds of the variable
         name (str): The name of the variable
+        dtype: The dtype of the variable
     Returns:
         variable (Trainable): The new variable
     """
-    return math.new_variable(value, bounds, name)
+    return math.new_variable(value, bounds, name, dtype)
 
 
-def new_constant(value, name: str) -> Tensor:
+def new_constant(value, name: str, dtype=math.float64) -> Tensor:
     r"""
     Returns a new constant (non-trainable) tensor from the current math backend
     with initial value set by `value`.
     Arguments:
         value (numeric): The initial value of the tensor
         name (str): The name of the constant
+        dtype: The dtype of the constant
     Returns:
         tensor (Tensor): The new constant tensor
     """
-    return math.new_constant(value, name)
+    if math.istensor(value):
+        return value
+    return math.new_constant(value, name, dtype)
 
 
 def new_symplectic(num_modes: int) -> Tensor:
@@ -116,10 +122,6 @@ def new_symplectic(num_modes: int) -> Tensor:
 
 def new_orthogonal(num_modes: int) -> Tensor:
     return math.random_orthogonal(num_modes)
-
-
-def numeric(tensor: Tensor) -> Tensor:
-    return math.asnumpy(tensor)
 
 
 def update_symplectic(symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float):

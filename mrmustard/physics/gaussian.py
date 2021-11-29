@@ -12,15 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
 from thewalrus.quantum import is_pure_cov
+
+from mrmustard.utils.types import *
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from numpy import pi
+from mrmustard.math import Math
 
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  NOTE: the math backend is loaded automatically by the settings object
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+math = Math()
+
+
+#  ~~~~~~
+#  States
+#  ~~~~~~
 
 
 def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
@@ -43,7 +48,7 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement(math.zeros(num_modes), math.zeros(num_modes), hbar)
+    return displacement(math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar)
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
@@ -102,7 +107,10 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
     else:
-        return math.matmul(math.matmul(symplectic, math.diag(eigenvalues)), math.transpose(symplectic))
+        return math.matmul(
+            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+            math.transpose(symplectic),
+        )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -546,7 +554,12 @@ def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Mat
 
 
 def general_dyne(
-    cov: Matrix, means: Vector, proj_cov: Matrix, proj_means: Vector, modes: Sequence[int], hbar: float
+    cov: Matrix,
+    means: Vector,
+    proj_cov: Matrix,
+    proj_means: Vector,
+    modes: Sequence[int],
+    hbar: float,
 ) -> Tuple[Scalar, Matrix, Vector]:
     r"""
     Returns the results of a general dyne measurement.
@@ -619,6 +632,20 @@ def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
 
 
+def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
+    r"""
+    Automatically determines reasonable cutoffs.
+    Args:
+        cov: The covariance matrix.
+        means: The means vector.
+        hbar: The value of the Planck constant.
+    Returns:
+        A list of cutoff indices.
+    """
+    cutoffs = number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
+    return [max(1, int(i)) for i in cutoffs]
+
+
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
     r"""
     Returns the covariances and means after discarding the specified modes.
@@ -646,7 +673,10 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
         Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
     """
     N = cov.shape[-1] // 2
-    Bindices = math.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+    Bindices = math.cast(
+        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+        "int32",
+    )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
     A_block = math.gather(math.gather(cov, Aindices, axis=1), Aindices, axis=0)
     B_block = math.gather(math.gather(cov, Bindices, axis=1), Bindices, axis=0)
@@ -664,7 +694,10 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
         Tuple[Vector, Vector]: the means of A and the means of B
     """
     N = len(means) // 2
-    Bindices = math.cast([i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes], "int32")
+    Bindices = math.cast(
+        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+        "int32",
+    )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
     return math.gather(means, Aindices), math.gather(means, Bindices)
 
@@ -678,6 +711,107 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
         float: the purity
     """
     return 1 / math.sqrt(math.det((2 / hbar) * cov))
+
+
+def sympletic_eigenvals(cov: Matrix) -> Any:
+    r"""
+    Returns the sympletic eigenspectrum of a covariance matrix.
+    For a pure state, we expect the sympletic eigenvalues to be 1.
+    Arguments:
+        cov (Matrix): the covariance matrix.
+    Returns:
+        List[float]: the sympletic eigenvalues
+    """
+    cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
+    J = math.J(cov.shape[0] // 2)  # create a sympletic form
+    M = 1j * J @ cov  # compute iJ*cov
+    vals = math.eigvals(M)  # compute the eigenspectrum
+    return math.abs(vals[::2])  # return the even eigenvalues
+
+
+def von_neumann_entropy(cov: Matrix) -> float:
+    r"""
+    Returns the Von Neumann entropy.
+    For a pure state, we expect the Von Neumann entropy to be 0.
+
+    Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
+
+    Arguments:
+        cov (Matrix): the covariance matrix
+    Returns:
+        float: the von neumann entropy
+    """
+    symp_vals = self.sympletic_eigenvals(cov)
+    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+    entropy = math.sum(g(symp_vals))
+    return entropy
+
+
+def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
+    r"""
+    Returns the fidelity of two gaussian states.
+
+    Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
+
+    Arguments:
+        mu1 (Vector): the means vector of state 1
+        mu2 (Vector): the means vector of state 2
+        cov1 (Matrix): the covariance matrix of state 1
+        cov1 (Matrix): the covariance matrix of state 2
+    Returns:
+        float: the fidelity
+    """
+
+    cov1 = math.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
+    cov2 = math.cast(cov2 / hbar, "complex128")  # convert to units where hbar = 1
+
+    mu1 = math.cast(mu1, "complex128")
+    mu2 = math.cast(mu2, "complex128")
+    deltar = (mu2 - mu1) / math.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
+    J = math.J(cov1.shape[0] // 2)
+    I = math.eye(cov1.shape[0])
+    J = math.cast(J, "complex128")
+    I = math.cast(I, "complex128")
+
+    cov12_inv = math.inv(cov1 + cov2)
+
+    V = math.transpose(J) @ cov12_inv @ ((1 / 4) * J + cov2 @ J @ cov1)
+
+    W = -2 * (V @ (1j * J))
+    W_inv = math.inv(W)
+    matsqrtm = math.sqrtm(I - W_inv @ W_inv)  # this also handles the case where the input matrix is close to zero
+    f0_top = math.det((matsqrtm + I) @ (W @ (1j * J)))
+    f0_bot = math.det(cov1 + cov2)
+
+    f0 = (f0_top / f0_bot) ** (1 / 2)  # square of equation 98
+
+    dot = math.sum(
+        math.transpose(deltar) * math.matvec(cov12_inv, deltar)
+    )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
+
+    fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
+
+    return math.cast(fidelity, "float64")
+
+
+def log_negativity(cov: Matrix) -> float:
+    r"""
+    Returns the log_negativity of a Gaussian state.
+
+    Reference: https://arxiv.org/pdf/quant-ph/0102117.pdf, Equation 57, 61.
+
+    Arguments:
+        cov (Matrix): the covariance matrix
+    Returns:
+        float: the log-negativity
+    """
+
+    vals = sympletic_eigenvals(cov)
+    mask = 2 * vals < 1
+
+    vals_filtered = math.boolean_mask(vals, mask)  # Get rid of terms that would lead to zero contribution.
+
+    return math.sum(-math.log(2 * vals_filtered) / math.log(2))
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
@@ -708,3 +842,41 @@ def join_means(means: Sequence[Vector]) -> Vector:
     for i, m in enumerate(means[1:]):
         mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2)))
     return mean.to_xxpp()
+
+
+def symplectic_inverse(S: Matrix) -> Matrix:
+    r"""
+    Returns the inverse of a symplectic matrix.
+    Arguments:
+        S (Matrix): the symplectic matrix
+    Returns:
+        Matrix: the inverse of the symplectic matrix
+    """
+    S = math.reshape(S, (S.shape[0] // 2, 2, S.shape[1] // 2, 2))
+    S = math.transpose(S, (1, 3, 0, 2))
+    return math.block(
+        [
+            [math.transpose(S[1, 1]), -math.transpose(S[0, 1])],
+            [-math.transpose(S[1, 0]), math.transpose(S[0, 0])],
+        ]
+    )
+
+
+def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
+    r"""
+    Returns the dual channel (X,Y,d)
+    Arguments:
+        X (Matrix): the X matrix
+        Y (Matrix): the Y noise matrix
+        d (Vector): the displacement vector
+    Returns:
+        (Matrix, Matrix, Vector): (X_dual, Y_dual, d_dual)
+    """
+    X_dual = math.inv(X) if X is not None else None
+    Y_dual = Y
+    d_dual = d
+    if Y is not None:
+        Y_dual = math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+    if d is not None:
+        d_dual = math.matvec(X_dual, d) if X_dual is not None else d
+    return X_dual, Y_dual, d_dual

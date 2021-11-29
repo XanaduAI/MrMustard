@@ -12,23 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import numpy as np
+import pytest
+from hypothesis import given, strategies as st, assume
+from hypothesis.extra.numpy import arrays
+from mrmustard.physics import gaussian
+from mrmustard.lab import *
 from mrmustard import settings
-import importlib
-
-if importlib.util.find_spec("tensorflow"):
-    from mrmustard.math.tensorflow import TFMath
-if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch import TorchMath
-
-
-class Math:
-    r"""
-    This class provides a unified interface for performing math operations.
-    """
-
-    def __getattribute__(self, name):
-        if settings.backend == "tensorflow":
-            return object.__getattribute__(TFMath(), name)
-        elif settings.backend == "torch":
-            return object.__getattribute__(TorchMath(), name)
+from mrmustard.tests import random

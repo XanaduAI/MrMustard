@@ -19,7 +19,7 @@ __all__ = ["Circuit"]
 from mrmustard.utils.types import *
 from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from mrmustard.physics.abstract import Transformation
+from mrmustard.lab.abstract import Transformation
 from mrmustard.lab.states import TMSV
 
 
@@ -30,61 +30,41 @@ class Circuit(Transformation):
 
     def reset(self):
         self._compiled: bool = False
-        self._bell: Optional[State] = None
         self._modes: List[int] = []
 
     @property
-    def bell(self):
-        if self._bell is None:
-            bell = bell_single = TMSV(r=settings.TMSV_DEFAULT_R)
-            for n in range(self.num_modes):
-                bell = bell & bell_single
-            order = tuple(range(0, 2 * self.num_modes, 2)) + tuple(range(1, 2 * self.num_modes, 2))
-            self._bell = bell[order]
-        return self._bell
-
-    @property
-    def num_modes(self) -> int:
+    def num_modes(self) -> int:  # TODO: improve this
         all_modes = set()
         for op in self._ops:
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
-    # NOTE: op.X_matrix is called repeatedly in the following methods, so circuits are composable but with an exponential cost.
-    # TODO: Find a way around it
+    def __call__(self, state: State) -> State:
+        for op in self._ops:
+            state = op(state)
+        return state
+
     @property
-    def X_matrix(self) -> Optional[Matrix]:
+    def XYd(self) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency
         X = XPMatrix(like_1=True)
-        for op in self._ops:
-            opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
-            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
-                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
-            X = opX @ X
-        return X.to_xxpp()
-
-    @property
-    def Y_matrix(self) -> Optional[Matrix]:
         Y = XPMatrix(like_0=True)
-        for op in self._ops:
-            opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
-            opY = XPMatrix.from_xxpp(op.Y_matrix, modes=(op.modes, op.modes), like_0=True)
-            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
-                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
-                opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
-            Y = opX @ Y @ opX.T + opY
-        return Y.to_xxpp()
-
-    @property
-    def d_vector(self) -> Optional[Vector]:
         d = XPVector()
         for op in self._ops:
             opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
+            opY = XPMatrix.from_xxpp(op.Y_matrix, modes=(op.modes, op.modes), like_0=True)
             opd = XPVector.from_xxpp(op.d_vector, modes=op.modes)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
+                opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
                 opd = opd.clone(len(op.modes), modes=op.modes)
+            X = opX @ X
+            Y = opX @ Y @ opX.T + opY
             d = opX @ d + opd
-        return d.to_xxpp()
+        return X.to_xxpp(), Y.to_xxpp(), d.to_xxpp()
+
+    @property
+    def is_gaussian(self):
+        return all(op.is_gaussian for op in self._ops)
 
     def extend(self, obj):
         result = self._ops.extend(obj)
