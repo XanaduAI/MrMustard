@@ -330,7 +330,7 @@ class State:
         if self.is_gaussian and other.is_gaussian:
             cov = gaussian.join_covs([self.cov, other.cov])
             means = gaussian.join_means([self.means, other.means])
-            return State(cov=cov, means=means, modes=self._modes + [m+len(self._modes) for m in other._modes])
+            return State(cov=cov, means=means, modes=self.modes + [m+len(self.modes) for m in other.modes])
         else:
             raise NotImplementedError("Concatenation of non-gaussian states is not implemented yet.")
 
