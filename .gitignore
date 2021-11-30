@@ -10,3 +10,4 @@ __pycache__/
 *.png
 .hypothesis/
 *.egg-info*
+doc/_build
