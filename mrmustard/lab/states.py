@@ -15,7 +15,7 @@
 from mrmustard.utils.types import *
 from mrmustard import settings
 
-from mrmustard.lab.abstract import State
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils import Parametrized, training
 

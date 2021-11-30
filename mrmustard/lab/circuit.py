@@ -21,6 +21,7 @@ from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.lab.abstract import Transformation
 from mrmustard.lab.states import TMSV
+from mrmustard.lab.abstract import State
 
 
 class Circuit(Transformation):

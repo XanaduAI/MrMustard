@@ -9,3 +9,4 @@ __pycache__/
 *.pkl
 *.png
 .hypothesis/
+doc/_build
