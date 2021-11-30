@@ -172,7 +172,7 @@ def test_loss_probs(eta):
     "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
     lossy_detector = PNRDetector(modes=[0, 1], efficiency=eta, dark_counts=0.0)
     ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
-    S = Sgate(r=0.3, phi=[0.0, 0.7])[0, 1]
+    S = Sgate(r=0.2, phi=[0.0, 0.7])[0, 1]
     B = BSgate(theta=1.4, phi=0.0)[0, 1]
     L = LossChannel(transmissivity=eta)[0, 1]
     dm_lossy = lossy_detector(Vacuum(2) >> S >> B, cutoffs=[20, 20])
