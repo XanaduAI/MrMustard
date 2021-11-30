@@ -41,7 +41,7 @@ def test_detector_coherent_state(alpha, eta, dc):
     assert np.allclose(ps, expected)
 
 
-@given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
+@given(r=st.floats(0, 0.5), phi=st.floats(0, 2 * np.pi), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
 def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
     S = Sgate(r=r, phi=phi)
