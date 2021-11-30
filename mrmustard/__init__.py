@@ -2,10 +2,9 @@
 
 import importlib
 from rich.pretty import install  # NOTE: just for the looks
+from ._version import __version__
 
 install()
-
-__version__ = "0.1.0"
 
 
 class Settings:
