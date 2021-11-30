@@ -95,6 +95,7 @@ def about():
 
     try:
         import torch
+
         torch_version = torch.__version__
     except ImportError:
         torch_version = None

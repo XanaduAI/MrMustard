@@ -194,7 +194,9 @@ class BSgate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer.")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer."
+            )
 
 
 class MZgate(Parametrized, Transformation):
@@ -244,7 +246,9 @@ class MZgate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer?")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer?"
+            )
 
 
 class S2gate(Parametrized, Transformation):

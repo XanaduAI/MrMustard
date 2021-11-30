@@ -290,7 +290,9 @@ class State:
             remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
 
             if self.is_gaussian and other.is_gaussian:
-                prob, cov, means = gaussian.general_dyne(other.cov, other.means, self.cov, self.means, self._modes, settings.HBAR)
+                prob, cov, means = gaussian.general_dyne(
+                    other.cov, other.means, self.cov, self.means, self._modes, settings.HBAR
+                )
                 if len(remaining_modes) > 0:
                     return State(means=means, cov=cov, modes=remaining_modes)
                 else:
@@ -320,7 +322,11 @@ class State:
                     )
                     output_is_mixed = other.is_mixed or self.is_mixed
                 if len(remaining_modes) > 0:
-                    return State(dm=out_fock, modes=remaining_modes) if output_is_mixed else State(ket=out_fock, modes=remaining_modes)
+                    return (
+                        State(dm=out_fock, modes=remaining_modes)
+                        if output_is_mixed
+                        else State(ket=out_fock, modes=remaining_modes)
+                    )
                 else:
                     return fock.math.abs(out_fock) ** 2 if other.is_pure and self.is_pure else fock.math.abs(out_fock)
         else:
@@ -348,7 +354,9 @@ class State:
         else:
             raise TypeError("item must be int or iterable")
         if len(item) != self.num_modes:
-            raise ValueError(f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)")
+            raise ValueError(
+                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
+            )
         self._modes = item
         return self
 

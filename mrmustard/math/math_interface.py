@@ -374,7 +374,9 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+    def loss_and_gradients(
+        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
+    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         r"""Returns the loss and gradients of the given cost function.
         Arguments:
             cost_fn (callable): cost function to compute the loss and gradients of
@@ -688,7 +690,9 @@ class MathInterface(ABC):
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
 
-    def loss_and_gradients(self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+    def loss_and_gradients(
+        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
+    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         ...
 
     def eigvals(self, tensor: Tensor) -> Tensor:
@@ -805,7 +809,9 @@ class MathInterface(ABC):
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
 
-    def add_at_modes(self, old: Tensor, new: Optional[Tensor], modes: Sequence[int]) -> Tensor:  # NOTE: To be deprecated (XPTensor)
+    def add_at_modes(
+        self, old: Tensor, new: Optional[Tensor], modes: Sequence[int]
+    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
         "adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes"
         if new is None:
             return old
@@ -813,7 +819,9 @@ class MathInterface(ABC):
         indices = modes + [m + N for m in modes]
         return self.update_add_tensor(old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1))
 
-    def left_matmul_at_modes(self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]) -> Tensor:  # NOTE: To be deprecated (XPTensor)
+    def left_matmul_at_modes(
+        self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]
+    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
         r"""
         Left matrix multiplication of a partial matrix and a full matrix.
         It assumes that that `a_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
@@ -833,7 +841,9 @@ class MathInterface(ABC):
         b_rows = self.matmul(a_partial, b_rows)
         return self.update_tensor(b_full, indices[:, None], b_rows)
 
-    def right_matmul_at_modes(self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]) -> Tensor:  # NOTE: To be deprecated (XPTensor)
+    def right_matmul_at_modes(
+        self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
+    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
         r"""
         Right matrix multiplication of a full matrix and a partial matrix.
         It assumes that that `b_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
@@ -847,7 +857,9 @@ class MathInterface(ABC):
         """
         return self.transpose(self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes))
 
-    def matvec_at_modes(self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]) -> Tensor:  # NOTE: To be deprecated (XPTensor)
+    def matvec_at_modes(
+        self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]
+    ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
         "matrix-vector multiplication between a phase-space matrix and a vector in the specified modes"
         if mat is None:
             return vec
@@ -876,7 +888,11 @@ class MathInterface(ABC):
         "P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out"
         in_ = self.arange(dim_in)[None, :]
         out_ = self.arange(dim_out)[:, None]
-        return self.cast(binom(in_, out_), in_.dtype) * success_prob ** out_ * (1.0 - success_prob) ** self.maximum(in_ - out_, 0.0)
+        return (
+            self.cast(binom(in_, out_), in_.dtype)
+            * success_prob ** out_
+            * (1.0 - success_prob) ** self.maximum(in_ - out_, 0.0)
+        )
 
     def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:
         "Convolution of a joint probability with a list of single-index probabilities"
@@ -910,7 +926,9 @@ class MathInterface(ABC):
             prob_padded[None, ..., None],
             other_reversed[..., None, None],
             padding="VALID",  # TODO: do we need to specify this?
-            data_format="N" + ("HD"[: other.ndim - 1])[::-1] + "WC",  # TODO: rewrite this to be more readable (do we need it?)
+            data_format="N"
+            + ("HD"[: other.ndim - 1])[::-1]
+            + "WC",  # TODO: rewrite this to be more readable (do we need it?)
         )[0, ..., 0]
 
     def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:

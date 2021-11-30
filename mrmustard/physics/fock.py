@@ -39,7 +39,9 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None) -> Tuple[int, ...]:
+def autocutoffs(
+    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
+) -> Tuple[int, ...]:
     r"""
     Returns the autocutoffs of a Wigner state.
     Arguments:
@@ -92,7 +94,9 @@ def fock_representation(
         A, B, C = ABC(cov, means, full=return_dm)
     elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
         A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
-    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
+    return math.hermite_renormalized(
+        math.conj(-A), math.conj(B), math.conj(C), shape=shape
+    )  # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -214,7 +218,9 @@ def number_means(tensor, is_dm: bool):
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor([math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype)) for marginal in marginals])
+    return math.astensor(
+        [math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype)) for marginal in marginals]
+    )
 
 
 def number_variances(tensor, is_dm: bool):
