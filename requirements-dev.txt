@@ -1,2 +1,4 @@
 pytest
 hypothesis
+pytest-cov
+pylint
