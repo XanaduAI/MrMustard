@@ -313,8 +313,8 @@ def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: L
     return out
 
 
-def normalize(fock: Tensor, is_mixed: bool):
-    if is_mixed:
+def normalize(fock: Tensor, is_dm: bool):
+    if is_dm:
         return fock / math.sum(math.all_diagonals(fock, real=False))
     else:
         return fock / math.sum(math.norm(fock))

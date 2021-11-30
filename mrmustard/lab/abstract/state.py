@@ -302,7 +302,7 @@ class State:
                 if len(remaining_modes) > 0:
                     output_is_mixed = not (self.is_pure and other.is_pure)  # TODO: this may fail?
                     return State(
-                        fock=out_fock if self._normalize == False else fock.normalize(out_fock, is_mixed=output_is_mixed),
+                        fock=out_fock if self._normalize == False else fock.normalize(out_fock, is_dm=output_is_mixed),
                         is_mixed=output_is_mixed,
                     )
                 else:
@@ -355,6 +355,14 @@ class State:
             fock_partitioned = fock.trace(self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item])
             return State(fock=fock_partitioned, is_mixed=fock.is_mixed_dm(fock_partitioned))
 
+    def normalize(self):
+        r"""
+        Normalizes the state.
+        """
+        if not self.is_gaussian:
+            self._fock = fock.normalize(self.fock, is_dm = self.is_mixed)
+        return self
+
     def __eq__(self, other):
         r"""
         Returns whether the states are equal.
@@ -386,7 +394,7 @@ class State:
         return other(self)
 
     def __lshift__(self, other):
-        r"""
+        r""".
         Implements
         e.g. Dgate << psi
         """
