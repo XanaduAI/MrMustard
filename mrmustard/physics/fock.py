@@ -329,7 +329,6 @@ def is_mixed_dm(dm):
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
 
 
-
 def trace(dm, keep: List[int]):
     r"""
     Computes the partial trace of a density matrix.

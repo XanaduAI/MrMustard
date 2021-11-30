@@ -24,21 +24,23 @@ from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
-math = Math()
 
+math = Math()
 
 
 class State:
     r"""Base class for quantum states"""
 
-    def __init__(self,
-                cov: Matrix = None,
-                means: Vector = None, 
-                eigenvalues: Array = None,
-                symplectic: Matrix = None,
-                ket: Array = None, 
-                dm: Array = None,
-                modes: Sequence[int] = None):
+    def __init__(
+        self,
+        cov: Matrix = None,
+        means: Vector = None,
+        eigenvalues: Array = None,
+        symplectic: Matrix = None,
+        ket: Array = None,
+        dm: Array = None,
+        modes: Sequence[int] = None,
+    ):
         r"""
         Initializes the state. Supply either:
         - a covariance matrix and means vector
@@ -60,21 +62,25 @@ class State:
         self._eigenvalues = eigenvalues
         self._symplectic = symplectic
         self._fock = ket if ket is not None else dm
-        if (cov is not None and means is not None):
+        if cov is not None and means is not None:
             self.is_gaussian = True
             self.num_modes = cov.shape[-1] // 2
-        elif (eigenvalues is not None and symplectic is not None):
+        elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
             self.num_modes = symplectic.shape[-1] // 2
-        elif (ket is not None or dm is not None):
+        elif ket is not None or dm is not None:
             self.is_gaussian = False
             self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
             self._purity = 1.0 if ket is not None else None
         else:
-            raise ValueError("State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation")
+            raise ValueError(
+                "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
+            )
         self._modes = modes
         if modes is not None:
-            assert len(modes) == self.num_modes, f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+            assert (
+                len(modes) == self.num_modes
+            ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
 
     @property
     def modes(self):
@@ -153,7 +159,7 @@ class State:
         Returns the cutoff dimensions for each mode.
         """
         if self._fock is None:
-            return fock.autocutoffs(self.number_stdev, self.number_means) # TODO: move in gaussian and pass cov, means
+            return fock.autocutoffs(self.number_stdev, self.number_means)  # TODO: move in gaussian and pass cov, means
         else:
             if self._cutoffs is not None:
                 return self._cutoffs
@@ -310,7 +316,7 @@ class State:
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
                         modes=self._modes,
-                        normalize=self._normalize if hasattr(self, '_normalize') else False,
+                        normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
                     output_is_mixed = other.is_mixed or self.is_mixed
                 if len(remaining_modes) > 0:
@@ -330,7 +336,7 @@ class State:
         if self.is_gaussian and other.is_gaussian:
             cov = gaussian.join_covs([self.cov, other.cov])
             means = gaussian.join_means([self.means, other.means])
-            return State(cov=cov, means=means, modes=self.modes + [m+len(self.modes) for m in other.modes])
+            return State(cov=cov, means=means, modes=self.modes + [m + len(self.modes) for m in other.modes])
         else:
             raise NotImplementedError("Concatenation of non-gaussian states is not implemented yet.")
 
