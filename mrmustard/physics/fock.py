@@ -240,6 +240,7 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
+    dm = normalize(fock, is_dm=True)
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
@@ -286,6 +287,8 @@ def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: L
         b_is_mixed: Whether the second state is mixed or not.
         modes: The modes on which to contract the states.
         normalize: Whether to normalize the result
+    Returns:
+        The contracted state (subsystem of A)
     """
     indices = list(range(len(modes)))
     if not a_is_mixed and not b_is_mixed:
@@ -324,6 +327,7 @@ def is_mixed_dm(dm):
     cutoffs = dm.shape[: len(dm.shape) // 2]
     square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
+
 
 
 def trace(dm, keep: List[int]):
