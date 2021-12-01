@@ -1,4 +1,4 @@
-[!img](https://github.com/XanaduAI/MrMustard/blob/main/mmlogo.pdf)
+[!img](https://github.com/XanaduAI/MrMustard/blob/mm-manteinance/mmlogo.pdf)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
