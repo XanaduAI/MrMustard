@@ -1,5 +1,5 @@
-Math
-=======
+mrmustard.math
+==============
 
 Backends
 ---------

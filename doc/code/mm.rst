@@ -1,5 +1,5 @@
-Mr. Mustard
-===========
+mrmustard
+=========
 
 .. currentmodule:: mrmustard
 

@@ -1,5 +1,5 @@
-Physics
-=======
+mrmustard.physics
+=================
 
 .. toctree::
     :maxdepth: 1

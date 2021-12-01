@@ -155,6 +155,7 @@ MrMustard supports in fully differentiable way:
    :caption: Mr. Mustard API
    :hidden:
 
+   code/mm
    code/lab
    code/physics
    code/math
