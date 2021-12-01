@@ -18,7 +18,7 @@ import numpy as np
 from rich.table import Table
 from rich import print as rprint
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector

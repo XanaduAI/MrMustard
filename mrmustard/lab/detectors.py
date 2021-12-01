@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
+
+from mrmustard.types import *
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement, GaussianMeasurement
 from mrmustard.physics import fock, gaussian

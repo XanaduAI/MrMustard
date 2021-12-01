@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod, abstractproperty
-from mrmustard.utils.types import *
+from mrmustard.types import *
 import numpy as np
 from functools import lru_cache
 from scipy.special import binom

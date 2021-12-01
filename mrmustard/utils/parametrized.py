@@ -15,7 +15,7 @@
 
 from functools import reduce
 from mrmustard.utils import training
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.math import Math
 
 math = Math()

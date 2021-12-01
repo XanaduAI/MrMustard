@@ -20,7 +20,7 @@ from rich import print as rprint
 
 from mrmustard.physics import gaussian, fock
 from mrmustard.lab.abstract.state import State
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils import graphics
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard import settings

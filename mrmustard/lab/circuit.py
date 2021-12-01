@@ -16,7 +16,8 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from mrmustard.utils.types import *
+
+from mrmustard.types import *
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
