@@ -11,4 +11,4 @@ __pycache__/
 .hypothesis/
 *.egg-info*
 doc/_build
-docs/code/api/*
+doc/code/api/*
