@@ -36,7 +36,7 @@ def test_S2gate_coincidence_prob(n):
     )
 
     def cost_fn():
-        return -tf.abs(S[0, 1](Vacuum(2)).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
+        return -tf.abs((Vacuum(2) >> S[0, 1]).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
@@ -69,7 +69,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     cutoff = 1 + i + k
 
     def cost_fn():
-        return tf.abs(circ(state_in).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])[i, 1, i + k - 1, k]) ** 2
+        return tf.abs((state_in >> circ).ket(cutoffs=[cutoff]*4)[i, 1, i + k - 1, k]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
@@ -89,7 +89,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
-        return tf.abs(circ(state_in).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        return tf.abs((state_in >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
@@ -120,7 +120,7 @@ def test_learning_two_mode_squeezing():
     state_in = Vacuum(num_modes=2)
 
     def cost_fn():
-        amps = circ(state_in).ket(cutoffs=[2, 2])
+        amps = (state_in >> circ).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.05)
@@ -136,7 +136,7 @@ def test_learning_two_mode_Ggate():
     tf.random.set_seed(20)
 
     def cost_fn():
-        amps = G(Vacuum(2)).ket(cutoffs=[2, 2])
+        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
@@ -161,7 +161,7 @@ def test_learning_two_mode_Interferometer():
     state_in = Vacuum(num_modes=2)
 
     def cost_fn():
-        amps = circ(state_in).ket(cutoffs=[2, 2])
+        amps = (state_in >> circ).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
@@ -186,7 +186,7 @@ def test_learning_four_mode_Interferometer():
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
-        amps = circ(state_in).ket(cutoffs=[3, 3, 3, 3])
+        amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
         return -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]]))) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
@@ -207,7 +207,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     circ.append(S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2])
 
     def cost_fn():
-        return tf.abs(circ(Vacuum(4)).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)

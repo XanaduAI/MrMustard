@@ -25,8 +25,7 @@ from mrmustard.lab.states import Vacuum, TMSV
 @given(r=st.floats(0, 2))
 def test_two_mode_squeezing(r):
     """Tests that the two-mode squeezing operation is implemented correctly"""
-    S2 = S2gate(r=r, phi=0.0)
-    cov = S2(Vacuum(num_modes=2)).cov
+    cov = (Vacuum(num_modes=2) >> S2gate(r=r, phi=0.0)).cov
     expected = two_mode_squeezing(2 * r, 0.0)
     assert np.allclose(cov, expected, atol=1e-6)
 
@@ -37,7 +36,7 @@ def test_Sgate(r, phi):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     S = Sgate(r=r, phi=phi)[0]
-    cov = S(S2(Vacuum(2))).cov
+    cov = (Vacuum(2) >> S2 >> S).cov
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(squeezing(r, phi), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
@@ -50,7 +49,7 @@ def test_Rgate(theta):
     r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r_choi, phi=0.0)
     R = Rgate(angle=theta)
-    cov = R[0](S2(Vacuum(num_modes=2))).cov
+    cov = (Vacuum(2) >> S2 >> R).cov
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(rotation(theta), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
@@ -64,7 +63,6 @@ def test_BSgate(theta, phi):
     S2 = S2gate(r=r_choi, phi=0.0)
     BS = BSgate(theta=theta, phi=phi)
     cov = ((Vacuum(4) >> S2[0, 2]) >> S2[1, 3] >> BS[0, 1]).cov
-    # cov = BS(S2b(S2a(Vacuum(num_modes=4)))).cov
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
     S_expanded = expand(beam_splitter(theta, phi), [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T

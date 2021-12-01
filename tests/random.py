@@ -241,4 +241,4 @@ def pure_state(draw, num_modes=1, small=False):
     S = draw(random_Sgate(num_modes, small=small))
     I = draw(random_Interferometer(num_modes))
     D = draw(random_Dgate(num_modes, small=small))
-    return D(I(S(Vacuum(num_modes))))
+    return Vacuum(num_modes) >> S >> I >> D
