@@ -33,9 +33,14 @@ __all__ = [
 
 class Dgate(Parametrized, Transformation):
     r"""
-    Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    Displacement gate.
+
+    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+
     If a parameter is a single float, the parallel instances of the gate share that parameter.
+
     To apply mode-specific values use a list of floats.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -76,9 +81,14 @@ class Dgate(Parametrized, Transformation):
 
 class Sgate(Parametrized, Transformation):
     r"""
-    Squeezing gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    Squeezing gate.
+
+    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+
     If a parameter is a single float, the parallel instances of the gate share that parameter.
+
     To apply mode-specific values use a list of floats.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -120,8 +130,11 @@ class Sgate(Parametrized, Transformation):
 class Rgate(Parametrized, Transformation):
     r"""
     Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+
     If a parameter is a single float, the parallel instances of the gate share that parameter.
+
     To apply mode-specific values use a list of floats.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -154,7 +167,10 @@ class Rgate(Parametrized, Transformation):
 
 class BSgate(Parametrized, Transformation):
     r"""
-    Beam splitter gate. It applies to a single pair of modes.
+    Beam splitter gate.
+
+    It applies to a single pair of modes.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -201,9 +217,12 @@ class BSgate(Parametrized, Transformation):
 
 class MZgate(Parametrized, Transformation):
     r"""
-    Mach-Zehnder gate. It supports two conventions:
+    Mach-Zehnder gate.
+
+    sIt supports two conventions:
         1. if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
         2. if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -253,7 +272,10 @@ class MZgate(Parametrized, Transformation):
 
 class S2gate(Parametrized, Transformation):
     r"""
-    Two-mode squeezing gate. It applies to a single pair of modes.
+    Two-mode squeezing gate.
+
+    It applies to a single pair of modes.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Arguments:
@@ -341,6 +363,7 @@ class Interferometer(Parametrized, Transformation):
 class Ggate(Parametrized, Transformation):
     r"""
     A generic N-mode Gaussian unitary transformation with zero displacement.
+
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
     strength r in [0,1] for each mode.
 
@@ -390,9 +413,14 @@ class Ggate(Parametrized, Transformation):
 
 class LossChannel(Parametrized, Transformation):
     r"""
-    The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    The lossy bosonic channel.
+
+    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+
     If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
+
     To apply mode-specific values use a list of floats.
+
     One can optionally set bounds for `transmissivity`, which the optimizer will respect.
 
     Arguments:

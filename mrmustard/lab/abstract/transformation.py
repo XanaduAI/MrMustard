@@ -38,8 +38,10 @@ class Transformation:
     def __call__(self, state: State) -> State:
         r"""
         Applies self (a Transformation) to other (a State) and returns the transformed state.
+
         Arguments:
             state (State): the state to transform
+
         Returns:
             State: the transformed state
         """
@@ -52,8 +54,10 @@ class Transformation:
     def dual(self, state: State) -> State:
         r"""
         Applies the dual of self (dual of a Transformation) to other (a State) and returns the transformed state.
+
         Arguments:
             state (State): the state to transform
+
         Returns:
             State: the transformed state
         """
@@ -80,9 +84,11 @@ class Transformation:
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""
         Transforms a Gaussian state into a Gaussian state.
+
         Arguments:
             state (State): the state to transform
             dual (bool): whether to apply the dual channel
+
         Returns:
             State: the transformed state
         """
@@ -94,9 +100,11 @@ class Transformation:
     def transform_fock(self, state: State, dual: bool) -> State:
         r"""
         Transforms a state in Fock representation.
+
         Arguments:
             state (State): the state to transform
             dual (bool): whether to apply the dual channel
+
         Returns:
             State: the transformed state
         """
@@ -278,11 +286,14 @@ class Transformation:
     def __rshift__(self, other: Transformation):
         r"""
         Concatenates self with other (other after self).
+
         If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
         E.g.
         `circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]`
+
         Arguments:
             other: another transformation
+
         Returns:
             A circuit that concatenates self with other
         """
@@ -295,13 +306,18 @@ class Transformation:
     def __lshift__(self, other: Union[State, Transformation]):
         r"""
         Applies the dual of self to other.
+
         If other is a state, the dual of self is applied to the state.
+
         If other is a transformation, the dual of self is concatenated after other (in the dual sense).
+
         E.g.
         Sgate(0.1) << Coherent(0.5)   # state
         Sgate(0.1) << Dgate(0.2)      # transformation
+
         Arguments:
             other: a state or a transformation
+
         Returns:
             the state transformed via the dual transformation or the transformation concatenated after other
         """

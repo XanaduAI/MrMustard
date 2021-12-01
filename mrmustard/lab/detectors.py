@@ -23,12 +23,18 @@ __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Genera
 
 class PNRDetector(Parametrized, FockMeasurement):
     r"""
-    Photon Number Resolving detector. If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
+    Photon Number Resolving detector.
+
+    If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.
+
     To apply mode-specific parmeters use a list of floats.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
+
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (possonian).
+
     Arguments:
         efficiency (float or List[float]): list of quantum efficiencies for each detector
         efficiency_trainable (bool): whether the efficiency is trainable
@@ -90,11 +96,16 @@ class PNRDetector(Parametrized, FockMeasurement):
 class ThresholdDetector(Parametrized, FockMeasurement):
     r"""
     Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
+
     If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
+
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
+
     To apply mode-specific values use a list of floats.
+
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (bernoulli).
+
     Arguments:
         conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         efficiency (float or List[float]): list of quantum efficiencies for each detector

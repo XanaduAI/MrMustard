@@ -163,6 +163,7 @@ class TorchMath(MathInterface):
         Args:
             1D convolution: Tensor of shape [batch_size, input_channels, signal_length].
             2D convolution: [batch_size, input_channels, input_height, input_width]
+
         Returns:
         """
 
@@ -281,14 +282,17 @@ class TorchMath(MathInterface):
         self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
     ) -> torch.Tensor:  # TODO this is not ready
         r"""
-        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of exp(Ax^2 + Bx + C) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        Renormalized multidimensional Hermite polynomial
+
+        This is given by the "exponential" Taylor series of exp(Ax^2 + Bx + C) at zero,
+        where the series has `sqrt(n!)` at the denominator rather than `n!`.
 
         Args:
             A: The A matrix.
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
+
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
@@ -313,6 +317,7 @@ class TorchMath(MathInterface):
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
             optimizer: The optimizer to be used by the math backend.
+
         Returns:
             The loss and the gradients.
         """

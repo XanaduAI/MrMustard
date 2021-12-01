@@ -294,7 +294,7 @@ class TFMath(MathInterface):
         of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
         Note the minus sign in front of A.
 
-        Args:
+        Arguments:
             A: The A matrix.
             B: The B vector.
             C: The C scalar.

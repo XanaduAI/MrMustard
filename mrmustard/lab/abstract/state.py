@@ -42,10 +42,13 @@ class State:
         modes: Sequence[int] = None,
     ):
         r"""
-        Initializes the state. Supply either:
+        Initializes the state.
+
+        Supply either:
         - a covariance matrix and means vector
         - an eigenvalues array and symplectic matrix
         - a fock representation (ket or dm)
+
         Arguments:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
@@ -133,6 +136,7 @@ class State:
     def modes(self) -> List[int]:
         r"""
         Returns the modes of the state.
+
         By default states are in modes 0, ..., num_modes-1
         """
         try:
@@ -145,8 +149,7 @@ class State:
     @property
     def number_stdev(self) -> Vector:
         r"""
-        Returns the square root of the photon number variances
-        (standard deviation) in each mode.
+        Returns the square root of the photon number variances (standard deviation) in each mode.
         """
         if self.is_gaussian:
             return math.sqrt(math.diag_part(self.number_cov))
@@ -206,9 +209,11 @@ class State:
     def ket(self, cutoffs: Sequence[Optional[int]]) -> Optional[Tensor]:
         r"""
         Returns the ket of the state in Fock representation or `None` if the state is mixed.
+
         Arguments:
             cutoffs List[int or None]: the cutoff dimensions for each mode. If a mode cutoff is None,
                 it's guessed automatically.
+
         Returns:
             Tensor: the ket
         """
@@ -234,9 +239,11 @@ class State:
     def dm(self, cutoffs: List[int] = None) -> Tensor:
         r"""
         Returns the density matrix of the state in Fock representation.
+
         Arguments:
             cutoffs List[int]: the cutoff dimensions for each mode. If a mode cutoff is None,
                 it's automatically computed.
+
         Returns:
             Tensor: the density matrix
         """
@@ -262,10 +269,13 @@ class State:
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""
         Returns the probabilities in Fock representation.
+
         If the state is pure, they are the absolute value squared of the ket amplitudes.
         If the state is mixed they are the multi-dimensional diagonals of the density matrix.
+
         Arguments:
             cutoffs List[int]: the cutoff dimensions for each mode
+
         Returns:
             Array: the probabilities
         """
@@ -282,8 +292,10 @@ class State:
         r"""
         Returns the post-measurement state after `other` is projected onto `self`:
         self(state) -> state projected onto self.
+
         If `other` is a `Transformation`, it returns the dual of the transformation applied to `self`:
         self(transformation) -> transformation^dual(self).
+
         Note that the returned state is not normalized unless the state has attribute `_normalize` set.
         """
         if issubclass(other.__class__, State):

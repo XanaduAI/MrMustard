@@ -23,9 +23,10 @@ math = Math()
 
 class Optimizer:
     r"""An optimizer for any parametrized object.
+
     It can optimize euclidean, orthogonal and symplectic parameters.
 
-    NOTE: In the future it will also include a compiler, so that it will be possible to
+    .. note:: In the future it will also include a compiler, so that it will be possible to
     simplify the circuit/detector/gate/etc before the optimization and also
     compile other types of structures like error correcting codes and encoders/decoders.
     """
@@ -39,6 +40,7 @@ class Optimizer:
     def minimize(self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000):
         r"""
         Minimizes the given cost function by optimizing circuits and/or detectors.
+
         Arguments:
             cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
@@ -63,6 +65,7 @@ class Optimizer:
     def should_stop(self, max_steps: int) -> bool:
         r"""
         Returns True if the optimization should stop
+
         (either because the loss is stable or because the maximum number of steps is reached)
         """
         if max_steps != 0 and len(self.loss_history) > max_steps:
@@ -83,11 +86,13 @@ def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: s
     r"""
     Returns a new trainable variable from the current math backend
     with initial value set by `value` and bounds set by `bounds`.
+
     Arguments:
         value (float): The initial value of the variable
         bounds (Tuple[float, float]): The bounds of the variable
         name (str): The name of the variable
         dtype: The dtype of the variable
+
     Returns:
         variable (Trainable): The new variable
     """
@@ -98,10 +103,12 @@ def new_constant(value, name: str, dtype=math.float64) -> Tensor:
     r"""
     Returns a new constant (non-trainable) tensor from the current math backend
     with initial value set by `value`.
+
     Arguments:
         value (numeric): The initial value of the tensor
         name (str): The name of the constant
         dtype: The dtype of the constant
+
     Returns:
         tensor (Tensor): The new constant tensor
     """
@@ -114,8 +121,10 @@ def new_symplectic(num_modes: int) -> Tensor:
     r"""
     Returns a new symplectic matrix from the current math backend
     with `num_modes` modes.
+
     Arguments:
         num_modes (int): The number of modes in the symplectic matrix
+
     Returns:
         tensor (Tensor): The new symplectic matrix
     """
@@ -149,9 +158,11 @@ def update_euclidean(euclidean_params: Sequence[Trainable], euclidean_grads: Seq
 def extract_parameters(items: Sequence, kind: str) -> List[Trainable]:
     r"""
     Extracts the parameters of the given kind from the given items.
+
     Arguments:
         items (Sequence[Trainable]): The items to extract the parameters from
         kind (str): The kind of parameters to extract. Can be "symplectic", "orthogonal", or "euclidean".
+
     Returns:
         parameters (List[Trainable]): The extracted parameters
     """

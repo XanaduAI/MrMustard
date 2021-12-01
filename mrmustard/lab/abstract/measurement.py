@@ -31,10 +31,12 @@ class GaussianMeasurement(ABC):
         r"""
         Applies a general-dyne Gaussian measurement to the state, i.e. it projects
         onto the state with given cov and outcome means vector.
-        Args:
+
+        Arguments:
             state (State): the state to be measured.
             kwargs (optional): same arguments as in the init, use them only if they are different
             from the arguments supplied at init time (e.g. for training a measurement using a state to project onto).
+
         Returns:
             (float, state) The measurement probabilities and the remaining post-measurement state.
             Note that the post-measurement state is trivial if all modes are measured.
@@ -81,8 +83,10 @@ class GaussianMeasurement(ABC):
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.
+
     It works by representing the state in the Fock basis and then applying
     a stochastic channel matrix P(meas|n) to the Fock probabilities (belief propagation).
+
     It outputs the measurement probabilities and the remaining post-measurement state (if any)
     in the Fock basis.
     """
@@ -91,6 +95,8 @@ class FockMeasurement(ABC):
         self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]
     ) -> Tuple[State, Tensor]:
         r"""
+        Projects the state onto a Fock measurement.
+
         Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
         indicate the Fock measurement on that mode and None indicates no projection on that mode.
 
