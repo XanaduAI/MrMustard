@@ -15,8 +15,8 @@
 r"""
 The physics module contains high-level functions for performing calculations on quantum objects.
 It allows for objects in different representation to be used seamlessly in the same calculation.
-E.g.`fidelity(A, B)` works whether A and B are in Fock or Gaussian representation or a mix of both.
+E.g. :code:`fidelity(A, B)` works whether A and B are in Fock or Gaussian representation or a mix of both.
 
-All the functions are automatically differentiated and can be used in conjunction with an 
+All the functions are automatically differentiated and can be used in conjunction with an
 optimiization routine.
 """
