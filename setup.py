@@ -17,15 +17,15 @@ with open("mrmustard/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 requirements = [
-    "numpy"
-    "scipy"
-    "numba"
-    "thewalrus>=0.17.0"
-    "tensorflow>=2.4.0"
-    "rich"
-    "tqdm"
-    "matplotlib"
-    "strawberryfields>=0.20.0"
+    "numpy",
+    "scipy",
+    "numba",
+    "thewalrus>=0.17.0",
+    "tensorflow>=2.4.0",
+    "rich",
+    "tqdm",
+    "matplotlib",
+    "strawberryfields>=0.20.0",
 ]
 
 info = {
