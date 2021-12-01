@@ -20,8 +20,9 @@ from rich import print as rprint
 
 from mrmustard.physics import gaussian, fock
 from mrmustard.lab.abstract.state import State
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils import graphics
+from mrmustard.utils.parametrized import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -35,7 +36,7 @@ class Transformation:
     _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
-    def __call__(self, state: State) -> State:
+    def primal(self, state: State) -> State:
         r"""
         Applies self (a Transformation) to other (a State) and returns the transformed state.
         Arguments:
@@ -69,7 +70,7 @@ class Transformation:
         if self._bell is None:
             cov = gaussian.two_mode_squeezed_vacuum_cov(r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR)
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
-            bell = bell_single = State(cov=cov, means=means, is_mixed=False)
+            bell = bell_single = State(cov=cov, means=means)
             for _ in self.modes[1:]:
                 bell = bell & bell_single
             tot = 2 * len(self.modes)
@@ -88,7 +89,7 @@ class Transformation:
         """
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
-        new_state = State(cov=cov, means=means, is_mixed=state.is_mixed or not self.is_unitary)
+        new_state = State(cov=cov, means=means)
         return new_state
 
     def transform_fock(self, state: State, dual: bool) -> State:
@@ -116,17 +117,12 @@ class Transformation:
             transformation=transformation,
             fock_state=state.ket(state.cutoffs) if state.is_pure else state.dm(state.cutoffs),
             transformation_is_unitary=self.is_unitary,
-            state_is_mixed=state.is_mixed,
+            state_is_dm=state.is_mixed,
         )
-        new_state = State(
-            fock=new_fock, is_mixed=not self.is_unitary or state.is_mixed
-        )  # TODO: is_mixed is too conservative (non-unitary maps could return pure states)
-        try:
-            new_state._modes = state._modes
-            new_state._normalize = state._normalize
-        except AttributeError:
-            pass
-        return new_state
+        if state.is_mixed or not self.is_unitary:
+            return State(dm=new_fock, modes=state.modes)
+        else:
+            return State(ket=new_fock, modes=state.modes)
 
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__}")
@@ -135,20 +131,22 @@ class Transformation:
         table.add_column("Value")
         table.add_column("Shape")
         table.add_column("Trainable")
-        with np.printoptions(precision=6, suppress=True):
-            for name in self.param_names:
-                par = self.__dict__[name]
-                table.add_row(
-                    name,
-                    par.dtype.name,
-                    f"{np.array(par)}",
-                    f"{par.shape}",
-                    str(self.__dict__["_" + name + "_trainable"]),
-                )
-            lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
-            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (f"[{self._modes}]" if self._modes is not None else "")
-        rprint(table)
-        return repr_string
+        # with np.printoptions(precision=6, suppress=True):
+        #     for name in self.param_names:
+        #         par = self.__dict__[name]
+        #         table.add_row(
+        #             name,
+        #             par.dtype.name,
+        #             f"{np.array(par)}",
+        #             f"{par.shape}",
+        #             str(self.__dict__["_" + name + "_trainable"]),
+        #         )
+        #     lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
+        #     repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
+        #         f"[{self._modes}]" if self._modes is not None else ""
+        #     )
+        # rprint(table)
+        return ""  # repr_string
 
     @property
     def modes(self) -> Sequence[int]:
@@ -230,7 +228,7 @@ class Transformation:
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
             return None
-        choi_state = self(self.bell)
+        choi_state = self.bell >> self
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
@@ -254,9 +252,6 @@ class Transformation:
                 choi_r=settings.CHOI_R,
             )
             return choi_op
-
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
 
     def __getitem__(self, items) -> Callable:
         r"""

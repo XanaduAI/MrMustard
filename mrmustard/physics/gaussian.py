@@ -14,7 +14,7 @@
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from numpy import pi
@@ -151,7 +151,11 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     sh = math.sinh(r)
     cpsh = cp * sh
     spsh = sp * sh
-    return math.diag(math.concat([ch - cpsh, ch + cpsh], axis=0)) + math.diag(-spsh, k=num_modes) + math.diag(-spsh, k=-num_modes)
+    return (
+        math.diag(math.concat([ch - cpsh, ch + cpsh], axis=0))
+        + math.diag(-spsh, k=num_modes)
+        + math.diag(-spsh, k=-num_modes)
+    )
 
 
 def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
@@ -515,7 +519,9 @@ def amp_Y(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hb
     return math.diag(math.concat([D, D], axis=0))
 
 
-def compose_channels_XYd(X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector) -> Tuple[Matrix, Matrix, Vector]:
+def compose_channels_XYd(
+    X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector
+) -> Tuple[Matrix, Matrix, Vector]:
     r"""Returns the combined X, Y, and d for two CPTP channels.
     Arguments:
         X1 (Matrix): the X matrix of the first CPTP channel
@@ -604,7 +610,9 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
         The photon number means vector.
     """
     N = means.shape[-1] // 2
-    return (means[:N] ** 2 + means[N:] ** 2 + math.diag_part(cov[:N, :N]) + math.diag_part(cov[N:, N:]) - hbar) / (2 * hbar)
+    return (means[:N] ** 2 + means[N:] ** 2 + math.diag_part(cov[:N, :N]) + math.diag_part(cov[N:, N:]) - hbar) / (
+        2 * hbar
+    )
 
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
@@ -642,7 +650,9 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
     Returns:
         A list of cutoff indices.
     """
-    cutoffs = number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
+    cutoffs = (
+        number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
+    )
     return [max(1, int(i)) for i in cutoffs]
 
 

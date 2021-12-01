@@ -14,7 +14,7 @@
 
 import numpy as np
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -39,7 +39,9 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None) -> Tuple[int, ...]:
+def autocutoffs(
+    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
+) -> Tuple[int, ...]:
     r"""
     Returns the autocutoffs of a Wigner state.
     Arguments:
@@ -92,7 +94,9 @@ def fock_representation(
         A, B, C = ABC(cov, means, full=return_dm)
     elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
         A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
-    return math.hermite_renormalized(math.conj(-A), math.conj(B), math.conj(C), shape=shape)  # NOTE: remove conj when TW is updated
+    return math.hermite_renormalized(
+        math.conj(-A), math.conj(B), math.conj(C), shape=shape
+    )  # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -214,7 +218,9 @@ def number_means(tensor, is_dm: bool):
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor([math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype)) for marginal in marginals])
+    return math.astensor(
+        [math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype)) for marginal in marginals]
+    )
 
 
 def number_variances(tensor, is_dm: bool):
@@ -240,21 +246,22 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
+    dm = normalize(fock, is_dm=True)
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool) -> Tensor:
+def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
     r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
     It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
     Arguments:
         transformation: The transformation tensor.
         fock_state: The state to transform.
         transformation_is_unitary: Whether the transformation is a unitary matrix or a Choi operator.
-        state_is_mixed: Whether the state is mixed or not.
+        state_is_dm: Whether the state is a density matrix or a ket
     Returns:
         The transformed state.
     """
-    num_modes = len(fock_state.shape) // 2 if state_is_mixed else len(fock_state.shape)
+    num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
     N0 = list(range(0, num_modes))
     N1 = list(range(num_modes, 2 * num_modes))
     N2 = list(range(2 * num_modes, 3 * num_modes))
@@ -262,13 +269,13 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_m
     if transformation_is_unitary:
         U = transformation
         Us = math.tensordot(U, fock_state, axes=(N1, N0))
-        if not state_is_mixed:
+        if not state_is_dm:
             return Us
         else:  # is state is dm, the input indices of dm are still at the end of Us
             return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
     else:
         C = transformation  # choi operator
-        if state_is_mixed:
+        if state_is_dm:
             return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
         else:
             Cs = math.tensordot(C, fock_state, axes=(N1, N0))
@@ -286,6 +293,8 @@ def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: L
         b_is_mixed: Whether the second state is mixed or not.
         modes: The modes on which to contract the states.
         normalize: Whether to normalize the result
+    Returns:
+        The contracted state (subsystem of A)
     """
     indices = list(range(len(modes)))
     if not a_is_mixed and not b_is_mixed:
@@ -313,8 +322,8 @@ def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: L
     return out
 
 
-def normalize(fock: Tensor, is_mixed: bool):
-    if is_mixed:
+def normalize(fock: Tensor, is_dm: bool):
+    if is_dm:
         return fock / math.sum(math.all_diagonals(fock, real=False))
     else:
         return fock / math.sum(math.norm(fock))

@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
-from mrmustard.utils import training, Parametrized
+from mrmustard.utils.parametrized import Parametrized
+from mrmustard.utils import training
 from mrmustard.physics import gaussian, fock
 
 __all__ = [
@@ -194,7 +195,9 @@ class BSgate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer.")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer."
+            )
 
 
 class MZgate(Parametrized, Transformation):
@@ -244,7 +247,9 @@ class MZgate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer?")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be 2). Perhaps you are looking for Interferometer?"
+            )
 
 
 class S2gate(Parametrized, Transformation):

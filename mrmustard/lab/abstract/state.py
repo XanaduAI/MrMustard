@@ -13,56 +13,107 @@
 # limitations under the License.
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
+import warnings
+import numpy as np
+from rich.table import Table
+from rich import print as rprint
+
+from mrmustard.types import *
+from mrmustard.utils import graphics
+from mrmustard import settings
+from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
 
 math = Math()
 
-from mrmustard.utils.types import *
-from mrmustard.utils import graphics
-from mrmustard import settings
-import numpy as np
-from rich.table import Table
-from rich import print as rprint
-from mrmustard.utils.xptensor import XPMatrix, XPVector
-
 
 class State:
     r"""Base class for quantum states"""
 
-    def __init__(self, cov: Matrix = None, means: Vector = None, fock: Array = None, is_mixed: bool = None):
+    def __init__(
+        self,
+        cov: Matrix = None,
+        means: Vector = None,
+        eigenvalues: Array = None,
+        symplectic: Matrix = None,
+        ket: Array = None,
+        dm: Array = None,
+        modes: Sequence[int] = None,
+    ):
         r"""
-        Initializes the state. Either supply the fock tensor or the cov and means.
+        Initializes the state. Supply either:
+        - a covariance matrix and means vector
+        - an eigenvalues array and symplectic matrix
+        - a fock representation (ket or dm)
         Arguments:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
+            eigenvalues (Array): the eigenvalues of the covariance matrix
+            symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Array): the Fock representation
-            is_mixed (optional, bool): whether the state is mixed
+            modes (optional, Sequence[int]): the modes in which the state is defined
         """
-
-        _fock = fock is not None
-        if (cov is None or means is None) and not _fock:
-            raise ValueError("Please supply either (S, eig), (cov and means) or fock")
-        self._num_modes = len(means) // 2 if means is not None else (len(fock.shape) // 2 if is_mixed else len(fock.shape))
-        self._is_mixed = is_mixed
-        self._purity = 1.0 if not is_mixed else None
-        self._fock = fock
-        self._cov = cov
-        self._means = means
+        self._purity = None
         self._fock_probabilities = None
         self._cutoffs = None
-        self._eigenvalues = None
+        self._cov = cov
+        self._means = means
+        self._eigenvalues = eigenvalues
+        self._symplectic = symplectic
+        self._fock = ket if ket is not None else dm
+        if cov is not None and means is not None:
+            self.is_gaussian = True
+            self.num_modes = cov.shape[-1] // 2
+        elif eigenvalues is not None and symplectic is not None:
+            self.is_gaussian = True
+            self.num_modes = symplectic.shape[-1] // 2
+        elif ket is not None or dm is not None:
+            self.is_gaussian = False
+            self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
+            self._purity = 1.0 if ket is not None else None
+        else:
+            raise ValueError(
+                "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
+            )
+        self._modes = modes
+        if modes is not None:
+            assert (
+                len(modes) == self.num_modes
+            ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+
+    @property
+    def modes(self):
+        r"""
+        Returns the modes of the state.
+        """
+        if self._modes is None:
+            return list(range(self.num_modes))
+        return self._modes
+
+    @property
+    def purity(self) -> float:
+        if self._purity is None:
+            if self.is_gaussian:
+                self._purity = gaussian.purity(self.cov, settings.HBAR)
+                # TODO: add symplectic representation
+            else:
+                self._purity = fock.purity(self.fock)  # has to be dm
+        return self._purity
 
     @property
     def is_mixed(self):
-        if self._is_mixed is None:
-            self._is_mixed = gaussian.is_mixed_cov(self.cov)
-        return self._is_mixed
+        r"""
+        Returns whether the state is mixed.
+        """
+        return not self.is_pure
 
     @property
     def is_pure(self):
-        return not self.is_mixed
+        r"""
+        Returns `True` if the state is pure and `False` otherwise.
+        """
+        return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[Vector]:
@@ -77,38 +128,6 @@ class State:
         Returns the covariance matrix of the state.
         """
         return self._cov
-
-    @property
-    def is_gaussian(self) -> bool:
-        r"""
-        Returns `True` if the state is Gaussian.
-        """
-        return self._cov is not None and self._means is not None
-
-    @property
-    def num_modes(self) -> int:
-        r"""
-        Returns the number of modes in the state.
-        """
-        if self._num_modes is None:
-            if self.is_gaussian:
-                self._num_modes = self._means.shape[-1] // 2
-            else:
-                num_indices = len(self._fock.shape)
-                self._num_modes = num_indices if self.is_pure else num_indices // 2
-        return self._num_modes
-
-    @property
-    def purity(self) -> float:
-        r"""
-        Returns the purity of the state.
-        """
-        if self._purity is None:
-            if self.is_gaussian:
-                self._purity = gaussian.purity(self.cov, settings.HBAR)
-            else:
-                self._purity = fock.purity(self._fock)  # dm
-        return self._purity
 
     @property
     def modes(self) -> List[int]:
@@ -132,7 +151,7 @@ class State:
         if self.is_gaussian:
             return math.sqrt(math.diag_part(self.number_cov))
         else:
-            return math.sqrt(fock.number_variances(self.fock, is_dm=self.is_mixed))
+            return math.sqrt(fock.number_variances(self.fock, is_dm=len(self._fock.shape) == self.num_modes * 2))
 
     @property
     def cutoffs(self) -> List[int]:
@@ -140,7 +159,7 @@ class State:
         Returns the cutoff dimensions for each mode.
         """
         if self._fock is None:
-            return fock.autocutoffs(self.number_stdev, self.number_means)
+            return fock.autocutoffs(self.number_stdev, self.number_means)  # TODO: move in gaussian and pass cov, means
         else:
             if self._cutoffs is not None:
                 return self._cutoffs
@@ -259,33 +278,36 @@ class State:
                 self._fock_probabilities = fock.ket_to_probs(ket)
         return self._fock_probabilities
 
-    def __call__(self, other: Union[State, Transformation]) -> State:
+    def primal(self, other: Union[State, Transformation]) -> State:
         r"""
         Returns the post-measurement state after `other` is projected onto `self`:
         self(state) -> state projected onto self.
         If `other` is a `Transformation`, it returns the dual of the transformation applied to `self`:
-        self(transformation) -> transformation^dual(self)
+        self(transformation) -> transformation^dual(self).
+        Note that the returned state is not normalized unless the state has attribute `_normalize` set.
         """
         if issubclass(other.__class__, State):
-            remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
+            remaining_modes = [m for m in range(other.num_modes) if m not in self.modes]
 
             if self.is_gaussian and other.is_gaussian:
-                prob, cov, means = gaussian.general_dyne(other.cov, other.means, self.cov, self.means, self._modes, settings.HBAR)
+                prob, cov, means = gaussian.general_dyne(
+                    other.cov, other.means, self.cov, self.means, self.modes, settings.HBAR
+                )
                 if len(remaining_modes) > 0:
-                    return State(means=means, cov=cov, is_mixed=gaussian.is_mixed_cov(cov))
+                    return State(means=means, cov=cov, modes=remaining_modes)
                 else:
                     return prob
             else:  # either self or other is not gaussian
                 other_cutoffs = []
                 used = 0
                 for m in range(other.num_modes):
-                    if m in self._modes:
+                    if m in self.modes:
                         other_cutoffs.append(self.cutoffs[used])
                         used += 1
                     else:
                         other_cutoffs.append(other.cutoffs[m])
                 try:
-                    out_fock = self.__preferred_projection(other, other_cutoffs, self._modes)
+                    out_fock = self.__preferred_projection(other, other_cutoffs, self.modes)
                 except AttributeError:
                     other_fock = other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)
                     self_cutoffs = [other_cutoffs[m] for m in range(self.num_modes)]
@@ -295,14 +317,15 @@ class State:
                         stateB=self_fock if self.is_pure else self.dm(self_cutoffs),
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
-                        modes=self._modes,
-                        normalize=self._normalize,
+                        modes=self.modes,
+                        normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
+                    output_is_mixed = other.is_mixed or self.is_mixed
                 if len(remaining_modes) > 0:
-                    output_is_mixed = not (self.is_pure and other.is_pure)  # TODO: this may fail?
-                    return State(
-                        fock=out_fock if self._normalize == False else fock.normalize(out_fock, is_mixed=output_is_mixed),
-                        is_mixed=output_is_mixed,
+                    return (
+                        State(dm=out_fock, modes=remaining_modes)
+                        if output_is_mixed
+                        else State(ket=out_fock, modes=remaining_modes)
                     )
                 else:
                     return fock.math.abs(out_fock) ** 2 if other.is_pure and self.is_pure else fock.math.abs(out_fock)
@@ -319,10 +342,9 @@ class State:
         if self.is_gaussian and other.is_gaussian:
             cov = gaussian.join_covs([self.cov, other.cov])
             means = gaussian.join_means([self.means, other.means])
-            return State(cov=cov, means=means, is_mixed=self.is_mixed or other.is_mixed)
+            return State(cov=cov, means=means, modes=self.modes + [m + len(self.modes) for m in other.modes])
         else:
-            fock_joined = fock.join_focks([self.fock, other.fock])  # TODO: write this method
-            return State(fock=fock_joined, is_mixed=self.is_mixed or other.is_mixed)
+            raise NotImplementedError("Concatenation of non-gaussian states is not implemented yet.")
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -332,7 +354,9 @@ class State:
         else:
             raise TypeError("item must be int or iterable")
         if len(item) != self.num_modes:
-            raise ValueError(f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)")
+            raise ValueError(
+                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
+            )
         self._modes = item
         return self
 
@@ -349,10 +373,10 @@ class State:
         if self.is_gaussian:
             cov, _, _ = gaussian.partition_cov(self.cov, item)
             means, _ = gaussian.partition_means(self.means, item)
-            return State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
+            return State(cov=cov, means=means, modes=item)
         else:
             fock_partitioned = fock.trace(self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item])
-            return State(fock=fock_partitioned, is_mixed=fock.is_mixed_dm(fock_partitioned))
+            return State(dm=fock_partitioned, modes=item)
 
     def __eq__(self, other):
         r"""
@@ -382,34 +406,31 @@ class State:
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
             )
-        return other(self)
+        return other.primal(self)
 
-    def __lshift__(self, other):
+    def __lshift__(self, other: State):
         r"""
-        Implements
-        e.g. Dgate << psi
+        Implements projection onto a state or the dual transformation applied on a state
+        e.g. self << other where other is a State and self is either a State or a Transformation
         """
-        return other(self)
+        return other.primal(self)
 
     def __add__(self, other: State):
         r"""
-        Implements a mixture of states.
+        Implements a mixture of states. Only available in fock representation for the moment.
         """
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
-        return State(fock=self.dm(self.cutoffs) + other.dm(self.cutoffs), is_mixed=True)  # TODO: gaussian implementation
+        warnings.warn("mixing states forces conversion to fock representation", UserWarning)
+        return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
     def __rmul__(self, other):
         r"""
-        Implements multiplication by a scalar from the right.
+        Implements multiplication by a scalar from the left.
         e.g. 0.5 * psi
         """
-        if not isinstance(other, (int, float)):
-            raise TypeError(f"Cannot multiply {other.__class__.__qualname__} by a state")
-        if self.is_gaussian:
-            return State(cov=self.cov * other, means=self.means, is_mixed=True)
-        else:
-            return State(fock=self.dm() * other, is_mixed=True)
+        warnings.warn("scalar multiplication forces conversion to fock representation", UserWarning)
+        return State(dm=self.dm() * other, modes=self.modes)
 
     def __repr__(self):
         table = Table(title=str(self.__class__.__qualname__))

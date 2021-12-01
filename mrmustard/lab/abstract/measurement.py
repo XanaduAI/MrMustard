@@ -16,7 +16,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.physics import gaussian, fock
 from mrmustard.lab.abstract.state import State
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings
 import numpy as np
@@ -52,7 +52,7 @@ class GaussianMeasurement(ABC):
         remaining_modes = [m for m in range(state.num_modes) if m not in self._modes]
 
         if len(remaining_modes) > 0:
-            remaining_state = State(cov=cov, means=means, is_mixed=gaussian.is_mixed_cov(cov))
+            remaining_state = State(cov=cov, means=means)
             return prob, remaining_state
         else:
             return prob
@@ -87,7 +87,9 @@ class FockMeasurement(ABC):
     in the Fock basis.
     """
 
-    def project(self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]) -> Tuple[State, Tensor]:
+    def project(
+        self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]
+    ) -> Tuple[State, Tensor]:
         r"""
         Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
         indicate the Fock measurement on that mode and None indicates no projection on that mode.
@@ -125,10 +127,14 @@ class FockMeasurement(ABC):
                 [[mode], [1]],
             )
             indices = list(range(fock_probs.ndim - 1))
-            detector_probs = fock.math.transpose(detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:])
+            detector_probs = fock.math.transpose(
+                detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:]
+            )
         return detector_probs
 
-    def __call__(self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None) -> Tuple[Tensor, Tensor]:
+    def __call__(
+        self, state: State, cutoffs: List[int], outcomes: Optional[Sequence[Optional[int]]] = None
+    ) -> Tuple[Tensor, Tensor]:
         if outcomes is None:
             fock_probs = state.fock_probabilities(cutoffs)
             return self.apply_stochastic_channel(self._stochastic_channel, fock_probs)

@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard import settings
 
-from mrmustard.lab.abstract import State
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.physics import gaussian, fock
-from mrmustard.utils import Parametrized, training
+from mrmustard.utils.parametrized import Parametrized
+from mrmustard.utils import training
 
 __all__ = [
     "Vacuum",
@@ -39,7 +40,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        super().__init__(cov=cov, means=means, is_mixed=False)
+        super().__init__(cov=cov, means=means)
 
 
 class Coherent(Parametrized, State):
@@ -69,7 +70,7 @@ class Coherent(Parametrized, State):
         )
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed=False)
+        State.__init__(self, cov=cov, means=means)
 
     @property
     def means(self):
@@ -103,7 +104,7 @@ class SqueezedVacuum(Parametrized, State):
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed=False)
+        State.__init__(self, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -137,7 +138,7 @@ class TMSV(Parametrized, State):
         )
         cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed=False)
+        State.__init__(self, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -159,7 +160,7 @@ class Thermal(Parametrized, State):
         Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs)
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed=True)
+        State.__init__(self, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -205,7 +206,7 @@ class DisplacedSqueezed(Parametrized, State):
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed=False)
+        State.__init__(self, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -246,7 +247,7 @@ class Gaussian(Parametrized, State):
         )
         cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, is_mixed=any(eigenvalues > settings.HBAR / 2))
+        State.__init__(self, cov=cov, means=means)
 
     @property
     def cov(self):
@@ -271,7 +272,7 @@ class Fock(Parametrized, State):
     """
 
     def __init__(self, n: Sequence[int], **kwargs):
-        State.__init__(self, fock=fock.fock_state(n), is_mixed=False)
+        State.__init__(self, ket=fock.fock_state(n))
         Parametrized.__init__(self, n=n, **kwargs)
 
     def __preferred_projection(other: State, other_cutoffs: Sequence[int], modes: Sequence[int]):

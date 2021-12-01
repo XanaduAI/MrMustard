@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
-from mrmustard.utils import Parametrized
+
+from mrmustard.types import *
+from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement, GaussianMeasurement
 from mrmustard.physics import fock, gaussian
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
@@ -60,7 +61,8 @@ class PNRDetector(Parametrized, FockMeasurement):
         if not isinstance(dark_counts, Sequence):
             dark_counts = [dark_counts for m in modes]
 
-        super().__init__(
+        Parametrized.__init__(
+            self,
             efficiency=efficiency,
             dark_counts=dark_counts,
             efficiency_trainable=efficiency_trainable,
@@ -82,7 +84,9 @@ class PNRDetector(Parametrized, FockMeasurement):
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
                 dark_prior = fock.math.poisson(max_k=cut, rate=dc)
                 condprob = fock.math.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
-                self._stochastic_channel.append(fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]]))
+                self._stochastic_channel.append(
+                    fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]])
+                )
 
 
 class ThresholdDetector(Parametrized, FockMeasurement):
@@ -119,7 +123,8 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         if not isinstance(dark_count_prob, Sequence):
             dark_count_prob = [dark_count_prob for m in modes]
 
-        super().__init__(
+        Parametrized.__init__(
+            self,
             modes=modes,
             conditional_probs=conditional_probs,
             efficiency=efficiency,
@@ -159,7 +164,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
 
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
-        super().__init__(modes=modes, project_onto=project_onto)
+        Parametrized.__init__(self, modes=modes, project_onto=project_onto)
 
     def recompute_project_onto(self, project_onto: State) -> State:
         return project_onto
@@ -185,11 +190,12 @@ class Homodyne(Parametrized, GaussianMeasurement):
             squeezing (float): amount of squeezing of the measurement (default 10.0, ideally infinite)
         """
 
-        super().__init__(
+        Parametrized.__init__(
+            self,
             modes=modes,
             quadrature_angles=quadrature_angles,
             results=results,
-            squeezing=gaussian.math.astensor(squeezing, "float64"),
+            squeezing=squeezing,
         )
         self._project_onto = self.recompute_project_onto(quadrature_angles, results)
 
@@ -213,7 +219,7 @@ class Heterodyne(Parametrized, GaussianMeasurement):
             x: x-coordinates of the measurement
             y: y-coordinates of the measurement
         """
-        super().__init__(x=x, y=y, modes=modes)
+        Parametrized.__init__(self, x=x, y=y, modes=modes)
         self._project_onto = self.recompute_project_onto(x, y)
 
     def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
