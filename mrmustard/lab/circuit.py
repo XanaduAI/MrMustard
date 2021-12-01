@@ -42,9 +42,14 @@ class Circuit(Transformation, Parametrized):
             all_modes = all_modes | set(op.modes)
         return len(all_modes)
 
-    def __call__(self, state: State) -> State:
+    def primal(self, state: State) -> State:
         for op in self._ops:
-            state = op(state)
+            state = op.primal(state)
+        return state
+
+    def dual(self, state: State) -> State:
+        for op in reversed(self._ops):
+            state = op.dual(state)
         return state
 
     @property
