@@ -34,7 +34,7 @@ class Optimizer:
         self.symplectic_lr: float = symplectic_lr
         self.orthogonal_lr: float = orthogonal_lr
         self.euclidean_lr: float = euclidean_lr
-        self.loss_history: List[float] = [0]
+        self.opt_history: List[float] = [0]
 
     def minimize(self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000):
         r"""
@@ -46,17 +46,25 @@ class Optimizer:
         """
         try:
             params = {
-                kind: extract_parameters(by_optimizing, kind) for kind in ("symplectic", "orthogonal", "euclidean")
+                "symplectic": math.unique_tensors(
+                    [p for item in by_optimizing for p in item.trainable_parameters["symplectic"]]
+                ),
+                "orthogonal": math.unique_tensors(
+                    [p for item in by_optimizing for p in item.trainable_parameters["orthogonal"]]
+                ),
+                "euclidean": math.unique_tensors(
+                    [p for item in by_optimizing for p in item.trainable_parameters["euclidean"]]
+                ),
             }
             bar = graphics.Progressbar(max_steps)
             with bar:
                 while not self.should_stop(max_steps):
-                    loss, grads = loss_and_gradients(cost_fn, params)
+                    cost, grads = math.value_and_gradients(cost_fn, params)
                     update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
                     update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
                     update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
-                    self.loss_history.append(loss)
-                    bar.step(math.asnumpy(loss))
+                    self.opt_history.append(cost)
+                    bar.step(math.asnumpy(cost))
         except KeyboardInterrupt:  # graceful exit
             return
 
@@ -65,10 +73,10 @@ class Optimizer:
         Returns True if the optimization should stop
         (either because the loss is stable or because the maximum number of steps is reached)
         """
-        if max_steps != 0 and len(self.loss_history) > max_steps:
+        if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
-        if len(self.loss_history) > 20:  # if loss varies less than 10e-6 over 20 steps
-            if sum(abs(self.loss_history[-i - 1] - self.loss_history[-i]) for i in range(1, 20)) < 1e-6:
+        if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
+            if sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20)) < 1e-6:
                 print("Loss looks stable, stopping here.")
                 return True
         return False
@@ -105,8 +113,6 @@ def new_constant(value, name: str, dtype=math.float64) -> Tensor:
     Returns:
         tensor (Tensor): The new constant tensor
     """
-    if math.istensor(value):
-        return value
     return math.new_constant(value, name, dtype)
 
 
@@ -144,41 +150,3 @@ def update_orthogonal(orthogonal_params: Sequence[Trainable], orthogonal_grads: 
 def update_euclidean(euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
     math.euclidean_opt.lr = euclidean_lr
     math.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
-
-
-def extract_parameters(items: Sequence, kind: str) -> List[Trainable]:
-    r"""
-    Extracts the parameters of the given kind from the given items.
-    Arguments:
-        items (Sequence[Trainable]): The items to extract the parameters from
-        kind (str): The kind of parameters to extract. Can be "symplectic", "orthogonal", or "euclidean".
-    Returns:
-        parameters (List[Trainable]): The extracted parameters
-    """
-    params_dict = dict()
-    for item in items:
-        try:
-            for p in item.trainable_parameters[kind]:
-                if (hash := math.hash_tensor(p)) not in params_dict:
-                    params_dict[hash] = p
-        except TypeError:  # NOTE: make sure hash_tensor raises a TypeError when the tensor is not hashable
-            continue
-    return list(params_dict.values())
-
-
-def loss_and_gradients(cost_fn: Callable, params: dict) -> Tuple[Tensor, Dict[str, Tensor]]:
-    r"""
-    Computes the loss and gradients of the cost function with respect to the parameters.
-    The dictionary has three keys: "symplectic", "orthogonal", and "euclidean", to maintain
-    the information of the different parameter types.
-
-    Arguments:
-        cost_fn (Callable): The cost function to be minimized
-        params (dict): A dictionary of parameters to be optimized
-
-    Returns:
-        loss (float): The cost function of the current parameters
-        gradients (dict): A dictionary of gradients of the cost function with respect to the parameters
-    """
-    loss, grads = math.loss_and_gradients(cost_fn, params)  # delegate entirely to backend
-    return loss, grads

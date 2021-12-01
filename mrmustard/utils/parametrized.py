@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC, abstractproperty
+
+from functools import reduce
 from mrmustard.utils import training
 from mrmustard.utils.types import *
+from mrmustard.math import Math
+
+math = Math()
 
 
-class Parametrized(ABC):
+class Parametrized:
     r"""
     Abstract base class for all parametrized objects (gates, detectors, etc...)
 
@@ -29,29 +33,72 @@ class Parametrized(ABC):
         yyy (any): other parameters
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
         self._trainable_parameters = []
         self._constant_parameters = []
-        self.param_names = [
-            key for key in kwargs if key + "_trainable" in kwargs
-        ]  # every parameter can be trainable! 🚀
-
-        for name in self.param_names:
-            self.__dict__["_" + name + "_trainable"] = kwargs[name + "_trainable"]  # defining ._param_trainable: bool
-            if kwargs[name + "_trainable"]:
-                var = training.new_variable(kwargs[name], kwargs[name + "_bounds"], name)
-                self._trainable_parameters.append(var)
-                self.__dict__[name] = var  # making parameters available as gate.parameter_name
+        # We can get a few types of arguments:
+        # 1. trainable parameters native to the backend (e.g. tf.Variable)
+        # 2. constant parameters native to the backend (e.g. tf.constant)
+        # in these first two cases we just add the parameters to the two lists self._trainable_parameters  and self._constant_parameters.
+        # 3. parameters that are not native to the backend but that are trainable if the there is another argument, boolean, with the same name and ending with _trainable that is True.
+        # 4. arguments that are not native to the backend and that don't represent trainable parameters (e.g. modes, flags, etc...)
+        # in these last two cases we either create a native parameter or add the arguments the __dict__ of the object preprending the name with _
+        owner = f"{self.__class__.__qualname__}"
+        for name, value in kwargs.items():
+            if math.from_backend(value):
+                if math.is_trainable(value):
+                    self._trainable_parameters.append(value)
+                elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
+                    value = training.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
+                    self._trainable_parameters.append(value)
+                else:
+                    self._constant_parameters.append(value)
+            elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
+                value = training.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
+                self._trainable_parameters.append(value)
+            elif name + "_trainable" in kwargs and not kwargs[name + "_trainable"]:
+                value = training.new_constant(value, owner + ":" + name)
+                self._constant_parameters.append(value)
             else:
-                const = training.new_constant(kwargs[name], name)
-                self._constant_parameters.append(const)
-                self.__dict__[name] = const
-        for key, val in kwargs.items():
-            if not any(word in key for word in self.param_names):
-                self.__dict__["_" + key] = val  # making other values available as gate._blah
+                name = "_" + name
+            self.__dict__[name] = value
 
     @property
-    def trainable_parameters(
-        self,
-    ) -> Dict[str, List[Trainable]]:  # override as needed in child classes
-        return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        r"""
+        Returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit).
+        """
+        if hasattr(self, "_ops"):
+            return {
+                "symplectic": math.unique_tensors(
+                    [p for item in self._ops for p in item.trainable_parameters["symplectic"]]
+                ),
+                "orthogonal": math.unique_tensors(
+                    [p for item in self._ops for p in item.trainable_parameters["orthogonal"]]
+                ),
+                "euclidean": math.unique_tensors(
+                    [p for item in self._ops for p in item.trainable_parameters["euclidean"]]
+                ),
+            }
+        else:
+            return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}  # default
+
+    @property
+    def constant_parameters(self) -> Dict[str, List[Tensor]]:
+        r"""
+        Returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit).
+        """
+        if hasattr(self, "_ops"):
+            return {
+                "symplectic": math.unique_tensors(
+                    [p for item in self._ops for p in item.constant_parameters["symplectic"]]
+                ),
+                "orthogonal": math.unique_tensors(
+                    [p for item in self._ops for p in item.constant_parameters["orthogonal"]]
+                ),
+                "euclidean": math.unique_tensors(
+                    [p for item in self._ops for p in item.constant_parameters["euclidean"]]
+                ),
+            }
+        else:
+            return {"symplectic": [], "orthogonal": [], "euclidean": self._constant_parameters}  # default
