@@ -9,11 +9,6 @@ __pycache__/
 *.pkl
 *.png
 .hypothesis/
-<<<<<<< HEAD
-doc/_build
-doc/code/api/*
-=======
 *.egg-info*
 doc/_build
 docs/code/api/*
->>>>>>> main
