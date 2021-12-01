@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.utils import training, Parametrized

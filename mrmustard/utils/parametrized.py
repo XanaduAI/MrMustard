@@ -14,7 +14,7 @@
 
 from abc import ABC, abstractproperty
 from mrmustard.utils import training
-from mrmustard.utils.types import *
+from mrmustard.types import *
 
 
 class Parametrized(ABC):

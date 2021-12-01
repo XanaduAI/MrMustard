@@ -14,7 +14,7 @@
 
 import numpy as np
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard import settings
 from mrmustard.math import Math
 
