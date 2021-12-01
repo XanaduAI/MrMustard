@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from __future__ import annotations
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from abc import ABC, abstractmethod, abstractproperty
 from itertools import product
 import numpy as np
