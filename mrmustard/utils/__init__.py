@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+The utilities module contains various functions and classes for internal use.
+The only user-facing API is the Optimizer class.
+"""
 
-from .parametrized import Parametrized
 from .training import Optimizer
 
-__all__ = ["GaussianMeasurement", "FockMeasurement", "State", "Transformation", "Parametrized"]
+__all__ = ["Optimizer"]

@@ -289,6 +289,11 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
+    def from_backend(self, value: Any) -> bool:
+        r"""Returns whether the given tensor is a tensor of the concrete backend."""
+        ...
+
+    @abstractmethod
     def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
         r"""Returns the values of the array at the given indices.
         Arguments:
@@ -344,12 +349,7 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def istensor(self, tensor: Tensor) -> bool:
-        r"""Returns whether the given tensor is a tensor of the concrete backend."""
-        ...
-
-    @abstractmethod
-    def istrainable(self, tensor: Tensor) -> bool:
+    def is_trainable(self, tensor: Tensor) -> bool:
         r"""Returns whether the given tensor is trainable."""
         ...
 
@@ -370,19 +370,6 @@ class MathInterface(ABC):
             x (array): array to take the natural logarithm of
         Returns:
             array: natural logarithm of x
-        """
-        ...
-
-    @abstractmethod
-    def loss_and_gradients(
-        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
-    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
-        r"""Returns the loss and gradients of the given cost function.
-        Arguments:
-            cost_fn (callable): cost function to compute the loss and gradients of
-            parameters (dict): parameters to compute the loss and gradients of
-        Returns:
-            tuple: loss and gradients (dict) of the given cost function
         """
         ...
 
@@ -640,6 +627,16 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
+    def unique_tensors(lst: List[Tensor]) -> List[Tensor]:
+        r"""Returns the tensors in lst without duplicates and non-tensors.
+        Arguments:
+            lst (list): list of tensors to remove duplicates and non-tensors from.
+        Returns:
+            list: list of tensors without duplicates and non-tensors.
+        """
+        ...
+
+    @abstractmethod
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.
         Arguments:
@@ -656,6 +653,19 @@ class MathInterface(ABC):
             tensor (array): tensor to update
             indices (array): indices to update
             values (array): values to add
+        """
+        ...
+
+    @abstractmethod
+    def value_and_gradients(
+        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
+    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
+        r"""Returns the loss and gradients of the given cost function.
+        Arguments:
+            cost_fn (callable): cost function to compute the loss and gradients of
+            parameters (dict): parameters to compute the loss and gradients of
+        Returns:
+            tuple: loss and gradients (dict) of the given cost function
         """
         ...
 
@@ -689,11 +699,6 @@ class MathInterface(ABC):
         if not self._euclidean_opt:
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
-
-    def loss_and_gradients(
-        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
-    ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
-        ...
 
     def eigvals(self, tensor: Tensor) -> Tensor:
         r"Returns the eigenvalues of a matrix."

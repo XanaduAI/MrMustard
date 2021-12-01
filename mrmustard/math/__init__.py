@@ -12,6 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+r"""
+The `math` module contains low-level functions for performing mathematical operations. It is recommeded
+that users access the backends using the an instance of the Math class rather than the backends themselves.
+The Math class is a wrapper that passes the calls to the currently active backend, which is determined by
+the `BACKEND` parameter in `mrmustard.settings` (the default is 'tensorflow').
+The advantage of using the Math class is that the same code can run on different backends, allowing for a
+greater degree of flexibility and code reuse.
+
+```python
+from mrmustard.math import Math
+math = Math()
+math.cos(x)  # tensorflow backend
+
+from mrmustard import settings
+settings.BACKEND = 'torch'
+
+math.cos(x)  # torch backend
+```
+"""
+
 
 from mrmustard import settings
 import importlib
@@ -24,7 +44,7 @@ if importlib.util.find_spec("torch"):
 
 class Math:
     r"""
-    This class provides a unified interface for performing math operations.
+    This class is a switcher for performing math operations on the currently active backend.
     """
 
     def __getattribute__(self, name):
