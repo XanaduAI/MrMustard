@@ -32,7 +32,7 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
     circ.append(S2gate(r=r, phi=phi))
-    amps = circ(Vacuum(num_modes=2)).ket(cutoffs=[cutoff, cutoff])
+    amps = (Vacuum(num_modes=2) >> circ).ket(cutoffs=[cutoff, cutoff])
     diag = (1 / np.cosh(r)) * (np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
     assert np.allclose(amps, expected)
@@ -47,7 +47,7 @@ def test_hong_ou_mandel(n_mean, phi, varphi):
     circ.append(S2gate(r=r, phi=phi)[0, 1])
     circ.append(S2gate(r=r, phi=phi)[2, 3])
     circ.append(BSgate(theta=np.pi / 4, phi=varphi)[1, 2])
-    amps = circ(Vacuum(num_modes=4)).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
+    amps = (Vacuum(4) >> circ).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
     assert np.allclose(amps[1, 1, 1, 1], 0.0, atol=1e-6)
 
 
@@ -83,7 +83,7 @@ def test_squeezed_state(r, phi):
 def test_two_mode_squeezing_fock_mean_and_covar(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     r = np.arcsinh(np.sqrt(n_mean))
-    state = S2gate(r=r, phi=phi)(Vacuum(num_modes=2))
+    state = Vacuum(num_modes=2) >> S2gate(r=r, phi=phi)
     meanN = state.number_means
     covN = state.number_cov
     expectedN = np.array([n_mean, n_mean])
@@ -97,9 +97,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
-    sq = SqueezedVacuum(r=r, phi=phi)
-    L = LossChannel(transmissivity=eta)
-    ps = L[0](sq).fock_probabilities(cutoffs=[cutoff])
+    ps = (SqueezedVacuum(r=r, phi=phi) >> LossChannel(transmissivity=eta)).fock_probabilities([cutoff])
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
     assert np.allclose(ps, expected, atol=1e-6)
 
@@ -110,7 +108,7 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     cutoff = 40
     n = np.arange(cutoff)
     L = LossChannel(transmissivity=[eta_0, eta_1])
-    state = L[0, 1](TMSV(r=np.arcsinh(np.sqrt(n_mean)), phi=phi))
+    state = TMSV(r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
     ps0 = state.get_modes(0).fock_probabilities([cutoff])
     ps1 = state.get_modes(1).fock_probabilities([cutoff])
     mean_0 = np.sum(n * ps0)
