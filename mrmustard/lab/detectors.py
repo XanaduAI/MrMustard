@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from mrmustard.utils.types import *
-from mrmustard.utils import Parametrized
+from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement, GaussianMeasurement
 from mrmustard.physics import fock, gaussian
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
