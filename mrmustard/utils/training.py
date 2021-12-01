@@ -26,7 +26,9 @@ class Optimizer:
 
     It can optimize euclidean, orthogonal and symplectic parameters.
 
-    .. note:: In the future it will also include a compiler, so that it will be possible to
+    .. note:: 
+    
+      In the future it will also include a compiler, so that it will be possible to
     simplify the circuit/detector/gate/etc before the optimization and also
     compile other types of structures like error correcting codes and encoders/decoders.
     """
