@@ -22,6 +22,7 @@ from mrmustard.physics import gaussian, fock
 from mrmustard.lab.abstract.state import State
 from mrmustard.types import *
 from mrmustard.utils import graphics
+from mrmustard.utils.parametrized import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -130,22 +131,22 @@ class Transformation:
         table.add_column("Value")
         table.add_column("Shape")
         table.add_column("Trainable")
-        with np.printoptions(precision=6, suppress=True):
-            for name in self.param_names:
-                par = self.__dict__[name]
-                table.add_row(
-                    name,
-                    par.dtype.name,
-                    f"{np.array(par)}",
-                    f"{par.shape}",
-                    str(self.__dict__["_" + name + "_trainable"]),
-                )
-            lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
-            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
-                f"[{self._modes}]" if self._modes is not None else ""
-            )
-        rprint(table)
-        return repr_string
+        # with np.printoptions(precision=6, suppress=True):
+        #     for name in self.param_names:
+        #         par = self.__dict__[name]
+        #         table.add_row(
+        #             name,
+        #             par.dtype.name,
+        #             f"{np.array(par)}",
+        #             f"{par.shape}",
+        #             str(self.__dict__["_" + name + "_trainable"]),
+        #         )
+        #     lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
+        #     repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
+        #         f"[{self._modes}]" if self._modes is not None else ""
+        #     )
+        # rprint(table)
+        return ""  # repr_string
 
     @property
     def modes(self) -> Sequence[int]:
@@ -251,9 +252,6 @@ class Transformation:
                 choi_r=settings.CHOI_R,
             )
             return choi_op
-
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}
 
     def __getitem__(self, items) -> Callable:
         r"""

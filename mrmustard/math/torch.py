@@ -301,7 +301,7 @@ class TorchMath(MathInterface):
         self.optimizer = torch.optim.Adam(params, lr=0.001)
         return self.optimizer
 
-    def loss_and_gradients(
+    def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
     ) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
         r"""

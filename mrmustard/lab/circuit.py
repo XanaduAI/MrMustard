@@ -16,7 +16,9 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
+
 from mrmustard.types import *
+from mrmustard.utils.parametrized import Parametrized
 from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.lab.abstract import Transformation
@@ -24,7 +26,7 @@ from mrmustard.lab.states import TMSV
 from mrmustard.lab.abstract import State
 
 
-class Circuit(Transformation):
+class Circuit(Transformation, Parametrized):
     def __init__(self, ops: Sequence = []):
         self._ops: List = [o for o in ops]
         self.reset()
@@ -80,19 +82,3 @@ class Circuit(Transformation):
 
     def __repr__(self) -> str:
         return f"Circuit | {len(self._ops)} ops | compiled = {self._compiled}"
-
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        r"""
-        Returns the dictionary of trainable parameters
-        """
-        symp = [
-            p for op in self._ops for p in op.trainable_parameters["symplectic"] if hasattr(op, "trainable_parameters")
-        ]
-        orth = [
-            p for op in self._ops for p in op.trainable_parameters["orthogonal"] if hasattr(op, "trainable_parameters")
-        ]
-        eucl = [
-            p for op in self._ops for p in op.trainable_parameters["euclidean"] if hasattr(op, "trainable_parameters")
-        ]
-        return {"symplectic": symp, "orthogonal": orth, "euclidean": eucl}
