@@ -36,7 +36,7 @@ class Transformation:
     _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
-    def __call__(self, state: State) -> State:
+    def primal(self, state: State) -> State:
         r"""
         Applies self (a Transformation) to other (a State) and returns the transformed state.
         Arguments:
@@ -228,7 +228,7 @@ class Transformation:
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
             return None
-        choi_state = self(self.bell)
+        choi_state = self.bell >> self
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
