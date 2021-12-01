@@ -33,10 +33,10 @@ clean:
 	rm -rf mrmustard/physics/__pycache__
 	rm -rf mrmustard/utils/__pycache__
 	rm -rf mrmustard/backends/gaussianbackend/__pycache__
-	rm -rf mrmustard/tests/__pycache__
-	rm -rf mrmustard/tests/test_lab/__pycache__
-	rm -rf mrmustard/tests/test_physics/__pycache__
-	rm -rf mrmustard/tests/test_utils/__pycache__
+	rm -rf tests/__pycache__
+	rm -rf tests/test_lab/__pycache__
+	rm -rf tests/test_physics/__pycache__
+	rm -rf tests/test_utils/__pycache__
 	rm -rf dist
 	rm -rf build
 
