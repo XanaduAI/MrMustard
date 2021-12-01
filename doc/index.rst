@@ -143,6 +143,15 @@ MrMustard supports in fully differentiable way:
 
 .. toctree::
    :maxdepth: 1
+   :caption: Development
+   :hidden:
+
+   development/development_guide
+   development/research
+   development/release_notes.md
+
+.. toctree::
+   :maxdepth: 1
    :caption: Mr. Mustard API
    :hidden:
 
