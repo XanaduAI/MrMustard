@@ -82,7 +82,9 @@ class PNRDetector(Parametrized, FockMeasurement):
             for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
                 dark_prior = fock.math.poisson(max_k=cut, rate=dc)
                 condprob = fock.math.binomial_conditional_prob(success_prob=qe, dim_in=cut, dim_out=cut)
-                self._stochastic_channel.append(fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]]))
+                self._stochastic_channel.append(
+                    fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]])
+                )
 
 
 class ThresholdDetector(Parametrized, FockMeasurement):

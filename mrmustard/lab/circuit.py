@@ -86,7 +86,13 @@ class Circuit(Transformation):
         r"""
         Returns the dictionary of trainable parameters
         """
-        symp = [p for op in self._ops for p in op.trainable_parameters["symplectic"] if hasattr(op, "trainable_parameters")]
-        orth = [p for op in self._ops for p in op.trainable_parameters["orthogonal"] if hasattr(op, "trainable_parameters")]
-        eucl = [p for op in self._ops for p in op.trainable_parameters["euclidean"] if hasattr(op, "trainable_parameters")]
+        symp = [
+            p for op in self._ops for p in op.trainable_parameters["symplectic"] if hasattr(op, "trainable_parameters")
+        ]
+        orth = [
+            p for op in self._ops for p in op.trainable_parameters["orthogonal"] if hasattr(op, "trainable_parameters")
+        ]
+        eucl = [
+            p for op in self._ops for p in op.trainable_parameters["euclidean"] if hasattr(op, "trainable_parameters")
+        ]
         return {"symplectic": symp, "orthogonal": orth, "euclidean": eucl}

@@ -23,8 +23,8 @@ from thewalrus.fock_gradients import (
     mzgate,
 )
 import numpy as np
-from mrmustard.tests.random import single_mode_unitary
-from mrmustard.tests import random
+from tests.random import single_mode_unitary
+from tests import random
 
 
 @given(state=random.pure_state(num_modes=1), xy=random.vector(2))

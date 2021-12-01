@@ -20,7 +20,7 @@ from mrmustard.physics import gaussian as gp
 from mrmustard.lab.states import *
 from mrmustard.lab.gates import *
 from mrmustard import settings
-from mrmustard.tests import random
+from tests import random
 
 
 @st.composite

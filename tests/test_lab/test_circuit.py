@@ -19,4 +19,4 @@ from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian
 from mrmustard.lab import *
 from mrmustard import settings
-from mrmustard.tests import random
+from tests import random
