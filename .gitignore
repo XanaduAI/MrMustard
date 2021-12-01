@@ -10,3 +10,4 @@ __pycache__/
 *.png
 .hypothesis/
 doc/_build
+doc/code/api/*
