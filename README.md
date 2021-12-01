@@ -1,7 +1,5 @@
 ![mmlogo](https://user-images.githubusercontent.com/8944955/144168939-5f22c4f8-3361-49b0-8da3-72c6b9c42717.png)
 
-
-
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 ![Python version](https://img.shields.io/badge/python-3.8-blue)

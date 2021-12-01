@@ -10,4 +10,4 @@ jobs:
     - name: Black Code Formatter
       uses: lgeiger/black-action@v1.0.1
       with:
-        args: "-l 140 mrmustard/ --check"
+        args: "-l 120 mrmustard/ --check"

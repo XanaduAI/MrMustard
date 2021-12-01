@@ -1,7 +1,7 @@
 ## Contribution guidelines
 
-- Write new [tests](https://github.com/XanaduAI/MrMustard/tree/main/mrmustard/tests) if you add new functionality or fix a bug.
-- Type-hint the code (quantum-specific and math-specific type hints (like `Covmat` or `Tensor`) are in `mrmustard.utils.types`). 
+- Write new [tests](https://github.com/XanaduAI/MrMustard/tree/main/tests) if you add new functionality or fix a bug.
+- Type-hint the code (quantum-specific and math-specific type hints (like `Covmat` or `Tensor`) are in `mrmustard.utils.types`).
 - Write informative docstrings using the Args/Returns pattern.
 
 You can raise [issues](https://github.com/XanaduAI/MrMustard/issues) to keep track of bugs. We also have a [kanban board](https://github.com/XanaduAI/MrMustard/projects/1) to keep track of projects (you can [make your own](https://github.com/XanaduAI/MrMustard/projects) too).
