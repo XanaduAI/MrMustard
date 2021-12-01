@@ -250,18 +250,18 @@ def purity(dm: Tensor) -> Scalar:
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_mixed: bool) -> Tensor:
+def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
     r"""computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
     It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
     Arguments:
         transformation: The transformation tensor.
         fock_state: The state to transform.
         transformation_is_unitary: Whether the transformation is a unitary matrix or a Choi operator.
-        state_is_mixed: Whether the state is mixed or not.
+        state_is_dm: Whether the state is a density matrix or a ket
     Returns:
         The transformed state.
     """
-    num_modes = len(fock_state.shape) // 2 if state_is_mixed else len(fock_state.shape)
+    num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
     N0 = list(range(0, num_modes))
     N1 = list(range(num_modes, 2 * num_modes))
     N2 = list(range(2 * num_modes, 3 * num_modes))
@@ -269,13 +269,13 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_m
     if transformation_is_unitary:
         U = transformation
         Us = math.tensordot(U, fock_state, axes=(N1, N0))
-        if not state_is_mixed:
+        if not state_is_dm:
             return Us
         else:  # is state is dm, the input indices of dm are still at the end of Us
             return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
     else:
         C = transformation  # choi operator
-        if state_is_mixed:
+        if state_is_dm:
             return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
         else:
             Cs = math.tensordot(C, fock_state, axes=(N1, N0))
