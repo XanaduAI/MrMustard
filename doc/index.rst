@@ -97,7 +97,7 @@ MrMustard supports in fully differentiable way:
 
 ..
 
-* Beam splitter, MZ interferometer, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, [more to come...]
+* Beam splitter, MZ interferometer, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, more to come..
 
 ..
 
@@ -125,7 +125,7 @@ MrMustard supports in fully differentiable way:
 
 ..
 
-* Plug-and-play backends (TF and Pytorch [Upcoming])
+* Plug-and-play backends (TF and Pytorch)
 
 ..
 
