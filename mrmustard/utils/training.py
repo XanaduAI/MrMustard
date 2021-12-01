@@ -45,9 +45,17 @@ class Optimizer:
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
         """
         try:
-            params = {"symplectic": math.unique_tensors([p for item in by_optimizing for p in item.trainable_parameters["symplectic"]]),
-                        "orthogonal": math.unique_tensors([p for item in by_optimizing for p in item.trainable_parameters["orthogonal"]]),
-                        "euclidean": math.unique_tensors([p for item in by_optimizing for p in item.trainable_parameters["euclidean"]])}
+            params = {
+                "symplectic": math.unique_tensors(
+                    [p for item in by_optimizing for p in item.trainable_parameters["symplectic"]]
+                ),
+                "orthogonal": math.unique_tensors(
+                    [p for item in by_optimizing for p in item.trainable_parameters["orthogonal"]]
+                ),
+                "euclidean": math.unique_tensors(
+                    [p for item in by_optimizing for p in item.trainable_parameters["euclidean"]]
+                ),
+            }
             bar = graphics.Progressbar(max_steps)
             with bar:
                 while not self.should_stop(max_steps):
@@ -142,4 +150,3 @@ def update_orthogonal(orthogonal_params: Sequence[Trainable], orthogonal_grads: 
 def update_euclidean(euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float):
     math.euclidean_opt.lr = euclidean_lr
     math.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
-

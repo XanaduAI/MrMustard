@@ -146,7 +146,7 @@ class Transformation:
         #         f"[{self._modes}]" if self._modes is not None else ""
         #     )
         # rprint(table)
-        return ""#repr_string
+        return ""  # repr_string
 
     @property
     def modes(self) -> Sequence[int]:

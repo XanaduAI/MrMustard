@@ -636,7 +636,6 @@ class MathInterface(ABC):
         """
         ...
 
-
     @abstractmethod
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.

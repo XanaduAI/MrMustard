@@ -68,10 +68,18 @@ class Parametrized:
         r"""
         Returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit).
         """
-        if hasattr(self, '_ops'):
-            return {"symplectic": math.unique_tensors([p for item in self._ops for p in item.trainable_parameters["symplectic"]]),
-                    "orthogonal": math.unique_tensors([p for item in self._ops for p in item.trainable_parameters["orthogonal"]]),
-                    "euclidean": math.unique_tensors([p for item in self._ops for p in item.trainable_parameters["euclidean"]])}
+        if hasattr(self, "_ops"):
+            return {
+                "symplectic": math.unique_tensors(
+                    [p for item in self._ops for p in item.trainable_parameters["symplectic"]]
+                ),
+                "orthogonal": math.unique_tensors(
+                    [p for item in self._ops for p in item.trainable_parameters["orthogonal"]]
+                ),
+                "euclidean": math.unique_tensors(
+                    [p for item in self._ops for p in item.trainable_parameters["euclidean"]]
+                ),
+            }
         else:
             return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}  # default
 
@@ -80,9 +88,17 @@ class Parametrized:
         r"""
         Returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit).
         """
-        if hasattr(self, '_ops'):
-            return {"symplectic": math.unique_tensors([p for item in self._ops for p in item.constant_parameters["symplectic"]]),
-                    "orthogonal": math.unique_tensors([p for item in self._ops for p in item.constant_parameters["orthogonal"]]),
-                    "euclidean": math.unique_tensors([p for item in self._ops for p in item.constant_parameters["euclidean"]])}
+        if hasattr(self, "_ops"):
+            return {
+                "symplectic": math.unique_tensors(
+                    [p for item in self._ops for p in item.constant_parameters["symplectic"]]
+                ),
+                "orthogonal": math.unique_tensors(
+                    [p for item in self._ops for p in item.constant_parameters["orthogonal"]]
+                ),
+                "euclidean": math.unique_tensors(
+                    [p for item in self._ops for p in item.constant_parameters["euclidean"]]
+                ),
+            }
         else:
             return {"symplectic": [], "orthogonal": [], "euclidean": self._constant_parameters}  # default
