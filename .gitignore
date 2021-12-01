@@ -4,6 +4,7 @@
 settings.json
 *.npy
 __pycache__/
+.mypy_cache/
 *.pdf
 .DS_Store
 *.pkl
