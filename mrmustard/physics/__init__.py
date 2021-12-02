@@ -86,6 +86,7 @@ def relative_entropy(A, B) -> float:
     Returns:
     float: The relative entropy between the two states.
     """
+    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.relative_entropy(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.relative_entropy(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
@@ -102,6 +103,7 @@ def trace_distance(A, B) -> float:
     Returns:
     float: The trace distance between the two states.
     """
+    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.trace_distance(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.trace_distance(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
