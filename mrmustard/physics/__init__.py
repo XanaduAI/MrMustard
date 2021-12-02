@@ -38,10 +38,6 @@ def fidelity(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.fidelity(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    elif A.is_gaussian:
-        A.fock  # trigger conversion to Fock
-    elif B.is_gaussian:
-        B.fock
     return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
 
 
