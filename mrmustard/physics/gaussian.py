@@ -266,7 +266,7 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
-def two_mode_controlled_phase(g=1):
+def controlled_Z(g: Scalar):
     r"""Controlled PHASE gate of two-gaussian modes.
 
     C_Z = \exp(ig q_1 \otimes q_2).
@@ -277,20 +277,20 @@ def two_mode_controlled_phase(g=1):
     Args:
         g (float): interaction strength
     Returns:
-        the C_Z controlled phase matrix (in xpxp format)
+        the C_Z(g) matrix (in xxpp ordering)
     """
 
     return math.astensor(
         [
             [1, 0, 0, 0],
-            [0, 1, g, 0],
-            [0, 0, 1, 0],
+            [0, 1, 0, 0],
+            [0, g, 1, 0],
             [g, 0, 0, 1],
         ]
     )
 
 
-def two_mode_controlled_not(g=1):
+def controlled_X(g: Scalar):
     r"""Controlled NOT gate of two-gaussian modes.
 
     C_X = \exp(ig q_1 \otimes p_2).
@@ -300,61 +300,19 @@ def two_mode_controlled_not(g=1):
     Args:
         g (float): interaction strength
     Returns:
-        the C_X controlled NOT matrix (in xpxp format)
+        the C_X(g) matrix (in xxpp ordering)
     """
 
     return math.astensor(
         [
             [1, 0, 0, 0],
-            [0, 1, 0, -g],
-            [g, 0, 1, 0],
+            [g, 1, 0, 0],
+            [0, 0, 1, -g],
             [0, 0, 0, 1],
         ]
     )
 
 
-def controlled_phase(N: Scalar, a: Scalar, b: Scalar, g=1):
-    r"""Controlled PHASE gate of N-mode gaussian.
-
-    C_Z = \exp(ig q_A \otimes q_B).
-
-    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
-
-    Args:
-        N (int): number of modes
-        a (int): mode number A between (1, N)
-        b (int): mode number B between (1, N)
-        g (float): interaction strength
-    Returns:
-        the C_Z controlled PHASE matrix (in xpxp format)
-    """
-
-    S = math.eye(N)
-    S[2 * a - 1, 2 * b - 2] = g
-    S[2 * b - 1, 2 * a - 2] = g
-    return math.astensor(S)
-
-
-def controlled_NOT(N: Scalar, a: Scalar, b: Scalar, g=1):
-    r"""Controlled NOT gate of N-mode gaussian.
-
-    C_X = \exp(ig q_A \otimes p_B).
-
-    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
-
-    Args:
-        N (int): number of modes
-        a (int): mode number A between (1, N)
-        b (int): mode number B between (1, N)
-        g (float): interaction strength
-    Returns:
-        the C_X controlled NOT matrix (in xpxp format)
-    """
-
-    S = math.eye(N)
-    S[2 * a - 1, 2 * b - 1] = -g
-    S[2 * b - 2, 2 * a - 2] = g
-    return math.astensor(S)
 
 
 # ~~~~~~~~~~~~~
@@ -733,7 +691,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
         List[float]: the sympletic eigenvalues
     """
     cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
-    J = math.J(cov.shape[0] // 2)  # create a sympletic form
+    J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = 1j * J @ cov  # compute iJ*cov
     vals = math.eigvals(M)  # compute the eigenspectrum
     return math.abs(vals[::2])  # return the even eigenvalues
