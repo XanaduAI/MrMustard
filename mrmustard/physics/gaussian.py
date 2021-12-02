@@ -353,19 +353,16 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
 
 
 def loss_XYd(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Matrix, None]:
-    r"""Returns the X,Y matrices and the d vector for the lossy bosonic channel.
+    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel.
+    The pure loss channel is recovered for nbar = 0.0.
 
-    This channel couples mode a to a thermal state b with the transformation
-
-    a -> sqrt(t) a + \sqrt(1-t) b
-
-    Reference: https://arxiv.org/pdf/1110.3234.pdf, Equation 113.
+    Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
     Arguments:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
-        nbar (float): average photon number in the thermal state
+        nbar (float): photon number expectation value in the environment (0 for pure loss channel)
     Returns:
-        Tuple[Matrix, Vector]: the X matrix of the loss channel.
+        Tuple[Matrix, Matrix, None]: the X,Y matrices and the d vector for the noisy loss channel
     """
     if math.any(transmissivity < 0) or math.any(transmissivity > 1):
         raise ValueError("transmissivity must be between 0 and 1")
@@ -377,24 +374,35 @@ def loss_XYd(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector],
 
 
 
-def amp_XYd(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the amplification channel.
-    The amplification channel is like a loss channel, but with a transmissivity larger than 1.
+def amp_XYd(amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
+    r"""Returns the X,Y matrices and the d vector for the noisy amplifier channel.
+    The quantum limited amplifier channel is recovered for nbar = 0.0.
 
     Arguments:
-        transmissivity (float): value of the transmissivity > 1
-        nbar (float): average number of photons per mode
+        amplification (float): value of the amplification > 1
+        nbar (float): photon number expectation value in the environment (0 for quantum limited amplifier)
     Returns:
-        Tuple[Matrix, Vector]: the Y matrix of the amplification channel.
+        Tuple[Matrix, Vector]: the X,Y matrices and the d vector for the noisy amplifier channel.
     """
-    if math.any(transmissivity <= 1):
-        raise ValueError("Transmissivity must be larger than 1")
-    x = math.sqrt(transmissivity)
+    if math.any(amplification < 1):
+        raise ValueError("Amplification must be larger than 1")
+    x = math.sqrt(amplification)
     X = math.diag(math.concat([x, x], axis=0))
-    y = (transmissivity-1) * (2*nbar + 1) * hbar / 2
+    y = (amplification-1) * (2*nbar + 1) * hbar / 2
     Y = math.diag(math.concat([y, y], axis=0))
     return X, Y, None
 
+
+def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I)
+    
+        Arguments:
+            noise (float): number of photons in the thermal state
+        Returns:
+            Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
+        """
+    Y = math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
+    return None, Y, None
 
 
 def compose_channels_XYd(
