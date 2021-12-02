@@ -61,7 +61,8 @@ class State:
         self._means = means
         self._eigenvalues = eigenvalues
         self._symplectic = symplectic
-        self._fock = ket if ket is not None else dm
+        self._ket = ket
+        self._dm = dm
         if cov is not None and means is not None:
             self.is_gaussian = True
             self.num_modes = cov.shape[-1] // 2
@@ -152,7 +153,7 @@ class State:
             return math.sqrt(math.diag_part(self.number_cov))
         else:
             return math.sqrt(
-                fock.number_variances(self.fock, is_dm=len(self._fock.shape) == self.num_modes * 2)
+                fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
             )
 
     @property
@@ -160,14 +161,14 @@ class State:
         r"""
         Returns the cutoff dimensions for each mode.
         """
-        if self._fock is None:
+        if self._ket is None and self._dm is None:
             return fock.autocutoffs(
                 self.number_stdev, self.number_means
             )  # TODO: move in gaussian and pass cov, means
         else:
             if self._cutoffs is not None:
                 return self._cutoffs
-            return [s for s in self._fock.shape[: self.num_modes]]
+            return list(self.fock.shape[: self.num_modes])
 
     @property
     def shape(self) -> List[int]:
@@ -183,11 +184,17 @@ class State:
         r"""
         Returns the Fock representation of the state.
         """
-        if self._fock is None:
-            self._fock = fock.fock_representation(
+        if self._dm is None and self._ket is None:
+            _fock = fock.fock_representation(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
             )
-        return self._fock
+            if self.is_mixed:
+                self._dm = _fock
+                self._ket = None
+            else:
+                self._ket = _fock
+                self._dm = None
+        return self._ket if self._ket is not None else self._dm
 
     @property
     def number_means(self) -> Vector:
@@ -218,26 +225,21 @@ class State:
         Returns:
             Tensor: the ket
         """
-        if cutoffs is None:
-            cutoffs = self.cutoffs
-        else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-        if self.is_mixed:
-            return None
+        cutoffs = self.cutoffs if cutoffs is None else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_gaussian:
-            self._fock = fock.fock_representation(
-                self.cov, self.means, shape=cutoffs, return_dm=False
-            )
+            self._ket = fock.fock_representation(self.cov, self.means, shape=cutoffs, return_dm=False)
         else:  # only fock representation is available
-            current_cutoffs = [s for s in self._fock.shape[: self.num_modes]]
+            if self._ket is None:
+                return None
+            current_cutoffs = [s for s in self._ket.shape[: self.num_modes]]
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._fock, paddings, mode="constant")
+                    padded = fock.math.pad(self._ket, paddings, mode="constant")
                 else:
-                    padded = self._fock
+                    padded = self._ket
                 return padded[tuple([slice(s) for s in cutoffs])]
-        return self._fock
+        return self._ket
 
     def dm(self, cutoffs: List[int] = None) -> Tensor:
         r"""
@@ -254,20 +256,19 @@ class State:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_pure:
             ket = self.ket(cutoffs=cutoffs)
-            return fock.ket_to_dm(ket)
+            if ket is not None:
+                return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._fock = fock.fock_representation(
-                    self.cov, self.means, shape=cutoffs * 2, return_dm=True
-                )
-            elif cutoffs != (current_cutoffs := [s for s in self._fock.shape[: self.num_modes]]):
+                self._dm = fock.fock_representation(self.cov, self.means, shape=cutoffs * 2, return_dm=True)
+            elif cutoffs != (current_cutoffs := [s for s in self._dm.shape[: self.num_modes]]):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._fock, paddings + paddings, mode="constant")
+                    padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
                 else:
-                    padded = self._fock
+                    padded = self._dm
                 return padded[tuple([slice(s) for s in cutoffs + cutoffs])]
-        return self._fock
+        return self._dm
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""
@@ -472,7 +473,7 @@ class State:
             str(self.num_modes),
             "1" if self.is_gaussian else "N/A",
             "✅" if self.is_gaussian else "❌",
-            "✅" if self._fock is not None else "❌",
+            "✅" if self._ket is not None or self._dm is not None else "❌",
         )
         rprint(table)
         if self.num_modes == 1:
