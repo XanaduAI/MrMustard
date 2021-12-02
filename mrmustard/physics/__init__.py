@@ -24,7 +24,7 @@ optimiization routine.
 from mrmustard.physics import fock, gaussian
 from mrmustard import settings
 
-def fidelity(A: State, B: State) -> float:
+def fidelity(A, B) -> float:
     r"""
     Calculates the fidelity between two quantum states.
 
@@ -44,7 +44,7 @@ def fidelity(A: State, B: State) -> float:
     return fock.fidelity(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
-def overlap(A: State, B: State) -> float:
+def overlap(A, B) -> float:
     r"""
     Calculates the overlap between two quantum states.
     If the states are both pure it returns |<A|B>|^2, if one is mixed it returns <A|B|A>
@@ -66,7 +66,7 @@ def overlap(A: State, B: State) -> float:
     return fock.overlap(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
-def entropy_VN(A: State) -> float:
+def entropy_VN(A) -> float:
     r"""
     Calculates the Von Neumann entropy of a quantum state.
 
@@ -81,7 +81,7 @@ def entropy_VN(A: State) -> float:
     return fock.entropy_VN(A.fock, a_dm=A.is_mixed)
 
 
-def trace_distance(A: State, B: State) -> float:
+def trace_distance(A, B) -> float:
     r"""
     Calculates the trace distance between two quantum states.
 
