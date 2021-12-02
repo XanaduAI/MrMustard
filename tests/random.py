@@ -53,11 +53,15 @@ def none_or_(strategy):
     return st.one_of(st.just(None), strategy)
 
 
-angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True)
+angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
+    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+)
 positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
-real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True)
+real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
+    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+)
 
 
 @st.composite

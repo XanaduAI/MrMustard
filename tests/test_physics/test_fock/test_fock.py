@@ -73,7 +73,10 @@ def test_squeezed_state(r, phi):
         1
         / np.sqrt(np.cosh(r))
         * np.array(
-            [(-np.exp(1j * phi) * np.tanh(r)) ** n * np.sqrt(factorial(2 * n)) / (2 ** n * factorial(n)) for n in range(len_non_zero)]
+            [
+                (-np.exp(1j * phi) * np.tanh(r)) ** n * np.sqrt(factorial(2 * n)) / (2 ** n * factorial(n))
+                for n in range(len_non_zero)
+            ]
         )
     )
     assert np.allclose(non_zero_amps, amp_pairs)
