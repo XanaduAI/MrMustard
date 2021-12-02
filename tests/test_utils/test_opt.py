@@ -73,7 +73,9 @@ def test_hong_ou_mandel_optimizer(i, k):
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i + k), atol=1e-2)
+    assert np.allclose(
+        np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i + k), atol=1e-2
+    )
 
 
 def test_squeezing_hong_ou_mandel_optimizer():
@@ -188,7 +190,12 @@ def test_learning_four_mode_Interferometer():
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
         return (
-            -tf.abs(tf.reduce_sum(amps[1, 1] * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])))
+            -tf.abs(
+                tf.reduce_sum(
+                    amps[1, 1]
+                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
+                )
+            )
             ** 2
         )
 

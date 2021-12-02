@@ -48,7 +48,9 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix: vacuum covariance matrix
         Vector: vacuum means vector
     """
-    return displacement(math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar)
+    return displacement(
+        math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar
+    )
 
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
@@ -130,7 +132,11 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     num_modes = angle.shape[-1]
     x = math.cos(angle)
     y = math.sin(angle)
-    return math.diag(math.concat([x, x], axis=0)) + math.diag(-y, k=num_modes) + math.diag(y, k=-num_modes)
+    return (
+        math.diag(math.concat([x, x], axis=0))
+        + math.diag(-y, k=num_modes)
+        + math.diag(y, k=-num_modes)
+    )
 
 
 def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
@@ -318,7 +324,9 @@ def controlled_X(g: Scalar):
 # ~~~~~~~~~~~~~
 
 
-def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]) -> Tuple[Matrix, Vector]:
+def CPTP(
+    cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]
+) -> Tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
@@ -495,9 +503,13 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
         The photon number means vector.
     """
     N = means.shape[-1] // 2
-    return (means[:N] ** 2 + means[N:] ** 2 + math.diag_part(cov[:N, :N]) + math.diag_part(cov[N:, N:]) - hbar) / (
-        2 * hbar
-    )
+    return (
+        means[:N] ** 2
+        + means[N:] ** 2
+        + math.diag_part(cov[:N, :N])
+        + math.diag_part(cov[N:, N:])
+        - hbar
+    ) / (2 * hbar)
 
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
@@ -513,9 +525,13 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     """
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
-    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (2 * hbar ** 2)
+    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
+        2 * hbar ** 2
+    )
     CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
-    return CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
+    return (
+        CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
+    )
 
 
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
@@ -536,7 +552,8 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
         A list of cutoff indices.
     """
     cutoffs = (
-        number_means(cov, means, hbar) + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
+        number_means(cov, means, hbar)
+        + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
     )
     return [max(1, int(i)) for i in cutoffs]
 
@@ -642,7 +659,9 @@ def von_neumann_entropy(cov: Matrix) -> float:
     return entropy
 
 
-def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08) -> float:
+def fidelity(
+    mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08
+) -> float:
     r"""
     Returns the fidelity of two gaussian states.
 
@@ -674,7 +693,9 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rto
 
     W = -2 * (V @ (1j * J))
     W_inv = math.inv(W)
-    matsqrtm = math.sqrtm(I - W_inv @ W_inv)  # this also handles the case where the input matrix is close to zero
+    matsqrtm = math.sqrtm(
+        I - W_inv @ W_inv
+    )  # this also handles the case where the input matrix is close to zero
     f0_top = math.det((matsqrtm + I) @ (W @ (1j * J)))
     f0_bot = math.det(cov1 + cov2)
 
@@ -704,7 +725,9 @@ def log_negativity(cov: Matrix) -> float:
     vals = sympletic_eigenvals(cov)
     mask = 2 * vals < 1
 
-    vals_filtered = math.boolean_mask(vals, mask)  # Get rid of terms that would lead to zero contribution.
+    vals_filtered = math.boolean_mask(
+        vals, mask
+    )  # Get rid of terms that would lead to zero contribution.
 
     return math.sum(-math.log(2 * vals_filtered) / math.log(2))
 
@@ -735,7 +758,9 @@ def join_means(means: Sequence[Vector]) -> Vector:
     """
     mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0]) // 2)))
     for i, m in enumerate(means[1:]):
-        mean = mean + XPVector.from_xxpp(m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2)))
+        mean = mean + XPVector.from_xxpp(
+            m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2))
+        )
     return mean.to_xxpp()
 
 
@@ -771,7 +796,9 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     Y_dual = Y
     d_dual = d
     if Y is not None:
-        Y_dual = math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+        Y_dual = (
+            math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+        )
     if d is not None:
         d_dual = math.matvec(X_dual, d) if X_dual is not None else d
     return X_dual, Y_dual, d_dual
