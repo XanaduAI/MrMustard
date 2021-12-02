@@ -83,5 +83,7 @@ def test_fidelity_vac_to_displaced_squeezed(r, alpha, hbar):
     means1 = real_to_complex_displacements(np.array([alpha, np.conj(alpha)]), hbar=hbar)
     means2 = np.zeros([2])
     cov2 = np.identity(2) * hbar / 2
-    expected = np.exp(-np.abs(alpha) ** 2) * np.abs(np.exp(np.tanh(r) * np.conj(alpha) ** 2)) / np.cosh(r)
+    expected = (
+        np.exp(-np.abs(alpha) ** 2) * np.abs(np.exp(np.tanh(r) * np.conj(alpha) ** 2)) / np.cosh(r)
+    )
     assert np.allclose(expected, gp.fidelity(means1, cov1, means2, cov2, hbar=hbar))

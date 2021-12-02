@@ -53,7 +53,9 @@ class Circuit(Transformation, Parametrized):
         return state
 
     @property
-    def XYd(self) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency
+    def XYd(
+        self,
+    ) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency
         X = XPMatrix(like_1=True)
         Y = XPMatrix(like_0=True)
         d = XPVector()
