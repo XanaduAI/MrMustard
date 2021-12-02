@@ -164,7 +164,9 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> Optional[Callable]:
+    def constraint_func(
+        self, bounds: Tuple[Optional[float], Optional[float]]
+    ) -> Optional[Callable]:
         r"""Returns a constraint function for the given bounds.
         A constraint function will clip the value to the interval given by the bounds.
         Note: the upper and/or lower bounds can be None, in which case the constraint function will not clip the value.
@@ -442,7 +444,9 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def new_variable(self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Tensor:
+    def new_variable(
+        self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str
+    ) -> Tensor:
         r"""Returns a new variable with the given value and bounds.
         Arguments:
             value (array): value of the new variable
@@ -507,7 +511,9 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def pad(self, array: Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> Tensor:
+    def pad(
+        self, array: Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0
+    ) -> Tensor:
         r"""Returns the padded array.
         Arguments:
             array (array): array to pad
@@ -792,7 +798,9 @@ class MathInterface(ABC):
         """
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
-        mat = self.diag(self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)))  # shape [2,2,N,N]
+        mat = self.diag(
+            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes))
+        )  # shape [2,2,N,N]
         mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
         return mat
 
@@ -832,7 +840,9 @@ class MathInterface(ABC):
             return old
         N = old.shape[-1] // 2
         indices = modes + [m + N for m in modes]
-        return self.update_add_tensor(old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1))
+        return self.update_add_tensor(
+            old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1)
+        )
 
     def left_matmul_at_modes(
         self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]
@@ -870,7 +880,9 @@ class MathInterface(ABC):
         Returns:
             array: :math:`2N\times 2N` array
         """
-        return self.transpose(self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes))
+        return self.transpose(
+            self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes)
+        )
 
     def matvec_at_modes(
         self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]
