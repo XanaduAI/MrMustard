@@ -24,6 +24,7 @@ optimiization routine.
 from mrmustard.physics import fock, gaussian
 from mrmustard import settings
 
+
 def fidelity(A, B) -> float:
     r"""
     Calculates the fidelity between two quantum states.
@@ -41,7 +42,7 @@ def fidelity(A, B) -> float:
         A.fock  # trigger conversion to Fock
     elif B.is_gaussian:
         B.fock
-    return fock.fidelity(A.fock, B.fock, a_ket=A.is_mixed, b_ket=B.is_mixed)
+    return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
 
 
 def overlap(A, B) -> float:
@@ -59,10 +60,6 @@ def overlap(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.overlap(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    elif A.is_gaussian:
-        A.fock  # trigger conversion to Fock
-    elif B.is_gaussian:
-        B.fock
     return fock.overlap(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
@@ -81,6 +78,22 @@ def entropy_VN(A) -> float:
     return fock.entropy_VN(A.fock, a_dm=A.is_mixed)
 
 
+def entropy_Relative(A, B) -> float:
+    r"""
+    Calculates the relative entropy between two quantum states.
+
+    Args:
+    A (State) The first quantum state.
+    B (State) The second quantum state.
+
+    Returns:
+    float: The relative entropy between the two states.
+    """
+    if A.is_gaussian and B.is_gaussian:
+        return gaussian.entropy_Relative(A.means, A.cov, B.means, B.cov, settings.HBAR)
+    return fock.entropy_Relative(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
+
+
 def trace_distance(A, B) -> float:
     r"""
     Calculates the trace distance between two quantum states.
@@ -94,8 +107,4 @@ def trace_distance(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.trace_distance(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    elif A.is_gaussian:
-        A.fock  # trigger conversion to Fock
-    elif B.is_gaussian:
-        B.fock
     return fock.trace_distance(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
