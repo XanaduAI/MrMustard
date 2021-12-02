@@ -131,22 +131,22 @@ class Transformation:
         table.add_column("Value")
         table.add_column("Shape")
         table.add_column("Trainable")
-        # with np.printoptions(precision=6, suppress=True):
-        #     for name in self.param_names:
-        #         par = self.__dict__[name]
-        #         table.add_row(
-        #             name,
-        #             par.dtype.name,
-        #             f"{np.array(par)}",
-        #             f"{par.shape}",
-        #             str(self.__dict__["_" + name + "_trainable"]),
-        #         )
-        #     lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
-        #     repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
-        #         f"[{self._modes}]" if self._modes is not None else ""
-        #     )
-        # rprint(table)
-        return ""  # repr_string
+        with np.printoptions(precision=6, suppress=True):
+            for name in self.param_names:
+                par = self.__dict__[name]
+                table.add_row(
+                    name,
+                    par.dtype.name,
+                    f"{np.array(par)}",
+                    f"{par.shape}",
+                    str(self.__dict__["_" + name + "_trainable"]),
+                )
+            lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
+            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
+                f"[{self._modes}]" if self._modes is not None else ""
+            )
+        rprint(table)
+        return repr_string
 
     @property
     def modes(self) -> Sequence[int]:
@@ -214,6 +214,7 @@ class Transformation:
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
         r"""
         Returns the (X, Y, d) triple.
+        Override in subclasses if computing X, Y and d together is more efficient.
         """
         return self.X_matrix, self.Y_matrix, self.d_vector
 

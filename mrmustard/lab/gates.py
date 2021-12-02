@@ -420,9 +420,39 @@ class LossChannel(Parametrized, Transformation):
         self.is_gaussian = True
 
     @property
-    def X_matrix(self):
-        return gaussian.loss_X(self.transmissivity)
+    def XYd(self):
+        return gaussian.loss_XYd(self.transmissivity, 0.0, settings.HBAR)
+
+
+class Amplifier(Parametrized, Transformation):
+    r"""
+    The bosonic amplifier. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    If `amplification` is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
+    One can optionally set bounds for `amplification`, which the optimizer will respect.
+    Args:
+        amplification (float or List[float]): the list of amplifications (must be > 1)
+        amplification_bounds (float, float): bounds for the amplification
+        amplification_trainable (bool): whether amplification is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+    
+    def __init__(
+        self,
+        amplification: Union[Optional[float], Optional[List[float]]] = 1.0,
+        amplification_trainable: bool = False,
+        amplification_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            amplification=amplification,
+            amplification_trainable=amplification_trainable,
+            amplification_bounds=amplification_bounds,
+            modes=modes,
+        )
+        self.is_unitary = False
+        self.is_gaussian = True
 
     @property
-    def Y_matrix(self):
-        return gaussian.loss_Y(self.transmissivity, settings.HBAR)
+    def XYd(self):
+        return gaussian.amp_XYd(self.amplification, 0.0, settings.HBAR)
