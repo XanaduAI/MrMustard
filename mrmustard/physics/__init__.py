@@ -41,7 +41,7 @@ def fidelity(A, B) -> float:
         A.fock  # trigger conversion to Fock
     elif B.is_gaussian:
         B.fock
-    return fock.fidelity(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
+    return fock.fidelity(A.fock, B.fock, a_ket=A.is_mixed, b_ket=B.is_mixed)
 
 
 def overlap(A, B) -> float:

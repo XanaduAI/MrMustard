@@ -22,7 +22,7 @@ import tensorflow as tf
 from scipy.stats import poisson
 
 from mrmustard.lab import *
-from mrmustard.utils import Optimizer
+from mrmustard.utils.training import Optimizer
 from mrmustard.physics import gaussian
 from mrmustard import settings
 

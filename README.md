@@ -203,7 +203,7 @@ But we can also always use MrMustard's optimizer (which calls Adam if needed):
 ```python
 import tensorflow as tf
 from mrmustard.lab import Circuit, Ggate, LossChannel, Vacuum, DisplacedSqueezed
-from mrmustard.utils import Optimizer
+from mrmustard.utils.training import Optimizer
 from mrmustard.physics.gaussian import fidelity
 
 circ = Circuit()
