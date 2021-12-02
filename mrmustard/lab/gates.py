@@ -396,7 +396,7 @@ class Attenuator(Parametrized, Transformation):
     The CPT channel is given by
     X = sqrt(transmissivity) * I
     Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
-    
+
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
     To apply mode-specific values use a list of floats.
@@ -446,7 +446,7 @@ class Amplifier(Parametrized, Transformation):
 
     X = sqrt(transmissivity) * I
     Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
-    
+
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If `amplification` is a single float, the parallel instances of the gate share that parameter.
     To apply mode-specific values use a list of floats.
@@ -460,7 +460,7 @@ class Amplifier(Parametrized, Transformation):
         nbar_trainable (bool): whether nbar is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
-    
+
     def __init__(
         self,
         amplification: Union[Optional[float], Optional[List[float]]] = 1.0,

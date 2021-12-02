@@ -313,8 +313,6 @@ def controlled_X(g: Scalar):
     )
 
 
-
-
 # ~~~~~~~~~~~~~
 # CPTP channels
 # ~~~~~~~~~~~~~
@@ -352,7 +350,9 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
     return cov, means
 
 
-def loss_XYd(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Tuple[Matrix, Matrix, None]:
+def loss_XYd(
+    transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
+) -> Tuple[Matrix, Matrix, None]:
     r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel.
     The pure loss channel is recovered for nbar = 0.0.
 
@@ -368,10 +368,9 @@ def loss_XYd(transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector],
         raise ValueError("transmissivity must be between 0 and 1")
     x = math.sqrt(transmissivity)
     X = math.diag(math.concat([x, x], axis=0))
-    y = (1-transmissivity) * (2*nbar + 1) * hbar / 2
+    y = (1 - transmissivity) * (2 * nbar + 1) * hbar / 2
     Y = math.diag(math.concat([y, y], axis=0))
     return X, Y, None
-
 
 
 def amp_XYd(amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
@@ -388,19 +387,19 @@ def amp_XYd(amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], h
         raise ValueError("Amplification must be larger than 1")
     x = math.sqrt(amplification)
     X = math.diag(math.concat([x, x], axis=0))
-    y = (amplification-1) * (2*nbar + 1) * hbar / 2
+    y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
     Y = math.diag(math.concat([y, y], axis=0))
     return X, Y, None
 
 
 def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I)
-    
-        Arguments:
-            noise (float): number of photons in the thermal state
-        Returns:
-            Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
-        """
+
+    Arguments:
+        noise (float): number of photons in the thermal state
+    Returns:
+        Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
+    """
     Y = math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
     return None, Y, None
 
