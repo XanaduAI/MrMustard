@@ -38,6 +38,9 @@ class TFMath(MathInterface):
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
+    def any(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.reduce_any(array)
+
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=dtype)
 

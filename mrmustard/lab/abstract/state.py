@@ -225,9 +225,15 @@ class State:
         Returns:
             Tensor: the ket
         """
-        cutoffs = self.cutoffs if cutoffs is None else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+        cutoffs = (
+            self.cutoffs
+            if cutoffs is None
+            else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+        )
         if self.is_gaussian:
-            self._ket = fock.fock_representation(self.cov, self.means, shape=cutoffs, return_dm=False)
+            self._ket = fock.fock_representation(
+                self.cov, self.means, shape=cutoffs, return_dm=False
+            )
         else:  # only fock representation is available
             if self._ket is None:
                 return None
@@ -260,7 +266,9 @@ class State:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.fock_representation(self.cov, self.means, shape=cutoffs * 2, return_dm=True)
+                self._dm = fock.fock_representation(
+                    self.cov, self.means, shape=cutoffs * 2, return_dm=True
+                )
             elif cutoffs != (current_cutoffs := [s for s in self._dm.shape[: self.num_modes]]):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):

@@ -1,9 +1,9 @@
-sf.lab.LossChannel
+sf.lab.Attenuator
 ==================
 
 .. currentmodule:: mrmustard.lab
 
-.. autoclass:: LossChannel
+.. autoclass:: Attenuator
    :show-inheritance:
 
    .. raw:: html
@@ -18,18 +18,18 @@ sf.lab.LossChannel
    .. autosummary::
       :nosignatures:
 
-      ~LossChannel.XYd
-      ~LossChannel.XYd_dual
-      ~LossChannel.X_matrix
-      ~LossChannel.X_matrix_dual
-      ~LossChannel.Y_matrix
-      ~LossChannel.Y_matrix_dual
-      ~LossChannel.bell
-      ~LossChannel.d_vector
-      ~LossChannel.d_vector_dual
-      ~LossChannel.is_unitary
-      ~LossChannel.modes
-      ~LossChannel.trainable_parameters
+      ~Attenuator.XYd
+      ~Attenuator.XYd_dual
+      ~Attenuator.X_matrix
+      ~Attenuator.X_matrix_dual
+      ~Attenuator.Y_matrix
+      ~Attenuator.Y_matrix_dual
+      ~Attenuator.bell
+      ~Attenuator.d_vector
+      ~Attenuator.d_vector_dual
+      ~Attenuator.is_unitary
+      ~Attenuator.modes
+      ~Attenuator.trainable_parameters
 
    .. autoattribute:: XYd
    .. autoattribute:: XYd_dual
@@ -59,12 +59,12 @@ sf.lab.LossChannel
 
    .. autosummary::
 
-      ~LossChannel.U
-      ~LossChannel.__call__
-      ~LossChannel.choi
-      ~LossChannel.dual
-      ~LossChannel.transform_fock
-      ~LossChannel.transform_gaussian
+      ~Attenuator.U
+      ~Attenuator.__call__
+      ~Attenuator.choi
+      ~Attenuator.dual
+      ~Attenuator.transform_fock
+      ~Attenuator.transform_gaussian
 
    .. automethod:: U
    .. automethod:: __call__

@@ -54,6 +54,16 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
+    def any(self, array: Tensor) -> bool:
+        r"""Returns True if any element of array is True.
+        Arguments:
+            array (array): array to check
+        Returns:
+            bool: True if any element of array is True
+        """
+        ...
+
+    @abstractmethod
     def arange(self, start: int, limit: int = None, delta: int = 1) -> Tensor:
         r"""
         Returns an array of evenly spaced values within a given interval.
