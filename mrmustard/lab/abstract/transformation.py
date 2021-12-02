@@ -143,7 +143,10 @@ class Transformation:
                     f"{par.shape}",
                     str(self.__dict__["_" + name + "_trainable"]),
                 )
-            lst = [f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}" for name in self.param_names]
+            lst = [
+                f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}"
+                for name in self.param_names
+            ]
             repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
                 f"[{self._modes}]" if self._modes is not None else ""
             )

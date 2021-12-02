@@ -104,7 +104,9 @@ def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
-    ps = (SqueezedVacuum(r=r, phi=phi) >> Attenuator(transmissivity=eta)).fock_probabilities([cutoff])
+    ps = (SqueezedVacuum(r=r, phi=phi) >> Attenuator(transmissivity=eta)).fock_probabilities(
+        [cutoff]
+    )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
     assert np.allclose(ps, expected, atol=1e-6)
 
