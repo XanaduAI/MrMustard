@@ -32,7 +32,7 @@ class GaussianMeasurement(ABC):
         Applies a general-dyne Gaussian measurement to the state, i.e. it projects
         onto the state with given cov and outcome means vector.
 
-        Arguments:
+        Args:
             state (State): the state to be measured.
             kwargs (optional): same arguments as in the init, use them only if they are different
             from the arguments supplied at init time (e.g. for training a measurement using a state to project onto).

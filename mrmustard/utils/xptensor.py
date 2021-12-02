@@ -46,7 +46,7 @@ class XPTensor(ABC):
     means + d if d is undefined it simply returns means. In this example no operation was actually computed.
     Thanks to sparsity we can represent graph states and transformations on graph states as XPTensor objects.
 
-    Arguments:
+    Args:
         tensor: The tensor in (n,m,2,2) or (n,2) order.
         modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
         like_0: Whether the null tensor behaves like 0 under addition (e.g. the noise matrix Y)
@@ -179,7 +179,7 @@ class XPTensor(ABC):
         Create a new XPTensor with the same shape and modes as other. The new tensor
         has the same content as self, cloned as many times as necessary to match the shape and modes of other.
         The other properties are kept as is.
-        Arguments:
+        Args:
             other: The tensor to be cloned.
         Returns:
             A new XPTensor with the same shape and modes as other.

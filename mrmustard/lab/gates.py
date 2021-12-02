@@ -44,7 +44,7 @@ class Dgate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         x (float or List[float]): the list of displacements along the x axis
         x_bounds (float, float): bounds for the displacement along the x axis
         x_trainable (bool): whether x is a trainable variable
@@ -92,7 +92,7 @@ class Sgate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         r (float or List[float]): the list of squeezing magnitudes
         r_bounds (float, float): bounds for the squeezing magnitudes
         r_trainable (bool): whether r is a trainable variable
@@ -138,7 +138,7 @@ class Rgate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         modes (List[int]): the list of modes this gate is applied to
         angle (float or List[float]): the list of rotation angles
         angle_bounds (float, float): bounds for the rotation angles
@@ -174,7 +174,7 @@ class BSgate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         theta (float): the transmissivity angle
         theta_bounds (float, float): bounds for the transmissivity angle
         theta_trainable (bool): whether theta is a trainable variable
@@ -226,7 +226,7 @@ class MZgate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         phi_a (float): the phase in the upper arm of the MZ interferometer
         phi_a_bounds (float, float): bounds for phi_a
         phi_a_trainable (bool): whether phi_a is a trainable variable
@@ -279,7 +279,7 @@ class S2gate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         r (float): the squeezing magnitude
         r_bounds (float, float): bounds for the squeezing magnitude
         r_trainable (bool): whether r is a trainable variable
@@ -323,7 +323,7 @@ class Interferometer(Parametrized, Transformation):
     r"""
     N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
 
-    Arguments:
+    Args:
         orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
@@ -368,7 +368,7 @@ class Ggate(Parametrized, Transformation):
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
     strength r in [0,1] for each mode.
 
-    Arguments:
+    Args:
         num_modes (int): the number of modes this gate is acting on.
         symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape `(2N,2N)`.
         symplectic_trainable (bool): whether symplectic is a trainable variable.
@@ -424,7 +424,7 @@ class LossChannel(Parametrized, Transformation):
 
     One can optionally set bounds for `transmissivity`, which the optimizer will respect.
 
-    Arguments:
+    Args:
         transmissivity (float or List[float]): the list of transmissivities
         transmissivity_bounds (float, float): bounds for the transmissivity
         transmissivity_trainable (bool): whether transmissivity is a trainable variable

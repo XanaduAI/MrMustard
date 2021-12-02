@@ -311,7 +311,7 @@ class TorchMath(MathInterface):
         r"""
         Computes the loss and gradients of the given cost function.
 
-        Arguments:
+        Args:
             cost_fn (Callable): The cost function. Takes in two arguments:
                 - Output: The output tensor of the model.
             parameters (Dict): The parameters to optimize in three kinds:

@@ -47,7 +47,7 @@ class MathInterface(ABC):
     def abs(self, array: Tensor) -> Tensor:
         r"""Returns the absolute value of array.
 
-        Arguments:
+        Args:
             array (array): array to take the absolute value of
 
         Returns:
@@ -60,7 +60,7 @@ class MathInterface(ABC):
         r"""
         Returns an array of evenly spaced values within a given interval.
 
-        Arguments:
+        Args:
             start (int): start of the interval
             limit (int): end of the interval
             delta (int): step size
@@ -74,7 +74,7 @@ class MathInterface(ABC):
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts a tensor to a numpy array.
 
-        Arguments:
+        Args:
             tensor (array): tensor to convert
 
         Returns:
@@ -86,7 +86,7 @@ class MathInterface(ABC):
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
         r"""Assigns value to tensor.
 
-        Arguments:
+        Args:
             tensor (array): tensor to assign to
             value (array): value to assign
 
@@ -99,7 +99,7 @@ class MathInterface(ABC):
     def astensor(self, array: Tensor) -> Tensor:
         r"""Converts a numpy array to a tensor.
 
-        Arguments:
+        Args:
             array (array): numpy array to convert
 
         Returns:
@@ -112,7 +112,7 @@ class MathInterface(ABC):
         r"""
         Returns an array with at least one dimension.
 
-        Arguments:
+        Args:
             array (array): array to convert
             dtype (dtype): data type of the array
 
@@ -125,7 +125,7 @@ class MathInterface(ABC):
     def cast(self, array: Tensor, dtype) -> Tensor:
         r"""Casts array to dtype.
 
-        Arguments:
+        Args:
             array (array): array to cast
             dtype (dtype): data type to cast to
 
@@ -138,7 +138,7 @@ class MathInterface(ABC):
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
         r"""Clips array to the interval [a_min, a_max].
 
-        Arguments:
+        Args:
             array (array): array to clip
             a_min (float): minimum value
             a_max (float): maximum value
@@ -152,7 +152,7 @@ class MathInterface(ABC):
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
         r"""Concatenates values along the given axis.
 
-        Arguments:
+        Args:
             values (array): values to concatenate
             axis (int): axis along which to concatenate
 
@@ -165,7 +165,7 @@ class MathInterface(ABC):
     def conj(self, array: Tensor) -> Tensor:
         r"""Returns the complex conjugate of array.
 
-        Arguments:
+        Args:
             array (array): array to take the complex conjugate of
 
         Returns:
@@ -180,7 +180,7 @@ class MathInterface(ABC):
         A constraint function will clip the value to the interval given by the bounds.
         .. note:: the upper and/or lower bounds can be None, in which case the constraint function will not clip the value.
 
-        Arguments:
+        Args:
             bounds (tuple): bounds of the constraint
 
         Returns:
@@ -198,7 +198,7 @@ class MathInterface(ABC):
     ) -> Tensor:  # TODO: remove strides and data_format?
         r"""Performs a convolution on array with filters.
 
-        Arguments:
+        Args:
             array (array): array to convolve
             filters (array): filters to convolve with
             padding (str): padding mode
@@ -213,7 +213,7 @@ class MathInterface(ABC):
     def cos(self, array: Tensor) -> Tensor:
         r"""Returns the cosine of array.
 
-        Arguments:
+        Args:
             array (array): array to take the cosine of
 
         Returns:
@@ -225,7 +225,7 @@ class MathInterface(ABC):
     def cosh(self, array: Tensor) -> Tensor:
         r"""Returns the hyperbolic cosine of array.
 
-        Arguments:
+        Args:
             array (array): array to take the hyperbolic cosine of
 
         Returns:
@@ -237,7 +237,7 @@ class MathInterface(ABC):
     def det(self, matrix: Tensor) -> Tensor:
         r"""Returns the determinant of matrix.
 
-        Arguments:
+        Args:
             matrix (matrix): matrix to take the determinant of
 
         Returns:
@@ -249,7 +249,7 @@ class MathInterface(ABC):
     def diag(self, array: Tensor, k: int) -> Tensor:
         r"""Returns the array made by inserting the given array along the k-th diagonal.
 
-        Arguments:
+        Args:
             array (array): array to insert
             k (int): kth diagonal to insert array into
 
@@ -262,7 +262,7 @@ class MathInterface(ABC):
     def diag_part(self, array: Tensor) -> Tensor:
         r"""Returns the array of the main diagonal of array.
 
-        Arguments:
+        Args:
             array (array): array to extract the main diagonal of
 
         Returns:
@@ -274,7 +274,7 @@ class MathInterface(ABC):
     def einsum(self, string: str, *tensors) -> Tensor:
         r"""Returns the result of the Einstein summation convention on the tensors.
 
-        Arguments:
+        Args:
             string (str): string of the Einstein summation convention
             tensors (array): tensors to perform the Einstein summation on
 
@@ -287,7 +287,7 @@ class MathInterface(ABC):
     def exp(self, array: Tensor) -> Tensor:
         r"""Returns the exponential of array element-wise.
 
-        Arguments:
+        Args:
             array (array): array to take the exponential of
 
         Returns:
@@ -299,7 +299,7 @@ class MathInterface(ABC):
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
         r"""Returns the array with an additional dimension inserted at the given axis.
 
-        Arguments:
+        Args:
             array (array): array to expand
             axis (int): axis to insert the new dimension
 
@@ -312,7 +312,7 @@ class MathInterface(ABC):
     def expm(self, matrix: Tensor) -> Tensor:
         r"""Returns the matrix exponential of matrix.
 
-        Arguments:
+        Args:
             matrix (matrix): matrix to take the exponential of
 
         Returns:
@@ -324,7 +324,7 @@ class MathInterface(ABC):
     def eye(self, size: int, dtype) -> Tensor:
         r"""Returns the identity matrix of size.
 
-        Arguments:
+        Args:
             size (int): size of the identity matrix
             dtype (dtype): data type of the identity matrix
 
@@ -337,7 +337,7 @@ class MathInterface(ABC):
     def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
         r"""Returns the values of the array at the given indices.
 
-        Arguments:
+        Args:
             array (array): array to gather values from
             indices (array): indices to gather values from
             axis (int): axis to gather values from
@@ -351,7 +351,7 @@ class MathInterface(ABC):
     def hash_tensor(self, tensor: Tensor) -> int:
         r"""Returns the hash of the given tensor.
 
-        Arguments:
+        Args:
             tensor (array): tensor to hash
 
         Returns:
@@ -363,7 +363,7 @@ class MathInterface(ABC):
     def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
         r"""Returns the array of hermite renormalized polynomials of the given coefficients.
 
-        Arguments:
+        Args:
             A (array): Matrix coefficient of the hermite polynomial
             B (array): Vector coefficient of the hermite polynomial
             C (array): Scalar coefficient of the hermite polynomial
@@ -378,7 +378,7 @@ class MathInterface(ABC):
     def imag(self, array: Tensor) -> Tensor:
         r"""Returns the imaginary part of array.
 
-        Arguments:
+        Args:
             array (array): array to take the imaginary part of
 
         Returns:
@@ -390,7 +390,7 @@ class MathInterface(ABC):
     def inv(self, tensor: Tensor) -> Tensor:
         r"""Returns the inverse of tensor.
 
-        Arguments:
+        Args:
             tensor (array): tensor to take the inverse of
 
         Returns:
@@ -412,7 +412,7 @@ class MathInterface(ABC):
     def lgamma(self, x: Tensor) -> Tensor:
         r"""Returns the natural logarithm of the gamma function of x.
 
-        Arguments:
+        Args:
             x (array): array to take the natural logarithm of the gamma function of
 
         Returns:
@@ -424,7 +424,7 @@ class MathInterface(ABC):
     def log(self, x: Tensor) -> Tensor:
         r"""Returns the natural logarithm of x.
 
-        Arguments:
+        Args:
             x (array): array to take the natural logarithm of
 
         Returns:
@@ -438,7 +438,7 @@ class MathInterface(ABC):
     ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
         r"""Returns the loss and gradients of the given cost function.
 
-        Arguments:
+        Args:
             cost_fn (callable): cost function to compute the loss and gradients of
             parameters (dict): parameters to compute the loss and gradients of
 
@@ -459,7 +459,7 @@ class MathInterface(ABC):
     ) -> Tensor:
         r"""Returns the matrix product of a and b.
 
-        Arguments:
+        Args:
             a (array): first matrix to multiply
             b (array): second matrix to multiply
             transpose_a (bool): whether to transpose a
@@ -476,7 +476,7 @@ class MathInterface(ABC):
     def matvec(self, a: Matrix, b: Vector, transpose_a=False, adjoint_a=False) -> Tensor:
         r"""Returns the matrix vector product of a (matrix) and b (vector).
 
-        Arguments:
+        Args:
             a (array): matrix to multiply
             b (array): vector to multiply
             transpose_a (bool): whether to transpose a
@@ -491,7 +491,7 @@ class MathInterface(ABC):
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""Returns the element-wise maximum of a and b.
 
-        Arguments:
+        Args:
             a (array): first array to take the maximum of
             b (array): second array to take the maximum of
 
@@ -504,7 +504,7 @@ class MathInterface(ABC):
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
         r"""Returns the element-wise minimum of a and b.
 
-        Arguments:
+        Args:
             a (array): first array to take the minimum of
             b (array): second array to take the minimum of
 
@@ -517,7 +517,7 @@ class MathInterface(ABC):
     def new_variable(self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str) -> Tensor:
         r"""Returns a new variable with the given value and bounds.
 
-        Arguments:
+        Args:
             value (array): value of the new variable
             bounds (tuple): bounds of the new variable
             name (str): name of the new variable
@@ -531,7 +531,7 @@ class MathInterface(ABC):
     def new_constant(self, value: Tensor, name: str) -> Tensor:
         r"""Returns a new constant with the given value.
 
-        Arguments:
+        Args:
             value (array): value of the new constant
             name (str): name of the new constant
 
@@ -544,7 +544,7 @@ class MathInterface(ABC):
     def norm(self, array: Tensor) -> Tensor:
         r"""Returns the norm of array.
 
-        Arguments:
+        Args:
             array (array): array to take the norm of
 
         Returns:
@@ -556,7 +556,7 @@ class MathInterface(ABC):
     def ones(self, shape: Sequence[int], dtype) -> Tensor:
         r"""Returns an array of ones with the given shape and dtype.
 
-        Arguments:
+        Args:
             shape (tuple): shape of the array
             dtype (type): dtype of the array
 
@@ -569,7 +569,7 @@ class MathInterface(ABC):
     def ones_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of ones with the same shape and dtype as array.
 
-        Arguments:
+        Args:
             array (array): array to take the shape and dtype of
 
         Returns:
@@ -581,7 +581,7 @@ class MathInterface(ABC):
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
         r"""Returns the outer product of array1 and array2.
 
-        Arguments:
+        Args:
             array1 (array): first array to take the outer product of
             array2 (array): second array to take the outer product of
 
@@ -594,7 +594,7 @@ class MathInterface(ABC):
     def pad(self, array: Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0) -> Tensor:
         r"""Returns the padded array.
 
-        Arguments:
+        Args:
             array (array): array to pad
             paddings (tuple): paddings to apply
             mode (str): mode to apply the padding
@@ -609,7 +609,7 @@ class MathInterface(ABC):
     def pinv(self, matrix: Tensor) -> Tensor:
         r"""Returns the pseudo-inverse of matrix.
 
-        Arguments:
+        Args:
             matrix (array): matrix to take the pseudo-inverse of
 
         Returns:
@@ -621,7 +621,7 @@ class MathInterface(ABC):
     def real(self, array: Tensor) -> Tensor:
         r"""Returns the real part of array.
 
-        Arguments:
+        Args:
             array (array): array to take the real part of
 
         Returns:
@@ -633,7 +633,7 @@ class MathInterface(ABC):
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
         r"""Returns the reshaped array.
 
-        Arguments:
+        Args:
             array (array): array to reshape
             shape (tuple): shape to reshape the array to
 
@@ -646,7 +646,7 @@ class MathInterface(ABC):
     def sin(self, array: Tensor) -> Tensor:
         r"""Returns the sine of array.
 
-        Arguments:
+        Args:
             array (array): array to take the sine of
 
         Returns:
@@ -658,7 +658,7 @@ class MathInterface(ABC):
     def sinh(self, array: Tensor) -> Tensor:
         r"""Returns the hyperbolic sine of array.
 
-        Arguments:
+        Args:
             array (array): array to take the hyperbolic sine of
 
         Returns:
@@ -670,7 +670,7 @@ class MathInterface(ABC):
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""Returns the square root of x.
 
-        Arguments:
+        Args:
             x (array): array to take the square root of
             dtype (type): dtype of the output array
 
@@ -683,7 +683,7 @@ class MathInterface(ABC):
     def sum(self, array: Tensor, axes: Sequence[int] = None):
         r"""Returns the sum of array.
 
-        Arguments:
+        Args:
             array (array): array to take the sum of
             axes (tuple): axes to sum over
 
@@ -696,7 +696,7 @@ class MathInterface(ABC):
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
         r"""Returns the tensordot product of a and b.
 
-        Arguments:
+        Args:
             a (array): first array to take the tensordot product of
             b (array): second array to take the tensordot product of
             axes (tuple): axes to take the tensordot product over
@@ -710,7 +710,7 @@ class MathInterface(ABC):
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
         r"""Returns the tiled array.
 
-        Arguments:
+        Args:
             array (array): array to tile
             repeats (tuple): number of times to tile the array along each axis
 
@@ -723,7 +723,7 @@ class MathInterface(ABC):
     def trace(self, array: Tensor) -> Tensor:
         r"""Returns the trace of array.
 
-        Arguments:
+        Args:
             array (array): array to take the trace of
 
         Returns:
@@ -735,7 +735,7 @@ class MathInterface(ABC):
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
         r"""Returns the transposed array.
 
-        Arguments:
+        Args:
             a (array): array to transpose
             perm (tuple): permutation to apply to the array
 
@@ -748,7 +748,7 @@ class MathInterface(ABC):
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.
 
-        Arguments:
+        Args:
             tensor (array): tensor to update
             indices (array): indices to update
             values (array): values to update
@@ -759,7 +759,7 @@ class MathInterface(ABC):
     def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place by adding the given values.
 
-        Arguments:
+        Args:
             tensor (array): tensor to update
             indices (array): indices to update
             values (array): values to add
@@ -770,7 +770,7 @@ class MathInterface(ABC):
     def zeros(self, shape: Sequence[int], dtype) -> Tensor:
         r"""Returns an array of zeros with the given shape and dtype.
 
-        Arguments:
+        Args:
             shape (tuple): shape of the array
             dtype (type): dtype of the array
 
@@ -783,7 +783,7 @@ class MathInterface(ABC):
     def zeros_like(self, array: Tensor) -> Tensor:
         r"""Returns an array of zeros with the same shape and dtype as array.
 
-        Arguments:
+        Args:
             array (array): array to take the shape and dtype of
 
         Returns:
@@ -821,7 +821,7 @@ class MathInterface(ABC):
     def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
         r"""Returns a matrix made from the given blocks
 
-        Arguments:
+        Args:
             blocks (list): list of lists of compatible blocks
             axes (tuple): axes to stack the blocks along
 
@@ -834,7 +834,7 @@ class MathInterface(ABC):
     def dagger(self, array: Tensor) -> Tensor:
         r"""Returns the adjoint of array.
 
-        Arguments:
+        Args:
             array (array): array to take the adjoint of
 
         Returns:
@@ -947,7 +947,7 @@ class MathInterface(ABC):
         It assumes that that `a_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
         i.e. it will apply a_partial on the corresponding M modes of `b_full` from the left.
 
-        Arguments:
+        Args:
             a_partial (array): :math:`2M\times 2M` array
             b_full (array): :math:`2N\times 2N` array
             modes (list): list of `M` modes to perform the multiplication on
@@ -972,7 +972,7 @@ class MathInterface(ABC):
         It assumes that that `b_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
         i.e. it will apply b_partial on the corresponding M modes of `a_full` from the right.
 
-        Arguments:
+        Args:
             a_full (array): :math:`2N\times 2N` array
             b_partial (array): :math:`2M\times 2M` array
             modes (list): list of `M` modes to perform the multiplication on
@@ -1060,7 +1060,7 @@ class MathInterface(ABC):
         r"""Convert the Riemannian gradient to a symplectic gradient.
         TODO: add citation (S.Fiori)
 
-        Arguments:
+        Args:
             S (Matrix): symplectic matrix
             dS_riemann (Matrix): Riemannian gradient tensor
 

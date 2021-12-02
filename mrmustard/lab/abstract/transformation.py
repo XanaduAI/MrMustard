@@ -39,7 +39,7 @@ class Transformation:
         r"""
         Applies self (a Transformation) to other (a State) and returns the transformed state.
 
-        Arguments:
+        Args:
             state (State): the state to transform
 
         Returns:
@@ -55,7 +55,7 @@ class Transformation:
         r"""
         Applies the dual of self (dual of a Transformation) to other (a State) and returns the transformed state.
 
-        Arguments:
+        Args:
             state (State): the state to transform
 
         Returns:
@@ -85,7 +85,7 @@ class Transformation:
         r"""
         Transforms a Gaussian state into a Gaussian state.
 
-        Arguments:
+        Args:
             state (State): the state to transform
             dual (bool): whether to apply the dual channel
 
@@ -101,7 +101,7 @@ class Transformation:
         r"""
         Transforms a state in Fock representation.
 
-        Arguments:
+        Args:
             state (State): the state to transform
             dual (bool): whether to apply the dual channel
 
@@ -291,7 +291,7 @@ class Transformation:
         E.g.
         `circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]`
 
-        Arguments:
+        Args:
             other: another transformation
 
         Returns:
@@ -315,7 +315,7 @@ class Transformation:
         Sgate(0.1) << Coherent(0.5)   # state
         Sgate(0.1) << Dgate(0.2)      # transformation
 
-        Arguments:
+        Args:
             other: a state or a transformation
 
         Returns:

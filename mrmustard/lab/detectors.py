@@ -35,7 +35,7 @@ class PNRDetector(Parametrized, FockMeasurement):
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (possonian).
 
-    Arguments:
+    Args:
         efficiency (float or List[float]): list of quantum efficiencies for each detector
         efficiency_trainable (bool): whether the efficiency is trainable
         efficiency_bounds (Tuple[float, float]): bounds for the efficiency
@@ -106,7 +106,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (bernoulli).
 
-    Arguments:
+    Args:
         conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         efficiency (float or List[float]): list of quantum efficiencies for each detector
         dark_count_prob (float or List[float]): list of dark count probabilities for each detector

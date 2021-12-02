@@ -26,8 +26,8 @@ class Optimizer:
 
     It can optimize euclidean, orthogonal and symplectic parameters.
 
-    .. note:: 
-    
+    .. note::
+
       In the future it will also include a compiler, so that it will be possible to
     simplify the circuit/detector/gate/etc before the optimization and also
     compile other types of structures like error correcting codes and encoders/decoders.
@@ -43,7 +43,7 @@ class Optimizer:
         r"""
         Minimizes the given cost function by optimizing circuits and/or detectors.
 
-        Arguments:
+        Args:
             cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
@@ -89,7 +89,7 @@ def new_variable(value, bounds: Tuple[Optional[float], Optional[float]], name: s
     Returns a new trainable variable from the current math backend
     with initial value set by `value` and bounds set by `bounds`.
 
-    Arguments:
+    Args:
         value (float): The initial value of the variable
         bounds (Tuple[float, float]): The bounds of the variable
         name (str): The name of the variable
@@ -106,7 +106,7 @@ def new_constant(value, name: str, dtype=math.float64) -> Tensor:
     Returns a new constant (non-trainable) tensor from the current math backend
     with initial value set by `value`.
 
-    Arguments:
+    Args:
         value (numeric): The initial value of the tensor
         name (str): The name of the constant
         dtype: The dtype of the constant
@@ -124,7 +124,7 @@ def new_symplectic(num_modes: int) -> Tensor:
     Returns a new symplectic matrix from the current math backend
     with `num_modes` modes.
 
-    Arguments:
+    Args:
         num_modes (int): The number of modes in the symplectic matrix
 
     Returns:
@@ -161,7 +161,7 @@ def extract_parameters(items: Sequence, kind: str) -> List[Trainable]:
     r"""
     Extracts the parameters of the given kind from the given items.
 
-    Arguments:
+    Args:
         items (Sequence[Trainable]): The items to extract the parameters from
         kind (str): The kind of parameters to extract. Can be "symplectic", "orthogonal", or "euclidean".
 
@@ -185,7 +185,7 @@ def loss_and_gradients(cost_fn: Callable, params: dict) -> Tuple[Tensor, Dict[st
     The dictionary has three keys: "symplectic", "orthogonal", and "euclidean", to maintain
     the information of the different parameter types.
 
-    Arguments:
+    Args:
         cost_fn (Callable): The cost function to be minimized
         params (dict): A dictionary of parameters to be optimized
 

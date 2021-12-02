@@ -31,7 +31,7 @@ math = Math()
 def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix of the vacuum state.
 
-    Arguments:
+    Args:
         num_modes (int): number of modes
         hbar (float): value of hbar
 
@@ -44,7 +44,7 @@ def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
 def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of the vacuum state.
 
-    Arguments:
+    Args:
         num_modes (int): number of modes
         hbar (float): value of hbar
 
@@ -59,7 +59,7 @@ def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
 
-    Arguments:
+    Args:
         r (vector): squeezing magnitude
         phi (vector): squeezing angle
         hbar: value of hbar
@@ -76,7 +76,7 @@ def thermal_cov(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
     The dimension depends on the dimensions of nbar.
 
-    Arguments:
+    Args:
         nbar (vector): average number of photons per mode
         hbar: value of hbar
 
@@ -92,7 +92,7 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a two-mode squeezed vacuum state.
     The dimension depends on the dimensions of r and phi.
 
-    Arguments:
+    Args:
         r (vector): squeezing magnitude
         phi (vector): squeezing angle
         hbar: value of hbar
@@ -108,7 +108,7 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
 def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
     r"""Returns the covariance matrix of a Gaussian state.
 
-    Arguments:
+    Args:
         symplectic (Tensor): symplectic matrix of a channel
         eigenvalues (vector): symplectic eigenvalues
         hbar (float): value of hbar
@@ -134,7 +134,7 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     r"""Symplectic matrix of a rotation gate.
     The dimension depends on the dimension of the angle.
 
-    Arguments:
+    Args:
         angle (scalar or vector): rotation angles
 
     Returns:
@@ -151,7 +151,7 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     r"""Symplectic matrix of a squeezing gate.
     The dimension depends on the dimension of r and phi.
 
-    Arguments:
+    Args:
         r (scalar or vector): squeezing magnitude
         phi (scalar or vector): rotation parameter
 
@@ -178,7 +178,7 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
     r"""Returns the displacement vector for a displacement by alpha = x + iy.
     The dimension depends on the dimensions of x and y.
 
-    Arguments:
+    Args:
         x (scalar or vector): real part of displacement
         y (scalar or vector): imaginary part of displacement
         hbar: value of hbar
@@ -199,7 +199,7 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a Beam-splitter gate.
     The dimension is 4x4.
 
-    Arguments:
+    Args:
         theta: transmissivity parameter
         phi: phase parameter
 
@@ -229,7 +229,7 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
     if `internal = False` (default), both phases act on the upper arm:
         `phi_a` before the first BS, `phi_b` after the first BS.
 
-    Arguments:
+    Args:
         phi_a (float): first phase
         phi_b (float): second phase
         internal (bool): whether phases are in the internal arms (default is False)
@@ -268,7 +268,7 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a two-mode squeezing gate.
     The dimension is 4x4.
 
-    Arguments:
+    Args:
         r (float): squeezing magnitude
         phi (float): rotation parameter
 
@@ -304,7 +304,7 @@ def CPTP(cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Seq
     If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
     otherwise it must contain as many modes as the number of modes in the channel.
 
-    Arguments:
+    Args:
         cov (Matrix): covariance matrix
         means (Vector): means vector
         X (Matrix): the X matrix of the CPTP channel
@@ -366,7 +366,7 @@ def compose_channels_XYd(
 ) -> Tuple[Matrix, Matrix, Vector]:
     r"""Returns the combined X, Y, and d for two CPTP channels.
 
-    Arguments:
+    Args:
         X1 (Matrix): the X matrix of the first CPTP channel
         Y1 (Matrix): the Y matrix of the first CPTP channel
         d1 (Vector): the displacement vector of the first CPTP channel
@@ -414,7 +414,7 @@ def general_dyne(
     r"""
     Returns the results of a general dyne measurement.
 
-    Arguments:
+    Args:
         cov (Matrix): covariance matrix of the state being measured
         means (Vector): means vector of the state being measured
         proj_cov (Matrix): covariance matrix of the state being projected onto
@@ -449,7 +449,7 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
     Returns the photon number means vector
     given a Wigner covariance matrix and a means vector.
 
-    Arguments:
+    Args:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         hbar: The value of the Planck constant.
@@ -468,7 +468,7 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     Returns the photon number covariance matrix
     given a Wigenr covariance matrix and a means vector.
 
-    Arguments:
+    Args:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         hbar: The value of the Planck constant.
@@ -494,7 +494,7 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
     r"""
     Automatically determines reasonable cutoffs.
 
-    Arguments:
+    Args:
         cov: The covariance matrix.
         means: The means vector.
         hbar: The value of the Planck constant.
@@ -512,7 +512,7 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     r"""
     Returns the covariances and means after discarding the specified modes.
 
-    Arguments:
+    Args:
         cov (Matrix): covariance matrix
         means (Vector): means vector
         Bmodes (Sequence[int]): modes to discard
@@ -531,7 +531,7 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
     r"""
     Partitions the covariance matrix into the A and B subsystems and the AB coherence block.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
         Amodes (Sequence[int]): the modes of system A
 
@@ -554,7 +554,7 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
     r"""
     Partitions the means vector into the A and B subsystems.
 
-    Arguments:
+    Args:
         means (Vector): the means vector
         Amodes (Sequence[int]): the modes of system A
 
@@ -574,7 +574,7 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     r"""
     Returns the purity of the state with the given covariance matrix.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
 
     Returns:
@@ -589,7 +589,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix.
 
     Returns:
@@ -610,7 +610,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
 
     Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
 
     Returns:
@@ -628,7 +628,7 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rto
 
     Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
 
-    Arguments:
+    Args:
         mu1 (Vector): the means vector of state 1
         mu2 (Vector): the means vector of state 2
         cov1 (Matrix): the covariance matrix of state 1
@@ -676,7 +676,7 @@ def log_negativity(cov: Matrix) -> float:
 
     Reference: https://arxiv.org/pdf/quant-ph/0102117.pdf, Equation 57, 61.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
 
     Returns:
@@ -695,7 +695,7 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     r"""
     Joins the given covariance matrices into a single covariance matrix.
 
-    Arguments:
+    Args:
         covs (Sequence[Matrix]): the covariance matrices
 
     Returns:
@@ -713,7 +713,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
     r"""
     Joins the given means vectors into a single means vector.
 
-    Arguments:
+    Args:
         means (Sequence[Vector]): the means vectors
 
     Returns:
@@ -729,7 +729,7 @@ def symplectic_inverse(S: Matrix) -> Matrix:
     r"""
     Returns the inverse of a symplectic matrix.
 
-    Arguments:
+    Args:
         S (Matrix): the symplectic matrix
 
     Returns:
@@ -749,7 +749,7 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     r"""
     Returns the dual channel (X,Y,d)
 
-    Arguments:
+    Args:
         X (Matrix): the X matrix
         Y (Matrix): the Y noise matrix
         d (Vector): the displacement vector

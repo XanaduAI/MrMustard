@@ -30,7 +30,7 @@ def fock_state(n: Sequence[int]) -> Tensor:
     r"""
     Returns a pure or mixed Fock state.
 
-    Arguments:
+    Args:
         n: a list of photon numbers.
 
     Returns:
@@ -47,7 +47,7 @@ def autocutoffs(
     r"""
     Returns the autocutoffs of a Wigner state.
 
-    Arguments:
+    Args:
         number_stdev: The photon number standard deviation in each mode
             (i.e. the square root of the diagonal of the covariance matrix)
         number_means: The photon number means vector.
@@ -83,7 +83,7 @@ def fock_representation(
 
     If the transformation is not unitary it returns the Choi matrix.
 
-    Arguments:
+    Args:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         shape: The shape of the tensor.
@@ -113,7 +113,7 @@ def ket_to_dm(ket: Tensor) -> Tensor:
     r"""
     Maps a ket to a density matrix.
 
-    Arguments:
+    Args:
         ket: The ket.
 
     Returns:
@@ -126,7 +126,7 @@ def ket_to_probs(ket: Tensor) -> Tensor:
     r"""
     Maps a ket to probabilities.
 
-    Arguments:
+    Args:
         ket: The ket.
 
     Returns:
@@ -139,7 +139,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     r"""
     Extracts the diagonals of a density matrix.
 
-    Arguments:
+    Args:
         dm: The density matrix.
 
     Returns:
@@ -152,7 +152,7 @@ def U_to_choi(U: Tensor) -> Tensor:
     r"""
     Converts a unitary transformation to a Choi tensor.
 
-    Arguments:
+    Args:
         U: The unitary transformation.
 
     Returns:
@@ -171,7 +171,7 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
     r"""
     Returns the full-size A matrix, B vector and C scalar.
 
-    Arguments:
+    Args:
         cov: The Wigner covariance matrix.
         means: The Wigner means vector.
         full: Whether to return the full-size A, B and C or the half-size A, B and C.
@@ -274,7 +274,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
 
     It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
 
-    Arguments:
+    Args:
         transformation: The transformation tensor.
         fock_state: The state to transform.
         transformation_is_unitary: Whether the transformation is a unitary matrix or a Choi operator.
@@ -309,7 +309,7 @@ def contract_states(stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: L
 
     It assumes that the modes spanned by B are a subset of the modes spanned by A.
 
-    Arguments:
+    Args:
         stateA: The first state
         stateB: The second state (assumed to be on a subset of the modes of stateA)
         a_is_mixed: Whether the first state is mixed or not.
@@ -362,7 +362,7 @@ def is_mixed_dm(dm):
 def trace(dm, keep: List[int]):
     r"""Computes the partial trace of a density matrix.
 
-    Arguments:
+    Args:
         dm: The density matrix
         keep: The modes to keep
     """

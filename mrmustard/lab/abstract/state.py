@@ -49,7 +49,7 @@ class State:
         - an eigenvalues array and symplectic matrix
         - a fock representation (ket or dm)
 
-        Arguments:
+        Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
             eigenvalues (Array): the eigenvalues of the covariance matrix
@@ -210,7 +210,7 @@ class State:
         r"""
         Returns the ket of the state in Fock representation or `None` if the state is mixed.
 
-        Arguments:
+        Args:
             cutoffs List[int or None]: the cutoff dimensions for each mode. If a mode cutoff is None,
                 it's guessed automatically.
 
@@ -240,7 +240,7 @@ class State:
         r"""
         Returns the density matrix of the state in Fock representation.
 
-        Arguments:
+        Args:
             cutoffs List[int]: the cutoff dimensions for each mode. If a mode cutoff is None,
                 it's automatically computed.
 
@@ -273,7 +273,7 @@ class State:
         If the state is pure, they are the absolute value squared of the ket amplitudes.
         If the state is mixed they are the multi-dimensional diagonals of the density matrix.
 
-        Arguments:
+        Args:
             cutoffs List[int]: the cutoff dimensions for each mode
 
         Returns:

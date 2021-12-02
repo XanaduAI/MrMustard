@@ -272,7 +272,7 @@ class TFMath(MathInterface):
         r"""
         Computes the loss and gradients of the given cost function.
 
-        Arguments:
+        Args:
             cost_fn (Callable with no args): The cost function.
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
@@ -294,7 +294,7 @@ class TFMath(MathInterface):
         of exp(C + Bx - Ax^2) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
         Note the minus sign in front of A.
 
-        Arguments:
+        Args:
             A: The A matrix.
             B: The B vector.
             C: The C scalar.

@@ -64,7 +64,7 @@ class Progressbar:
 def wigner(state, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     r"""
     Plots the wigner function of a single mode state.
-    Arguments:
+    Args:
         state (complex array): the state in Fock representation (can be pure or mixed)
         filename (str): optional filename for saving the plot of the wigner function
     """
