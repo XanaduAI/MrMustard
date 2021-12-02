@@ -225,6 +225,17 @@ class Transformation:
         """
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
+    @property
+    def is_phase_covariant(self) -> bool:
+        X, Y, d = self.XYd
+        if d is not None:
+            return False
+        if X is not None and not math.allclose(self.X, math.diag(math.diag_part(self.X))):
+            return False
+        if Y is not None and not math.allclose(self.Y, math.diag(math.diag_part(self.Y))):
+            return False
+        return True
+
     def U(self, cutoffs: Sequence[int]):
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
