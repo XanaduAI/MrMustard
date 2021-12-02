@@ -59,8 +59,14 @@ class Autocast:
         Casts all arguments to the highest precision when possible and needed.
         """
         max_dtype = self.max_dtype(self.get_dtypes(*args, **kwargs))
-        args = [backend.cast(arg, max_dtype) if self.should_cast(arg, max_dtype) else arg for arg in args]
-        kwargs = {k: backend.cast(v, max_dtype) if self.should_cast(v, max_dtype) else v for k, v in kwargs.items()}
+        args = [
+            backend.cast(arg, max_dtype) if self.should_cast(arg, max_dtype) else arg
+            for arg in args
+        ]
+        kwargs = {
+            k: backend.cast(v, max_dtype) if self.should_cast(v, max_dtype) else v
+            for k, v in kwargs.items()
+        }
         return args, kwargs
 
     def __call__(self, func):
