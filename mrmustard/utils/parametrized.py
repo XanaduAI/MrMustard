@@ -36,13 +36,7 @@ class Parametrized:
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
         self._trainable_parameters = []
         self._constant_parameters = []
-        # We can get a few types of arguments:
-        # 1. trainable parameters native to the backend (e.g. tf.Variable)
-        # 2. constant parameters native to the backend (e.g. tf.constant)
-        # in these first two cases we just add the parameters to the two lists self._trainable_parameters  and self._constant_parameters.
-        # 3. parameters that are not native to the backend but that are trainable if the there is another argument, boolean, with the same name and ending with _trainable that is True.
-        # 4. arguments that are not native to the backend and that don't represent trainable parameters (e.g. modes, flags, etc...)
-        # in these last two cases we either create a native parameter or add the arguments the __dict__ of the object preprending the name with _
+        self._param_names = []
         owner = f"{self.__class__.__qualname__}"
         for name, value in kwargs.items():
             if math.from_backend(value):
@@ -64,6 +58,7 @@ class Parametrized:
             else:
                 name = "_" + name
             self.__dict__[name] = value
+            self._param_names += [] if name.startswith('_') else [name]
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
