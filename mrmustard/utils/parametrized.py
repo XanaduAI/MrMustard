@@ -49,7 +49,9 @@ class Parametrized:
                 if math.is_trainable(value):
                     self._trainable_parameters.append(value)
                 elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
-                    value = training.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
+                    value = training.new_variable(
+                        value, kwargs[name + "_bounds"], owner + ":" + name
+                    )
                     self._trainable_parameters.append(value)
                 else:
                     self._constant_parameters.append(value)
@@ -81,7 +83,11 @@ class Parametrized:
                 ),
             }
         else:
-            return {"symplectic": [], "orthogonal": [], "euclidean": self._trainable_parameters}  # default
+            return {
+                "symplectic": [],
+                "orthogonal": [],
+                "euclidean": self._trainable_parameters,
+            }  # default
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
@@ -101,4 +107,8 @@ class Parametrized:
                 ),
             }
         else:
-            return {"symplectic": [], "orthogonal": [], "euclidean": self._constant_parameters}  # default
+            return {
+                "symplectic": [],
+                "orthogonal": [],
+                "euclidean": self._constant_parameters,
+            }  # default
