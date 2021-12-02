@@ -157,7 +157,9 @@ class Thermal(Parametrized, State):
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         **kwargs,
     ):
-        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs)
+        Parametrized.__init__(
+            self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs
+        )
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means)
