@@ -50,7 +50,7 @@ clean-docs:
 
 .PHONY : format
 format:
-	black -l 120 mrmustard/
+	black -l 100 mrmustard/ tests/
 
 .PHONY : lint
 lint:

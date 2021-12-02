@@ -156,7 +156,7 @@ Contributors without ``make`` installed can run ``black`` directly using:
 
 .. code-block:: bash
 
-    black -l 120 mrmustard
+    black -l 100 mrmustard
 
 Contributions are checked for format alignment in the pipeline. Changes can be
 formatted and linted locally using:
@@ -216,7 +216,7 @@ Before submitting a pull request, please make sure the following is done:
 
   .. code-block:: bash
 
-      black -l 120 mrmustard/path/to/modified/file.py
+      black -l 100 mrmustard/path/to/modified/file.py
 
   We check all of our code against `Pylint <https://www.pylint.org/>`_ for errors.
   To lint modified files, simply ``pip install pylint``, and then from the source code
