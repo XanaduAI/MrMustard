@@ -14,7 +14,7 @@
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from numpy import pi

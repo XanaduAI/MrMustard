@@ -18,7 +18,7 @@ from matplotlib.colors import Normalize
 from matplotlib import cm
 import numpy as np
 import strawberryfields as sf  # TODO: remove dependency on strawberryfields
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard import settings
 
 

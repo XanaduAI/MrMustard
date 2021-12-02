@@ -18,7 +18,7 @@ import numpy as np
 from rich.table import Table
 from rich import print as rprint
 
-from mrmustard.utils.types import *
+from mrmustard.types import *
 from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
@@ -288,7 +288,7 @@ class State:
                 self._fock_probabilities = fock.ket_to_probs(ket)
         return self._fock_probabilities
 
-    def __call__(self, other: Union[State, Transformation]) -> State:
+    def primal(self, other: Union[State, Transformation]) -> State:
         r"""
         Returns the post-measurement state after `other` is projected onto `self`:
         self(state) -> state projected onto self.
@@ -299,11 +299,11 @@ class State:
         Note that the returned state is not normalized unless the state has attribute `_normalize` set.
         """
         if issubclass(other.__class__, State):
-            remaining_modes = [m for m in range(other.num_modes) if m not in self._modes]
+            remaining_modes = [m for m in range(other.num_modes) if m not in self.modes]
 
             if self.is_gaussian and other.is_gaussian:
                 prob, cov, means = gaussian.general_dyne(
-                    other.cov, other.means, self.cov, self.means, self._modes, settings.HBAR
+                    other.cov, other.means, self.cov, self.means, self.modes, settings.HBAR
                 )
                 if len(remaining_modes) > 0:
                     return State(means=means, cov=cov, modes=remaining_modes)
@@ -313,13 +313,13 @@ class State:
                 other_cutoffs = []
                 used = 0
                 for m in range(other.num_modes):
-                    if m in self._modes:
+                    if m in self.modes:
                         other_cutoffs.append(self.cutoffs[used])
                         used += 1
                     else:
                         other_cutoffs.append(other.cutoffs[m])
                 try:
-                    out_fock = self.__preferred_projection(other, other_cutoffs, self._modes)
+                    out_fock = self.__preferred_projection(other, other_cutoffs, self.modes)
                 except AttributeError:
                     other_fock = other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs)
                     self_cutoffs = [other_cutoffs[m] for m in range(self.num_modes)]
@@ -329,7 +329,7 @@ class State:
                         stateB=self_fock if self.is_pure else self.dm(self_cutoffs),
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
-                        modes=self._modes,
+                        modes=self.modes,
                         normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
                     output_is_mixed = other.is_mixed or self.is_mixed
@@ -390,14 +390,6 @@ class State:
             fock_partitioned = fock.trace(self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item])
             return State(dm=fock_partitioned, modes=item)
 
-    # def normalize(self):
-    #     r"""
-    #     Normalizes the state.
-    #     """
-    #     if not self.is_gaussian:
-    #         self._fock = fock.normalize(self.fock, is_dm = self.is_mixed)
-    #     return self
-
     def __eq__(self, other):
         r"""
         Returns whether the states are equal.
@@ -426,14 +418,14 @@ class State:
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
             )
-        return other(self)
+        return other.primal(self)
 
-    def __lshift__(self, other):
-        r""".
-        Implements projection onto a state or a POVM or the dual transformation.
-        e.g. phi << psi or Dgate << psi
+    def __lshift__(self, other: State):
+        r"""
+        Implements projection onto a state or the dual transformation applied on a state
+        e.g. self << other where other is a State and self is either a State or a Transformation
         """
-        return other(self)
+        return other.primal(self)
 
     def __add__(self, other: State):
         r"""

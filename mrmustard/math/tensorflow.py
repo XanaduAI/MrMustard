@@ -18,7 +18,7 @@ from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
 from mrmustard.utils.autocast import Autocast
-from mrmustard.utils.types import *
+from mrmustard.types import *
 
 
 class TFMath(MathInterface):
@@ -121,6 +121,9 @@ class TFMath(MathInterface):
     def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
         return tf.eye(size, dtype=dtype)
 
+    def from_backend(self, thing) -> bool:
+        return isinstance(thing, (tf.Tensor, tf.Variable))
+
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
@@ -137,11 +140,8 @@ class TFMath(MathInterface):
     def inv(self, a: tf.Tensor) -> tf.Tensor:
         return tf.linalg.inv(a)
 
-    def istensor(self, tensor) -> bool:
-        return isinstance(tensor, (tf.Tensor, tf.Variable))
-
-    def istrainable(self, tensor: tf.Tensor) -> bool:
-        return tensor.trainable
+    def is_trainable(self, tensor: tf.Tensor) -> bool:
+        return isinstance(tensor, tf.Variable)
 
     def lgamma(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.lgamma(x)
@@ -248,6 +248,16 @@ class TFMath(MathInterface):
     def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
+    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
+        hash_dict = dict()
+        for tensor in lst:
+            try:
+                if (hash := self.hash_tensor(tensor)) not in hash_dict:
+                    hash_dict[hash] = tensor
+            except TypeError:
+                continue
+        return list(hash_dict.values())
+
     def zeros(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
         return tf.zeros(shape, dtype=dtype)
 
@@ -266,7 +276,7 @@ class TFMath(MathInterface):
         """
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
-    def loss_and_gradients(
+    def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
     ) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
         r"""

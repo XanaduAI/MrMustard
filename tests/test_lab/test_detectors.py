@@ -14,7 +14,8 @@
 
 from hypothesis import settings, given, strategies as st
 from hypothesis.extra.numpy import arrays
-
+from mrmustard.math import Math
+math = Math()
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
@@ -105,15 +106,14 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         "n_modes": 2,
     }
     cutoff = 20
-    tfbe = gaussian.math
-    circc = Circuit()
-    circd = Circuit()
+    # circc = Circuit()
+    # circd = Circuit()
     r1 = np.arcsinh(np.sqrt(guess["sq_0"]))
     r2 = np.arcsinh(np.sqrt(guess["sq_1"]))
     S2c = S2gate(r=r1, phi=0.0, r_trainable=True, phi_trainable=True)
     S2d = S2gate(r=r2, phi=0.0, r_trainable=True, phi_trainable=True)
-    circc.append(S2c)
-    circd.append(S2d)
+    # circc.append(S2c)
+    # circd.append(S2d)
     tetas = [guess["eta_s"], guess["eta_i"]]
     tdcs = [guess["noise_s"], guess["noise_i"]]
     tdetector = PNRDetector(
@@ -126,24 +126,24 @@ def test_detector_two_temporal_modes_two_mode_squeezed_vacuum():
         dark_counts_bounds=(0.0, 0.2),
         max_cutoffs=20,
     )
-    outc = circc(Vacuum(2))
-    outd = circd(Vacuum(2))
+    outc = Vacuum(2) >> S2c
+    outd = Vacuum(2) >> S2d
     tdetector.recompute_stochastic_channel()
     psc = tdetector(outc, cutoffs=[cutoff, cutoff])
     psd = tdetector(outd, cutoffs=[cutoff, cutoff])
-    fake_data = tfbe.convolve_probs(psc, psd)
+    fake_data = math.convolve_probs(psc, psd)
 
     def loss_fn():
-        outc = circc(Vacuum(2))
-        outd = circd(Vacuum(2))
+        outc = Vacuum(2) >> S2c
+        outd = Vacuum(2) >> S2d
         tdetector.recompute_stochastic_channel()
         psc = tdetector(outc, cutoffs=[cutoff, cutoff])
         psd = tdetector(outd, cutoffs=[cutoff, cutoff])
-        ps = tfbe.convolve_probs(psc, psd)
+        ps = math.convolve_probs(psc, psd)
         return tf.norm(fake_data - ps) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
-    opt.minimize(loss_fn, by_optimizing=[circc, circd, tdetector], max_steps=0)
+    opt.minimize(loss_fn, by_optimizing=[S2c, S2d, tdetector], max_steps=0)
     assert np.allclose(guess["sq_0"], np.sinh(S2c.trainable_parameters["euclidean"][0].numpy()) ** 2)
     assert np.allclose(guess["sq_1"], np.sinh(S2d.trainable_parameters["euclidean"][0].numpy()) ** 2)
     assert np.allclose(tdetector.efficiency, [guess["eta_s"], guess["eta_i"]])
