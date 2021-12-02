@@ -54,12 +54,13 @@ def overlap(A, B) -> float:
     Returns:
     float: The overlap between the two states.
     """
+    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.overlap(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.overlap(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
-def entropy_VN(A) -> float:
+def von_neumann_entropy(A) -> float:
     r"""
     Calculates the Von Neumann entropy of a quantum state.
 
@@ -70,11 +71,11 @@ def entropy_VN(A) -> float:
     float: The Von Neumann entropy of the state.
     """
     if A.is_gaussian:
-        return gaussian.entropy_VN(A.means, A.cov, settings.HBAR)
-    return fock.entropy_VN(A.fock, a_dm=A.is_mixed)
+        return gaussian.von_neumann_entropy(A.means, A.cov, settings.HBAR)
+    return fock.von_neumann_entropy(A.fock, a_dm=A.is_mixed)
 
 
-def entropy_Relative(A, B) -> float:
+def relative_entropy(A, B) -> float:
     r"""
     Calculates the relative entropy between two quantum states.
 
@@ -86,8 +87,8 @@ def entropy_Relative(A, B) -> float:
     float: The relative entropy between the two states.
     """
     if A.is_gaussian and B.is_gaussian:
-        return gaussian.entropy_Relative(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    return fock.entropy_Relative(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
+        return gaussian.relative_entropy(A.means, A.cov, B.means, B.cov, settings.HBAR)
+    return fock.relative_entropy(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
 def trace_distance(A, B) -> float:
