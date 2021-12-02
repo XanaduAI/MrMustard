@@ -339,7 +339,8 @@ def CPTP(
 
 def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the lossy bosonic channel.
-    The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
+
+    The full channel is applied to a covariance matrix :math:`\Sigma` as :math:`X\Sigma X^T + Y`.
     """
     D = math.sqrt(transmissivity)
     return math.diag(math.concat([D, D], axis=0))
@@ -347,7 +348,8 @@ def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
 
 def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the Y (noise) matrix for the lossy bosonic channel.
-    The full channel is applied to a covariance matrix `\Sigma` as `X\Sigma X^T + Y`.
+
+    The full channel is applied to a covariance matrix :math:`\Sigma` as :math:`X\Sigma X^T + Y`.
     """
     D = (1.0 - transmissivity) * hbar / 2
     return math.diag(math.concat([D, D], axis=0))
@@ -355,7 +357,8 @@ def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
 
 def thermal_X(nbar: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the X matrix for the thermal lossy channel.
-    The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
+
+    The full channel is applied to a covariance matrix :math:`\sigma` as :math:`X\sigma X^T + Y`.
     """
     raise NotImplementedError
 
@@ -370,7 +373,7 @@ def thermal_Y(nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
 def compose_channels_XYd(
     X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector
 ) -> Tuple[Matrix, Matrix, Vector]:
-    r"""Returns the combined X, Y, and d for two CPTP channels.
+    r"""returns the combined X, Y, and d for two CPTP channels
 
     Args:
         X1 (Matrix): the X matrix of the first CPTP channel
@@ -417,8 +420,7 @@ def general_dyne(
     modes: Sequence[int],
     hbar: float,
 ) -> Tuple[Scalar, Matrix, Vector]:
-    r"""
-    Returns the results of a general dyne measurement.
+    r"""returns the results of a general dyne measurement
 
     Args:
         cov (Matrix): covariance matrix of the state being measured
@@ -451,9 +453,7 @@ def general_dyne(
 # utilities
 # ~~~~~~~~~
 def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
-    r"""
-    Returns the photon number means vector
-    given a Wigner covariance matrix and a means vector.
+    r"""returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
     Args:
         cov: The Wigner covariance matrix.
@@ -474,9 +474,7 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
 
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
-    r"""
-    Returns the photon number covariance matrix
-    given a Wigenr covariance matrix and a means vector.
+    r"""returns the photon number covariance matrix given a Wigenr covariance matrix and a means vector.
 
     Args:
         cov: The Wigner covariance matrix.
@@ -498,15 +496,13 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
 
 
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
-    r"""
-    Returns True if the covariance matrix is mixed, False otherwise.
+    r"""returns ``True`` if the covariance matrix is mixed, ``False`` otherwise.
     """
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
 
 
 def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
-    r"""
-    Automatically determines reasonable cutoffs.
+    r"""automatically determines reasonable cutoffs
 
     Args:
         cov: The covariance matrix.
@@ -524,8 +520,7 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
-    r"""
-    Returns the covariances and means after discarding the specified modes.
+    r"""returns the covariances and means after discarding the specified modes
 
     Args:
         cov (Matrix): covariance matrix
@@ -543,8 +538,7 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
 
 
 def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
-    r"""
-    Partitions the covariance matrix into the A and B subsystems and the AB coherence block.
+    r"""partitions the covariance matrix into the A and B subsystems and the AB coherence block
 
     Args:
         cov (Matrix): the covariance matrix
@@ -566,8 +560,7 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
 
 
 def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
-    r"""
-    Partitions the means vector into the A and B subsystems.
+    r"""partitions the means vector into the A and B subsystems
 
     Args:
         means (Vector): the means vector
@@ -586,8 +579,7 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
 
 
 def purity(cov: Matrix, hbar: float) -> Scalar:
-    r"""
-    Returns the purity of the state with the given covariance matrix.
+    r"""returns the purity of the state with the given covariance matrix
 
     Args:
         cov (Matrix): the covariance matrix
@@ -599,8 +591,7 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
 
 
 def sympletic_eigenvals(cov: Matrix) -> Any:
-    r"""
-    Returns the sympletic eigenspectrum of a covariance matrix.
+    r"""returns the sympletic eigenspectrum of a covariance matrix
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
 
@@ -618,8 +609,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
-    r"""
-    Returns the Von Neumann entropy.
+    r"""returns the Von Neumann entropy
 
     For a pure state, we expect the Von Neumann entropy to be 0.
 
@@ -640,10 +630,10 @@ def von_neumann_entropy(cov: Matrix) -> float:
 def fidelity(
     mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08
 ) -> float:
-    r"""
-    Returns the fidelity of two gaussian states.
+    r"""Returns the fidelity of two gaussian states.
 
-    Reference: https://arxiv.org/pdf/2102.05748.pdf, Equations 95-99. Note that we compute the square of equation 98.
+    Reference: `arXiv:2102.05748 <https://arxiv.org/pdf/2102.05748.pdf>`_, equations 95-99.
+    Note that we compute the square of equation 98.
 
     Args:
         mu1 (Vector): the means vector of state 1
@@ -690,10 +680,9 @@ def fidelity(
 
 
 def log_negativity(cov: Matrix) -> float:
-    r"""
-    Returns the log_negativity of a Gaussian state.
+    r"""Returns the log_negativity of a Gaussian state.
 
-    Reference: https://arxiv.org/pdf/quant-ph/0102117.pdf, Equation 57, 61.
+    Reference: `arXiv:0102117 <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_, equation 57, 61.
 
     Args:
         cov (Matrix): the covariance matrix
@@ -713,8 +702,7 @@ def log_negativity(cov: Matrix) -> float:
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
-    r"""
-    Joins the given covariance matrices into a single covariance matrix.
+    r"""joins the given covariance matrices into a single covariance matrix
 
     Args:
         covs (Sequence[Matrix]): the covariance matrices
@@ -731,8 +719,7 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
 
 
 def join_means(means: Sequence[Vector]) -> Vector:
-    r"""
-    Joins the given means vectors into a single means vector.
+    r"""joins the given means vectors into a single means vector
 
     Args:
         means (Sequence[Vector]): the means vectors
@@ -749,8 +736,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
 
 
 def symplectic_inverse(S: Matrix) -> Matrix:
-    r"""
-    Returns the inverse of a symplectic matrix.
+    r"""returns the inverse of a symplectic matrix
 
     Args:
         S (Matrix): the symplectic matrix
@@ -769,8 +755,7 @@ def symplectic_inverse(S: Matrix) -> Matrix:
 
 
 def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
-    r"""
-    Returns the dual channel (X,Y,d)
+    r"""returns the dual channel (X,Y,d)
 
     Args:
         X (Matrix): the X matrix

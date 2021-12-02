@@ -23,7 +23,7 @@ from mrmustard import settings
 
 
 class Progressbar:
-    "A spiffy loading bar to display the progress during an optimization"
+    "a spiffy loading bar to display the progress during an optimization"
 
     def __init__(self, max_steps: int):
         self.taskID = None
@@ -62,8 +62,8 @@ class Progressbar:
 
 
 def wigner(state, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
-    r"""
-    Plots the wigner function of a single mode state.
+    r"""plots the wigner function of a single mode state.
+
     Args:
         state (complex array): the state in Fock representation (can be pure or mixed)
         filename (str): optional filename for saving the plot of the wigner function

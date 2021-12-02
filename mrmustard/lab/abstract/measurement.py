@@ -23,13 +23,11 @@ import numpy as np
 
 
 class GaussianMeasurement(ABC):
-    r"""
-    Base class for all Gaussian measurements.
+    r"""base class for all Gaussian measurements
     """
 
     def __call__(self, state: State, **kwargs) -> Tuple[Scalar, State]:
-        r"""
-        Applies a general-dyne Gaussian measurement to the state, i.e. it projects
+        r"""Applies a general-dyne Gaussian measurement to the state, i.e. it projects
         onto the state with given cov and outcome means vector.
 
         Args:
@@ -63,9 +61,7 @@ class GaussianMeasurement(ABC):
         ...
 
     def __getitem__(self, items) -> Callable:
-        r"""
-        Allows measurements to be used as:
-        output = meas[0,1](input)  # e.g. measuring modes 0 and 1
+        r"""allows measurements to be used as output = meas[0,1](input), e.g. measuring modes 0 and 1
         """
         if isinstance(items, int):
             modes = [items]
@@ -81,8 +77,7 @@ class GaussianMeasurement(ABC):
 
 # TODO: push all math methods into the physics module?
 class FockMeasurement(ABC):
-    r"""
-    A Fock measurement projecting onto a Fock measurement pattern.
+    r"""A Fock measurement projecting onto a Fock measurement pattern.
 
     It works by representing the state in the Fock basis and then applying
     a stochastic channel matrix P(meas|n) to the Fock probabilities (belief propagation).
@@ -94,8 +89,7 @@ class FockMeasurement(ABC):
     def project(
         self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]
     ) -> Tuple[State, Tensor]:
-        r"""
-        Projects the state onto a Fock measurement.
+        r"""Projects the state onto a Fock measurement.
 
         Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
         indicate the Fock measurement on that mode and None indicates no projection on that mode.

@@ -22,8 +22,7 @@ from functools import lru_cache, wraps
 
 
 class Autocast:
-    r"""
-    A decorator that casts all castable arguments of a method to the dtype with highest precision.
+    r"""a decorator that casts all castable arguments of a method to the dtype with highest precision.
     """
 
     def __init__(self):
@@ -39,24 +38,21 @@ class Autocast:
         return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(arg.dtype.name)
 
     def get_dtypes(self, *args, **kwargs) -> List:
-        r"""
-        Returns the dtypes of the arguments.
+        r"""returns the dtypes of the arguments.
         """
         args_dtypes = [arg.dtype.name for arg in args if self.can_cast(arg)]
         kwargs_dtypes = [v.dtype.name for v in kwargs.values() if self.can_cast(v)]
         return args_dtypes + kwargs_dtypes
 
     def max_dtype(self, dtypes: List):
-        r"""
-        Returns the dtype with the highest precision.
+        r"""returns the dtype with the highest precision.
         """
         if dtypes == []:
             return None
         return max(dtypes, key=lambda dtype: self.dtype_order.index(dtype))
 
     def cast_all(self, backend, *args, **kwargs):
-        r"""
-        Casts all arguments to the highest precision when possible and needed.
+        r"""casts all arguments to the highest precision when possible and needed.
         """
         max_dtype = self.max_dtype(self.get_dtypes(*args, **kwargs))
         args = [

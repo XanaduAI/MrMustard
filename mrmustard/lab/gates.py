@@ -33,15 +33,13 @@ __all__ = [
 
 
 class Dgate(Parametrized, Transformation):
-    r"""
-    Displacement gate.
+    r"""Displacement gate.
 
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    If :code:``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, the parallel instances of the gate share that parameter.
 
     To apply mode-specific values use a list of floats.
-
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Args:
@@ -81,15 +79,13 @@ class Dgate(Parametrized, Transformation):
 
 
 class Sgate(Parametrized, Transformation):
-    r"""
-    Squeezing gate.
+    r"""Squeezing gate.
 
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    If :code:``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, the parallel instances of the gate share that parameter.
 
     To apply mode-specific values use a list of floats.
-
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Args:
@@ -129,13 +125,13 @@ class Sgate(Parametrized, Transformation):
 
 
 class Rgate(Parametrized, Transformation):
-    r"""
-    Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    r"""Rotation gate.
+
+    If :code:``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, the parallel instances of the gate share that parameter.
 
     To apply mode-specific values use a list of floats.
-
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Args:
@@ -167,11 +163,9 @@ class Rgate(Parametrized, Transformation):
 
 
 class BSgate(Parametrized, Transformation):
-    r"""
-    Beam splitter gate.
+    r"""Beam splitter gate.
 
     It applies to a single pair of modes.
-
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Args:
@@ -217,12 +211,11 @@ class BSgate(Parametrized, Transformation):
 
 
 class MZgate(Parametrized, Transformation):
-    r"""
-    Mach-Zehnder gate.
+    r"""Mach-Zehnder gate.
 
-    sIt supports two conventions:
-        1. if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
-        2. if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
+    It supports two conventions:
+        1. if :code:``internal=True``, both phases act iside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
+        2. if :code:``internal = False``, both phases act on the upper arm: ``phi_a`` before the first BS, ``phi_b`` after the first BS.
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
@@ -272,12 +265,9 @@ class MZgate(Parametrized, Transformation):
 
 
 class S2gate(Parametrized, Transformation):
-    r"""
-    Two-mode squeezing gate.
+    r"""Two-mode squeezing gate.
 
-    It applies to a single pair of modes.
-
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    It applies to a single pair of modes. One can optionally set bounds for each parameter, which the optimizer will respect.
 
     Args:
         r (float): the squeezing magnitude
@@ -320,8 +310,9 @@ class S2gate(Parametrized, Transformation):
 
 
 class Interferometer(Parametrized, Transformation):
-    r"""
-    N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
+    r"""N-mode interferometer.
+
+    It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
 
     Args:
         orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
@@ -364,8 +355,7 @@ class Interferometer(Parametrized, Transformation):
 
 
 class Ggate(Parametrized, Transformation):
-    r"""
-    A generic N-mode Gaussian unitary transformation with zero displacement.
+    r"""A generic N-mode Gaussian unitary transformation with zero displacement.
 
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
     strength r in [0,1] for each mode.
@@ -417,8 +407,7 @@ class Ggate(Parametrized, Transformation):
 
 
 class LossChannel(Parametrized, Transformation):
-    r"""
-    The lossy bosonic channel.
+    r"""The lossy bosonic channel.
 
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
 

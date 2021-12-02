@@ -33,8 +33,7 @@ __all__ = [
 
 
 class Vacuum(State):
-    r"""
-    The N-mode vacuum state.
+    r"""the N-mode vacuum state
     """
 
     def __init__(self, num_modes: int):
@@ -44,8 +43,7 @@ class Vacuum(State):
 
 
 class Coherent(Parametrized, State):
-    r"""
-    The N-mode coherent state.
+    r"""the N-mode coherent state
     """
 
     def __init__(
@@ -78,8 +76,7 @@ class Coherent(Parametrized, State):
 
 
 class SqueezedVacuum(Parametrized, State):
-    r"""
-    The N-mode squeezed vacuum state.
+    r"""the N-mode squeezed vacuum state
     """
 
     def __init__(
@@ -112,8 +109,7 @@ class SqueezedVacuum(Parametrized, State):
 
 
 class TMSV(Parametrized, State):
-    r"""
-    The 2-mode squeezed vacuum state.
+    r"""the 2-mode squeezed vacuum state
     """
 
     def __init__(
@@ -146,8 +142,7 @@ class TMSV(Parametrized, State):
 
 
 class Thermal(Parametrized, State):
-    r"""
-    The N-mode thermal state.
+    r"""the N-mode thermal state
     """
 
     def __init__(
@@ -170,8 +165,7 @@ class Thermal(Parametrized, State):
 
 
 class DisplacedSqueezed(Parametrized, State):
-    r"""
-    The N-mode displaced squeezed state.
+    r"""the N-mode displaced squeezed state
     """
 
     def __init__(
@@ -220,8 +214,7 @@ class DisplacedSqueezed(Parametrized, State):
 
 
 class Gaussian(Parametrized, State):
-    r"""
-    The N-mode Gaussian state.
+    r"""the N-mode Gaussian state
     """
 
     def __init__(
@@ -278,8 +271,8 @@ class Fock(Parametrized, State):
         Parametrized.__init__(self, n=n, **kwargs)
 
     def __preferred_projection(other: State, other_cutoffs: Sequence[int], modes: Sequence[int]):
-        r"""
-        Preferred method to perform a projection onto this state (rather than the default one).
+        r"""preferred method to perform a projection onto this state (rather than the default one)
+
         Args:
             other: The state to project onto this state.
             other_cutoffs: The cutoffs of the other state.

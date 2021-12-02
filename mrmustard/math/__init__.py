@@ -13,12 +13,12 @@
 # limitations under the License.
 
 r"""
-The :code:`math` module contains low-level functions for performing mathematical operations.
+The :code:``math`` module contains low-level functions for performing mathematical operations.
 
 It is recommeded that users access the backends using the an instance of the :class:`Math` class rather than the backends themselves.
 
 The Math class is a wrapper that passes the calls to the currently active backend, which is determined by
-the :code:`BACKEND` parameter in :code:`mrmustard.settings` (the default is 'tensorflow').
+the :code:``BACKEND`` parameter in :code:``mrmustard.settings`` (the default is 'tensorflow').
 
 The advantage of using the Math class is that the same code can run on different backends, allowing for a
 greater degree of flexibility and code reuse.

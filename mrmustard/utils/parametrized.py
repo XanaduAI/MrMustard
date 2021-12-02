@@ -22,8 +22,7 @@ math = Math()
 
 
 class Parametrized:
-    r"""
-    Abstract base class for all parametrized objects (gates, detectors, etc...)
+    r"""abstract base class for all parametrized objects (gates, detectors, etc...)
 
     Arguments (must be all called with keyword):
         For each trainable parameter:
@@ -67,8 +66,7 @@ class Parametrized:
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        r"""
-        Returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit).
+        r"""returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit).
         """
         if hasattr(self, "_ops"):
             return {
@@ -91,8 +89,7 @@ class Parametrized:
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
-        r"""
-        Returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit).
+        r"""returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit).
         """
         if hasattr(self, "_ops"):
             return {

@@ -22,8 +22,7 @@ from itertools import product
 
 
 class MathInterface(ABC):
-    r"""
-    The interface that all backends must implement.
+    r"""the interface that all backends must implement
     """
     _euclidean_opt: type = None  # NOTE this is an object that
 
@@ -45,7 +44,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def abs(self, array: Tensor) -> Tensor:
-        r"""Returns the absolute value of array.
+        r"""returns the absolute value of array
 
         Args:
             array (array): array to take the absolute value of
@@ -57,8 +56,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def arange(self, start: int, limit: int = None, delta: int = 1) -> Tensor:
-        r"""
-        Returns an array of evenly spaced values within a given interval.
+        r"""returns an array of evenly spaced values within a given interval
 
         Args:
             start (int): start of the interval
@@ -72,7 +70,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
-        r"""Converts a tensor to a numpy array.
+        r"""converts a tensor to a numpy array
 
         Args:
             tensor (array): tensor to convert
@@ -84,7 +82,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
-        r"""Assigns value to tensor.
+        r"""assigns value to tensor
 
         Args:
             tensor (array): tensor to assign to
@@ -97,7 +95,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def astensor(self, array: Tensor) -> Tensor:
-        r"""Converts a numpy array to a tensor.
+        r"""converts a numpy array to a tensor
 
         Args:
             array (array): numpy array to convert
@@ -109,8 +107,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
-        r"""
-        Returns an array with at least one dimension.
+        r"""returns an array with at least one dimension
 
         Args:
             array (array): array to convert
@@ -123,7 +120,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def cast(self, array: Tensor, dtype) -> Tensor:
-        r"""Casts array to dtype.
+        r"""casts array to dtype
 
         Args:
             array (array): array to cast
@@ -136,7 +133,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
-        r"""Clips array to the interval [a_min, a_max].
+        r"""clips array to the interval :code:``[a_min, a_max]``
 
         Args:
             array (array): array to clip
@@ -150,7 +147,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
-        r"""Concatenates values along the given axis.
+        r"""concatenates values along the given axis
 
         Args:
             values (array): values to concatenate
@@ -163,7 +160,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def conj(self, array: Tensor) -> Tensor:
-        r"""Returns the complex conjugate of array.
+        r"""returns the complex conjugate of array
 
         Args:
             array (array): array to take the complex conjugate of
@@ -177,10 +174,11 @@ class MathInterface(ABC):
     def constraint_func(
         self, bounds: Tuple[Optional[float], Optional[float]]
     ) -> Optional[Callable]:
-        r"""Returns a constraint function for the given bounds.
+        r"""returns a constraint function for the given bounds.
 
         A constraint function will clip the value to the interval given by the bounds.
-        .. note:: the upper and/or lower bounds can be None, in which case the constraint function will not clip the value.
+
+        .. note:: the upper and/or lower bounds can be :code:``None``, in which case the constraint function will not clip the value.
 
         Args:
             bounds (tuple): bounds of the constraint
@@ -198,7 +196,7 @@ class MathInterface(ABC):
         padding="VALID",
         data_format="NWC",
     ) -> Tensor:  # TODO: remove strides and data_format?
-        r"""Performs a convolution on array with filters.
+        r"""performs a convolution on array with filters
 
         Args:
             array (array): array to convolve
@@ -213,7 +211,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def cos(self, array: Tensor) -> Tensor:
-        r"""Returns the cosine of array.
+        r"""returns the cosine of array
 
         Args:
             array (array): array to take the cosine of
@@ -225,7 +223,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def cosh(self, array: Tensor) -> Tensor:
-        r"""Returns the hyperbolic cosine of array.
+        r"""returns the hyperbolic cosine of array
 
         Args:
             array (array): array to take the hyperbolic cosine of
@@ -237,7 +235,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def det(self, matrix: Tensor) -> Tensor:
-        r"""Returns the determinant of matrix.
+        r"""returns the determinant of matrix
 
         Args:
             matrix (matrix): matrix to take the determinant of
@@ -249,7 +247,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def diag(self, array: Tensor, k: int) -> Tensor:
-        r"""Returns the array made by inserting the given array along the k-th diagonal.
+        r"""returns the array made by inserting the given array along the :math:`k`-th diagonal
 
         Args:
             array (array): array to insert
@@ -262,7 +260,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def diag_part(self, array: Tensor) -> Tensor:
-        r"""Returns the array of the main diagonal of array.
+        r"""returns the array of the main diagonal of array
 
         Args:
             array (array): array to extract the main diagonal of
@@ -274,7 +272,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def einsum(self, string: str, *tensors) -> Tensor:
-        r"""Returns the result of the Einstein summation convention on the tensors.
+        r"""returns the result of the Einstein summation convention on the tensors
 
         Args:
             string (str): string of the Einstein summation convention
@@ -287,7 +285,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def exp(self, array: Tensor) -> Tensor:
-        r"""Returns the exponential of array element-wise.
+        r"""returns the exponential of array element-wise
 
         Args:
             array (array): array to take the exponential of
@@ -299,7 +297,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
-        r"""Returns the array with an additional dimension inserted at the given axis.
+        r"""returns the array with an additional dimension inserted at the given axis
 
         Args:
             array (array): array to expand
@@ -312,7 +310,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def expm(self, matrix: Tensor) -> Tensor:
-        r"""Returns the matrix exponential of matrix.
+        r"""returns the matrix exponential of matrix
 
         Args:
             matrix (matrix): matrix to take the exponential of
@@ -324,7 +322,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def eye(self, size: int, dtype) -> Tensor:
-        r"""Returns the identity matrix of size.
+        r"""returns the identity matrix of size
 
         Args:
             size (int): size of the identity matrix
@@ -337,12 +335,13 @@ class MathInterface(ABC):
 
     @abstractmethod
     def from_backend(self, value: Any) -> bool:
-        r"""Returns whether the given tensor is a tensor of the concrete backend."""
+        r"""returns whether the given tensor is a tensor of the concrete backend
+        """
         ...
 
     @abstractmethod
     def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
-        r"""Returns the values of the array at the given indices.
+        r"""returns the values of the array at the given indices
 
         Args:
             array (array): array to gather values from
@@ -356,7 +355,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def hash_tensor(self, tensor: Tensor) -> int:
-        r"""Returns the hash of the given tensor.
+        r"""returns the hash of the given tensor
 
         Args:
             tensor (array): tensor to hash
@@ -368,7 +367,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
-        r"""Returns the array of hermite renormalized polynomials of the given coefficients.
+        r"""returns the array of hermite renormalized polynomials of the given coefficients
 
         Args:
             A (array): Matrix coefficient of the hermite polynomial
@@ -383,7 +382,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def imag(self, array: Tensor) -> Tensor:
-        r"""Returns the imaginary part of array.
+        r"""returns the imaginary part of array
 
         Args:
             array (array): array to take the imaginary part of
@@ -395,7 +394,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def inv(self, tensor: Tensor) -> Tensor:
-        r"""Returns the inverse of tensor.
+        r"""returns the inverse of tensor
 
         Args:
             tensor (array): tensor to take the inverse of
@@ -412,7 +411,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def lgamma(self, x: Tensor) -> Tensor:
-        r"""Returns the natural logarithm of the gamma function of x.
+        r"""returns the natural logarithm of the gamma function of x
 
         Args:
             x (array): array to take the natural logarithm of the gamma function of
@@ -424,7 +423,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def log(self, x: Tensor) -> Tensor:
-        r"""Returns the natural logarithm of x.
+        r"""returns the natural logarithm of x
 
         Args:
             x (array): array to take the natural logarithm of
@@ -444,7 +443,7 @@ class MathInterface(ABC):
         adjoint_a=False,
         adjoint_b=False,
     ) -> Tensor:
-        r"""Returns the matrix product of a and b.
+        r"""returns the matrix product of a and b
 
         Args:
             a (array): first matrix to multiply
@@ -461,7 +460,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def matvec(self, a: Matrix, b: Vector, transpose_a=False, adjoint_a=False) -> Tensor:
-        r"""Returns the matrix vector product of a (matrix) and b (vector).
+        r"""returns the matrix vector product of a (matrix) and b (vector)
 
         Args:
             a (array): matrix to multiply
@@ -476,7 +475,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""Returns the element-wise maximum of a and b.
+        r"""returns the element-wise maximum of a and b
 
         Args:
             a (array): first array to take the maximum of
@@ -489,7 +488,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
-        r"""Returns the element-wise minimum of a and b.
+        r"""returns the element-wise minimum of a and b
 
         Args:
             a (array): first array to take the minimum of
@@ -504,7 +503,7 @@ class MathInterface(ABC):
     def new_variable(
         self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str
     ) -> Tensor:
-        r"""Returns a new variable with the given value and bounds.
+        r"""returns a new variable with the given value and bounds
 
         Args:
             value (array): value of the new variable
@@ -518,7 +517,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def new_constant(self, value: Tensor, name: str) -> Tensor:
-        r"""Returns a new constant with the given value.
+        r"""returns a new constant with the given value
 
         Args:
             value (array): value of the new constant
@@ -531,7 +530,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def norm(self, array: Tensor) -> Tensor:
-        r"""Returns the norm of array.
+        r"""returns the norm of array
 
         Args:
             array (array): array to take the norm of
@@ -543,7 +542,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def ones(self, shape: Sequence[int], dtype) -> Tensor:
-        r"""Returns an array of ones with the given shape and dtype.
+        r"""returns an array of ones with the given :code:``shape`` and :code:``dtype``
 
         Args:
             shape (tuple): shape of the array
@@ -556,7 +555,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def ones_like(self, array: Tensor) -> Tensor:
-        r"""Returns an array of ones with the same shape and dtype as array.
+        r"""returns an array of ones with the same shape and dtype as array
 
         Args:
             array (array): array to take the shape and dtype of
@@ -568,7 +567,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
-        r"""Returns the outer product of array1 and array2.
+        r"""returns the outer product of :code:``array1`` and :code:``array2``
 
         Args:
             array1 (array): first array to take the outer product of
@@ -583,7 +582,7 @@ class MathInterface(ABC):
     def pad(
         self, array: Tensor, paddings: Sequence[Tuple[int, int]], mode="CONSTANT", constant_values=0
     ) -> Tensor:
-        r"""Returns the padded array.
+        r"""returns the padded array
 
         Args:
             array (array): array to pad
@@ -598,7 +597,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def pinv(self, matrix: Tensor) -> Tensor:
-        r"""Returns the pseudo-inverse of matrix.
+        r"""returns the pseudo-inverse of matrix
 
         Args:
             matrix (array): matrix to take the pseudo-inverse of
@@ -610,7 +609,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def real(self, array: Tensor) -> Tensor:
-        r"""Returns the real part of array.
+        r"""returns the real part of array
 
         Args:
             array (array): array to take the real part of
@@ -622,7 +621,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
-        r"""Returns the reshaped array.
+        r"""returns the reshaped array
 
         Args:
             array (array): array to reshape
@@ -635,7 +634,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def sin(self, array: Tensor) -> Tensor:
-        r"""Returns the sine of array.
+        r"""returns the sine of array
 
         Args:
             array (array): array to take the sine of
@@ -647,7 +646,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def sinh(self, array: Tensor) -> Tensor:
-        r"""Returns the hyperbolic sine of array.
+        r"""returns the hyperbolic sine of array
 
         Args:
             array (array): array to take the hyperbolic sine of
@@ -659,7 +658,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
-        r"""Returns the square root of x.
+        r"""returns the square root of :code:``x``
 
         Args:
             x (array): array to take the square root of
@@ -672,7 +671,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def sum(self, array: Tensor, axes: Sequence[int] = None):
-        r"""Returns the sum of array.
+        r"""returns the sum of array
 
         Args:
             array (array): array to take the sum of
@@ -685,7 +684,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
-        r"""Returns the tensordot product of a and b.
+        r"""returns the tensordot product of :code:``a`` and :code:``b``
 
         Args:
             a (array): first array to take the tensordot product of
@@ -699,7 +698,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
-        r"""Returns the tiled array.
+        r"""returns the tiled array
 
         Args:
             array (array): array to tile
@@ -712,7 +711,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def trace(self, array: Tensor) -> Tensor:
-        r"""Returns the trace of array.
+        r"""returns the trace of array
 
         Args:
             array (array): array to take the trace of
@@ -724,7 +723,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
-        r"""Returns the transposed array.
+        r"""returns the transposed arrays
 
         Args:
             a (array): array to transpose
@@ -737,7 +736,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def unique_tensors(lst: List[Tensor]) -> List[Tensor]:
-        r"""Returns the tensors in lst without duplicates and non-tensors.
+        r"""returns the tensors in :code:``lst`` without duplicates and non-tensors
         Arguments:
             lst (list): list of tensors to remove duplicates and non-tensors from.
         Returns:
@@ -747,7 +746,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
-        r"""Updates a tensor in place with the given values.
+        r"""updates a tensor in place with the given values
 
         Args:
             tensor (array): tensor to update
@@ -758,7 +757,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
-        r"""Updates a tensor in place by adding the given values.
+        r"""updates a tensor in place by adding the given values
 
         Args:
             tensor (array): tensor to update
@@ -771,10 +770,12 @@ class MathInterface(ABC):
     def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
     ) -> Tuple[Tensor, Dict[str, List[Tensor]]]:
-        r"""Returns the loss and gradients of the given cost function.
+        r"""returns the loss and gradients of the given cost function
+
         Arguments:
             cost_fn (callable): cost function to compute the loss and gradients of
             parameters (dict): parameters to compute the loss and gradients of
+
         Returns:
             tuple: loss and gradients (dict) of the given cost function
         """
@@ -782,7 +783,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def zeros(self, shape: Sequence[int], dtype) -> Tensor:
-        r"""Returns an array of zeros with the given shape and dtype.
+        r"""returns an array of zeros with the given shape and dtype
 
         Args:
             shape (tuple): shape of the array
@@ -795,7 +796,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def zeros_like(self, array: Tensor) -> Tensor:
-        r"""Returns an array of zeros with the same shape and dtype as array.
+        r"""returns an array of zeros with the same shape and dtype as array
 
         Args:
             array (array): array to take the shape and dtype of
@@ -828,7 +829,7 @@ class MathInterface(ABC):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
-        r"""Returns a matrix made from the given blocks
+        r"""returns a matrix made from the given blocks
 
         Args:
             blocks (list): list of lists of compatible blocks
@@ -841,7 +842,7 @@ class MathInterface(ABC):
         return self.concat(rows, axis=axes[0])
 
     def dagger(self, array: Tensor) -> Tensor:
-        r"""Returns the adjoint of array.
+        r"""returns the adjoint of array
 
         Args:
             array (array): array to take the adjoint of
@@ -852,7 +853,7 @@ class MathInterface(ABC):
         return self.conj(self.transpose(array))
 
     def unitary_to_orthogonal(self, U):
-        r"""Unitary to orthogonal mapping.
+        r"""unitary to orthogonal mapping
 
         Args:
             U (array): unitary matrix in U(n)
@@ -865,8 +866,10 @@ class MathInterface(ABC):
         return self.block([[X, -Y], [Y, X]])
 
     def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
-        r"""A random symplectic matrix in Sp(2*num_modes).
-        Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default)."""
+        r"""A random symplectic matrix in :code:``Sp(2*num_modes)``.
+
+        Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default).
+        """
         if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))
             V = np.exp(1j * np.random.uniform(size=(1, 1)))
@@ -880,7 +883,8 @@ class MathInterface(ABC):
         return OW @ dd @ OV
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
-        "a random orthogonal matrix in O(2*num_modes)"
+        """a random orthogonal matrix in :math:`O(2*num_modes)`
+        """
         if num_modes == 1:
             W = self.exp(1j * np.random.uniform(size=(1, 1)))
         else:
@@ -888,8 +892,7 @@ class MathInterface(ABC):
         return self.unitary_to_orthogonal(W)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
-        r"""
-        Apply the same 2-vector (i.e. single-mode) to a larger number of modes.
+        r"""apply the same 2-vector (i.e. single-mode) to a larger number of modes
         """
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
@@ -898,8 +901,7 @@ class MathInterface(ABC):
         return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
-        r"""
-        Apply the same 2x2 matrix (i.e. single-mode) to a larger number of modes.
+        r"""apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes
         """
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
@@ -912,7 +914,7 @@ class MathInterface(ABC):
     @staticmethod
     @lru_cache()
     def Xmat(num_modes: int):
-        r"""Returns the matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}`
+        r"""returns the matrix :math:`X_n = \begin{bmatrix}0 & I_n\\ I_n & 0\end{bmatrix}`
 
         Args:
             num_modes (int): positive integer
@@ -927,14 +929,14 @@ class MathInterface(ABC):
     @staticmethod
     @lru_cache()
     def rotmat(num_modes: int):
-        "Rotation matrix from quadratures to complex amplitudes"
+        "rotation matrix from quadratures to complex amplitudes"
         I = np.identity(num_modes)
         return np.sqrt(0.5) * np.block([[I, 1j * I], [I, -1j * I]])
 
     @staticmethod
     @lru_cache()
     def J(num_modes: int):
-        "Symplectic form"
+        "symplectic form"
         I = np.identity(num_modes)
         O = np.zeros_like(I)
         return np.block([[O, I], [-I, O]])
@@ -954,8 +956,7 @@ class MathInterface(ABC):
     def left_matmul_at_modes(
         self, a_partial: Tensor, b_full: Tensor, modes: Sequence[int]
     ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""
-        Left matrix multiplication of a partial matrix and a full matrix.
+        r"""Left matrix multiplication of a partial matrix and a full matrix.
 
         It assumes that that `a_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
         i.e. it will apply a_partial on the corresponding M modes of `b_full` from the left.
@@ -979,8 +980,7 @@ class MathInterface(ABC):
     def right_matmul_at_modes(
         self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]
     ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        r"""
-        Right matrix multiplication of a full matrix and a partial matrix.
+        r"""Right matrix multiplication of a full matrix and a partial matrix.
 
         It assumes that that `b_partial` is a matrix operating on M modes and that `modes` is a list of M integers,
         i.e. it will apply b_partial on the corresponding M modes of `a_full` from the right.
@@ -1000,7 +1000,8 @@ class MathInterface(ABC):
     def matvec_at_modes(
         self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]
     ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        "matrix-vector multiplication between a phase-space matrix and a vector in the specified modes"
+        """matrix-vector multiplication between a phase-space matrix and a vector in the specified modes
+        """
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
@@ -1009,7 +1010,8 @@ class MathInterface(ABC):
         return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
-        "Returns all the diagonals of a density matrix"
+        """returns all the diagonals of a density matrix
+        """
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = self.reshape(rho, (int(np.prod(cutoffs)), int(np.prod(cutoffs))))
         diag = self.diag_part(rho)
@@ -1019,13 +1021,15 @@ class MathInterface(ABC):
             return self.reshape(diag, cutoffs)
 
     def poisson(self, max_k: int, rate: Tensor) -> Tensor:
-        "poisson distribution up to max_k"
+        """poisson distribution up to max_k
+        """
         k = self.arange(max_k)
         rate = self.cast(rate, k.dtype)
         return self.exp(k * self.log(rate + 1e-9) - rate - self.lgamma(k + 1.0))
 
     def binomial_conditional_prob(self, success_prob: Tensor, dim_out: int, dim_in: int):
-        "P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out"
+        """:math:`P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out`
+        """
         in_ = self.arange(dim_in)[None, :]
         out_ = self.arange(dim_out)[:, None]
         return (
@@ -1035,7 +1039,8 @@ class MathInterface(ABC):
         )
 
     def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:
-        "Convolution of a joint probability with a list of single-index probabilities"
+        """convolution of a joint probability with a list of single-index probabilities
+        """
 
         if prob.ndim > 3 or len(other_probs) > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
@@ -1052,8 +1057,10 @@ class MathInterface(ABC):
 
     def convolve_probs(self, prob: Tensor, other: Tensor) -> Tensor:
         r"""Convolve two probability distributions (up to 3D) with the same shape.
+
         Note that the output is not guaranteed to be a complete joint probability,
-        as it's computed only up to the dimension of the base probs."""
+        as it's computed only up to the dimension of the base probs.
+        """
 
         if prob.ndim > 3 or other.ndim > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
@@ -1072,7 +1079,8 @@ class MathInterface(ABC):
         )[0, ..., 0]
 
     def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:
-        r"""Convert the Riemannian gradient to a symplectic gradient.
+        r"""convert the Riemannian gradient to a symplectic gradient
+
         TODO: add citation (S.Fiori)
 
         Args:

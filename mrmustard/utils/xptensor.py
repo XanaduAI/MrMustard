@@ -25,7 +25,7 @@ math = Math()
 class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 
-    Tensors in phase space have a (2n, 2n) or (2n,) shape where n is the number of modes.
+    Tensors in phase space have a ``(2n, 2n)`` or ``(2n,)`` shape where n is the number of modes.
     There are two main orderings:
         - xxpp: matrix is a `2\times 2` block matrix where each block is an `xx`, `xp`, `px`, `pp` block on all modes.
         - xpxp: matrix is a `n\times n` block matrix of `2\times 2` blocks each corresponding to a mode or a coherence between modes
@@ -39,11 +39,12 @@ class XPTensor(ABC):
 
     XPTensor objects are sparse, in the sense that they support implicit operations between modes where one or more tensors are undefined.
     There are two types of behaviour:
-        - like_0 (default): in modes where the tensor is undefined, it's like having a zero (a zero matrix)
-        - like_1: in modes where the tensor is undefined, it's like having a one (an identity matrix)
-    For example, in the expression X @ means + d where X is a symplectic matrix and d is a displacement vector,
-    if X is undefined it's like having the identity and the matrix product simply returns means, while in the expression
-    means + d if d is undefined it simply returns means. In this example no operation was actually computed.
+        * like_0 (default): in modes where the tensor is undefined, it's like having a zero (a zero matrix)
+        * like_1: in modes where the tensor is undefined, it's like having a one (an identity matrix)
+
+    For example, in the expression :math:`X @ means + d` where `X` is a symplectic matrix and `d` is a displacement vector,
+    if `X` is undefined it's like having the identity and the matrix product simply returns means, while in the expression
+    `means + d` if `d` is undefined it simply returns `means`. In this example no operation was actually computed.
     Thanks to sparsity we can represent graph states and transformations on graph states as XPTensor objects.
 
     Args:
@@ -155,8 +156,8 @@ class XPTensor(ABC):
         return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
     def clone(self, times: int, modes=None) -> XPtensor:
-        r"""Create a new XPTensor made by cloning the system a given number of times.
-        The modes are reset by default unless specified.
+        r"""create a new XPTensor made by cloning the system a given number of times
+        (the modes are reset by default unless specified)
         """
         if self.tensor is None:
             return self
@@ -182,9 +183,11 @@ class XPTensor(ABC):
 
     def clone_like(self, other: XPTensor):
         r"""
-        Create a new XPTensor with the same shape and modes as other. The new tensor
-        has the same content as self, cloned as many times as necessary to match the shape and modes of other.
+        Create a new XPTensor with the same shape and modes as other.
+
+        The new tensor has the same content as self, cloned as many times as necessary to match the shape and modes of other.
         The other properties are kept as is.
+
         Args:
             other: The tensor to be cloned.
         Returns:
@@ -447,8 +450,11 @@ class XPTensor(ABC):
         r"""
         Returns modes or subsets of modes from the XPTensor,
         or coherences between modes using an intuitive notation.
+
         We handle mode indices and we get the corresponding tensor indices handled correctly.
+
         Examples:
+        .. code::
             T[N] ~ self.tensor[N,:,:,:]
             T[M,N] = the coherence between the modes M and N
             T[:,N] ~ self.tensor[:,N,:,:]
@@ -500,8 +506,7 @@ class XPTensor(ABC):
 
 
 class XPMatrix(XPTensor):
-    r"""
-    A convenience class for a matrix in the XPTensor format.
+    r"""a convenience class for a matrix in the XPTensor format
 
     # TODO: write docstring
     """
@@ -563,8 +568,7 @@ class XPMatrix(XPTensor):
 
 
 class XPVector(XPTensor):
-    r"""
-    A convenience class for a vector in the XPTensor format.
+    r"""a convenience class for a vector in the XPTensor format.
     """
 
     def __init__(self, tensor: Tensor = None, modes: List[int] = []):
