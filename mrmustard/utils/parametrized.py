@@ -66,8 +66,7 @@ class Parametrized:
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        r"""returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit).
-        """
+        r"""returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(
@@ -89,8 +88,7 @@ class Parametrized:
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
-        r"""returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit).
-        """
+        r"""returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(

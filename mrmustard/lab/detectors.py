@@ -171,8 +171,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
 
 class Generaldyne(Parametrized, GaussianMeasurement):
-    r"""general dyne measurement
-    """
+    r"""general dyne measurement"""
 
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
@@ -183,8 +182,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
 
 
 class Homodyne(Parametrized, GaussianMeasurement):
-    r"""homodyne measurement on a given list of modes
-    """
+    r"""homodyne measurement on a given list of modes"""
 
     def __init__(
         self,
@@ -221,8 +219,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
-    r"""heterodyne measurement on a given mode.
-    """
+    r"""heterodyne measurement on a given mode."""
 
     def __init__(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], modes: List[int]):
         r"""

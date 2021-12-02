@@ -22,8 +22,7 @@ from itertools import product
 
 
 class MathInterface(ABC):
-    r"""the interface that all backends must implement
-    """
+    r"""the interface that all backends must implement"""
     _euclidean_opt: type = None  # NOTE this is an object that
 
     # backend is a singleton
@@ -335,8 +334,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def from_backend(self, value: Any) -> bool:
-        r"""returns whether the given tensor is a tensor of the concrete backend
-        """
+        r"""returns whether the given tensor is a tensor of the concrete backend"""
         ...
 
     @abstractmethod
@@ -883,8 +881,7 @@ class MathInterface(ABC):
         return OW @ dd @ OV
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
-        """a random orthogonal matrix in :math:`O(2*num_modes)`
-        """
+        """a random orthogonal matrix in :math:`O(2*num_modes)`"""
         if num_modes == 1:
             W = self.exp(1j * np.random.uniform(size=(1, 1)))
         else:
@@ -892,8 +889,7 @@ class MathInterface(ABC):
         return self.unitary_to_orthogonal(W)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
-        r"""apply the same 2-vector (i.e. single-mode) to a larger number of modes
-        """
+        r"""apply the same 2-vector (i.e. single-mode) to a larger number of modes"""
         if vec.shape[-1] != 2:
             raise ValueError("vec must be 2-dimensional (i.e. single-mode)")
         x, y = vec[..., -2], vec[..., -1]
@@ -901,8 +897,7 @@ class MathInterface(ABC):
         return vec
 
     def single_mode_to_multimode_mat(self, mat: Tensor, num_modes: int):
-        r"""apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes
-        """
+        r"""apply the same :math:`2\times 2` matrix (i.e. single-mode) to a larger number of modes"""
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
         mat = self.diag(
@@ -1000,8 +995,7 @@ class MathInterface(ABC):
     def matvec_at_modes(
         self, mat: Optional[Tensor], vec: Tensor, modes: Sequence[int]
     ) -> Tensor:  # NOTE: To be deprecated (XPTensor)
-        """matrix-vector multiplication between a phase-space matrix and a vector in the specified modes
-        """
+        """matrix-vector multiplication between a phase-space matrix and a vector in the specified modes"""
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
@@ -1010,8 +1004,7 @@ class MathInterface(ABC):
         return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
-        """returns all the diagonals of a density matrix
-        """
+        """returns all the diagonals of a density matrix"""
         cutoffs = rho.shape[: rho.ndim // 2]
         rho = self.reshape(rho, (int(np.prod(cutoffs)), int(np.prod(cutoffs))))
         diag = self.diag_part(rho)
@@ -1021,15 +1014,13 @@ class MathInterface(ABC):
             return self.reshape(diag, cutoffs)
 
     def poisson(self, max_k: int, rate: Tensor) -> Tensor:
-        """poisson distribution up to max_k
-        """
+        """poisson distribution up to max_k"""
         k = self.arange(max_k)
         rate = self.cast(rate, k.dtype)
         return self.exp(k * self.log(rate + 1e-9) - rate - self.lgamma(k + 1.0))
 
     def binomial_conditional_prob(self, success_prob: Tensor, dim_out: int, dim_in: int):
-        """:math:`P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out`
-        """
+        """:math:`P(out|in) = binom(in, out) * (1-success_prob)**(in-out) * success_prob**out`"""
         in_ = self.arange(dim_in)[None, :]
         out_ = self.arange(dim_out)[:, None]
         return (
@@ -1039,8 +1030,7 @@ class MathInterface(ABC):
         )
 
     def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:
-        """convolution of a joint probability with a list of single-index probabilities
-        """
+        """convolution of a joint probability with a list of single-index probabilities"""
 
         if prob.ndim > 3 or len(other_probs) > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")

@@ -86,8 +86,7 @@ class State:
 
     @property
     def modes(self):
-        r"""returns the modes of the state
-        """
+        r"""returns the modes of the state"""
         if self._modes is None:
             return list(range(self.num_modes))
         return self._modes
@@ -104,14 +103,12 @@ class State:
 
     @property
     def is_mixed(self):
-        r"""returns whether the state is mixed
-        """
+        r"""returns whether the state is mixed"""
         return not self.is_pure
 
     @property
     def is_pure(self):
-        r"""returns `True` if the state is pure and `False` otherwise
-        """
+        r"""returns `True` if the state is pure and `False` otherwise"""
         return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
@@ -123,14 +120,12 @@ class State:
 
     @property
     def cov(self) -> Optional[Matrix]:
-        r"""returns the covariance matrix of the state
-        """
+        r"""returns the covariance matrix of the state"""
         return self._cov
 
     @property
     def modes(self) -> List[int]:
-        r"""returns the modes of the state (by default states are in modes 0, ..., num_modes-1)
-        """
+        r"""returns the modes of the state (by default states are in modes 0, ..., num_modes-1)"""
         try:
             if self._modes is None:
                 self._modes = list(range(self.num_modes))
@@ -140,8 +135,7 @@ class State:
 
     @property
     def number_stdev(self) -> Vector:
-        r"""returns the square root of the photon number variances (standard deviation) in each mode
-        """
+        r"""returns the square root of the photon number variances (standard deviation) in each mode"""
         if self.is_gaussian:
             return math.sqrt(math.diag_part(self.number_cov))
         else:
@@ -151,8 +145,7 @@ class State:
 
     @property
     def cutoffs(self) -> List[int]:
-        r"""returns the cutoff dimensions for each mode
-        """
+        r"""returns the cutoff dimensions for each mode"""
         if self._fock is None:
             return fock.autocutoffs(
                 self.number_stdev, self.number_means
@@ -173,8 +166,7 @@ class State:
 
     @property
     def fock(self) -> Array:
-        r"""returns the Fock representation of the state
-        """
+        r"""returns the Fock representation of the state"""
         if self._fock is None:
             self._fock = fock.fock_representation(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
@@ -183,8 +175,7 @@ class State:
 
     @property
     def number_means(self) -> Vector:
-        r"""returns the mean photon number for each mode
-        """
+        r"""returns the mean photon number for each mode"""
         if self.is_gaussian:
             return gaussian.number_means(self.cov, self.means, settings.HBAR)
         else:
@@ -192,8 +183,7 @@ class State:
 
     @property
     def number_cov(self) -> Matrix:
-        r"""returns the complete photon number covariance matrix
-        """
+        r"""returns the complete photon number covariance matrix"""
         if self.is_gaussian:
             return gaussian.number_cov(self.cov, self.means, settings.HBAR)
         else:
@@ -349,8 +339,7 @@ class State:
                 )
 
     def __and__(self, other: State) -> State:
-        r"""concatenates two states
-        """
+        r"""concatenates two states"""
         if self.is_gaussian and other.is_gaussian:
             cov = gaussian.join_covs([self.cov, other.cov])
             means = gaussian.join_means([self.means, other.means])
@@ -377,8 +366,7 @@ class State:
         return self
 
     def get_modes(self, item):
-        r"""returns the state on the given modes
-        """
+        r"""returns the state on the given modes"""
         if isinstance(item, int):
             item = [item]
         elif isinstance(item, Iterable):
@@ -396,8 +384,7 @@ class State:
             return State(dm=fock_partitioned, modes=item)
 
     def __eq__(self, other):
-        r"""returns whether the states are equal
-        """
+        r"""returns whether the states are equal"""
         if self.num_modes != other.num_modes:
             return False
         if self.purity != other.purity:
@@ -418,8 +405,7 @@ class State:
             )
 
     def __rshift__(self, other):
-        r"""applies other (a Transformation) to self (a State), e.g., :code:``Coherent(x=0.1) >> Sgate(r=0.1)``
-        """
+        r"""applies other (a Transformation) to self (a State), e.g., :code:``Coherent(x=0.1) >> Sgate(r=0.1)``"""
         if issubclass(other.__class__, State):
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
@@ -434,16 +420,14 @@ class State:
         return other.primal(self)
 
     def __add__(self, other: State):
-        r"""implements a mixture of states (only available in fock representation for the moment)
-        """
+        r"""implements a mixture of states (only available in fock representation for the moment)"""
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
         warnings.warn("mixing states forces conversion to fock representation", UserWarning)
         return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
     def __rmul__(self, other):
-        r"""implements multiplication by a scalar from the left, e.g. :code:``0.5 * psi``
-        """
+        r"""implements multiplication by a scalar from the left, e.g. :code:``0.5 * psi``"""
         warnings.warn("scalar multiplication forces conversion to fock representation", UserWarning)
         return State(dm=self.dm() * other, modes=self.modes)
 

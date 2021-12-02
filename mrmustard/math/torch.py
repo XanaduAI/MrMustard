@@ -309,8 +309,7 @@ class TorchMath(MathInterface):
         raise NotImplementedError
 
     def DefaultEuclideanOptimizer(self, params) -> torch.optim.Optimizer:
-        r"""default optimizer for the Euclidean parameters
-        """
+        r"""default optimizer for the Euclidean parameters"""
         self.optimizer = torch.optim.Adam(params, lr=0.001)
         return self.optimizer
 
@@ -341,23 +340,19 @@ class TorchMath(MathInterface):
         return loss, grads
 
     def eigvals(self, tensor: torch.Tensor) -> Tensor:
-        """returns the eigenvalues of a matrix
-        """
+        """returns the eigenvalues of a matrix"""
         return torch.linalg.eigvals(tensor)
 
     def eigvalsh(self, tensor: torch.Tensor) -> Tensor:
-        """returns the eigenvalues of a Real Symmetric or Hermitian matrix
-        """
+        """returns the eigenvalues of a Real Symmetric or Hermitian matrix"""
         return torch.linalg.eigvalsh(tensor)
 
     def svd(self, tensor: torch.Tensor) -> Tensor:
-        """returns the Singular Value Decomposition of a matrix
-        """
+        """returns the Singular Value Decomposition of a matrix"""
         return torch.linalg.svd(tensor)
 
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
-        """returns 0 if x == 0, and x * log(y) otherwise, elementwise
-        """
+        """returns 0 if x == 0, and x * log(y) otherwise, elementwise"""
         return torch.xlogy(x, y)
 
     def sqrtm(self, tensor: torch.Tensor) -> Tensor:

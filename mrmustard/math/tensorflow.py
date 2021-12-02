@@ -275,8 +275,7 @@ class TFMath(MathInterface):
     def DefaultEuclideanOptimizer(
         self,
     ) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
-        r"""default optimizer for the Euclidean parameters
-        """
+        r"""default optimizer for the Euclidean parameters"""
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
     def value_and_gradients(
@@ -330,33 +329,27 @@ class TFMath(MathInterface):
         return poly, grad
 
     def eigvals(self, tensor: tf.Tensor) -> Tensor:
-        """returns the eigenvalues of a matrix
-        """
+        """returns the eigenvalues of a matrix"""
         return tf.linalg.eigvals(tensor)
 
     def eigvalsh(self, tensor: tf.Tensor) -> Tensor:
-        """returns the eigenvalues of a Real Symmetric or Hermitian matrix
-        """
+        """returns the eigenvalues of a Real Symmetric or Hermitian matrix"""
         return tf.linalg.eigvalsh(tensor)
 
     def svd(self, tensor: tf.Tensor) -> Tensor:
-        """returns the Singular Value Decomposition of a matrix
-        """
+        """returns the Singular Value Decomposition of a matrix"""
         return tf.linalg.svd(tensor)
 
     def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
-        """returns 0 if x == 0, and x * log(y) otherwise, elementwise
-        """
+        """returns 0 if x == 0, and x * log(y) otherwise, elementwise"""
         return tf.math.xlogy(x, y)
 
     def eigh(self, tensor: tf.Tensor) -> Tensor:
-        """returns the eigenvalues and eigenvectors of a matrix
-        """
+        """returns the eigenvalues and eigenvectors of a matrix"""
         return tf.linalg.eigh(tensor)
 
     def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
-        """returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A
-        """
+        """returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A"""
 
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
@@ -365,8 +358,7 @@ class TFMath(MathInterface):
             return tf.linalg.sqrtm(tensor)
 
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
-        """returns a tensor based on the truth value of the boolean mask
-        """
+        """returns a tensor based on the truth value of the boolean mask"""
         return tf.boolean_mask(tensor, mask)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -375,8 +367,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def getitem(tensor, *, key):
-        """a differentiable pure equivalent of numpy's `value = tensor[key]`
-        """
+        """a differentiable pure equivalent of numpy's `value = tensor[key]`"""
         value = np.array(tensor)[key]
 
         def grad(dy):
@@ -388,8 +379,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def setitem(tensor, value, *, key):
-        """a differentiable pure equivalent of numpy's `tensor[key] = value`
-        """
+        """a differentiable pure equivalent of numpy's `tensor[key] = value`"""
         tensor = np.array(tensor)
         value = np.array(value)
         tensor[key] = value

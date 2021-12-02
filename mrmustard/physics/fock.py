@@ -207,8 +207,7 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
 
 
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
-    r"""computes the fidelity between two states in Fock representation
-    """
+    r"""computes the fidelity between two states in Fock representation"""
     if a_pure and b_pure:
         min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)])
         state_a = state_a[min_cutoffs]
@@ -245,8 +244,7 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
 
 
 def number_means(tensor, is_dm: bool):
-    r"""returns the mean of the number operator in each mode
-    """
+    r"""returns the mean of the number operator in each mode"""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
@@ -259,8 +257,7 @@ def number_means(tensor, is_dm: bool):
 
 
 def number_variances(tensor, is_dm: bool):
-    r"""returns the variance of the number operator in each mode
-    """
+    r"""returns the variance of the number operator in each mode"""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]

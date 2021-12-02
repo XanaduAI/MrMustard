@@ -74,8 +74,7 @@ class Optimizer:
             return
 
     def should_stop(self, max_steps: int) -> bool:
-        r"""returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)
-        """
+        r"""returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)"""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps

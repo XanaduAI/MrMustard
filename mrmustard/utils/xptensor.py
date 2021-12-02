@@ -568,8 +568,7 @@ class XPMatrix(XPTensor):
 
 
 class XPVector(XPTensor):
-    r"""a convenience class for a vector in the XPTensor format.
-    """
+    r"""a convenience class for a vector in the XPTensor format."""
 
     def __init__(self, tensor: Tensor = None, modes: List[int] = []):
         if not (isinstance(modes, list) or all(type(m) == int for m in modes)):

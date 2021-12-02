@@ -30,8 +30,7 @@ math = Math()
 
 
 class Transformation:
-    r"""base class for all Transformations
-    """
+    r"""base class for all Transformations"""
     _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
@@ -67,8 +66,7 @@ class Transformation:
 
     @property
     def bell(self):
-        r"""the N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism
-        """
+        r"""the N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
         if self._bell is None:
             cov = gaussian.two_mode_squeezed_vacuum_cov(
                 r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
@@ -218,19 +216,16 @@ class Transformation:
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        r"""returns the (X, Y, d) triple
-        """
+        r"""returns the (X, Y, d) triple"""
         return self.X_matrix, self.Y_matrix, self.d_vector
 
     @property
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        r"""returns the (X, Y, d) triple of the dual of the current transformation
-        """
+        r"""returns the (X, Y, d) triple of the dual of the current transformation"""
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
     def U(self, cutoffs: Sequence[int]):
-        r"""returns the unitary representation of the transformation
-        """
+        r"""returns the unitary representation of the transformation"""
         if not self.is_unitary:
             return None
         choi_state = self.bell >> self
@@ -243,8 +238,7 @@ class Transformation:
         )
 
     def choi(self, cutoffs: Sequence[int]):
-        r"""returns the Choi representation of the transformation
-        """
+        r"""returns the Choi representation of the transformation"""
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
@@ -260,8 +254,7 @@ class Transformation:
             return choi_op
 
     def __getitem__(self, items) -> Callable:
-        r"""allows transformations to be used as :math:`output = op[0,1](input)`, e.g. acting on modes 0 and 1
-        """
+        r"""allows transformations to be used as :math:`output = op[0,1](input)`, e.g. acting on modes 0 and 1"""
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
         # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
         if isinstance(items, int):
@@ -320,8 +313,7 @@ class Transformation:
             raise ValueError(f"{other} is not a valid state or transformation.")
 
     def __eq__(self, other):
-        r"""returns True if the two transformations are equal
-        """
+        r"""returns True if the two transformations are equal"""
         if not isinstance(other, Transformation):
             return False
         if self.is_gaussian and other.is_gaussian:

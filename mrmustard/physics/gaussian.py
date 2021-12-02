@@ -496,8 +496,7 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
 
 
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
-    r"""returns ``True`` if the covariance matrix is mixed, ``False`` otherwise.
-    """
+    r"""returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
 
 
