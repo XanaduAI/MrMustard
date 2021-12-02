@@ -58,7 +58,7 @@ class Parametrized:
             else:
                 name = "_" + name
             self.__dict__[name] = value
-            self._param_names += [] if name.startswith('_') else [name]
+            self._param_names += [] if name.startswith("_") else [name]
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
