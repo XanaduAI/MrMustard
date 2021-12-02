@@ -74,7 +74,7 @@ Note that if a parameter of a single-mode gate is a float or a list of length 1,
 
 ```python
 from mrmustard.lab import Vacuum
-from mrmustard.lab import Dgate, Sgate, Rgate, LossChannel  # 1-mode gates ; parallelizable
+from mrmustard.lab import Dgate, Sgate, Rgate, Attenuator  # 1-mode gates ; parallelizable
 from mrmustard.lab import BSgate, MZgate, S2gate  # 2-mode gates
 from mrmustard.lab import Ggate, Interferometer  # N-mode gates
 
@@ -91,7 +91,7 @@ D = Dgate(modes = [0,1], x = 0.1, y = -0.5)
 D = Dgate(x=0.2, y=[0.9, 1.9]))
 
 # a lossy bosonic channel with fixed transmissivity
-L = LossChannel(transmissivity = 0.9, transmissivity_trainable = False)
+L = Attenuator(transmissivity = 0.9, transmissivity_trainable = False)
 
 # a generic gaussian transformation on 4 modes
 G = Ggate(num_modes=4)
@@ -126,15 +126,15 @@ In order to build a circuit we create an empty circuit object `circ = Circuit()`
 Circuits are callable and trainable.
 
 ```python
-from mrmustard.lab import Circuit, Vacuum, Sgate, Interferometer, LossChannel
+from mrmustard.lab import Circuit, Vacuum, Sgate, Interferometer, Attenuator
 
 modes = [0,1,2,3]
 
 X4 = Circuit()
 X4.append(Sgate(r = 1.0, phi = np.random.uniform(0.0, 2*np.pi, size=4)), r_bounds=(0.0, 1.0))
-X4.append(LossChannel(transmissivity=0.8))  # automatically parallelized over all modes
+X4.append(Attenuator(transmissivity=0.8))  # automatically parallelized over all modes
 X4.append(Interferometer(len(modes)))
-L = LossChannel(transmissivity=0.9, transmissivity_trainable=False)
+L = Attenuator(transmissivity=0.9, transmissivity_trainable=False)
 X4.append(L[modes])    # shared over all modes
 
 output = X4(Vacuum(4))  # differentiable output state
@@ -143,12 +143,12 @@ output = X4(Vacuum(4))  # differentiable output state
 Circuits are great for modelling realistic components:
 
 ``` python
-from mrmustard.lab import Circuit, MZgate, LossChannel
+from mrmustard.lab import Circuit, MZgate, Attenuator
 
 lossy_MZ = circuit().append([
-    LossChannel([0,1], transmissivity=[0.4, 0.45], transmissivity_trainable=False)  # in-couplings
+    Attenuator([0,1], transmissivity=[0.4, 0.45], transmissivity_trainable=False)  # in-couplings
     MZgate([0,1], phi_a = 0.1, phi_b = 0.4, external=False),  # both phases in the MZ
-    LossChannel([0,1], transmissivity=[0.44, 0.52], transmissivity_trainable=False)  # out-couplings
+    Attenuator([0,1], transmissivity=[0.44, 0.52], transmissivity_trainable=False)  # out-couplings
     ])
 
 state = lossy_MZ(state)  # differentiable
@@ -162,7 +162,7 @@ Note that measurements require the outcome to be specified.
 
 
 ```python
-from mrmustard.lab import Circuit, Vacuum, Sgate, BSgate, LossChannel, PNRDetector, ThresholdDetector
+from mrmustard.lab import Circuit, Vacuum, Sgate, BSgate, Attenuator, PNRDetector, ThresholdDetector
 
 circ = Circuit()
 circ.append(Sgate(r=0.2, phi=[0.9,1.9]))  # a mix of shared and independent parameters is allowed
@@ -181,11 +181,11 @@ MrMustard implements a dedicated optimizer that can perform symplectic and ortho
 Here we could use a default TensorFlow optimizer (no `Ggate`s or `Interferometer`s)):
 ```python
 import tensorflow as tf
-from mrmustard.lab import Dgate, LossChannel, Vacuum
+from mrmustard.lab import Dgate, Attenuator, Vacuum
 from mrmustard.physics.gaussian import fidelity
 
 D = Dgate(x = 0.1, y = -0.5, x_bounds=(0.0, 1.0), x_trainable=True)
-L = LossChannel(transmissivity=0.5)
+L = Attenuator(transmissivity=0.5)
 
 # we write a function that takes no arguments and returns the cost
 def cost_fn():
@@ -202,14 +202,14 @@ for i in trange(100):
 But we can also always use MrMustard's optimizer (which calls Adam if needed):
 ```python
 import tensorflow as tf
-from mrmustard.lab import Circuit, Ggate, LossChannel, Vacuum, DisplacedSqueezed
+from mrmustard.lab import Circuit, Ggate, Attenuator, Vacuum, DisplacedSqueezed
 from mrmustard.utils import Optimizer
 from mrmustard.physics.gaussian import fidelity
 
 circ = Circuit()
 
 G = Ggate(modes = [0], displacement_trainable=False)
-L = LossChannel(modes=[0], transmissivity=0.5, transmissivity_trainable=False)
+L = Attenuator(modes=[0], transmissivity=0.5, transmissivity_trainable=False)
 circ.extend([G,L])
 
 def cost_fn():

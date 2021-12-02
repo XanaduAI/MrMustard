@@ -16,7 +16,7 @@ r"""
 The lab module is all you need to construct and simulate photonic circuits.
 It contains the items you'd find in a lab:
 - states (Vacuum, Coherent, SqueezedVacuum, Thermal, etc...)
-- transformations (Sgate, BSgate, LossChannel, etc...)
+- transformations (Sgate, BSgate, Attenuator, etc...)
 - detectors (PNRDetector, Homodyne, etc...)
 - the Circuit class
 """

@@ -28,7 +28,7 @@ __all__ = [
     "MZgate",
     "S2gate",
     "Interferometer",
-    "LossChannel",
+    "Attenuator",
 ]
 
 
@@ -393,9 +393,15 @@ class Ggate(Parametrized, Transformation):
 # ~~~~~~~~~~~~~
 
 
-class LossChannel(Parametrized, Transformation):
+class Attenuator(Parametrized, Transformation):
     r"""
-    The lossy bosonic channel. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    The noisy attenuator channel. It corresponds to mixing with a thermal environment and applying
+    the pure loss channel. The pure lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
+    The CPT channel is given by
+    X = sqrt(transmissivity) * I
+    Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
+
+    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
     If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
     To apply mode-specific values use a list of floats.
     One can optionally set bounds for `transmissivity`, which the optimizer will respect.
@@ -404,6 +410,9 @@ class LossChannel(Parametrized, Transformation):
         transmissivity (float or List[float]): the list of transmissivities
         transmissivity_bounds (float, float): bounds for the transmissivity
         transmissivity_trainable (bool): whether transmissivity is a trainable variable
+        nbar (float): the average number of photons in the thermal state
+        nbar_bounds (float, float): bounds for the average number of photons in the thermal state
+        nbar_trainable (bool): whether nbar is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
@@ -412,21 +421,72 @@ class LossChannel(Parametrized, Transformation):
         transmissivity: Union[Optional[float], Optional[List[float]]] = 1.0,
         transmissivity_trainable: bool = False,
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        nbar: float = 0.0,
+        nbar_trainable: bool = False,
+        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
             transmissivity=transmissivity,
             transmissivity_trainable=transmissivity_trainable,
             transmissivity_bounds=transmissivity_bounds,
+            nbar=nbar,
+            nbar_trainable=nbar_trainable,
+            nbar_bounds=nbar_bounds,
             modes=modes,
         )
         self.is_unitary = False
         self.is_gaussian = True
 
     @property
-    def X_matrix(self):
-        return gaussian.loss_X(self.transmissivity)
+    def XYd(self):
+        return gaussian.loss_XYd(self.transmissivity, self.nbar, settings.HBAR)
+
+
+class Amplifier(Parametrized, Transformation):
+    r"""
+    The noisy amplifier channel. It corresponds to mixing with a thermal environment and applying
+    a two-mode squeezing gate.
+
+    X = sqrt(transmissivity) * I
+    Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
+
+    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    If `amplification` is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
+    One can optionally set bounds for `amplification`, which the optimizer will respect.
+    Args:
+        amplification (float or List[float]): the list of amplifications (must be > 1)
+        amplification_bounds (float, float): bounds for the amplification
+        amplification_trainable (bool): whether amplification is a trainable variable
+        nbar (float): the average number of photons in the thermal state
+        nbar_bounds (float, float): bounds for the average number of photons in the thermal state
+        nbar_trainable (bool): whether nbar is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        amplification: Union[Optional[float], Optional[List[float]]] = 1.0,
+        amplification_trainable: bool = False,
+        amplification_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
+        nbar: float = 0.0,
+        nbar_trainable: bool = False,
+        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            amplification=amplification,
+            amplification_trainable=amplification_trainable,
+            amplification_bounds=amplification_bounds,
+            nbar=nbar,
+            nbar_trainable=nbar_trainable,
+            nbar_bounds=nbar_bounds,
+            modes=modes,
+        )
+        self.is_unitary = False
+        self.is_gaussian = True
 
     @property
-    def Y_matrix(self):
-        return gaussian.loss_Y(self.transmissivity, settings.HBAR)
+    def XYd(self):
+        return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)
