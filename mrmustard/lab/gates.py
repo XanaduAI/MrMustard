@@ -28,7 +28,7 @@ __all__ = [
     "MZgate",
     "S2gate",
     "Interferometer",
-    "LossChannel",
+    "Attenuator",
 ]
 
 
