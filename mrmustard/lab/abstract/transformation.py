@@ -72,7 +72,9 @@ class Transformation:
     def bell(self):
         r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
         if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR)
+            cov = gaussian.two_mode_squeezed_vacuum_cov(
+                r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
+            )
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means)
             for _ in self.modes[1:]:

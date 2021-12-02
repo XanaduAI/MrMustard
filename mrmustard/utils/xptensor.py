@@ -63,7 +63,9 @@ class XPTensor(ABC):
     ):
 
         self.like_0 = like_0
-        self.shape = None if tensor is None else tensor.shape[: len(tensor.shape) // 2]  # only (N,M) or (N,)
+        self.shape = (
+            None if tensor is None else tensor.shape[: len(tensor.shape) // 2]
+        )  # only (N,M) or (N,)
         self.ndim = None if tensor is None else len(self.shape)
         self.isVector = isVector
         if self.ndim == 1 and not self.isVector:
@@ -78,7 +80,9 @@ class XPTensor(ABC):
             raise ValueError("vectors should be like_0")
         self.tensor = tensor
         if not (set(modes[0]) == set(modes[1]) or set(modes[0]).isdisjoint(modes[1])):
-            raise ValueError("The inmodes and outmodes should either contain the same modes or be disjoint")
+            raise ValueError(
+                "The inmodes and outmodes should either contain the same modes or be disjoint"
+            )
         self.modes = modes
 
     @property
@@ -169,7 +173,9 @@ class XPTensor(ABC):
             tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
             return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
         else:
-            tensor = math.tile(self.expand_dims(self.modes_last(), axis=2), (1, 1, times))  # shape = [2,N,T]
+            tensor = math.tile(
+                self.expand_dims(self.modes_last(), axis=2), (1, 1, times)
+            )  # shape = [2,N,T]
             tensor = math.reshape(tensor, (2, -1))  # shape = [2,NT] = [2,O]
             tensor = math.transpose(tensor, (1, 0))  # shape = [NT,2] = [O,2]
             return XPVector(tensor, [] if modes is None else modes)
@@ -189,7 +195,9 @@ class XPTensor(ABC):
         if self.isCoherence:
             raise ValueError("Cannot clone a coherence block")
         if bool(other.num_modes % self.num_modes):
-            raise ValueError(f"No integer multiple of {self.num_modes} modes fits into {other.num_modes} modes")
+            raise ValueError(
+                f"No integer multiple of {self.num_modes} modes fits into {other.num_modes} modes"
+            )
         times = other.num_modes // self.num_modes
         if self.isVector == other.isVector:
             tensor = self.clone(times, modes=other.modes).tensor
@@ -241,20 +249,26 @@ class XPTensor(ABC):
             return XPMatrix(tensor, like_1=self.like_1 and other.like_1, modes=modes)
         elif self.isMatrix and other.isVector:
             tensor, modes = self._mode_aware_matmul(other)
-            return XPVector(tensor, modes[0])  # TODO: check if we can output modes as a list in _mode_aware_matmul
+            return XPVector(
+                tensor, modes[0]
+            )  # TODO: check if we can output modes as a list in _mode_aware_matmul
         elif self.isVector and other.isMatrix:
             tensor, modes = other.T._mode_aware_matmul(self)
             return XPVector(tensor, modes[0])
         else:  # self.isVector and other.isVector:
             return self._mode_aware_vecvec(other)  # NOTE: this is a scalar, not an XPTensor
 
-    def _mode_aware_matmul(self, other: Union[XPMatrix, XPVector]) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
+    def _mode_aware_matmul(
+        self, other: Union[XPMatrix, XPVector]
+    ) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
         r"""Performs matrix multiplication only on the necessary modes and
         takes care of keeping only the modes that are needed, in case of mismatch.
         See documentation for a visual explanation with blocks.  #TODO: add link to figure
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
-            prod = math.tensordot(self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1)))
+            prod = math.tensordot(
+                self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1))
+            )
             return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (
                 self.outmodes,
                 other.inmodes,
@@ -262,27 +276,42 @@ class XPTensor(ABC):
         contracted = [i for i in self.inmodes if i in other.outmodes]
         uncontracted_self = [i for i in self.inmodes if i not in contracted]
         uncontracted_other = [o for o in other.outmodes if o not in contracted]
-        if not (set(self.outmodes).isdisjoint(uncontracted_other) and set(other.inmodes).isdisjoint(uncontracted_self)):
+        if not (
+            set(self.outmodes).isdisjoint(uncontracted_other)
+            and set(other.inmodes).isdisjoint(uncontracted_self)
+        ):
             raise ValueError("Invalid modes")
         bulk = None
         copied_rows = None
         copied_cols = None
         if len(contracted) > 0:
-            subtensor1 = math.gather(self.tensor, [self.inmodes.index(m) for m in contracted], axis=1)
-            subtensor2 = math.gather(other.tensor, [other.outmodes.index(m) for m in contracted], axis=0)
+            subtensor1 = math.gather(
+                self.tensor, [self.inmodes.index(m) for m in contracted], axis=1
+            )
+            subtensor2 = math.gather(
+                other.tensor, [other.outmodes.index(m) for m in contracted], axis=0
+            )
             if other.isMatrix:
                 bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 2)))
                 bulk = math.transpose(bulk, (0, 2, 1, 3))
             else:
                 bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 1)))
         if self.like_1 and len(uncontracted_other) > 0:
-            copied_rows = math.gather(other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0)
+            copied_rows = math.gather(
+                other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0
+            )
         if other.like_1 and len(uncontracted_self) > 0:
-            copied_cols = math.gather(self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1)
+            copied_cols = math.gather(
+                self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1
+            )
         if copied_rows is not None and copied_cols is not None:
             if bulk is None:
-                bulk = math.zeros((copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype)
-            empty = math.zeros((copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype)
+                bulk = math.zeros(
+                    (copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype
+                )
+            empty = math.zeros(
+                (copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype
+            )
             final = math.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
         elif copied_cols is None and copied_rows is not None:
             if bulk is None:
@@ -318,7 +347,9 @@ class XPTensor(ABC):
     def _mode_aware_vecvec(self, other: XPVector) -> Scalar:
         if list(self.outmodes) == list(other.outmodes):
             return math.sum(self.tensor * other.tensor)
-        common = list(set(self.outmodes) & set(other.outmodes))  # only the common modes (the others are like 0)
+        common = list(
+            set(self.outmodes) & set(other.outmodes)
+        )  # only the common modes (the others are like 0)
         return math.sum(self.tensor[common] * other.tensor[common])
 
     def __add__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
@@ -343,14 +374,20 @@ class XPTensor(ABC):
             elif (
                 self.like_1
             ):  # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
-                indices = [[i, i] for i in range(other.num_modes)]  # TODO: check if this is always correct
-                updates = math.tile(math.expand_dims(math.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1))
+                indices = [
+                    [i, i] for i in range(other.num_modes)
+                ]  # TODO: check if this is always correct
+                updates = math.tile(
+                    math.expand_dims(math.eye(2, dtype=other.dtype), 0), (other.num_modes, 1, 1)
+                )
                 other.tensor = math.update_add_tensor(other.tensor, indices, updates)
                 return other
         if other.tensor is None:  # only other is None
             return other + self
         # now neither is None
-        modes_match = list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(other.inmodes)
+        modes_match = list(self.outmodes) == list(other.outmodes) and list(self.inmodes) == list(
+            other.inmodes
+        )
         if modes_match:
             self.tensor = self.tensor + other.tensor
             return self
@@ -358,12 +395,12 @@ class XPTensor(ABC):
             raise ValueError("Cannot add two like_1 tensors on different modes yet")
         outmodes = sorted(set(self.outmodes).union(other.outmodes))
         inmodes = sorted(set(self.inmodes).union(other.inmodes))
-        self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(self.inmodes).issuperset(
-            other.inmodes
-        )
-        other_contains_self = set(other.outmodes).issuperset(self.outmodes) and set(other.inmodes).issuperset(
+        self_contains_other = set(self.outmodes).issuperset(other.outmodes) and set(
             self.inmodes
-        )
+        ).issuperset(other.inmodes)
+        other_contains_self = set(other.outmodes).issuperset(self.outmodes) and set(
+            other.inmodes
+        ).issuperset(self.inmodes)
         if self_contains_other:
             to_update = self.tensor
             to_add = [other]
@@ -379,7 +416,9 @@ class XPTensor(ABC):
         for t in to_add:
             outmodes_indices = [outmodes.index(o) for o in t.outmodes]
             inmodes_indices = [inmodes.index(i) for i in t.inmodes]
-            if t.isMatrix:  # e.g. outmodes of to_update are [self]+[other_new] = (e.g.) [9,1,2]+[0,20]
+            if (
+                t.isMatrix
+            ):  # e.g. outmodes of to_update are [self]+[other_new] = (e.g.) [9,1,2]+[0,20]
                 indices = [[o, i] for o in outmodes_indices for i in inmodes_indices]
             else:
                 indices = [[o] for o in outmodes_indices]
@@ -444,7 +483,9 @@ class XPTensor(ABC):
                     elif M == slice(None, None, None):
                         _modes[i] = self.modes[i]
                     else:
-                        raise ValueError(f"Invalid modes: {M} from {modes} (tensor has modes {self.modes})")
+                        raise ValueError(
+                            f"Invalid modes: {M} from {modes} (tensor has modes {self.modes})"
+                        )
             else:
                 raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
             rows = [self.outmodes.index(m) for m in _modes[0]]
@@ -476,14 +517,18 @@ class XPMatrix(XPTensor):
             raise ValueError("At least one of like_0 or like_1 must be set")
         if like_0 == like_1:
             raise ValueError(f"like_0 and like_1 can't both be {like_0}")
-        if not (isinstance(modes, tuple) and len(modes) == 2 and all(type(m) == list for m in modes)):
+        if not (
+            isinstance(modes, tuple) and len(modes) == 2 and all(type(m) == list for m in modes)
+        ):
             raise ValueError("modes should be a tuple containing two lists (outmodes and inmodes)")
         if len(modes[0]) == 0 and len(modes[1]) == 0 and tensor is not None:
             if (
                 tensor.shape[0] != tensor.shape[1] and like_0
             ):  # NOTE: we can't catch square coherences if no modes are specified
                 raise ValueError("Must specify the modes for a coherence block")
-            modes = tuple(list(range(s)) for s in tensor.shape[:2])  # NOTE assuming that it isn't a coherence block
+            modes = tuple(
+                list(range(s)) for s in tensor.shape[:2]
+            )  # NOTE assuming that it isn't a coherence block
         like_0 = like_0 if like_0 is not None else not like_1
         super().__init__(tensor, like_0, isVector=False, modes=modes)
 

@@ -350,7 +350,9 @@ class Interferometer(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != self.orthogonal.shape[1] // 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})"
+            )
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
@@ -396,7 +398,9 @@ class Ggate(Parametrized, Transformation):
 
     def _validate_modes(self, modes):
         if len(modes) != self.symplectic.shape[1] // 2:
-            raise ValueError(f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})")
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})"
+            )
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
