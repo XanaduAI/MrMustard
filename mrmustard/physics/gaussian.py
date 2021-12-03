@@ -655,7 +655,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
     Returns:
         float: the von neumann entropy
     """
-    symp_vals = self.sympletic_eigenvals(cov)
+    symp_vals = sympletic_eigenvals(cov)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
