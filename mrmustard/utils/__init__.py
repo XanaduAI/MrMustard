@@ -13,9 +13,4 @@
 # limitations under the License.
 r"""
 The utilities module contains various functions and classes for internal use.
-The only user-facing API is the Optimizer class.
 """
-
-from .training import Optimizer
-
-__all__ = ["Optimizer"]
