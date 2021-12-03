@@ -144,3 +144,17 @@ def test_get_modes():
     b = Gaussian(2)
     assert a == (a & b).get_modes([0, 1])
     assert b == (a & b).get_modes([2, 3])
+
+@given(m=st.integers(0, 3))
+def test_modes_after_projection(m):
+    a = Gaussian(4) << Fock(1)[m]
+    assert np.allclose(a.modes, [k for k in range(4) if k != m])
+    assert len(a.modes) == 3
+
+
+@given(n=st.integers(0, 3), m=st.integers(0, 3))
+def test_modes_after_double_projection(n,m):
+    assume(n != m)
+    a = Gaussian(4) << Fock([1,2])[n,m]
+    assert np.allclose(a.modes, [k for k in range(4) if k != m and k != n])
+    assert len(a.modes) == 2
