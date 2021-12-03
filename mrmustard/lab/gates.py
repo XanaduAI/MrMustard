@@ -29,6 +29,7 @@ __all__ = [
     "S2gate",
     "Interferometer",
     "Attenuator",
+    "Amplifier",
 ]
 
 
