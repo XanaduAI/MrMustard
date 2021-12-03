@@ -325,7 +325,7 @@ def controlled_X(g: Scalar):
 
 
 def CPTP(
-    cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]
+    cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, state_modes: Sequence[int], transf_modes: Sequence[int]
 ) -> Tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
@@ -338,23 +338,29 @@ def CPTP(
         X (Matrix): the X matrix of the CPTP channel
         Y (Matrix): noise matrix of the CPTP channel
         d (Vector): displacement vector of the CPTP channel
-        modes (Sequence[int]): modes on which the channel operates
+        state_modes (Sequence[int]): modes the state is defined on
+        transf_modes (Sequence[int]): modes on which the channel acts
         hbar (float): value of hbar
     Returns:
         Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
     """
+    print(state_modes, transf_modes)
+    if not set(transf_modes).issubset(state_modes):
+        raise ValueError(f"The channel should act on a subset of the state modes ({transf_modes} is not a subset of {state_modes})")
     # if single-mode channel, apply to all modes indicated in `modes`
     if X is not None and X.shape[-1] == 2:
-        X = math.single_mode_to_multimode_mat(X, len(modes))
+        X = math.single_mode_to_multimode_mat(X, len(transf_modes))
     if Y is not None and Y.shape[-1] == 2:
-        Y = math.single_mode_to_multimode_mat(Y, len(modes))
+        Y = math.single_mode_to_multimode_mat(Y, len(transf_modes))
     if d is not None and d.shape[-1] == 2:
-        d = math.single_mode_to_multimode_vec(d, len(modes))
-    cov = math.left_matmul_at_modes(X, cov, modes)
-    cov = math.right_matmul_at_modes(cov, math.transpose(X), modes)
-    cov = math.add_at_modes(cov, Y, modes)
-    means = math.matvec_at_modes(X, means, modes)
-    means = math.add_at_modes(means, d, modes)
+        d = math.single_mode_to_multimode_vec(d, len(transf_modes))
+    indices = [state_modes.index(i) for i in transf_modes] 
+    print(indices)
+    cov = math.left_matmul_at_modes(X, cov, indices)
+    cov = math.right_matmul_at_modes(cov, math.transpose(X), indices)
+    cov = math.add_at_modes(cov, Y, indices)
+    means = math.matvec_at_modes(X, means, indices)
+    means = math.add_at_modes(means, d, indices)
     return cov, means
 
 

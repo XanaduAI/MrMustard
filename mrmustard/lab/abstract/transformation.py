@@ -73,9 +73,9 @@ class Transformation:
             )
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means)
-            for _ in self.modes[1:]:
+            for _ in range(self.num_modes - 1):
                 bell = bell & bell_single
-            tot = 2 * len(self.modes)
+            tot = 2 * self.num_modes
             order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
             self._bell = bell.get_modes(order)
         return self._bell
@@ -90,7 +90,7 @@ class Transformation:
             State: the transformed state
         """
         X, Y, d = self.XYd if not dual else self.XYd_dual
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
         new_state = State(cov=cov, means=means)
         return new_state
 
@@ -173,6 +173,13 @@ class Transformation:
         self._validate_modes(modes)
         self._modes = modes
 
+    @property
+    def num_modes(self) -> int:
+        r"""
+        The number of modes on which the transformation acts.
+        """
+        return len(self.modes)
+
     def _validate_modes(self, modes):
         pass
 
@@ -245,7 +252,7 @@ class Transformation:
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
             return None
-        choi_state = self.bell >> self
+        choi_state = self.bell >> self[tuple(i for i,_ in enumerate(self.modes))]
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
