@@ -296,6 +296,53 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
+def controlled_Z(g: Scalar):
+    r"""Controlled PHASE gate of two-gaussian modes.
+
+    C_Z = \exp(ig q_1 \otimes q_2).
+
+    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
+    https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
+
+    Args:
+        g (float): interaction strength
+    Returns:
+        the C_Z(g) matrix (in xxpp ordering)
+    """
+
+    return math.astensor(
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, g, 1, 0],
+            [g, 0, 0, 1],
+        ]
+    )
+
+
+def controlled_X(g: Scalar):
+    r"""Controlled NOT gate of two-gaussian modes.
+
+    C_X = \exp(ig q_1 \otimes p_2).
+
+    Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
+
+    Args:
+        g (float): interaction strength
+    Returns:
+        the C_X(g) matrix (in xxpp ordering)
+    """
+
+    return math.astensor(
+        [
+            [1, 0, 0, 0],
+            [g, 1, 0, 0],
+            [0, 0, 1, -g],
+            [0, 0, 0, 1],
+        ]
+    )
+
+
 # ~~~~~~~~~~~~~
 # CPTP channels
 # ~~~~~~~~~~~~~
@@ -337,37 +384,60 @@ def CPTP(
     return cov, means
 
 
-def loss_X(transmissivity: Union[Scalar, Vector]) -> Matrix:
-    r"""Returns the X matrix for the lossy bosonic channel.
+def loss_XYd(
+    transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
+) -> Tuple[Matrix, Matrix, None]:
+    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel.
+    The pure loss channel is recovered for nbar = 0.0.
 
-    The full channel is applied to a covariance matrix :math:`\Sigma` as :math:`X\Sigma X^T + Y`.
+    Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
+
+    Arguments:
+        transmissivity (float): value of the transmissivity, must be between 0 and 1
+        nbar (float): photon number expectation value in the environment (0 for pure loss channel)
+    Returns:
+        Tuple[Matrix, Matrix, None]: the X,Y matrices and the d vector for the noisy loss channel
     """
-    D = math.sqrt(transmissivity)
-    return math.diag(math.concat([D, D], axis=0))
+    if math.any(transmissivity < 0) or math.any(transmissivity > 1):
+        raise ValueError("transmissivity must be between 0 and 1")
+    x = math.sqrt(transmissivity)
+    X = math.diag(math.concat([x, x], axis=0))
+    y = (1 - transmissivity) * (2 * nbar + 1) * hbar / 2
+    Y = math.diag(math.concat([y, y], axis=0))
+    return X, Y, None
 
 
-def loss_Y(transmissivity: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the Y (noise) matrix for the lossy bosonic channel.
+def amp_XYd(
+    amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
+) -> Matrix:
+    r"""Returns the X,Y matrices and the d vector for the noisy amplifier channel.
+    The quantum limited amplifier channel is recovered for nbar = 0.0.
 
-    The full channel is applied to a covariance matrix :math:`\Sigma` as :math:`X\Sigma X^T + Y`.
+    Arguments:
+        amplification (float): value of the amplification > 1
+        nbar (float): photon number expectation value in the environment (0 for quantum limited amplifier)
+    Returns:
+        Tuple[Matrix, Vector]: the X,Y matrices and the d vector for the noisy amplifier channel.
     """
-    D = (1.0 - transmissivity) * hbar / 2
-    return math.diag(math.concat([D, D], axis=0))
+    if math.any(amplification < 1):
+        raise ValueError("Amplification must be larger than 1")
+    x = math.sqrt(amplification)
+    X = math.diag(math.concat([x, x], axis=0))
+    y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
+    Y = math.diag(math.concat([y, y], axis=0))
+    return X, Y, None
 
 
-def thermal_X(nbar: Union[Scalar, Vector]) -> Matrix:
-    r"""Returns the X matrix for the thermal lossy channel.
+def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I)
 
-    The full channel is applied to a covariance matrix :math:`\sigma` as :math:`X\sigma X^T + Y`.
+    Arguments:
+        noise (float): number of photons in the thermal state
+    Returns:
+        Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
     """
-    raise NotImplementedError
-
-
-def thermal_Y(nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the Y (noise) matrix for the thermal lossy channel.
-    The full channel is applied to a covariance matrix `\sigma` as `X\sigma X^T + Y`.
-    """
-    raise NotImplementedError
+    Y = math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
+    return None, Y, None
 
 
 def compose_channels_XYd(
@@ -601,7 +671,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
         List[float]: the sympletic eigenvalues
     """
     cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
-    J = math.J(cov.shape[0] // 2)  # create a sympletic form
+    J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = 1j * J @ cov  # compute iJ*cov
     vals = math.eigvals(M)  # compute the eigenspectrum
     return math.abs(vals[::2])  # return the even eigenvalues

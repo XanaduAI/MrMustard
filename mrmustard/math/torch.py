@@ -17,7 +17,7 @@ import torch
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
-from mrmustard.utils.autocast import Autocast
+from mrmustard.math.autocast import Autocast
 from mrmustard.types import *
 
 

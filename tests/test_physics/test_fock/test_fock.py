@@ -104,7 +104,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
-    ps = (SqueezedVacuum(r=r, phi=phi) >> LossChannel(transmissivity=eta)).fock_probabilities(
+    ps = (SqueezedVacuum(r=r, phi=phi) >> Attenuator(transmissivity=eta)).fock_probabilities(
         [cutoff]
     )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
@@ -116,7 +116,7 @@ def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     """Tests the photon number distribution of a lossy two-mode squeezed state"""
     cutoff = 40
     n = np.arange(cutoff)
-    L = LossChannel(transmissivity=[eta_0, eta_1])
+    L = Attenuator(transmissivity=[eta_0, eta_1])
     state = TMSV(r=np.arcsinh(np.sqrt(n_mean)), phi=phi) >> L
     ps0 = state.get_modes(0).fock_probabilities([cutoff])
     ps1 = state.get_modes(1).fock_probabilities([cutoff])
@@ -132,7 +132,7 @@ def test_density_matrix(num_modes):
     modes = list(range(num_modes))
     cutoffs = [num_modes + 1] * num_modes
     G = Ggate(num_modes=num_modes)
-    L = LossChannel(transmissivity=1.0)
+    L = Attenuator(transmissivity=1.0)
     rho_legit = (Vacuum(num_modes) >> G >> L[modes]).dm(cutoffs=cutoffs)
     rho_made = (Vacuum(num_modes) >> G).dm(cutoffs=cutoffs)
     # rho_legit = L[modes](G(Vacuum(num_modes))).dm(cutoffs=cutoffs)

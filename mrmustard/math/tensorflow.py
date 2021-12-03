@@ -17,7 +17,7 @@ import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
-from mrmustard.utils.autocast import Autocast
+from mrmustard.math.autocast import Autocast
 from mrmustard.types import *
 
 
@@ -37,6 +37,9 @@ class TFMath(MathInterface):
 
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
+
+    def any(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.reduce_any(array)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=dtype)

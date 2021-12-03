@@ -22,7 +22,7 @@ import tensorflow as tf
 from scipy.stats import poisson
 
 from mrmustard.lab import *
-from mrmustard.utils import Optimizer
+from mrmustard.utils.training import Optimizer
 from mrmustard.physics import gaussian
 from mrmustard import settings
 
@@ -181,7 +181,7 @@ def test_loss_probs(eta):
     ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
     S = Sgate(r=0.2, phi=[0.0, 0.7])[0, 1]
     B = BSgate(theta=1.4, phi=0.0)[0, 1]
-    L = LossChannel(transmissivity=eta)[0, 1]
+    L = Attenuator(transmissivity=eta)[0, 1]
     dm_lossy = lossy_detector(Vacuum(2) >> S >> B, cutoffs=[20, 20])
     dm_ideal = ideal_detector(Vacuum(2) >> S >> B >> L, cutoffs=[20, 20])
     assert np.allclose(dm_ideal, dm_lossy)
@@ -194,7 +194,7 @@ def test_projected(eta, n):
     ideal_detector = PNRDetector(modes=[0, 1], efficiency=1.0, dark_counts=0.0)
     S = Sgate(r=0.3, phi=[0.0, 1.5])
     B = BSgate(theta=1.0, phi=0.0)
-    L = LossChannel(transmissivity=eta)
+    L = Attenuator(transmissivity=eta)
     dm_lossy, _ = lossy_detector(Vacuum(2) >> S[0, 1] >> B, cutoffs=[20, 20], outcomes=[n, None])
     dm_ideal, _ = ideal_detector(
         Vacuum(2) >> S[0, 1] >> B >> L[0], cutoffs=[20, 20], outcomes=[n, None]
