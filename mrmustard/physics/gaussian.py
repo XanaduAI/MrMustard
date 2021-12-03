@@ -325,7 +325,13 @@ def controlled_X(g: Scalar):
 
 
 def CPTP(
-    cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, state_modes: Sequence[int], transf_modes: Sequence[int]
+    cov: Matrix,
+    means: Vector,
+    X: Matrix,
+    Y: Matrix,
+    d: Vector,
+    state_modes: Sequence[int],
+    transf_modes: Sequence[int],
 ) -> Tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
@@ -344,9 +350,10 @@ def CPTP(
     Returns:
         Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
     """
-    print(state_modes, transf_modes)
     if not set(transf_modes).issubset(state_modes):
-        raise ValueError(f"The channel should act on a subset of the state modes ({transf_modes} is not a subset of {state_modes})")
+        raise ValueError(
+            f"The channel should act on a subset of the state modes ({transf_modes} is not a subset of {state_modes})"
+        )
     # if single-mode channel, apply to all modes indicated in `modes`
     if X is not None and X.shape[-1] == 2:
         X = math.single_mode_to_multimode_mat(X, len(transf_modes))
@@ -354,8 +361,9 @@ def CPTP(
         Y = math.single_mode_to_multimode_mat(Y, len(transf_modes))
     if d is not None and d.shape[-1] == 2:
         d = math.single_mode_to_multimode_vec(d, len(transf_modes))
-    indices = [state_modes.index(i) for i in transf_modes] 
-    print(indices)
+    indices = [
+        state_modes.index(i) for i in transf_modes
+    ]  # TODO: do this when calling the method instead of here?
     cov = math.left_matmul_at_modes(X, cov, indices)
     cov = math.right_matmul_at_modes(cov, math.transpose(X), indices)
     cov = math.add_at_modes(cov, Y, indices)

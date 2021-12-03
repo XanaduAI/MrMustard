@@ -78,7 +78,7 @@ class Transformation:
             tot = 2 * self.num_modes
             order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
             self._bell = bell.get_modes(order)
-        return self._bell
+        return self._bell[self.modes + [m + self.num_modes for m in self.modes]]
 
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""
@@ -91,7 +91,9 @@ class Transformation:
         """
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
-        new_state = State(cov=cov, means=means)
+        new_state = State(
+            cov=cov, means=means, modes=state.modes
+        )  # NOTE: assumes modes don't change
         return new_state
 
     def transform_fock(self, state: State, dual: bool) -> State:
@@ -252,7 +254,7 @@ class Transformation:
         "Returns the unitary representation of the transformation"
         if not self.is_unitary:
             return None
-        choi_state = self.bell >> self[tuple(i for i,_ in enumerate(self.modes))]
+        choi_state = self.bell >> self
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
