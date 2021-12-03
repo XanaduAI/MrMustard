@@ -475,9 +475,9 @@ def general_dyne(
         means (Vector): means vector of the state being measured
         proj_cov (Matrix): covariance matrix of the state being projected onto
         proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
-        modes (Sequence[int]): modes being measured
+        modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
     Returns:
-        Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
+        Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
     """
     N = cov.shape[-1] // 2
     nB = proj_cov.shape[-1] // 2  # B is the system being measured
