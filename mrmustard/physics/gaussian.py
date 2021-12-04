@@ -272,10 +272,31 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
+def quadratic_phase(s: Scalar):
+    r"""Quadratic phase single mode gate.
+
+    P = \exp(i s q^2 / 2 \hbar).
+
+    Reference: https://strawberryfields.ai/photonics/conventions/gates.html
+
+    Args:
+        s (float): interaction strength
+    Returns:
+        the P(s) matrix (in xxpp ordering)
+    """
+
+    return math.astensor(
+        [
+            [1, 0],
+            [s, 1],
+        ]
+    )
+
+
 def controlled_Z(g: Scalar):
     r"""Controlled PHASE gate of two-gaussian modes.
 
-    C_Z = \exp(ig q_1 \otimes q_2).
+    C_Z = \exp(ig q_1 \otimes q_2 / hbar).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
     https://arxiv.org/pdf/1110.3234.pdf, Equation 161.

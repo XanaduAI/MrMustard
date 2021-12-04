@@ -27,6 +27,8 @@ __all__ = [
     "BSgate",
     "MZgate",
     "S2gate",
+    "CZgate",
+    "CXgate"
     "Interferometer",
     "Attenuator",
     "Amplifier",
@@ -152,6 +154,41 @@ class Rgate(Parametrized, Transformation):
     @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle)
+
+
+class Pgate(Parametrized, Transformation):
+    r"""
+    Quadratic phase gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Arguments:
+        modes (List[int]): the list of modes this gate is applied to
+        shearing (float or List[float]): the list of shearing parameters
+        shearing_bounds (float, float): bounds for the shearing parameters
+        shearing_trainable bool: whether shearing is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        shearing: Union[Optional[float], Optional[List[float]]] = 0.0,
+        shearing_trainable: bool = False,
+        shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            shearing=shearing,
+            shearing_trainable=shearing_trainable,
+            shearing_bounds=shearing_bounds,
+            modes=modes,
+        )
+        self.is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return gaussian.quadratic_phase(self.angle)
 
 
 class BSgate(Parametrized, Transformation):
