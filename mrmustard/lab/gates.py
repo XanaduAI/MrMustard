@@ -191,6 +191,72 @@ class Pgate(Parametrized, Transformation):
         return gaussian.quadratic_phase(self.angle)
 
 
+class CXgate(Parametrized, Transformation):
+    r"""
+    Controlled X gate. It applies to a single pair of modes.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Arguments:
+        s (float): control parameter
+        s_bounds (float, float): bounds for the control angle
+        s_trainable (bool): whether s is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        s: Optional[float] = 0.0,
+        s_trainable: bool = False,
+        s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            s=s,
+            s_trainable=s_trainable,
+            s_bounds=s_bounds,
+            modes=modes,
+        )
+        self.is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return gaussian.controlled_X(self.theta, self.phi)
+
+
+
+class CZgate(Parametrized, Transformation):
+    r"""
+    Controlled Z gate. It applies to a single pair of modes.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Arguments:
+        s (float): control parameter
+        s_bounds (float, float): bounds for the control angle
+        s_trainable (bool): whether s is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        s: Optional[float] = 0.0,
+        s_trainable: bool = False,
+        s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            s=s,
+            s_trainable=s_trainable,
+            s_bounds=s_bounds,
+            modes=modes,
+        )
+        self.is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return gaussian.controlled_Z(self.theta, self.phi)
+
+
+
 class BSgate(Parametrized, Transformation):
     r"""
     Beam splitter gate. It applies to a single pair of modes.
