@@ -92,14 +92,16 @@ class State:
             return list(range(self.num_modes))
         return self._modes
 
-    def indices(self, modes) -> List[int]:
+    def indices(self, modes) -> Union[Tuple[int], int]:
         r"""
         Returns the indices of the given modes.
         Arguments:
-            modes (Sequence[int]): the modes
+            modes (Sequence[int] or int): the modes or mode
         Returns:
-            List[int]: the indices of the given modes
+            Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
         """
+        if isinstance(modes, int):
+            return self.modes.index(modes)
         return tuple(self.modes.index(m) for m in modes)
 
     @property
@@ -319,28 +321,18 @@ class State:
                 else:
                     return prob
             else:  # either self or other is not gaussian
-                other_cutoffs = []
-                used = 0
-                for m in other.modes:
-                    if m in self.modes:
-                        other_cutoffs.append(self.cutoffs[used])
-                        used += 1
-                    else:
-                        other_cutoffs.append(other.cutoffs[other.indices([m])[0]])
+                other_cutoffs = [None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes]
                 try:
-                    out_fock = self._preferred_projection(other, other.indices(self.modes))
+                    out_fock = self._preferred_projection(other, other.indices(self.modes))  # available in state Fock
                 except AttributeError:
-                    self_cutoffs = [
-                        other_cutoffs[m] for m in range(self.num_modes)
-                    ]  # matching other's cutoffs
+                    # matching other's cutoffs
+                    self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
                     out_fock = fock.contract_states(
-                        stateA=other.fock,
-                        stateB=self.fock,
+                        stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+                        stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
-                        modes=other.indices(
-                            self.modes
-                        ),  # modes in fock.contract_states go from 0 to N-1
+                        modes=other.indices(self.modes),  # modes in fock.contract_states are indexed from 0 to N-1
                         normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
                 if len(remaining_modes) > 0:

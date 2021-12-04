@@ -269,7 +269,7 @@ class Transformation:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
         else:
-            choi_state = self(self.bell)
+            choi_state = self.bell >> self
             choi_op = fock.fock_representation(
                 choi_state.cov,
                 choi_state.means,
