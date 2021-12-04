@@ -321,8 +321,9 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
 def contract_states(
     stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: List[int], normalize: bool
 ):
-    r"""contracts two states in the specified modes, it assumes that the modes spanned by B are a subset of the modes spanned by A
-
+    r"""
+    Contracts two states on the specified modes, assuming that the modes run from 0 to num_modes-1.
+    It assumes that the modes spanned by B are a subset of the modes spanned by A.
     Args:
         stateA: The first state
         stateB: The second state (assumed to be on a subset of the modes of stateA)

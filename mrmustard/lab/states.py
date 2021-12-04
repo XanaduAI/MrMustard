@@ -14,7 +14,9 @@
 
 from mrmustard.types import *
 from mrmustard import settings
+from mrmustard.math import Math
 
+math = Math()
 from mrmustard.lab.abstract import State, Transformation
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils.parametrized import Parametrized
@@ -38,7 +40,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        super().__init__(cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means)
 
 
 class Coherent(Parametrized, State):
@@ -257,24 +259,26 @@ class Gaussian(Parametrized, State):
 class Fock(Parametrized, State):
     r"""
     The N-mode Fock state.
+
     """
 
     def __init__(self, n: Sequence[int], **kwargs):
         State.__init__(self, ket=fock.fock_state(n))
-        Parametrized.__init__(self, n=n, **kwargs)
+        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, **kwargs)
 
-    def __preferred_projection(other: State, other_cutoffs: Sequence[int], modes: Sequence[int]):
-        r"""preferred method to perform a projection onto this state (rather than the default one)
-
+    def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
+        r"""
+        Preferred method to perform a projection onto this state (rather than the default one).
+        E.g. ket << Fock(1, modes=[3]) is equivalent to ket[:,:,:,1] if ket has 4 modes
+        E.g. dm << Fock(1, modes=[1]) is equivalent to dm[:,1,:,1] if dm has 2 modes
         Args:
             other: The state to project onto this state.
-            other_cutoffs: The cutoffs of the other state.
-            modes: The modes of this state (self) to project onto.
+            mode_indices: The indices of the modes of other that we want to project onto self.
         """
         getitem = []
         used = 0
-        for mode, c in enumerate(other_cutoffs):
-            if mode in modes:
+        for i, m in enumerate(other.modes):
+            if i in mode_indices:
                 getitem.append(self._n[used])
                 used += 1
             else:
