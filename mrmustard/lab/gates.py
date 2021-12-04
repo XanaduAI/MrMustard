@@ -30,6 +30,7 @@ __all__ = [
     "Interferometer",
     "Attenuator",
     "Amplifier",
+    "AdditiveNoise",
 ]
 
 
@@ -491,3 +492,34 @@ class Amplifier(Parametrized, Transformation):
     @property
     def XYd(self):
         return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)
+
+
+class AdditiveNoise(Parametrized, Transformation):
+    r"""
+    The additive noise channel.
+
+    
+    X = I
+    Y = noise * (hbar / 2) * I
+
+    Args:
+        noise (float or List[float]): the added noise in units of hbar/2
+        noise_trainable (bool): whether noise is a trainable variable
+        noise_bounds (float, float): bounds for the noise
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        noise: Union[Optional[float], Optional[List[float]]] = 0.0,
+        noise_trainable: bool = False,
+        noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds, modes=modes)
+        self.is_unitary = False
+        self.is_gaussian = True
+
+    @property
+    def XYd(self):
+        return gaussian.noise_XYd(self.noise, settings.HBAR)
