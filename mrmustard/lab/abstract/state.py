@@ -321,18 +321,27 @@ class State:
                 else:
                     return prob
             else:  # either self or other is not gaussian
-                other_cutoffs = [None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes]
+                other_cutoffs = [
+                    None if m not in self.modes else other.cutoffs[other.indices(m)]
+                    for m in other.modes
+                ]
                 try:
-                    out_fock = self._preferred_projection(other, other.indices(self.modes))  # available in state Fock
+                    out_fock = self._preferred_projection(
+                        other, other.indices(self.modes)
+                    )  # available in state Fock
                 except AttributeError:
                     # matching other's cutoffs
                     self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
                     out_fock = fock.contract_states(
-                        stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+                        stateA=other.ket(other_cutoffs)
+                        if other.is_pure
+                        else other.dm(other_cutoffs),
                         stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
-                        modes=other.indices(self.modes),  # modes in fock.contract_states are indexed from 0 to N-1
+                        modes=other.indices(
+                            self.modes
+                        ),  # modes in fock.contract_states are indexed from 0 to N-1
                         normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
                 if len(remaining_modes) > 0:
