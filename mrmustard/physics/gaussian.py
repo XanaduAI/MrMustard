@@ -150,6 +150,10 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     """
     r = math.atleast_1d(r)
     phi = math.atleast_1d(phi)
+    if r.shape[-1] == 1:
+        r = math.tile(r, phi.shape)
+    if phi.shape[-1] == 1:
+        phi = math.tile(phi, r.shape)
     num_modes = phi.shape[-1]
     cp = math.cos(phi)
     sp = math.sin(phi)
@@ -375,8 +379,9 @@ def CPTP(
 def loss_XYd(
     transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Tuple[Matrix, Matrix, None]:
-    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel.
-    The pure loss channel is recovered for nbar = 0.0.
+    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel:
+    X = math.sqrt(amplification)
+    Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -416,8 +421,8 @@ def amp_XYd(
     return X, Y, None
 
 
-def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I)
+def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix: 
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * (hbar / 2) * I)
 
     Arguments:
         noise (float): number of photons in the thermal state
