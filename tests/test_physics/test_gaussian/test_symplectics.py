@@ -22,6 +22,7 @@ from mrmustard.lab.gates import Sgate, BSgate, S2gate, Rgate, MZgate, Pgate, CXg
 from mrmustard.lab.states import Vacuum, TMSV
 from mrmustard.physics.gaussian import quadratic_phase, controlled_Z, controlled_X
 
+
 @given(r=st.floats(0, 2))
 def test_two_mode_squeezing(r):
     """Tests that the two-mode squeezing operation is implemented correctly"""
@@ -63,12 +64,15 @@ def test_CXgate(s):
     r_choi = np.arcsinh(1.0)
     S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
     S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
-    CX = CXgate(s=s, modes=[0,1])
+    CX = CXgate(s=s, modes=[0, 1])
     cov = (Vacuum(4) >> S2a >> S2b >> CX).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
     CX_expanded = expand(controlled_X(s).numpy(), [0, 1], 4)
     expected = CX_expanded @ expected @ CX_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
+
 
 @given(s=st.floats(0, 1))
 def test_CZgate(s):
@@ -77,9 +81,11 @@ def test_CZgate(s):
     r_choi = np.arcsinh(1.0)
     S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
     S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
-    CZ = CZgate(s=s, modes=[0,1])
+    CZ = CZgate(s=s, modes=[0, 1])
     cov = (Vacuum(4) >> S2a >> S2b >> CZ).cov
-    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4)
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
     CZ_expanded = expand(controlled_Z(s).numpy(), [0, 1], 4)
     expected = CZ_expanded @ expected @ CZ_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)

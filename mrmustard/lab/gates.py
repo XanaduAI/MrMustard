@@ -224,7 +224,6 @@ class CXgate(Parametrized, Transformation):
         return gaussian.controlled_X(self.s)
 
 
-
 class CZgate(Parametrized, Transformation):
     r"""
     Controlled Z gate. It applies to a single pair of modes.
@@ -255,7 +254,6 @@ class CZgate(Parametrized, Transformation):
     @property
     def X_matrix(self):
         return gaussian.controlled_Z(self.s)
-
 
 
 class BSgate(Parametrized, Transformation):
