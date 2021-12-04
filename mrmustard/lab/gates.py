@@ -23,12 +23,13 @@ __all__ = [
     "Dgate",
     "Sgate",
     "Rgate",
+    "Pgate",
     "Ggate",
     "BSgate",
     "MZgate",
     "S2gate",
     "CZgate",
-    "CXgate"
+    "CXgate",
     "Interferometer",
     "Attenuator",
     "Amplifier",
@@ -188,7 +189,7 @@ class Pgate(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.quadratic_phase(self.angle)
+        return gaussian.quadratic_phase(self.shearing)
 
 
 class CXgate(Parametrized, Transformation):
@@ -220,7 +221,7 @@ class CXgate(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.controlled_X(self.theta, self.phi)
+        return gaussian.controlled_X(self.s)
 
 
 
@@ -253,7 +254,7 @@ class CZgate(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.controlled_Z(self.theta, self.phi)
+        return gaussian.controlled_Z(self.s)
 
 
 
