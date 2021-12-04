@@ -47,7 +47,35 @@ class Vacuum(State):
 
 class Coherent(Parametrized, State):
     r"""
-    The N-mode coherent state.
+    The N-mode coherent state. Equivalent to applying a displacement to the vacuum state:
+    >>> Coherent(x=0.5, y=0.2) == Vacuum(1) >> Dgate(x=0.5, y=0.3)
+    True
+
+    Parallelizable over x and y:
+    >>> Coherent(x=[1.0, 2.0], y=[-1.0, -2.0]) == Coherent(x=1.0, y=-1.0) & Coherent(x=2.0, y=-2.0)
+    True
+
+    Can be used to model a heterodyne detection:
+    >>> Gaussian(2) << Coherent(x=1.0, y=0.0)[1]  # e.g. heterodyne on mode 1
+    # leftover state on mode 0
+
+    When used as a measurement, the returned state is always normalized,
+    but the probability of the measurement is available as an attribute of the leftover state:
+    >>> leftover = Gaussian(2) << Coherent(x=1.0, y=0.0)[1]
+    >>> leftover.prob < 1.0
+    True
+
+    Note that the values of x and y are automatically rescaled by 1/(2*sqrt(mrmustard.settings.HBAR)).
+
+    Args:
+        x (float or List[float]): The x-displacement of the coherent state.
+        y (float or List[float]): The y-displacement of the coherent state.
+        x_trainable (bool): Whether the x-displacement is trainable.
+        y_trainable (bool): Whether the y-displacement is trainable.
+        x_bounds (float or None, float or None): The bounds of the x-displacement.
+        y_bounds (float or None, float or None): The bounds of the y-displacement.
+        modes (optional List[int]): The modes of the coherent state.
+        normalize (bool, default True): When projecting onto Coherent, whether to normalize the leftover state.
     """
 
     def __init__(
@@ -58,7 +86,8 @@ class Coherent(Parametrized, State):
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        **kwargs,
+        modes: Optional[Sequence[int]] = None,
+        normalize: bool = True,
     ):
         Parametrized.__init__(
             self,
@@ -68,7 +97,8 @@ class Coherent(Parametrized, State):
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
-            **kwargs,
+            modes=modes,
+            normalize=normalize,
         )
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
@@ -81,7 +111,33 @@ class Coherent(Parametrized, State):
 
 class SqueezedVacuum(Parametrized, State):
     r"""
-    The N-mode squeezed vacuum state.
+    The N-mode squeezed vacuum state. Equivalent to applying a squeezing gate to the vacuum state:
+    >>> SqueezedVacuum(x=0.5, y=0.2) == Vacuum(1) >> Sgate(x=0.5, y=0.2)
+    True
+
+    Parallelizable over r and phi:
+    >>> SqueezedVacuum(r=[1.0, 2.0], phi=[-1.0, -2.0]) == SqueezedVacuum(r=1.0, phi=-1.0) & SqueezedVacuum(r=2.0, phi=-2.0)
+    True
+
+    Can be used to model a heterodyne detection with result 0.0:
+    >>> Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]  # e.g. homodyne on x quadrature on mode 1 with result 0.0
+    # leftover state on mode 0
+
+    When used as a measurement, the returned state is always normalized,
+    but the probability of the measurement is available as an attribute of the leftover state:
+    >>> leftover = Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]
+    >>> leftover.prob < 1.0
+    True
+
+    Args:
+        r (float): The squeezing magnitude.
+        phi (float): The squeezing phase.
+        r_trainable (bool): Whether the squeezing magnitude is trainable.
+        phi_trainable (bool): Whether the squeezing phase is trainable.
+        r_bounds (tuple): The bounds of the squeezing magnitude.
+        phi_bounds (tuple): The bounds of the squeezing phase.
+        modes (list): The modes of the squeezed vacuum state.
+        normalize (bool, default True): When projecting onto SqueezedVacuum, whether to normalize the leftover state.
     """
 
     def __init__(
@@ -92,7 +148,8 @@ class SqueezedVacuum(Parametrized, State):
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        **kwargs,
+        modes: Optional[Sequence[int]] = None,
+        normalize: bool = True,
     ):
         Parametrized.__init__(
             self,
@@ -102,7 +159,8 @@ class SqueezedVacuum(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            **kwargs,
+            modes=modes,
+            normalize=normalize,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -116,6 +174,19 @@ class SqueezedVacuum(Parametrized, State):
 class TMSV(Parametrized, State):
     r"""
     The 2-mode squeezed vacuum state.
+    Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
+    >>> TMSV(r=0.5, phi=0.0) == Vacuum(2) >> Sgate(r=[0.5,0.5], phi=[0.0, np.pi]) >> BSgate(theta=-np.pi/4)
+    True
+
+    Args:
+        r (float): The squeezing magnitude.
+        phi (float): The squeezing phase.
+        r_trainable (bool): Whether the squeezing magnitude is trainable.
+        phi_trainable (bool): Whether the squeezing phase is trainable.
+        r_bounds (tuple): The bounds of the squeezing magnitude.
+        phi_bounds (tuple): The bounds of the squeezing phase.
+        modes (list): The modes of the two-mode squeezed vacuum state. Must be of length 2.
+        normalize (bool, default True): When projecting onto TMSV, whether to normalize the leftover state.
     """
 
     def __init__(
@@ -126,7 +197,8 @@ class TMSV(Parametrized, State):
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        **kwargs,
+        modes: Optional[Sequence[int]] = [0,1],
+        normalize: bool = True,
     ):
         Parametrized.__init__(
             self,
@@ -136,7 +208,8 @@ class TMSV(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            **kwargs,
+            modes=modes,
+            normalize=normalize,
         )
         cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
@@ -150,6 +223,8 @@ class TMSV(Parametrized, State):
 class Thermal(Parametrized, State):
     r"""
     The N-mode thermal state.
+    Equivalent to applying an added noise channel to the vacuum state:
+    >>> Thermal(nbar=0.5) == Vacuum(1) >> AdditiveNoise(noise=0.5)
     """
 
     def __init__(
