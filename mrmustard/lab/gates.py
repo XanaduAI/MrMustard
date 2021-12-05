@@ -520,7 +520,9 @@ class AdditiveNoise(Parametrized, Transformation):
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds, modes=modes)
+        super().__init__(
+            noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds, modes=modes
+        )
         self.is_unitary = False
         self.is_gaussian = True
 

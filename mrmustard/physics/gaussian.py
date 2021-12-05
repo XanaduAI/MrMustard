@@ -421,7 +421,7 @@ def amp_XYd(
     return X, Y, None
 
 
-def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix: 
+def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * (hbar / 2) * I)
 
     Arguments:

@@ -185,7 +185,7 @@ class TMSV(Parametrized, State):
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = [0,1],
+        modes: Optional[Sequence[int]] = [0, 1],
         normalize: bool = True,
     ):
         Parametrized.__init__(
@@ -235,7 +235,14 @@ class Thermal(Parametrized, State):
         modes: Optional[Sequence[int]] = None,
         normalize: bool = True,
     ):
-        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, modes=modes, normalize=normalize)
+        Parametrized.__init__(
+            self,
+            nbar=nbar,
+            nbar_trainable=nbar_trainable,
+            nbar_bounds=nbar_bounds,
+            modes=modes,
+            normalize=normalize,
+        )
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means)
@@ -361,7 +368,7 @@ class Gaussian(Parametrized, State):
             symplectic = training.new_symplectic(num_modes=num_modes)
         if eigenvalues is None:
             eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
-        if math.any(math.atleast_1d(eigenvalues) < settings.HBAR/2):
+        if math.any(math.atleast_1d(eigenvalues) < settings.HBAR / 2):
             raise ValueError(
                 f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2 = {settings.HBAR/2}"
             )
@@ -409,7 +416,9 @@ class Fock(Parametrized, State):
 
     def __init__(self, n: Sequence[int], modes: Sequence[int] = None, normalize: bool = True):
         State.__init__(self, ket=fock.fock_state(n))
-        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize)
+        Parametrized.__init__(
+            self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize
+        )
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""
