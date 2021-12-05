@@ -421,7 +421,7 @@ def amp_XYd(
     return X, Y, None
 
 
-def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix: 
+def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix: 
     r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * (hbar / 2) * I)
 
     Arguments:
@@ -429,8 +429,7 @@ def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
     Returns:
         Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
     """
-    Y = math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
-    return None, Y, None
+    return math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
 
 
 def compose_channels_XYd(
@@ -659,7 +658,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = 1j * J @ cov  # compute iJ*cov
     vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues
+    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: fix the ordering?!
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
