@@ -408,8 +408,8 @@ class Fock(Parametrized, State):
     """
 
     def __init__(self, n: Sequence[int], modes: Sequence[int] = None, normalize: bool = True):
-        State.__init__(self, ket=fock.fock_state(n), modes=modes, normalize=normalize)
-        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n)
+        State.__init__(self, ket=fock.fock_state(n))
+        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize)
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""
