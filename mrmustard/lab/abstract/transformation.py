@@ -199,30 +199,28 @@ class Transformation:
 
     @property
     def X_matrix_dual(self) -> Optional[Matrix]:
-        if self.X_matrix is not None:
-            return gaussian.math.inv(self.X_matrix)
+        if (X := self.X_matrix) is not None:
+            return gaussian.math.inv(X)
         else:
             return None
 
     @property
     def Y_matrix_dual(self) -> Optional[Matrix]:
-        Xdual = self.X_matrix_dual
         Y = self.Y_matrix
-        if Xdual is None:
+        if (Xdual := self.X_matrix_dual) is None:
             return Y
         elif Y is not None:
-            return math.matmul(math.matmul(Xdual, self.Y_matrix), Xdual)
+            return math.matmul(math.matmul(Xdual, self.Y_matrix), math.transpose(Xdual))
         return None
 
     @property
     def d_vector_dual(self) -> Optional[Vector]:
+        if (d := self.d_vector) is None:
+            return None
         Xdual = self.X_matrix_dual
-        d = self.d_vector
         if Xdual is None:
             return -d
-        elif d is not None:
-            return -math.matvec(Xdual, d)
-        return None
+        return -math.matvec(Xdual, d)
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
