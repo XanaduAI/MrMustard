@@ -106,7 +106,7 @@ class Coherent(Parametrized, State):
 class SqueezedVacuum(Parametrized, State):
     r"""
     The N-mode squeezed vacuum state. Equivalent to applying a squeezing gate to the vacuum state:
-    >>> SqueezedVacuum(x=0.5, y=0.2) == Vacuum(1) >> Sgate(x=0.5, y=0.2)
+    >>> SqueezedVacuum(r=0.5, phi=0.2) == Vacuum(1) >> Sgate(r=0.5, phi=0.2)
     True
 
     Parallelizable over r and phi:
@@ -235,7 +235,7 @@ class Thermal(Parametrized, State):
         modes: Optional[Sequence[int]] = None,
         normalize: bool = True,
     ):
-        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds)
+        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, modes=modes, normalize=normalize)
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means)
@@ -291,7 +291,8 @@ class DisplacedSqueezed(Parametrized, State):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        **kwargs,
+        modes: Optional[Sequence[int]] = None,
+        normalize: bool = True,
     ):
         Parametrized.__init__(
             self,
@@ -307,7 +308,8 @@ class DisplacedSqueezed(Parametrized, State):
             phi_bounds=phi_bounds,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
-            **kwargs,
+            modes=modes,
+            normalize=normalize,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
@@ -371,7 +373,8 @@ class Gaussian(Parametrized, State):
             symplectic_trainable=symplectic_trainable,
             eigenvalues_bounds=(settings.HBAR / 2, None),
             symplectic_bounds=(None, None),
-            **kwargs,
+            modes=modes,
+            normalize=normalize,
         )
         cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -405,7 +408,7 @@ class Fock(Parametrized, State):
     """
 
     def __init__(self, n: Sequence[int], modes: Sequence[int] = None, normalize: bool = True):
-        State.__init__(self, ket=fock.fock_state(n), normalize=normalize, modes=modes)
+        State.__init__(self, ket=fock.fock_state(n), modes=modes, normalize=normalize)
         Parametrized.__init__(self, n=[n] if isinstance(n, int) else n)
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
