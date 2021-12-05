@@ -59,12 +59,6 @@ class Coherent(Parametrized, State):
     >>> Gaussian(2) << Coherent(x=1.0, y=0.0)[1]  # e.g. heterodyne on mode 1
     # leftover state on mode 0
 
-    When used as a measurement, the returned state is always normalized,
-    but the probability of the measurement is available as an attribute of the leftover state:
-    >>> leftover = Gaussian(2) << Coherent(x=1.0, y=0.0)[1]
-    >>> leftover.prob < 1.0
-    True
-
     Note that the values of x and y are automatically rescaled by 1/(2*sqrt(mrmustard.settings.HBAR)).
 
     Args:
@@ -122,12 +116,6 @@ class SqueezedVacuum(Parametrized, State):
     Can be used to model a heterodyne detection with result 0.0:
     >>> Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]  # e.g. homodyne on x quadrature on mode 1 with result 0.0
     # leftover state on mode 0
-
-    When used as a measurement, the returned state is always normalized,
-    but the probability of the measurement is available as an attribute of the leftover state:
-    >>> leftover = Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]
-    >>> leftover.prob < 1.0
-    True
 
     Args:
         r (float): The squeezing magnitude.
@@ -223,8 +211,20 @@ class TMSV(Parametrized, State):
 class Thermal(Parametrized, State):
     r"""
     The N-mode thermal state.
-    Equivalent to applying an added noise channel to the vacuum state:
-    >>> Thermal(nbar=0.5) == Vacuum(1) >> AdditiveNoise(noise=0.5)
+    Equivalent to applying additive noise to the vacuum:
+    >>> Thermal(nbar=0.31) == Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
+    True
+
+    Parallelizable over nbar:
+    >>> Thermal(nbar=[0.1, 0.2]) == Thermal(nbar=0.1) & Thermal(nbar=0.2)
+    True
+
+    Args:
+        nbar (float or List[float]): the expected number of photons in each mode
+        nbar_trainable (bool): whether the nbar is trainable
+        nbar_bounds (tuple): the bounds of the nbar
+        modes (list): the modes of the thermal state.
+        normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state.
     """
 
     def __init__(
@@ -232,11 +232,10 @@ class Thermal(Parametrized, State):
         nbar: Union[Scalar, Vector] = 0.0,
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
-        **kwargs,
+        modes: Optional[Sequence[int]] = None,
+        normalize: bool = True,
     ):
-        Parametrized.__init__(
-            self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds, **kwargs
-        )
+        Parametrized.__init__(self, nbar=nbar, nbar_trainable=nbar_trainable, nbar_bounds=nbar_bounds)
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means)
@@ -249,6 +248,33 @@ class Thermal(Parametrized, State):
 class DisplacedSqueezed(Parametrized, State):
     r"""
     The N-mode displaced squeezed state.
+    Equivalent to applying a displacement to the squeezed vacuum state:
+    >>> DisplacedSqueezed(r=0.5, phi=0.2, x=0.3, y=-0.7) == SqueezedVacuum(r=0.5, phi=0.2) >> Dgate(x=0.3, y=-0.7)
+    True
+
+    Parallelizable over r, phi, x, y:
+    >>> DisplacedSqueezed(r=[0.1, 0.2], phi=[0.3, 0.4], x=[0.5, 0.6], y=[0.7, 0.8]) == DisplacedSqueezed(r=0.1, phi=0.3, x=0.5, y=0.7) & DisplacedSqueezed(r=0.2, phi=0.4, x=0.6, y=0.8)
+    True
+
+    Can be used to model homodyne detection:
+    >>> Gaussian(2) << DisplacedSqueezed(r=10, phi=np.pi, y=0.3)[1]  # e.g. homodyne on mode 1, p quadrature, result 0.3
+    # leftover state on mode 0
+
+    Args:
+        r (float or List[float]): the squeezing magnitude
+        phi (float or List[float]): the squeezing phase
+        x (float or List[float]): the displacement in the x direction
+        y (float or List[float]): the displacement in the y direction
+        r_trainable (bool): whether the squeezing magnitude is trainable
+        phi_trainable (bool): whether the squeezing phase is trainable
+        x_trainable (bool): whether the displacement in the x direction is trainable
+        y_trainable (bool): whether the displacement in the y direction is trainable
+        r_bounds (tuple): the bounds of the squeezing magnitude
+        phi_bounds (tuple): the bounds of the squeezing phase
+        x_bounds (tuple): the bounds of the displacement in the x direction
+        y_bounds (tuple): the bounds of the displacement in the y direction
+        modes (list): the modes of the displaced squeezed state.
+        normalize (bool, default True): when projecting onto DisplacedSqueezed, whether to normalize the leftover state.
     """
 
     def __init__(
@@ -298,7 +324,25 @@ class DisplacedSqueezed(Parametrized, State):
 
 class Gaussian(Parametrized, State):
     r"""
-    The N-mode Gaussian state.
+    The N-mode Gaussian state is parametrized by a symplectic matrix and N symplectic eigenvalues.
+    The (mixed) Gaussian state is equivalent to applying a Gaussian symplectic transformation to a Thermal state:
+    >>> G = Gaussian(num_modes=1, eigenvalues = np.random.uniform(settings.HBAR/2, 10.0))
+    >>> G == Thermal(nbar=(G.eigenvalues*2/settings.HBAR  - 1)/2) >> Ggate(1, symplectic=G.symplectic)
+    True
+
+    Note that the 1st moments are zero unless a Dgate is applied to the Gaussian state:
+    >>> np.allclose(Gaussian(num_modes=1).means, 0.0)
+    True
+
+    Args:
+        num_modes (int): the number of modes
+        eigenvalues (float or List[float]): the symplectic eigenvalues of the Gaussian state
+        symplectic (np.ndarray or List[np.ndarray]): the symplectic matrix of the Gaussian state
+        eigenvalues_trainable (bool): whether the eigenvalues are trainable
+        symplectic_trainable (bool): whether the symplectic matrix is trainable
+        eigenvalues_bounds (tuple): the bounds of the eigenvalues
+        modes (optional, List[int]): the modes of the Gaussian state.
+        normalize (bool, default True): when projecting onto Gaussian, whether to normalize the leftover state.
     """
 
     def __init__(
@@ -308,12 +352,17 @@ class Gaussian(Parametrized, State):
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
-        **kwargs,
+        modes: List[int] = None,
+        normalize: bool = True,
     ):
         if symplectic is None:
             symplectic = training.new_symplectic(num_modes=num_modes)
         if eigenvalues is None:
             eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
+        if math.any(math.atleast_1d(eigenvalues) < settings.HBAR/2):
+            raise ValueError(
+                f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2 = {settings.HBAR/2}"
+            )
         Parametrized.__init__(
             self,
             symplectic=symplectic,
@@ -349,11 +398,15 @@ class Fock(Parametrized, State):
     r"""
     The N-mode Fock state.
 
+    Args:
+        n (int or List[int]): the number of photons in each mode
+        modes (optional, List[int]): the modes of the Fock state.
+        normalize (bool, default True): when projecting onto Fock, whether to normalize the leftover state.
     """
 
-    def __init__(self, n: Sequence[int], **kwargs):
-        State.__init__(self, ket=fock.fock_state(n))
-        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, **kwargs)
+    def __init__(self, n: Sequence[int], modes: Sequence[int] = None, normalize: bool = True):
+        State.__init__(self, ket=fock.fock_state(n), normalize=normalize, modes=modes)
+        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n)
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""
