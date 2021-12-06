@@ -50,7 +50,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         dark_counts_trainable: bool = False,
         efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        max_cutoffs: Union[int, List[int]] = 50,
+        max_cutoffs: Union[int, List[int]] = 50,  # TODO: make this a parameter in mm.settings
         conditional_probs=None,
         modes: List[int] = None,
     ):
@@ -91,6 +91,7 @@ class PNRDetector(Parametrized, FockMeasurement):
                         condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]]
                     )
                 )
+
 
 
 class ThresholdDetector(Parametrized, FockMeasurement):
@@ -161,7 +162,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         return self._stochastic_channel
 
 
-class Generaldyne(Parametrized, GaussianMeasurement):
+class Generaldyne(Parametrized, State):
     r"""
     General dyne measurement.
     """
@@ -206,7 +207,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
     def recompute_project_onto(
         self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]
     ) -> State:
-        quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype="float64")
+        quadrature_angles = gaussian.math.astensor(2*quadrature_angles, dtype="float64")
         results = gaussian.math.astensor(results, dtype="float64")
         x = results * gaussian.math.cos(quadrature_angles)
         y = results * gaussian.math.sin(quadrature_angles)
@@ -230,3 +231,20 @@ class Heterodyne(Parametrized, GaussianMeasurement):
 
     def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
         return Coherent(x=x, y=y)
+
+
+class Heterodyne(State):
+    r"""
+    Heterodyne measurement on given modes.
+    """
+    def __new__(cls, x, y, modes):
+        r"""
+        Args:
+            mode: modes of the measurement
+            x: x-coordinates of the measurement
+            y: y-coordinates of the measurement
+        """
+        instance = Coherent(x=x, y=y)[modes]
+        instance.__class__ = Heterodyne
+        return instance
+

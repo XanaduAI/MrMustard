@@ -98,12 +98,13 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def astensor(self, array: Tensor) -> Tensor:
+    def astensor(self, array: Tensor, dtype: str) -> Tensor:
         r"""Converts a numpy array to a tensor.
         Arguments:
             array (array): numpy array to convert
+            dtype (str): dtype of the tensor
         Returns:
-            array: tensor
+            array: tensor with dtype
         """
         ...
 
