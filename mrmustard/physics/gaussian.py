@@ -766,13 +766,14 @@ def log_negativity(cov: Matrix) -> float:
     """
 
     vals = sympletic_eigenvals(cov)
-    mask = 2 * vals < 1
 
     vals_filtered = math.boolean_mask(
-        vals, mask
+        vals, vals < settings.HBAR / 2
     )  # Get rid of terms that would lead to zero contribution.
-
-    return math.sum(-math.log(2 * vals_filtered) / math.log(2))
+    if len(vals_filtered) > 0:
+        return -math.sum(math.log(2.0 * vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype))
+    else:
+        return 0
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
