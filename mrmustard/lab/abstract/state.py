@@ -512,7 +512,7 @@ class State:
         )
         rprint(table)
         if self.num_modes == 1:
-            graphics.mikkel_plot(self.dm(cutoffs=self.cutoffs))
+            graphics.mikkel_plot(math.asnumpy(self.dm(self.cutoffs)))
         detailed_info = (
             f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
         )
