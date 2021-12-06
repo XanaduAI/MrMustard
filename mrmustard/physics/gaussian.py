@@ -770,7 +770,9 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
         vals, vals < settings.HBAR / 2
     )  # Get rid of terms that would lead to zero contribution.
     if len(vals_filtered) > 0:
-        return -math.sum(math.log(2.0 * vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype))
+        return -math.sum(
+            math.log(2.0 * vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
+        )
     else:
         return 0
 
