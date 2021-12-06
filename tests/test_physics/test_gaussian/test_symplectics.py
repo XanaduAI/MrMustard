@@ -18,8 +18,20 @@ from hypothesis import settings, given, strategies as st
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
 
-from mrmustard.lab.gates import Sgate, BSgate, S2gate, Rgate, MZgate, Pgate, CXgate, CZgate
-from mrmustard.lab.states import Vacuum, TMSV
+from mrmustard.lab.gates import (
+    Sgate,
+    BSgate,
+    S2gate,
+    Rgate,
+    MZgate,
+    Pgate,
+    CXgate,
+    CZgate,
+    Dgate,
+    Amplifier,
+    Attenuator,
+)
+from mrmustard.lab.states import Vacuum, TMSV, Thermal
 from mrmustard.physics.gaussian import quadratic_phase, controlled_Z, controlled_X
 
 
@@ -178,3 +190,19 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     S_expanded = expand(BS, [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
+
+
+@given(g=st.floats(1, 3), x=st.floats(-2, 2), y=st.floats(-2, 2))
+def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
+    """Tests that amplifying a coherent state is equivalent to preparing a thermal state displaced state"""
+    assert Vacuum(1) >> Dgate(x, y) >> Amplifier(g) == Thermal(g - 1) >> Dgate(
+        np.sqrt(g) * x, np.sqrt(g) * y
+    )
+
+
+@given(eta=st.floats(0.1, 0.9), x=st.floats(-2, 2), y=st.floats(-2, 2))
+def test_amplifier_attenuator_on_coherent_coherent(eta, x, y):
+    """Tests that amplifying and the attenuating a coherent state is equivalent to preparing a thermal state displaced state"""
+    assert Vacuum(1) >> Dgate(x, y) >> Amplifier(1 / eta) >> Attenuator(eta) == Thermal(
+        ((1 / eta) - 1) * eta
+    ) >> Dgate(x, y)
