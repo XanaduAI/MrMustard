@@ -49,17 +49,15 @@ class Parametrized:
                 if math.is_trainable(value):
                     self._trainable_parameters.append(value)
                 elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
-                    value = training.new_variable(
-                        value, kwargs[name + "_bounds"], owner + ":" + name
-                    )
+                    value = math.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
                     self._trainable_parameters.append(value)
                 else:
                     self._constant_parameters.append(value)
             elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
-                value = training.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
+                value = math.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
                 self._trainable_parameters.append(value)
             elif name + "_trainable" in kwargs and not kwargs[name + "_trainable"]:
-                value = training.new_constant(value, owner + ":" + name)
+                value = math.new_constant(value, owner + ":" + name)
                 self._constant_parameters.append(value)
             else:
                 name = "_" + name
