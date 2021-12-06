@@ -182,12 +182,7 @@ settings.BACKEND = 'torch'
 math.cos(0.1)  # pytorch
 ```
 
-### 4. Detectors
-MrMustard supports a variety of differentiable detectors, which fall into two categories: Gaussian and Fock detectors.
-
-FILL IN
-
-### 4. Utils
+### 4. Optimization
 The utils module is currently only offering the Optimizer (in the future we will implement a Compiler).
 The `Optimizer` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
 
