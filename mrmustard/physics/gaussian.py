@@ -668,20 +668,20 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     return 1 / math.sqrt(math.det((2 / hbar) * cov))
 
 
-def sympletic_eigenvals(cov: Matrix) -> Any:
+def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
     r"""
     Returns the sympletic eigenspectrum of a covariance matrix.
     For a pure state, we expect the sympletic eigenvalues to be 1.
     Arguments:
         cov (Matrix): the covariance matrix.
+        hbar (float): the value of the Planck constant.
     Returns:
         List[float]: the sympletic eigenvalues
     """
-    cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
-    M = 1j * J @ cov  # compute iJ*cov
+    M = math.matmul(1j * J, cov * (2 / hbar))
     vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: fix the ordering?!
+    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
