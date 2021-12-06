@@ -164,10 +164,10 @@ def test_random_state_is_entangled():
     """Tests that a Gaussian state generated at random is entangled"""
     state = Vacuum(2) >> Ggate(num_modes = 2)
     mat = state.cov
-    assert np.allclose(gp.log_negativity(mat), 0.0)
-    assert np.allclose(gp.log_negativity(gp.physical_partial_transpose(mat, [0,1])), 0.0, atol=1e-7)
-    N1 = gp.log_negativity(gp.physical_partial_transpose(mat, [0]))
-    N2 = gp.log_negativity(gp.physical_partial_transpose(mat, [1]))
+    assert np.allclose(gp.log_negativity(mat, 2), 0.0)
+    assert np.allclose(gp.log_negativity(gp.physical_partial_transpose(mat, [0,1]), 2), 0.0, atol=1e-7)
+    N1 = gp.log_negativity(gp.physical_partial_transpose(mat, [0]), 2)
+    N2 = gp.log_negativity(gp.physical_partial_transpose(mat, [1]), 2)
 
     assert N1 > 0
     assert N2 > 0
