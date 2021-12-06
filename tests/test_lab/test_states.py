@@ -159,3 +159,16 @@ def test_modes_after_double_projection(n, m):
     a = Gaussian(4) << Fock([1, 2])[n, m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m and k != n])
     assert len(a.modes) == 2
+
+def test_random_state_is_entangled():
+    """Tests that a Gaussian state generated at random is entangled"""
+    state = Vacuum(2) >> Ggate(num_modes = 2)
+    mat = state.cov
+    assert np.allclose(gp.log_negativity(mat), 0.0)
+    assert np.allclose(gp.log_negativity(gp.physical_partial_transpose(mat, [0,1])), 0.0, atol=1e-7)
+    N1 = gp.log_negativity(gp.physical_partial_transpose(mat, [0]))
+    N2 = gp.log_negativity(gp.physical_partial_transpose(mat, [1]))
+
+    assert N1 > 0
+    assert N2 > 0
+    assert np.allclose(N1, N2)
