@@ -17,7 +17,7 @@ import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from .math_interface import MathInterface
-from mrmustard.utils.autocast import Autocast
+from mrmustard.math.autocast import Autocast
 from mrmustard.types import *
 
 
@@ -181,11 +181,11 @@ class TFMath(MathInterface):
     def new_variable(
         self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64
     ):
-        value = self.cast(value, dtype)
+        value = self.convert_to_tensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=tf.float64):
-        value = self.cast(value, dtype)
+        value = self.convert_to_tensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:

@@ -150,6 +150,10 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     """
     r = math.atleast_1d(r)
     phi = math.atleast_1d(phi)
+    if r.shape[-1] == 1:
+        r = math.tile(r, phi.shape)
+    if phi.shape[-1] == 1:
+        phi = math.tile(phi, r.shape)
     num_modes = phi.shape[-1]
     cp = math.cos(phi)
     sp = math.sin(phi)
@@ -325,7 +329,13 @@ def controlled_X(g: Scalar):
 
 
 def CPTP(
-    cov: Matrix, means: Vector, X: Matrix, Y: Matrix, d: Vector, modes: Sequence[int]
+    cov: Matrix,
+    means: Vector,
+    X: Matrix,
+    Y: Matrix,
+    d: Vector,
+    state_modes: Sequence[int],
+    transf_modes: Sequence[int],
 ) -> Tuple[Matrix, Vector]:
     r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
     and `d = X \cdot means + d`.
@@ -338,31 +348,40 @@ def CPTP(
         X (Matrix): the X matrix of the CPTP channel
         Y (Matrix): noise matrix of the CPTP channel
         d (Vector): displacement vector of the CPTP channel
-        modes (Sequence[int]): modes on which the channel operates
+        state_modes (Sequence[int]): modes the state is defined on
+        transf_modes (Sequence[int]): modes on which the channel acts
         hbar (float): value of hbar
     Returns:
         Tuple[Matrix, Vector]: the covariance matrix and the means vector of the state after the CPTP channel
     """
+    if not set(transf_modes).issubset(state_modes):
+        raise ValueError(
+            f"The channel should act on a subset of the state modes ({transf_modes} is not a subset of {state_modes})"
+        )
     # if single-mode channel, apply to all modes indicated in `modes`
     if X is not None and X.shape[-1] == 2:
-        X = math.single_mode_to_multimode_mat(X, len(modes))
+        X = math.single_mode_to_multimode_mat(X, len(transf_modes))
     if Y is not None and Y.shape[-1] == 2:
-        Y = math.single_mode_to_multimode_mat(Y, len(modes))
+        Y = math.single_mode_to_multimode_mat(Y, len(transf_modes))
     if d is not None and d.shape[-1] == 2:
-        d = math.single_mode_to_multimode_vec(d, len(modes))
-    cov = math.left_matmul_at_modes(X, cov, modes)
-    cov = math.right_matmul_at_modes(cov, math.transpose(X), modes)
-    cov = math.add_at_modes(cov, Y, modes)
-    means = math.matvec_at_modes(X, means, modes)
-    means = math.add_at_modes(means, d, modes)
+        d = math.single_mode_to_multimode_vec(d, len(transf_modes))
+    indices = [
+        state_modes.index(i) for i in transf_modes
+    ]  # TODO: do this when calling the method instead of here?
+    cov = math.left_matmul_at_modes(X, cov, indices)
+    cov = math.right_matmul_at_modes(cov, math.transpose(X), indices)
+    cov = math.add_at_modes(cov, Y, indices)
+    means = math.matvec_at_modes(X, means, indices)
+    means = math.add_at_modes(means, d, indices)
     return cov, means
 
 
 def loss_XYd(
     transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Tuple[Matrix, Matrix, None]:
-    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel.
-    The pure loss channel is recovered for nbar = 0.0.
+    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel:
+    X = math.sqrt(amplification)
+    Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -402,16 +421,15 @@ def amp_XYd(
     return X, Y, None
 
 
-def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I)
+def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * (hbar / 2) * I)
 
     Arguments:
         noise (float): number of photons in the thermal state
     Returns:
         Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
     """
-    Y = math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
-    return None, Y, None
+    return math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
 
 
 def compose_channels_XYd(
@@ -469,9 +487,9 @@ def general_dyne(
         means (Vector): means vector of the state being measured
         proj_cov (Matrix): covariance matrix of the state being projected onto
         proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
-        modes (Sequence[int]): modes being measured
+        modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
     Returns:
-        Tuple[Scalar, Matrix, Vector]: the outcome probability *density*, the post-measurement cov and means vector
+        Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
     """
     N = cov.shape[-1] // 2
     nB = proj_cov.shape[-1] // 2  # B is the system being measured
@@ -640,7 +658,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = 1j * J @ cov  # compute iJ*cov
     vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues
+    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: fix the ordering?!
 
 
 def von_neumann_entropy(cov: Matrix) -> float:

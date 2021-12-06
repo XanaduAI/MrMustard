@@ -73,12 +73,12 @@ class Transformation:
             )
             means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
             bell = bell_single = State(cov=cov, means=means)
-            for _ in self.modes[1:]:
+            for _ in range(self.num_modes - 1):
                 bell = bell & bell_single
-            tot = 2 * len(self.modes)
+            tot = 2 * self.num_modes
             order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
             self._bell = bell.get_modes(order)
-        return self._bell
+        return self._bell[self.modes + [m + self.num_modes for m in self.modes]]
 
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""
@@ -90,8 +90,10 @@ class Transformation:
             State: the transformed state
         """
         X, Y, d = self.XYd if not dual else self.XYd_dual
-        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, self.modes)
-        new_state = State(cov=cov, means=means)
+        cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
+        new_state = State(
+            cov=cov, means=means, modes=state.modes
+        )  # NOTE: assumes modes don't change
         return new_state
 
     def transform_fock(self, state: State, dual: bool) -> State:
@@ -145,6 +147,13 @@ class Transformation:
         """
         self._validate_modes(modes)
         self._modes = modes
+
+    @property
+    def num_modes(self) -> int:
+        r"""
+        The number of modes on which the transformation acts.
+        """
+        return len(self.modes)
 
     def _validate_modes(self, modes):
         pass
@@ -233,7 +242,7 @@ class Transformation:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
         else:
-            choi_state = self(self.bell)
+            choi_state = self.bell >> self
             choi_op = fock.fock_representation(
                 choi_state.cov,
                 choi_state.means,
@@ -307,12 +316,53 @@ class Transformation:
         if not isinstance(other, Transformation):
             return False
         if self.is_gaussian and other.is_gaussian:
-            for s, o in zip(self.XYd, other.XYd):
-                if (s is not None) != (o is not None):
-                    return False
-                if s is not None and o is not None:
-                    if not np.allclose(s, o, rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS):
+            sX, sY, sd = self.XYd
+            oX, oY, od = other.XYd
+            if sX is None:
+                if oX is not None:
+                    if not np.allclose(
+                        oX, np.eye(oX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                    ):
                         return False
+            if oX is None:
+                if sX is not None:
+                    if not np.allclose(
+                        sX, np.eye(sX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                    ):
+                        return False
+            if sX is not None and oX is not None:
+                if not np.allclose(sX, oX):
+                    return False
+            if sY is None:
+                if oY is not None:
+                    if not np.allclose(
+                        oY, np.zeros_like(oY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                    ):
+                        return False
+            if oY is None:
+                if sY is not None:
+                    if not np.allclose(
+                        sY, np.zeros_like(sY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                    ):
+                        return False
+            if sY is not None and oY is not None:
+                if not np.allclose(sY, oY):
+                    return False
+            if sd is None:
+                if od is not None:
+                    if not np.allclose(
+                        sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                    ):
+                        return False
+            if od is None:
+                if sd is not None:
+                    if not np.allclose(
+                        sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                    ):
+                        return False
+            if sd is not None and od is not None:
+                if not np.allclose(sd, od):
+                    return False
             return True
         else:
             return np.allclose(
