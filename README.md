@@ -3,7 +3,7 @@
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
-![Python version](https://img.shields.io/badge/python-3.8+-blue)
+[![Python version](<https://img.shields.io/badge/python-3.8 | 3.9-blue>)](https://pypi.org/project/MrMustard/)
 
 Mr Mustard is a differentiable simulator, with built-in optimizer, that operates across phase space and Fock space.
 Mr Mustard is Built on top of an agnostic autodiff backend, with TensorFlow as default.
@@ -46,7 +46,7 @@ sq  = SqueezedVacuum(r=0.5)      # squeezed vacuum state
 g   = Gaussian(num_modes=2)      # 2-mode Gaussian state with zero means
 fock4 = Fock(4)                  # fock state |4>
 
-D  = Dgate(x=1.0, y=-0.4)         # Displacement by 1.0 along x and -0.4 along y      
+D  = Dgate(x=1.0, y=-0.4)         # Displacement by 1.0 along x and -0.4 along y
 S  = Sgate(r=0.5)                 # Squeezer with r=0.5
 BS = BSgate(theta=np.pi/4).       # 50/50 beam splitter
 L  = Attenuator(transmissivity=0.8) # pure lossy channel with 80% transmissivity
