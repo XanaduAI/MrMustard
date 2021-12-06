@@ -172,30 +172,27 @@ class Transformation:
 
     @property
     def X_matrix_dual(self) -> Optional[Matrix]:
-        if self.X_matrix is not None:
-            return gaussian.math.inv(self.X_matrix)
-        else:
+        if (X := self.X_matrix) is None:
             return None
+        return gaussian.math.inv(X)
 
     @property
     def Y_matrix_dual(self) -> Optional[Matrix]:
-        Xdual = self.X_matrix_dual
-        Y = self.Y_matrix
-        if Xdual is None:
+        if (Y := self.Y_matrix) is None:
+            return None
+        elif (Xdual := self.X_matrix_dual) is None:
             return Y
-        elif Y is not None:
-            return math.matmul(math.matmul(Xdual, self.Y_matrix), Xdual)
-        return None
+        else:
+            return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
 
     @property
     def d_vector_dual(self) -> Optional[Vector]:
-        Xdual = self.X_matrix_dual
-        d = self.d_vector
-        if Xdual is None:
-            return -d
-        elif d is not None:
-            return -math.matvec(Xdual, d)
-        return None
+        if (d := self.d_vector) is None:
+            return None
+        elif (Xdual := self.X_matrix_dual) is None:
+            return d
+        else:
+            return math.matmul(Xdual, d)
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
@@ -209,6 +206,7 @@ class Transformation:
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
         r"""
         Returns the (X, Y, d) triple of the dual of the current transformation.
+        Override in subclasses if computing Xdual, Ydual and ddual together is more efficient.
         """
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
@@ -254,8 +252,8 @@ class Transformation:
 
     def __getitem__(self, items) -> Callable:
         r"""
-        Allows transformations to be used as:
-        output = op[0,1](input)  # e.g. acting on modes 0 and 1
+        Sets the modes on which the transformation acts.
+        Allows transformations to be used as: `output = transf[0,1](input)`  e.g. acting on modes 0 and 1.
         """
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
         # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.

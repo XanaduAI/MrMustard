@@ -23,10 +23,13 @@ __all__ = [
     "Dgate",
     "Sgate",
     "Rgate",
+    "Pgate",
     "Ggate",
     "BSgate",
     "MZgate",
     "S2gate",
+    "CZgate",
+    "CXgate",
     "Interferometer",
     "Attenuator",
     "Amplifier",
@@ -153,6 +156,105 @@ class Rgate(Parametrized, Transformation):
     @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle)
+
+
+class Pgate(Parametrized, Transformation):
+    r"""
+    Quadratic phase gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+    To apply mode-specific values use a list of floats.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Arguments:
+        modes (List[int]): the list of modes this gate is applied to
+        shearing (float or List[float]): the list of shearing parameters
+        shearing_bounds (float, float): bounds for the shearing parameters
+        shearing_trainable bool: whether shearing is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        shearing: Union[Optional[float], Optional[List[float]]] = 0.0,
+        shearing_trainable: bool = False,
+        shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            shearing=shearing,
+            shearing_trainable=shearing_trainable,
+            shearing_bounds=shearing_bounds,
+            modes=modes,
+        )
+        self.is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return gaussian.quadratic_phase(self.shearing)
+
+
+class CXgate(Parametrized, Transformation):
+    r"""
+    Controlled X gate. It applies to a single pair of modes.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Arguments:
+        s (float): control parameter
+        s_bounds (float, float): bounds for the control angle
+        s_trainable (bool): whether s is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        s: Optional[float] = 0.0,
+        s_trainable: bool = False,
+        s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            s=s,
+            s_trainable=s_trainable,
+            s_bounds=s_bounds,
+            modes=modes,
+        )
+        self.is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return gaussian.controlled_X(self.s)
+
+
+class CZgate(Parametrized, Transformation):
+    r"""
+    Controlled Z gate. It applies to a single pair of modes.
+    One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Arguments:
+        s (float): control parameter
+        s_bounds (float, float): bounds for the control angle
+        s_trainable (bool): whether s is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+
+    def __init__(
+        self,
+        s: Optional[float] = 0.0,
+        s_trainable: bool = False,
+        s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            s=s,
+            s_trainable=s_trainable,
+            s_bounds=s_bounds,
+            modes=modes,
+        )
+        self.is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return gaussian.controlled_Z(self.s)
 
 
 class BSgate(Parametrized, Transformation):

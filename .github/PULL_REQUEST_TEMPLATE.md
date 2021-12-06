@@ -19,8 +19,8 @@ Please complete the following checklist when submitting a PR:
 - [ ] Add a new entry to the `.github/CHANGELOG.md` file, summarizing the
       change, and including a link back to the PR.
 
-- [ ] The Strawberry Fields source code conforms to
-      [PEP8 standards](https://www.python.org/dev/peps/pep-0008/).
+- [ ] The Mr Mustard source code conforms to
+      [PEP8 standards](https://www.python.org/dev/peps/pep-0008/) except line length.
       We check all of our code against [Pylint](https://www.pylint.org/).
       To lint modified files, simply `pip install pylint`, and then
       run `pylint strawberryfields/path/to/file.py`.
