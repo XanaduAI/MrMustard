@@ -18,8 +18,21 @@ from hypothesis import settings, given, strategies as st
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
 
-from mrmustard.lab.gates import Sgate, BSgate, S2gate, Rgate, MZgate
-from mrmustard.lab.states import Vacuum, TMSV
+from mrmustard.lab.gates import (
+    Sgate,
+    BSgate,
+    S2gate,
+    Rgate,
+    MZgate,
+    Pgate,
+    CXgate,
+    CZgate,
+    Dgate,
+    Amplifier,
+    Attenuator,
+)
+from mrmustard.lab.states import Vacuum, TMSV, Thermal
+from mrmustard.physics.gaussian import quadratic_phase, controlled_Z, controlled_X
 
 
 @given(r=st.floats(0, 2))
@@ -40,6 +53,53 @@ def test_Sgate(r, phi):
     expected = two_mode_squeezing(2 * r_choi, 0.0)
     S_expanded = expand(squeezing(r, phi), [0], 2)
     expected = S_expanded @ expected @ S_expanded.T
+    assert np.allclose(cov, expected, atol=1e-6)
+
+
+@given(s=st.floats(0, 1))
+def test_Pgate(s):
+    """Tests the Pgate is implemented correctly by applying it on one half of a maximally entangled state"""
+    r_choi = np.arcsinh(1.0)
+    S2 = S2gate(r=r_choi, phi=0.0)
+    P = Pgate(shearing=s, modes=[0])
+    cov = (Vacuum(2) >> S2 >> P).cov
+    expected = two_mode_squeezing(2 * r_choi, 0.0)
+    P_expanded = expand(np.array([[1, 0], [s, 1]]), [0], 2)
+    expected = P_expanded @ expected @ P_expanded.T
+    assert np.allclose(cov, expected, atol=1e-6)
+
+
+@given(s=st.floats(0, 1))
+def test_CXgate(s):
+    """Tests the CXgate is implemented correctly by applying it on one half of a maximally entangled state"""
+    s = 2
+    r_choi = np.arcsinh(1.0)
+    S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
+    S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
+    CX = CXgate(s=s, modes=[0, 1])
+    cov = (Vacuum(4) >> S2a >> S2b >> CX).cov
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
+    CX_expanded = expand(controlled_X(s).numpy(), [0, 1], 4)
+    expected = CX_expanded @ expected @ CX_expanded.T
+    assert np.allclose(cov, expected, atol=1e-6)
+
+
+@given(s=st.floats(0, 1))
+def test_CZgate(s):
+    """Tests the CXgate is implemented correctly by applying it on one half of a maximally entangled state"""
+    s = 2
+    r_choi = np.arcsinh(1.0)
+    S2a = S2gate(r=r_choi, phi=0.0, modes=[0, 2])
+    S2b = S2gate(r=r_choi, phi=0.0, modes=[1, 3])
+    CZ = CZgate(s=s, modes=[0, 1])
+    cov = (Vacuum(4) >> S2a >> S2b >> CZ).cov
+    expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
+        two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
+    )
+    CZ_expanded = expand(controlled_Z(s).numpy(), [0, 1], 4)
+    expected = CZ_expanded @ expected @ CZ_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
 
 
@@ -130,3 +190,19 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     S_expanded = expand(BS, [0, 1], 4)
     expected = S_expanded @ expected @ S_expanded.T
     assert np.allclose(cov, expected, atol=1e-6)
+
+
+@given(g=st.floats(1, 3), x=st.floats(-2, 2), y=st.floats(-2, 2))
+def test_amplifier_on_coherent_is_thermal_coherent(g, x, y):
+    """Tests that amplifying a coherent state is equivalent to preparing a thermal state displaced state"""
+    assert Vacuum(1) >> Dgate(x, y) >> Amplifier(g) == Thermal(g - 1) >> Dgate(
+        np.sqrt(g) * x, np.sqrt(g) * y
+    )
+
+
+@given(eta=st.floats(0.1, 0.9), x=st.floats(-2, 2), y=st.floats(-2, 2))
+def test_amplifier_attenuator_on_coherent_coherent(eta, x, y):
+    """Tests that amplifying and the attenuating a coherent state is equivalent to preparing a thermal state displaced state"""
+    assert Vacuum(1) >> Dgate(x, y) >> Amplifier(1 / eta) >> Attenuator(eta) == Thermal(
+        ((1 / eta) - 1) * eta
+    ) >> Dgate(x, y)

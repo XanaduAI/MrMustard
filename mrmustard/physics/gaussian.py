@@ -276,10 +276,31 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
+def quadratic_phase(s: Scalar):
+    r"""Quadratic phase single mode gate.
+
+    P = \exp(i s q^2 / 2 \hbar).
+
+    Reference: https://strawberryfields.ai/photonics/conventions/gates.html
+
+    Args:
+        s (float): interaction strength
+    Returns:
+        the P(s) matrix (in xxpp ordering)
+    """
+
+    return math.astensor(
+        [
+            [1, 0],
+            [s, 1],
+        ]
+    )
+
+
 def controlled_Z(g: Scalar):
     r"""Controlled PHASE gate of two-gaussian modes.
 
-    C_Z = \exp(ig q_1 \otimes q_2).
+    C_Z = \exp(ig q_1 \otimes q_2 / hbar).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
     https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
@@ -589,7 +610,9 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
         Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
     """
     N = len(cov) // 2
-    Aindices = math.astensor([i for i in range(N) if i not in Bmodes])
+    Aindices = math.astensor(
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+    )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)
     return A_cov_block, A_means_vec
@@ -673,7 +696,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
     Returns:
         float: the von neumann entropy
     """
-    symp_vals = self.sympletic_eigenvals(cov)
+    symp_vals = sympletic_eigenvals(cov)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
