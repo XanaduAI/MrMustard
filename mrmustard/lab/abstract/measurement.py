@@ -23,8 +23,7 @@ import numpy as np
 
 
 class GaussianMeasurement(ABC):
-    r"""Base class for all Gaussian measurements.
-    """
+    r"""Base class for all Gaussian measurements."""
 
     def __call__(self, state: State, **kwargs) -> Tuple[Scalar, State]:
         r"""Applies a general-dyne Gaussian measurement to the state, i.e. it projects
@@ -61,8 +60,7 @@ class GaussianMeasurement(ABC):
         ...
 
     def __getitem__(self, items) -> Callable:
-        r"""Allows measurements to be used as output = meas[0,1](input), e.g. measuring modes 0 and 1.
-        """
+        r"""Allows measurements to be used as output = meas[0,1](input), e.g. measuring modes 0 and 1."""
         if isinstance(items, int):
             modes = [items]
         elif isinstance(items, slice):

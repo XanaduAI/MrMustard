@@ -135,7 +135,6 @@ class State:
         return self._cov
 
     @property
-
     def number_stdev(self) -> Vector:
         r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
         if self.is_gaussian:
