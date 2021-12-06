@@ -244,12 +244,8 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
         state = Vacuum(2) >> G
         cov1, mu1 = trace(state.cov, state.means, [0])
         cov2, mu2 = trace(state.cov, state.means, [1])
-        mean1 = state.number_means[
-            0
-        ]  # (tf.linalg.trace(cov1) - 2)/4 # Mean photon number mode 1 in units with hbar=2
-        mean2 = state.number_means[
-            1
-        ]  # (tf.linalg.trace(cov2) - 2)/4 # Mean photon number mode 2 in units with hbar=2
+        mean1 = state.number_means[0]
+        mean2 = state.number_means[1]
         entropy = von_neumann_entropy(cov1)
         S = thermal_entropy(nbar)
         return (mean1 - nbar) ** 2 + (entropy - S) ** 2 + (mean2 - nbar) ** 2
