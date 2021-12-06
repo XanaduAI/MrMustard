@@ -772,7 +772,7 @@ def log_negativity(cov: Matrix) -> float:
         vals, mask
     )  # Get rid of terms that would lead to zero contribution.
 
-    return math.sum(-math.log(2 * vals_filtered) / math.log(2))
+    return math.sum(-math.log(2.0 * vals_filtered) / math.log(2.0))
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
