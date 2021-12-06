@@ -25,6 +25,7 @@ from mrmustard.lab.circuit import Circuit
 from mrmustard.utils.training import Optimizer
 from mrmustard.lab.states import Vacuum
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
+from mrmustard import settings
 
 
 @given(n=st.integers(0, 3))
@@ -246,7 +247,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
         cov2, mu2 = trace(state.cov, state.means, [1])
         mean1 = state.number_means[0]
         mean2 = state.number_means[1]
-        entropy = von_neumann_entropy(cov1)
+        entropy = von_neumann_entropy(cov1, settings.HBAR)
         S = thermal_entropy(nbar)
         return (mean1 - nbar) ** 2 + (entropy - S) ** 2 + (mean2 - nbar) ** 2
 
