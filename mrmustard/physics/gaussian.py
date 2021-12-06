@@ -606,7 +606,9 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
         Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
     """
     N = len(cov) // 2
-    Aindices = math.astensor([i for i in range(N) if i not in Bmodes] + [i+N for i in range(N) if i not in Bmodes])
+    Aindices = math.astensor(
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+    )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)
     return A_cov_block, A_means_vec
