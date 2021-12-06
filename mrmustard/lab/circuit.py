@@ -60,12 +60,15 @@ class Circuit(Transformation, Parametrized):
         Y = XPMatrix(like_0=True)
         d = XPVector()
         for op in self._ops:
-            opX = XPMatrix.from_xxpp(op.X_matrix, modes=(op.modes, op.modes), like_1=True)
-            opY = XPMatrix.from_xxpp(op.Y_matrix, modes=(op.modes, op.modes), like_0=True)
-            opd = XPVector.from_xxpp(op.d_vector, modes=op.modes)
+            opx, opy, opd = op.XYd
+            opX = XPMatrix.from_xxpp(opx, modes=(op.modes, op.modes), like_1=True)
+            opY = XPMatrix.from_xxpp(opy, modes=(op.modes, op.modes), like_0=True)
+            opd = XPVector.from_xxpp(opd, modes=op.modes)
             if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
                 opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
+            if opY.shape is not None and opY.shape[-1] == 1 and len(op.modes) > 1:
                 opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
+            if opd.shape is not None and opd.shape[-1] == 1 and len(op.modes) > 1:
                 opd = opd.clone(len(op.modes), modes=op.modes)
             X = opX @ X
             Y = opX @ Y @ opX.T + opY
@@ -76,11 +79,11 @@ class Circuit(Transformation, Parametrized):
     def is_gaussian(self):
         return all(op.is_gaussian for op in self._ops)
 
-    def extend(self, obj):
+    def extend(self, obj):  # TODO: remove
         result = self._ops.extend(obj)
         self.reset()
 
-    def append(self, obj):
+    def append(self, obj):  # TODO: remove
         result = self._ops.append(obj)
         self.reset()
 

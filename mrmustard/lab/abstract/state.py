@@ -420,7 +420,7 @@ class State:
         """
         if self.num_modes != other.num_modes:
             return False
-        if self.purity != other.purity:
+        if not np.isclose(self.purity, other.purity, atol=1e-6):
             return False
         if self.is_gaussian and other.is_gaussian:
             if not np.allclose(self.means, other.means, atol=1e-6):
