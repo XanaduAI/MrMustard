@@ -71,7 +71,7 @@ def von_neumann_entropy(A) -> float:
     float: The Von Neumann entropy of the state.
     """
     if A.is_gaussian:
-        return gaussian.von_neumann_entropy(A.cov/settings.HBAR)
+        return gaussian.von_neumann_entropy(A.cov, settings.HBAR)
     return fock.von_neumann_entropy(A.fock, a_dm=A.is_mixed)
 
 
