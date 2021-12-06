@@ -101,10 +101,10 @@ class Coherent(Parametrized, State):
         return gaussian.displacement(self.x, self.y, settings.HBAR)
 
 
-class SqueezedVacuum(Parametrized, State)
+class SqueezedVacuum(Parametrized, State):
     r"""
     The N-mode squeezed vacuum state. Equivalent to applying a squeezing gate to the vacuum state:
-    
+
     .. code::
       >>> SqueezedVacuum(r=0.5, phi=0.2) == Vacuum(1) >> Sgate(r=0.5, phi=0.2)
       True
@@ -165,7 +165,7 @@ class TMSV(Parametrized, State):
     r"""
     The 2-mode squeezed vacuum state.
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
-    
+
     .. code::
       >>> TMSV(r=0.5, phi=0.0) == Vacuum(2) >> Sgate(r=[0.5,0.5], phi=[0.0, np.pi]) >> BSgate(theta=-np.pi/4)
       True
@@ -213,23 +213,23 @@ class TMSV(Parametrized, State):
 
 
 class Thermal(Parametrized, State):
-r"""The N-mode thermal state.
-  Equivalent to applying additive noise to the vacuum:
-  >>> Thermal(nbar=0.31) == Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
-  True
+    r"""The N-mode thermal state.
+    Equivalent to applying additive noise to the vacuum:
+    >>> Thermal(nbar=0.31) == Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
+    True
 
-  Parallelizable over nbar:
-  
-  .. code::
+    Parallelizable over nbar:
+
+    .. code::
     >>> Thermal(nbar=[0.1, 0.2]) == Thermal(nbar=0.1) & Thermal(nbar=0.2)
     True
 
-  Args:
-      nbar (float or List[float]): the expected number of photons in each mode
-      nbar_trainable (bool): whether the nbar is trainable
-      nbar_bounds (tuple): the bounds of the nbar
-      modes (list): the modes of the thermal state.
-      normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state.
+    Args:
+        nbar (float or List[float]): the expected number of photons in each mode
+        nbar_trainable (bool): whether the nbar is trainable
+        nbar_bounds (tuple): the bounds of the nbar
+        modes (list): the modes of the thermal state.
+        normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state.
     """
 
     def __init__(
