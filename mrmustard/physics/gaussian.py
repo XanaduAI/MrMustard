@@ -684,7 +684,7 @@ def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
     return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
 
 
-def von_neumann_entropy(cov: Matrix) -> float:
+def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     r"""
     Returns the Von Neumann entropy.
     For a pure state, we expect the Von Neumann entropy to be 0.
@@ -696,7 +696,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
     Returns:
         float: the von neumann entropy
     """
-    symp_vals = sympletic_eigenvals(cov)
+    symp_vals = sympletic_eigenvals(cov, hbar)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
@@ -753,7 +753,7 @@ def fidelity(
     return math.cast(fidelity, "float64")
 
 
-def log_negativity(cov: Matrix) -> float:
+def log_negativity(cov: Matrix, hbar: float) -> float:
     r"""
     Returns the log_negativity of a Gaussian state.
 
@@ -765,7 +765,7 @@ def log_negativity(cov: Matrix) -> float:
         float: the log-negativity
     """
 
-    vals = sympletic_eigenvals(cov)
+    vals = sympletic_eigenvals(cov, hbar)
     mask = 2 * vals < 1
 
     vals_filtered = math.boolean_mask(
