@@ -25,7 +25,6 @@ requirements = [
     "rich",
     "tqdm",
     "matplotlib",
-    "strawberryfields>=0.20.0",
 ]
 
 info = {
