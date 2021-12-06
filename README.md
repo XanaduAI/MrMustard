@@ -1,4 +1,5 @@
-![mmlogo](https://github.com/XanaduAI/MrMustard/blob/main/mmlogo.png)
+![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_white.png#gh-light-mode-only)
+![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_black.png#gh-dark-mode-only)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
