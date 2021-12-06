@@ -1,3 +1,4 @@
+mistune==0.8.4
 sphinx
 docutils
 m2r2
