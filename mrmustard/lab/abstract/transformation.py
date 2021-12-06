@@ -128,33 +128,6 @@ class Transformation:
         else:
             return State(ket=new_fock, modes=state.modes)
 
-    def __repr__(self):
-        table = Table(title=f"{self.__class__.__qualname__}")
-        table.add_column("Parameters")
-        table.add_column("dtype")
-        table.add_column("Value")
-        table.add_column("Shape")
-        table.add_column("Trainable")
-        with np.printoptions(precision=6, suppress=True):
-            for name in self.param_names:
-                par = self.__dict__[name]
-                table.add_row(
-                    name,
-                    par.dtype.name,
-                    f"{np.array(par)}",
-                    f"{par.shape}",
-                    str(self.__dict__["_" + name + "_trainable"]),
-                )
-            lst = [
-                f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}"
-                for name in self.param_names
-            ]
-            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
-                f"[{self._modes}]" if self._modes is not None else ""
-            )
-        rprint(table)
-        return repr_string
-
     @property
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
@@ -395,3 +368,25 @@ class Transformation:
                 other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
+
+    def __repr__(self):
+        table = Table(title=f"{self.__class__.__qualname__}")
+        table.add_column("Parameters")
+        table.add_column("dtype")
+        table.add_column("Value")
+        table.add_column("Bounds")
+        table.add_column("Shape")
+        table.add_column("Trainable")
+        with np.printoptions(precision=6, suppress=True):
+            for name in self._param_names:
+                par = self.__dict__[name]
+                table.add_row(
+                    name,
+                    par.dtype.name,
+                    f"{np.array(par)}",
+                    str(self.__dict__["_" + name + "_bounds"]),
+                    f"{par.shape}",
+                    str(self.__dict__["_" + name + "_trainable"]),
+                )
+        rprint(table)
+        return ""
