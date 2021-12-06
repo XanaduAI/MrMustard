@@ -18,10 +18,13 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.lab.gates import Sgate, BSgate, S2gate, Ggate, Interferometer
+from thewalrus.symplectic import two_mode_squeezing
+
+from mrmustard.lab.gates import Sgate, BSgate, S2gate, Ggate, Interferometer, Ggate
 from mrmustard.lab.circuit import Circuit
 from mrmustard.utils.training import Optimizer
 from mrmustard.lab.states import Vacuum
+from mrmustard.physics.gaussian import trace, von_neumann_entropy
 
 
 @given(n=st.integers(0, 3))
@@ -222,3 +225,37 @@ def test_squeezing_hong_ou_mandel_optimizer():
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
     assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+
+
+def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
+    """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
+    and mean photon number as a thermal state"""
+
+    S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
+
+    nbar = 1.4
+
+    def thermal_entropy(nbar):
+        return -(nbar * np.log((nbar) / (1 + nbar)) - np.log(1 + nbar))
+
+    G = Ggate(num_modes=2, symplectic_trainable=True, symplectic=S_init)
+
+    def cost_fn():
+        state = Vacuum(2) >> G
+        cov1, mu1 = trace(state.cov, state.means, [0])
+        cov2, mu2 = trace(state.cov, state.means, [1])
+        mean1 = state.number_means[
+            0
+        ]  # (tf.linalg.trace(cov1) - 2)/4 # Mean photon number mode 1 in units with hbar=2
+        mean2 = state.number_means[
+            1
+        ]  # (tf.linalg.trace(cov2) - 2)/4 # Mean photon number mode 2 in units with hbar=2
+        entropy = von_neumann_entropy(cov1)
+        S = thermal_entropy(nbar)
+        return (mean1 - nbar) ** 2 + (entropy - S) ** 2 + (mean2 - nbar) ** 2
+
+    opt = Optimizer(symplectic_lr=0.1)
+    opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
+    S = G.symplectic.numpy()
+    cov = S @ S.T
+    assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
