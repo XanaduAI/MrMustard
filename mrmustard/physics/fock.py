@@ -27,13 +27,13 @@ math = Math()
 
 
 def fock_state(n: Sequence[int]) -> Tensor:
-    r"""returns a pure or mixed Fock state
+    r"""Returns a pure or mixed Fock state.
 
     Args:
-        n: a list of photon numbers.
+        n: a list of photon numbers
 
     Returns:
-        The Fock state up to cutoffs n+1
+        the Fock state up to cutoffs n+1
     """
     psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
     psi[tuple(np.atleast_1d(n))] = 1
@@ -46,13 +46,13 @@ def autocutoffs(
     r"""returns the autocutoffs of a Wigner state
 
     Args:
-        number_stdev: The photon number standard deviation in each mode
+        number_stdev: the photon number standard deviation in each mode
             (i.e. the square root of the diagonal of the covariance matrix)
-        number_means: The photon number means vector.
-        max_cutoff: The maximum cutoff.
+        number_means: the photon number means vector
+        max_cutoff: the maximum cutoff
 
     Returns:
-        The suggested cutoffs.
+        the suggested cutoffs
     """
     if max_cutoff is None:
         max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -70,26 +70,23 @@ def fock_representation(
     return_unitary: bool = None,
     choi_r: float = None,
 ) -> Tensor:
-    r"""returns the Fock representation of a state or Choi state
+    r"""Returns the Fock representation of a state or Choi state.
 
-    If the state is pure it returns the state vector (ket).
-
-    If the state is mixed it returns the density matrix.
-
-    If the transformation is unitary it returns the unitary transformation matrix.
-
-    If the transformation is not unitary it returns the Choi matrix.
+    * If the state is pure it returns the state vector (ket).
+    * If the state is mixed it returns the density matrix.
+    * If the transformation is unitary it returns the unitary transformation matrix.
+    * If the transformation is not unitary it returns the Choi matrix.
 
     Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        shape: The shape of the tensor.
-        return_dm: Whether the state vector is mixed or not.
-        return_unitary: Whether the transformation is unitary or not.
-        choi_r: The TMSV squeezing magnitude.
+        cov: the Wigner covariance matrix
+        means: the Wigner means vector
+        shape: the shape of the tensor
+        return_dm: whether the state vector is mixed or not
+        return_unitary: whether the transformation is unitary or not
+        choi_r: the TMSV squeezing magnitude
 
     Returns:
-        The Fock representation.
+        the fock representation
     """
     if return_dm is not None and return_unitary is not None:
         raise ValueError("Cannot specify both mixed and unitary.")
@@ -107,49 +104,49 @@ def fock_representation(
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
-    r"""maps a ket to a density matrix
+    r"""Maps a ket to a density matrix.
 
     Args:
-        ket: The ket.
+        ket: the ket
 
     Returns:
-        The density matrix.
+        the density matrix
     """
     return math.outer(ket, math.conj(ket))
 
 
 def ket_to_probs(ket: Tensor) -> Tensor:
-    r"""maps a ket to probabilities
+    r"""Maps a ket to probabilities.
 
     Args:
-        ket: The ket.
+        ket: the ket
 
     Returns:
-        The probabilities vector.
+        the probabilities vector
     """
     return math.abs(ket) ** 2
 
 
 def dm_to_probs(dm: Tensor) -> Tensor:
-    r"""extracts the diagonals of a density matrix
+    r"""Extracts the diagonals of a density matrix.
 
     Args:
-        dm: The density matrix.
+        dm: the density matrix
 
     Returns:
-        The probabilities vector.
+        the probabilities vector
     """
     return math.all_diagonals(dm, real=True)
 
 
 def U_to_choi(U: Tensor) -> Tensor:
-    r"""converts a unitary transformation to a Choi tensor
+    r"""Converts a unitary transformation to a Choi tensor.
 
     Args:
-        U: The unitary transformation.
+        U: the unitary transformation
 
     Returns:
-        The Choi tensor.
+        the Choi tensor
     """
     cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
@@ -164,13 +161,13 @@ def U_to_choi(U: Tensor) -> Tensor:
 
 
 def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
-    r"""returns the full-size A matrix, B vector and C scalar
+    r"""Returns the full-size A matrix, B vector and C scalar.
 
     Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        full: Whether to return the full-size A, B and C or the half-size A, B and C.
-        choi_r: The TMSV squeezing magnitude if not None we consider ABC of a Choi state.
+        cov: the Wigner covariance matrix
+        means: the Wigner means vector
+        full: whether to return the full-size A, B and C or the half-size A, B and C
+        choi_r: the TMSV squeezing magnitude if not None we consider ABC of a Choi state
     """
     is_state = choi_r is None
     N = cov.shape[-1] // 2
@@ -207,7 +204,7 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
 
 
 def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
-    r"""computes the fidelity between two states in Fock representation"""
+    r"""Computes the fidelity between two states in Fock representation."""
     if a_pure and b_pure:
         min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)])
         state_a = state_a[min_cutoffs]
@@ -244,7 +241,7 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
 
 
 def number_means(tensor, is_dm: bool):
-    r"""returns the mean of the number operator in each mode"""
+    r"""Returns the mean of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
@@ -257,7 +254,7 @@ def number_means(tensor, is_dm: bool):
 
 
 def number_variances(tensor, is_dm: bool):
-    r"""returns the variance of the number operator in each mode"""
+    r"""Returns the variance of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = [m for m in range(len(probs.shape))]
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
@@ -284,13 +281,13 @@ def purity(dm: Tensor) -> Scalar:
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
     r"""Computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
 
-    It assumes that the cutoffs of the transformation matche the cutoffs of the relevant axes of the state.
+    It assumes that the cutoffs of the transformation matches the cutoffs of the relevant axes of the state.
 
     Args:
-        transformation: The transformation tensor.
-        fock_state: The state to transform.
-        transformation_is_unitary: Whether the transformation is a unitary matrix or a Choi operator.
-        state_is_dm: Whether the state is a density matrix or a ket
+        transformation: the transformation tensor
+        fock_state: the state to transform
+        transformation_is_unitary: whether the transformation is a unitary matrix or a Choi operator
+        state_is_dm: whether the state is a density matrix or a ket
 
     Returns:
         The transformed state.
@@ -321,15 +318,15 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
 def contract_states(
     stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: List[int], normalize: bool
 ):
-    r"""contracts two states in the specified modes, it assumes that the modes spanned by B are a subset of the modes spanned by A
+    r"""Contracts two states in the specified modes, it assumes that the modes spanned by B are a subset of the modes spanned by A.
 
     Args:
-        stateA: The first state
-        stateB: The second state (assumed to be on a subset of the modes of stateA)
-        a_is_mixed: Whether the first state is mixed or not.
-        b_is_mixed: Whether the second state is mixed or not.
-        modes: The modes on which to contract the states.
-        normalize: Whether to normalize the result
+        stateA: the first state
+        stateB: the second state (assumed to be on a subset of the modes of stateA)
+        a_is_mixed: whether the first state is mixed or not.
+        b_is_mixed: whether the second state is mixed or not.
+        modes: the modes on which to contract the states.
+        normalize: whether to normalize the result
 
     Returns:
         The contracted state (subsystem of A)
@@ -376,11 +373,11 @@ def is_mixed_dm(dm):
 
 
 def trace(dm, keep: List[int]):
-    r"""computes the partial trace of a density matrix
+    r"""Computes the partial trace of a density matrix.
 
     Args:
-        dm: The density matrix
-        keep: The modes to keep
+        dm: the density matrix
+        keep: the modes to keep
     """
     N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]

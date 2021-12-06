@@ -94,7 +94,7 @@ class TorchMath(MathInterface):
         return torch.matrix_exp(matrix)
 
     def norm(self, array: torch.Tensor) -> torch.Tensor:
-        "note that the norm preserves the type of array"
+        """Note that the norm preserves the type of array."""
         return torch.norm(array)
 
     @Autocast()
@@ -159,7 +159,7 @@ class TorchMath(MathInterface):
         data_format="NWC",
         dilations: Optional[List[int]] = None,
     ) -> torch.Tensor:
-        r"""wrapper for :code:``torch.nn.Conv1d`` and :code:``torch.nn.Conv2d``
+        r"""Wrapper for :code:``torch.nn.Conv1d`` and :code:``torch.nn.Conv2d``.
 
         Args:
             1D convolution: Tensor of shape [batch_size, input_channels, signal_length].
@@ -309,14 +309,14 @@ class TorchMath(MathInterface):
         raise NotImplementedError
 
     def DefaultEuclideanOptimizer(self, params) -> torch.optim.Optimizer:
-        r"""default optimizer for the Euclidean parameters"""
+        r"""Default optimizer for the Euclidean parameters."""
         self.optimizer = torch.optim.Adam(params, lr=0.001)
         return self.optimizer
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
     ) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
-        r"""computes the loss and gradients of the given cost function
+        r"""Computes the loss and gradients of the given cost function.
 
         Args:
             cost_fn (Callable): The cost function. Takes in two arguments:
@@ -340,19 +340,19 @@ class TorchMath(MathInterface):
         return loss, grads
 
     def eigvals(self, tensor: torch.Tensor) -> Tensor:
-        """returns the eigenvalues of a matrix"""
+        """Returns the eigenvalues of a matrix."""
         return torch.linalg.eigvals(tensor)
 
     def eigvalsh(self, tensor: torch.Tensor) -> Tensor:
-        """returns the eigenvalues of a Real Symmetric or Hermitian matrix"""
+        """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return torch.linalg.eigvalsh(tensor)
 
     def svd(self, tensor: torch.Tensor) -> Tensor:
-        """returns the Singular Value Decomposition of a matrix"""
+        """Returns the Singular Value Decomposition of a matrix."""
         return torch.linalg.svd(tensor)
 
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
-        """returns 0 if x == 0, and x * log(y) otherwise, elementwise"""
+        """Returns 0 if x == 0, and x * log(y) otherwise, elementwise."""
         return torch.xlogy(x, y)
 
     def sqrtm(self, tensor: torch.Tensor) -> Tensor:

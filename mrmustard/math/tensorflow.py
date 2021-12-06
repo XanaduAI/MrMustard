@@ -189,7 +189,7 @@ class TFMath(MathInterface):
         return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
-        "Note that the norm preserves the type of array"
+        "Note that the norm preserves the type of array."
         return tf.linalg.norm(array)
 
     def ones(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
@@ -284,7 +284,7 @@ class TFMath(MathInterface):
     def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
     ) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
-        r"""computes the loss and gradients of the given cost function
+        r"""Computes the loss and gradients of the given cost function.
 
         Args:
             cost_fn (Callable with no args): The cost function.
@@ -312,6 +312,7 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
+
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
@@ -332,27 +333,27 @@ class TFMath(MathInterface):
         return poly, grad
 
     def eigvals(self, tensor: tf.Tensor) -> Tensor:
-        """returns the eigenvalues of a matrix"""
+        """Returns the eigenvalues of a matrix."""
         return tf.linalg.eigvals(tensor)
 
     def eigvalsh(self, tensor: tf.Tensor) -> Tensor:
-        """returns the eigenvalues of a Real Symmetric or Hermitian matrix"""
+        """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return tf.linalg.eigvalsh(tensor)
 
     def svd(self, tensor: tf.Tensor) -> Tensor:
-        """returns the Singular Value Decomposition of a matrix"""
+        """Returns the Singular Value Decomposition of a matrix."""
         return tf.linalg.svd(tensor)
 
     def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
-        """returns 0 if x == 0, and x * log(y) otherwise, elementwise"""
+        """Returns 0 if x == 0, and x * log(y) otherwise, elementwise."""
         return tf.math.xlogy(x, y)
 
     def eigh(self, tensor: tf.Tensor) -> Tensor:
-        """returns the eigenvalues and eigenvectors of a matrix"""
+        """Returns the eigenvalues and eigenvectors of a matrix."""
         return tf.linalg.eigh(tensor)
 
     def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
-        """returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A"""
+        """Returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A."""
 
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
@@ -361,7 +362,7 @@ class TFMath(MathInterface):
             return tf.linalg.sqrtm(tensor)
 
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
-        """returns a tensor based on the truth value of the boolean mask"""
+        """Returns a tensor based on the truth value of the boolean mask."""
         return tf.boolean_mask(tensor, mask)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -370,7 +371,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def getitem(tensor, *, key):
-        """a differentiable pure equivalent of numpy's `value = tensor[key]`"""
+        """A differentiable pure equivalent of numpy's `value = tensor[key]`."""
         value = np.array(tensor)[key]
 
         def grad(dy):
@@ -382,7 +383,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def setitem(tensor, value, *, key):
-        """a differentiable pure equivalent of numpy's `tensor[key] = value`"""
+        """A differentiable pure equivalent of numpy's `tensor[key] = value`."""
         tensor = np.array(tensor)
         value = np.array(value)
         tensor[key] = value

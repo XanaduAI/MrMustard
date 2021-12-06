@@ -156,8 +156,8 @@ class XPTensor(ABC):
         return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
     def clone(self, times: int, modes=None) -> XPtensor:
-        r"""create a new XPTensor made by cloning the system a given number of times
-        (the modes are reset by default unless specified)
+        r"""Create a new XPTensor made by cloning the system a given number of times
+        (the modes are reset by default unless specified).
         """
         if self.tensor is None:
             return self
@@ -182,14 +182,14 @@ class XPTensor(ABC):
             return XPVector(tensor, [] if modes is None else modes)
 
     def clone_like(self, other: XPTensor):
-        r"""
-        Create a new XPTensor with the same shape and modes as other.
+        r"""Create a new XPTensor with the same shape and modes as other.
 
         The new tensor has the same content as self, cloned as many times as necessary to match the shape and modes of other.
         The other properties are kept as is.
 
         Args:
             other: The tensor to be cloned.
+
         Returns:
             A new XPTensor with the same shape and modes as other.
         """
@@ -216,7 +216,7 @@ class XPTensor(ABC):
     ####################################################################################################################
 
     def __rmul__(self, other: Scalar) -> XPTensor:
-        "implements the operation self * other"
+        "Implements the operation ``self * other``"
         if self.tensor is None:
             if self.like_1:
                 raise NotImplementedError("Cannot multiply a scalar and a like_1 null tensor yet")
@@ -266,6 +266,7 @@ class XPTensor(ABC):
     ) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
         r"""Performs matrix multiplication only on the necessary modes and
         takes care of keeping only the modes that are needed, in case of mismatch.
+
         See documentation for a visual explanation with blocks.  #TODO: add link to figure
         """
         if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
@@ -447,8 +448,7 @@ class XPTensor(ABC):
         return (1 / other) * self
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> Union[XPMatrix, XPVector]:
-        r"""
-        Returns modes or subsets of modes from the XPTensor,
+        r"""Returns modes or subsets of modes from the XPTensor,
         or coherences between modes using an intuitive notation.
 
         We handle mode indices and we get the corresponding tensor indices handled correctly.
@@ -506,7 +506,7 @@ class XPTensor(ABC):
 
 
 class XPMatrix(XPTensor):
-    r"""a convenience class for a matrix in the XPTensor format
+    r"""A convenience class for a matrix in the XPTensor format.
 
     # TODO: write docstring
     """
@@ -568,7 +568,7 @@ class XPMatrix(XPTensor):
 
 
 class XPVector(XPTensor):
-    r"""a convenience class for a vector in the XPTensor format."""
+    r"""A convenience class for a vector in the XPTensor format."""
 
     def __init__(self, tensor: Tensor = None, modes: List[int] = []):
         if not (isinstance(modes, list) or all(type(m) == int for m in modes)):

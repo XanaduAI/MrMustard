@@ -33,7 +33,7 @@ __all__ = [
 
 
 class Vacuum(State):
-    r"""the N-mode vacuum state"""
+    r"""The N-mode vacuum state."""
 
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
@@ -42,7 +42,7 @@ class Vacuum(State):
 
 
 class Coherent(Parametrized, State):
-    r"""the N-mode coherent state"""
+    r"""The N-mode coherent state."""
 
     def __init__(
         self,
@@ -74,7 +74,7 @@ class Coherent(Parametrized, State):
 
 
 class SqueezedVacuum(Parametrized, State):
-    r"""the N-mode squeezed vacuum state"""
+    r"""The N-mode squeezed vacuum state."""
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class SqueezedVacuum(Parametrized, State):
 
 
 class TMSV(Parametrized, State):
-    r"""the 2-mode squeezed vacuum state"""
+    r"""The 2-mode squeezed vacuum state."""
 
     def __init__(
         self,
@@ -138,7 +138,7 @@ class TMSV(Parametrized, State):
 
 
 class Thermal(Parametrized, State):
-    r"""the N-mode thermal state"""
+    r"""The N-mode thermal state."""
 
     def __init__(
         self,
@@ -160,7 +160,7 @@ class Thermal(Parametrized, State):
 
 
 class DisplacedSqueezed(Parametrized, State):
-    r"""the N-mode displaced squeezed state"""
+    r"""The N-mode displaced squeezed state."""
 
     def __init__(
         self,
@@ -208,7 +208,7 @@ class DisplacedSqueezed(Parametrized, State):
 
 
 class Gaussian(Parametrized, State):
-    r"""the N-mode Gaussian state"""
+    r"""The N-mode Gaussian state."""
 
     def __init__(
         self,
@@ -255,9 +255,7 @@ class Gaussian(Parametrized, State):
 
 
 class Fock(Parametrized, State):
-    r"""
-    The N-mode Fock state.
-    """
+    r"""The N-mode Fock state."""
 
     def __init__(self, n: Sequence[int], **kwargs):
         State.__init__(self, ket=fock.fock_state(n))

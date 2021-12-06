@@ -65,8 +65,8 @@ def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
         r (vector): squeezing magnitude
         phi (vector): squeezing angle
         hbar: value of hbar
-    Returns:
 
+    Returns:
         Matrix: squeezed state covariance matrix
         Vector: squeezed state means vector
     """
@@ -203,7 +203,7 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
 
 def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a Beam-splitter gate.
-    The dimension is 4x4.
+    The dimension is :math:`4\times 4`.
 
     Args:
         theta: transmissivity parameter
@@ -229,11 +229,13 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
 
 def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matrix:
     r"""Symplectic matrix of a Mach-Zehnder gate.
+
     It supports two conventions:
-    if `internal=True`, both phases act inside the interferometer:
-        `phi_a` on the upper arm, `phi_b` on the lower arm;
-    if `internal = False` (default), both phases act on the upper arm:
-        `phi_a` before the first BS, `phi_b` after the first BS.
+
+        * if `internal=True`, both phases act inside the interferometer:
+            `phi_a` on the upper arm, `phi_b` on the lower arm;
+        * if `internal = False` (default), both phases act on the upper arm:
+            `phi_a` before the first BS, `phi_b` after the first BS.
 
     Args:
         phi_a (float): first phase
@@ -272,7 +274,7 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
 
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a two-mode squeezing gate.
-    The dimension is 4x4.
+    The dimension is :math:`4\times 4`.
 
     Args:
         r (float): squeezing magnitude
@@ -299,13 +301,15 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
 def controlled_Z(g: Scalar):
     r"""Controlled PHASE gate of two-gaussian modes.
 
-    C_Z = \exp(ig q_1 \otimes q_2).
+    .. math::
+        C_Z = \exp(ig q_1 \otimes q_2).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
     https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
 
     Args:
         g (float): interaction strength
+
     Returns:
         the C_Z(g) matrix (in xxpp ordering)
     """
@@ -323,12 +327,14 @@ def controlled_Z(g: Scalar):
 def controlled_X(g: Scalar):
     r"""Controlled NOT gate of two-gaussian modes.
 
-    C_X = \exp(ig q_1 \otimes p_2).
+    .. math::
+        C_X = \exp(ig q_1 \otimes p_2).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
 
     Args:
         g (float): interaction strength
+
     Returns:
         the C_X(g) matrix (in xxpp ordering)
     """
@@ -395,6 +401,7 @@ def loss_XYd(
     Arguments:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
         nbar (float): photon number expectation value in the environment (0 for pure loss channel)
+
     Returns:
         Tuple[Matrix, Matrix, None]: the X,Y matrices and the d vector for the noisy loss channel
     """
@@ -416,6 +423,7 @@ def amp_XYd(
     Arguments:
         amplification (float): value of the amplification > 1
         nbar (float): photon number expectation value in the environment (0 for quantum limited amplifier)
+
     Returns:
         Tuple[Matrix, Vector]: the X,Y matrices and the d vector for the noisy amplifier channel.
     """
@@ -429,10 +437,11 @@ def amp_XYd(
 
 
 def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I)
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I).
 
     Arguments:
         noise (float): number of photons in the thermal state
+
     Returns:
         Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
     """
@@ -443,7 +452,7 @@ def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
 def compose_channels_XYd(
     X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector
 ) -> Tuple[Matrix, Matrix, Vector]:
-    r"""returns the combined X, Y, and d for two CPTP channels
+    r"""Returns the combined X, Y, and d for two CPTP channels.
 
     Args:
         X1 (Matrix): the X matrix of the first CPTP channel
@@ -490,7 +499,7 @@ def general_dyne(
     modes: Sequence[int],
     hbar: float,
 ) -> Tuple[Scalar, Matrix, Vector]:
-    r"""returns the results of a general dyne measurement
+    r"""Returns the results of a general dyne measurement.
 
     Args:
         cov (Matrix): covariance matrix of the state being measured
@@ -523,7 +532,7 @@ def general_dyne(
 # utilities
 # ~~~~~~~~~
 def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
-    r"""returns the photon number means vector given a Wigner covariance matrix and a means vector.
+    r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
     Args:
         cov: The Wigner covariance matrix.
@@ -544,15 +553,15 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
 
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
-    r"""returns the photon number covariance matrix given a Wigenr covariance matrix and a means vector.
+    r"""Returns the photon number covariance matrix given a Wigenr covariance matrix and a means vector.
 
     Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        hbar: The value of the Planck constant.
+        cov: the Wigner covariance matrix
+        means: the Wigner means vector
+        hbar: the value of the Planck constant
 
     Returns:
-        The photon number covariance matrix.
+        the photon number covariance matrix
     """
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
@@ -566,20 +575,20 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
 
 
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
-    r"""returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
+    r"""Returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
 
 
 def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
-    r"""automatically determines reasonable cutoffs
+    r"""Automatically determines reasonable cutoffs.
 
     Args:
-        cov: The covariance matrix.
-        means: The means vector.
-        hbar: The value of the Planck constant.
+        cov: the covariance matrix
+        means: the means vector
+        hbar: the value of the Planck constant
 
     Returns:
-        A list of cutoff indices.
+        a list of cutoff indices
     """
     cutoffs = (
         number_means(cov, means, hbar)
@@ -589,7 +598,7 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
-    r"""returns the covariances and means after discarding the specified modes
+    r"""Returns the covariances and means after discarding the specified modes.
 
     Args:
         cov (Matrix): covariance matrix
@@ -607,7 +616,7 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
 
 
 def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
-    r"""partitions the covariance matrix into the A and B subsystems and the AB coherence block
+    r"""Partitions the covariance matrix into the A and B subsystems and the AB coherence block.
 
     Args:
         cov (Matrix): the covariance matrix
@@ -629,7 +638,7 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
 
 
 def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
-    r"""partitions the means vector into the A and B subsystems
+    r"""Partitions the means vector into the A and B subsystems.
 
     Args:
         means (Vector): the means vector
@@ -648,7 +657,7 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
 
 
 def purity(cov: Matrix, hbar: float) -> Scalar:
-    r"""returns the purity of the state with the given covariance matrix
+    r"""Returns the purity of the state with the given covariance matrix.
 
     Args:
         cov (Matrix): the covariance matrix
@@ -660,12 +669,12 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
 
 
 def sympletic_eigenvals(cov: Matrix) -> Any:
-    r"""returns the sympletic eigenspectrum of a covariance matrix
+    r"""Returns the sympletic eigenspectrum of a covariance matrix
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
 
     Args:
-        cov (Matrix): the covariance matrix.
+        cov (Matrix): the covariance matrix
 
     Returns:
         List[float]: the sympletic eigenvalues
@@ -678,7 +687,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
-    r"""returns the Von Neumann entropy
+    r"""Returns the Von Neumann entropy.
 
     For a pure state, we expect the Von Neumann entropy to be 0.
 
@@ -771,7 +780,7 @@ def log_negativity(cov: Matrix) -> float:
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
-    r"""joins the given covariance matrices into a single covariance matrix
+    r"""Joins the given covariance matrices into a single covariance matrix.
 
     Args:
         covs (Sequence[Matrix]): the covariance matrices
@@ -788,7 +797,7 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
 
 
 def join_means(means: Sequence[Vector]) -> Vector:
-    r"""joins the given means vectors into a single means vector
+    r"""Joins the given means vectors into a single means vector.
 
     Args:
         means (Sequence[Vector]): the means vectors
@@ -805,7 +814,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
 
 
 def symplectic_inverse(S: Matrix) -> Matrix:
-    r"""returns the inverse of a symplectic matrix
+    r"""Returns the inverse of a symplectic matrix.
 
     Args:
         S (Matrix): the symplectic matrix
@@ -824,7 +833,7 @@ def symplectic_inverse(S: Matrix) -> Matrix:
 
 
 def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
-    r"""returns the dual channel (X,Y,d)
+    r"""Returns the dual channel (X,Y,d).
 
     Args:
         X (Matrix): the X matrix

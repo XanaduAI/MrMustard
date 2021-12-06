@@ -23,20 +23,21 @@ import numpy as np
 
 
 class GaussianMeasurement(ABC):
-    r"""base class for all Gaussian measurements"""
+    r"""Base class for all Gaussian measurements.
+    """
 
     def __call__(self, state: State, **kwargs) -> Tuple[Scalar, State]:
         r"""Applies a general-dyne Gaussian measurement to the state, i.e. it projects
         onto the state with given cov and outcome means vector.
 
         Args:
-            state (State): the state to be measured.
+            state (State): the state to be measured
             kwargs (optional): same arguments as in the init, use them only if they are different
-            from the arguments supplied at init time (e.g. for training a measurement using a state to project onto).
+            from the arguments supplied at init time (e.g. for training a measurement using a state to project onto)
 
         Returns:
-            (float, state) The measurement probabilities and the remaining post-measurement state.
-            Note that the post-measurement state is trivial if all modes are measured.
+            (float, state): The measurement probabilities and the remaining post-measurement state.
+                Note that the post-measurement state is trivial if all modes are measured.
         """
         if len(kwargs) > 0:
             self._project_onto = self.recompute_project_onto(**kwargs)
@@ -60,7 +61,8 @@ class GaussianMeasurement(ABC):
         ...
 
     def __getitem__(self, items) -> Callable:
-        r"""allows measurements to be used as output = meas[0,1](input), e.g. measuring modes 0 and 1"""
+        r"""Allows measurements to be used as output = meas[0,1](input), e.g. measuring modes 0 and 1.
+        """
         if isinstance(items, int):
             modes = [items]
         elif isinstance(items, slice):
@@ -89,8 +91,8 @@ class FockMeasurement(ABC):
     ) -> Tuple[State, Tensor]:
         r"""Projects the state onto a Fock measurement.
 
-        Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
-        indicate the Fock measurement on that mode and None indicates no projection on that mode.
+        Projects the state onto a Fock measurement in the form :code:``[a,b,c,...]`` where integers
+        indicate the Fock measurement on that mode and ``None`` indicates no projection on that mode.
 
         Returns the measurement probability and the renormalized state (in the Fock basis) in the unmeasured modes.
         """

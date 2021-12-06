@@ -101,7 +101,7 @@ class PNRDetector(Parametrized, FockMeasurement):
 class ThresholdDetector(Parametrized, FockMeasurement):
     r"""Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
 
-    If len(modes) > 1 the detector is applied in parallel to all of the modes provided.
+    If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, its value is applied to all of the parallel instances of the detector.
 
@@ -171,7 +171,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
 
 class Generaldyne(Parametrized, GaussianMeasurement):
-    r"""general dyne measurement"""
+    r"""General dyne measurement."""
 
     def __init__(self, modes: List[int], project_onto: State):
         assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
@@ -182,7 +182,7 @@ class Generaldyne(Parametrized, GaussianMeasurement):
 
 
 class Homodyne(Parametrized, GaussianMeasurement):
-    r"""homodyne measurement on a given list of modes"""
+    r"""Homodyne measurement on a given list of modes."""
 
     def __init__(
         self,
@@ -219,7 +219,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
-    r"""heterodyne measurement on a given mode."""
+    r"""Heterodyne measurement on a given mode."""
 
     def __init__(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], modes: List[int]):
         r"""

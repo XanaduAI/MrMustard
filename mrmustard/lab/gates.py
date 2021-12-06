@@ -411,11 +411,13 @@ class Attenuator(Parametrized, Transformation):
     r"""
     The noisy attenuator channel. It corresponds to mixing with a thermal environment and applying
     the pure loss channel. The pure lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
-    The CPT channel is given by
-    X = sqrt(transmissivity) * I
-    Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
 
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
+    The CPT channel is given by
+    .. math::
+        X = sqrt(transmissivity) * I
+        Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
+
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
     If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
 
     To apply mode-specific values use a list of floats.
@@ -467,10 +469,11 @@ class Amplifier(Parametrized, Transformation):
     X = sqrt(transmissivity) * I
     Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
 
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If `amplification` is a single float, the parallel instances of the gate share that parameter.
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``amplification`` is a single float, the parallel instances of the gate share that parameter.
     To apply mode-specific values use a list of floats.
-    One can optionally set bounds for `amplification`, which the optimizer will respect.
+    One can optionally set bounds for ``amplification``, which the optimizer will respect.
+
     Args:
         amplification (float or List[float]): the list of amplifications (must be > 1)
         amplification_bounds (float, float): bounds for the amplification

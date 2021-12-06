@@ -22,9 +22,9 @@ math = Math()
 
 
 class Parametrized:
-    r"""abstract base class for all parametrized objects (gates, detectors, etc...)
+    r"""Abstract base class for all parametrized objects (gates, detectors, etc...)
 
-    Arguments (must be all called with keyword):
+    Args (must be all called with keyword):
         For each trainable parameter:
         xxx (tensor): initial value
         xxx_bounds (float, float): numerical bounds. Default is (None, None) for unbounded parameters
@@ -66,7 +66,7 @@ class Parametrized:
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        r"""returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
+        r"""Returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(
@@ -88,7 +88,7 @@ class Parametrized:
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
-        r"""returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
+        r"""Returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(

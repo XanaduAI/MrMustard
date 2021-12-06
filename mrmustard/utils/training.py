@@ -22,7 +22,7 @@ math = Math()
 
 
 class Optimizer:
-    r"""an optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
+    r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
 
     .. note::
 
@@ -42,7 +42,7 @@ class Optimizer:
     def minimize(
         self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000
     ):
-        r"""minimizes the given cost function by optimizing circuits and/or detectors
+        r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 
         Args:
             cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
@@ -74,7 +74,7 @@ class Optimizer:
             return
 
     def should_stop(self, max_steps: int) -> bool:
-        r"""returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)"""
+        r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)"""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
@@ -95,8 +95,8 @@ class Optimizer:
 def new_variable(
     value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64
 ) -> Trainable:
-    r"""returns a new trainable variable from the current math backend
-    with initial value set by `value` and bounds set by `bounds`
+    r"""Returns a new trainable variable from the current math backend
+    with initial value set by `value` and bounds set by `bounds`.
 
     Args:
         value (float): The initial value of the variable
@@ -111,8 +111,8 @@ def new_variable(
 
 
 def new_constant(value, name: str, dtype=math.float64) -> Tensor:
-    r"""returns a new constant (non-trainable) tensor from the current math backend
-    with initial value set by ``value``
+    r"""Returns a new constant (non-trainable) tensor from the current math backend
+    with initial value set by ``value``.
 
     Args:
         value (numeric): The initial value of the tensor
@@ -126,7 +126,7 @@ def new_constant(value, name: str, dtype=math.float64) -> Tensor:
 
 
 def new_symplectic(num_modes: int) -> Tensor:
-    r"""returns a new symplectic matrix from the current math backend
+    r"""Returns a new symplectic matrix from the current math backend
     with ``num_modes`` modes.
 
     Args:
