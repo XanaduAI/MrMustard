@@ -35,7 +35,7 @@ Mr Mustard supports (differentiably):
 
 # Basic API Reference
 
-## 1. The lab
+## 1. The lab module
 The lab module contains things you'd find in the lab: states, gates, measurements, circuits.
 
 ### States and Gates
@@ -164,12 +164,12 @@ my_state >> Sgate(r=0.5)  # just works
 <img width="542" alt="Screen Shot 2021-12-06 at 1 44 38 PM" src="https://user-images.githubusercontent.com/8944955/144903799-5b6c1524-4357-4be0-9778-e1f0de6943c1.png">
 
 
-## 2. Physics
+## 2. The physics module
 FILL IN
 
 
-## 3. Math
-Mr Mustard comes with a plug-and-play backend. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
+## 3. The math module
+Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
 ```python
 from mrmustard import settings
 from mrmustard.math import Math
