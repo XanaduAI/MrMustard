@@ -752,6 +752,7 @@ def fidelity(
 
     return math.cast(fidelity, "float64")
 
+
 def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
     r"""
     Returns the covariance matrix that corresponds to applying the partial
@@ -769,8 +770,8 @@ def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
     num_modes = m // 2
     mat = [1.0] * m
     for i in modes:
-        mat[i + num_modes] =- 1.0
-    mat = math.astensor(mat, dtype='float64')
+        mat[i + num_modes] = -1.0
+    mat = math.astensor(mat, dtype="float64")
     return cov * mat[:, None] * mat[None, :]
 
 
@@ -788,7 +789,9 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
         vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.
     if len(vals_filtered) > 0:
-        return -math.sum(math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype))
+        return -math.sum(
+            math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
+        )
     else:
         return 0
 
