@@ -1,36 +1,100 @@
-![mmlogo](https://github.com/XanaduAI/MrMustard/blob/main/mmlogo.png)
+![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_white.png#gh-light-mode-only)
+![Logo](https://github.com/XanaduAI/MrMustard/blob/main/mm_dark.png#gh-dark-mode-only)
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 ![Python version](https://img.shields.io/badge/python-3.8+-blue)
 
-MrMustard is a differentiable bridge between phase space and Fock space with rich functionality in both representations.
+Mr Mustard is a differentiable simulator, with built-in optimizer, that operates across phase space and Fock space.
+Mr Mustard is Built on top of an agnostic autodiff backend, with TensorFlow as default.
 
-MrMustard supports in fully differentiable way:
+Mr Mustard supports (differentiably):
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 - Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
-- Beam splitter, MZ interferometer, squeezer, displacement, phase rotation, bosonic lossy channel, thermal channel, [more to come...]
-- General Gaussian N-mode gate and general N-mode Interferometer with dedicated symplectic and orthogonal optimization routines
+- single-mode gates (parallelizable):
+    - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
+- two-mode gates:
+    - beam splitter, Mach-Zehnder interferometer, two-mode squeezing
+- N-mode gates (with dedicated Rimannian optimization):
+    - interferometer (orthogonal), Gaussian transformation (symplectic)
+- single-mode states (parallelizable):
+    - vacuum, coherent, squeezed, displaced-squeezed, thermal
+- two-mode states:
+    - two-mode squeezed vacuum
+- N-mode states:
+    - Gaussian state
 - Photon number moments
-- PNR detectors, Threshold detectors with trainable quantum efficiency and dark counts
-- Homodyne, Heterodyne and Generaldyne Gaussian measurements
-- An optimizer with a spiffy progress bar
-- A composable Circuit object
-- Plug-and-play backends (TF and Pytorch [Upcoming])
-- An abstraction layer `XPTensor` for seamless symplectic algebra
+- PNR detectors and Threshold detectors with trainable quantum efficiency and dark counts
+- Homodyne, Heterodyne and Generaldyne measurements
+- Composable circuits
+- Plug-and-play backends (TensorFlow as default)
+- An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 
 ## Basic API Reference
 
+### 1. The lab
+The lab module contains things you'd find in the lab: states, gates, measurements, circuits.
+For example,
+
+```python
+from mrmustard.lab import *
+
+vac = Vacuum(num_modes=2)        # 2-mode vacuum state
+coh = Coherent(x=0.1, y=-0.4)    # coh state |alpha> with alpha = 0.1 - 0.4j
+sq  = SqueezedVacuum(r=0.5)      # squeezed vacuum state
+g   = Gaussian(num_modes=2)      # 2-mode Gaussian state with zero means
+fock4 = Fock(4)                  # fock state |4>
+
+D  = Dgate(x=1.0, y=-0.4)         # Displacement by 1.0 along x and -0.4 along y      
+S  = Sgate(r=0.5)                 # Squeezer with r=0.5
+BS = BSgate(theta=np.pi/4).       # 50/50 beam splitter
+L  = Attenuator(transmissivity=0.8) # pure lossy channel with 80% transmissivity
+```
+
+Gates are applied to states using python's right-shift operator, e.g. `vac >> S`.
+In this way we can describe circuits very naturally:
+```python
+displaced_squeezed = vac >> S >> D
+```
+
+When using only gates, we create a circuit:
+```python
+X8 = Sgate(r=0.9, phi=np.random.uniform(0.0, 2*np.pi)) >> Interferometer(num_modes=4)
+x8_out = Vacuum(num_modes=4) >> X8
+```
+
+In order to perform a measurement, we use the left-shift operator, e.g. `coh << sq` (think of the left-shift as "closing" the circuit).
+```python
+leftover = x8_out << sq[2]  # a homodyne measurement on mode 2
+```
+
+Transformations can also be applied in reverse (i.e. dually) by beginning with a state on the **right** and proceeding to the left:
+```python
+lossy_pnr = Attenuator(0.8) << fock4
+x8_out << fock4[0]  # measuring 4 photons in mode 0 with a lossy pnr detector
+```
+This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is now pure.
+
+States and Transformations (gates and circuits) support equality checking:
+```python
+>>> sq >> Attenuator(0.8) << Coherent(0.0) == sq << Attenuator(0.8) << Coherent(0.0)
+True
+```
+Note that the difference in the equality above is that the measurement in the LHS is on a mixed state, and the measurement on the RHS is on a pure state. If everything is Gaussian there's no tangible difference, but if the measurement is of type Fock, it can be much more efficient to keep the state pure (i.e. apply the dual of the attenuator to the projection state).
+
+
+
+
+
 ### 1: States
-States in MrMustard are very powerful objects. States, like gates, are trainable.
-They have differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means vector in phase space, as well as photon number moments:
+States in MrMustard are very powerful objects. States, like gates, can be trainable.
 
 ```python
 from mrmustard.lab import Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, TMSV, Thermal, Gaussian
 
 vac  = Vacuum(num_modes=2)
-coh  = Coherent(x=0.1, y=-0.4)  # e.g. 2-mode coherent state
+coh  = Coherent(x=0.1, y=-0.4)  # e.g. 1-mode coherent state
 sq   = SqueezedVacuum(r = 0.5, phi = 0.3)
 dsq  = DisplacedSqueezed(r = 0.5, phi = 0.3, x = 0.3, y = 0.9)
 tmsv = TMSV(r = 0.5, phi = 0.3, x = 0.3, y = 0.9)

@@ -166,6 +166,10 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     """
     r = math.atleast_1d(r)
     phi = math.atleast_1d(phi)
+    if r.shape[-1] == 1:
+        r = math.tile(r, phi.shape)
+    if phi.shape[-1] == 1:
+        phi = math.tile(phi, r.shape)
     num_modes = phi.shape[-1]
     cp = math.cos(phi)
     sp = math.sin(phi)
@@ -298,11 +302,33 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     )
 
 
+def quadratic_phase(s: Scalar):
+    r"""Quadratic phase single mode gate.
+
+    P = \exp(i s q^2 / 2 \hbar).
+
+    Reference: https://strawberryfields.ai/photonics/conventions/gates.html
+
+    Args:
+        s (float): interaction strength
+    Returns:
+        the P(s) matrix (in xxpp ordering)
+    """
+
+    return math.astensor(
+        [
+            [1, 0],
+            [s, 1],
+        ]
+    )
+
+
 def controlled_Z(g: Scalar):
     r"""Controlled PHASE gate of two-gaussian modes.
 
     .. math::
-        C_Z = \exp(ig q_1 \otimes q_2).
+        C_Z = \exp(ig q_1 \otimes q_2 / \hbar).
+
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 8.
     https://arxiv.org/pdf/1110.3234.pdf, Equation 161.
@@ -407,8 +433,9 @@ def CPTP(
 def loss_XYd(
     transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Tuple[Matrix, Matrix, None]:
-    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel.
-    The pure loss channel is recovered for nbar = 0.0.
+    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel:
+    X = math.sqrt(amplification)
+    Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -450,8 +477,8 @@ def amp_XYd(
     return X, Y, None
 
 
-def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the additive noise channel (Y = noise * I).
+def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel `(Y = noise * (\hbar / 2) * I)`
 
     Arguments:
         noise (float): number of photons in the thermal state
@@ -459,8 +486,7 @@ def noise_XYd(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
     Returns:
         Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
     """
-    Y = math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
-    return None, Y, None
+    return math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
 
 
 def compose_channels_XYd(
@@ -622,7 +648,9 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
         Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
     """
     N = len(cov) // 2
-    Aindices = math.astensor([i for i in range(N) if i not in Bmodes])
+    Aindices = math.astensor(
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+    )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)
     return A_cov_block, A_means_vec
@@ -696,7 +724,7 @@ def sympletic_eigenvals(cov: Matrix) -> Any:
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
     M = 1j * J @ cov  # compute iJ*cov
     vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues
+    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: fix the ordering?!
 
 
 def von_neumann_entropy(cov: Matrix) -> float:
@@ -712,7 +740,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
     Returns:
         float: the von neumann entropy
     """
-    symp_vals = self.sympletic_eigenvals(cov)
+    symp_vals = sympletic_eigenvals(cov)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
