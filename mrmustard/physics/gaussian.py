@@ -764,10 +764,10 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the log-negativity
     """
-    vals = sympletic_eigenvals(cov)
+    vals = sympletic_eigenvals(cov, hbar)
 
     vals_filtered = math.boolean_mask(
-        vals, vals < settings.HBAR / 2
+        vals, vals < settings.HBAR / 2 - 1e-9
     )  # Get rid of terms that would lead to zero contribution.
     if len(vals_filtered) > 0:
         return -math.sum(
