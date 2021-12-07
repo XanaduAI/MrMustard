@@ -17,11 +17,11 @@ from mrmustard.types import *
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement
 from mrmustard.physics import fock, gaussian
+from mrmustard.lab.states import DisplacedSqueezed, Coherent
+from mrmustard import settings
 from mrmustard.math import Math
 
 math = Math()
-from mrmustard.lab.states import DisplacedSqueezed, Coherent
-from mrmustard import settings
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 
@@ -41,7 +41,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         dark_counts (float or List[float]): list of expected dark counts
         dark_counts_trainable (bool): whether the dark counts are trainable
         dark_counts_bounds (Tuple[float, float]): bounds for the dark counts
-        max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
+        max_cutoffs (int or List[int]): largest phton number measurement cutoff for each mode
         stochastic_channel (Optional 2d array): if supplied, this stochastic_channel will be used for belief propagation
         modes (Optional List[int]): list of modes to apply the detector to
     """
@@ -56,8 +56,13 @@ class PNRDetector(Parametrized, FockMeasurement):
         dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         stochastic_channel: Matrix = None,
         modes: List[int] = None,
+        cutoffs: Union[int, List[int]] = None,
     ):
-        num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+        num_modes = len(modes) if modes is not None else max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+        if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
+            efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
+        if len(math.atleast_1d(dark_counts)) == 1 and num_modes > 1:
+            dark_counts = math.tile(math.atleast_1d(dark_counts), [num_modes])
         Parametrized.__init__(
             self,
             efficiency=efficiency,
@@ -67,13 +72,14 @@ class PNRDetector(Parametrized, FockMeasurement):
             efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
             stochastic_channel=stochastic_channel,
-            modes=modes or list(range(num_modes)),
+            modes=modes if modes is not None else list(range(num_modes)),
+            cutoffs=cutoffs if cutoffs is not None else [settings.PNR_INTERNAL_CUTOFF] * num_modes,
         )
 
         self.recompute_stochastic_channel()
 
     def should_recompute_stochastic_channel(self):
-        return self.efficiency_trainable or self.dark_counts_trainable
+        return self._efficiency_trainable or self._dark_counts_trainable
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         if cutoffs is None:
@@ -85,10 +91,10 @@ class PNRDetector(Parametrized, FockMeasurement):
             for c, qe, dc in zip(
                 cutoffs, math.atleast_1d(self.efficiency)[:], math.atleast_1d(self.dark_counts)[:]
             ):
-                dark_prior = fock.math.poisson(max_k=c, rate=dc)
-                condprob = fock.math.binomial_conditional_prob(success_prob=qe, dim_in=c, dim_out=c)
+                dark_prior = math.poisson(max_k=c, rate=dc)
+                condprob = math.binomial_conditional_prob(success_prob=qe, dim_in=c, dim_out=c)
                 self._internal_stochastic_channel.append(
-                    fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(c)[0]])
+                    math.convolve_probs_1d(condprob, [dark_prior, math.eye(c)[0]])
                 )
 
 
@@ -133,7 +139,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         self.recompute_stochastic_channel()
 
     def should_recompute_stochastic_channel(self):
-        return self.efficiency_trainable or self.dark_count_prob_trainable
+        return self._efficiency_trainable or self._dark_count_prob_trainable
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         if cutoffs is None:
@@ -147,10 +153,10 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 math.atleast_1d(self.efficiency)[:],
                 math.atleast_1d(self.dark_count_prob)[:],
             ):
-                row1 = ((1.0 - qe) ** fock.math.arange(cut))[None, :] - dc
+                row1 = ((1.0 - qe) ** math.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
-                rest = fock.math.zeros((cut - 2, cut), dtype=row1.dtype)
-                condprob = fock.math.concat([row1, row2, rest], axis=0)
+                rest = math.zeros((cut - 2, cut), dtype=row1.dtype)
+                condprob = math.concat([row1, row2, rest], axis=0)
                 self._internal_stochastic_channel.append(condprob)
 
 
@@ -166,7 +172,7 @@ class Heterodyne(Parametrized, State):
         modes: List[int] = None,
     ):
         instance = Coherent(x=x, y=y, modes=modes)
-        instance.__class__ = cls  # NOTE: naughty
+        instance.__class__ = cls  # NOTE: naughty?
         return instance
 
     def __init__(self, *args, **kwargs):
@@ -183,13 +189,17 @@ class Homodyne(Parametrized, State):
         quadrature_angles: Union[float, List[float]],
         results: Union[float, List[float]] = 1.0,
         modes: List[int] = None,
+        r: Union[float, List[float]] = None,
     ):
-        quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype="float64")
-        results = gaussian.math.astensor(results, dtype="float64")
-        x = results * gaussian.math.cos(quadrature_angles)
-        y = results * gaussian.math.sin(quadrature_angles)
+        quadrature_angles = math.astensor(quadrature_angles, dtype="float64")
+        results = math.astensor(results, dtype="float64")
+        x = results * math.cos(quadrature_angles)
+        y = results * math.sin(quadrature_angles)
         instance = DisplacedSqueezed(
-            r=settings.HOMODYNE_SQUEEZING, phi=2 * quadrature_angles, x=x, y=y
+            r=settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64"),
+            phi=2 * quadrature_angles,
+            x=x,
+            y=y
         )
         instance.__class__ = cls
         return instance

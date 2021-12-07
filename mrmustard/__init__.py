@@ -19,8 +19,9 @@ class Settings:
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
-        # for the PNR
+        # for the detectors
         self.PNR_INTERNAL_CUTOFF = 50
+        self.HOMODYNE_SQUEEZING = 10.0
 
     @property
     def backend(self):
