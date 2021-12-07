@@ -5,14 +5,16 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](<https://img.shields.io/badge/python-3.8 | 3.9-blue>)](https://pypi.org/project/MrMustard/)
 
-Alpha release (v0.1.0).
+Alpha release (v0.1.0 - expect some bumps).
 
 Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates across phase space and Fock space.
 It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (TensorFlow by default, PyTorch coming soon).
 
-Mr Mustard supports (differentiably):
+Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 - Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
+- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the orthogonal group (for interferometers)
+- Adam optimizer for euclidean parameters.
 - single-mode gates (parallelizable):
     - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
 - two-mode gates:
@@ -66,6 +68,7 @@ The `repr` of single-mode states shows the Wigner function:
 cat_amps = Coherent(2.0).ket([20]) + Coherent(-2.0).ket([20])
 cat_amps = cat_amps / np.linalg.norm(cat_amps)
 cat = State(ket=cat_amps)
+cat
 ```
 <img width="538" alt="Screen Shot 2021-12-06 at 8 27 06 PM" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
 
@@ -82,7 +85,7 @@ cat >> Sgate(0.5)  # squeezed cat
 
 Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
 ```python
-displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> D(x=1.0)
+displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> Dgate(x=1.0)
 ```
 
 If you want to apply a gate to specific modes, use the `getitem` format. Here are a few examples:
@@ -104,10 +107,10 @@ output = Vacuum(4) >> X8
 
 # lossy X8
 noise = lambda: np.random.uniform(size=4)
-X8_realistic = (Sgate(r=0.9 + 0.1*noise, phi=0.1*noise)
-                >> Attenuator(0.89 + 0.01*noise)
+X8_realistic = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
+                >> Attenuator(0.89 + 0.01*noise())
                 >> Interferometer(4)
-                >> Attenuator(0.95 + 0.01*noise)
+                >> Attenuator(0.95 + 0.01*noise())
                )
 
 # 2-mode Bloch Messiah decomposition
@@ -123,8 +126,7 @@ leftover = Vacuum(4) >> X8 << SqueezedVacuum(r=10.0, phi=np.pi)[2]  # a homodyne
 
 Transformations can also be applied in the dual sense by using the left-shift operator `<<`:
 ```python
-lossy_444 = Attenuator(0.8)[0,1,2] << Fock([4,4,4])  # lossy detection of 4 photons in modes 0, 1 and 2.
-leftover = Vacuum(4) >> X8 << lossy_444  # measuring 4 photons in modes 0,1,2 with a lossy pnr detector
+Attenuator(0.5) << Coherent(0.1, 0.2) == Coherent(0.1, 0.2) >> Amplifier(2.0)
 ```
 This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
 
@@ -132,7 +134,7 @@ This has the advantage of modelling lossy detectors without applying the loss ch
 There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is how Homodyne performs a measurement).
 
 The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
-```
+```python
 results = Gaussian(2) << PNRDetector(efficiency = 0.9, modes = [0])
 results[0]  # unnormalized dm of mode 1 conditioned on measuring 0 in mode 0
 results[1]  # unnormalized dm of mode 1 conditioned on measuring 1 in mode 0
@@ -140,11 +142,12 @@ results[2]  # unnormalized dm of mode 1 conditioned on measuring 2 in mode 0
 # etc...
 ```
 The trace of the leftover density matrices will yield the success probability. If multiple modes are measured then there is a corresponding number of indices:
-```
+```python
 results = Gaussian(3) << PNRDetector(efficiency = [0.9, 0.8], modes = [0,1])
 results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 and 3 in mode 1
 # etc...
 ```
+Set a lower `settings.PNR_INTERNAL_CUTOFF` (default 50) to speed-up computations of the PNR output.
 
 ## 6. Equality check
 States support equality checking:
@@ -162,7 +165,7 @@ True
 ## 7. State operations and properties
 States can be joined using the `&` (and) operator:
 ```python
-Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0). # A separable two-mode coherent state
+Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)  # A separable two-mode coherent state
 
 s = SqueezedVacuum(r=1.0)
 s4 = s & s & s & s   # four squeezed states
@@ -171,10 +174,10 @@ s4 = s & s & s & s   # four squeezed states
 Subsystems can be accessed via `get_modes`:
 ```python
 joint = Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)
-joint.get_mode(0)  # first mode
-joint.get_mode(1)  # second mode
+joint.get_modes(0)  # first mode
+joint.get_modes(1)  # second mode
 
-swapped = joint.get_modes(1,0)
+swapped = joint.get_modes([1,0])
 ```
 
 ## 8. Fock representation
@@ -182,8 +185,8 @@ The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutof
 
 ```python
 # Fock representation of a coherent state
-coh.ket(cutoffs=[5])   # ket
-coh.dm(cutoffs=[5])    # density matrix
+Coherent(0.5).ket(cutoffs=[5])   # ket
+Coherent(0.5).dm(cutoffs=[5])    # density matrix
 
 Dgate(x=1.0).U(cutoffs=[15])  # truncated unitary op
 Dgate(x=1.0).choi(cutoffs=[15])  # truncated choi op
@@ -217,7 +220,7 @@ math.cos(0.1)  # tensorflow
 
 settings.BACKEND = 'torch'
 
-math.cos(0.1)  # pytorch
+math.cos(0.1)  # pytorch (upcoming)
 ```
 
 # Optimization

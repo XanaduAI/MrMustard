@@ -485,32 +485,10 @@ class State:
         )
 
         if self.num_modes == 1:
-            graphics.mikkel_plot(self.dm(cutoffs=self.cutoffs))
+            graphics.mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
 
         if settings.DEBUG:
             detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
             return f"{table}\n{detailed_info}"
 
         return table
-
-    def __repr__(self):
-        table = Table(title=str(self.__class__.__qualname__))
-        table.add_column("Purity", justify="center")
-        table.add_column("Num modes", justify="center")
-        table.add_column("Bosonic size", justify="center")
-        table.add_column("Gaussian", justify="center")
-        table.add_column("Fock", justify="center")
-        table.add_row(
-            f"{(self.purity):.3f}",
-            str(self.num_modes),
-            "1" if self.is_gaussian else "N/A",
-            "✅" if self.is_gaussian else "❌",
-            "✅" if self._ket is not None or self._dm is not None else "❌",
-        )
-        rprint(table)
-        if self.num_modes == 1:
-            graphics.mikkel_plot(math.asnumpy(self.dm(self.cutoffs)))
-        detailed_info = (
-            f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
-        )
-        return detailed_info
