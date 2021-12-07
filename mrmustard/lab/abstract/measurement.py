@@ -28,10 +28,10 @@ import numpy as np
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.
-    
+
     It works by representing the state in the Fock basis and then applying
     a stochastic channel matrix `P(meas|n)` to the Fock probabilities (belief propagation).
-    
+
     It outputs the measurement probabilities and the remaining post-measurement state (if any)
     in the Fock basis.
     """

@@ -171,7 +171,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 rest = math.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = math.concat([row1, row2, rest], axis=0)
                 self._internal_stochastic_channel.append(condprob)
-                
+
 
 class Heterodyne(Parametrized, State):
     r"""
