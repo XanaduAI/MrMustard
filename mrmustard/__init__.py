@@ -41,7 +41,7 @@ class Settings:
 
 
 settings = Settings()
-""":meta hide-value:"""
+"""Settings object."""
 
 settings.backend = "tensorflow"
 
