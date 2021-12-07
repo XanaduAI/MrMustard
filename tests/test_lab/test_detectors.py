@@ -98,7 +98,7 @@ def test_postselection():
     S2 = S2gate(r=np.arcsinh(np.sqrt(n_mean)), phi=0.0)
     proj_state = (Vacuum(2) >> S2 >> detector)[n_measured]
     success_prob = math.real(math.trace(proj_state))
-    proj_state = proj_state/math.trace(proj_state)
+    proj_state = proj_state / math.trace(proj_state)
     # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
     expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
     assert np.allclose(success_prob, expected_prob)
@@ -115,8 +115,8 @@ def test_loss_probs(eta):
     S = Sgate(r=0.2, phi=[0.0, 0.7])
     BS = BSgate(theta=1.4, phi=0.0)
     L = Attenuator(transmissivity=eta)
-    dms_lossy = Vacuum(2) >> S[0,1] >> BS[0,1] >> lossy_detector[0]
-    dms_ideal = Vacuum(2) >> S[0,1] >> BS[0,1] >> L[0] >> ideal_detector[0]
+    dms_lossy = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> lossy_detector[0]
+    dms_ideal = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> L[0] >> ideal_detector[0]
     assert np.allclose(dms_lossy, dms_ideal)
 
 

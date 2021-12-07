@@ -58,7 +58,11 @@ class PNRDetector(Parametrized, FockMeasurement):
         modes: List[int] = None,
         cutoffs: Union[int, List[int]] = None,
     ):
-        num_modes = len(modes) if modes is not None else max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+        num_modes = (
+            len(modes)
+            if modes is not None
+            else max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+        )
         if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
             efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
         if len(math.atleast_1d(dark_counts)) == 1 and num_modes > 1:
@@ -197,9 +201,9 @@ class Homodyne(Parametrized, State):
         y = result * math.sin(quadrature_angle)
         instance = DisplacedSqueezed(
             r=settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64"),
-            phi=2*quadrature_angle,
+            phi=2 * quadrature_angle,
             x=x,
-            y=y
+            y=y,
         )
         instance.__class__ = cls
         return instance

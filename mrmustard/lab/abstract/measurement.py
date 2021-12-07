@@ -40,7 +40,9 @@ class FockMeasurement(ABC):
         The first N indices of the returned tensor correspond to the Fock measurements of the N modes that
         the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
         """
-        if self.should_recompute_stochastic_channel() or math.any([c > settings.PNR_INTERNAL_CUTOFF for c in state.cutoffs]):
+        if self.should_recompute_stochastic_channel() or math.any(
+            [c > settings.PNR_INTERNAL_CUTOFF for c in state.cutoffs]
+        ):
             self.recompute_stochastic_channel(state.cutoffs)
         cutoffs = []
         used = 0
