@@ -6,6 +6,7 @@ from ._version import __version__
 
 
 class Settings:
+
     def __init__(self):
         self._backend = "tensorflow"
         self.HBAR = 2.0

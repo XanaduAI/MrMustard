@@ -1,7 +1,7 @@
 ## Basic API Reference
 
 ### 1: States
-States in MrMustard are very powerful objects. States, like gates, are trainable. They have
+States in Mr Mustard are very powerful objects. States, like gates, are trainable. They have
 differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means
 vector in phase space, as well as photon number moments:
 
@@ -135,7 +135,7 @@ state = lossy_MZ(state)  # differentiable
 ```
 
 ### 4. Detectors
-MrMustard supports a variety of differentiable detectors, which fall into two categories: Gaussian and Fock detectors.
+Mr Mustard supports a variety of differentiable detectors, which fall into two categories: Gaussian and Fock detectors.
 
 Gaussian detectors are Homodyne, Heterodyne and Generaldyne detectors. They measure a Gaussian state
 and return a post-measurement state (in the unmeasured modes) that is Gaussian. Fock detectors are
@@ -159,7 +159,7 @@ detection_probs = detector(state_out, cutoffs=[2,3])
 ```
 
 ### 5. Optimization
-MrMustard implements a dedicated optimizer that can perform symplectic and orthogonal optimization,
+Mr Mustard implements a dedicated optimizer that can perform symplectic and orthogonal optimization,
 on top of the usual Euclidean optimization.
 
 Here we could use a default TensorFlow optimizer (no `Ggate`s or `Interferometer`s)):

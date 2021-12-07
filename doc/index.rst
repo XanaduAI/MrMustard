@@ -31,7 +31,7 @@ Mr Mustard's Documentation
       </div>
       <div class="col-lg-8 col-12 align-middle mb-2">
         <p class="lead grey-text">
-            MrMustard is a differentiable bridge between phase space and Fock space with rich functionality in both representations.
+            Mr Mustard is a differentiable bridge between phase space and Fock space with rich functionality in both representations.
         </p>
    </div>
    <div style='clear:both'></div>
@@ -87,7 +87,7 @@ Mr Mustard's Documentation
 Features
 ========
 
-MrMustard supports in fully differentiable way:
+Mr Mustard supports in fully differentiable way:
 
 * Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 
