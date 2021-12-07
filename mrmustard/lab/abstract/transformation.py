@@ -128,6 +128,18 @@ class Transformation:
         else:
             return State(ket=new_fock, modes=state.modes)
 
+    # def _repr_markdown_(self):
+    #     table = f"#### {self.__class__.__qualname__}\n\n" + \
+    #         "| Params | dtype | Value | Shape | Trainable |\n" + \
+    #         "| :----: | :----: | :----: | :----: | :----: |\n"
+
+    #     with np.printoptions(precision=6, suppress=True):
+    #         for name in self.param_names:
+    #             par = self.__dict__[name]
+    #             table += f"| {name} | {par.dtype.name} | {np.array(par)} | {par.shape} | {self.__dict__['_' + name + '_trainable']} |\n"
+
+    #     return table
+
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__}")
         table.add_column("Parameters")
