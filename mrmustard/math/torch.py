@@ -94,7 +94,7 @@ class TorchMath(MathInterface):
         return torch.matrix_exp(matrix)
 
     def norm(self, array: torch.Tensor) -> torch.Tensor:
-        "Note that the norm preserves the type of array"
+        """Note that the norm preserves the type of array."""
         return torch.norm(array)
 
     @Autocast()
@@ -159,12 +159,12 @@ class TorchMath(MathInterface):
         data_format="NWC",
         dilations: Optional[List[int]] = None,
     ) -> torch.Tensor:
-        r"""
-        Wrapper for torch.nn.Conv1d and torch.nn.Conv2d.
+        r"""Wrapper for ``torch.nn.Conv1d`` and ``torch.nn.Conv2d``.
 
         Args:
             1D convolution: Tensor of shape [batch_size, input_channels, signal_length].
             2D convolution: [batch_size, input_channels, input_height, input_width]
+
         Returns:
         """
 
@@ -292,39 +292,39 @@ class TorchMath(MathInterface):
     def hermite_renormalized(
         self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
     ) -> torch.Tensor:  # TODO this is not ready
-        r"""
-        Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of exp(Ax^2 + Bx + C) at zero, where the series has `sqrt(n!)` at the denominator rather than `n!`.
+        r"""Renormalized multidimensional Hermite polynomial.
+
+        This is given by the "exponential" Taylor series of :math:`exp(Ax^2 + Bx + C)` at zero,
+        where the series has :math:`sqrt(n!)` at the denominator rather than `n!`.
 
         Args:
             A: The A matrix.
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
+
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
         raise NotImplementedError
 
     def DefaultEuclideanOptimizer(self, params) -> torch.optim.Optimizer:
-        r"""
-        Default optimizer for the Euclidean parameters.
-        """
+        r"""Default optimizer for the Euclidean parameters."""
         self.optimizer = torch.optim.Adam(params, lr=0.001)
         return self.optimizer
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
     ) -> Tuple[torch.Tensor, Dict[str, List[torch.Tensor]]]:
-        r"""
-        Computes the loss and gradients of the given cost function.
+        r"""Computes the loss and gradients of the given cost function.
 
-        Arguments:
+        Args:
             cost_fn (Callable): The cost function. Takes in two arguments:
                 - Output: The output tensor of the model.
             parameters (Dict): The parameters to optimize in three kinds:
                 symplectic, orthogonal and euclidean.
             optimizer: The optimizer to be used by the math backend.
+
         Returns:
             The loss and the gradients.
         """
@@ -340,19 +340,19 @@ class TorchMath(MathInterface):
         return loss, grads
 
     def eigvals(self, tensor: torch.Tensor) -> Tensor:
-        "Returns the eigenvalues of a matrix."
+        """Returns the eigenvalues of a matrix."""
         return torch.linalg.eigvals(tensor)
 
     def eigvalsh(self, tensor: torch.Tensor) -> Tensor:
-        "Returns the eigenvalues of a Real Symmetric or Hermitian matrix."
+        """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return torch.linalg.eigvalsh(tensor)
 
     def svd(self, tensor: torch.Tensor) -> Tensor:
-        "Returns the Singular Value Decomposition of a matrix."
+        """Returns the Singular Value Decomposition of a matrix."""
         return torch.linalg.svd(tensor)
 
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
-        "Returns 0 if x == 0, and x * log(y) otherwise, elementwise."
+        """Returns 0 if ``x == 0``, and ``x * log(y)`` otherwise, elementwise."""
         return torch.xlogy(x, y)
 
     def sqrtm(self, tensor: torch.Tensor) -> Tensor:

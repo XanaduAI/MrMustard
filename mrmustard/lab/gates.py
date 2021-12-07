@@ -38,13 +38,16 @@ __all__ = [
 
 
 class Dgate(Parametrized, Transformation):
-    r"""
-    Displacement gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, the parallel instances of the gate share that parameter.
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Displacement gate.
 
-    Arguments:
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+
+    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+    parameter, which the optimizer will respect.
+
+    Args:
         x (float or List[float]): the list of displacements along the x axis
         x_bounds (float, float): bounds for the displacement along the x axis
         x_trainable (bool): whether x is a trainable variable
@@ -81,13 +84,16 @@ class Dgate(Parametrized, Transformation):
 
 
 class Sgate(Parametrized, Transformation):
-    r"""
-    Squeezing gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, the parallel instances of the gate share that parameter.
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Squeezing gate.
 
-    Arguments:
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+
+    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+    parameter, which the optimizer will respect.
+
+    Args:
         r (float or List[float]): the list of squeezing magnitudes
         r_bounds (float, float): bounds for the squeezing magnitudes
         r_trainable (bool): whether r is a trainable variable
@@ -124,13 +130,16 @@ class Sgate(Parametrized, Transformation):
 
 
 class Rgate(Parametrized, Transformation):
-    r"""
-    Rotation gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, the parallel instances of the gate share that parameter.
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Rotation gate.
 
-    Arguments:
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+
+    If a parameter is a single float, the parallel instances of the gate share that parameter.
+
+    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+    parameter, which the optimizer will respect.
+
+    Args:
         modes (List[int]): the list of modes this gate is applied to
         angle (float or List[float]): the list of rotation angles
         angle_bounds (float, float): bounds for the rotation angles
@@ -258,11 +267,12 @@ class CZgate(Parametrized, Transformation):
 
 
 class BSgate(Parametrized, Transformation):
-    r"""
-    Beam splitter gate. It applies to a single pair of modes.
+    r"""Beam splitter gate.
+
+    It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         theta (float): the transmissivity angle
         theta_bounds (float, float): bounds for the transmissivity angle
         theta_trainable (bool): whether theta is a trainable variable
@@ -305,13 +315,15 @@ class BSgate(Parametrized, Transformation):
 
 
 class MZgate(Parametrized, Transformation):
-    r"""
-    Mach-Zehnder gate. It supports two conventions:
-        1. if `internal=True`, both phases act iside the interferometer: `phi_a` on the upper arm, `phi_b` on the lower arm;
-        2. if `internal = False`, both phases act on the upper arm: `phi_a` before the first BS, `phi_b` after the first BS.
+    r"""Mach-Zehnder gate.
+
+    It supports two conventions:
+        1. if ``internal=True``, both phases act inside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
+        2. if ``internal = False``, both phases act on the upper arm: ``phi_a`` before the first BS, ``phi_b`` after the first BS.
+
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    Arguments:
+    Args:
         phi_a (float): the phase in the upper arm of the MZ interferometer
         phi_a_bounds (float, float): bounds for phi_a
         phi_a_trainable (bool): whether phi_a is a trainable variable
@@ -357,11 +369,11 @@ class MZgate(Parametrized, Transformation):
 
 
 class S2gate(Parametrized, Transformation):
-    r"""
-    Two-mode squeezing gate. It applies to a single pair of modes.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Two-mode squeezing gate.
 
-    Arguments:
+    It applies to a single pair of modes. One can optionally set bounds for each parameter, which the optimizer will respect.
+
+    Args:
         r (float): the squeezing magnitude
         r_bounds (float, float): bounds for the squeezing magnitude
         r_trainable (bool): whether r is a trainable variable
@@ -402,10 +414,11 @@ class S2gate(Parametrized, Transformation):
 
 
 class Interferometer(Parametrized, Transformation):
-    r"""
-    N-mode interferometer. It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
+    r"""N-mode interferometer.
 
-    Arguments:
+    It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
+
+    Args:
         orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
@@ -446,14 +459,14 @@ class Interferometer(Parametrized, Transformation):
 
 
 class Ggate(Parametrized, Transformation):
-    r"""
-    A generic N-mode Gaussian unitary transformation with zero displacement.
-    If a symplectic matrix is not provided, one will be picked at random with effective squeezing
-    strength r in [0,1] for each mode.
+    r"""A generic N-mode Gaussian unitary transformation with zero displacement.
 
-    Arguments:
+    If a symplectic matrix is not provided, one will be picked at random with effective squeezing
+    strength ``r`` in ``[0, 1]`` for each mode.
+
+    Args:
         num_modes (int): the number of modes this gate is acting on.
-        symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape `(2N,2N)`.
+        symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape ``(2N,2N)``.
         symplectic_trainable (bool): whether symplectic is a trainable variable.
     """
 
@@ -501,16 +514,21 @@ class Attenuator(Parametrized, Transformation):
     r"""
     The noisy attenuator channel. It corresponds to mixing with a thermal environment and applying
     the pure loss channel. The pure lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
-    The CPT channel is given by
-    X = sqrt(transmissivity) * I
-    Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
 
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
+    The CPT channel is given by
+    .. math::
+
+        X = sqrt(transmissivity) * I
+        Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
+
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``transmissivity`` is a single float, the parallel instances of the gate share that parameter.
+
     To apply mode-specific values use a list of floats.
+
     One can optionally set bounds for `transmissivity`, which the optimizer will respect.
 
-    Arguments:
+    Args:
         transmissivity (float or List[float]): the list of transmissivities
         nbar (float): the average number of photons in the thermal state
         transmissivity_trainable (bool): whether transmissivity is a trainable variable
@@ -556,13 +574,16 @@ class Amplifier(Parametrized, Transformation):
     The noisy amplifier channel. It corresponds to mixing with a thermal environment and applying
     a two-mode squeezing gate.
 
-    X = sqrt(amplification) * I
-    Y = (amplification-1) * (2*nbar + 1) * (hbar / 2) * I
+    .. code:: python
 
-    If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If `amplification` is a single float, the parallel instances of the gate share that parameter.
+        X = sqrt(amplification) * I
+        Y = (amplification-1) * (2*nbar + 1) * (hbar / 2) * I
+
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``amplification`` is a single float, the parallel instances of the gate share that parameter.
     To apply mode-specific values use a list of floats.
-    One can optionally set bounds for `amplification`, which the optimizer will respect.
+    One can optionally set bounds for ``amplification``, which the optimizer will respect.
+
     Args:
         amplification (float or List[float]): the list of amplifications (must be > 1)
         nbar (float): the average number of photons in the thermal state
@@ -607,14 +628,20 @@ class Amplifier(Parametrized, Transformation):
 class AdditiveNoise(Parametrized, Transformation):
     r"""
     The additive noise channel. Equivalent to an amplifier followed by an attenuator. E.g.
-    >>> na,nb = np.random.uniform(size=2)
-    >>> tr = np.random.uniform()
-    >>> Amplifier(1/tr, nb) >> Attenuator(tr, na) == AdditiveNoise(2*(1-tr)*(1+na+nb))
-    True
+
+    .. code-block::
+
+        na,nb = np.random.uniform(size=2)
+        tr = np.random.uniform()
+        Amplifier(1/tr, nb) >> Attenuator(tr, na) == AdditiveNoise(2*(1-tr)*(1+na+nb)) # evaluates to True
+
     or equivalent to an attenuator followed by an amplifier:
-    >>> na,nb = np.random.uniform(size=2)
-    >>> amp = 1.0 + np.random.uniform()
-    >>> Attenuator(1/amp, nb) >> Amplifier(amp, na) == AdditiveNoise(2*(amp-1)*(1+na+nb))
+
+    .. code-block::
+
+        na,nb = np.random.uniform(size=2)
+        amp = 1.0 + np.random.uniform()
+        Attenuator(1/amp, nb) >> Amplifier(amp, na) == AdditiveNoise(2*(amp-1)*(1+na+nb))
 
     Args:
         noise (float or List[float]): the added noise in units of hbar/2

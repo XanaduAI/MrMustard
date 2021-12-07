@@ -1,5 +1,7 @@
-Math
-=======
+mrmustard.math
+==============
+
+.. currentmodule:: mrmustard.math
 
 Backends
 ---------
@@ -9,3 +11,7 @@ Backends
 
     math/tensorflow
     math/torch
+
+.. automodapi:: mrmustard.math
+    :no-heading:
+    :include-all-objects:
