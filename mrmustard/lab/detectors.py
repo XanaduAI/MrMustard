@@ -32,7 +32,7 @@ class PNRDetector(Parametrized, FockMeasurement):
     If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.
 
-    To apply mode-specific parmeters use a list of floats. The number of modes is determined (in order of priority) 
+    To apply mode-specific parmeters use a list of floats. The number of modes is determined (in order of priority)
     by the modes parameter, the cutoffs parameter, or the length of the efficiency and dark counts parameters.
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
