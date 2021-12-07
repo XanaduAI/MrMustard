@@ -178,7 +178,7 @@ swapped = joint.get_modes(1,0)
 ```
 
 ## 8. Fock representation
-The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutoffs)`. For circuits and gates it's `.U(cutoffs)` or `.choi(cutoffs)`. The Fock representation is exact (with miron caveats) and it doesn't break differentiability. This means that one can define cost functions on the Fock representation and backpropagate back to the phase space representation.
+The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutoffs)`. For circuits and gates it's `.U(cutoffs)` or `.choi(cutoffs)`. The Fock representation is exact (with minor caveats) and it doesn't break differentiability. This means that one can define cost functions on the Fock representation and backpropagate back to the phase space representation.
 
 ```python
 # Fock representation of a coherent state
@@ -221,7 +221,7 @@ math.cos(0.1)  # pytorch
 ```
 
 # Optimization
-The `Optimizer` (availbale in  uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
+The `Optimizer` (available in `mrmustard.utils.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: Hong-Ou-Mandel interference. We wish to find which 
 
