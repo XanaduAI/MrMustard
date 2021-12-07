@@ -203,14 +203,15 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
     return A, B, C
 
 
-def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scalar:
+
+def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
-    if a_pure and b_pure:
+    if a_ket and b_ket:
         min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)])
         state_a = state_a[min_cutoffs]
         state_b = state_b[min_cutoffs]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
-    elif a_pure:
+    elif a_ket:
         min_cutoffs = tuple(
             [
                 slice(min(a, b))
@@ -223,7 +224,7 @@ def fidelity(state_a, state_b, a_pure: bool = True, b_pure: bool = True) -> Scal
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
         )
-    elif b_pure:
+    elif b_ket:
         min_cutoffs = tuple(
             [
                 slice(min(a, b))

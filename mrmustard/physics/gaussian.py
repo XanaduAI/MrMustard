@@ -718,27 +718,28 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     return 1 / math.sqrt(math.det((2 / hbar) * cov))
 
 
-def sympletic_eigenvals(cov: Matrix) -> Any:
-    r"""Returns the sympletic eigenspectrum of a covariance matrix
-
+def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
+    r"""
+    Returns the sympletic eigenspectrum of a covariance matrix.
+    
     For a pure state, we expect the sympletic eigenvalues to be 1.
-
-    Args:
+    
+    Arguments:
         cov (Matrix): the covariance matrix
-
+        hbar (float): the value of the Planck constant
+        
     Returns:
         List[float]: the sympletic eigenvalues
     """
-    cov = math.cast(cov, "complex128")  # cast to complex otherwise matmul will break
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
-    M = 1j * J @ cov  # compute iJ*cov
+    M = math.matmul(1j * J, cov * (2 / hbar))
     vals = math.eigvals(M)  # compute the eigenspectrum
-    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: fix the ordering?!
+    return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
 
 
-def von_neumann_entropy(cov: Matrix) -> float:
+def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     r"""Returns the Von Neumann entropy.
-
+    
     For a pure state, we expect the Von Neumann entropy to be 0.
 
     Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
@@ -749,7 +750,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
     Returns:
         float: the von neumann entropy
     """
-    symp_vals = sympletic_eigenvals(cov)
+    symp_vals = sympletic_eigenvals(cov, hbar)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
@@ -807,26 +808,51 @@ def fidelity(
     return math.cast(fidelity, "float64")
 
 
-def log_negativity(cov: Matrix) -> float:
-    r"""Returns the log_negativity of a Gaussian state.
+def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
+    r"""
+    Returns the covariance matrix that corresponds to applying the partial
+    transposition on the density matrix of a given set of modes.
+    
+    Reference: `https://arxiv.org/abs/quant-ph/9909044 <https://arxiv.org/abs/quant-ph/9909044>`_, Equation 1, 5.
+    
+    Arguments:
+        cov (Matrix): the covariance matrix
+        modes (Sequence[int]): the modes of system on which transposition is applied
+        
+    Returns:
+        (Matrix): the covariance matrix corresponding to the partially transposed state
+    """
+    m, _ = cov.shape
+    num_modes = m // 2
+    mat = [1.0] * m
+    for i in modes:
+        mat[i + num_modes] = -1.0
+    mat = math.astensor(mat, dtype="float64")
+    return cov * mat[:, None] * mat[None, :]
 
-    Reference: `arXiv:0102117 <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_, equation 57, 61.
 
-    Args:
+def log_negativity(cov: Matrix, hbar: float) -> float:
+    r"""
+    Returns the log_negativity of a Gaussian state.
+    
+    Reference: `https://arxiv.org/pdf/quant-ph/0102117.pdf <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_ , Equation 57, 61.
+    
+    Arguments:
         cov (Matrix): the covariance matrix
 
     Returns:
         float: the log-negativity
     """
-
-    vals = sympletic_eigenvals(cov)
-    mask = 2 * vals < 1
-
+    vals = sympletic_eigenvals(cov, hbar) / (hbar / 2)
     vals_filtered = math.boolean_mask(
-        vals, mask
+        vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.
-
-    return math.sum(-math.log(2 * vals_filtered) / math.log(2))
+    if len(vals_filtered) > 0:
+        return -math.sum(
+            math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
+        )
+    else:
+        return 0
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:

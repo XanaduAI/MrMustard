@@ -1,10 +1,8 @@
 # this is the topmost __init__.py file of the mrmustard package
 
-import importlib
-from rich.pretty import install  # NOTE: just for the looks
+# from rich.pretty import install  # NOTE: just for the looks
+# install()
 from ._version import __version__
-
-install()
 
 
 class Settings:
