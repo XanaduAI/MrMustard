@@ -24,7 +24,7 @@ from copy import copy
 
 
 class Progressbar:
-    "A spiffy loading bar to display the progress during an optimization"
+    "A spiffy loading bar to display the progress during an optimization."
 
     def __init__(self, max_steps: int):
         self.taskID = None
@@ -64,7 +64,14 @@ class Progressbar:
 
 def plot_wigner(rho, xvec, pvec, hbar):
     r"""Calculates the discretized Wigner function of the specified mode.
-    Lifted from https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725
+
+    Lifted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`_
+
+    Args:
+        rho (complex array): the state in Fock representation (can be pure or mixed)
+        xvec (array): array of discretized :math:`x` quadrature values
+        pvec (array): array of discretized :math:`p` quadrature values
+        hbar (float): the value of ``\hbar``
     """
 
     Q, P = np.meshgrid(xvec, pvec)

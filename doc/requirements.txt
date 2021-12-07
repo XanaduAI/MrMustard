@@ -5,3 +5,4 @@ sphinx-autodoc-typehints
 sphinx-copybutton
 sphinx-automodapi
 sphinxcontrib-bibtex
+mistune==0.8.4
