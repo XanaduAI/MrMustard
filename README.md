@@ -84,7 +84,7 @@ cat >> Sgate(0.5)  # squeezed cat
 
 Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
 ```python
-displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> D(x=1.0)
+displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> Dgate(x=1.0)
 ```
 
 If you want to apply a gate to specific modes, use the `getitem` format. Here are a few examples:
@@ -106,10 +106,10 @@ output = Vacuum(4) >> X8
 
 # lossy X8
 noise = lambda: np.random.uniform(size=4)
-X8_realistic = (Sgate(r=0.9 + 0.1*noise, phi=0.1*noise)
-                >> Attenuator(0.89 + 0.01*noise)
+X8_realistic = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
+                >> Attenuator(0.89 + 0.01*noise())
                 >> Interferometer(4)
-                >> Attenuator(0.95 + 0.01*noise)
+                >> Attenuator(0.95 + 0.01*noise())
                )
 
 # 2-mode Bloch Messiah decomposition
@@ -125,8 +125,7 @@ leftover = Vacuum(4) >> X8 << SqueezedVacuum(r=10.0, phi=np.pi)[2]  # a homodyne
 
 Transformations can also be applied in the dual sense by using the left-shift operator `<<`:
 ```python
-lossy_444 = Attenuator(0.8)[0,1,2] << Fock([4,4,4])  # lossy detection of 4 photons in modes 0, 1 and 2.
-leftover = Vacuum(4) >> X8 << lossy_444  # measuring 4 photons in modes 0,1,2 with a lossy pnr detector
+Attenuator(0.5) << Coherent(0.1, 0.2) == Coherent(0.1, 0.2) >> Amplifier(2.0)
 ```
 This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
 
@@ -134,7 +133,7 @@ This has the advantage of modelling lossy detectors without applying the loss ch
 There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is how Homodyne performs a measurement).
 
 The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
-```
+```python
 results = Gaussian(2) << PNRDetector(efficiency = 0.9, modes = [0])
 results[0]  # unnormalized dm of mode 1 conditioned on measuring 0 in mode 0
 results[1]  # unnormalized dm of mode 1 conditioned on measuring 1 in mode 0
@@ -142,11 +141,12 @@ results[2]  # unnormalized dm of mode 1 conditioned on measuring 2 in mode 0
 # etc...
 ```
 The trace of the leftover density matrices will yield the success probability. If multiple modes are measured then there is a corresponding number of indices:
-```
+```python
 results = Gaussian(3) << PNRDetector(efficiency = [0.9, 0.8], modes = [0,1])
 results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 and 3 in mode 1
 # etc...
 ```
+Set a lower `settings.PNR_INTERNAL_CUTOFF` (default 50) to speed-up computations of the PNR output.
 
 ## 6. Equality check
 States support equality checking:
