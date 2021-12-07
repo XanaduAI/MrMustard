@@ -133,7 +133,7 @@ This has the advantage of modelling lossy detectors without applying the loss ch
 There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is how Homodyne performs a measurement).
 
 The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
-```
+```python
 results = Gaussian(2) << PNRDetector(efficiency = 0.9, modes = [0])
 results[0]  # unnormalized dm of mode 1 conditioned on measuring 0 in mode 0
 results[1]  # unnormalized dm of mode 1 conditioned on measuring 1 in mode 0
@@ -141,11 +141,12 @@ results[2]  # unnormalized dm of mode 1 conditioned on measuring 2 in mode 0
 # etc...
 ```
 The trace of the leftover density matrices will yield the success probability. If multiple modes are measured then there is a corresponding number of indices:
-```
+```python
 results = Gaussian(3) << PNRDetector(efficiency = [0.9, 0.8], modes = [0,1])
 results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 and 3 in mode 1
 # etc...
 ```
+Set a lower `settings.PNR_INTERNAL_CUTOFF` (default 50) to speed-up computations of the PNR output.
 
 ## 6. Equality check
 States support equality checking:
