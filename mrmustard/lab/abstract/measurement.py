@@ -40,18 +40,18 @@ class FockMeasurement(ABC):
         The first N indices of the returned tensor correspond to the Fock measurements of the N modes that
         the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
         """
-        if self.should_recompute_stochastic_channel() or math.any(
-            [c > settings.PNR_INTERNAL_CUTOFF for c in state.cutoffs]
-        ):
-            self.recompute_stochastic_channel(state.cutoffs)
         cutoffs = []
         used = 0
         for mode in state.modes:
             if mode in self._modes:
-                cutoffs.append(self._cutoffs[used])
+                cutoffs.append(max(settings.PNR_INTERNAL_CUTOFF, state.cutoffs[state.indices(mode)]))
                 used += 1
             else:
-                cutoffs.append(state.cutoffs[mode])
+                cutoffs.append(state.cutoffs[state.indices(mode)])
+        if self.should_recompute_stochastic_channel() or math.any(
+            [c > settings.PNR_INTERNAL_CUTOFF for c in state.cutoffs]
+        ):
+            self.recompute_stochastic_channel(cutoffs)
         dm = state.dm(cutoffs)
         for k, (mode, stoch) in enumerate(zip(self._modes, self._internal_stochastic_channel)):
             # move the mode indices to the end
@@ -60,7 +60,7 @@ class FockMeasurement(ABC):
             dm = math.transpose(dm, perm)
             # compute sum_m P(meas|m)rho_mm
             dm = math.diag_part(dm)
-            dm = math.tensordot(dm, stoch[: cutoffs[k], : dm.shape[-1]], [[-1], [1]])
+            dm = math.tensordot(dm, stoch[: self._cutoffs[k], : dm.shape[-1]], [[-1], [1]])
         # put back the last len(self.modes) modes at the beginning
         output = math.transpose(
             dm,
