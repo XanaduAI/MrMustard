@@ -1,8 +1,9 @@
 ## Basic API Reference
 
 ### 1: States
-States in MrMustard are very powerful objects. States, like gates, are trainable.
-They have differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means vector in phase space, as well as photon number moments:
+States in MrMustard are very powerful objects. States, like gates, are trainable. They have
+differentiable methods to return a ket or density matrix in Fock space, covariance matrix and means
+vector in phase space, as well as photon number moments:
 
 ```python
 from mrmustard.lab import Vacuum, Coherent, SqueezedVacuum, DisplacedSqueezed, TMSV, Thermal, Gaussian
@@ -48,7 +49,8 @@ rearranged = joint[1,0]
 
 ### 2. Gates
 We have a variety of unitary Gaussian gates and non-unitary Gaussian channels.
-Note that if a parameter of a single-mode gate is a float or a list of length 1, its value is shared across all the modes the gate is applied to.
+Note that if a parameter of a single-mode gate is a float or a list of length 1, its value is
+shared across all the modes the gate is applied to.
 
 ```python
 from mrmustard.lab import Vacuum
@@ -100,8 +102,8 @@ state = S[0,1,2](Vacuum(4)) # applying the squeezing gate in parallel to modes 0
 ### 3: Circuits
 
 Circuits are a way of getting more functionality out of a collection of gates.
-In order to build a circuit we create an empty circuit object `circ = Circuit()` and append gates to it, or we pass a list of gates.
-Circuits are callable and trainable.
+In order to build a circuit we create an empty circuit object `circ = Circuit()` and append gates
+to it, or we pass a list of gates. Circuits are callable and trainable.
 
 ```python
 from mrmustard.lab import Circuit, Vacuum, Sgate, Interferometer, Attenuator
@@ -135,8 +137,11 @@ state = lossy_MZ(state)  # differentiable
 ### 4. Detectors
 MrMustard supports a variety of differentiable detectors, which fall into two categories: Gaussian and Fock detectors.
 
-Gaussian detectors are Homodyne, Heterodyne and Generaldyne detectors. They measure a Gaussian state and return a post-measurement state (in the unmeasured modes) that is Gaussian. Fock detectors are the PNRDetector and the ThresholdDetector. They measure the Fock representation of a state and return a post-measurement state (in the unmeasured modes) in the Fock representation, as well as the probability of the outcome.
-Note that measurements require the outcome to be specified.
+Gaussian detectors are Homodyne, Heterodyne and Generaldyne detectors. They measure a Gaussian state
+and return a post-measurement state (in the unmeasured modes) that is Gaussian. Fock detectors are
+the PNRDetector and the ThresholdDetector. They measure the Fock representation of a state and
+return a post-measurement state (in the unmeasured modes) in the Fock representation, as well as the
+probability of the outcome. Note that measurements require the outcome to be specified.
 
 
 ```python
@@ -154,7 +159,8 @@ detection_probs = detector(state_out, cutoffs=[2,3])
 ```
 
 ### 5. Optimization
-MrMustard implements a dedicated optimizer that can perform symplectic and orthogonal optimization, on top of the usual Euclidean optimization.
+MrMustard implements a dedicated optimizer that can perform symplectic and orthogonal optimization,
+on top of the usual Euclidean optimization.
 
 Here we could use a default TensorFlow optimizer (no `Ggate`s or `Interferometer`s)):
 ```python
