@@ -620,14 +620,20 @@ class Amplifier(Parametrized, Transformation):
 class AdditiveNoise(Parametrized, Transformation):
     r"""
     The additive noise channel. Equivalent to an amplifier followed by an attenuator. E.g.
-    >>> na,nb = np.random.uniform(size=2)
-    >>> tr = np.random.uniform()
-    >>> Amplifier(1/tr, nb) >> Attenuator(tr, na) == AdditiveNoise(2*(1-tr)*(1+na+nb))
-    True
+
+    .. code-block::
+
+        na,nb = np.random.uniform(size=2)
+        tr = np.random.uniform()
+        Amplifier(1/tr, nb) >> Attenuator(tr, na) == AdditiveNoise(2*(1-tr)*(1+na+nb)) # evaluates to True
+
     or equivalent to an attenuator followed by an amplifier:
-    >>> na,nb = np.random.uniform(size=2)
-    >>> amp = 1.0 + np.random.uniform()
-    >>> Attenuator(1/amp, nb) >> Amplifier(amp, na) == AdditiveNoise(2*(amp-1)*(1+na+nb))
+
+    .. code-block::
+
+        na,nb = np.random.uniform(size=2)
+        amp = 1.0 + np.random.uniform()
+        Attenuator(1/amp, nb) >> Amplifier(amp, na) == AdditiveNoise(2*(amp-1)*(1+na+nb))
 
     Args:
         noise (float or List[float]): the added noise in units of hbar/2

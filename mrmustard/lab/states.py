@@ -46,16 +46,22 @@ class Vacuum(State):
 class Coherent(Parametrized, State):
     r"""
     The N-mode coherent state. Equivalent to applying a displacement to the vacuum state:
-    >>> Coherent(x=0.5, y=0.2) == Vacuum(1) >> Dgate(x=0.5, y=0.3)
-    True
+
+    .. code-block::
+
+        Coherent(x=0.5, y=0.2) == Vacuum(1) >> Dgate(x=0.5, y=0.3)    # True
 
     Parallelizable over x and y:
-    >>> Coherent(x=[1.0, 2.0], y=[-1.0, -2.0]) == Coherent(x=1.0, y=-1.0) & Coherent(x=2.0, y=-2.0)
-    True
+
+    .. code-block::
+
+        Coherent(x=[1.0, 2.0], y=[-1.0, -2.0]) == Coherent(x=1.0, y=-1.0) & Coherent(x=2.0, y=-2.0)  # True
 
     Can be used to model a heterodyne detection:
-    >>> Gaussian(2) << Coherent(x=1.0, y=0.0)[1]  # e.g. heterodyne on mode 1
-    # leftover state on mode 0
+
+    .. code-block::
+
+        Gaussian(2) << Coherent(x=1.0, y=0.0)[1]  # e.g. heterodyne on mode 1, leftover state on mode 0
 
     Note that the values of x and y are automatically rescaled by 1/(2*sqrt(mrmustard.settings.HBAR)).
 
