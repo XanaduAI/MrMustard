@@ -1,4 +1,5 @@
 .. _research:
+
 Research and contribution
 =========================
 
@@ -17,7 +18,7 @@ Mr Mustard is an open-source library, with the up-to-date code available on GitH
 
 We welcome contributions - simply fork Mr Mustard's repository, and then make a
 `pull request <https://help.github.com/articles/about-pull-requests/>`_ containing
-your contribution. All contributers to Mr Mustard will be listed as authors on the
+your contribution. All contributors to Mr Mustard will be listed as authors on the
 releases.
 
 We also encourage bug reports, suggestions for new features and enhancements,
