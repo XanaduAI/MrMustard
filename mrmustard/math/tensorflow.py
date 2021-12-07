@@ -214,6 +214,10 @@ class TFMath(MathInterface):
     def pinv(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.pinv(array)
 
+    @Autocast()
+    def pow(self, array: tf.Tensor, exponent: float) -> tf.Tensor:
+        return tf.math.pow(array, exponent)
+
     def real(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.real(array)
 
