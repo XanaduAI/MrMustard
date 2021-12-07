@@ -10,7 +10,6 @@ Backends
     :maxdepth: 1
 
     math/tensorflow
-    math/torch
 
 .. automodapi:: mrmustard.math
     :no-heading:
