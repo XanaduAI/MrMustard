@@ -98,12 +98,13 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def astensor(self, array: Tensor) -> Tensor:
+    def astensor(self, array: Tensor, dtype: str) -> Tensor:
         r"""Converts a numpy array to a tensor.
         Arguments:
             array (array): numpy array to convert
+            dtype (str): dtype of the tensor
         Returns:
-            array: tensor
+            array: tensor with dtype
         """
         ...
 
@@ -536,6 +537,17 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
+    def pow(self, x: Tensor, y: Tensor) -> Tensor:
+        r"""Returns x^y. Broadcasts x and y if necessary.
+        Arguments:
+            x (array): base
+            y (array): exponent
+        Returns:
+            array: x^y
+        """
+        ...
+
+    @abstractmethod
     def real(self, array: Tensor) -> Tensor:
         r"""Returns the real part of array.
         Arguments:
@@ -917,8 +929,8 @@ class MathInterface(ABC):
         out_ = self.arange(dim_out)[:, None]
         return (
             self.cast(binom(in_, out_), in_.dtype)
-            * success_prob ** out_
-            * (1.0 - success_prob) ** self.maximum(in_ - out_, 0.0)
+            * self.pow(success_prob, out_)
+            * self.pow(1.0 - success_prob, self.maximum(in_ - out_, 0.0))
         )
 
     def convolve_probs_1d(self, prob: Tensor, other_probs: List[Tensor]) -> Tensor:

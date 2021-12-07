@@ -17,9 +17,10 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib import cm
 import numpy as np
-import strawberryfields as sf  # TODO: remove dependency on strawberryfields
 from mrmustard.types import *
 from mrmustard import settings
+from numba import njit
+from copy import copy
 
 
 class Progressbar:
@@ -61,43 +62,53 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def wigner(state, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
-    r"""
-    Plots the wigner function of a single mode state.
-    Arguments:
-        state (complex array): the state in Fock representation (can be pure or mixed)
-        filename (str): optional filename for saving the plot of the wigner function
+def plot_wigner(rho, xvec, pvec, hbar):
+    r"""Calculates the discretized Wigner function of the specified mode.
+    Lifted from https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725
     """
-    assert state.ndim in {1, 2}
-    scale = np.sqrt(settings.HBAR)
-    x_axis = np.linspace(*xbounds, 200) * scale
-    y_axis = np.linspace(*ybounds, 200) * scale
-    pure = state.ndim == 1  # if ndim=2, then it's density matrix
-    state_sf = sf.backends.BaseFockState(
-        state, 1, pure, len(state)
-    )  # TODO: remove dependency on strawberryfields
-    Wig = state_sf.wigner(mode=0, xvec=x_axis, pvec=y_axis)
-    scale = np.max(Wig.real)
-    nrm = Normalize(-scale, scale)
-    fig, ax = plt.subplots()
-    ax.set_aspect("equal")
-    plt.contourf(x_axis, y_axis, Wig, 60, cmap=cm.RdBu, norm=nrm)
-    plt.xlabel(r"q (units of $\sqrt{\hbar}$)", fontsize=15)
-    plt.ylabel(r"p (units of $\sqrt{\hbar}$)", fontsize=15)
-    plt.tight_layout()
-    if filename != "":
-        plt.savefig(filename, dpi=300)
+
+    Q, P = np.meshgrid(xvec, pvec)
+    cutoff = rho.shape[-1]
+    A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
+
+    Wlist = np.array([np.zeros(np.shape(A), dtype=complex) for k in range(cutoff)])
+
+    # Wigner function for |0><0|
+    Wlist[0] = np.exp(-2.0 * np.abs(A) ** 2) / np.pi
+
+    # W = rho(0,0)W(|0><0|)
+    W = np.real(rho[0, 0]) * np.real(Wlist[0])
+
+    for n in range(1, cutoff):
+        Wlist[n] = (2.0 * A * Wlist[n - 1]) / np.sqrt(n)
+        W += 2 * np.real(rho[0, n] * Wlist[n])
+
+    for m in range(1, cutoff):
+        temp = copy(Wlist[m])
+        # Wlist[m] = Wigner function for |m><m|
+        Wlist[m] = (2 * np.conj(A) * temp - np.sqrt(m) * Wlist[m - 1]) / np.sqrt(m)
+
+        # W += rho(m,m)W(|m><m|)
+        W += np.real(rho[m, m] * Wlist[m])
+
+        for n in range(m + 1, cutoff):
+            temp2 = (2 * A * Wlist[n - 1] - np.sqrt(m) * temp) / np.sqrt(n)
+            temp = copy(Wlist[n])
+            # Wlist[n] = Wigner function for |m><n|
+            Wlist[n] = temp2
+
+            # W += rho(m,n)W(|m><n|) + rho(n,m)W(|n><m|)
+            W += 2 * np.real(rho[m, n] * Wlist[n])
+
+    return W / hbar
 
 
-def mikkel_plot(dm: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
-    rho = dm.numpy()
-    sf.hbar = settings.HBAR
-    s = sf.ops.BaseFockState(rho, 1, False, rho.shape[0])
+def mikkel_plot(rho: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
     X = np.linspace(xbounds[0], xbounds[1], 200)
     P = np.linspace(ybounds[0], ybounds[1], 200)
-    W = s.wigner(0, X, P)
-    ProbX = s.x_quad_values(0, X, P)
-    ProbP = s.p_quad_values(0, X, P)
+    W = plot_wigner(rho, X, P, settings.HBAR)
+    ProbX = np.sum(W, axis=0)
+    ProbP = np.sum(W, axis=1)
 
     ### PLOTTING ###
 

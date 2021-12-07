@@ -543,8 +543,12 @@ class Attenuator(Parametrized, Transformation):
         self.is_gaussian = True
 
     @property
-    def XYd(self):
-        return gaussian.loss_XYd(self.transmissivity, self.nbar, settings.HBAR)
+    def X_matrix(self):
+        return gaussian.loss_XYd(self.transmissivity, self.nbar, settings.HBAR)[0]
+
+    @property
+    def Y_matrix(self):
+        return gaussian.loss_XYd(self.transmissivity, self.nbar, settings.HBAR)[1]
 
 
 class Amplifier(Parametrized, Transformation):
@@ -592,8 +596,12 @@ class Amplifier(Parametrized, Transformation):
         self.is_gaussian = True
 
     @property
-    def XYd(self):
-        return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)
+    def X_matrix(self):
+        return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)[0]
+
+    @property
+    def Y_matrix(self):
+        return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)[1]
 
 
 class AdditiveNoise(Parametrized, Transformation):

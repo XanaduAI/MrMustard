@@ -128,45 +128,6 @@ class Transformation:
         else:
             return State(ket=new_fock, modes=state.modes)
 
-    # def _repr_markdown_(self):
-    #     table = f"#### {self.__class__.__qualname__}\n\n" + \
-    #         "| Params | dtype | Value | Shape | Trainable |\n" + \
-    #         "| :----: | :----: | :----: | :----: | :----: |\n"
-
-    #     with np.printoptions(precision=6, suppress=True):
-    #         for name in self.param_names:
-    #             par = self.__dict__[name]
-    #             table += f"| {name} | {par.dtype.name} | {np.array(par)} | {par.shape} | {self.__dict__['_' + name + '_trainable']} |\n"
-
-    #     return table
-
-    def __repr__(self):
-        table = Table(title=f"{self.__class__.__qualname__}")
-        table.add_column("Parameters")
-        table.add_column("dtype")
-        table.add_column("Value")
-        table.add_column("Shape")
-        table.add_column("Trainable")
-        with np.printoptions(precision=6, suppress=True):
-            for name in self.param_names:
-                par = self.__dict__[name]
-                table.add_row(
-                    name,
-                    par.dtype.name,
-                    f"{np.array(par)}",
-                    f"{par.shape}",
-                    str(self.__dict__["_" + name + "_trainable"]),
-                )
-            lst = [
-                f"{name}={np.array(np.atleast_1d(self.__dict__[name]))}"
-                for name in self.param_names
-            ]
-            repr_string = f"{self.__class__.__qualname__}({', '.join(lst)})" + (
-                f"[{self._modes}]" if self._modes is not None else ""
-            )
-        rprint(table)
-        return repr_string
-
     @property
     def modes(self) -> Sequence[int]:
         if self._modes in (None, []):
@@ -211,30 +172,27 @@ class Transformation:
 
     @property
     def X_matrix_dual(self) -> Optional[Matrix]:
-        if self.X_matrix is not None:
-            return gaussian.math.inv(self.X_matrix)
-        else:
+        if (X := self.X_matrix) is None:
             return None
+        return gaussian.math.inv(X)
 
     @property
     def Y_matrix_dual(self) -> Optional[Matrix]:
-        Xdual = self.X_matrix_dual
-        Y = self.Y_matrix
-        if Xdual is None:
+        if (Y := self.Y_matrix) is None:
+            return None
+        elif (Xdual := self.X_matrix_dual) is None:
             return Y
-        elif Y is not None:
-            return math.matmul(math.matmul(Xdual, self.Y_matrix), Xdual)
-        return None
+        else:
+            return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
 
     @property
     def d_vector_dual(self) -> Optional[Vector]:
-        Xdual = self.X_matrix_dual
-        d = self.d_vector
-        if Xdual is None:
-            return -d
-        elif d is not None:
-            return -math.matvec(Xdual, d)
-        return None
+        if (d := self.d_vector) is None:
+            return None
+        elif (Xdual := self.X_matrix_dual) is None:
+            return d
+        else:
+            return math.matmul(Xdual, d)
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
@@ -248,6 +206,7 @@ class Transformation:
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
         r"""
         Returns the (X, Y, d) triple of the dual of the current transformation.
+        Override in subclasses if computing Xdual, Ydual and ddual together is more efficient.
         """
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
@@ -293,8 +252,8 @@ class Transformation:
 
     def __getitem__(self, items) -> Callable:
         r"""
-        Allows transformations to be used as:
-        output = op[0,1](input)  # e.g. acting on modes 0 and 1
+        Sets the modes on which the transformation acts.
+        Allows transformations to be used as: `output = transf[0,1](input)`  e.g. acting on modes 0 and 1.
         """
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
         # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
@@ -409,3 +368,25 @@ class Transformation:
                 other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
+
+    def __repr__(self):
+        table = Table(title=f"{self.__class__.__qualname__}")
+        table.add_column("Parameters")
+        table.add_column("dtype")
+        table.add_column("Value")
+        table.add_column("Bounds")
+        table.add_column("Shape")
+        table.add_column("Trainable")
+        with np.printoptions(precision=6, suppress=True):
+            for name in self._param_names:
+                par = self.__dict__[name]
+                table.add_row(
+                    name,
+                    par.dtype.name,
+                    f"{np.array(par)}",
+                    str(self.__dict__["_" + name + "_bounds"]),
+                    f"{par.shape}",
+                    str(self.__dict__["_" + name + "_trainable"]),
+                )
+        rprint(table)
+        return ""

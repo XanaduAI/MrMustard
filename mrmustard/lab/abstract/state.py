@@ -225,6 +225,8 @@ class State:
         Returns:
             Tensor: the ket
         """
+        if self.is_mixed:
+            return None
         cutoffs = (
             self.cutoffs
             if cutoffs is None
@@ -444,7 +446,7 @@ class State:
         """
         if issubclass(other.__class__, State):
             raise TypeError(
-                f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
+                f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
             )
         return other.primal(self)
 
@@ -527,7 +529,7 @@ class State:
         )
         rprint(table)
         if self.num_modes == 1:
-            graphics.mikkel_plot(self.dm(cutoffs=self.cutoffs))
+            graphics.mikkel_plot(math.asnumpy(self.dm(self.cutoffs)))
         detailed_info = (
             f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n" if settings.DEBUG else " "
         )
