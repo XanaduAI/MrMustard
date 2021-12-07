@@ -6,6 +6,3 @@ sphinx-copybutton
 sphinx-automodapi
 sphinxcontrib-bibtex
 mistune==0.8.4
-
-# not a strict requirement for mrmustard; needed for docs support
-torch==1.9.0+cpu
