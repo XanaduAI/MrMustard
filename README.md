@@ -68,6 +68,7 @@ The `repr` of single-mode states shows the Wigner function:
 cat_amps = Coherent(2.0).ket([20]) + Coherent(-2.0).ket([20])
 cat_amps = cat_amps / np.linalg.norm(cat_amps)
 cat = State(ket=cat_amps)
+cat
 ```
 <img width="538" alt="Screen Shot 2021-12-06 at 8 27 06 PM" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
 
@@ -164,7 +165,7 @@ True
 ## 7. State operations and properties
 States can be joined using the `&` (and) operator:
 ```python
-Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0). # A separable two-mode coherent state
+Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)  # A separable two-mode coherent state
 
 s = SqueezedVacuum(r=1.0)
 s4 = s & s & s & s   # four squeezed states
@@ -173,10 +174,10 @@ s4 = s & s & s & s   # four squeezed states
 Subsystems can be accessed via `get_modes`:
 ```python
 joint = Coherent(x=1.0, y=1.0) & Coherent(x=2.0, y=2.0)
-joint.get_mode(0)  # first mode
-joint.get_mode(1)  # second mode
+joint.get_modes(0)  # first mode
+joint.get_modes(1)  # second mode
 
-swapped = joint.get_modes(1,0)
+swapped = joint.get_modes([1,0])
 ```
 
 ## 8. Fock representation
@@ -184,8 +185,8 @@ The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutof
 
 ```python
 # Fock representation of a coherent state
-coh.ket(cutoffs=[5])   # ket
-coh.dm(cutoffs=[5])    # density matrix
+Coherent(0.5).ket(cutoffs=[5])   # ket
+Coherent(0.5).dm(cutoffs=[5])    # density matrix
 
 Dgate(x=1.0).U(cutoffs=[15])  # truncated unitary op
 Dgate(x=1.0).choi(cutoffs=[15])  # truncated choi op
@@ -219,7 +220,7 @@ math.cos(0.1)  # tensorflow
 
 settings.BACKEND = 'torch'
 
-math.cos(0.1)  # pytorch
+math.cos(0.1)  # pytorch (upcoming)
 ```
 
 # Optimization
