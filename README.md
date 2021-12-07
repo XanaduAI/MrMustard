@@ -16,7 +16,7 @@ Mr Mustard supports (differentiably):
 - single-mode gates (parallelizable):
     - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
 - two-mode gates:
-    - beam splitter, Mach-Zehnder interferometer, two-mode squeezing
+    - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
 - N-mode gates (with dedicated Rimannian optimization):
     - interferometer (orthogonal), Gaussian transformation (symplectic)
 - single-mode states (parallelizable):
