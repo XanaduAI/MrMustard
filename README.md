@@ -5,7 +5,7 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](<https://img.shields.io/badge/python-3.8 | 3.9-blue>)](https://pypi.org/project/MrMustard/)
 
-Alpha release (v0.1.0).
+Alpha release (v0.1.0 - expect some bumps).
 
 Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates across phase space and Fock space.
 It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (TensorFlow by default, PyTorch coming soon).
