@@ -13,5 +13,5 @@
 # limitations under the License.
 
 from .state import State
-from .measurement import GaussianMeasurement, FockMeasurement
+from .measurement import FockMeasurement
 from .transformation import Transformation

@@ -209,6 +209,8 @@ class State:
         Returns:
             Tensor: the ket
         """
+        if self.is_mixed:
+            return None
         cutoffs = (
             self.cutoffs
             if cutoffs is None
@@ -425,7 +427,7 @@ class State:
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
         if issubclass(other.__class__, State):
             raise TypeError(
-                f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
+                f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
             )
         return other.primal(self)
 

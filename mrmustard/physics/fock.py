@@ -58,7 +58,9 @@ def autocutoffs(
         max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
     if min_cutoff is None:
         min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
-    autocutoffs = math.cast(number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32")
+    autocutoffs = settings.AUTOCUTOFF_MIN_CUTOFF + math.cast(
+        number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32"
+    )
     return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
 
 
