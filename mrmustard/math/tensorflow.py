@@ -189,7 +189,7 @@ class TFMath(MathInterface):
         return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
-        "Note that the norm preserves the type of array."
+        """Note that the norm preserves the type of array."""
         return tf.linalg.norm(array)
 
     def ones(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
@@ -304,7 +304,7 @@ class TFMath(MathInterface):
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of exp(C + Bx - Ax^2) at zero, where the series has :math:`sqrt(n!)` at the denominator rather than :math:`n!`.
+        of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the denominator rather than :math:`n!`.
         Note the minus sign in front of A.
 
         Args:

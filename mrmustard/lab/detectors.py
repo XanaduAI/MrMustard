@@ -25,7 +25,7 @@ __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Genera
 class PNRDetector(Parametrized, FockMeasurement):
     r"""Photon Number Resolving detector.
 
-    If :code:``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
+    If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
     If a parameter is a single float, the parallel instances of the detector share that parameter.
 
     To apply mode-specific parmeters use a list of floats.
@@ -219,7 +219,13 @@ class Homodyne(Parametrized, GaussianMeasurement):
 
 
 class Heterodyne(Parametrized, GaussianMeasurement):
-    r"""Heterodyne measurement on a given mode."""
+    r"""Heterodyne measurement on a given mode.
+    
+    Args:
+        mode: modes of the measurement
+        x: x-coordinates of the measurement
+        y: y-coordinates of the measurement
+    """
 
     def __init__(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], modes: List[int]):
         r"""

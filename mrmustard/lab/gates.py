@@ -40,12 +40,12 @@ __all__ = [
 class Dgate(Parametrized, Transformation):
     r"""Displacement gate.
 
-    If :code:``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, the parallel instances of the gate share that parameter.
 
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+    parameter, which the optimizer will respect.
 
     Args:
         x (float or List[float]): the list of displacements along the x axis
@@ -86,12 +86,12 @@ class Dgate(Parametrized, Transformation):
 class Sgate(Parametrized, Transformation):
     r"""Squeezing gate.
 
-    If :code:``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, the parallel instances of the gate share that parameter.
 
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+    parameter, which the optimizer will respect.
 
     Args:
         r (float or List[float]): the list of squeezing magnitudes
@@ -132,12 +132,12 @@ class Sgate(Parametrized, Transformation):
 class Rgate(Parametrized, Transformation):
     r"""Rotation gate.
 
-    If :code:``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
 
     If a parameter is a single float, the parallel instances of the gate share that parameter.
 
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    To apply mode-specific values use a list of floats. One can optionally set bounds for each
+    parameter, which the optimizer will respect.
 
     Args:
         modes (List[int]): the list of modes this gate is applied to
@@ -318,8 +318,8 @@ class MZgate(Parametrized, Transformation):
     r"""Mach-Zehnder gate.
 
     It supports two conventions:
-        1. if :code:``internal=True``, both phases act iside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
-        2. if :code:``internal = False``, both phases act on the upper arm: ``phi_a`` before the first BS, ``phi_b`` after the first BS.
+        1. if ``internal=True``, both phases act inside the interferometer: ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
+        2. if ``internal = False``, both phases act on the upper arm: ``phi_a`` before the first BS, ``phi_b`` after the first BS.
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
@@ -416,7 +416,7 @@ class S2gate(Parametrized, Transformation):
 class Interferometer(Parametrized, Transformation):
     r"""N-mode interferometer.
 
-    It corresponds to a Ggate with zero mean and a `2N x 2N` orthogonal symplectic matrix.
+    It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
         orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
@@ -462,11 +462,11 @@ class Ggate(Parametrized, Transformation):
     r"""A generic N-mode Gaussian unitary transformation with zero displacement.
 
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
-    strength r in [0,1] for each mode.
+    strength ``r`` in ``[0, 1]`` for each mode.
 
     Args:
         num_modes (int): the number of modes this gate is acting on.
-        symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape `(2N,2N)`.
+        symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape ``(2N,2N)``.
         symplectic_trainable (bool): whether symplectic is a trainable variable.
     """
 
@@ -517,11 +517,12 @@ class Attenuator(Parametrized, Transformation):
 
     The CPT channel is given by
     .. math::
+
         X = sqrt(transmissivity) * I
         Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
-    If `transmissivity` is a single float, the parallel instances of the gate share that parameter.
+    If ``transmissivity`` is a single float, the parallel instances of the gate share that parameter.
 
     To apply mode-specific values use a list of floats.
 
@@ -569,8 +570,10 @@ class Amplifier(Parametrized, Transformation):
     The noisy amplifier channel. It corresponds to mixing with a thermal environment and applying
     a two-mode squeezing gate.
 
-    X = sqrt(amplification) * I
-    Y = (amplification-1) * (2*nbar + 1) * (hbar / 2) * I
+    .. code:: python
+
+        X = sqrt(amplification) * I
+        Y = (amplification-1) * (2*nbar + 1) * (hbar / 2) * I
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
     If ``amplification`` is a single float, the parallel instances of the gate share that parameter.

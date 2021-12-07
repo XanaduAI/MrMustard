@@ -26,6 +26,7 @@ class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 
     Tensors in phase space have a ``(2n, 2n)`` or ``(2n,)`` shape where n is the number of modes.
+
     There are two main orderings:
         - xxpp: matrix is a `2\times 2` block matrix where each block is an `xx`, `xp`, `px`, `pp` block on all modes.
         - xpxp: matrix is a `n\times n` block matrix of `2\times 2` blocks each corresponding to a mode or a coherence between modes

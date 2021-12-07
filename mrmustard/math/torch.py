@@ -159,7 +159,7 @@ class TorchMath(MathInterface):
         data_format="NWC",
         dilations: Optional[List[int]] = None,
     ) -> torch.Tensor:
-        r"""Wrapper for :code:``torch.nn.Conv1d`` and :code:``torch.nn.Conv2d``.
+        r"""Wrapper for ``torch.nn.Conv1d`` and ``torch.nn.Conv2d``.
 
         Args:
             1D convolution: Tensor of shape [batch_size, input_channels, signal_length].
@@ -352,7 +352,7 @@ class TorchMath(MathInterface):
         return torch.linalg.svd(tensor)
 
     def xlogy(self, x: torch.Tensor, y: torch.Tensor) -> Tensor:
-        """Returns 0 if x == 0, and x * log(y) otherwise, elementwise."""
+        """Returns 0 if ``x == 0``, and ``x * log(y)`` otherwise, elementwise."""
         return torch.xlogy(x, y)
 
     def sqrtm(self, tensor: torch.Tensor) -> Tensor:

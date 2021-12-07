@@ -128,10 +128,10 @@ def new_symplectic(num_modes: int) -> Tensor:
     with ``num_modes`` modes.
 
     Args:
-        num_modes (int): The number of modes in the symplectic matrix
+        num_modes (int): the number of modes in the symplectic matrix
 
     Returns:
-        tensor (Tensor): The new symplectic matrix
+        tensor (Tensor): the new symplectic matrix
     """
     return math.random_symplectic(num_modes)
 

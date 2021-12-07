@@ -4,7 +4,7 @@ Development guide
 Dependencies
 ------------
 
-Mr. Mustard requires the following libraries be installed:
+Mr Mustard requires the following libraries be installed:
 
 * `Python <http://python.org/>`_ >= 3.8
 
@@ -36,7 +36,7 @@ using development mode:
     pip install -e .
 
 The ``-e`` flag ensures that edits to the source code will be reflected when
-importing StrawberryFields in Python.
+importing Mr Mustard in Python.
 
 
 PyTorch support
@@ -48,13 +48,13 @@ To use Mr. Mustard with PyTorch using CPU, install it as follows:
 
     pip install torch
 
-Or, to install PyTorch with GPU and CUDA 10.2 support:
+To install PyTorch with GPU and CUDA 10.2 support:
 
 .. code-block:: console
 
     pip install torch==1.10.0+cu102
 
-for CUDA 11.3 use:
+To instead use CUDA 11.3:
 
 .. code-block:: console
 

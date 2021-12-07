@@ -95,8 +95,10 @@ class State:
     def indices(self, modes) -> Union[Tuple[int], int]:
         r"""
         Returns the indices of the given modes.
+
         Arguments:
             modes (Sequence[int] or int): the modes or mode
+
         Returns:
             Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
         """
@@ -131,7 +133,7 @@ class State:
 
     @property
     def cov(self) -> Optional[Matrix]:
-        r"""Returns the covariance matrix of the state"""
+        r"""Returns the covariance matrix of the state."""
         return self._cov
 
     @property
@@ -287,10 +289,10 @@ class State:
         Returns the post-measurement state after `other` is projected onto `self`:
         other >> self is other projected onto self.
 
-        If `other` is a `Transformation`, it returns the dual of the transformation applied to `self`:
-        other << self is like self >> other^dual.
+        If ``other`` is a ``Transformation``, it returns the dual of the transformation applied to ``self``:
+        ``other << self`` is like ``self >> other^dual``.
 
-        Note that the returned state is not normalized unless the state has attribute `_normalize` set.
+        Note that the returned state is not normalized unless the state has attribute ``_normalize`` set.
         """
         if issubclass(other.__class__, State):
             remaining_modes = [m for m in other.modes if m not in self.modes]
@@ -420,7 +422,7 @@ class State:
             )
 
     def __rshift__(self, other):
-        r"""Applies other (a Transformation) to self (a State), e.g., :code:``Coherent(x=0.1) >> Sgate(r=0.1)``."""
+        r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
         if issubclass(other.__class__, State):
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to a state.\nBut we can project a state on a state: are you looking for the << operator?"
@@ -431,7 +433,7 @@ class State:
         r"""
         Implements projection onto a state or the dual transformation applied on a state.
 
-        e.g. :code:``self << other`` where other is a :code:``State`` and :code:``self`` is either a :code:``State`` or a :code:``Transformation``.
+        e.g., ``self << other`` where other is a ``State`` and ``self`` is either a ``State`` or a ``Transformation``.
         """
         return other.primal(self)
 

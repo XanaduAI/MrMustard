@@ -55,9 +55,9 @@ class MathInterface(ABC):
 
     @abstractmethod
     def any(self, array: Tensor) -> bool:
-        r"""Returns True if any element of array is True.
+        r"""Returns ``True`` if any element of array is ``True``.
 
-        Arguments:
+        Args:
             array (array): array to check
 
         Returns:
@@ -81,12 +81,13 @@ class MathInterface(ABC):
 
     @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
-        r"""Converts a tensor to a numpy array.
+        r"""Converts a tensor to a NumPy array.
 
         Args:
             tensor (array): tensor to convert
+
         Returns:
-            array: numpy array
+            array: NumPy array
         """
         ...
 
@@ -143,7 +144,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
-        r"""Clips array to the interval :code:``[a_min, a_max]``.
+        r"""Clips array to the interval ``[a_min, a_max]``.
 
         Args:
             array (array): array to clip
@@ -188,7 +189,10 @@ class MathInterface(ABC):
 
         A constraint function will clip the value to the interval given by the bounds.
 
-        .. note:: the upper and/or lower bounds can be :code:``None``, in which case the constraint function will not clip the value.
+        .. note::
+
+            the upper and/or lower bounds can be :code:``None``, in which case the constraint
+            function will not clip the value.
 
         Args:
             bounds (tuple): bounds of the constraint
@@ -551,7 +555,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def ones(self, shape: Sequence[int], dtype) -> Tensor:
-        r"""Returns an array of ones with the given :code:``shape`` and :code:``dtype``.
+        r"""Returns an array of ones with the given ``shape`` and ``dtype``.
 
         Args:
             shape (tuple): shape of the array
@@ -576,7 +580,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
-        r"""Returns the outer product of :code:``array1`` and :code:``array2``.
+        r"""Returns the outer product of ``array1`` and ``array2``.
 
         Args:
             array1 (array): first array to take the outer product of
@@ -667,7 +671,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
-        r"""Returns the square root of :code:``x``.
+        r"""Returns the square root of ``x``.
 
         Args:
             x (array): array to take the square root of
@@ -693,7 +697,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
-        r"""Returns the tensordot product of :code:``a`` and :code:``b``.
+        r"""Returns the tensordot product of ``a`` and ``b``.
 
         Args:
             a (array): first array to take the tensordot product of
@@ -745,7 +749,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def unique_tensors(lst: List[Tensor]) -> List[Tensor]:
-        r"""Returns the tensors in :code:``lst`` without duplicates and non-tensors.
+        r"""Returns the tensors in ``lst`` without duplicates and non-tensors.
 
         Arguments:
             lst (list): list of tensors to remove duplicates and non-tensors from.
@@ -877,9 +881,9 @@ class MathInterface(ABC):
         return self.block([[X, -Y], [Y, X]])
 
     def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
-        r"""A random symplectic matrix in :code:``Sp(2*num_modes)``.
+        r"""A random symplectic matrix in ``Sp(2*num_modes)``.
 
-        Squeezing is sampled uniformly from 0.0 to max_r (1.0 by default).
+        Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))

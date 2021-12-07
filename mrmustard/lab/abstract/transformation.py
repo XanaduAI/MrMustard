@@ -35,7 +35,7 @@ class Transformation:
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def primal(self, state: State) -> State:
-        r"""applies :code:``self`` (a :code:``Transformation``) to other (a :code:``State``) and returns the transformed state
+        r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
 
         Args:
             state (State): the state to transform
@@ -236,7 +236,7 @@ class Transformation:
 
     @property
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        r"""returns the (X, Y, d) triple of the dual of the current transformation"""
+        r"""Returns the (X, Y, d) triple of the dual of the current transformation."""
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
     @property
@@ -280,7 +280,7 @@ class Transformation:
             return choi_op
 
     def __getitem__(self, items) -> Callable:
-        r"""Allows transformations to be used as :math:`output = op[0,1](input)`, e.g. acting on modes 0 and 1."""
+        r"""Allows transformations to be used as ``output = op[0,1](input)``, e.g. acting on modes 0 and 1."""
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
         # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
         if isinstance(items, int):
@@ -300,7 +300,7 @@ class Transformation:
         r"""Concatenates self with other (other after self).
 
         If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
-        E.g. :math:`circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]`
+        E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
 
         Args:
             other: another transformation
@@ -322,6 +322,7 @@ class Transformation:
 
         E.g.
         .. code-block::
+
             Sgate(0.1) << Coherent(0.5)   # state
             Sgate(0.1) << Dgate(0.2)      # transformation
 
@@ -339,7 +340,7 @@ class Transformation:
             raise ValueError(f"{other} is not a valid state or transformation.")
 
     def __eq__(self, other):
-        r"""Returns True if the two transformations are equal."""
+        r"""Returns ``True`` if the two transformations are equal."""
         if not isinstance(other, Transformation):
             return False
         if self.is_gaussian and other.is_gaussian:

@@ -106,21 +106,24 @@ class SqueezedVacuum(Parametrized, State):
     The N-mode squeezed vacuum state. Equivalent to applying a squeezing gate to the vacuum state:
 
     .. code::
+
       >>> SqueezedVacuum(r=0.5, phi=0.2) == Vacuum(1) >> Sgate(r=0.5, phi=0.2)
       True
 
     Parallelizable over r and phi:
     .. code::
+
       >>> SqueezedVacuum(r=[1.0, 2.0], phi=[-1.0, -2.0]) == SqueezedVacuum(r=1.0, phi=-1.0) & SqueezedVacuum(r=2.0, phi=-2.0)
       True
 
     Can be used to model a heterodyne detection with result 0.0:
     .. code::
+
       >>> Gaussian(2) << SqueezedVacuum(r=10.0, phi=0.0)[1]  # e.g. homodyne on x quadrature on mode 1 with result 0.0
       # leftover state on mode 0
 
     Args:
-        r (float): The squeezing magnitude.
+        r (float): the squeezing magnitude
         phi (float): The squeezing phase.
         r_trainable (bool): Whether the squeezing magnitude is trainable.
         phi_trainable (bool): Whether the squeezing phase is trainable.
@@ -167,6 +170,7 @@ class TMSV(Parametrized, State):
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
 
     .. code::
+
       >>> TMSV(r=0.5, phi=0.0) == Vacuum(2) >> Sgate(r=[0.5,0.5], phi=[0.0, np.pi]) >> BSgate(theta=-np.pi/4)
       True
 
@@ -221,15 +225,16 @@ class Thermal(Parametrized, State):
     Parallelizable over nbar:
 
     .. code::
-    >>> Thermal(nbar=[0.1, 0.2]) == Thermal(nbar=0.1) & Thermal(nbar=0.2)
-    True
+
+        >>> Thermal(nbar=[0.1, 0.2]) == Thermal(nbar=0.1) & Thermal(nbar=0.2)
+        True
 
     Args:
         nbar (float or List[float]): the expected number of photons in each mode
         nbar_trainable (bool): whether the nbar is trainable
         nbar_bounds (tuple): the bounds of the nbar
-        modes (list): the modes of the thermal state.
-        normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state.
+        modes (list): the modes of the thermal state
+        normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state
     """
 
     def __init__(

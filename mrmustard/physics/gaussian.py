@@ -236,10 +236,10 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
 
     It supports two conventions:
 
-        * if `internal=True`, both phases act inside the interferometer:
-            `phi_a` on the upper arm, `phi_b` on the lower arm;
+        * if ``internal=True``, both phases act inside the interferometer:
+            ``phi_a`` on the upper arm, ``phi_b`` on the lower arm;
         * if `internal = False` (default), both phases act on the upper arm:
-            `phi_a` before the first BS, `phi_b` after the first BS.
+            ``phi_a`` before the first BS, ``phi_b`` after the first BS.
 
     Args:
         phi_a (float): first phase
@@ -305,12 +305,15 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
 def quadratic_phase(s: Scalar):
     r"""Quadratic phase single mode gate.
 
-    P = \exp(i s q^2 / 2 \hbar).
+    .. math::
+
+        P = \exp(i s q^2 / 2 \hbar)
 
     Reference: https://strawberryfields.ai/photonics/conventions/gates.html
 
     Args:
         s (float): interaction strength
+
     Returns:
         the P(s) matrix (in xxpp ordering)
     """
@@ -327,6 +330,7 @@ def controlled_Z(g: Scalar):
     r"""Controlled PHASE gate of two-gaussian modes.
 
     .. math::
+
         C_Z = \exp(ig q_1 \otimes q_2 / \hbar).
 
 
@@ -354,6 +358,7 @@ def controlled_X(g: Scalar):
     r"""Controlled NOT gate of two-gaussian modes.
 
     .. math::
+
         C_X = \exp(ig q_1 \otimes p_2).
 
     Reference: https://arxiv.org/pdf/2110.03247.pdf, Equation 9.
@@ -389,10 +394,10 @@ def CPTP(
     state_modes: Sequence[int],
     transf_modes: Sequence[int],
 ) -> Tuple[Matrix, Vector]:
-    r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as `cov = X \cdot cov \cdot X^T + Y`
-    and `d = X \cdot means + d`.
+    r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as ``cov = X \cdot cov \cdot X^T + Y``
+    and ``d = X \cdot means + d``.
 
-    If the channel is single-mode, `modes` can contain `M` modes to apply the channel to,
+    If the channel is single-mode, ``modes`` can contain ``M`` modes to apply the channel to,
     otherwise it must contain as many modes as the number of modes in the channel.
 
     Args:
@@ -433,9 +438,12 @@ def CPTP(
 def loss_XYd(
     transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Tuple[Matrix, Matrix, None]:
-    r"""Returns the X,Y matrices and the d vector for the noisy loss (attenuator) channel:
-    X = math.sqrt(amplification)
-    Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
+    r"""Returns the X, Y matrices and the d vector for the noisy loss (attenuator) channel:
+
+    .. math::
+
+        X = math.sqrt(amplification)
+        Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -478,7 +486,7 @@ def amp_XYd(
 
 
 def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the additive noise channel `(Y = noise * (\hbar / 2) * I)`
+    r"""Returns the X,Y matrices and the d vector for the additive noise channel ``(Y = noise * (\hbar / 2) * I)``
 
     Arguments:
         noise (float): number of photons in the thermal state
@@ -547,6 +555,7 @@ def general_dyne(
         proj_cov (Matrix): covariance matrix of the state being projected onto
         proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
         modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
+
     Returns:
         Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
     """
@@ -874,7 +883,7 @@ def symplectic_inverse(S: Matrix) -> Matrix:
 
 
 def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
-    r"""Returns the dual channel (X,Y,d).
+    r"""Returns the dual channel ``(X, Y, d)``.
 
     Args:
         X (Matrix): the X matrix

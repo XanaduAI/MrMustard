@@ -92,7 +92,9 @@ class FockMeasurement(ABC):
         Projects the state onto a Fock measurement in the form :code:``[a,b,c,...]`` where integers
         indicate the Fock measurement on that mode and ``None`` indicates no projection on that mode.
 
-        Returns the measurement probability and the renormalized state (in the Fock basis) in the unmeasured modes.
+        Returns:
+            Tuple[State, Tensor]: the measurement probability and the renormalized state 
+            (in the Fock basis) in the unmeasured modes
         """
         if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):
             raise ValueError(
