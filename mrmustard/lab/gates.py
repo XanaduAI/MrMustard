@@ -168,13 +168,14 @@ class Rgate(Parametrized, Transformation):
 
 
 class Pgate(Parametrized, Transformation):
-    r"""
-    Quadratic phase gate. If len(modes) > 1 the gate is applied in parallel to all of the modes provided.
-    If a parameter is a single float, the parallel instances of the gate share that parameter.
-    To apply mode-specific values use a list of floats.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Quadratic phase gate.
 
-    Arguments:
+    If len(modes) > 1 the gate is applied in parallel to all of the modes provided. If a parameter
+    is a single float, the parallel instances of the gate share that parameter. To apply
+    mode-specific values use a list of floats. One can optionally set bounds for each parameter,
+    which the optimizer will respect.
+
+    Args:
         modes (List[int]): the list of modes this gate is applied to
         shearing (float or List[float]): the list of shearing parameters
         shearing_bounds (float, float): bounds for the shearing parameters
@@ -203,11 +204,12 @@ class Pgate(Parametrized, Transformation):
 
 
 class CXgate(Parametrized, Transformation):
-    r"""
-    Controlled X gate. It applies to a single pair of modes.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Controlled X gate.
 
-    Arguments:
+    It applies to a single pair of modes. One can optionally set bounds for each parameter, which
+    the optimizer will respect.
+
+    Args:
         s (float): control parameter
         s_bounds (float, float): bounds for the control angle
         s_trainable (bool): whether s is a trainable variable
@@ -235,11 +237,12 @@ class CXgate(Parametrized, Transformation):
 
 
 class CZgate(Parametrized, Transformation):
-    r"""
-    Controlled Z gate. It applies to a single pair of modes.
-    One can optionally set bounds for each parameter, which the optimizer will respect.
+    r"""Controlled Z gate.
 
-    Arguments:
+    It applies to a single pair of modes. One can optionally set bounds for each parameter, which
+    the optimizer will respect.
+
+    Args:
         s (float): control parameter
         s_bounds (float, float): bounds for the control angle
         s_trainable (bool): whether s is a trainable variable
@@ -511,11 +514,13 @@ class Ggate(Parametrized, Transformation):
 
 
 class Attenuator(Parametrized, Transformation):
-    r"""
-    The noisy attenuator channel. It corresponds to mixing with a thermal environment and applying
-    the pure loss channel. The pure lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
+    r"""The noisy attenuator channel.
+
+    It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
+    lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
 
     The CPT channel is given by
+
     .. math::
 
         X = sqrt(transmissivity) * I
@@ -570,9 +575,9 @@ class Attenuator(Parametrized, Transformation):
 
 
 class Amplifier(Parametrized, Transformation):
-    r"""
-    The noisy amplifier channel. It corresponds to mixing with a thermal environment and applying
-    a two-mode squeezing gate.
+    r"""The noisy amplifier channel.
+
+    It corresponds to mixing with a thermal environment and applying a two-mode squeezing gate.
 
     .. code:: python
 
@@ -626,8 +631,9 @@ class Amplifier(Parametrized, Transformation):
 
 
 class AdditiveNoise(Parametrized, Transformation):
-    r"""
-    The additive noise channel. Equivalent to an amplifier followed by an attenuator. E.g.
+    r"""The additive noise channel.
+
+    Equivalent to an amplifier followed by an attenuator. E.g.,
 
     .. code-block::
 

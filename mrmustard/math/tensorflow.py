@@ -282,7 +282,7 @@ class TFMath(MathInterface):
     def DefaultEuclideanOptimizer(
         self,
     ) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
-        r"""default optimizer for the Euclidean parameters"""
+        r"""Default optimizer for the Euclidean parameters."""
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
     def value_and_gradients(
@@ -307,9 +307,9 @@ class TFMath(MathInterface):
     def hermite_renormalized(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:  # TODO this is not ready
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor series
-        of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the denominator rather than :math:`n!`.
-        Note the minus sign in front of A.
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
 
         Args:
             A: The A matrix.
@@ -349,7 +349,7 @@ class TFMath(MathInterface):
         return tf.linalg.svd(tensor)
 
     def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
-        """Returns 0 if x == 0, and x * log(y) otherwise, elementwise."""
+        """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
         return tf.math.xlogy(x, y)
 
     def eigh(self, tensor: tf.Tensor) -> Tensor:
@@ -357,7 +357,7 @@ class TFMath(MathInterface):
         return tf.linalg.eigh(tensor)
 
     def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
-        """Returns the matrix square root of a square matrix, such that sqrt(A) @ sqrt(A) = A."""
+        """Returns the matrix square root of a square matrix, such that ``sqrt(A) @ sqrt(A) = A``."""
 
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
@@ -375,7 +375,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def getitem(tensor, *, key):
-        """A differentiable pure equivalent of numpy's `value = tensor[key]`."""
+        """A differentiable pure equivalent of numpy's ``value = tensor[key]``."""
         value = np.array(tensor)[key]
 
         def grad(dy):
@@ -387,7 +387,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def setitem(tensor, value, *, key):
-        """A differentiable pure equivalent of numpy's `tensor[key] = value`."""
+        """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
         tensor = np.array(tensor)
         value = np.array(value)
         tensor[key] = value

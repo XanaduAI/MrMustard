@@ -50,7 +50,7 @@ class Transformation:
         return new_state
 
     def dual(self, state: State) -> State:
-        r"""Applies the dual of self (dual of a Transformation) to other (a State) and returns the transformed state.
+        r"""Applies the dual of self (dual of a ``Transformation``) to other (a ``State``) and returns the transformed state.
 
         Args:
             state (State): the state to transform
@@ -144,17 +144,13 @@ class Transformation:
 
     @modes.setter
     def modes(self, modes: List[int]):
-        r"""
-        Sets the modes on which the transformation acts.
-        """
+        r"""Sets the modes on which the transformation acts."""
         self._validate_modes(modes)
         self._modes = modes
 
     @property
     def num_modes(self) -> int:
-        r"""
-        The number of modes on which the transformation acts.
-        """
+        r"""The number of modes on which the transformation acts."""
         return len(self.modes)
 
     def _validate_modes(self, modes):
@@ -198,18 +194,17 @@ class Transformation:
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        r"""Returns the (X, Y, d) triple.
+        r"""Returns the ```(X, Y, d)``` triple.
 
-        Override in subclasses if computing X, Y and d together is more efficient.
+        Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
         """
         return self.X_matrix, self.Y_matrix, self.d_vector
 
     @property
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        r"""
-        Returns the (X, Y, d) triple of the dual of the current transformation.
+        r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
-        Override in subclasses if computing `Xdual`, `Ydual` and `ddual` together is more efficient.
+        Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
         """
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
@@ -254,10 +249,10 @@ class Transformation:
             return choi_op
 
     def __getitem__(self, items) -> Callable:
-        r"""
-        Sets the modes on which the transformation acts.
+        r"""Sets the modes on which the transformation acts.
 
-        Allows transformations to be used as: `output = transf[0,1](input)`  e.g. acting on modes 0 and 1.
+        Allows transformations to be used as: ``output = transf[0,1](input)``,  e.g. acting on
+        modes 0 and 1.
         """
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
         # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
@@ -284,7 +279,7 @@ class Transformation:
             other: another transformation
 
         Returns:
-            A circuit that concatenates self with other
+            Circuit: A circuit that concatenates self with other
         """
         from mrmustard.lab import Circuit  # this is called at runtime so it's ok
 
@@ -308,7 +303,8 @@ class Transformation:
             other: a state or a transformation
 
         Returns:
-            the state transformed via the dual transformation or the transformation concatenated after other
+            State: the state transformed via the dual transformation or the transformation
+            concatenated after other
         """
         if isinstance(other, State):
             return self.dual(other)

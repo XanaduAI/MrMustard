@@ -25,15 +25,14 @@ from mrmustard import settings
 
 
 def fidelity(A, B) -> float:
-    r"""
-    Calculates the fidelity between two quantum states.
+    r"""Calculates the fidelity between two quantum states.
 
     Args:
-    A (State) The first quantum state.
-    B (State) The second quantum state.
+        A (State) The first quantum state.
+        B (State) The second quantum state.
 
     Returns:
-    float: The fidelity between the two states.
+        float: The fidelity between the two states.
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.fidelity(A.means, A.cov, B.means, B.cov, settings.HBAR)
@@ -41,17 +40,17 @@ def fidelity(A, B) -> float:
 
 
 def overlap(A, B) -> float:
-    r"""
-    Calculates the overlap between two quantum states.
-    If the states are both pure it returns |<A|B>|^2, if one is mixed it returns <A|B|A>
-    and if both are mixed it returns Tr[AB].
+    r"""Calculates the overlap between two quantum states.
+
+    If the states are both pure it returns :math:`|<A|B>|^2`, if one is mixed it returns :math:`<A|B|A>`
+    and if both are mixed it returns :math:`Tr[AB]`.
 
     Args:
-    A (State) The first quantum state.
-    B (State) The second quantum state.
+        A (State) the first quantum state
+        B (State) the second quantum state
 
     Returns:
-    float: The overlap between the two states.
+        float: the overlap between the two states
     """
     raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
@@ -60,14 +59,13 @@ def overlap(A, B) -> float:
 
 
 def von_neumann_entropy(A) -> float:
-    r"""
-    Calculates the Von Neumann entropy of a quantum state.
+    r"""Calculates the Von Neumann entropy of a quantum state.
 
     Args:
-    A (State) The quantum state.
+        A (State) the quantum state
 
     Returns:
-    float: The Von Neumann entropy of the state.
+        float: the Von Neumann entropy of the state
     """
     if A.is_gaussian:
         return gaussian.von_neumann_entropy(A.cov, settings.HBAR)
@@ -75,15 +73,14 @@ def von_neumann_entropy(A) -> float:
 
 
 def relative_entropy(A, B) -> float:
-    r"""
-    Calculates the relative entropy between two quantum states.
+    r"""Calculates the relative entropy between two quantum states.
 
     Args:
-    A (State) The first quantum state.
-    B (State) The second quantum state.
+        A (State) the first quantum state
+        B (State) the second quantum state
 
     Returns:
-    float: The relative entropy between the two states.
+        float: the relative entropy between the two states
     """
     raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
@@ -92,15 +89,14 @@ def relative_entropy(A, B) -> float:
 
 
 def trace_distance(A, B) -> float:
-    r"""
-    Calculates the trace distance between two quantum states.
+    r"""Calculates the trace distance between two quantum states.
 
     Args:
-    A (State) The first quantum state.
-    B (State) The second quantum state.
+        A (State) the first quantum state
+        B (State) the second quantum state
 
     Returns:
-    float: The trace distance between the two states.
+        float: the trace distance between the two states
     """
     raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:

@@ -33,7 +33,7 @@ def fock_state(n: Sequence[int]) -> Tensor:
         n: a list of photon numbers
 
     Returns:
-        the Fock state up to cutoffs n+1
+        the Fock state up to cutoffs ``n+1``
     """
     psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
     psi[tuple(np.atleast_1d(n))] = 1
@@ -43,7 +43,7 @@ def fock_state(n: Sequence[int]) -> Tensor:
 def autocutoffs(
     number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
 ) -> Tuple[int, ...]:
-    r"""returns the autocutoffs of a Wigner state
+    r"""Returns the autocutoffs of a Wigner state.
 
     Args:
         number_stdev: the photon number standard deviation in each mode
@@ -52,7 +52,7 @@ def autocutoffs(
         max_cutoff: the maximum cutoff
 
     Returns:
-        the suggested cutoffs
+        Tuple[int, ...]: the suggested cutoffs
     """
     if max_cutoff is None:
         max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -88,7 +88,7 @@ def fock_representation(
         choi_r: the TMSV squeezing magnitude
 
     Returns:
-        the fock representation
+        Tensor: the fock representation
     """
     if return_dm is not None and return_unitary is not None:
         raise ValueError("Cannot specify both mixed and unitary.")
@@ -112,7 +112,7 @@ def ket_to_dm(ket: Tensor) -> Tensor:
         ket: the ket
 
     Returns:
-        the density matrix
+        Tensor: the density matrix
     """
     return math.outer(ket, math.conj(ket))
 
@@ -124,7 +124,7 @@ def ket_to_probs(ket: Tensor) -> Tensor:
         ket: the ket
 
     Returns:
-        the probabilities vector
+        Tensor: the probabilities vector
     """
     return math.abs(ket) ** 2
 
@@ -136,7 +136,7 @@ def dm_to_probs(dm: Tensor) -> Tensor:
         dm: the density matrix
 
     Returns:
-        the probabilities vector
+        Tensor: the probabilities vector
     """
     return math.all_diagonals(dm, real=True)
 
@@ -148,7 +148,7 @@ def U_to_choi(U: Tensor) -> Tensor:
         U: the unitary transformation
 
     Returns:
-        the Choi tensor
+        Tensor: the Choi tensor
     """
     cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
@@ -163,13 +163,17 @@ def U_to_choi(U: Tensor) -> Tensor:
 
 
 def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
-    r"""Returns the full-size A matrix, B vector and C scalar.
+    r"""Returns the full-size ``A`` matrix, ``B`` vector and ``C`` scalar.
 
     Args:
         cov: the Wigner covariance matrix
         means: the Wigner means vector
-        full: whether to return the full-size A, B and C or the half-size A, B and C
+        full: whether to return the full-size ``A``, ``B`` and ``C`` or the half-size ``A``, ``B``
+            and ``C``
         choi_r: the TMSV squeezing magnitude if not None we consider ABC of a Choi state
+
+    Returns:
+        Tuple[Matrix, Vector, Scalar]: full-size ``A`` matrix, ``B`` vector and ``C`` scalar
     """
     is_state = choi_r is None
     N = cov.shape[-1] // 2
@@ -281,7 +285,7 @@ def purity(dm: Tensor) -> Scalar:
 
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
-    r"""Computes the CPTP (# NOTE: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
+    r"""Computes the CPTP (note: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
 
     It assumes that the cutoffs of the transformation matches the cutoffs of the relevant axes of the state.
 
@@ -292,7 +296,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
         state_is_dm: whether the state is a density matrix or a ket
 
     Returns:
-        The transformed state.
+        Tensor: the transformed state
     """
     num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
     N0 = list(range(0, num_modes))
@@ -320,7 +324,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
 def contract_states(
     stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: List[int], normalize: bool
 ):
-    r"""Contracts two states in the specified modes, it assumes that the modes spanned by B are a subset of the modes spanned by A.
+    r"""Contracts two states in the specified modes, it assumes that the modes spanned by ``B`` are a subset of the modes spanned by ``A``.
 
     Args:
         stateA: the first state
@@ -331,7 +335,7 @@ def contract_states(
         normalize: whether to normalize the result
 
     Returns:
-        The contracted state (subsystem of A)
+        State: the contracted state (subsystem of ``A``)
     """
     indices = list(range(len(modes)))
     if not a_is_mixed and not b_is_mixed:

@@ -24,11 +24,9 @@ math = Math()
 class Parametrized:
     r"""Abstract base class for all parametrized objects (gates, detectors, etc.)
 
-    For each trainable parameter keyword arguments must be passed for the initial value
-    ``xxx`` (tensor), the numerical bounds ``xxx_bounds`` (float, float), whether the
-    parameter ``xxx`` will be optimized ``xxx_trainable`` (bool), along with any other parameters.
-        xxx_trainable (bool): whether the parameter `xxx` will be optimized
-        yyy (any): other parameters
+    For each trainable parameter keyword arguments must be passed for the initial value ``xxx``
+    (tensor), the numerical bounds ``xxx_bounds`` (float, float), whether the parameter ``xxx`` will
+    be optimized ``xxx_trainable`` (bool), along with any other parameters.
     """
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
@@ -58,7 +56,7 @@ class Parametrized:
 
     @property
     def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        r"""Returns the dictionary of trainable parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
+        r"""Returns the dictionary of trainable parameters, searching recursively in the object tree (for example, when in a Circuit)."""
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(
@@ -80,7 +78,7 @@ class Parametrized:
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
-        r"""Returns the dictionary of constant parameters, searching recursively in the object tree (e.g. when in a Circuit)."""
+        r"""Returns the dictionary of constant parameters, searching recursively in the object tree (for example, when in a Circuit)."""
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(
