@@ -45,9 +45,12 @@ class Optimizer:
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 
         Args:
-            cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
-            by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
-            max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
+            cost_fn (Callable): a function that will be executed in a differentiable context in
+                order to compute gradients as needed
+            by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that
+                contain the parameters to optimize
+            max_steps (int): the minimization keeps going until the loss is stable or max_steps are
+                reached (if ``max_steps=0`` it will only stop when the loss is stable)
         """
         try:
             params = {
@@ -74,7 +77,7 @@ class Optimizer:
             return
 
     def should_stop(self, max_steps: int) -> bool:
-        r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)"""
+        r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)."""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
@@ -95,14 +98,15 @@ class Optimizer:
 # def new_variable(
 #     value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64
 # ) -> Trainable:
-#     r"""
-#     Returns a new trainable variable from the current math backend
+#     r"""Returns a new trainable variable from the current math backend
 #     with initial value set by `value` and bounds set by `bounds`.
-#     Arguments:
+#
+#     Args:
 #         value (float): The initial value of the variable
 #         bounds (Tuple[float, float]): The bounds of the variable
 #         name (str): The name of the variable
 #         dtype: The dtype of the variable
+#
 #     Returns:
 #         variable (Trainable): The new variable
 #     """
@@ -110,13 +114,13 @@ class Optimizer:
 
 
 # def new_constant(value, name: str, dtype=math.float64) -> Tensor:
-#     r"""
-#     Returns a new constant (non-trainable) tensor from the current math backend
+#     r"""Returns a new constant (non-trainable) tensor from the current math backend
 #     with initial value set by `value`.
-#     Arguments:
+#     Args:
 #         value (numeric): The initial value of the tensor
 #         name (str): The name of the constant
 #         dtype: The dtype of the constant
+#
 #     Returns:
 #         tensor (Tensor): The new constant tensor
 #     """
@@ -124,14 +128,13 @@ class Optimizer:
 
 
 def new_symplectic(num_modes: int) -> Tensor:
-    r"""Returns a new symplectic matrix from the current math backend
-    with ``num_modes`` modes.
+    r"""Returns a new symplectic matrix from the current math backend with ``num_modes`` modes.
 
     Args:
         num_modes (int): the number of modes in the symplectic matrix
 
     Returns:
-        tensor (Tensor): the new symplectic matrix
+        Tensor: the new symplectic matrix
     """
     return math.random_symplectic(num_modes)
 

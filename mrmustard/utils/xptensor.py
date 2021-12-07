@@ -185,14 +185,14 @@ class XPTensor(ABC):
     def clone_like(self, other: XPTensor):
         r"""Create a new XPTensor with the same shape and modes as other.
 
-        The new tensor has the same content as self, cloned as many times as necessary to match the shape and modes of other.
-        The other properties are kept as is.
+        The new tensor has the same content as self, cloned as many times as necessary to match the
+        shape and modes of other. The other properties are kept as is.
 
         Args:
             other: The tensor to be cloned.
 
         Returns:
-            A new XPTensor with the same shape and modes as other.
+            Tensor: A new XPTensor with the same shape and modes as other.
         """
         if other.shape == self.shape:
             return self
@@ -449,13 +449,15 @@ class XPTensor(ABC):
         return (1 / other) * self
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> Union[XPMatrix, XPVector]:
-        r"""Returns modes or subsets of modes from the XPTensor,
-        or coherences between modes using an intuitive notation.
+        r"""Returns modes or subsets of modes from the XPTensor or coherences between modes using an
+        intuitive notation.
 
         We handle mode indices and we get the corresponding tensor indices handled correctly.
 
         Examples:
+
         .. code::
+
             T[N] ~ self.tensor[N,:,:,:]
             T[M,N] = the coherence between the modes M and N
             T[:,N] ~ self.tensor[:,N,:,:]

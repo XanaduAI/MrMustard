@@ -5,8 +5,8 @@
 - Write informative docstrings using the Args/Returns pattern.
 
 You can raise [issues](https://github.com/XanaduAI/MrMustard/issues) to keep track of bugs. We also have a [kanban board](https://github.com/XanaduAI/MrMustard/projects/1) to keep track of projects (you can [make your own](https://github.com/XanaduAI/MrMustard/projects) too).
-## Architecture of MrMustard
-MrMustard is split into 3 components:
+## Architecture of Mr Mustard
+Mr Mustard is split into 3 components:
 
 ### 1. [lab](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/lab)
 The lab module contains states, gates and detectors. The code in these objects uses the functionality provided by the physics module (see below) and does not care how things are actually computed. The code in the lab module should not use the math module directly.

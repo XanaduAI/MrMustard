@@ -33,7 +33,7 @@ def vacuum_cov(num_modes: int, hbar: float) -> Matrix:
 
     Args:
         num_modes (int): number of modes
-        hbar (float): value of hbar
+        hbar (float): value of ``hbar``
 
     Returns:
         Matrix: vacuum covariance matrix
@@ -46,11 +46,10 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
 
     Args:
         num_modes (int): number of modes
-        hbar (float): value of hbar
+        hbar (float): value of ``hbar``
 
     Returns:
-        Matrix: vacuum covariance matrix
-        Vector: vacuum means vector
+        Matrix, Vector: thermal state covariance matrix or means vector
     """
     return displacement(
         math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar
@@ -59,16 +58,16 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
 
 def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a squeezed vacuum state.
-    The dimension depends on the dimensions of r and phi.
+
+    The dimension depends on the dimensions of ``r`` and ``phi``.
 
     Args:
         r (vector): squeezing magnitude
         phi (vector): squeezing angle
-        hbar: value of hbar
+        hbar: value of ``hbar``
 
     Returns:
-        Matrix: squeezed state covariance matrix
-        Vector: squeezed state means vector
+        Matrix, Vector: thermal state covariance matrix or means vector
     """
     S = squeezing_symplectic(r, phi)
     return math.matmul(S, math.transpose(S)) * hbar / 2
@@ -76,15 +75,15 @@ def squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
 
 def thermal_cov(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
     r"""Returns the real covariance matrix and real means vector of a thermal state.
-    The dimension depends on the dimensions of nbar.
+
+    The dimension depends on the dimensions of ``nbar``.
 
     Args:
         nbar (vector): average number of photons per mode
-        hbar: value of hbar
+        hbar: value of ``hbar``
 
     Returns:
-        Matrix: thermal state covariance matrix
-        Vector: thermal state means vector
+        Matrix, Vector: thermal state covariance matrix or means vector
     """
     g = (2 * math.atleast_1d(nbar) + 1) * hbar / 2
     return math.diag(math.concat([g, g], axis=-1))
@@ -92,7 +91,8 @@ def thermal_cov(nbar: Vector, hbar: float) -> Tuple[Matrix, Vector]:
 
 def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     r"""Returns the real covariance matrix and real means vector of a two-mode squeezed vacuum state.
-    The dimension depends on the dimensions of r and phi.
+
+    The dimension depends on the dimensions of ``r`` and ``phi``.
 
     Args:
         r (vector): squeezing magnitude
@@ -134,6 +134,7 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
 
 def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     r"""Symplectic matrix of a rotation gate.
+
     The dimension depends on the dimension of the angle.
 
     Args:
@@ -155,7 +156,8 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
 
 def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
     r"""Symplectic matrix of a squeezing gate.
-    The dimension depends on the dimension of r and phi.
+
+    The dimension depends on the dimension of ``r`` and ``phi``.
 
     Args:
         r (scalar or vector): squeezing magnitude
@@ -185,8 +187,8 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
 
 
 def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
-    r"""Returns the displacement vector for a displacement by alpha = x + iy.
-    The dimension depends on the dimensions of x and y.
+    r"""Returns the displacement vector for a displacement by :math:`alpha = x + iy`.
+    The dimension depends on the dimensions of ``x`` and ``y``.
 
     Args:
         x (scalar or vector): real part of displacement
@@ -207,6 +209,7 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
 
 def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a Beam-splitter gate.
+
     The dimension is :math:`4\times 4`.
 
     Args:
@@ -278,6 +281,7 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
 
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     r"""Symplectic matrix of a two-mode squeezing gate.
+
     The dimension is :math:`4\times 4`.
 
     Args:
@@ -315,7 +319,7 @@ def quadratic_phase(s: Scalar):
         s (float): interaction strength
 
     Returns:
-        the P(s) matrix (in xxpp ordering)
+        Tensor: the :math:`P(s)` matrix (in ``xxpp`` ordering)
     """
 
     return math.astensor(
@@ -394,8 +398,9 @@ def CPTP(
     state_modes: Sequence[int],
     transf_modes: Sequence[int],
 ) -> Tuple[Matrix, Vector]:
-    r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel, computed as ``cov = X \cdot cov \cdot X^T + Y``
-    and ``d = X \cdot means + d``.
+    r"""Returns the cov matrix and means vector of a state after undergoing a CPTP channel.
+
+    Computed as ``cov = X \cdot cov \cdot X^T + Y`` and ``d = X \cdot means + d``.
 
     If the channel is single-mode, ``modes`` can contain ``M`` modes to apply the channel to,
     otherwise it must contain as many modes as the number of modes in the channel.
@@ -438,7 +443,7 @@ def CPTP(
 def loss_XYd(
     transmissivity: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Tuple[Matrix, Matrix, None]:
-    r"""Returns the X, Y matrices and the d vector for the noisy loss (attenuator) channel:
+    r"""Returns the ``X``, ``Y`` matrices and the ``d`` vector for the noisy loss (attenuator) channel.
 
     .. math::
 
@@ -447,12 +452,13 @@ def loss_XYd(
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
-    Arguments:
+    Args:
         transmissivity (float): value of the transmissivity, must be between 0 and 1
         nbar (float): photon number expectation value in the environment (0 for pure loss channel)
 
     Returns:
-        Tuple[Matrix, Matrix, None]: the X,Y matrices and the d vector for the noisy loss channel
+        Tuple[Matrix, Matrix, None]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
+        loss channel
     """
     if math.any(transmissivity < 0) or math.any(transmissivity > 1):
         raise ValueError("transmissivity must be between 0 and 1")
@@ -466,15 +472,18 @@ def loss_XYd(
 def amp_XYd(
     amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the noisy amplifier channel.
-    The quantum limited amplifier channel is recovered for nbar = 0.0.
+    r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
 
-    Arguments:
+    The quantum limited amplifier channel is recovered for ``nbar = 0.0``.
+
+    Args:
         amplification (float): value of the amplification > 1
-        nbar (float): photon number expectation value in the environment (0 for quantum limited amplifier)
+        nbar (float): photon number expectation value in the environment (0 for quantum
+            limited amplifier)
 
     Returns:
-        Tuple[Matrix, Vector]: the X,Y matrices and the d vector for the noisy amplifier channel.
+        Tuple[Matrix, Vector]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
+        amplifier channel.
     """
     if math.any(amplification < 1):
         raise ValueError("Amplification must be larger than 1")
@@ -486,13 +495,13 @@ def amp_XYd(
 
 
 def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
-    r"""Returns the X,Y matrices and the d vector for the additive noise channel ``(Y = noise * (\hbar / 2) * I)``
+    r"""Returns the ``X``, ``Y`` matrices and the d vector for the additive noise channel ``(Y = noise * (\hbar / 2) * I)``
 
-    Arguments:
+    Args:
         noise (float): number of photons in the thermal state
 
     Returns:
-        Tuple[None, Matrix, None]: the X,Y matrices and the d vector of the noise channel.
+        Tuple[None, Matrix, None]: the ``X``, ``Y`` matrices and the ``d`` vector of the noise channel.
     """
     return math.diag(math.concat([noise, noise], axis=0)) * hbar / 2
 
@@ -500,18 +509,18 @@ def noise_Y(noise: Union[Scalar, Vector], hbar: float) -> Matrix:
 def compose_channels_XYd(
     X1: Matrix, Y1: Matrix, d1: Vector, X2: Matrix, Y2: Matrix, d2: Vector
 ) -> Tuple[Matrix, Matrix, Vector]:
-    r"""Returns the combined X, Y, and d for two CPTP channels.
+    r"""Returns the combined ``X``, ``Y``, and ``d`` for two CPTP channels.
 
     Args:
-        X1 (Matrix): the X matrix of the first CPTP channel
-        Y1 (Matrix): the Y matrix of the first CPTP channel
+        X1 (Matrix): the ``X`` matrix of the first CPTP channel
+        Y1 (Matrix): the ``Y`` matrix of the first CPTP channel
         d1 (Vector): the displacement vector of the first CPTP channel
-        X2 (Matrix): the X matrix of the second CPTP channel
-        Y2 (Matrix): the Y matrix of the second CPTP channel
+        X2 (Matrix): the ``X`` matrix of the second CPTP channel
+        Y2 (Matrix): the ``Y`` matrix of the second CPTP channel
         d2 (Vector): the displacement vector of the second CPTP channel
 
     Returns:
-        Tuple[Matrix, Matrix, Vector]: the combined X, Y, and d matrices
+        Tuple[Matrix, Matrix, Vector]: the combined ``X``, ``Y``, and ``d`` matrices
     """
     if X1 is None:
         X = X2
@@ -583,12 +592,12 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
     r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
     Args:
-        cov: The Wigner covariance matrix.
-        means: The Wigner means vector.
-        hbar: The value of the Planck constant.
+        cov: the Wigner covariance matrix
+        means: the Wigner means vector
+        hbar: the value of the Planck constant
 
     Returns:
-        The photon number means vector.
+        Vector: the photon number means vector
     """
     N = means.shape[-1] // 2
     return (
@@ -601,7 +610,7 @@ def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
 
 
 def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
-    r"""Returns the photon number covariance matrix given a Wigenr covariance matrix and a means vector.
+    r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
 
     Args:
         cov: the Wigner covariance matrix
@@ -609,7 +618,7 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
         hbar: the value of the Planck constant
 
     Returns:
-        the photon number covariance matrix
+        Matrix: the photon number covariance matrix
     """
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
@@ -636,7 +645,7 @@ def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
         hbar: the value of the Planck constant
 
     Returns:
-        a list of cutoff indices
+        List[int]: a list of cutoff indices
     """
     cutoffs = (
         number_means(cov, means, hbar)
@@ -666,14 +675,14 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
 
 
 def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
-    r"""Partitions the covariance matrix into the A and B subsystems and the AB coherence block.
+    r"""Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB coherence block.
 
     Args:
         cov (Matrix): the covariance matrix
-        Amodes (Sequence[int]): the modes of system A
+        Amodes (Sequence[int]): the modes of system ``A``
 
     Returns:
-        Tuple[Matrix, Matrix, Matrix]: the cov of A, the cov of B and the AB block
+        Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
     """
     N = cov.shape[-1] // 2
     Bindices = math.cast(
@@ -688,14 +697,14 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
 
 
 def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
-    r"""Partitions the means vector into the A and B subsystems.
+    r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
 
     Args:
         means (Vector): the means vector
-        Amodes (Sequence[int]): the modes of system A
+        Amodes (Sequence[int]): the modes of system ``A``
 
     Returns:
-        Tuple[Vector, Vector]: the means of A and the means of B
+        Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
     """
     N = len(means) // 2
     Bindices = math.cast(
@@ -719,12 +728,11 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
 
 
 def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
-    r"""
-    Returns the sympletic eigenspectrum of a covariance matrix.
+    r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
         hbar (float): the value of the Planck constant
 
@@ -748,7 +756,7 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
         cov (Matrix): the covariance matrix
 
     Returns:
-        float: the von neumann entropy
+        float: the Von Neumann entropy
     """
     symp_vals = sympletic_eigenvals(cov, hbar)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
@@ -809,18 +817,17 @@ def fidelity(
 
 
 def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
-    r"""
-    Returns the covariance matrix that corresponds to applying the partial
+    r"""Returns the covariance matrix that corresponds to applying the partial
     transposition on the density matrix of a given set of modes.
 
     Reference: `https://arxiv.org/abs/quant-ph/9909044 <https://arxiv.org/abs/quant-ph/9909044>`_, Equation 1, 5.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
         modes (Sequence[int]): the modes of system on which transposition is applied
 
     Returns:
-        (Matrix): the covariance matrix corresponding to the partially transposed state
+        Matrix: the covariance matrix corresponding to the partially transposed state
     """
     m, _ = cov.shape
     num_modes = m // 2
@@ -832,12 +839,11 @@ def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
 
 
 def log_negativity(cov: Matrix, hbar: float) -> float:
-    r"""
-    Returns the log_negativity of a Gaussian state.
+    r"""Returns the log_negativity of a Gaussian state.
 
     Reference: `https://arxiv.org/pdf/quant-ph/0102117.pdf <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_ , Equation 57, 61.
 
-    Arguments:
+    Args:
         cov (Matrix): the covariance matrix
 
     Returns:
@@ -912,12 +918,12 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     r"""Returns the dual channel ``(X, Y, d)``.
 
     Args:
-        X (Matrix): the X matrix
-        Y (Matrix): the Y noise matrix
+        X (Matrix): the ``X`` matrix
+        Y (Matrix): the ``Y`` noise matrix
         d (Vector): the displacement vector
 
     Returns:
-        (Matrix, Matrix, Vector): (X_dual, Y_dual, d_dual)
+        Tuple[Matrix, Matrix, Vector]: ``(X_dual, Y_dual, d_dual)``
     """
     X_dual = math.inv(X) if X is not None else None
     Y_dual = Y

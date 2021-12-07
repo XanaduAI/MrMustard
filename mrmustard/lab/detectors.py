@@ -196,9 +196,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
 
 class Heterodyne(Parametrized, State):
-    r"""
-    Heterodyne measurement on given modes.
-    """
+    r"""Heterodyne measurement on given modes."""
 
     def __new__(
         cls,
@@ -215,9 +213,7 @@ class Heterodyne(Parametrized, State):
 
 
 class Homodyne(Parametrized, State):
-    r"""
-    Heterodyne measurement on given modes.
-    """
+    r"""Heterodyne measurement on given modes."""
 
     def __new__(
         cls,

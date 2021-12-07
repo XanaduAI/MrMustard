@@ -44,8 +44,9 @@ class Vacuum(State):
 
 
 class Coherent(Parametrized, State):
-    r"""
-    The N-mode coherent state. Equivalent to applying a displacement to the vacuum state:
+    r"""The N-mode coherent state.
+
+    Equivalent to applying a displacement to the vacuum state:
 
     .. code-block::
 
@@ -108,8 +109,9 @@ class Coherent(Parametrized, State):
 
 
 class SqueezedVacuum(Parametrized, State):
-    r"""
-    The N-mode squeezed vacuum state. Equivalent to applying a squeezing gate to the vacuum state:
+    r"""The N-mode squeezed vacuum state.
+
+    Equivalent to applying a squeezing gate to the vacuum state:
 
     .. code::
 
@@ -171,8 +173,8 @@ class SqueezedVacuum(Parametrized, State):
 
 
 class TMSV(Parametrized, State):
-    r"""
-    The 2-mode squeezed vacuum state.
+    r"""The 2-mode squeezed vacuum state.
+
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
 
     .. code::
@@ -224,11 +226,15 @@ class TMSV(Parametrized, State):
 
 class Thermal(Parametrized, State):
     r"""The N-mode thermal state.
-    Equivalent to applying additive noise to the vacuum:
-    >>> Thermal(nbar=0.31) == Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
-    True
 
-    Parallelizable over nbar:
+    Equivalent to applying additive noise to the vacuum:
+
+    .. code::
+
+        >>> Thermal(nbar=0.31) == Vacuum(1) >> AdditiveNoise(0.62)  # i.e. 2*nbar + 1 (from vac) in total
+        True
+
+    Parallelizable over ``nbar``:
 
     .. code::
 
@@ -237,8 +243,8 @@ class Thermal(Parametrized, State):
 
     Args:
         nbar (float or List[float]): the expected number of photons in each mode
-        nbar_trainable (bool): whether the nbar is trainable
-        nbar_bounds (tuple): the bounds of the nbar
+        nbar_trainable (bool): whether the ``nbar`` is trainable
+        nbar_bounds (tuple): the bounds of the ``nbar``
         modes (list): the modes of the thermal state
         normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state
     """
@@ -269,18 +275,26 @@ class Thermal(Parametrized, State):
 
 
 class DisplacedSqueezed(Parametrized, State):
-    r"""
-    The N-mode displaced squeezed state.
-    Equivalent to applying a displacement to the squeezed vacuum state:
-    >>> DisplacedSqueezed(r=0.5, phi=0.2, x=0.3, y=-0.7) == SqueezedVacuum(r=0.5, phi=0.2) >> Dgate(x=0.3, y=-0.7)
-    True
+    r"""The N-mode displaced squeezed state.
 
-    Parallelizable over r, phi, x, y:
-    >>> DisplacedSqueezed(r=[0.1, 0.2], phi=[0.3, 0.4], x=[0.5, 0.6], y=[0.7, 0.8]) == DisplacedSqueezed(r=0.1, phi=0.3, x=0.5, y=0.7) & DisplacedSqueezed(r=0.2, phi=0.4, x=0.6, y=0.8)
-    True
+    Equivalent to applying a displacement to the squeezed vacuum state:
+
+    .. code::
+
+        >>> DisplacedSqueezed(r=0.5, phi=0.2, x=0.3, y=-0.7) == SqueezedVacuum(r=0.5, phi=0.2) >> Dgate(x=0.3, y=-0.7)
+        True
+
+    Parallelizable over ``r``, ``phi``, ``x``, ``y``:
+
+    .. code::
+
+        >>> DisplacedSqueezed(r=[0.1, 0.2], phi=[0.3, 0.4], x=[0.5, 0.6], y=[0.7, 0.8]) == DisplacedSqueezed(r=0.1, phi=0.3, x=0.5, y=0.7) & DisplacedSqueezed(r=0.2, phi=0.4, x=0.6, y=0.8)
+        True
 
     Can be used to model homodyne detection:
+
     .. code::
+
       >>> Gaussian(2) << DisplacedSqueezed(r=10, phi=np.pi, y=0.3)[1]  # e.g. homodyne on mode 1, p quadrature, result 0.3
       # leftover state on mode 0
 
@@ -349,18 +363,22 @@ class DisplacedSqueezed(Parametrized, State):
 
 
 class Gaussian(Parametrized, State):
-    r"""
-    The N-mode Gaussian state is parametrized by a symplectic matrix and N symplectic eigenvalues.
+    r"""The N-mode Gaussian state parametrized by a symplectic matrix and N symplectic eigenvalues.
+
     The (mixed) Gaussian state is equivalent to applying a Gaussian symplectic transformation to a Thermal state:
-    >>> G = Gaussian(num_modes=1, eigenvalues = np.random.uniform(settings.HBAR/2, 10.0))
-    >>> G == Thermal(nbar=(G.eigenvalues*2/settings.HBAR  - 1)/2) >> Ggate(1, symplectic=G.symplectic)
-    True
+
+    .. code::
+
+        >>> G = Gaussian(num_modes=1, eigenvalues = np.random.uniform(settings.HBAR/2, 10.0))
+        >>> G == Thermal(nbar=(G.eigenvalues*2/settings.HBAR  - 1)/2) >> Ggate(1, symplectic=G.symplectic)
+        True
 
     Note that the 1st moments are zero unless a Dgate is applied to the Gaussian state:
 
     .. code::
-      >>> np.allclose(Gaussian(num_modes=1).means, 0.0)
-      True
+
+        >>> np.allclose(Gaussian(num_modes=1).means, 0.0)
+        True
 
     Args:
         num_modes (int): the number of modes
@@ -424,13 +442,13 @@ class Gaussian(Parametrized, State):
 
 
 class Fock(Parametrized, State):
-    r"""
-    The N-mode Fock state.
+    r"""The N-mode Fock state.
 
     Args:
         n (int or List[int]): the number of photons in each mode
-        modes (optional, List[int]): the modes of the Fock state.
-        normalize (bool, default True): when projecting onto Fock, whether to normalize the leftover state.
+        modes (optional, List[int]): the modes of the Fock state
+        normalize (bool, default True): when projecting onto Fock, whether to normalize the
+            leftover state
     """
 
     def __init__(self, n: Sequence[int], modes: Sequence[int] = None, normalize: bool = True):
@@ -440,13 +458,14 @@ class Fock(Parametrized, State):
         )
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
-        r"""
-        Preferred method to perform a projection onto this state (rather than the default one).
-        E.g. ket << Fock(1, modes=[3]) is equivalent to ket[:,:,:,1] if ket has 4 modes
-        E.g. dm << Fock(1, modes=[1]) is equivalent to dm[:,1,:,1] if dm has 2 modes
+        r"""Preferred method to perform a projection onto this state (rather than the default one).
+
+        E.g. ``ket << Fock(1, modes=[3])`` is equivalent to ``ket[:,:,:,1]`` if ``ket`` has 4 modes
+        E.g. ``dm << Fock(1, modes=[1])`` is equivalent to ``dm[:,1,:,1]`` if ``dm`` has 2 modes
+
         Args:
-            other: The state to project onto this state.
-            mode_indices: The indices of the modes of other that we want to project onto self.
+            other: the state to project onto this state
+            mode_indices: the indices of the modes of other that we want to project onto self
         """
         getitem = []
         used = 0

@@ -93,10 +93,9 @@ class State:
         return self._modes
 
     def indices(self, modes) -> Union[Tuple[int], int]:
-        r"""
-        Returns the indices of the given modes.
+        r"""Returns the indices of the given modes.
 
-        Arguments:
+        Args:
             modes (Sequence[int] or int): the modes or mode
 
         Returns:
@@ -123,7 +122,7 @@ class State:
 
     @property
     def is_pure(self):
-        r"""Returns `True` if the state is pure and `False` otherwise."""
+        r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
         return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
@@ -200,11 +199,11 @@ class State:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
 
     def ket(self, cutoffs: Sequence[Optional[int]]) -> Optional[Tensor]:
-        r"""Returns the ket of the state in Fock representation or `None` if the state is mixed.
+        r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
         Args:
-            cutoffs List[int or None]: the cutoff dimensions for each mode. If a mode cutoff is None,
-            it's guessed automatically.
+            cutoffs List[int or None]: The cutoff dimensions for each mode. If a mode cutoff is
+                ``None``, it's guessed automatically.
 
         Returns:
             Tensor: the ket
@@ -237,8 +236,8 @@ class State:
         r"""Returns the density matrix of the state in Fock representation.
 
         Args:
-            cutoffs List[int]: The cutoff dimensions for each mode. If a mode cutoff is None,
-            it's automatically computed.
+            cutoffs List[int]: The cutoff dimensions for each mode. If a mode cutoff is ``None``,
+                it's automatically computed.
 
         Returns:
             Tensor: the density matrix
@@ -287,12 +286,12 @@ class State:
         return self._fock_probabilities
 
     def primal(self, other: Union[State, Transformation]) -> State:
-        r"""
-        Returns the post-measurement state after `other` is projected onto `self`:
-        other >> self is other projected onto self.
+        r"""Returns the post-measurement state after ``other`` is projected onto ``self``.
 
-        If ``other`` is a ``Transformation``, it returns the dual of the transformation applied to ``self``:
-        ``other << self`` is like ``self >> other^dual``.
+        ``other >> self`` is other projected onto ``self``.
+
+        If ``other`` is a ``Transformation``, it returns the dual of the transformation applied to
+        ``self``: ``other << self`` is like ``self >> other^dual``.
 
         Note that the returned state is not normalized unless the state has attribute ``_normalize`` set.
         """
@@ -432,10 +431,9 @@ class State:
         return other.primal(self)
 
     def __lshift__(self, other: State):
-        r"""
-        Implements projection onto a state or the dual transformation applied on a state.
+        r"""Implements projection onto a state or the dual transformation applied on a state.
 
-        e.g., ``self << other`` where other is a ``State`` and ``self`` is either a ``State`` or a ``Transformation``.
+        E.g., ``self << other`` where other is a ``State`` and ``self`` is either a ``State`` or a ``Transformation``.
         """
         return other.primal(self)
 
@@ -447,9 +445,9 @@ class State:
         return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
     def __rmul__(self, other):
-        r"""
-        Implements multiplication by a scalar from the left.
-        e.g. 0.5 * psi
+        r"""Implements multiplication by a scalar from the left.
+
+        E.g., ``0.5 * psi``.
         """
         if state.is_gaussian:
             warnings.warn(
@@ -464,9 +462,9 @@ class State:
             raise ValueError("No fock representation available")
 
     def __truediv__(self, other):
-        r"""
-        Implements division by a scalar from the left.
-        e.g. psi / 0.5
+        r"""Implements division by a scalar from the left.
+
+        E.g. ``psi / 0.5``
         """
         if state.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)

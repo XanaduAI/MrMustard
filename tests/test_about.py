@@ -23,16 +23,14 @@ import mrmustard as mm
 
 
 def test_about():
-    """
-    about: Tests if the about string prints correctly.
-    """
+    """Tests if the about string prints correctly."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
         mm.about()
     out = f.getvalue().strip()
 
     assert "Python version:" in out
-    pl_version_match = re.search(r"Mr. Mustard version:\s+([\S]+)\n", out).group(1)
+    pl_version_match = re.search(r"Mr Mustard version:\s+([\S]+)\n", out).group(1)
     assert mm.version() in pl_version_match
     assert "Numpy version" in out
     assert "Scipy version" in out

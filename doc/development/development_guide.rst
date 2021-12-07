@@ -26,7 +26,7 @@ of Python packaged for scientific computation.
 Installation
 ------------
 
-For development purposes, it is recommended to install the Mr. Mustard source code
+For development purposes, it is recommended to install the Mr Mustard source code
 using development mode:
 
 .. code-block:: bash
@@ -42,7 +42,7 @@ importing Mr Mustard in Python.
 PyTorch support
 ------------------
 
-To use Mr. Mustard with PyTorch using CPU, install it as follows:
+To use Mr Mustard with PyTorch using CPU, install it as follows:
 
 .. code-block:: console
 
@@ -65,7 +65,7 @@ Refer to `PyTorch <https://pytorch.org/get-started/locally/>`_ project webpage f
 Development environment
 -----------------------
 
-Mr. Mustard uses a ``pytest`` suite for testing and ``black`` for formatting. These
+Mr Mustard uses a ``pytest`` suite for testing and ``black`` for formatting. These
 dependencies can be installed via ``pip``:
 
 .. code-block:: bash
@@ -75,11 +75,11 @@ dependencies can be installed via ``pip``:
 Software tests
 --------------
 
-The Mr. Mustard test suite includes `pytest <https://docs.pytest.org/en/latest/>`_,
+The Mr Mustard test suite includes `pytest <https://docs.pytest.org/en/latest/>`_,
 `pytest-cov <https://pytest-cov.readthedocs.io/en/latest/>`_ for coverage reports and
 `hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_ for property-based testing.
 
-To ensure that Mr. Mustard is working correctly after installation, the test suite
+To ensure that Mr Mustard is working correctly after installation, the test suite
 can be run by navigating to the source code folder and running
 
 .. code-block:: bash
@@ -92,7 +92,7 @@ Individual test modules are run by invoking pytest directly from the command lin
 
     pytest tests/test_fidelity.py
 
-.. note:: **Run options for Mr. Mustard tests**
+.. note:: **Run options for Mr Mustard tests**
 
     When running tests, it can be useful to examine a single failing test.
     The following command stops at the first failing test:
@@ -140,7 +140,7 @@ filtering out certain tests:
     pytest tests/test_fidelity.py --cov --cov-report=term-missing -k 'not test_fidelity_coherent_state'
 
 Passing the ``--cov`` option without any modules specified will generate a
-coverage report for all modules of Mr. Mustard.
+coverage report for all modules of Mr Mustard.
 
 Format and code style
 ---------------------
@@ -210,7 +210,7 @@ Before submitting a pull request, please make sure the following is done:
 
 * **Make sure the modified code in the pull request conforms to the PEP8 coding standard.**
 
-  Mr. Mustard's source code conforms to `PEP8 standards <https://www.python.org/dev/peps/pep-0008/>`_.
+  Mr Mustard's source code conforms to `PEP8 standards <https://www.python.org/dev/peps/pep-0008/>`_.
   Before submitting the PR, you can autoformat your code changes using the
   `Black <https://github.com/psf/black>`_ Python autoformatter, with max-line length set to 120:
 
@@ -228,7 +228,7 @@ Before submitting a pull request, please make sure the following is done:
 
 
 When ready, submit your fork as a `pull request <https://help.github.com/articles/about-pull-requests>`_
-to the Mr. Mustard repository, filling out the pull request template. This template is added
+to the Mr Mustard repository, filling out the pull request template. This template is added
 automatically to the comment box when you create a new issue.
 
 * When describing the pull request, please include as much detail as possible
@@ -243,7 +243,7 @@ automatically to the comment box when you create a new issue.
 
   - Once the test suite is finished, a **code coverage report** will be generated on
     `Codecov <https://codecov.io/gh/XanaduAI/MrMustard>`_. This will calculate the percentage
-    of Mr. Mustard covered by the test suite, to ensure that all new code additions
+    of Mr Mustard covered by the test suite, to ensure that all new code additions
     are adequately tested.
 
   - Finally, the **code quality** is calculated by

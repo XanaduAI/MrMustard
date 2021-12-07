@@ -13,7 +13,7 @@
 # limitations under the License.
 
 r"""
-The :code:``math`` module contains low-level functions for performing mathematical operations.
+The ``math`` module contains low-level functions for performing mathematical operations.
 
 It is recommended that users access the backends using the an instance of the :class:`Math` class rather than the backends themselves.
 
