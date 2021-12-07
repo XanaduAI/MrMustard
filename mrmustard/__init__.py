@@ -6,6 +6,7 @@ from ._version import __version__
 
 
 class Settings:
+    """Settings class."""
 
     def __init__(self):
         self._backend = "tensorflow"
@@ -36,6 +37,8 @@ class Settings:
 
 
 settings = Settings()
+""":meta hide-value:"""
+
 settings.backend = "tensorflow"
 
 
