@@ -84,7 +84,7 @@ cat >> Sgate(0.5)  # squeezed cat
 
 Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
 ```python
-displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> D(x=1.0)
+displaced_squeezed = Vacuum(1) >> Sgate(r=0.5) >> Dgate(x=1.0)
 ```
 
 If you want to apply a gate to specific modes, use the `getitem` format. Here are a few examples:
@@ -106,10 +106,10 @@ output = Vacuum(4) >> X8
 
 # lossy X8
 noise = lambda: np.random.uniform(size=4)
-X8_realistic = (Sgate(r=0.9 + 0.1*noise, phi=0.1*noise)
-                >> Attenuator(0.89 + 0.01*noise)
+X8_realistic = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
+                >> Attenuator(0.89 + 0.01*noise())
                 >> Interferometer(4)
-                >> Attenuator(0.95 + 0.01*noise)
+                >> Attenuator(0.95 + 0.01*noise())
                )
 
 # 2-mode Bloch Messiah decomposition
@@ -125,8 +125,7 @@ leftover = Vacuum(4) >> X8 << SqueezedVacuum(r=10.0, phi=np.pi)[2]  # a homodyne
 
 Transformations can also be applied in the dual sense by using the left-shift operator `<<`:
 ```python
-lossy_444 = Attenuator(0.8)[0,1,2] << Fock([4,4,4])  # lossy detection of 4 photons in modes 0, 1 and 2.
-leftover = Vacuum(4) >> X8 << lossy_444  # measuring 4 photons in modes 0,1,2 with a lossy pnr detector
+Attenuator(0.5) << Coherent(0.1, 0.2) == Coherent(0.1, 0.2) >> Amplifier(2.0)
 ```
 This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
 
