@@ -93,7 +93,7 @@ class FockMeasurement(ABC):
         indicate the Fock measurement on that mode and ``None`` indicates no projection on that mode.
 
         Returns:
-            Tuple[State, Tensor]: the measurement probability and the renormalized state 
+            Tuple[State, Tensor]: the measurement probability and the renormalized state
             (in the Fock basis) in the unmeasured modes
         """
         if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):

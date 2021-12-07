@@ -208,7 +208,7 @@ class Transformation:
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
         r"""
         Returns the (X, Y, d) triple of the dual of the current transformation.
-        
+
         Override in subclasses if computing `Xdual`, `Ydual` and `ddual` together is more efficient.
         """
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
@@ -256,7 +256,7 @@ class Transformation:
     def __getitem__(self, items) -> Callable:
         r"""
         Sets the modes on which the transformation acts.
-        
+
         Allows transformations to be used as: `output = transf[0,1](input)`  e.g. acting on modes 0 and 1.
         """
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.

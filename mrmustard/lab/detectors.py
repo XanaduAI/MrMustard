@@ -220,7 +220,7 @@ class Homodyne(Parametrized, GaussianMeasurement):
 
 class Heterodyne(Parametrized, GaussianMeasurement):
     r"""Heterodyne measurement on a given mode.
-    
+
     Args:
         mode: modes of the measurement
         x: x-coordinates of the measurement

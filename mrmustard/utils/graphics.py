@@ -65,7 +65,7 @@ class Progressbar:
 def plot_wigner(rho, xvec, pvec, hbar):
     r"""Calculates the discretized Wigner function of the specified mode.
 
-    Lifted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`_ 
+    Lifted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`_
 
     Args:
         rho (complex array): the state in Fock representation (can be pure or mixed)

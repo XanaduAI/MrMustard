@@ -24,8 +24,8 @@ math = Math()
 class Parametrized:
     r"""Abstract base class for all parametrized objects (gates, detectors, etc.)
 
-    For each trainable parameter keyword arguments must be passed for the initial value 
-    ``xxx`` (tensor), the numerical bounds ``xxx_bounds`` (float, float), whether the 
+    For each trainable parameter keyword arguments must be passed for the initial value
+    ``xxx`` (tensor), the numerical bounds ``xxx_bounds`` (float, float), whether the
     parameter ``xxx`` will be optimized ``xxx_trainable`` (bool), along with any other parameters.
         xxx_trainable (bool): whether the parameter `xxx` will be optimized
         yyy (any): other parameters

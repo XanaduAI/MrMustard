@@ -721,13 +721,13 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
 def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
     r"""
     Returns the sympletic eigenspectrum of a covariance matrix.
-    
+
     For a pure state, we expect the sympletic eigenvalues to be 1.
-    
+
     Arguments:
         cov (Matrix): the covariance matrix
         hbar (float): the value of the Planck constant
-        
+
     Returns:
         List[float]: the sympletic eigenvalues
     """
@@ -739,7 +739,7 @@ def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
 
 def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     r"""Returns the Von Neumann entropy.
-    
+
     For a pure state, we expect the Von Neumann entropy to be 0.
 
     Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
@@ -812,13 +812,13 @@ def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
     r"""
     Returns the covariance matrix that corresponds to applying the partial
     transposition on the density matrix of a given set of modes.
-    
+
     Reference: `https://arxiv.org/abs/quant-ph/9909044 <https://arxiv.org/abs/quant-ph/9909044>`_, Equation 1, 5.
-    
+
     Arguments:
         cov (Matrix): the covariance matrix
         modes (Sequence[int]): the modes of system on which transposition is applied
-        
+
     Returns:
         (Matrix): the covariance matrix corresponding to the partially transposed state
     """
@@ -834,9 +834,9 @@ def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
 def log_negativity(cov: Matrix, hbar: float) -> float:
     r"""
     Returns the log_negativity of a Gaussian state.
-    
+
     Reference: `https://arxiv.org/pdf/quant-ph/0102117.pdf <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_ , Equation 57, 61.
-    
+
     Arguments:
         cov (Matrix): the covariance matrix
 
