@@ -69,6 +69,13 @@ cat = State(ket=cat_amps)
 ```
 <img width="538" alt="Screen Shot 2021-12-06 at 8 27 06 PM" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
 
+States (even those in Fock representation) are always compatible with gates:
+```python
+cat >> Sgate(0.5)  # squeezed cat
+```
+<img width="479" alt="Screen Shot 2021-12-07 at 2 03 14 PM" src="https://user-images.githubusercontent.com/8944955/145090219-298ca2ab-92e9-4ac2-beab-33ee33770fb2.png">
+
+
 
 
 ## 2. Gates
