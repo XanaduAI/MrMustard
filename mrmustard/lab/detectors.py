@@ -17,7 +17,9 @@ from mrmustard.types import *
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement
 from mrmustard.physics import fock, gaussian
-from mrmustard.math import Math; math = Math()
+from mrmustard.math import Math
+
+math = Math()
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
 
@@ -75,16 +77,19 @@ class PNRDetector(Parametrized, FockMeasurement):
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         if cutoffs is None:
-            cutoffs = [settings.PNR_INTERNAL_CUTOFF]*len(self._modes)
+            cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
         self._internal_stochastic_channel = []
         if self._stochastic_channel is not None:
             self._internal_stochastic_channel = self._stochastic_channel
         else:
-            for c, qe, dc in zip(cutoffs, math.atleast_1d(self.efficiency)[:], math.atleast_1d(self.dark_counts)[:]):
+            for c, qe, dc in zip(
+                cutoffs, math.atleast_1d(self.efficiency)[:], math.atleast_1d(self.dark_counts)[:]
+            ):
                 dark_prior = fock.math.poisson(max_k=c, rate=dc)
                 condprob = fock.math.binomial_conditional_prob(success_prob=qe, dim_in=c, dim_out=c)
-                self._internal_stochastic_channel.append(fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(c)[0]]))
-
+                self._internal_stochastic_channel.append(
+                    fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(c)[0]])
+                )
 
 
 class ThresholdDetector(Parametrized, FockMeasurement):
@@ -96,10 +101,9 @@ class ThresholdDetector(Parametrized, FockMeasurement):
     It can be supplied the full conditional detection probabilities, or it will compute them from
     the quantum efficiency (binomial) and the dark count probability (bernoulli).
     Arguments:
-        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
         efficiency (float or List[float]): list of quantum efficiencies for each detector
         dark_count_prob (float or List[float]): list of dark count probabilities for each detector
-        max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
+        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
     """
 
     def __init__(
@@ -113,7 +117,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         conditional_probs=None,
         modes: List[int] = None,
     ):
-
+        num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_count_prob)))
         Parametrized.__init__(
             self,
             efficiency=efficiency,
@@ -122,63 +126,71 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             dark_count_prob_trainable=dark_count_prob_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
-            conditional_probs=conditional_probs,
-            modes=modes,
+            stochastic_channel=stochastic_channel,
+            modes=modes or list(range(num_modes)),
         )
 
         self.recompute_stochastic_channel()
 
     def should_recompute_stochastic_channel(self):
-        return self.efficiency_trainable or self.dark_counts_trainable
+        return self.efficiency_trainable or self.dark_count_prob_trainable
 
-    def recompute_stochastic_channel(self):
-        self._stochastic_channel = []
+    def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+        if cutoffs is None:
+            cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
+        self._internal_stochastic_channel = []
         if self._conditional_probs is not None:
-            self._stochastic_channel = self.conditional_probs
+            self._internal_stochastic_channel = self.conditional_probs
         else:
-            for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_count_prob[:]):
+            for cut, qe, dc in zip(
+                cutoffs,
+                math.atleast_1d(self.efficiency)[:],
+                math.atleast_1d(self.dark_count_prob)[:],
+            ):
                 row1 = ((1.0 - qe) ** fock.math.arange(cut))[None, :] - dc
                 row2 = 1.0 - row1
                 rest = fock.math.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = fock.math.concat([row1, row2, rest], axis=0)
-                self._stochastic_channel.append(condprob)
-
-    @property
-    def stochastic_channel(self) -> List[Matrix]:
-        if self._stochastic_channel is None:
-            self._stochastic_channel = fock.stochastic_channel()
-        return self._stochastic_channel
-
-
-class Homodyne(Parametrized, State):
-    r"""
-    Heterodyne measurement on given modes.
-    """
-    def __new__(cls,
-            quadrature_angles: Union[float, List[float]],
-            results: Union[float, List[float]] = 1.0,
-            modes: List[int] = None):
-        quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype="float64")
-        results = gaussian.math.astensor(results, dtype="float64")
-        x = results * gaussian.math.cos(quadrature_angles)
-        y = results * gaussian.math.sin(quadrature_angles)
-        instance = DisplacedSqueezed(r=settings.HOMODYNE_SQUEEZING, phi=2*quadrature_angles, x=x, y=y)
-        instance.__class__ = cls
-        return instance
-
-    def __init__(self, *args, **kwargs):
-        pass
+                self._internal_stochastic_channel.append(condprob)
 
 
 class Heterodyne(Parametrized, State):
     r"""
     Heterodyne measurement on given modes.
     """
-    def __new__(cls,
-            x: Union[float, List[float]] = 0.0,
-            y: Union[float, List[float]] = 0.0,
-            modes: List[int] = None):
+
+    def __new__(
+        cls,
+        x: Union[float, List[float]] = 0.0,
+        y: Union[float, List[float]] = 0.0,
+        modes: List[int] = None,
+    ):
         instance = Coherent(x=x, y=y, modes=modes)
+        instance.__class__ = cls  # NOTE: naughty
+        return instance
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class Homodyne(Parametrized, State):
+    r"""
+    Heterodyne measurement on given modes.
+    """
+
+    def __new__(
+        cls,
+        quadrature_angles: Union[float, List[float]],
+        results: Union[float, List[float]] = 1.0,
+        modes: List[int] = None,
+    ):
+        quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype="float64")
+        results = gaussian.math.astensor(results, dtype="float64")
+        x = results * gaussian.math.cos(quadrature_angles)
+        y = results * gaussian.math.sin(quadrature_angles)
+        instance = DisplacedSqueezed(
+            r=settings.HOMODYNE_SQUEEZING, phi=2 * quadrature_angles, x=x, y=y
+        )
         instance.__class__ = cls
         return instance
 

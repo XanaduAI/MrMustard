@@ -14,7 +14,9 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from mrmustard.math import Math; math = Math()
+from mrmustard.math import Math
+
+math = Math()
 from mrmustard.physics import fock
 from mrmustard.lab.abstract.state import State
 from mrmustard.types import *
@@ -38,7 +40,9 @@ class FockMeasurement(ABC):
         The first N indices of the returned tensor correspond to the Fock measurements of the N modes that
         the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
         """
-        if self.should_recompute_stochastic_channel or math.any(state.cutoffs > settings.PNR_INTERNAL_CUTOFF):
+        if self.should_recompute_stochastic_channel or math.any(
+            state.cutoffs > settings.PNR_INTERNAL_CUTOFF
+        ):
             self.recompute_stochastic_channel(state.cutoffs)
         dm = state.dm()
         for k, (mode, stoch) in enumerate(zip(self._modes, self._internal_stochastic_channel)):
@@ -48,9 +52,13 @@ class FockMeasurement(ABC):
             dm = math.transpose(dm, perm)
             # compute sum_m P(meas|m)rho_mm
             dm = math.diag_part(dm)
-            dm = math.tensordot(stoch[:dm.shape[-1], :dm.shape[-1]], dm, [[1], [-1]])
+            dm = math.tensordot(stoch[: dm.shape[-1], : dm.shape[-1]], dm, [[1], [-1]])
         # put back the last len(self.modes) modes at the beginning
-        return math.transpose(dm, list(range(dm.ndim - len(self._modes), dm.ndim)) + list(range(dm.ndim - len(self._modes))))
+        return math.transpose(
+            dm,
+            list(range(dm.ndim - len(self._modes), dm.ndim))
+            + list(range(dm.ndim - len(self._modes))),
+        )
 
     def should_recompute_stochastic_channel(self) -> bool:  # override in subclasses
         return False
