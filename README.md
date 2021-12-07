@@ -122,14 +122,34 @@ leftover = Vacuum(4) >> X8 << lossy_444  # measuring 4 photons in modes 0,1,2 wi
 This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
 
 ## 5. Detectors
-FILL IN
+There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is a generaldyne measurement).
+
+The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
+```
+results = Gaussian(2) << PNRDetector(efficiency = 0.9, modes = [0])
+results[0]  # unnormalized dm of mode 1 conditioned on measuring 0 in mode 0
+results[1]  # unnormalized dm of mode 1 conditioned on measuring 1 in mode 0
+results[2]  # unnormalized dm of mode 1 conditioned on measuring 2 in mode 0
+# etc...
+```
+The trace of the leftover density matrices will yield the success probability. If multiple modes are measured then there is a corresponding number of indices:
+```
+results = Gaussian(3) << PNRDetector(efficiency = [0.9, 0.8], modes = [0,1])
+results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 and 3 in mode 1
+# etc...
+```
 
 ## 6. Equality check
-States, Gates and Circuits support equality checking:
+States support equality checking:
 ```python
-bunched = (Coherent(1.0) & Coherent(1.0)) >> BSgate(np.pi/4)
-bunched.get_modes(1) == Coherent(np.sqrt(2.0))
->>> True
+>>> bunched = (Coherent(1.0) & Coherent(1.0)) >> BSgate(np.pi/4)
+>>> bunched.get_modes(1) == Coherent(np.sqrt(2.0))
+True
+```
+As well as transformations (gates and circuits):
+```python
+>>> Dgate(np.sqrt(2)) >> Attenuator(0.5) == Attenuator(0.5) >> Dgate(1.0)
+True
 ```
 
 ## 7. State operations and properties
@@ -211,14 +231,14 @@ def cost_fn_eucl():
     state_out = Vacuum(1) >> D >> L
     return 1 - fidelity(state_out, Coherent(0.1, 0.5))
 
-G = Ggate(symplectic_trainable=True)
+G = Ggate(num_modes=1, symplectic_trainable=True)
 def cost_fn_sympl():
     state_out = Vacuum(1) >> G >> D >> L
-    return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=-0.1, y=0.1))
+    return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=0.4, y=-0.2))
 
-opt = Optimizer()
+opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
 opt.minimize(cost_fn_eucl, by_optimizing=[D])  # using Adam for D and the symplectic opt for G
 
-opt = Optimizer()
+opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
 opt.minimize(cost_fn_sympl, by_optimizing=[G,D])  # using Adam for D and the symplectic opt for G
 ```
