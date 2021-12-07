@@ -753,25 +753,44 @@ def fidelity(
     return math.cast(fidelity, "float64")
 
 
+def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
+    r"""
+    Returns the covariance matrix that corresponds to applying the partial
+    transposition on the density matrix of a given set of modes
+    Reference: https://arxiv.org/abs/quant-ph/9909044, Equation 1, 5.
+    Arguments:
+        cov (Matrix): the covariance matrix
+        modes (Sequence[int]): the modes of system on which transposition is applied
+    Returns:
+        (Matrix): the covariance matrix corresponding to the partially transposed state
+
+
+    """
+    m, _ = cov.shape
+    num_modes = m // 2
+    mat = [1.0] * m
+    for i in modes:
+        mat[i + num_modes] = -1.0
+    mat = math.astensor(mat, dtype="float64")
+    return cov * mat[:, None] * mat[None, :]
+
+
 def log_negativity(cov: Matrix, hbar: float) -> float:
     r"""
     Returns the log_negativity of a Gaussian state.
-
     Reference: https://arxiv.org/pdf/quant-ph/0102117.pdf, Equation 57, 61.
-
     Arguments:
         cov (Matrix): the covariance matrix
     Returns:
         float: the log-negativity
     """
-    vals = sympletic_eigenvals(cov, hbar)
-
+    vals = sympletic_eigenvals(cov, hbar) / (hbar / 2)
     vals_filtered = math.boolean_mask(
-        vals, vals < settings.HBAR / 2 - 1e-9
+        vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.
     if len(vals_filtered) > 0:
         return -math.sum(
-            math.log(2.0 * vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
+            math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
         )
     else:
         return 0

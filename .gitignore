@@ -16,5 +16,5 @@ __pycache__/
 .hypothesis/
 doc/_build
 docs/code/api/*
-
-
+coverage.xml
+.coverage
