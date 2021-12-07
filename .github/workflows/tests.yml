@@ -24,8 +24,8 @@ jobs:
           pip install dist/*.whl
           export HYPOTHESIS_PROFILE=ci
       - name: Run tests
-        run: python -m pytest tests --cov=mrmustard --cov-report=term-missing -p no:warnings --tb=native
+        run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          file: ./.coverage
+          file: ./coverage.xml
