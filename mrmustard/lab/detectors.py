@@ -15,11 +15,13 @@
 
 from mrmustard.types import *
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard.lab.abstract import State, FockMeasurement, GaussianMeasurement
+from mrmustard.lab.abstract import State, FockMeasurement
 from mrmustard.physics import fock, gaussian
+from mrmustard.math import Math; math = Math()
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
+from mrmustard import settings
 
-__all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne", "Generaldyne"]
+__all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 
 
 class PNRDetector(Parametrized, FockMeasurement):
@@ -38,7 +40,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         dark_counts_trainable (bool): whether the dark counts are trainable
         dark_counts_bounds (Tuple[float, float]): bounds for the dark counts
         max_cutoffs (int or List[int]): largest Fock space cutoffs that the detector should expect
-        conditional_probs (Optional 2d array): if supplied, these probabilities will be used for belief propagation
+        stochastic_channel (Optional 2d array): if supplied, this stochastic_channel will be used for belief propagation
         modes (Optional List[int]): list of modes to apply the detector to
     """
 
@@ -50,17 +52,10 @@ class PNRDetector(Parametrized, FockMeasurement):
         dark_counts_trainable: bool = False,
         efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        max_cutoffs: Union[int, List[int]] = 50,  # TODO: make this a parameter in mm.settings
-        conditional_probs=None,
+        stochastic_channel: Matrix = None,
         modes: List[int] = None,
     ):
-        if not isinstance(max_cutoffs, Sequence):
-            max_cutoffs = [max_cutoffs for m in modes]
-        if not isinstance(efficiency, Sequence):
-            efficiency = [efficiency for m in modes]
-        if not isinstance(dark_counts, Sequence):
-            dark_counts = [dark_counts for m in modes]
-
+        num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
         Parametrized.__init__(
             self,
             efficiency=efficiency,
@@ -69,28 +64,26 @@ class PNRDetector(Parametrized, FockMeasurement):
             dark_counts_trainable=dark_counts_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
-            max_cutoffs=max_cutoffs,
-            conditional_probs=conditional_probs,
-            modes=modes,
+            stochastic_channel=stochastic_channel,
+            modes=modes or list(range(num_modes)),
         )
 
         self.recompute_stochastic_channel()
 
-    def recompute_stochastic_channel(self):
-        self._stochastic_channel = []
-        if self._conditional_probs is not None:
-            self._stochastic_channel = self._conditional_probs
+    def should_recompute_stochastic_channel(self):
+        return self.efficiency_trainable or self.dark_counts_trainable
+
+    def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+        if cutoffs is None:
+            cutoffs = [settings.PNR_INTERNAL_CUTOFF]*len(self._modes)
+        self._internal_stochastic_channel = []
+        if self._stochastic_channel is not None:
+            self._internal_stochastic_channel = self._stochastic_channel
         else:
-            for cut, qe, dc in zip(self._max_cutoffs, self.efficiency[:], self.dark_counts[:]):
-                dark_prior = fock.math.poisson(max_k=cut, rate=dc)
-                condprob = fock.math.binomial_conditional_prob(
-                    success_prob=qe, dim_in=cut, dim_out=cut
-                )
-                self._stochastic_channel.append(
-                    fock.math.convolve_probs_1d(
-                        condprob, [dark_prior, fock.math.eye(condprob.shape[1])[0]]
-                    )
-                )
+            for c, qe, dc in zip(cutoffs, math.atleast_1d(self.efficiency)[:], math.atleast_1d(self.dark_counts)[:]):
+                dark_prior = fock.math.poisson(max_k=c, rate=dc)
+                condprob = fock.math.binomial_conditional_prob(success_prob=qe, dim_in=c, dim_out=c)
+                self._internal_stochastic_channel.append(fock.math.convolve_probs_1d(condprob, [dark_prior, fock.math.eye(c)[0]]))
 
 
 
@@ -111,37 +104,32 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
     def __init__(
         self,
-        modes: List[int],
-        conditional_probs=None,
         efficiency: Union[float, List[float]] = 1.0,
         dark_count_prob: Union[float, List[float]] = 0.0,
         efficiency_trainable: bool = False,
         dark_count_prob_trainable: bool = False,
         efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_count_prob_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        max_cutoffs: Union[int, List[int]] = 50,
+        conditional_probs=None,
+        modes: List[int] = None,
     ):
-        if not isinstance(max_cutoffs, Sequence):
-            max_cutoffs = [max_cutoffs for m in modes]
-        if not isinstance(efficiency, Sequence):
-            efficiency = [efficiency for m in modes]
-        if not isinstance(dark_count_prob, Sequence):
-            dark_count_prob = [dark_count_prob for m in modes]
 
         Parametrized.__init__(
             self,
-            modes=modes,
-            conditional_probs=conditional_probs,
             efficiency=efficiency,
             dark_count_prob=dark_count_prob,
             efficiency_trainable=efficiency_trainable,
             dark_count_prob_trainable=dark_count_prob_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
-            max_cutoffs=max_cutoffs,
+            conditional_probs=conditional_probs,
+            modes=modes,
         )
 
         self.recompute_stochastic_channel()
+
+    def should_recompute_stochastic_channel(self):
+        return self.efficiency_trainable or self.dark_counts_trainable
 
     def recompute_stochastic_channel(self):
         self._stochastic_channel = []
@@ -167,9 +155,9 @@ class Homodyne(Parametrized, State):
     Heterodyne measurement on given modes.
     """
     def __new__(cls,
-            quadrature_angles=quadrature_angles,
-            results=results,
-            modes=modes):
+            quadrature_angles: Union[float, List[float]],
+            results: Union[float, List[float]] = 1.0,
+            modes: List[int] = None):
         quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype="float64")
         results = gaussian.math.astensor(results, dtype="float64")
         x = results * gaussian.math.cos(quadrature_angles)
@@ -186,7 +174,10 @@ class Heterodyne(Parametrized, State):
     r"""
     Heterodyne measurement on given modes.
     """
-    def __new__(cls, x, y, modes=None):
+    def __new__(cls,
+            x: Union[float, List[float]] = 0.0,
+            y: Union[float, List[float]] = 0.0,
+            modes: List[int] = None):
         instance = Coherent(x=x, y=y, modes=modes)
         instance.__class__ = cls
         return instance

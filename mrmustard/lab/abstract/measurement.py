@@ -14,7 +14,8 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from mrmustard.physics import gaussian, fock
+from mrmustard.math import Math; math = Math()
+from mrmustard.physics import fock
 from mrmustard.lab.abstract.state import State
 from mrmustard.types import *
 from mrmustard.utils import graphics
@@ -22,7 +23,6 @@ from mrmustard import settings
 import numpy as np
 
 
-# TODO: push all math methods into the physics module?
 class FockMeasurement(ABC):
     r"""
     A Fock measurement projecting onto a Fock measurement pattern.
@@ -32,60 +32,32 @@ class FockMeasurement(ABC):
     in the Fock basis.
     """
 
-    def project(
-        self, state: State, cutoffs: Sequence[int], measurement: Sequence[Optional[int]]
-    ) -> Tuple[State, Tensor]:
+    def primal(self, state: State) -> Tensor:
         r"""
-        Projects the state onto a Fock measurement in the form [a,b,c,...] where integers
-        indicate the Fock measurement on that mode and None indicates no projection on that mode.
-
-        Returns the measurement probability and the renormalized state (in the Fock basis) in the unmeasured modes.
+        Returns a tensor representing the post-measurement state in the unmeasured modes in the Fock basis.
+        The first N indices of the returned tensor correspond to the Fock measurements of the N modes that
+        the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
         """
-        if (len(cutoffs) != state.num_modes) or (len(measurement) != state.num_modes):
-            raise ValueError(
-                "the length of cutoffs/measurements does not match the number of modes"
-            )
-        dm = state.dm(cutoffs=cutoffs)
-        measured = 0
-        for mode, (stoch, meas) in enumerate(zip(self._stochastic_channel, measurement)):
-            if meas is not None:
-                # put both indices last and compute sum_m P(meas|m)rho_mm for every meas
-                last = [mode - measured, mode + state.num_modes - 2 * measured]
-                perm = list(set(range(dm.ndim)).difference(last)) + last
-                dm = fock.math.transpose(dm, perm)
-                dm = fock.math.diag_part(dm)
-                dm = fock.math.tensordot(dm, stoch[meas, : dm.shape[-1]], [[-1], [0]])
-            measured += 1
-        probs = fock.math.sum(fock.math.all_diagonals(dm, real=False))
-        return dm / probs, fock.math.abs(probs)
+        if self.should_recompute_stochastic_channel or math.any(state.cutoffs > settings.PNR_INTERNAL_CUTOFF):
+            self.recompute_stochastic_channel(state.cutoffs)
+        dm = state.dm()
+        for k, (mode, stoch) in enumerate(zip(self._modes, self._internal_stochastic_channel)):
+            # move the mode indices to the end
+            last = [mode - k, mode + state.num_modes - 2 * k]
+            perm = [m for m in range(dm.ndim) if m not in last] + last
+            dm = math.transpose(dm, perm)
+            # compute sum_m P(meas|m)rho_mm
+            dm = math.diag_part(dm)
+            dm = math.tensordot(stoch[:dm.shape[-1], :dm.shape[-1]], dm, [[1], [-1]])
+        # put back the last len(self.modes) modes at the beginning
+        return math.transpose(dm, list(range(dm.ndim - len(self._modes), dm.ndim)) + list(range(dm.ndim - len(self._modes))))
 
-    def apply_stochastic_channel(self, stochastic_channel, fock_probs: Tensor) -> Tensor:
-        cutoffs = [fock_probs.shape[m] for m in self._modes]
-        for i, mode in enumerate(self._modes):
-            if cutoffs[mode] > stochastic_channel[i].shape[1]:
-                raise IndexError(
-                    f"Internal cutoff ({stochastic_channel[i].shape[1]}) too low in mode {mode} (state cutoff {cutoffs[mode]}).\nYou can increase max_input_photons or reduce the cutoff of the state."
-                )
-        detector_probs = fock_probs
-        for i, mode in enumerate(self._modes):
-            detector_probs = fock.math.tensordot(
-                detector_probs,
-                stochastic_channel[i][: cutoffs[mode], : cutoffs[mode]],
-                [[mode], [1]],
-            )
-            indices = list(range(fock_probs.ndim - 1))
-            detector_probs = fock.math.transpose(
-                detector_probs, indices[:mode] + [fock_probs.ndim - 1] + indices[mode:]
-            )
-        return detector_probs
-        
-    def recompute_stochastic_channel(self, **kwargs) -> State:
-        ...
+    def should_recompute_stochastic_channel(self) -> bool:  # override in subclasses
+        return False
 
     def __lshift__(self, other) -> Tensor:
         if isinstance(other, State):
-            fock_probs = state.fock_probabilities(other.cutoffs)
-            return self.apply_stochastic_channel(self._stochastic_channel, fock_probs)
+            self.primal(other)
         else:
             raise TypeError(
                 f"unsupported operand type(s) '{type(self).__name__}' << '{type(other).__name__}'"
