@@ -158,93 +158,38 @@ class ThresholdDetector(Parametrized, FockMeasurement):
     @property
     def stochastic_channel(self) -> List[Matrix]:
         if self._stochastic_channel is None:
-            fock.stochastic_channel()
+            self._stochastic_channel = fock.stochastic_channel()
         return self._stochastic_channel
 
 
-class Generaldyne(Parametrized, State):
-    r"""
-    General dyne measurement.
-    """
-
-    def __init__(self, modes: List[int], project_onto: State):
-        assert len(modes) * 2 == project_onto.cov.shape[-1] == project_onto.means.shape[-1]
-        Parametrized.__init__(self, modes=modes, project_onto=project_onto)
-
-    def recompute_project_onto(self, project_onto: State) -> State:
-        return project_onto
-
-
-class Homodyne(Parametrized, GaussianMeasurement):
-    r"""
-    Homodyne measurement on a given list of modes.
-    """
-
-    def __init__(
-        self,
-        modes: List[int],
-        quadrature_angles: Union[Scalar, Vector],
-        results: Union[Scalar, Vector],
-        squeezing: float = 10.0,
-    ):
-        r"""
-        Args:
-            modes (list of ints): modes of the measurement
-            quadrature_angles (float or vector): angle(s) of the quadrature axes of the measurement
-            results (float or vector): result(s) of the measurement on each axis
-            squeezing (float): amount of squeezing of the measurement (default 10.0, ideally infinite)
-        """
-
-        Parametrized.__init__(
-            self,
-            modes=modes,
-            quadrature_angles=quadrature_angles,
-            results=results,
-            squeezing=squeezing,
-        )
-        self._project_onto = self.recompute_project_onto(quadrature_angles, results)
-
-    def recompute_project_onto(
-        self, quadrature_angles: Union[Scalar, Vector], results: Union[Scalar, Vector]
-    ) -> State:
-        quadrature_angles = gaussian.math.astensor(2*quadrature_angles, dtype="float64")
-        results = gaussian.math.astensor(results, dtype="float64")
-        x = results * gaussian.math.cos(quadrature_angles)
-        y = results * gaussian.math.sin(quadrature_angles)
-        return DisplacedSqueezed(r=self._squeezing, phi=quadrature_angles, x=x, y=y)
-
-
-class Heterodyne(Parametrized, GaussianMeasurement):
-    r"""
-    Heterodyne measurement on a given mode.
-    """
-
-    def __init__(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector], modes: List[int]):
-        r"""
-        Args:
-            mode: modes of the measurement
-            x: x-coordinates of the measurement
-            y: y-coordinates of the measurement
-        """
-        Parametrized.__init__(self, x=x, y=y, modes=modes)
-        self._project_onto = self.recompute_project_onto(x, y)
-
-    def recompute_project_onto(self, x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> State:
-        return Coherent(x=x, y=y)
-
-
-class Heterodyne(State):
+class Homodyne(Parametrized, State):
     r"""
     Heterodyne measurement on given modes.
     """
-    def __new__(cls, x, y, modes):
-        r"""
-        Args:
-            mode: modes of the measurement
-            x: x-coordinates of the measurement
-            y: y-coordinates of the measurement
-        """
-        instance = Coherent(x=x, y=y)[modes]
-        instance.__class__ = Heterodyne
+    def __new__(cls,
+            quadrature_angles=quadrature_angles,
+            results=results,
+            modes=modes):
+        quadrature_angles = gaussian.math.astensor(quadrature_angles, dtype="float64")
+        results = gaussian.math.astensor(results, dtype="float64")
+        x = results * gaussian.math.cos(quadrature_angles)
+        y = results * gaussian.math.sin(quadrature_angles)
+        instance = DisplacedSqueezed(r=settings.HOMODYNE_SQUEEZING, phi=2*quadrature_angles, x=x, y=y)
+        instance.__class__ = cls
         return instance
 
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class Heterodyne(Parametrized, State):
+    r"""
+    Heterodyne measurement on given modes.
+    """
+    def __new__(cls, x, y, modes=None):
+        instance = Coherent(x=x, y=y, modes=modes)
+        instance.__class__ = cls
+        return instance
+
+    def __init__(self, *args, **kwargs):
+        pass
