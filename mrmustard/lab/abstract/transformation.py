@@ -30,17 +30,16 @@ math = Math()
 
 
 class Transformation:
-    r"""
-    Base class for all Transformations.
-    """
+    r"""Base class for all Transformations."""
     _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def primal(self, state: State) -> State:
-        r"""
-        Applies self (a Transformation) to other (a State) and returns the transformed state.
-        Arguments:
+        r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
+
+        Args:
             state (State): the state to transform
+
         Returns:
             State: the transformed state
         """
@@ -51,10 +50,11 @@ class Transformation:
         return new_state
 
     def dual(self, state: State) -> State:
-        r"""
-        Applies the dual of self (dual of a Transformation) to other (a State) and returns the transformed state.
-        Arguments:
+        r"""Applies the dual of self (dual of a Transformation) to other (a State) and returns the transformed state.
+
+        Args:
             state (State): the state to transform
+
         Returns:
             State: the transformed state
         """
@@ -66,7 +66,7 @@ class Transformation:
 
     @property
     def bell(self):
-        r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism"""
+        r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism."""
         if self._bell is None:
             cov = gaussian.two_mode_squeezed_vacuum_cov(
                 r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
@@ -81,11 +81,12 @@ class Transformation:
         return self._bell[self.modes + [m + self.num_modes for m in self.modes]]
 
     def transform_gaussian(self, state: State, dual: bool) -> State:
-        r"""
-        Transforms a Gaussian state into a Gaussian state.
-        Arguments:
+        r"""Transforms a Gaussian state into a Gaussian state.
+
+        Args:
             state (State): the state to transform
             dual (bool): whether to apply the dual channel
+
         Returns:
             State: the transformed state
         """
@@ -97,11 +98,12 @@ class Transformation:
         return new_state
 
     def transform_fock(self, state: State, dual: bool) -> State:
-        r"""
-        Transforms a state in Fock representation.
-        Arguments:
+        r"""Transforms a state in Fock representation.
+
+        Args:
             state (State): the state to transform
             dual (bool): whether to apply the dual channel
+
         Returns:
             State: the transformed state
         """
@@ -196,8 +198,8 @@ class Transformation:
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
-        r"""
-        Returns the (X, Y, d) triple.
+        r"""Returns the (X, Y, d) triple.
+
         Override in subclasses if computing X, Y and d together is more efficient.
         """
         return self.X_matrix, self.Y_matrix, self.d_vector
@@ -206,7 +208,8 @@ class Transformation:
     def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
         r"""
         Returns the (X, Y, d) triple of the dual of the current transformation.
-        Override in subclasses if computing Xdual, Ydual and ddual together is more efficient.
+
+        Override in subclasses if computing `Xdual`, `Ydual` and `ddual` together is more efficient.
         """
         return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
 
@@ -222,7 +225,7 @@ class Transformation:
         return True
 
     def U(self, cutoffs: Sequence[int]):
-        "Returns the unitary representation of the transformation"
+        r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
         choi_state = self.bell >> self
@@ -235,7 +238,7 @@ class Transformation:
         )
 
     def choi(self, cutoffs: Sequence[int]):
-        "Returns the Choi representation of the transformation"
+        r"""Returns the Choi representation of the transformation."""
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
@@ -253,6 +256,7 @@ class Transformation:
     def __getitem__(self, items) -> Callable:
         r"""
         Sets the modes on which the transformation acts.
+
         Allows transformations to be used as: `output = transf[0,1](input)`  e.g. acting on modes 0 and 1.
         """
         #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
@@ -271,13 +275,14 @@ class Transformation:
     # TODO: use __class_getitem__ for compiler stuff
 
     def __rshift__(self, other: Transformation):
-        r"""
-        Concatenates self with other (other after self).
+        r"""Concatenates self with other (other after self).
+
         If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
-        E.g.
-        `circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]`
-        Arguments:
+        E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
+
+        Args:
             other: another transformation
+
         Returns:
             A circuit that concatenates self with other
         """
@@ -288,15 +293,20 @@ class Transformation:
         return Circuit(ops1 + ops2)
 
     def __lshift__(self, other: Union[State, Transformation]):
-        r"""
-        Applies the dual of self to other.
+        r"""Applies the dual of self to other.
+
         If other is a state, the dual of self is applied to the state.
         If other is a transformation, the dual of self is concatenated after other (in the dual sense).
+
         E.g.
-        Sgate(0.1) << Coherent(0.5)   # state
-        Sgate(0.1) << Dgate(0.2)      # transformation
-        Arguments:
+        .. code-block::
+
+            Sgate(0.1) << Coherent(0.5)   # state
+            Sgate(0.1) << Dgate(0.2)      # transformation
+
+        Args:
             other: a state or a transformation
+
         Returns:
             the state transformed via the dual transformation or the transformation concatenated after other
         """
@@ -308,9 +318,7 @@ class Transformation:
             raise ValueError(f"{other} is not a valid state or transformation.")
 
     def __eq__(self, other):
-        r"""
-        Returns True if the two transformations are equal.
-        """
+        r"""Returns ``True`` if the two transformations are equal."""
         if not isinstance(other, Transformation):
             return False
         if self.is_gaussian and other.is_gaussian:

@@ -15,6 +15,6 @@ __pycache__/
 .ipynb_checkpoints/
 .hypothesis/
 doc/_build
-docs/code/api/*
+doc/code/api/*
 coverage.xml
 .coverage

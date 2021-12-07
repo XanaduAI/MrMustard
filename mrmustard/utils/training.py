@@ -22,12 +22,13 @@ math = Math()
 
 
 class Optimizer:
-    r"""An optimizer for any parametrized object.
-    It can optimize euclidean, orthogonal and symplectic parameters.
+    r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
 
-    NOTE: In the future it will also include a compiler, so that it will be possible to
-    simplify the circuit/detector/gate/etc before the optimization and also
-    compile other types of structures like error correcting codes and encoders/decoders.
+    .. note::
+
+        In the future it will also include a compiler, so that it will be possible to
+        simplify the circuit/detector/gate/etc before the optimization and also
+        compile other types of structures like error correcting codes and encoders/decoders.
     """
 
     def __init__(
@@ -41,9 +42,9 @@ class Optimizer:
     def minimize(
         self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000
     ):
-        r"""
-        Minimizes the given cost function by optimizing circuits and/or detectors.
-        Arguments:
+        r"""Minimizes the given cost function by optimizing circuits and/or detectors.
+
+        Args:
             cost_fn (Callable): a function that will be executed in a differentiable context in order to compute gradients as needed
             by_optimizing (list of circuits and/or detectors and/or gates): a list of elements that contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are reached (if `max_steps=0` it will only stop when the loss is stable)
@@ -73,10 +74,7 @@ class Optimizer:
             return
 
     def should_stop(self, max_steps: int) -> bool:
-        r"""
-        Returns True if the optimization should stop
-        (either because the loss is stable or because the maximum number of steps is reached)
-        """
+        r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)"""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
@@ -126,13 +124,14 @@ class Optimizer:
 
 
 def new_symplectic(num_modes: int) -> Tensor:
-    r"""
-    Returns a new symplectic matrix from the current math backend
-    with `num_modes` modes.
-    Arguments:
-        num_modes (int): The number of modes in the symplectic matrix
+    r"""Returns a new symplectic matrix from the current math backend
+    with ``num_modes`` modes.
+
+    Args:
+        num_modes (int): the number of modes in the symplectic matrix
+
     Returns:
-        tensor (Tensor): The new symplectic matrix
+        tensor (Tensor): the new symplectic matrix
     """
     return math.random_symplectic(num_modes)
 

@@ -29,7 +29,7 @@ math = Math()
 
 
 class State:
-    r"""Base class for quantum states"""
+    r"""Base class for quantum states."""
 
     def __init__(
         self,
@@ -41,12 +41,14 @@ class State:
         dm: Array = None,
         modes: Sequence[int] = None,
     ):
-        r"""
-        Initializes the state. Supply either:
-        - a covariance matrix and means vector
-        - an eigenvalues array and symplectic matrix
-        - a fock representation (ket or dm)
-        Arguments:
+        r"""Initializes the state.
+
+        Supply either:
+            * a covariance matrix and means vector
+            * an eigenvalues array and symplectic matrix
+            * a fock representation (ket or dm)
+
+        Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
             eigenvalues (Array): the eigenvalues of the covariance matrix
@@ -85,9 +87,7 @@ class State:
 
     @property
     def modes(self):
-        r"""
-        Returns the modes of the state.
-        """
+        r"""Returns the modes of the state."""
         if self._modes is None:
             return list(range(self.num_modes))
         return self._modes
@@ -95,8 +95,10 @@ class State:
     def indices(self, modes) -> Union[Tuple[int], int]:
         r"""
         Returns the indices of the given modes.
+
         Arguments:
             modes (Sequence[int] or int): the modes or mode
+
         Returns:
             Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
         """
@@ -116,38 +118,27 @@ class State:
 
     @property
     def is_mixed(self):
-        r"""
-        Returns whether the state is mixed.
-        """
+        r"""Returns whether the state is mixed."""
         return not self.is_pure
 
     @property
     def is_pure(self):
-        r"""
-        Returns `True` if the state is pure and `False` otherwise.
-        """
+        r"""Returns `True` if the state is pure and `False` otherwise."""
         return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[Vector]:
-        r"""
-        Returns the means vector of the state.
-        """
+        r"""Returns the means vector of the state."""
         return self._means
 
     @property
     def cov(self) -> Optional[Matrix]:
-        r"""
-        Returns the covariance matrix of the state.
-        """
+        r"""Returns the covariance matrix of the state."""
         return self._cov
 
     @property
     def number_stdev(self) -> Vector:
-        r"""
-        Returns the square root of the photon number variances
-        (standard deviation) in each mode.
-        """
+        r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
         if self.is_gaussian:
             return math.sqrt(math.diag_part(self.number_cov))
         else:
@@ -157,9 +148,7 @@ class State:
 
     @property
     def cutoffs(self) -> List[int]:
-        r"""
-        Returns the cutoff dimensions for each mode.
-        """
+        r"""Returns the cutoff dimensions for each mode."""
         if self._ket is None and self._dm is None:
             return fock.autocutoffs(
                 self.number_stdev, self.number_means
@@ -171,8 +160,8 @@ class State:
 
     @property
     def shape(self) -> List[int]:
-        r"""
-        Returns the shape of the state, accounting for ket/dm representation.
+        r"""Returns the shape of the state, accounting for ket/dm representation.
+
         If the state is in Gaussian representation, the shape is inferred from
         the first two moments of the number operator.
         """
@@ -181,9 +170,7 @@ class State:
 
     @property
     def fock(self) -> Array:
-        r"""
-        Returns the Fock representation of the state.
-        """
+        r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.fock_representation(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
@@ -198,9 +185,7 @@ class State:
 
     @property
     def number_means(self) -> Vector:
-        r"""
-        Returns the mean photon number for each mode.
-        """
+        r"""Returns the mean photon number for each mode."""
         if self.is_gaussian:
             return gaussian.number_means(self.cov, self.means, settings.HBAR)
         else:
@@ -208,20 +193,19 @@ class State:
 
     @property
     def number_cov(self) -> Matrix:
-        r"""
-        Returns the complete photon number covariance matrix.
-        """
+        r"""Returns the complete photon number covariance matrix."""
         if self.is_gaussian:
             return gaussian.number_cov(self.cov, self.means, settings.HBAR)
         else:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
 
     def ket(self, cutoffs: Sequence[Optional[int]]) -> Optional[Tensor]:
-        r"""
-        Returns the ket of the state in Fock representation or `None` if the state is mixed.
-        Arguments:
+        r"""Returns the ket of the state in Fock representation or `None` if the state is mixed.
+
+        Args:
             cutoffs List[int or None]: the cutoff dimensions for each mode. If a mode cutoff is None,
-                it's guessed automatically.
+            it's guessed automatically.
+
         Returns:
             Tensor: the ket
         """
@@ -250,11 +234,12 @@ class State:
         return self._ket
 
     def dm(self, cutoffs: List[int] = None) -> Tensor:
-        r"""
-        Returns the density matrix of the state in Fock representation.
-        Arguments:
-            cutoffs List[int]: the cutoff dimensions for each mode. If a mode cutoff is None,
-                it's automatically computed.
+        r"""Returns the density matrix of the state in Fock representation.
+
+        Args:
+            cutoffs List[int]: The cutoff dimensions for each mode. If a mode cutoff is None,
+            it's automatically computed.
+
         Returns:
             Tensor: the density matrix
         """
@@ -281,12 +266,14 @@ class State:
         return self._dm
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
-        r"""
-        Returns the probabilities in Fock representation.
+        r"""Returns the probabilities in Fock representation.
+
         If the state is pure, they are the absolute value squared of the ket amplitudes.
         If the state is mixed they are the multi-dimensional diagonals of the density matrix.
-        Arguments:
+
+        Args:
             cutoffs List[int]: the cutoff dimensions for each mode
+
         Returns:
             Array: the probabilities
         """
@@ -303,8 +290,11 @@ class State:
         r"""
         Returns the post-measurement state after `other` is projected onto `self`:
         other >> self is other projected onto self.
-        If `other` is a `Transformation`, it returns the dual of the transformation applied to `self`:
-        other << self is like self >> other^dual.
+
+        If ``other`` is a ``Transformation``, it returns the dual of the transformation applied to ``self``:
+        ``other << self`` is like ``self >> other^dual``.
+
+        Note that the returned state is not normalized unless the state has attribute ``_normalize`` set.
         """
         if issubclass(other.__class__, State):
             remaining_modes = [m for m in other.modes if m not in self.modes]
@@ -367,9 +357,7 @@ class State:
                 )
 
     def __and__(self, other: State) -> State:
-        r"""
-        Concatenates two states.
-        """
+        r"""Concatenates two states."""
         if self.is_gaussian and other.is_gaussian:
             cov = gaussian.join_covs([self.cov, other.cov])
             means = gaussian.join_means([self.means, other.means])
@@ -397,9 +385,7 @@ class State:
         return self
 
     def get_modes(self, item):
-        r"""
-        Returns the state on the given modes.
-        """
+        r"""Returns the state on the given modes."""
         if isinstance(item, int):
             item = [item]
         elif isinstance(item, Iterable):
@@ -417,9 +403,7 @@ class State:
             return State(dm=fock_partitioned, modes=item)
 
     def __eq__(self, other):
-        r"""
-        Returns whether the states are equal.
-        """
+        r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:
             return False
         if not np.isclose(self.purity, other.purity, atol=1e-6):
@@ -440,10 +424,7 @@ class State:
             )
 
     def __rshift__(self, other):
-        r"""
-        Applies other (a Transformation) to self (a State).
-        e.g. Coherent(x=0.1) >> Sgate(r=0.1)
-        """
+        r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
         if issubclass(other.__class__, State):
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
@@ -452,15 +433,14 @@ class State:
 
     def __lshift__(self, other: State):
         r"""
-        Implements projection onto a state or the dual transformation applied on a state
-        e.g. self << other where other is a State and self is either a State or a Transformation
+        Implements projection onto a state or the dual transformation applied on a state.
+
+        e.g., ``self << other`` where other is a ``State`` and ``self`` is either a ``State`` or a ``Transformation``.
         """
         return other.primal(self)
 
     def __add__(self, other: State):
-        r"""
-        Implements a mixture of states. Only available in fock representation for the moment.
-        """
+        r"""Implements a mixture of states (only available in fock representation for the moment)."""
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
         warnings.warn("mixing states forces conversion to fock representation", UserWarning)
