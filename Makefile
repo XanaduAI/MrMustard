@@ -5,7 +5,7 @@ COVERAGE := --cov=mrmustard --cov-report=html:coverage_html_report --cov-append
 .PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  install            to install Mr. Mustard"
+	@echo "  install            to install Mr Mustard"
 	@echo "  dist               to package the source distribution"
 	@echo "  clean              to delete all temporary, cache, and build files"
 	@echo "  clean-docs         to delete all built documentation"
@@ -16,7 +16,7 @@ help:
 .PHONY: install
 install:
 ifndef PYTHON3
-	@echo "To install Mr. Mustard you need to have Python 3 installed"
+	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
 	$(PYTHON) setup.py install
 
@@ -57,11 +57,11 @@ lint:
 	pylint mrmustard
 
 test:
-	@echo "Testing Mr. Mustard..."
+	@echo "Testing Mr Mustard..."
 	$(PYTHON) $(TESTRUNNER)
 
 coverage:
-	@echo "Generating coverage report for Mr. Mustard..."
+	@echo "Generating coverage report for Mr Mustard..."
 	$(PYTHON) $(TESTRUNNER) $(COVERAGE)
 
 clean-coverage:

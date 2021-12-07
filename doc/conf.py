@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 
 # -- Project information -----------------------------------------------------
 
-project = "Mr. Mustard"
+project = "Mr Mustard"
 copyright = "Copyright 2021, Xanadu Quantum Technologies Inc."
 author = "Filippo Miatto"
 
@@ -128,7 +128,7 @@ html_theme_options = {
     # Set the path to a special layout to include for the homepage
     # "homepage": "special_index.html",
     # Set the name of the project to appear in the left sidebar.
-    "project_nav_name": "Mr. Mustard",
+    "project_nav_name": "Mr Mustard",
     "touch_icon": "_static/logo_new.png",
     # Set GA account ID to enable tracking
     "google_analytics_account": "UA-116279123-2",

@@ -1,4 +1,4 @@
-Mr. Mustard's Documentation
+Mr Mustard's Documentation
 =======================================
 
 .. rst-class:: lead grey-text ml-2
@@ -46,7 +46,7 @@ Mr. Mustard's Documentation
                                 Key concepts
                                 </h3>
                                 <p class="mb-3 grey-text px-3">
-                                    Learn about Mr. Mustard's main features <i class="fas fa-angle-double-right"></i>
+                                    Learn about Mr Mustard's main features <i class="fas fa-angle-double-right"></i>
                                 </p>
                             </div>
                         </div>
@@ -61,7 +61,7 @@ Mr. Mustard's Documentation
                             <h3 class="card-title pl-3 mt-4">
                             Developing
                             </h3>
-                            <p class="mb-3 grey-text px-3">How you can contribute to Mr. Mustard <i class="fas fa-angle-double-right"></i></p>
+                            <p class="mb-3 grey-text px-3">How you can contribute to Mr Mustard <i class="fas fa-angle-double-right"></i></p>
                         </div>
                     </div>
                 </div>
@@ -75,7 +75,7 @@ Mr. Mustard's Documentation
                             <h3 class="card-title pl-3 mt-4">
                             API
                             </h3>
-                            <p class="mb-3 grey-text px-3">Explore Mr. Mustard's API <i class="fas fa-angle-double-right"></i></p>
+                            <p class="mb-3 grey-text px-3">Explore Mr Mustard's API <i class="fas fa-angle-double-right"></i></p>
                         </div>
                     </div>
                 </div>
@@ -136,7 +136,7 @@ MrMustard supports in fully differentiable way:
 
 .. toctree::
    :maxdepth: 1
-   :caption: Using Mr. Mustard
+   :caption: Using Mr Mustard
    :hidden:
 
    introduction/basic_reference
@@ -152,7 +152,7 @@ MrMustard supports in fully differentiable way:
 
 .. toctree::
    :maxdepth: 1
-   :caption: Mr. Mustard API
+   :caption: Mr Mustard API
    :hidden:
 
    code/mm
