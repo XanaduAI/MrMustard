@@ -96,4 +96,4 @@ class Circuit(Transformation, Parametrized):
 
     def __repr__(self) -> str:
         ops_repr = [repr(op) for op in self._ops]
-        return "Circuit([" + ','.join(ops_repr) + "])"
+        return "Circuit([" + ",".join(ops_repr) + "])"

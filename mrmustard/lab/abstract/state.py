@@ -479,10 +479,12 @@ class State:
             raise ValueError("No fock representation available")
 
     def _repr_markdown_(self):
-        table = f"#### {self.__class__.__qualname__}\n\n" + \
-            "| Purity | Num modes | Bosonic size | Gaussian | Fock |\n" + \
-            "| :----: | :----: | :----: | :----: | :----: |\n" + \
-            f"| {(self.purity):.3f} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+        table = (
+            f"#### {self.__class__.__qualname__}\n\n"
+            + "| Purity | Num modes | Bosonic size | Gaussian | Fock |\n"
+            + "| :----: | :----: | :----: | :----: | :----: |\n"
+            + f"| {(self.purity):.3f} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+        )
 
         if self.num_modes == 1:
             graphics.mikkel_plot(self.dm(cutoffs=self.cutoffs))
