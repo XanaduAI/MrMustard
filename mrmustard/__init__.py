@@ -27,6 +27,10 @@ class Settings:
 
     @property
     def backend(self):
+        """The backend which is used.
+
+        Can be either ``'tensorflow'`` or ``'pytorch'``.
+        """
         return self._backend
 
     @backend.setter
