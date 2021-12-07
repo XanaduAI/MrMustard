@@ -122,7 +122,7 @@ leftover = Vacuum(4) >> X8 << lossy_444  # measuring 4 photons in modes 0,1,2 wi
 This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
 
 ## 5. Detectors
-There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is a generaldyne measurement).
+There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is how Homodyne performs a measurement).
 
 The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
 ```
