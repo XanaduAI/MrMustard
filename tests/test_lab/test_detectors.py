@@ -139,43 +139,51 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     assert np.allclose(remaining_state.means, means)
 
 
-@given(s=st.floats(1.0, 10.0), X=st.floats(-5.0, 5.0), angle=st.floats(0, np.pi * 2))
+@given(s=st.floats(1.0, 10.0), X=st.floats(-5.0, 5.0), angle=st.floats(0, np.pi))
 def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
-    pass  # TODO: reimplement this test
-    # homodyne = Homodyne(quadrature_angle=angle, result=X)
-    # r = homodyne.r
-    # remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
-    # denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
-    # cov = (
-    #     settings.HBAR / 2
-    #     * np.array(
-    #         [
-    #             [
-    #                 1 + 2 * s - 2 * s * (s + 1)
-    #                 * (1 + 2 * s + np.cosh(2 * r) + np.cos(2*angle) * np.sinh(2 * r)) / denom,
-    #                 2 * s * (1 + s) * np.sin(2*angle) * np.sinh(2 * r) / denom,
-    #             ],
-    #             [
-    #                 2 * s * (1 + s) * np.sin(2*angle) * np.sinh(2 * r) / denom,
-    #                 (
-    #                     1 + 2 * s + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
-    #                     + 2 * s * (s + 1) * np.cos(2*angle) * np.sinh(2 * r)
-    #                 )
-    #                 / denom,
-    #             ],
-    #         ]
-    #     )
-    # )
-    # assert np.allclose(remaining_state.cov, cov)
+    homodyne = Homodyne(quadrature_angle=angle, result=X)
+    r = homodyne.r
+    remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
+    denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
+    cov = (
+        settings.HBAR
+        / 2
+        * np.array(
+            [
+                [
+                    1
+                    + 2 * s
+                    - 2
+                    * s
+                    * (s + 1)
+                    * (1 + 2 * s + np.cosh(2 * r) + np.cos(2 * angle) * np.sinh(2 * r))
+                    / denom,
+                    2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
+                ],
+                [
+                    2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
+                    (
+                        1
+                        + 2 * s
+                        + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
+                        + 2 * s * (s + 1) * np.cos(2 * angle) * np.sinh(2 * r)
+                    )
+                    / denom,
+                ],
+            ]
+        )
+    )
+    assert np.allclose(remaining_state.cov, cov)
+    # TODO: figure out why this is not working
     # denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
     # means = (
     #     np.array(
     #         [
     #             np.sqrt(s * (1 + s))
     #             * X
-    #             * (np.cos(2*angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r))
+    #             * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r))
     #             / denom,
-    #             -np.sqrt(s * (1 + s)) * X * (np.sin(2*angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
+    #             -np.sqrt(s * (1 + s)) * X * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
     #         ]
     #     )
     #     * np.sqrt(2 * settings.HBAR)
