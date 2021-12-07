@@ -10,9 +10,11 @@ Alpha release (v0.1.0).
 Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates across phase space and Fock space.
 It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (TensorFlow by default, PyTorch coming soon).
 
-Mr Mustard supports (differentiably):
+Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 - Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
+- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the orthogonal group (for interferometers)
+- Adam optimizer for euclidean parameters.
 - single-mode gates (parallelizable):
     - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
 - two-mode gates:
