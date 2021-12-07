@@ -36,7 +36,7 @@ class PNRDetector(Parametrized, FockMeasurement):
 
     It can be supplied the full stochastic channel, or it will compute it from
     the quantum efficiency (binomial) and the dark count probability (possonian).
-    
+
     Arguments:
         efficiency (float or List[float]): list of quantum efficiencies for each detector
         efficiency_trainable (bool): whether the efficiency is trainable
@@ -101,9 +101,13 @@ class PNRDetector(Parametrized, FockMeasurement):
                 cutoffs, math.atleast_1d(self.efficiency)[:], math.atleast_1d(self.dark_counts)[:]
             ):
                 dark_prior = math.poisson(max_k=settings.PNR_INTERNAL_CUTOFF, rate=dc)
-                condprob = math.binomial_conditional_prob(success_prob=qe, dim_in=settings.PNR_INTERNAL_CUTOFF, dim_out=c)
+                condprob = math.binomial_conditional_prob(
+                    success_prob=qe, dim_in=settings.PNR_INTERNAL_CUTOFF, dim_out=c
+                )
                 self._internal_stochastic_channel.append(
-                    math.convolve_probs_1d(condprob, [dark_prior, math.eye(settings.PNR_INTERNAL_CUTOFF)[0]])
+                    math.convolve_probs_1d(
+                        condprob, [dark_prior, math.eye(settings.PNR_INTERNAL_CUTOFF)[0]]
+                    )
                 )
 
 
@@ -155,7 +159,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             dark_count_prob_bounds=dark_count_prob_bounds,
             stochastic_channel=stochastic_channel,
             modes=modes or list(range(num_modes)),
-            cutoffs = [2]*num_modes,
+            cutoffs=[2] * num_modes,
         )
 
         self.recompute_stochastic_channel()
@@ -175,7 +179,9 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 math.atleast_1d(self.efficiency)[:],
                 math.atleast_1d(self.dark_count_prob)[:],
             ):
-                row1 = math.pow(1.0 - qe, math.arange(cut)[None, :]) - math.cast(dc, self.efficiency.dtype)
+                row1 = math.pow(1.0 - qe, math.arange(cut)[None, :]) - math.cast(
+                    dc, self.efficiency.dtype
+                )
                 row2 = 1.0 - row1
                 # rest = math.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = math.concat([row1, row2], axis=0)

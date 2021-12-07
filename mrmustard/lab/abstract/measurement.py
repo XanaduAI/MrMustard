@@ -44,7 +44,9 @@ class FockMeasurement(ABC):
         used = 0
         for mode in state.modes:
             if mode in self._modes:
-                cutoffs.append(max(settings.PNR_INTERNAL_CUTOFF, state.cutoffs[state.indices(mode)]))
+                cutoffs.append(
+                    max(settings.PNR_INTERNAL_CUTOFF, state.cutoffs[state.indices(mode)])
+                )
                 used += 1
             else:
                 cutoffs.append(state.cutoffs[state.indices(mode)])
