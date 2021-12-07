@@ -186,18 +186,18 @@ class Homodyne(Parametrized, State):
 
     def __new__(
         cls,
-        quadrature_angles: Union[float, List[float]],
-        results: Union[float, List[float]] = 1.0,
+        quadrature_angle: Union[float, List[float]],
+        result: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
         r: Union[float, List[float]] = None,
     ):
-        quadrature_angles = math.astensor(quadrature_angles, dtype="float64")
-        results = math.astensor(results, dtype="float64")
-        x = results * math.cos(quadrature_angles)
-        y = results * math.sin(quadrature_angles)
+        quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
+        result1 = math.astensor(result, dtype="float64")
+        x = result * math.cos(quadrature_angle)
+        y = result * math.sin(quadrature_angle)
         instance = DisplacedSqueezed(
             r=settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64"),
-            phi=2 * quadrature_angles,
+            phi=2*quadrature_angle,
             x=x,
             y=y
         )

@@ -58,7 +58,7 @@ class FockMeasurement(ABC):
             dm = math.transpose(dm, perm)
             # compute sum_m P(meas|m)rho_mm
             dm = math.diag_part(dm)
-            dm = math.tensordot(stoch[: cutoffs[k], : dm.shape[-1]], dm, [[1], [-1]])
+            dm = math.tensordot(dm, stoch[: cutoffs[k], : dm.shape[-1]], [[-1], [1]])
         # put back the last len(self.modes) modes at the beginning
         output = math.transpose(
             dm,
