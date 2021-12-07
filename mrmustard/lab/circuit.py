@@ -90,5 +90,10 @@ class Circuit(Transformation, Parametrized):
     def __len__(self):
         return len(self._ops)
 
+    def _repr_markdown_(self) -> str:
+        """Markdown string to display the object on ipython notebooks."""
+        return f"Circuit | {len(self._ops)} ops | compiled = `{self._compiled}`"
+
     def __repr__(self) -> str:
-        return f"Circuit | {len(self._ops)} ops | compiled = {self._compiled}"
+        ops_repr = [repr(op) for op in self._ops]
+        return "Circuit([" + ','.join(ops_repr) + "])"
