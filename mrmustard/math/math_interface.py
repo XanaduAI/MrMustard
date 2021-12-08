@@ -1100,18 +1100,22 @@ class MathInterface(ABC):
             + "WC",  # TODO: rewrite this to be more readable (do we need it?)
         )[0, ..., 0]
 
-    def riemann_to_symplectic(self, S: Matrix, dS_riemann: Matrix) -> Matrix:
-        r"""Convert the Riemannian gradient to a symplectic gradient.
+    def euclidean_to_symplectic(self, S: Matrix, dS_euclidean: Matrix) -> Matrix:
+        r"""Convert the Euclidean gradient to a Riemannian gradient on the
+        tangent bundle of the symplectic manifold.
 
-        TODO: add citation (S.Fiori)
+        Implemented from:
+            Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
+            for optimization on the real symplectic group.
+            Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
 
         Args:
             S (Matrix): symplectic matrix
-            dS_riemann (Matrix): Riemannian gradient tensor
+            dS_euclidean (Matrix): Euclidean gradient tensor
 
         Returns:
             Matrix: symplectic gradient tensor
         """
         Jmat = self.J(S.shape[-1] // 2)
-        Z = self.matmul(self.transpose(S), dS_riemann)
+        Z = self.matmul(self.transpose(S), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
