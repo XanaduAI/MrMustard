@@ -146,6 +146,7 @@ def new_orthogonal(num_modes: int) -> Tensor:
 def update_symplectic(
     symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float
 ):
+
     r"""Updates the symplectic parameters using the given symplectic gradients.
 
     Implemented from:
