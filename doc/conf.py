@@ -133,13 +133,13 @@ html_theme_options = {
     # Set GA account ID to enable tracking
     "google_analytics_account": "UA-116279123-2",
     # colors
-    "navigation_button": "#b13a59",
-    "navigation_button_hover": "#712b3d",
-    "toc_caption": "#b13a59",
-    "toc_hover": "#b13a59",
+    "navigation_button": "#b79226",
+    "navigation_button_hover": "#d7b348",
+    "toc_caption": "#b79226",
+    "toc_hover": "#b79226",
     "table_header_bg": "#ffdce5",
-    "table_header_border": "#b13a59",
-    "download_button": "#b13a59",
+    "table_header_border": "#b79226",
+    "download_button": "#b79226",
 }
 
 edit_on_github_project = "XanaduAI/MrMustard"
