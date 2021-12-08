@@ -81,7 +81,7 @@ cat >> Sgate(0.5)  # squeezed cat
 
 
 
-## 2. Gates
+## 2. Gates and the right shift operator `>>`
 
 Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
 ```python
@@ -149,8 +149,8 @@ results[2,3]  # unnormalized dm of mode 2 conditioned on measuring 2 in mode 0 a
 ```
 Set a lower `settings.PNR_INTERNAL_CUTOFF` (default 50) to speed-up computations of the PNR output.
 
-## 6. Equality check
-States support equality checking:
+## 6. Comparison operator `==`
+States support the comparison operator:
 ```python
 >>> bunched = (Coherent(1.0) & Coherent(1.0)) >> BSgate(np.pi/4)
 >>> bunched.get_modes(1) == Coherent(np.sqrt(2.0))
