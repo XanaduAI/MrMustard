@@ -1,4 +1,4 @@
-.. currentmodule:: strawberryfields.package_name
+.. currentmodule:: mrmustard.package_name
 .. autosummary::
    :toctree: api
 
