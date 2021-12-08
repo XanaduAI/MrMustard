@@ -200,6 +200,11 @@ my_state >> Sgate(r=0.5)  # just works
 ```
 <img width="542" alt="Screen Shot 2021-12-06 at 1 44 38 PM" src="https://user-images.githubusercontent.com/8944955/144903799-5b6c1524-4357-4be0-9778-e1f0de6943c1.png">
 
+```python
+my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25] + [0.0]*23)  # notice the buffer
+my_state = State(ket=my_amplitudes)
+my_state >> Sgate(r=0.5)  # just works
+```
 
 # The physics module
 The physics module contains a growing number of functions that we can apply to states directly. These are made out of the functions that operate on the _representation_ of the state:
@@ -247,7 +252,7 @@ def cost_fn_sympl():
     return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=0.4, y=-0.2))
 
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
-opt.minimize(cost_fn_eucl, by_optimizing=[D])  # using Adam for D and the symplectic opt for G
+opt.minimize(cost_fn_eucl, by_optimizing=[D])  # using Adam for D
 
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
 opt.minimize(cost_fn_sympl, by_optimizing=[G,D])  # using Adam for D and the symplectic opt for G
