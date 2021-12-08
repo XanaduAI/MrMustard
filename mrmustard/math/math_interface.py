@@ -1103,9 +1103,9 @@ class MathInterface(ABC):
     def euclidean_to_symplectic(self, S: Matrix, dS_euclidean: Matrix) -> Matrix:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the symplectic manifold.
-        
+
         Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach 
+        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
         for optimization on the real symplectic group.
         Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
 

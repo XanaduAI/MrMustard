@@ -149,7 +149,7 @@ def update_symplectic(
     r"""
     Updates the symplectic parameters using the given symplectic gradients.
     Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach 
+        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
         for optimization on the real symplectic group.
         Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
     """
@@ -173,8 +173,12 @@ def update_orthogonal(
         Journal of Machine Learning Research. 2005 May 1;6(5).
     """
     for O, dO_euclidean in zip(orthogonal_params, orthogonal_grads):
-        dO_orthogonal = 0.5 * (dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O))
-        new_value = math.matmul(O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), O)))
+        dO_orthogonal = 0.5 * (
+            dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O)
+        )
+        new_value = math.matmul(
+            O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), O))
+        )
         math.assign(O, new_value)
 
 
