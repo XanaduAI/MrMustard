@@ -146,8 +146,15 @@ def new_orthogonal(num_modes: int) -> Tensor:
 def update_symplectic(
     symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float
 ):
-    for S, dS_riemann in zip(symplectic_params, symplectic_grads):
-        Y = math.riemann_to_symplectic(S, dS_riemann)
+    r"""
+    Updates the symplectic parameters using the given symplectic gradients.
+    Implemented from:
+        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
+        for optimization on the real symplectic group.
+        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
+    """
+    for S, dS_euclidean in zip(symplectic_params, symplectic_grads):
+        Y = math.euclidean_to_symplectic(S, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
             S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
@@ -158,9 +165,20 @@ def update_symplectic(
 def update_orthogonal(
     orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float
 ):
-    for O, dO_riemann in zip(orthogonal_params, orthogonal_grads):
-        D = 0.5 * (dO_riemann - math.matmul(math.matmul(O, math.transpose(dO_riemann)), O))
-        new_value = math.matmul(O, math.expm(orthogonal_lr * math.matmul(math.transpose(D), O)))
+    r"""
+    Updates the orthogonal parameters using the given orthogonal gradients.
+    Implemented from:
+        Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
+        Over the Orthogonal Group: A Tutorial.
+        Journal of Machine Learning Research. 2005 May 1;6(5).
+    """
+    for O, dO_euclidean in zip(orthogonal_params, orthogonal_grads):
+        dO_orthogonal = 0.5 * (
+            dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O)
+        )
+        new_value = math.matmul(
+            O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), O))
+        )
         math.assign(O, new_value)
 
 
