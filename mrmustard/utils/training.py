@@ -146,8 +146,8 @@ def new_orthogonal(num_modes: int) -> Tensor:
 def update_symplectic(
     symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float
 ):
-    r"""
-    Updates the symplectic parameters using the given symplectic gradients.
+    r"""Updates the symplectic parameters using the given symplectic gradients.
+
     Implemented from:
         Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
         for optimization on the real symplectic group.
@@ -165,8 +165,8 @@ def update_symplectic(
 def update_orthogonal(
     orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float
 ):
-    r"""
-    Updates the orthogonal parameters using the given orthogonal gradients.
+    r"""Updates the orthogonal parameters using the given orthogonal gradients.
+
     Implemented from:
         Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
         Over the Orthogonal Group: A Tutorial.
