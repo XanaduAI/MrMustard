@@ -87,7 +87,7 @@ Mr Mustard's Documentation
 Features
 ========
 
-Mr Mustard supports in fully differentiable way:
+Mr Mustard supports the following in a fully differentiable way:
 
 * Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 
@@ -125,11 +125,11 @@ Mr Mustard supports in fully differentiable way:
 
 ..
 
-* Plug-and-play backends (TF and Pytorch)
+* Plug-and-play backends (TensorFlow and PyTorch)
 
 ..
 
-* An abstraction layer `XPTensor` for seamless symplectic algebra
+* An abstraction layer ``XPTensor`` for seamless symplectic algebra
 
 ..
 
