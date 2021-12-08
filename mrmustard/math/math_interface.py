@@ -1105,9 +1105,9 @@ class MathInterface(ABC):
         tangent bundle of the symplectic manifold.
 
         Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
-        for optimization on the real symplectic group.
-        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
+            Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
+            for optimization on the real symplectic group.
+            Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
 
         Args:
             S (Matrix): symplectic matrix
