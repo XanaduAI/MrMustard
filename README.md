@@ -200,10 +200,12 @@ my_state >> Sgate(r=0.5)  # just works
 ```
 <img width="542" alt="Screen Shot 2021-12-06 at 1 44 38 PM" src="https://user-images.githubusercontent.com/8944955/144903799-5b6c1524-4357-4be0-9778-e1f0de6943c1.png">
 
+Alternatively,
 ```python
-my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25] + [0.0]*23)  # notice the buffer
+my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25])  # no buffer 
 my_state = State(ket=my_amplitudes)
-my_state >> Sgate(r=0.5)  # just works
+my_state._cutoffs = [42]  # force the cutoff
+my_state >> Sgate(r=0.5)  # works too
 ```
 
 # The physics module
