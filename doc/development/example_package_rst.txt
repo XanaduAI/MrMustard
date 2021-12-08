@@ -3,4 +3,4 @@ sf.package_name
 
 .. rubric:: Modules
 
-.. automodule:: strawberryfields.package_name
+.. automodule:: mrmustard.package_name

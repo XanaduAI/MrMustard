@@ -1,4 +1,4 @@
 Release notes
 -------------
 
-.. mdinclude:: ../../.github/changelog.md
+.. mdinclude:: ../../.github/CHANGELOG.md
