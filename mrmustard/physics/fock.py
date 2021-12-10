@@ -356,8 +356,8 @@ def contract_states(
             stateA,
             math.conj(stateB),
             axes=(
-                modes + [m + len(stateA.shape) // 2 for m in modes],
-                indices + [i + len(stateB.shape) // 2 for i in indices],
+                list(modes) + [m + len(stateA.shape) // 2 for m in modes],
+                list(indices) + [i + len(stateB.shape) // 2 for i in indices],
             ),
         )
     if normalize:
@@ -370,6 +370,13 @@ def normalize(fock: Tensor, is_dm: bool):
         return fock / math.sum(math.all_diagonals(fock, real=False))
     else:
         return fock / math.sum(math.norm(fock))
+
+
+def probability(state: Tensor, is_dm: bool):
+    if is_dm:
+        return math.sum(math.all_diagonals(state, real=True))
+    else:
+        return math.norm(state)
 
 
 def is_mixed_dm(dm):
