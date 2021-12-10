@@ -466,7 +466,7 @@ class State:
 
         E.g. ``psi / 0.5``
         """
-        if state.is_gaussian:
+        if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
             self.fock
         if self._dm is not None:
