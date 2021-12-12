@@ -198,6 +198,14 @@ class State:
         else:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
 
+    @property
+    def norm(self) -> float:
+        r"""Returns the norm of the state."""
+        if self.is_gaussian:
+            return 1.0  # TODO: implement from self._probability
+        else:
+            return fock.probability(self.fock, self.is_mixed)
+
     def ket(self, cutoffs: Sequence[Optional[int]]) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
@@ -319,7 +327,7 @@ class State:
                 try:
                     out_fock = self._preferred_projection(
                         other, other.indices(self.modes)
-                    )  # available in state Fock
+                    )
                 except AttributeError:
                     # matching other's cutoffs
                     self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
@@ -479,9 +487,9 @@ class State:
     def _repr_markdown_(self):
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
-            + "| Purity | Num modes | Bosonic size | Gaussian | Fock |\n"
-            + "| :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {(self.purity):.3f} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            + "| Purity | Norm | Num modes | Bosonic size | Gaussian | Fock |\n"
+            + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
+            + f"| {self.purity :.3f} | {self.norm :.3f} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
         if self.num_modes == 1:
