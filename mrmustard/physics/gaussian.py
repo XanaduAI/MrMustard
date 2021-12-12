@@ -579,7 +579,7 @@ def general_dyne(
     inv = math.inv(B + proj_cov)
     new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
     new_means = a + math.matvec(math.matmul(AB, inv), proj_means - b)
-    prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * proj_means - b)) / (
+    prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * (proj_means - b))) / (
         pi ** nB * (hbar ** -nB) * math.sqrt(math.det(B + proj_cov))
     )  # TODO: check this (hbar part especially)
     return prob, new_cov, new_means
