@@ -376,7 +376,7 @@ def probability(state: Tensor, is_dm: bool):
     if is_dm:
         return math.sum(math.all_diagonals(state, real=True))
     else:
-        return math.norm(state)
+        return math.abs(math.norm(state))
 
 
 def is_mixed_dm(dm):
