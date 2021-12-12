@@ -849,7 +849,7 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the log-negativity
     """
-    vals = sympletic_eigenvals(cov, hbar) / (hbar / 2)
+    vals = symplectic_eigenvals(cov, hbar) / (hbar / 2)
     vals_filtered = math.boolean_mask(
         vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.
