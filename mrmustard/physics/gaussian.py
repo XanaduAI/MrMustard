@@ -447,8 +447,8 @@ def loss_XYd(
 
     .. math::
 
-        X = math.sqrt(amplification)
-        Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
+        X = math.sqrt(gain)
+        Y = (gain - 1) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -470,14 +470,14 @@ def loss_XYd(
 
 
 def amp_XYd(
-    amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
+    gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
 ) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
 
     The quantum limited amplifier channel is recovered for ``nbar = 0.0``.
 
     Args:
-        amplification (float): value of the amplification > 1
+        gain (float): value of the gain > 1
         nbar (float): photon number expectation value in the environment (0 for quantum
             limited amplifier)
 
@@ -485,11 +485,11 @@ def amp_XYd(
         Tuple[Matrix, Vector]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
         amplifier channel.
     """
-    if math.any(amplification < 1):
-        raise ValueError("Amplification must be larger than 1")
-    x = math.sqrt(amplification)
+    if math.any(gain < 1):
+        raise ValueError("Gain must be larger than 1")
+    x = math.sqrt(gain)
     X = math.diag(math.concat([x, x], axis=0))
-    y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
+    y = (gain - 1) * (2 * nbar + 1) * hbar / 2
     Y = math.diag(math.concat([y, y], axis=0))
     return X, Y, None
 
@@ -727,7 +727,7 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     return 1 / math.sqrt(math.det((2 / hbar) * cov))
 
 
-def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
+def symplectic_eigenvals(cov: Matrix, hbar: float) -> Any:
     r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
@@ -758,7 +758,7 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the Von Neumann entropy
     """
-    symp_vals = sympletic_eigenvals(cov, hbar)
+    symp_vals = symplectic_eigenvals(cov, hbar)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
