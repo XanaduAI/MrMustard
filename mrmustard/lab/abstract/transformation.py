@@ -373,7 +373,7 @@ class Transformation:
             )
 
     def __repr__(self):
-        table = Table(title=f"{self.__class__.__qualname__}")
+        table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
         table.add_column("Parameters")
         table.add_column("dtype")
         table.add_column("Value")
