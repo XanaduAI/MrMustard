@@ -96,8 +96,16 @@ class PNRDetector(Parametrized, FockMeasurement):
         if self._stochastic_channel is not None:
             self._internal_stochastic_channel = self._stochastic_channel
         else:
-            efficiency = math.tile(math.atleast_1d(self.efficiency), [len(cutoffs)]) if len(math.atleast_1d(self.efficiency)) == 1 else self.efficiency
-            dark_counts = math.tile(math.atleast_1d(self.dark_counts), [len(cutoffs)]) if len(math.atleast_1d(self.dark_counts)) == 1 else self.dark_counts
+            efficiency = (
+                math.tile(math.atleast_1d(self.efficiency), [len(cutoffs)])
+                if len(math.atleast_1d(self.efficiency)) == 1
+                else self.efficiency
+            )
+            dark_counts = (
+                math.tile(math.atleast_1d(self.dark_counts), [len(cutoffs)])
+                if len(math.atleast_1d(self.dark_counts)) == 1
+                else self.dark_counts
+            )
             for c, qe, dc in zip(cutoffs, efficiency, dark_counts):
                 dark_prior = math.poisson(max_k=settings.PNR_INTERNAL_CUTOFF, rate=dc)
                 condprob = math.binomial_conditional_prob(

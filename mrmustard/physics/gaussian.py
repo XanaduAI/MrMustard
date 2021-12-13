@@ -469,9 +469,7 @@ def loss_XYd(
     return X, Y, None
 
 
-def amp_XYd(
-    gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
-) -> Matrix:
+def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
 
     The quantum limited amplifier channel is recovered for ``nbar = 0.0``.

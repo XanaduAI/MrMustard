@@ -87,7 +87,6 @@ class Coherent(Parametrized, State):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
         cutoffs: Optional[Sequence[int]] = None,
-        
     ):
         Parametrized.__init__(
             self,
@@ -414,7 +413,6 @@ class Gaussian(Parametrized, State):
             symplectic_trainable=symplectic_trainable,
             eigenvalues_bounds=eigenvalues_bounds,
             modes=modes,
-
         )
         cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
@@ -446,7 +444,9 @@ class Fock(Parametrized, State):
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
-    def __init__(self, n: Sequence[int], modes: Sequence[int] = None, cutoffs: Sequence[int] = None):
+    def __init__(
+        self, n: Sequence[int], modes: Sequence[int] = None, cutoffs: Sequence[int] = None
+    ):
         State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
         Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes)
 

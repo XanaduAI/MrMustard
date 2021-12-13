@@ -224,7 +224,7 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             ]
         )
         state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs*2]
+        state_b = state_b[min_cutoffs * 2]
         a = math.reshape(state_a, -1)
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
@@ -236,7 +236,7 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
                 for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
             ]
         )
-        state_a = state_a[min_cutoffs*2]
+        state_a = state_a[min_cutoffs * 2]
         state_b = state_b[min_cutoffs]
         b = math.reshape(state_b, -1)
         return math.real(

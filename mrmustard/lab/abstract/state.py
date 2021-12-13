@@ -42,7 +42,6 @@ class State:
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         _norm: float = 1.0,
-        
     ):
         r"""Initializes the state.
 
@@ -60,7 +59,7 @@ class State:
             modes (optional, Sequence[int]): the modes in which the state is defined
             cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.]
-            
+
         """
         self._purity = None
         self._fock_probabilities = None
@@ -332,9 +331,7 @@ class State:
                     for m in other.modes
                 ]
                 try:
-                    out_fock = self._preferred_projection(
-                        other, other.indices(self.modes)
-                    )
+                    out_fock = self._preferred_projection(other, other.indices(self.modes))
                 except AttributeError:
                     # matching other's cutoffs
                     self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
@@ -347,7 +344,7 @@ class State:
                         b_is_mixed=self.is_mixed,
                         modes=other.indices(self.modes),  # TODO: change arg name to indices
                         normalize=False,
-                        )
+                    )
                 if len(remaining_modes) > 0:
                     return (
                         State(dm=out_fock, modes=remaining_modes)
