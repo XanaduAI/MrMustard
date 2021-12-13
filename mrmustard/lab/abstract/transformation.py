@@ -93,8 +93,7 @@ class Transformation:
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
         new_state = State(
-            cov=cov, means=means, modes=state.modes
-        )  # NOTE: assumes modes don't change
+            cov=cov, means=means, modes=state.modes, _norm=state._norm)  # NOTE: assumes modes don't change
         return new_state
 
     def transform_fock(self, state: State, dual: bool) -> State:
