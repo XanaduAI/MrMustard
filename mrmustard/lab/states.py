@@ -468,4 +468,4 @@ class Fock(Parametrized, State):
                 used += 1
             else:
                 getitem.append(slice(None))
-        return other.fock[tuple(getitem)] if self.is_pure else other.fock[tuple(getitem) * 2]
+        return other.fock[tuple(getitem)] if other.is_pure else other.fock[tuple(getitem) * 2]
