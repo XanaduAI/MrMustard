@@ -74,7 +74,7 @@ class Coherent(Parametrized, State):
         x_bounds (float or None, float or None): The bounds of the x-displacement.
         y_bounds (float or None, float or None): The bounds of the y-displacement.
         modes (optional List[int]): The modes of the coherent state.
-        normalize (bool, default True): When projecting onto Coherent, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
     def __init__(
@@ -86,7 +86,8 @@ class Coherent(Parametrized, State):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        normalize: bool = True,
+        cutoffs: Optional[Sequence[int]] = None,
+        
     ):
         Parametrized.__init__(
             self,
@@ -97,11 +98,10 @@ class Coherent(Parametrized, State):
             x_bounds=x_bounds,
             y_bounds=y_bounds,
             modes=modes,
-            normalize=normalize,
         )
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def means(self):
@@ -138,7 +138,7 @@ class SqueezedVacuum(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the squeezed vacuum state.
-        normalize (bool, default True): When projecting onto SqueezedVacuum, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
     def __init__(
@@ -150,7 +150,7 @@ class SqueezedVacuum(Parametrized, State):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        normalize: bool = True,
+        cutoffs: Optional[Sequence[int]] = None,
     ):
         Parametrized.__init__(
             self,
@@ -161,11 +161,10 @@ class SqueezedVacuum(Parametrized, State):
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
             modes=modes,
-            normalize=normalize,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -190,7 +189,7 @@ class TMSV(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the two-mode squeezed vacuum state. Must be of length 2.
-        normalize (bool, default True): When projecting onto TMSV, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
     def __init__(
@@ -202,7 +201,7 @@ class TMSV(Parametrized, State):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = [0, 1],
-        normalize: bool = True,
+        cutoffs: Optional[Sequence[int]] = None,
     ):
         Parametrized.__init__(
             self,
@@ -213,11 +212,10 @@ class TMSV(Parametrized, State):
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
             modes=modes,
-            normalize=normalize,
         )
         cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -246,7 +244,7 @@ class Thermal(Parametrized, State):
         nbar_trainable (bool): whether the ``nbar`` is trainable
         nbar_bounds (tuple): the bounds of the ``nbar``
         modes (list): the modes of the thermal state
-        normalize (bool, default True): when projecting onto Thermal, whether to normalize the leftover state
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
     def __init__(
@@ -255,7 +253,7 @@ class Thermal(Parametrized, State):
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         modes: Optional[Sequence[int]] = None,
-        normalize: bool = True,
+        cutoffs: Optional[Sequence[int]] = None,
     ):
         Parametrized.__init__(
             self,
@@ -263,11 +261,10 @@ class Thermal(Parametrized, State):
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
             modes=modes,
-            normalize=normalize,
         )
         cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -312,7 +309,7 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds (tuple): the bounds of the displacement in the x direction
         y_bounds (tuple): the bounds of the displacement in the y direction
         modes (list): the modes of the displaced squeezed state.
-        normalize (bool, default True): when projecting onto DisplacedSqueezed, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
     def __init__(
@@ -330,7 +327,7 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        normalize: bool = True,
+        cutoffs: Optional[Sequence[int]] = None,
     ):
         Parametrized.__init__(
             self,
@@ -347,11 +344,10 @@ class DisplacedSqueezed(Parametrized, State):
             x_bounds=x_bounds,
             y_bounds=y_bounds,
             modes=modes,
-            normalize=normalize,
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -388,7 +384,7 @@ class Gaussian(Parametrized, State):
         symplectic_trainable (bool): whether the symplectic matrix is trainable
         eigenvalues_bounds (tuple): the bounds of the eigenvalues
         modes (optional, List[int]): the modes of the Gaussian state.
-        normalize (bool, default True): when projecting onto Gaussian, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
     def __init__(
@@ -398,8 +394,9 @@ class Gaussian(Parametrized, State):
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
+        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (settings.HBAR / 2, None),
         modes: List[int] = None,
-        normalize: bool = True,
+        cutoffs: Optional[Sequence[int]] = None,
     ):
         if symplectic is None:
             symplectic = training.new_symplectic(num_modes=num_modes)
@@ -415,14 +412,13 @@ class Gaussian(Parametrized, State):
             eigenvalues=eigenvalues,
             eigenvalues_trainable=eigenvalues_trainable,
             symplectic_trainable=symplectic_trainable,
-            eigenvalues_bounds=(settings.HBAR / 2, None),
-            symplectic_bounds=(None, None),
+            eigenvalues_bounds=eigenvalues_bounds,
             modes=modes,
-            normalize=normalize,
+
         )
         cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -447,15 +443,12 @@ class Fock(Parametrized, State):
     Args:
         n (int or List[int]): the number of photons in each mode
         modes (optional, List[int]): the modes of the Fock state
-        normalize (bool, default True): when projecting onto Fock, whether to normalize the
-            leftover state
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
     """
 
-    def __init__(self, n: Sequence[int], modes: Sequence[int] = None, normalize: bool = True):
-        State.__init__(self, ket=fock.fock_state(n))
-        Parametrized.__init__(
-            self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize
-        )
+    def __init__(self, n: Sequence[int], modes: Sequence[int] = None, cutoffs: Sequence[int] = None):
+        State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
+        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes)
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).
