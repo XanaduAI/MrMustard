@@ -95,7 +95,7 @@ def about():
     print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
     print("Platform info:             {}".format(platform.platform()))
     print("Installation path:         {}".format(os.path.dirname(__file__)))
-    print("Mr Mustard version:       {}".format(__version__))
+    print("Mr Mustard version:        {}".format(__version__))
     print("Numpy version:             {}".format(numpy.__version__))
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
