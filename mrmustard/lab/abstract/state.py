@@ -459,7 +459,7 @@ class State:
 
         E.g., ``0.5 * psi``.
         """
-        if state.is_gaussian:
+        if self.is_gaussian:
             warnings.warn(
                 "scalar multiplication forces conversion to fock representation", UserWarning
             )
