@@ -13,7 +13,7 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        # min + mean + 5*std when auto-detecting the Fock cutoff
+        # clip(mean + 5*std, min, max) when auto-detecting the Fock cutoff
         self.AUTOCUTOFF_STDEV_FACTOR = 5
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
@@ -29,14 +29,14 @@ class Settings:
     def backend(self):
         """The backend which is used.
 
-        Can be either ``'tensorflow'`` or ``'pytorch'``.
+        Can be either ``'tensorflow'`` or ``'torch'``.
         """
         return self._backend
 
     @backend.setter
     def backend(self, backend_name: str):
-        if backend_name not in ["tensorflow", "pytorch"]:
-            raise ValueError("Backend must be either 'tensorflow' or 'pytorch'")
+        if backend_name not in ["tensorflow", "torch"]:
+            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = backend_name
 
 

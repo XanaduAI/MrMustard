@@ -347,7 +347,7 @@ class State:
                         b_is_mixed=self.is_mixed,
                         modes=other.indices(self.modes),  # TODO: change arg name to indices
                         normalize=False,
-                        )  
+                        )
                 if len(remaining_modes) > 0:
                     return (
                         State(dm=out_fock, modes=remaining_modes)
