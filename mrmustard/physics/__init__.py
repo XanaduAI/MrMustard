@@ -36,7 +36,7 @@ def fidelity(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.fidelity(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    return fock.fidelity(A.fock, B.fock, a_dm=A._dm is not None, b_dm=B._dm is not None)
+    return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
 
 
 def normalize(A):
