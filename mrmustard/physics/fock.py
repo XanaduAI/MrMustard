@@ -372,7 +372,7 @@ def normalize(fock: Tensor, is_dm: bool):
         return fock / math.sum(math.norm(fock))
 
 
-def probability(state: Tensor, is_dm: bool):
+def norm(state: Tensor, is_dm: bool):
     if is_dm:
         return math.sum(math.all_diagonals(state, real=True))
     else:
