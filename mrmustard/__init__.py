@@ -72,7 +72,7 @@ def about():
         Python version:            3.6.10
         Platform info:             Linux-5.8.18-1-MANJARO-x86_64-with-arch-Manjaro-Linux
         Installation path:         /home/mrmustard/
-        Mr Mustard version:       0.1.0
+        Mr Mustard version:        0.1.0
         Numpy version:             1.21.4
         Scipy version:             1.7.3
         The Walrus version:        0.17.0
