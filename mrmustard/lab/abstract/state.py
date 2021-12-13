@@ -261,7 +261,6 @@ class State:
             cutoffs = self.cutoffs
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-        print(cutoffs)
         if self.is_pure:
             ket = self.ket(cutoffs=cutoffs)
             if ket is not None:
