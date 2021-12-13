@@ -50,11 +50,9 @@ def normalize(A):
         A._norm = 1.0
         return A
     if A.is_mixed:
-        A._dm = fock.normalize(A.fock, is_dm=A.is_mixed)
+        return A.__class__(dm=fock.normalize(A.dm(), is_dm=True))
     else:
-        A._ket = fock.normalize(A.fock, is_dm=A.is_mixed)
-    A._norm = 1.0
-    return A
+        return A.__class__(ket=fock.normalize(A.ket(), is_dm=False))
 
 
 def norm(A) -> float:
