@@ -74,7 +74,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         Parametrized.__init__(
             self,
             efficiency=math.atleast_1d(efficiency),
-            dark_counts=math.atleast_1d(efficiency),
+            dark_counts=math.atleast_1d(dark_counts),
             efficiency_trainable=efficiency_trainable,
             dark_counts_trainable=dark_counts_trainable,
             efficiency_bounds=efficiency_bounds,
