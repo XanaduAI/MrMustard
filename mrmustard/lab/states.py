@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.types import *
+from typing import Union, Optional, List, Tuple, Sequence, Dict
+from mrmustard.types import Scalar, Vector, Matrix, Trainable
 from mrmustard import settings
-from mrmustard.math import Math
-
-math = Math()
-from mrmustard.lab.abstract import State, Transformation
+from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.utils import training
+from mrmustard.math import Math
+math = Math()
+
 
 __all__ = [
     "Vacuum",
@@ -462,7 +463,7 @@ class Fock(Parametrized, State):
         """
         getitem = []
         used = 0
-        for i, m in enumerate(other.modes):
+        for i, _ in enumerdate(other.modes):
             if i in mode_indices:
                 getitem.append(self._n[used])
                 used += 1

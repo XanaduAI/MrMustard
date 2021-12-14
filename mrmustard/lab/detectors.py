@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from mrmustard.types import *
+from typing import List, Tuple, Union, Optional
+from mrmustard.types import Matrix
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement
-from mrmustard.physics import fock, gaussian
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
 from mrmustard.math import Math
@@ -227,7 +226,7 @@ class Homodyne(Parametrized, State):
         r: Union[float, List[float]] = None,
     ):
         quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
-        result1 = math.astensor(result, dtype="float64")
+        result = math.astensor(result, dtype="float64")
         x = result * math.cos(quadrature_angle)
         y = result * math.sin(quadrature_angle)
         instance = DisplacedSqueezed(
@@ -235,6 +234,7 @@ class Homodyne(Parametrized, State):
             phi=2 * quadrature_angle,
             x=x,
             y=y,
+            modes=modes,
         )
         instance.__class__ = cls
         return instance

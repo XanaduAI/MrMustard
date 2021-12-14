@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from mrmustard.types import *
+from typing import Union, Optional, List, Tuple, Dict
+from mrmustard.types import Tensor, Trainable
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.utils import training
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import gaussian
 
 __all__ = [
     "Dgate",
