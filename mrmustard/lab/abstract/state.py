@@ -322,7 +322,12 @@ class State:
                     settings.HBAR,
                 )
                 if len(remaining_modes) > 0:
-                    return State(means=means, cov=cov, modes=remaining_modes, _norm=prob if (hasattr(self, "_normalize") and self._normalize) else 1.0)
+                    return State(
+                        means=means,
+                        cov=cov,
+                        modes=remaining_modes,
+                        _norm=prob if (hasattr(self, "_normalize") and self._normalize) else 1.0,
+                    )
                 else:
                     return prob
             else:  # either self or other is not gaussian

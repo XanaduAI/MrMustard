@@ -473,7 +473,9 @@ class Fock(Parametrized, State):
         normalize: bool = False,
     ):
         State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
-        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize)
+        Parametrized.__init__(
+            self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize
+        )
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).
