@@ -20,6 +20,7 @@ from mrmustard.physics import gaussian, fock
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.utils import training
 from mrmustard.math import Math
+
 math = Math()
 
 
