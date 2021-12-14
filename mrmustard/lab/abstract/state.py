@@ -345,7 +345,6 @@ class State:
                         modes=other.indices(self.modes),  # TODO: change arg name to indices
                         normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
-                print(out_fock)
                 if len(remaining_modes) > 0:
                     return (
                         State(dm=out_fock, modes=remaining_modes)
