@@ -262,3 +262,8 @@ def test_norm_2mode():
 def test_norm_2mode_normalized():
     leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=True)[0]
     assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+
+
+def test_norm_2mode_gaussian_normalized():
+    leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
+    assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
