@@ -466,7 +466,11 @@ class Fock(Parametrized, State):
     """
 
     def __init__(
-        self, n: Sequence[int], modes: Sequence[int] = None, cutoffs: Sequence[int] = None, normalize: bool = False
+        self,
+        n: Sequence[int],
+        modes: Sequence[int] = None,
+        cutoffs: Sequence[int] = None,
+        normalize: bool = False,
     ):
         State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
         Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes)
