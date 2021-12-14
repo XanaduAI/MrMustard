@@ -114,7 +114,7 @@ X8_realistic = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
                )
 
 # 2-mode Bloch Messiah decomposition
-bloch_messiah = BSgate(0.2, 1.9) >> Sgate(r=[0.1,0.2]) >> BSgate(-0.1, 2.1) >> Dgate(x=[0.1, -0.4])
+bloch_messiah = Sgate(r=[0.1,0.2]) >> BSgate(-0.1, 2.1) >> Dgate(x=[0.1, -0.4])
 my_state = Vacuum(2) >> bloch_messiah
 ```
 
