@@ -463,7 +463,7 @@ class Fock(Parametrized, State):
         """
         getitem = []
         used = 0
-        for i, _ in enumerdate(other.modes):
+        for i, _ in enumerate(other.modes):
             if i in mode_indices:
                 getitem.append(self._n[used])
                 used += 1
