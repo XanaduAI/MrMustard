@@ -14,7 +14,8 @@
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard.types import *
+from mrmustard.types import Matrix, Vector, Scalar
+from typing import Tuple, Union, Sequence, List, Any
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from numpy import pi
@@ -632,24 +633,6 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""Returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
-
-
-def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
-    r"""Automatically determines reasonable cutoffs.
-
-    Args:
-        cov: the covariance matrix
-        means: the means vector
-        hbar: the value of the Planck constant
-
-    Returns:
-        List[int]: a list of cutoff indices
-    """
-    cutoffs = (
-        number_means(cov, means, hbar)
-        + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
-    )
-    return [max(1, int(i)) for i in cutoffs]
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
