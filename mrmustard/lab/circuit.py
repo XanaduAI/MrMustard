@@ -17,17 +17,16 @@ from __future__ import annotations
 __all__ = ["Circuit"]
 
 
-from mrmustard.types import *
+from mrmustard.types import Matrix, Vector
+from typing import List, Tuple
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard import settings
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.lab.abstract import Transformation
-from mrmustard.lab.states import TMSV
 from mrmustard.lab.abstract import State
 
 
 class Circuit(Transformation, Parametrized):
-    def __init__(self, ops: Sequence = []):
+    def __init__(self, ops: List = []):
         self._ops: List = [o for o in ops]
         self.reset()
 
