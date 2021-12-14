@@ -473,7 +473,7 @@ class Fock(Parametrized, State):
         normalize: bool = False,
     ):
         State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
-        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes)
+        Parametrized.__init__(self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize)
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).
@@ -493,4 +493,7 @@ class Fock(Parametrized, State):
                 used += 1
             else:
                 getitem.append(slice(None))
-        return other.fock[tuple(getitem)] if other.is_pure else other.fock[tuple(getitem) * 2]
+        output = other.fock[tuple(getitem)] if other.is_pure else other.fock[tuple(getitem) * 2]
+        if self._normalize:
+            return fock.normalize(output, is_dm=other.is_mixed)
+        return output

@@ -322,7 +322,7 @@ class State:
                     settings.HBAR,
                 )
                 if len(remaining_modes) > 0:
-                    return State(means=means, cov=cov, modes=remaining_modes, _norm=prob)
+                    return State(means=means, cov=cov, modes=remaining_modes, _norm=prob if (hasattr(self, "_normalize") and self._normalize) else 1.0)
                 else:
                     return prob
             else:  # either self or other is not gaussian
@@ -343,8 +343,9 @@ class State:
                         a_is_mixed=other.is_mixed,
                         b_is_mixed=self.is_mixed,
                         modes=other.indices(self.modes),  # TODO: change arg name to indices
-                        normalize=False,
+                        normalize=self._normalize if hasattr(self, "_normalize") else False,
                     )
+                print(out_fock)
                 if len(remaining_modes) > 0:
                     return (
                         State(dm=out_fock, modes=remaining_modes)

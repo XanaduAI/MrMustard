@@ -247,9 +247,7 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
 
 
 def test_norm_1mode():
-    assert np.allclose(
-        Coherent(2.0) << Fock(3), np.abs((2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2
-    )
+    assert np.allclose(Coherent(2.0) << Fock(3), np.abs((2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2)
 
 
 def test_norm_2mode():
@@ -257,3 +255,7 @@ def test_norm_2mode():
     assert np.isclose(
         (2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0), physics.norm(leftover), atol=1e-5
     )
+
+def test_norm_2mode_normalized():
+    leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=True)[0]
+    assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
