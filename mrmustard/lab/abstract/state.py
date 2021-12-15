@@ -327,7 +327,7 @@ class State:
                         cov=cov,
                         modes=remaining_modes,
                         _norm=prob
-                        if (hasattr(self, "_normalize") and self._normalize is False)
+                        if getattr(self, "_normalize", False)
                         else 1.0,
                     )
                 else:
