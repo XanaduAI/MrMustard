@@ -143,7 +143,7 @@ class SqueezedVacuum(Parametrized, State):
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the squeezed vacuum state.
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto SqueezedVacuum, whether to normalize the leftover state.
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``SqueezedVacuum``, 
     """
 
     def __init__(
