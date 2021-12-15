@@ -76,8 +76,8 @@ class Coherent(Parametrized, State):
         x_bounds (float or None, float or None): The bounds of the x-displacement.
         y_bounds (float or None, float or None): The bounds of the y-displacement.
         modes (optional List[int]): The modes of the coherent state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Coherent, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Coherent``
     """
 
     def __init__(
