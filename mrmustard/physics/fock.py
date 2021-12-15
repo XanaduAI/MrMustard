@@ -377,7 +377,7 @@ def norm(state: Tensor, is_dm: bool):
     Returns the norm of a ket or the trace of the density matrix.
     Note that the "norm" is intended as that float number that is used to normalize the state,
     which depends on the representation. Hence different numbers for different representations
-    of the same state (|amp| for ket and |amp|^2 for dm).
+    of the same state (:math:`|amp|` for ``ket`` and :math:`|amp|^2` for ``dm``).
     """
     if is_dm:
         return math.sum(math.all_diagonals(state, real=True))
