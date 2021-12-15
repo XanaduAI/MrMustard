@@ -41,10 +41,10 @@ def fidelity(A, B) -> float:
 
 def normalize(A):
     r"""Returns the normalized state.
-    
+
     Args:
         A (State): the quantum state
-        
+
     Returns:
         State: the normalized state
     """
