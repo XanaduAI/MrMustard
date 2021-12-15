@@ -307,7 +307,8 @@ class State:
         If ``other`` is a ``Transformation``, it returns the dual of the transformation applied to
         ``self``: ``other << self`` is like ``self >> other^dual``.
 
-        Note that the returned state is not normalized.
+        Note that the returned state is not normalized. To normalize a state you can use
+        ``mrmustard.physics.normalize``.
         """
         if issubclass(other.__class__, State):
             remaining_modes = [m for m in other.modes if m not in self.modes]
