@@ -196,8 +196,8 @@ class TMSV(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the two-mode squeezed vacuum state. Must be of length 2.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto TMSV, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``TMSV``
     """
 
     def __init__(
