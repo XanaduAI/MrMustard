@@ -498,7 +498,7 @@ class State:
             f"#### {self.__class__.__qualname__}\n\n"
             + "| Purity | Norm | Num modes | Bosonic size | Gaussian | Fock |\n"
             + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.3f} | {self.norm :.3f} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            + f"| {self.purity :.2e} | {self.norm :.2e} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
         if self.num_modes == 1:
