@@ -57,8 +57,8 @@ class State:
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Array): the Fock representation
             modes (optional, Sequence[int]): the modes in which the state is defined
-            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-            _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.]
+            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+            _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
         self._purity = None
@@ -327,7 +327,7 @@ class State:
                         cov=cov,
                         modes=remaining_modes,
                         _norm=prob
-                        if (hasattr(self, "_normalize") and self._normalize is False)
+                        if getattr(self, "_normalize", False)
                         else 1.0,
                     )
                 else:
@@ -498,7 +498,7 @@ class State:
             f"#### {self.__class__.__qualname__}\n\n"
             + "| Purity | Norm | Num modes | Bosonic size | Gaussian | Fock |\n"
             + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.3f} | {self.norm :.3f} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            + f"| {self.purity :.2e} | {self.norm :.2e} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
         if self.num_modes == 1:

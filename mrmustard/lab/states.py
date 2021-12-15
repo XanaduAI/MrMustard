@@ -76,8 +76,8 @@ class Coherent(Parametrized, State):
         x_bounds (float or None, float or None): The bounds of the x-displacement.
         y_bounds (float or None, float or None): The bounds of the y-displacement.
         modes (optional List[int]): The modes of the coherent state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Coherent, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Coherent``
     """
 
     def __init__(
@@ -142,8 +142,8 @@ class SqueezedVacuum(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the squeezed vacuum state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto SqueezedVacuum, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``SqueezedVacuum``, 
     """
 
     def __init__(
@@ -196,8 +196,8 @@ class TMSV(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the two-mode squeezed vacuum state. Must be of length 2.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto TMSV, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``TMSV``
     """
 
     def __init__(
@@ -254,8 +254,8 @@ class Thermal(Parametrized, State):
         nbar_trainable (bool): whether the ``nbar`` is trainable
         nbar_bounds (tuple): the bounds of the ``nbar``
         modes (list): the modes of the thermal state
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Thermal, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Thermal``
     """
 
     def __init__(
@@ -322,8 +322,8 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds (tuple): the bounds of the displacement in the x direction
         y_bounds (tuple): the bounds of the displacement in the y direction
         modes (list): the modes of the displaced squeezed state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto DisplacedSqueezed, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``DisplacedSqueezed``
     """
 
     def __init__(
@@ -400,8 +400,8 @@ class Gaussian(Parametrized, State):
         symplectic_trainable (bool): whether the symplectic matrix is trainable
         eigenvalues_bounds (tuple): the bounds of the eigenvalues
         modes (optional, List[int]): the modes of the Gaussian state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Gaussian, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto Gaussian
     """
 
     def __init__(
@@ -461,8 +461,8 @@ class Fock(Parametrized, State):
     Args:
         n (int or List[int]): the number of photons in each mode
         modes (optional, List[int]): the modes of the Fock state
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Fock, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Fock``
     """
 
     def __init__(

@@ -41,8 +41,10 @@ def fidelity(A, B) -> float:
 
 def normalize(A):
     r"""Returns the normalized state.
+    
     Args:
-        A (State) the quantum state
+        A (State): the quantum state
+        
     Returns:
         State: the normalized state
     """
@@ -57,11 +59,12 @@ def normalize(A):
 
 def norm(A) -> float:
     r"""Calculates the norm of a quantum state.
+
     The norm is equal to the trace of the density matrix if the state
     is mixed and to the norm of the state vector if the state is pure.
 
     Args:
-        A (State) the quantum state
+        A (State): the quantum state
 
     Returns:
         float: the norm of the state
