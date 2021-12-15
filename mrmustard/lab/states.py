@@ -142,7 +142,7 @@ class SqueezedVacuum(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the squeezed vacuum state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``SqueezedVacuum``, 
     """
 
