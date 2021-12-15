@@ -254,8 +254,8 @@ class Thermal(Parametrized, State):
         nbar_trainable (bool): whether the ``nbar`` is trainable
         nbar_bounds (tuple): the bounds of the ``nbar``
         modes (list): the modes of the thermal state
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Thermal, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Thermal``
     """
 
     def __init__(
