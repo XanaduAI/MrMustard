@@ -57,7 +57,7 @@ class State:
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Array): the Fock representation
             modes (optional, Sequence[int]): the modes in which the state is defined
-            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
+            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
