@@ -461,8 +461,8 @@ class Fock(Parametrized, State):
     Args:
         n (int or List[int]): the number of photons in each mode
         modes (optional, List[int]): the modes of the Fock state
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Fock, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Fock``
     """
 
     def __init__(
