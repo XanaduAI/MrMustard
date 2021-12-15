@@ -400,8 +400,8 @@ class Gaussian(Parametrized, State):
         symplectic_trainable (bool): whether the symplectic matrix is trainable
         eigenvalues_bounds (tuple): the bounds of the eigenvalues
         modes (optional, List[int]): the modes of the Gaussian state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto Gaussian, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto Gaussian
     """
 
     def __init__(
