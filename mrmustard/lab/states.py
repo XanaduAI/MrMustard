@@ -322,8 +322,8 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds (tuple): the bounds of the displacement in the x direction
         y_bounds (tuple): the bounds of the displacement in the y direction
         modes (list): the modes of the displaced squeezed state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state.
-        normalize (bool, default False): When projecting onto DisplacedSqueezed, whether to normalize the leftover state.
+        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto ``DisplacedSqueezed``
     """
 
     def __init__(
