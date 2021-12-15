@@ -74,6 +74,7 @@ def about():
         Installation path:         /home/mrmustard/
         Mr Mustard version:        0.1.0
         Numpy version:             1.21.4
+        Numba version:             0.48.0
         Scipy version:             1.7.3
         The Walrus version:        0.17.0
         TensorFlow version:        2.7.0
@@ -84,6 +85,7 @@ def about():
     import platform
     import os
     import numpy
+    import numba
     import scipy
     import thewalrus
     import tensorflow
@@ -97,6 +99,7 @@ def about():
     print("Installation path:         {}".format(os.path.dirname(__file__)))
     print("Mr Mustard version:        {}".format(__version__))
     print("Numpy version:             {}".format(numpy.__version__))
+    print("Numba version:             {}".format(numba.__version__))
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
