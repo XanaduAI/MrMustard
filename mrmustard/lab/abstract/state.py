@@ -326,7 +326,7 @@ class State:
                         means=means,
                         cov=cov,
                         modes=remaining_modes,
-                        _norm=prob if getattr(self, "_normalize", False) else 1.0,
+                        _norm=prob if not getattr(self, "_normalize", False) else 1.0,
                     )
                 else:
                     return prob
