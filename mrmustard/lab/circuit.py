@@ -89,16 +89,6 @@ class Circuit(Transformation, Parametrized):
         """Returns `true` if all operations in the circuit are Gaussian."""
         return all(op.is_gaussian for op in self._ops)
 
-    def extend(self, obj):  # TODO: remove
-        """Extend the circuit operations by appending elements from an iterable."""
-        _ = self._ops.extend(obj)
-        self.reset()
-
-    def append(self, obj):  # TODO: remove
-        """Append a new operation to the end of the circuit."""
-        _ = self._ops.append(obj)
-        self.reset()
-
     def __len__(self):
         return len(self._ops)
 
