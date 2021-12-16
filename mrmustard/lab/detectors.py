@@ -15,7 +15,7 @@
 from typing import List, Tuple, Union, Optional
 from mrmustard.types import Matrix
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard.lab.abstract import State, FockMeasurement
+from mrmustard.lab.abstract import FockMeasurement
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
 from mrmustard.math import Math
@@ -24,7 +24,7 @@ math = Math()
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 
-
+# pylint: disable=no-member
 class PNRDetector(Parametrized, FockMeasurement):
     r"""Photon Number Resolving detector.
 
@@ -117,6 +117,7 @@ class PNRDetector(Parametrized, FockMeasurement):
                 )
 
 
+# pylint: disable: no-member
 class ThresholdDetector(Parametrized, FockMeasurement):
     r"""Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
 
@@ -198,28 +199,21 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 self._internal_stochastic_channel.append(condprob)
 
 
-class Heterodyne(Parametrized, State):
+class Heterodyne(Coherent):
     r"""Heterodyne measurement on given modes."""
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         x: Union[float, List[float]] = 0.0,
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
-        instance = Coherent(x=x, y=y, modes=modes)
-        instance.__class__ = cls  # NOTE: naughty?
-        return instance
-
-    def __init__(self, *args, **kwargs):
-        pass
+        super().__init__(x, y, modes=modes)
 
 
-class Homodyne(Parametrized, State):
-    r"""Heterodyne measurement on given modes."""
-
-    def __new__(
-        cls,
+class Homodyne(DisplacedSqueezed):
+    def __init__(
+        self,
         quadrature_angle: Union[float, List[float]],
         result: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
@@ -229,15 +223,11 @@ class Homodyne(Parametrized, State):
         result = math.astensor(result, dtype="float64")
         x = result * math.cos(quadrature_angle)
         y = result * math.sin(quadrature_angle)
-        instance = DisplacedSqueezed(
-            r=settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64"),
+        r = settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64")
+        super().__init__(
+            r=r,
             phi=2 * quadrature_angle,
             x=x,
             y=y,
             modes=modes,
         )
-        instance.__class__ = cls
-        return instance
-
-    def __init__(self, *args, **kwargs):
-        pass
