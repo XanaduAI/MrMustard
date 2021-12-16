@@ -24,6 +24,7 @@ from scipy.stats import poisson
 from mrmustard.lab import *
 from mrmustard.utils.training import Optimizer
 from mrmustard.physics import gaussian
+from mrmustard import physics
 from mrmustard import settings
 
 np.random.seed(137)
@@ -243,3 +244,26 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
         / (1 + s)
     )
     assert np.allclose(remaining_state.means, means, atol=1e-5)
+
+
+def test_norm_1mode():
+    assert np.allclose(
+        Coherent(2.0) << Fock(3), np.abs((2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2
+    )
+
+
+def test_norm_2mode():
+    leftover = Coherent(x=[2.0, 2.0]) << Fock(3)[0]
+    assert np.isclose(
+        (2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0), physics.norm(leftover), atol=1e-5
+    )
+
+
+def test_norm_2mode_normalized():
+    leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=True)[0]
+    assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+
+
+def test_norm_2mode_gaussian_normalized():
+    leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
+    assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)

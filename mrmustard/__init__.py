@@ -13,7 +13,7 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        # min + mean + 5*std when auto-detecting the Fock cutoff
+        # clip(mean + 5*std, min, max) when auto-detecting the Fock cutoff
         self.AUTOCUTOFF_STDEV_FACTOR = 5
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
@@ -29,14 +29,14 @@ class Settings:
     def backend(self):
         """The backend which is used.
 
-        Can be either ``'tensorflow'`` or ``'pytorch'``.
+        Can be either ``'tensorflow'`` or ``'torch'``.
         """
         return self._backend
 
     @backend.setter
     def backend(self, backend_name: str):
-        if backend_name not in ["tensorflow", "pytorch"]:
-            raise ValueError("Backend must be either 'tensorflow' or 'pytorch'")
+        if backend_name not in ["tensorflow", "torch"]:
+            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = backend_name
 
 
@@ -72,8 +72,9 @@ def about():
         Python version:            3.6.10
         Platform info:             Linux-5.8.18-1-MANJARO-x86_64-with-arch-Manjaro-Linux
         Installation path:         /home/mrmustard/
-        Mr Mustard version:       0.1.0
+        Mr Mustard version:        0.1.0
         Numpy version:             1.21.4
+        Numba version:             0.48.0
         Scipy version:             1.7.3
         The Walrus version:        0.17.0
         TensorFlow version:        2.7.0
@@ -84,6 +85,7 @@ def about():
     import platform
     import os
     import numpy
+    import numba
     import scipy
     import thewalrus
     import tensorflow
@@ -95,8 +97,9 @@ def about():
     print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
     print("Platform info:             {}".format(platform.platform()))
     print("Installation path:         {}".format(os.path.dirname(__file__)))
-    print("Mr Mustard version:       {}".format(__version__))
+    print("Mr Mustard version:        {}".format(__version__))
     print("Numpy version:             {}".format(numpy.__version__))
+    print("Numba version:             {}".format(numba.__version__))
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))

@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from mrmustard.types import *
+from typing import Union, Optional, List, Tuple, Dict
+from mrmustard.types import Tensor, Trainable
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.utils import training
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import gaussian
 
 __all__ = [
     "Dgate",
@@ -581,38 +581,38 @@ class Amplifier(Parametrized, Transformation):
 
     .. code:: python
 
-        X = sqrt(amplification) * I
-        Y = (amplification-1) * (2*nbar + 1) * (hbar / 2) * I
+        X = sqrt(gain) * I
+        Y = (gain-1) * (2*nbar + 1) * (hbar / 2) * I
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
-    If ``amplification`` is a single float, the parallel instances of the gate share that parameter.
+    If ``gain`` is a single float, the parallel instances of the gate share that parameter.
     To apply mode-specific values use a list of floats.
-    One can optionally set bounds for ``amplification``, which the optimizer will respect.
+    One can optionally set bounds for ``gain``, which the optimizer will respect.
 
     Args:
-        amplification (float or List[float]): the list of amplifications (must be > 1)
+        gain (float or List[float]): the list of gains (must be > 1)
         nbar (float): the average number of photons in the thermal state
         nbar_trainable (bool): whether nbar is a trainable variable
-        amplification_trainable (bool): whether amplification is a trainable variable
-        amplification_bounds (float, float): bounds for the amplification
+        gain_trainable (bool): whether gain is a trainable variable
+        gain_bounds (float, float): bounds for the gain
         nbar_bounds (float, float): bounds for the average number of photons in the thermal state
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
     def __init__(
         self,
-        amplification: Union[Optional[float], Optional[List[float]]] = 1.0,
+        gain: Union[Optional[float], Optional[List[float]]] = 1.0,
         nbar: float = 0.0,
-        amplification_trainable: bool = False,
+        gain_trainable: bool = False,
         nbar_trainable: bool = False,
-        amplification_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
+        gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            amplification=amplification,
-            amplification_trainable=amplification_trainable,
-            amplification_bounds=amplification_bounds,
+            gain=gain,
+            gain_trainable=gain_trainable,
+            gain_bounds=gain_bounds,
             nbar=nbar,
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
@@ -623,11 +623,11 @@ class Amplifier(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)[0]
+        return gaussian.amp_XYd(self.gain, self.nbar, settings.HBAR)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.amp_XYd(self.amplification, self.nbar, settings.HBAR)[1]
+        return gaussian.amp_XYd(self.gain, self.nbar, settings.HBAR)[1]
 
 
 class AdditiveNoise(Parametrized, Transformation):

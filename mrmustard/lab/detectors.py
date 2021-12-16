@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from mrmustard.types import *
+from typing import List, Tuple, Union, Optional
+from mrmustard.types import Matrix
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.abstract import State, FockMeasurement
-from mrmustard.physics import fock, gaussian
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
 from mrmustard.math import Math
@@ -71,14 +70,10 @@ class PNRDetector(Parametrized, FockMeasurement):
         else:
             num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
 
-        if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
-            efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
-        if len(math.atleast_1d(dark_counts)) == 1 and num_modes > 1:
-            dark_counts = math.tile(math.atleast_1d(dark_counts), [num_modes])
         Parametrized.__init__(
             self,
-            efficiency=efficiency,
-            dark_counts=dark_counts,
+            efficiency=math.atleast_1d(efficiency),
+            dark_counts=math.atleast_1d(dark_counts),
             efficiency_trainable=efficiency_trainable,
             dark_counts_trainable=dark_counts_trainable,
             efficiency_bounds=efficiency_bounds,
@@ -100,9 +95,17 @@ class PNRDetector(Parametrized, FockMeasurement):
         if self._stochastic_channel is not None:
             self._internal_stochastic_channel = self._stochastic_channel
         else:
-            for c, qe, dc in zip(
-                cutoffs, math.atleast_1d(self.efficiency)[:], math.atleast_1d(self.dark_counts)[:]
-            ):
+            efficiency = (
+                math.tile(math.atleast_1d(self.efficiency), [len(cutoffs)])
+                if len(math.atleast_1d(self.efficiency)) == 1
+                else self.efficiency
+            )
+            dark_counts = (
+                math.tile(math.atleast_1d(self.dark_counts), [len(cutoffs)])
+                if len(math.atleast_1d(self.dark_counts)) == 1
+                else self.dark_counts
+            )
+            for c, qe, dc in zip(cutoffs, efficiency, dark_counts):
                 dark_prior = math.poisson(max_k=settings.PNR_INTERNAL_CUTOFF, rate=dc)
                 condprob = math.binomial_conditional_prob(
                     success_prob=qe, dim_in=settings.PNR_INTERNAL_CUTOFF, dim_out=c
@@ -223,7 +226,7 @@ class Homodyne(Parametrized, State):
         r: Union[float, List[float]] = None,
     ):
         quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
-        result1 = math.astensor(result, dtype="float64")
+        result = math.astensor(result, dtype="float64")
         x = result * math.cos(quadrature_angle)
         y = result * math.sin(quadrature_angle)
         instance = DisplacedSqueezed(
@@ -231,6 +234,7 @@ class Homodyne(Parametrized, State):
             phi=2 * quadrature_angle,
             x=x,
             y=y,
+            modes=modes,
         )
         instance.__class__ = cls
         return instance

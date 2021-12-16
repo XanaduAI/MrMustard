@@ -14,7 +14,8 @@
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard.types import *
+from mrmustard.types import Matrix, Vector, Scalar
+from typing import Tuple, Union, Sequence, List, Any
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from numpy import pi
@@ -447,8 +448,8 @@ def loss_XYd(
 
     .. math::
 
-        X = math.sqrt(amplification)
-        Y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
+        X = math.sqrt(gain)
+        Y = (gain - 1) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -469,15 +470,13 @@ def loss_XYd(
     return X, Y, None
 
 
-def amp_XYd(
-    amplification: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
-) -> Matrix:
+def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
 
     The quantum limited amplifier channel is recovered for ``nbar = 0.0``.
 
     Args:
-        amplification (float): value of the amplification > 1
+        gain (float): value of the gain > 1
         nbar (float): photon number expectation value in the environment (0 for quantum
             limited amplifier)
 
@@ -485,11 +484,11 @@ def amp_XYd(
         Tuple[Matrix, Vector]: the ``X``, ``Y`` matrices and the ``d`` vector for the noisy
         amplifier channel.
     """
-    if math.any(amplification < 1):
-        raise ValueError("Amplification must be larger than 1")
-    x = math.sqrt(amplification)
+    if math.any(gain < 1):
+        raise ValueError("Gain must be larger than 1")
+    x = math.sqrt(gain)
     X = math.diag(math.concat([x, x], axis=0))
-    y = (amplification - 1) * (2 * nbar + 1) * hbar / 2
+    y = (gain - 1) * (2 * nbar + 1) * hbar / 2
     Y = math.diag(math.concat([y, y], axis=0))
     return X, Y, None
 
@@ -579,7 +578,7 @@ def general_dyne(
     inv = math.inv(B + proj_cov)
     new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
     new_means = a + math.matvec(math.matmul(AB, inv), proj_means - b)
-    prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * proj_means - b)) / (
+    prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * (proj_means - b))) / (
         pi ** nB * (hbar ** -nB) * math.sqrt(math.det(B + proj_cov))
     )  # TODO: check this (hbar part especially)
     return prob, new_cov, new_means
@@ -634,24 +633,6 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
 def is_mixed_cov(cov: Matrix) -> bool:  # TODO: deprecate
     r"""Returns ``True`` if the covariance matrix is mixed, ``False`` otherwise."""
     return not is_pure_cov(math.asnumpy(cov), hbar=settings.HBAR)
-
-
-def auto_cutoffs(cov: Matrix, means: Vector, hbar: float) -> List[int]:
-    r"""Automatically determines reasonable cutoffs.
-
-    Args:
-        cov: the covariance matrix
-        means: the means vector
-        hbar: the value of the Planck constant
-
-    Returns:
-        List[int]: a list of cutoff indices
-    """
-    cutoffs = (
-        number_means(cov, means, hbar)
-        + math.sqrt(math.diag(number_cov(cov, means, hbar))) * settings.N_SIGMA_CUTOFF
-    )
-    return [max(1, int(i)) for i in cutoffs]
 
 
 def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
@@ -727,7 +708,7 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     return 1 / math.sqrt(math.det((2 / hbar) * cov))
 
 
-def sympletic_eigenvals(cov: Matrix, hbar: float) -> Any:
+def symplectic_eigenvals(cov: Matrix, hbar: float) -> Any:
     r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
@@ -758,7 +739,7 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the Von Neumann entropy
     """
-    symp_vals = sympletic_eigenvals(cov, hbar)
+    symp_vals = symplectic_eigenvals(cov, hbar)
     g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
@@ -849,7 +830,7 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the log-negativity
     """
-    vals = sympletic_eigenvals(cov, hbar) / (hbar / 2)
+    vals = symplectic_eigenvals(cov, hbar) / (hbar / 2)
     vals_filtered = math.boolean_mask(
         vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.

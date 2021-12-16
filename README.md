@@ -58,7 +58,7 @@ S2 = S2gate(r=0.5)                  # two-mode squeezer
 MZ = MZgate(phi_a=0.3, phi_b=0.1)   # Mach-Zehnder interferometer
 I  = Interferometer(8)              # 8-mode interferomter
 L  = Attenuator(0.5)                # pure lossy channel with 50% transmissivity
-A  = Amplifier(2.0, nbar=1.0)       # noisy amplifier with 200% amplification
+A  = Amplifier(gain=2.0, nbar=1.0)  # noisy amplifier with 200% gain
 ```
 
 The `repr` of single-mode states shows the Wigner function:

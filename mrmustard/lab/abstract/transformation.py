@@ -93,7 +93,7 @@ class Transformation:
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
         new_state = State(
-            cov=cov, means=means, modes=state.modes
+            cov=cov, means=means, modes=state.modes, _norm=state._norm
         )  # NOTE: assumes modes don't change
         return new_state
 
@@ -374,7 +374,7 @@ class Transformation:
             )
 
     def __repr__(self):
-        table = Table(title=f"{self.__class__.__qualname__}")
+        table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
         table.add_column("Parameters")
         table.add_column("dtype")
         table.add_column("Value")

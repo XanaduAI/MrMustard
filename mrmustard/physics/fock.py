@@ -224,7 +224,7 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             ]
         )
         state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs]
+        state_b = state_b[min_cutoffs * 2]
         a = math.reshape(state_a, -1)
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
@@ -236,7 +236,7 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
                 for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
             ]
         )
-        state_a = state_a[min_cutoffs]
+        state_a = state_a[min_cutoffs * 2]
         state_b = state_b[min_cutoffs]
         b = math.reshape(state_b, -1)
         return math.real(
@@ -356,8 +356,8 @@ def contract_states(
             stateA,
             math.conj(stateB),
             axes=(
-                modes + [m + len(stateA.shape) // 2 for m in modes],
-                indices + [i + len(stateB.shape) // 2 for i in indices],
+                list(modes) + [m + len(stateA.shape) // 2 for m in modes],
+                list(indices) + [i + len(stateB.shape) // 2 for i in indices],
             ),
         )
     if normalize:
@@ -370,6 +370,19 @@ def normalize(fock: Tensor, is_dm: bool):
         return fock / math.sum(math.all_diagonals(fock, real=False))
     else:
         return fock / math.sum(math.norm(fock))
+
+
+def norm(state: Tensor, is_dm: bool):
+    r"""
+    Returns the norm of a ket or the trace of the density matrix.
+    Note that the "norm" is intended as the float number that is used to normalize the state,
+    and depends on the representation. Hence different numbers for different representations
+    of the same state (:math:`|amp|` for ``ket`` and :math:`|amp|^2` for ``dm``).
+    """
+    if is_dm:
+        return math.sum(math.all_diagonals(state, real=True))
+    else:
+        return math.abs(math.norm(state))
 
 
 def is_mixed_dm(dm):

@@ -36,7 +36,42 @@ def fidelity(A, B) -> float:
     """
     if A.is_gaussian and B.is_gaussian:
         return gaussian.fidelity(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    return fock.fidelity(A.fock, B.fock, a_dm=A._dm is not None, b_dm=B._dm is not None)
+    return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
+
+
+def normalize(A):
+    r"""Returns the normalized state.
+
+    Args:
+        A (State): the quantum state
+
+    Returns:
+        State: the normalized state
+    """
+    if A.is_gaussian:
+        A._norm = 1.0
+        return A
+    if A.is_mixed:
+        return A.__class__(dm=fock.normalize(A.dm(), is_dm=True))
+    else:
+        return A.__class__(ket=fock.normalize(A.ket(), is_dm=False))
+
+
+def norm(A) -> float:
+    r"""Calculates the norm of a quantum state.
+
+    The norm is equal to the trace of the density matrix if the state
+    is mixed and to the norm of the state vector if the state is pure.
+
+    Args:
+        A (State): the quantum state
+
+    Returns:
+        float: the norm of the state
+    """
+    if A.is_gaussian:
+        return A._norm
+    return fock.norm(A.fock, is_dm=A.is_mixed)
 
 
 def overlap(A, B) -> float:
