@@ -47,10 +47,8 @@ class Circuit(Transformation, Parametrized):
         self._modes: List[int] = []
 
     @property
-    def num_modes(self) -> int:  # TODO: improve this
-        all_modes = set()
-        for op in self._ops:
-            all_modes = all_modes | set(op.modes)
+    def num_modes(self) -> int:
+        all_modes = {mode for op in self._ops for mode in op.modes}
         return len(all_modes)
 
     def primal(self, state: State) -> State:
