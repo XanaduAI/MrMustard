@@ -66,7 +66,7 @@ def test_hong_ou_mandel_optimizer(i, k):
             phi=np.random.normal(),
             theta_trainable=True,
             phi_trainable=True,
-        )[1, 2]
+        )[1, 2],
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
@@ -91,7 +91,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
@@ -119,7 +119,7 @@ def test_learning_two_mode_squeezing():
             phi=np.random.normal(),
             theta_trainable=True,
             phi_trainable=True,
-        )
+        ),
     ]
     circ = Circuit(ops)
     tf.random.set_seed(20)
@@ -161,7 +161,7 @@ def test_learning_two_mode_Interferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        Interferometer(num_modes=2, orthogonal_trainable=True)
+        Interferometer(num_modes=2, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=2)
@@ -186,7 +186,7 @@ def test_learning_four_mode_Interferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        Interferometer(num_modes=4, orthogonal_trainable=True)
+        Interferometer(num_modes=4, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
@@ -218,7 +218,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
     ]
     circ = Circuit(ops)
 
