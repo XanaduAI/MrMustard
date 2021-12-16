@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module implements the quantum states upon which a quantum circuits acts on.
+"""
+
 from typing import Union, Optional, List, Tuple, Sequence, Dict
 from mrmustard.types import Scalar, Vector, Matrix, Trainable
 from mrmustard import settings
@@ -208,7 +212,7 @@ class TMSV(Parametrized, State):
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[Sequence[int]] = [0, 1],
+        modes: Optional[Sequence[int]] = (0, 1),
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
