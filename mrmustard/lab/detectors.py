@@ -13,12 +13,7 @@
 # limitations under the License.
 
 """
-This module implements the set of detector classes that perform measurements on quantum circuits:
-
-* :class:`PNRDetector`
-* :class:`ThresholdDetector`
-* :class:`Homodyne`
-* :class:`Heterodyne`
+This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
 from typing import List, Tuple, Union, Optional
