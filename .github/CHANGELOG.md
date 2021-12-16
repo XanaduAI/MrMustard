@@ -1,3 +1,18 @@
+# Release 0.2.0 (development release)
+
+### New features since last release
+
+### Improvements since last release
+
+### Bug fixes
+
+### Documentation
+
+### Contributors
+
+This release contains contributions from (in alphabetical order):
+
+
 # Release 0.1.1 (current release)
 
 ### New features since last release
