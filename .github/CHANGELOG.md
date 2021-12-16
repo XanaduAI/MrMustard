@@ -12,6 +12,7 @@
   [(#97)](https://github.com/XanaduAI/MrMustard/pull/97)
 
 ### Improvements since last release
+
 * Renamed `amplification` argument of `Amplifier` to `gain`.
   [(#97)](https://github.com/XanaduAI/MrMustard/pull/97)
 
