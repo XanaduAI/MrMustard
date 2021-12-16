@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module implements the set of detector classes that perform measurements on quantum circuits:
+
+* :class:`PNRDetector`
+* :class:`ThresholdDetector`
+* :class:`Homodyne`
+* :class:`Heterodyne`
+"""
+
 from typing import List, Tuple, Union, Optional
 from mrmustard.types import Matrix
 from mrmustard.utils.parametrized import Parametrized
@@ -89,6 +98,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         return self._efficiency_trainable or self._dark_counts_trainable
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+        """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
             cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
         self._internal_stochastic_channel = []
@@ -179,6 +189,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         return self._efficiency_trainable or self._dark_count_prob_trainable
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+        """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
             cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
         self._internal_stochastic_channel = []
@@ -200,7 +211,15 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
 
 class Heterodyne(Coherent):
-    r"""Heterodyne measurement on given modes."""
+    r"""Heterodyne measurement on given modes.
+
+    This class is just a thin wrapper around the :class:`Coherent`.
+
+    Args:
+        x (float or List[float]): the x-displacement of the coherent state
+        y (float or List[float]): the y-displacement of the coherent state
+        modes (List[int]): the modes of the coherent state
+    """
 
     def __init__(
         self,
@@ -212,18 +231,27 @@ class Heterodyne(Coherent):
 
 
 class Homodyne(DisplacedSqueezed):
+    r"""Homodyne measurement on given modes.
+
+    Args:
+        quadrature_angle (float or List[float]): measurement quadrature angle
+        result (optional float or List[float]): displacement amount
+        modes (optional List[int]): the modes of the displaced squeezed state
+        r (optional float or List[float]): squeezing amount
+    """
+
     def __init__(
         self,
         quadrature_angle: Union[float, List[float]],
         result: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
-        r: Union[float, List[float]] = None,
+        r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
         quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
         result = math.astensor(result, dtype="float64")
         x = result * math.cos(quadrature_angle)
         y = result * math.sin(quadrature_angle)
-        r = settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64")
+        r = math.astensor(r, dtype="float64")
         super().__init__(
             r=r,
             phi=2 * quadrature_angle,
