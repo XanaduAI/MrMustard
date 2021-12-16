@@ -23,6 +23,7 @@
   [(#97)](https://github.com/XanaduAI/MrMustard/pull/97)
 
 ### Bug fixes
+
 * Renamed "pytorch" to "torch" in `mrmustard.__init__()` so that torch can be imported correctly.
   [(#97)](https://github.com/XanaduAI/MrMustard/pull/97)
 
