@@ -141,7 +141,7 @@ class Transformation:
 
     @property
     def modes(self) -> Sequence[int]:
-        """returns the list of modes on which the transformation acts on"""
+        """Returns the list of modes on which the transformation acts on."""
         if self._modes in (None, []):
             X, Y, d = self.XYd
             if d is not None:
