@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the implementation of the class :class:`FockMeasurement`."""
+
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC
 from mrmustard.math import Math
 
-math = Math()
-from mrmustard.physics import fock
 from mrmustard.lab.abstract.state import State
-from mrmustard.types import *
-from mrmustard.utils import graphics
+from mrmustard.types import Tensor, Callable, Sequence, Iterable
 from mrmustard import settings
-import numpy as np
 
+math = Math()
 
 class FockMeasurement(ABC):
     r"""A Fock measurement projecting onto a Fock measurement pattern.
@@ -35,11 +34,20 @@ class FockMeasurement(ABC):
     in the Fock basis.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.modes = None
+
     def primal(self, state: State) -> Tensor:
         r"""
         Returns a tensor representing the post-measurement state in the unmeasured modes in the Fock basis.
-        The first N indices of the returned tensor correspond to the Fock measurements of the N modes that
+        The first `N` indices of the returned tensor correspond to the Fock measurements of the `N` modes that
         the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
+
+        Args
+            state (State): the quatum state
+        Returns
+            Tensor: a tensor representing the post-measurement state
         """
         cutoffs = []
         used = 0
@@ -74,7 +82,12 @@ class FockMeasurement(ABC):
             output = math.real(output)  # return probabilities
         return output
 
+    #  pylint: disable=no-self-use
     def should_recompute_stochastic_channel(self) -> bool:  # override in subclasses
+        """Returns `True` if the stochastic channel has to be recomputed.
+
+        This method should be overriden by subclasses accordingly.
+        """
         return False
 
     def __lshift__(self, other) -> Tensor:
