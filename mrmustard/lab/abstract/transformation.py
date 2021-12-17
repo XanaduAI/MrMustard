@@ -293,7 +293,7 @@ class Transformation:
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from ..circuit import Circuit  # circular import: this is called at runtime so it's ok
+        from ..circuit import Circuit  # WARNING - circular import: this is called at runtime so it's ok
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
