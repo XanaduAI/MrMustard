@@ -475,7 +475,6 @@ class State:
         warnings.warn("mixing states forces conversion to fock representation", UserWarning)
         return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
-    # pylint: disable=no-else-return
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
 
@@ -488,12 +487,10 @@ class State:
             return self.fock  # trigger creation of fock representation
         if self._dm is not None:
             return State(dm=self.dm() * other, modes=self.modes)
-        elif self._ket is not None:
+        if self._ket is not None:
             return State(ket=self.ket() * other, modes=self.modes)
-        else:
-            raise ValueError("No fock representation available")
+        raise ValueError("No fock representation available")
 
-    # pylint: disable=no-else-return
     def __truediv__(self, other):
         r"""Implements division by a scalar from the left.
 
@@ -505,10 +502,9 @@ class State:
 
         if self._dm is not None:
             return State(dm=self.dm() / other, modes=self.modes)
-        elif self._ket is not None:
+        if self._ket is not None:
             return State(ket=self.ket() / other, modes=self.modes)
-        else:
-            raise ValueError("No fock representation available")
+        raise ValueError("No fock representation available")
 
     def _repr_markdown_(self):
         table = (
