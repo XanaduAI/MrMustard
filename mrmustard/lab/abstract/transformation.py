@@ -15,7 +15,6 @@
 """This module contains the implementation of the :class:`Transformation` class."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 from rich.table import Table
 from rich import print as rprint
@@ -35,9 +34,7 @@ from mrmustard.types import (
 )
 from mrmustard import settings
 from mrmustard.math import Math
-
-if TYPE_CHECKING:
-    from .state import State
+from .state import State
 
 math = Math()
 
@@ -106,7 +103,7 @@ class Transformation:
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
         new_state = State(
-            cov=cov, means=means, modes=state.modes, _norm=state.norm()
+            cov=cov, means=means, modes=state.modes, _norm=state.norm
         )  # NOTE: assumes modes don't change
         return new_state
 
