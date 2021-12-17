@@ -12,19 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the implementation of the :class:`Transformation` class."""
+
 from __future__ import annotations
-from abc import ABC, abstractmethod
-import numpy as np
+from typing import TYPE_CHECKING
+
 from rich.table import Table
 from rich import print as rprint
+import numpy as np
 
 from mrmustard.physics import gaussian, fock
-from mrmustard.lab.abstract.state import State
-from mrmustard.types import *
-from mrmustard.utils import graphics
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.types import (
+    Sequence,
+    List,
+    Tuple,
+    Optional,
+    Matrix,
+    Vector,
+    Callable,
+    Iterable,
+    Union,
+)
 from mrmustard import settings
 from mrmustard.math import Math
+
+if TYPE_CHECKING:
+    from .state import State
 
 math = Math()
 
@@ -93,7 +106,7 @@ class Transformation:
         X, Y, d = self.XYd if not dual else self.XYd_dual
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
         new_state = State(
-            cov=cov, means=means, modes=state.modes, _norm=state._norm
+            cov=cov, means=means, modes=state.modes, _norm=state.norm()
         )  # NOTE: assumes modes don't change
         return new_state
 
@@ -127,11 +140,11 @@ class Transformation:
         )
         if state.is_mixed or not self.is_unitary:
             return State(dm=new_fock, modes=state.modes)
-        else:
-            return State(ket=new_fock, modes=state.modes)
+        return State(ket=new_fock, modes=state.modes)
 
     @property
     def modes(self) -> Sequence[int]:
+        """returns the list of modes on which the transformation acts on"""
         if self._modes in (None, []):
             X, Y, d = self.XYd
             if d is not None:
@@ -178,19 +191,17 @@ class Transformation:
     def Y_matrix_dual(self) -> Optional[Matrix]:
         if (Y := self.Y_matrix) is None:
             return None
-        elif (Xdual := self.X_matrix_dual) is None:
+        if (Xdual := self.X_matrix_dual) is None:
             return Y
-        else:
-            return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
+        return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
 
     @property
     def d_vector_dual(self) -> Optional[Vector]:
         if (d := self.d_vector) is None:
             return None
-        elif (Xdual := self.X_matrix_dual) is None:
+        if (Xdual := self.X_matrix_dual) is None:
             return d
-        else:
-            return math.matmul(Xdual, d)
+        return math.matmul(Xdual, d)
 
     @property
     def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
@@ -237,16 +248,16 @@ class Transformation:
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
-        else:
-            choi_state = self.bell >> self
-            choi_op = fock.fock_representation(
-                choi_state.cov,
-                choi_state.means,
-                shape=cutoffs * 4,
-                return_unitary=False,
-                choi_r=settings.CHOI_R,
-            )
-            return choi_op
+
+        choi_state = self.bell >> self
+        choi_op = fock.fock_representation(
+            choi_state.cov,
+            choi_state.means,
+            shape=cutoffs * 4,
+            return_unitary=False,
+            choi_r=settings.CHOI_R,
+        )
+        return choi_op
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.
@@ -269,6 +280,7 @@ class Transformation:
 
     # TODO: use __class_getitem__ for compiler stuff
 
+    #pylint: disable=import-outside-toplevel
     def __rshift__(self, other: Transformation):
         r"""Concatenates self with other (other after self).
 
@@ -308,70 +320,71 @@ class Transformation:
         """
         if isinstance(other, State):
             return self.dual(other)
-        elif isinstance(other, Transformation):
+        if isinstance(other, Transformation):
             return self >> other  # so that the dual is self.dual(other.dual(x))
-        else:
-            raise ValueError(f"{other} is not a valid state or transformation.")
+        raise ValueError(f"{other} is not a valid state or transformation.")
 
+    #pylint: disable=too-many-branches,too-many-return-statements
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
         if not isinstance(other, Transformation):
             return False
-        if self.is_gaussian and other.is_gaussian:
-            sX, sY, sd = self.XYd
-            oX, oY, od = other.XYd
-            if sX is None:
-                if oX is not None:
-                    if not np.allclose(
-                        oX, np.eye(oX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                    ):
-                        return False
-            if oX is None:
-                if sX is not None:
-                    if not np.allclose(
-                        sX, np.eye(sX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                    ):
-                        return False
-            if sX is not None and oX is not None:
-                if not np.allclose(sX, oX):
-                    return False
-            if sY is None:
-                if oY is not None:
-                    if not np.allclose(
-                        oY, np.zeros_like(oY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                    ):
-                        return False
-            if oY is None:
-                if sY is not None:
-                    if not np.allclose(
-                        sY, np.zeros_like(sY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                    ):
-                        return False
-            if sY is not None and oY is not None:
-                if not np.allclose(sY, oY):
-                    return False
-            if sd is None:
-                if od is not None:
-                    if not np.allclose(
-                        sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                    ):
-                        return False
-            if od is None:
-                if sd is not None:
-                    if not np.allclose(
-                        sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                    ):
-                        return False
-            if sd is not None and od is not None:
-                if not np.allclose(sd, od):
-                    return False
-            return True
-        else:
+        if not(self.is_gaussian and other.is_gaussian):
             return np.allclose(
                 self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
                 other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
+
+        sX, sY, sd = self.XYd
+        oX, oY, od = other.XYd
+        if sX is None:
+            if oX is not None:
+                if not np.allclose(
+                    oX, np.eye(oX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                ):
+                    return False
+        if oX is None:
+            if sX is not None:
+                if not np.allclose(
+                    sX, np.eye(sX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                ):
+                    return False
+        if sX is not None and oX is not None:
+            if not np.allclose(sX, oX):
+                return False
+        if sY is None:
+            if oY is not None:
+                if not np.allclose(
+                    oY, np.zeros_like(oY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                ):
+                    return False
+        if oY is None:
+            if sY is not None:
+                if not np.allclose(
+                    sY, np.zeros_like(sY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                ):
+                    return False
+        if sY is not None and oY is not None:
+            if not np.allclose(sY, oY):
+                return False
+        if sd is None:
+            if od is not None:
+                if not np.allclose(
+                    sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                ):
+                    return False
+        if od is None:
+            if sd is not None:
+                if not np.allclose(
+                    sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
+                ):
+                    return False
+        if sd is not None and od is not None:
+            if not np.allclose(sd, od):
+                return False
+        return True
+
 
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
