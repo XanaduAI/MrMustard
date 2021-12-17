@@ -15,6 +15,8 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import warnings
 import numpy as np
 
@@ -34,7 +36,9 @@ from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
-from .transformation import Transformation
+
+if TYPE_CHECKING:
+    from .transformation import Transformation
 
 math = Math()
 

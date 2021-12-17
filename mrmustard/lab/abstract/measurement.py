@@ -18,9 +18,9 @@ from __future__ import annotations
 from abc import ABC
 from mrmustard.math import Math
 
-from mrmustard.lab.abstract.state import State
 from mrmustard.types import Tensor, Callable, Sequence, Iterable
 from mrmustard import settings
+from .state import State
 
 math = Math()
 

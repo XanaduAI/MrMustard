@@ -280,7 +280,7 @@ class Transformation:
 
     # TODO: use __class_getitem__ for compiler stuff
 
-    #pylint: disable=import-outside-toplevel
+    #pylint: disable=import-outside-toplevel,cyclic-import
     def __rshift__(self, other: Transformation):
         r"""Concatenates self with other (other after self).
 
@@ -293,7 +293,7 @@ class Transformation:
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from mrmustard.lab import Circuit  # this is called at runtime so it's ok
+        from ..circuit import Circuit  # circular import: this is called at runtime so it's ok
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]

@@ -86,6 +86,7 @@ class PNRDetector(Parametrized, FockMeasurement):
             modes=modes if modes is not None else list(range(num_modes)),
             cutoffs=cutoffs if cutoffs is not None else [settings.PNR_INTERNAL_CUTOFF] * num_modes,
         )
+        FockMeasurement.__init__(self)
 
         self.recompute_stochastic_channel()
 
@@ -177,6 +178,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             modes=modes or list(range(num_modes)),
             cutoffs=[2] * num_modes,
         )
+        FockMeasurement.__init__(self)
 
         self.recompute_stochastic_channel()
 
