@@ -24,6 +24,7 @@ from mrmustard import settings
 
 math = Math()
 
+
 class FockMeasurement(ABC):
     r"""A Fock measurement projecting onto a Fock measurement pattern.
 

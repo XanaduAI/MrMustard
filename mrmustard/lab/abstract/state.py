@@ -18,7 +18,18 @@ from __future__ import annotations
 import warnings
 import numpy as np
 
-from mrmustard.types import Matrix, Vector, Array, Tensor, Sequence, Union, Tuple, Optional, List, Iterable
+from mrmustard.types import (
+    Matrix,
+    Vector,
+    Array,
+    Tensor,
+    Sequence,
+    Union,
+    Tuple,
+    Optional,
+    List,
+    Iterable,
+)
 from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
@@ -162,7 +173,9 @@ class State:
                 self.number_stdev, self.number_means
             )  # TODO: move autocutoffs in gaussian.py and pass cov, means
 
-        return list(self.fock.shape[: self.num_modes]) # NOTE: triggered only if the fock representation already exists
+        return list(
+            self.fock.shape[: self.num_modes]
+        )  # NOTE: triggered only if the fock representation already exists
 
     @property
     def shape(self) -> List[int]:
@@ -204,8 +217,6 @@ class State:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
 
         return gaussian.number_cov(self.cov, self.means, settings.HBAR)
-
-
 
     @property
     def norm(self) -> float:
@@ -345,9 +356,7 @@ class State:
                 # matching other's cutoffs
                 self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
                 out_fock = fock.contract_states(
-                    stateA=other.ket(other_cutoffs)
-                    if other.is_pure
-                    else other.dm(other_cutoffs),
+                    stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
                     stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
                     a_is_mixed=other.is_mixed,
                     b_is_mixed=self.is_mixed,
@@ -377,7 +386,7 @@ class State:
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
-        if not(self.is_gaussian and other.is_gaussian):
+        if not (self.is_gaussian and other.is_gaussian):
             raise NotImplementedError(
                 "Concatenation of non-gaussian states is not implemented yet."
             )
