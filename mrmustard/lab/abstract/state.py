@@ -12,22 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the implementation of the :class:`State` class."""
+
 from __future__ import annotations
 import warnings
 import numpy as np
-from rich.table import Table
-from rich import print as rprint
 
-from mrmustard.types import *
+from mrmustard.types import Matrix, Vector, Array, Tensor, Sequence, Union, Tuple, Optional, List, Iterable
 from mrmustard.utils import graphics
 from mrmustard import settings
-from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
+from .transformation import Transformation
 
 math = Math()
 
-
+# pylint: disable=too-many-instance-attributes
 class State:
     r"""Base class for quantum states."""
 
@@ -113,6 +113,7 @@ class State:
 
     @property
     def purity(self) -> float:
+        """Returns the purity of the state."""
         if self._purity is None:
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
@@ -146,10 +147,10 @@ class State:
         r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
         if self.is_gaussian:
             return math.sqrt(math.diag_part(self.number_cov))
-        else:
-            return math.sqrt(
-                fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
-            )
+
+        return math.sqrt(
+            fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
+        )
 
     @property
     def cutoffs(self) -> List[int]:
@@ -160,8 +161,8 @@ class State:
             return fock.autocutoffs(
                 self.number_stdev, self.number_means
             )  # TODO: move autocutoffs in gaussian.py and pass cov, means
-        else:  # NOTE: triggered only if the fock representation already exists
-            return list(self.fock.shape[: self.num_modes])
+
+        return list(self.fock.shape[: self.num_modes]) # NOTE: triggered only if the fock representation already exists
 
     @property
     def shape(self) -> List[int]:
@@ -193,24 +194,26 @@ class State:
         r"""Returns the mean photon number for each mode."""
         if self.is_gaussian:
             return gaussian.number_means(self.cov, self.means, settings.HBAR)
-        else:
-            return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
+
+        return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
 
     @property
     def number_cov(self) -> Matrix:
         r"""Returns the complete photon number covariance matrix."""
-        if self.is_gaussian:
-            return gaussian.number_cov(self.cov, self.means, settings.HBAR)
-        else:
+        if not self.is_gaussian:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
+
+        return gaussian.number_cov(self.cov, self.means, settings.HBAR)
+
+
 
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        else:
-            return fock.norm(self.fock, self.is_mixed)
+
+        return fock.norm(self.fock, self.is_mixed)
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
@@ -236,14 +239,14 @@ class State:
         else:  # only fock representation is available
             if self._ket is None:
                 return None
-            current_cutoffs = [s for s in self._ket.shape[: self.num_modes]]
+            current_cutoffs = list(self._ket.shape[: self.num_modes])
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
                     padded = fock.math.pad(self._ket, paddings, mode="constant")
                 else:
                     padded = self._ket
-                return padded[tuple([slice(s) for s in cutoffs])]
+                return padded[tuple(slice(s) for s in cutoffs)]
         return self._ket
 
     def dm(self, cutoffs: List[int] = None) -> Tensor:
@@ -269,13 +272,13 @@ class State:
                 self._dm = fock.fock_representation(
                     self.cov, self.means, shape=cutoffs * 2, return_dm=True
                 )
-            elif cutoffs != (current_cutoffs := [s for s in self._dm.shape[: self.num_modes]]):
+            elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
                     padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
                 else:
                     padded = self._dm
-                return padded[tuple([slice(s) for s in cutoffs + cutoffs])]
+                return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
         return self._dm
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
@@ -329,60 +332,61 @@ class State:
                         modes=remaining_modes,
                         _norm=prob if not getattr(self, "_normalize", False) else 1.0,
                     )
-                else:
-                    return prob
-            else:  # either self or other is not gaussian
-                other_cutoffs = [
-                    None if m not in self.modes else other.cutoffs[other.indices(m)]
-                    for m in other.modes
-                ]
-                try:
-                    out_fock = self._preferred_projection(other, other.indices(self.modes))
-                except AttributeError:
-                    # matching other's cutoffs
-                    self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-                    out_fock = fock.contract_states(
-                        stateA=other.ket(other_cutoffs)
-                        if other.is_pure
-                        else other.dm(other_cutoffs),
-                        stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                        a_is_mixed=other.is_mixed,
-                        b_is_mixed=self.is_mixed,
-                        modes=other.indices(self.modes),  # TODO: change arg name to indices
-                        normalize=self._normalize if hasattr(self, "_normalize") else False,
-                    )
-                if len(remaining_modes) > 0:
-                    return (
-                        State(dm=out_fock, modes=remaining_modes)
-                        if other.is_mixed or self.is_mixed
-                        else State(ket=out_fock, modes=remaining_modes)
-                    )
-                else:
-                    return (
-                        fock.math.abs(out_fock) ** 2
-                        if other.is_pure and self.is_pure
-                        else fock.math.abs(out_fock)
-                    )
-        else:
+                return prob
+
+            # either self or other is not gaussian
+            other_cutoffs = [
+                None if m not in self.modes else other.cutoffs[other.indices(m)]
+                for m in other.modes
+            ]
             try:
-                return other.dual(self)
+                out_fock = self._preferred_projection(other, other.indices(self.modes))
             except AttributeError:
-                raise TypeError(
-                    f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
+                # matching other's cutoffs
+                self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+                out_fock = fock.contract_states(
+                    stateA=other.ket(other_cutoffs)
+                    if other.is_pure
+                    else other.dm(other_cutoffs),
+                    stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                    a_is_mixed=other.is_mixed,
+                    b_is_mixed=self.is_mixed,
+                    modes=other.indices(self.modes),  # TODO: change arg name to indices
+                    normalize=self._normalize if hasattr(self, "_normalize") else False,
                 )
+
+            if len(remaining_modes) > 0:
+                return (
+                    State(dm=out_fock, modes=remaining_modes)
+                    if other.is_mixed or self.is_mixed
+                    else State(ket=out_fock, modes=remaining_modes)
+                )
+
+            return (
+                fock.math.abs(out_fock) ** 2
+                if other.is_pure and self.is_pure
+                else fock.math.abs(out_fock)
+            )
+
+        try:
+            return other.dual(self)
+        except AttributeError as e:
+            raise TypeError(
+                f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
+            ) from e
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
-        if self.is_gaussian and other.is_gaussian:
-            cov = gaussian.join_covs([self.cov, other.cov])
-            means = gaussian.join_means([self.means, other.means])
-            return State(
-                cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
-            )
-        else:
+        if not(self.is_gaussian and other.is_gaussian):
             raise NotImplementedError(
                 "Concatenation of non-gaussian states is not implemented yet."
             )
+
+        cov = gaussian.join_covs([self.cov, other.cov])
+        means = gaussian.join_means([self.means, other.means])
+        return State(
+            cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
+        )
 
     def __getitem__(self, item):
         "setting the modes of a state (same API of `Transformation`)"
@@ -407,16 +411,19 @@ class State:
             item = list(item)
         else:
             raise TypeError("item must be int or iterable")
+
         if self.is_gaussian:
             cov, _, _ = gaussian.partition_cov(self.cov, item)
             means, _ = gaussian.partition_means(self.means, item)
             return State(cov=cov, means=means, modes=item)
-        else:
-            fock_partitioned = fock.trace(
-                self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item]
-            )
-            return State(dm=fock_partitioned, modes=item)
 
+        # if not gaussian
+        fock_partitioned = fock.trace(
+            self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item]
+        )
+        return State(dm=fock_partitioned, modes=item)
+
+    # TODO: refactor
     def __eq__(self, other):
         r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:
@@ -433,10 +440,9 @@ class State:
             return np.allclose(
                 self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
             )
-        else:
-            return np.allclose(
-                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
-            )
+        return np.allclose(
+            self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
+        )
 
     def __rshift__(self, other):
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
@@ -460,6 +466,7 @@ class State:
         warnings.warn("mixing states forces conversion to fock representation", UserWarning)
         return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
+    # pylint: disable=no-else-return
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
 
@@ -469,7 +476,7 @@ class State:
             warnings.warn(
                 "scalar multiplication forces conversion to fock representation", UserWarning
             )
-            self.fock  # trigger creation of fock representation
+            return self.fock  # trigger creation of fock representation
         if self._dm is not None:
             return State(dm=self.dm() * other, modes=self.modes)
         elif self._ket is not None:
@@ -477,6 +484,7 @@ class State:
         else:
             raise ValueError("No fock representation available")
 
+    # pylint: disable=no-else-return
     def __truediv__(self, other):
         r"""Implements division by a scalar from the left.
 
@@ -484,7 +492,8 @@ class State:
         """
         if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
-            self.fock
+            return self.fock
+
         if self._dm is not None:
             return State(dm=self.dm() / other, modes=self.modes)
         elif self._ket is not None:
