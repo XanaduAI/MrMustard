@@ -280,7 +280,7 @@ class Transformation:
 
     # TODO: use __class_getitem__ for compiler stuff
 
-    #pylint: disable=import-outside-toplevel,cyclic-import
+    # pylint: disable=import-outside-toplevel,cyclic-import
     def __rshift__(self, other: Transformation):
         r"""Concatenates self with other (other after self).
 
@@ -293,7 +293,9 @@ class Transformation:
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from ..circuit import Circuit  # WARNING - circular import: this is called at runtime so it's ok
+        from ..circuit import (
+            Circuit,
+        )  # WARNING - circular import: this is called at runtime so it's ok
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
@@ -324,12 +326,12 @@ class Transformation:
             return self >> other  # so that the dual is self.dual(other.dual(x))
         raise ValueError(f"{other} is not a valid state or transformation.")
 
-    #pylint: disable=too-many-branches,too-many-return-statements
+    # pylint: disable=too-many-branches,too-many-return-statements
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
         if not isinstance(other, Transformation):
             return False
-        if not(self.is_gaussian and other.is_gaussian):
+        if not (self.is_gaussian and other.is_gaussian):
             return np.allclose(
                 self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
                 other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
@@ -384,7 +386,6 @@ class Transformation:
             if not np.allclose(sd, od):
                 return False
         return True
-
 
     def __repr__(self):
         table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
