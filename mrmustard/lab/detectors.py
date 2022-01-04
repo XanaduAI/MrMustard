@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module implements the set of detector classes that perform measurements on quantum circuits.
+"""
+
 from typing import List, Tuple, Union, Optional
 from mrmustard.types import Matrix
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard.lab.abstract import State, FockMeasurement
+from mrmustard.lab.abstract import FockMeasurement
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
 from mrmustard.math import Math
@@ -24,7 +28,7 @@ math = Math()
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 
-
+# pylint: disable=no-member
 class PNRDetector(Parametrized, FockMeasurement):
     r"""Photon Number Resolving detector.
 
@@ -82,6 +86,7 @@ class PNRDetector(Parametrized, FockMeasurement):
             modes=modes if modes is not None else list(range(num_modes)),
             cutoffs=cutoffs if cutoffs is not None else [settings.PNR_INTERNAL_CUTOFF] * num_modes,
         )
+        FockMeasurement.__init__(self)
 
         self.recompute_stochastic_channel()
 
@@ -89,6 +94,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         return self._efficiency_trainable or self._dark_counts_trainable
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+        """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
             cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
         self._internal_stochastic_channel = []
@@ -117,6 +123,7 @@ class PNRDetector(Parametrized, FockMeasurement):
                 )
 
 
+# pylint: disable: no-member
 class ThresholdDetector(Parametrized, FockMeasurement):
     r"""Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
 
@@ -171,6 +178,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             modes=modes or list(range(num_modes)),
             cutoffs=[2] * num_modes,
         )
+        FockMeasurement.__init__(self)
 
         self.recompute_stochastic_channel()
 
@@ -178,6 +186,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         return self._efficiency_trainable or self._dark_count_prob_trainable
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
+        """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
             cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
         self._internal_stochastic_channel = []
@@ -198,46 +207,52 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 self._internal_stochastic_channel.append(condprob)
 
 
-class Heterodyne(Parametrized, State):
-    r"""Heterodyne measurement on given modes."""
+class Heterodyne(Coherent):
+    r"""Heterodyne measurement on given modes.
 
-    def __new__(
-        cls,
+    This class is just a thin wrapper around the :class:`Coherent`.
+
+    Args:
+        x (float or List[float]): the x-displacement of the coherent state
+        y (float or List[float]): the y-displacement of the coherent state
+        modes (List[int]): the modes of the coherent state
+    """
+
+    def __init__(
+        self,
         x: Union[float, List[float]] = 0.0,
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
-        instance = Coherent(x=x, y=y, modes=modes)
-        instance.__class__ = cls  # NOTE: naughty?
-        return instance
-
-    def __init__(self, *args, **kwargs):
-        pass
+        super().__init__(x, y, modes=modes)
 
 
-class Homodyne(Parametrized, State):
-    r"""Heterodyne measurement on given modes."""
+class Homodyne(DisplacedSqueezed):
+    r"""Homodyne measurement on given modes.
 
-    def __new__(
-        cls,
+    Args:
+        quadrature_angle (float or List[float]): measurement quadrature angle
+        result (optional float or List[float]): displacement amount
+        modes (optional List[int]): the modes of the displaced squeezed state
+        r (optional float or List[float]): squeezing amount
+    """
+
+    def __init__(
+        self,
         quadrature_angle: Union[float, List[float]],
         result: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
-        r: Union[float, List[float]] = None,
+        r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
         quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
         result = math.astensor(result, dtype="float64")
         x = result * math.cos(quadrature_angle)
         y = result * math.sin(quadrature_angle)
-        instance = DisplacedSqueezed(
-            r=settings.HOMODYNE_SQUEEZING if r is None else math.astensor(r, dtype="float64"),
+        r = math.astensor(r, dtype="float64")
+        super().__init__(
+            r=r,
             phi=2 * quadrature_angle,
             x=x,
             y=y,
             modes=modes,
         )
-        instance.__class__ = cls
-        return instance
-
-    def __init__(self, *args, **kwargs):
-        pass

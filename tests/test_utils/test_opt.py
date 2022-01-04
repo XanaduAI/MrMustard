@@ -57,18 +57,18 @@ def test_hong_ou_mandel_optimizer(i, k):
     which lacks a square root in the right hand side.
     """
     tf.random.set_seed(137)
-    circ = Circuit()
     r = np.arcsinh(1.0)
-    circ.append(S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1])
-    circ.append(S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3])
-    circ.append(
+    ops = [
+        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
             theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * np.random.normal(),
             phi=np.random.normal(),
             theta_trainable=True,
             phi_trainable=True,
-        )[1, 2]
-    )
+        )[1, 2],
+    ]
+    circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
     cutoff = 1 + i + k
 
@@ -87,11 +87,13 @@ def test_squeezing_hong_ou_mandel_optimizer():
     see https://www.pnas.org/content/117/52/33107/tab-article-info
     """
     tf.random.set_seed(137)
-    circ = Circuit()
     r = np.arcsinh(1.0)
-    circ.append(S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1])
-    circ.append(S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3])
-    circ.append(S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2])
+    ops = [
+        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
+        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
+    ]
+    circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
@@ -105,23 +107,21 @@ def test_squeezing_hong_ou_mandel_optimizer():
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     tf.random.set_seed(137)
-    circ = Circuit()
-    circ.append(
+    ops = [
         Sgate(
             r=abs(np.random.normal(size=(2))),
             phi=np.random.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
-        )
-    )
-    circ.append(
+        ),
         BSgate(
             theta=np.random.normal(),
             phi=np.random.normal(),
             theta_trainable=True,
             phi_trainable=True,
-        )
-    )
+        ),
+    ]
+    circ = Circuit(ops)
     tf.random.set_seed(20)
     state_in = Vacuum(num_modes=2)
 
@@ -154,16 +154,16 @@ def test_learning_two_mode_Ggate():
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
     np.random.seed(11)
-    circ = Circuit()  # emtpy circuit with vacuum input state
-    circ.append(
+    ops = [
         Sgate(
             r=np.random.normal(size=(2)) ** 2,
             phi=np.random.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
-        )
-    )
-    circ.append(Interferometer(num_modes=2, orthogonal_trainable=True))
+        ),
+        Interferometer(num_modes=2, orthogonal_trainable=True),
+    ]
+    circ = Circuit(ops)
     state_in = Vacuum(num_modes=2)
 
     def cost_fn():
@@ -179,16 +179,16 @@ def test_learning_two_mode_Interferometer():
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
     np.random.seed(11)
-    circ = Circuit()
-    circ.append(
+    ops = [
         Sgate(
             r=np.random.uniform(size=4),
             phi=np.random.normal(size=4),
             r_trainable=True,
             phi_trainable=True,
-        )
-    )
-    circ.append(Interferometer(num_modes=4, orthogonal_trainable=True))
+        ),
+        Interferometer(num_modes=4, orthogonal_trainable=True),
+    ]
+    circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
 
     def cost_fn():
@@ -214,11 +214,13 @@ def test_squeezing_hong_ou_mandel_optimizer():
     see https://www.pnas.org/content/117/52/33107/tab-article-info
     """
     tf.random.set_seed(137)
-    circ = Circuit()
     r = np.arcsinh(1.0)
-    circ.append(S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1])
-    circ.append(S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3])
-    circ.append(S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2])
+    ops = [
+        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
+        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
+    ]
+    circ = Circuit(ops)
 
     def cost_fn():
         return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2

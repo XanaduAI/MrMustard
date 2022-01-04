@@ -29,9 +29,8 @@ def test_two_mode_squeezing_fock(n_mean, phi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state
     Note that this is consistent with the Strawberryfields convention"""
     cutoff = 4
-    circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(r=r, phi=phi))
+    circ = Circuit(ops=[S2gate(r=r, phi=phi)])
     amps = (Vacuum(num_modes=2) >> circ).ket(cutoffs=[cutoff, cutoff])
     diag = (1 / np.cosh(r)) * (np.exp(1j * phi) * np.tanh(r)) ** np.arange(cutoff)
     expected = np.diag(diag)
@@ -42,11 +41,13 @@ def test_two_mode_squeezing_fock(n_mean, phi):
 def test_hong_ou_mandel(n_mean, phi, varphi):
     """Tests that perfect number correlations are obtained for a two-mode squeezed vacuum state"""
     cutoff = 2
-    circ = Circuit()
     r = np.arcsinh(np.sqrt(n_mean))
-    circ.append(S2gate(r=r, phi=phi)[0, 1])
-    circ.append(S2gate(r=r, phi=phi)[2, 3])
-    circ.append(BSgate(theta=np.pi / 4, phi=varphi)[1, 2])
+    ops = [
+        S2gate(r=r, phi=phi)[0, 1],
+        S2gate(r=r, phi=phi)[2, 3],
+        BSgate(theta=np.pi / 4, phi=varphi)[1, 2],
+    ]
+    circ = Circuit(ops)
     amps = (Vacuum(4) >> circ).ket(cutoffs=[cutoff, cutoff, cutoff, cutoff])
     assert np.allclose(amps[1, 1, 1, 1], 0.0, atol=1e-6)
 

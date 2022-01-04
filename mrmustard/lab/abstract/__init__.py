@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+""" This package contains the modules implementing base classes for states, measurements and tranformations.
+"""
+
 from .state import State
 from .measurement import FockMeasurement
 from .transformation import Transformation

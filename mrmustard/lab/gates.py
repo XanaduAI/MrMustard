@@ -11,6 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=no-member
+
+"""
+This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
+"""
+
 from typing import Union, Optional, List, Tuple, Dict
 from mrmustard.types import Tensor, Trainable
 from mrmustard import settings
@@ -512,7 +519,7 @@ class Ggate(Parametrized, Transformation):
 # NON-UNITARY
 # ~~~~~~~~~~~~~
 
-
+# pylint: disable=no-member
 class Attenuator(Parametrized, Transformation):
     r"""The noisy attenuator channel.
 
@@ -630,6 +637,7 @@ class Amplifier(Parametrized, Transformation):
         return gaussian.amp_XYd(self.gain, self.nbar, settings.HBAR)[1]
 
 
+# pylint: disable=no-member
 class AdditiveNoise(Parametrized, Transformation):
     r"""The additive noise channel.
 

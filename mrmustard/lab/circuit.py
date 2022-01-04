@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module implements the :class:`.Circuit` class which acts as a representation for quantum circuits.
+"""
+
 from __future__ import annotations
 
 __all__ = ["Circuit"]
 
 
+from typing import List, Tuple, Optional
 from mrmustard.types import Matrix, Vector
-from typing import List, Tuple
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.lab.abstract import Transformation
@@ -26,19 +30,25 @@ from mrmustard.lab.abstract import State
 
 
 class Circuit(Transformation, Parametrized):
-    def __init__(self, ops: List = []):
-        self._ops: List = [o for o in ops]
+    """Represents a quantum circuit: a set of operations to be applied on quantum states.
+
+    Args:
+        ops (list or none): A list of operations comprising the circuit.
+    """
+
+    def __init__(self, ops: Optional[List] = None):
+        self._ops = list(ops) if ops is not None else []
+        super().__init__()
         self.reset()
 
     def reset(self):
+        """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
         self._compiled: bool = False
         self._modes: List[int] = []
 
     @property
-    def num_modes(self) -> int:  # TODO: improve this
-        all_modes = set()
-        for op in self._ops:
-            all_modes = all_modes | set(op.modes)
+    def num_modes(self) -> int:
+        all_modes = {mode for op in self._ops for mode in op.modes}
         return len(all_modes)
 
     def primal(self, state: State) -> State:
@@ -76,15 +86,8 @@ class Circuit(Transformation, Parametrized):
 
     @property
     def is_gaussian(self):
+        """Returns `true` if all operations in the circuit are Gaussian."""
         return all(op.is_gaussian for op in self._ops)
-
-    def extend(self, obj):  # TODO: remove
-        result = self._ops.extend(obj)
-        self.reset()
-
-    def append(self, obj):  # TODO: remove
-        result = self._ops.append(obj)
-        self.reset()
 
     def __len__(self):
         return len(self._ops)
@@ -94,5 +97,6 @@ class Circuit(Transformation, Parametrized):
         return f"Circuit | {len(self._ops)} ops | compiled = `{self._compiled}`"
 
     def __repr__(self) -> str:
+        """String to display the object on the command line."""
         ops_repr = [repr(op) for op in self._ops]
         return "Circuit([" + ",".join(ops_repr) + "])"
