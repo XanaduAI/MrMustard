@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-from mrmustard.types import *
-from functools import lru_cache
-from scipy.special import binom
-from scipy.stats import unitary_group
-from itertools import product
-from functools import lru_cache, wraps
+"""This module contains the implementation of the decorator class :class:`Autocast`."""
+
+from functools import wraps
+from mrmustard.types import List
 
 
 class Autocast:
@@ -29,9 +26,11 @@ class Autocast:
         self.no_cast = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64")
 
     def can_cast(self, arg):
+        r"""Returns `True` if the argument can be casted."""
         return hasattr(arg, "dtype") and arg.dtype.name not in self.no_cast
 
     def should_cast(self, arg, proposed_dtype):
+        r"""Returns `True` if the `arg` can (and should) be casted to `proposed_dtype`."""
         if not self.can_cast(arg):
             return False
         return self.dtype_order.index(proposed_dtype) > self.dtype_order.index(arg.dtype.name)
@@ -42,6 +41,7 @@ class Autocast:
         kwargs_dtypes = [v.dtype.name for v in kwargs.values() if self.can_cast(v)]
         return args_dtypes + kwargs_dtypes
 
+    # pylint: disable=unnecessary-lambda
     def max_dtype(self, dtypes: List):
         r"""Returns the dtype with the highest precision."""
         if dtypes == []:
