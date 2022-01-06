@@ -56,4 +56,6 @@ class Math:
         elif settings.backend == "torch":
             return object.__getattribute__(TorchMath(), name)
 
-        raise ValueError(f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``")
+        raise ValueError(
+            f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
+        )

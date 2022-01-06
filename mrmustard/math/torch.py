@@ -17,7 +17,17 @@
 import numpy as np
 import torch
 
-from mrmustard.types import List, Tensor, Sequence, Tuple, Optional, Dict, Trainable, Callable, Union
+from mrmustard.types import (
+    List,
+    Tensor,
+    Sequence,
+    Tuple,
+    Optional,
+    Dict,
+    Trainable,
+    Callable,
+    Union,
+)
 from mrmustard.math.autocast import Autocast
 from .math_interface import MathInterface
 

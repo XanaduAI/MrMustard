@@ -19,7 +19,17 @@ import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import List, Tensor, Sequence, Tuple, Optional, Dict, Trainable, Callable, Union
+from mrmustard.types import (
+    List,
+    Tensor,
+    Sequence,
+    Tuple,
+    Optional,
+    Dict,
+    Trainable,
+    Callable,
+    Union,
+)
 from .math_interface import MathInterface
 
 # pylint: disable=too-many-public-methods,no-self-argument

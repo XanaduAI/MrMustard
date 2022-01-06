@@ -21,7 +21,20 @@ import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group
 
-from mrmustard.types import List, Tensor, Matrix, Scalar, Vector, Sequence, Tuple, Optional, Dict, Trainable, Callable, Any
+from mrmustard.types import (
+    List,
+    Tensor,
+    Matrix,
+    Scalar,
+    Vector,
+    Sequence,
+    Tuple,
+    Optional,
+    Dict,
+    Trainable,
+    Callable,
+    Any,
+)
 
 # pylint: disable=too-many-public-methods
 class MathInterface(ABC):
@@ -938,8 +951,7 @@ class MathInterface(ABC):
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
         mat = self.diag(
-            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)),
-            k=0
+            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
         )  # shape [2,2,N,N]
         mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
         return mat
