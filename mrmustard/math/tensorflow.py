@@ -349,22 +349,27 @@ class TFMath(MathInterface):
 
         return poly, grad
 
+    @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a matrix."""
         return tf.linalg.eigvals(tensor)
 
+    @staticmethod
     def eigvalsh(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return tf.linalg.eigvalsh(tensor)
 
+    @staticmethod
     def svd(tensor: tf.Tensor) -> Tensor:
         """Returns the Singular Value Decomposition of a matrix."""
         return tf.linalg.svd(tensor)
 
+    @staticmethod
     def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
         """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
         return tf.math.xlogy(x, y)
 
+    @staticmethod
     def eigh(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues and eigenvectors of a matrix."""
         return tf.linalg.eigh(tensor)
@@ -377,6 +382,7 @@ class TFMath(MathInterface):
             return self.zeros_like(tensor)
         return tf.linalg.sqrtm(tensor)
 
+    @staticmethod
     def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         """Returns a tensor based on the truth value of the boolean mask."""
         return tf.boolean_mask(tensor, mask)
