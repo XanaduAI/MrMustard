@@ -857,7 +857,7 @@ class MathInterface(ABC):
 
     @property
     def euclidean_opt(self):
-        r"""Returns the configured Euclidiand optimizer."""
+        r"""Returns the configured Euclidean optimizer."""
         if not self._euclidean_opt:
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
