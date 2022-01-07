@@ -36,8 +36,8 @@ greater degree of flexibility and code reuse.
 """
 
 
-from mrmustard import settings
 import importlib
+from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
@@ -49,9 +49,13 @@ class Math:
     r"""
     This class is a switcher for performing math operations on the currently active backend.
     """
-
+    # pylint: disable=no-else-return
     def __getattribute__(self, name):
         if settings.backend == "tensorflow":
             return object.__getattribute__(TFMath(), name)
         elif settings.backend == "torch":
             return object.__getattribute__(TorchMath(), name)
+
+        raise ValueError(
+            f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
+        )

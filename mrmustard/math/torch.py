@@ -12,16 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the Pytorch implementation of the :class:`Math` interface."""
+
 import numpy as np
 import torch
-from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
-from .math_interface import MathInterface
+from mrmustard.types import (
+    List,
+    Tensor,
+    Sequence,
+    Tuple,
+    Optional,
+    Dict,
+    Trainable,
+    Callable,
+    Union,
+)
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import *
+from .math_interface import MathInterface
 
-
+# pylint: disable=too-many-public-methods,no-self-use
 class TorchMath(MathInterface):
+    r"""Torch implemantion of the :class:`Math` interface."""
 
     float64 = torch.float64
     float32 = torch.float32
@@ -185,7 +197,8 @@ class TorchMath(MathInterface):
                 dilation=dilations,
             )
             return m(array)
-        elif array.dim() == 4:  # 2D case
+
+        if array.dim() == 4:  # 2D case
             input_height = array.shape[2]
             input_width = array.shape[3]
 
@@ -199,8 +212,8 @@ class TorchMath(MathInterface):
                 dilation=dilations,
             )
             return m(array)
-        else:
-            raise NotImplementedError
+
+        raise NotImplementedError
 
     def transpose(self, a: torch.Tensor, perm: List[int] = None) -> torch.Tensor:
         if a is None:
@@ -269,7 +282,7 @@ class TorchMath(MathInterface):
             -np.inf if bounds[0] is None else bounds[0],
             np.inf if bounds[1] is None else bounds[1],
         )
-        if not bounds == (-np.inf, np.inf):
+        if bounds != (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
         else:
             constraint = None
@@ -278,10 +291,10 @@ class TorchMath(MathInterface):
     def new_variable(
         self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64
     ):
-        return torch.tensor(value, requires_grad=True)
+        return torch.tensor(value, dtype=dtype, requires_grad=True)
 
     def new_constant(self, value, name: str, dtype=torch.float64):
-        return torch.tensor(value)
+        return torch.tensor(value, dtype=dtype)
 
     def asnumpy(self, tensor: torch.Tensor) -> Tensor:
         return tensor.numpy()
@@ -359,4 +372,5 @@ class TorchMath(MathInterface):
         raise NotImplementedError
 
     def boolean_mask(self, tensor: torch.Tensor, mask: torch.Tensor) -> Tensor:
+        """Returns a new 1-D tensor which indexes the `input` tensor according to the boolean mask `mask`."""
         return torch.masked_select(tensor, mask)

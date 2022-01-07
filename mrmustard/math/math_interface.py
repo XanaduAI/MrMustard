@@ -12,15 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC, abstractmethod, abstractproperty
-from mrmustard.types import *
-import numpy as np
+"""This module contains the :class:`Math` interface that every backend has to implement."""
+
+from abc import ABC, abstractmethod
 from functools import lru_cache
+from itertools import product
+import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group
-from itertools import product
 
+from mrmustard.types import (
+    List,
+    Tensor,
+    Matrix,
+    Scalar,
+    Vector,
+    Sequence,
+    Tuple,
+    Optional,
+    Dict,
+    Trainable,
+    Callable,
+    Any,
+)
 
+# pylint: disable=too-many-public-methods
 class MathInterface(ABC):
     r"""The interface that all backends must implement."""
     _euclidean_opt: type = None  # NOTE this is an object that
@@ -28,6 +44,7 @@ class MathInterface(ABC):
     # backend is a singleton
     __instance = None
 
+    # pylint: disable=unused-argument
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
@@ -761,7 +778,7 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def unique_tensors(lst: List[Tensor]) -> List[Tensor]:
+    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
         r"""Returns the tensors in ``lst`` without duplicates and non-tensors.
 
         Args:
@@ -840,14 +857,17 @@ class MathInterface(ABC):
 
     @property
     def euclidean_opt(self):
+        r"""Returns the configured Euclidean optimizer."""
         if not self._euclidean_opt:
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
 
+    # pylint: disable=no-self-use
     def eigvals(self, tensor: Tensor) -> Tensor:
         r"""Returns the eigenvalues of a matrix."""
         ...
 
+    # pylint: disable=no-self-use
     def sqrtm(self, tensor: Tensor) -> Tensor:
         r"""Returns the matrix square root."""
         ...
@@ -907,7 +927,7 @@ class MathInterface(ABC):
         r = np.random.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
-        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0))
+        dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
         return OW @ dd @ OV
 
     def random_orthogonal(self, num_modes: int = 1) -> Tensor:
@@ -931,7 +951,7 @@ class MathInterface(ABC):
         if mat.shape[-2:] != (2, 2):
             raise ValueError("mat must be a single-mode (2x2) matrix")
         mat = self.diag(
-            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes))
+            self.tile(self.expand_dims(mat, axis=-1), (1, 1, num_modes)), k=0
         )  # shape [2,2,N,N]
         mat = self.reshape(self.transpose(mat, (0, 2, 1, 3)), [2 * num_modes, 2 * num_modes])
         return mat
@@ -998,7 +1018,7 @@ class MathInterface(ABC):
         if a_partial is None:
             return b_full
         N = b_full.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes])
+        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
         return self.update_tensor(b_full, indices[:, None], b_rows)
@@ -1031,8 +1051,8 @@ class MathInterface(ABC):
         if mat is None:
             return vec
         N = vec.shape[-1] // 2
-        indices = self.astensor(modes + [m + N for m in modes])
-        updates = self.matvec(mat, self.gather(vec, indices))
+        indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
+        updates = self.matvec(mat, self.gather(vec, indices, axis=0))
         return self.update_tensor(vec, indices[:, None], updates)
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
@@ -1042,8 +1062,8 @@ class MathInterface(ABC):
         diag = self.diag_part(rho)
         if real:
             return self.real(self.reshape(diag, cutoffs))
-        else:
-            return self.reshape(diag, cutoffs)
+
+        return self.reshape(diag, cutoffs)
 
     def poisson(self, max_k: int, rate: Tensor) -> Tensor:
         """Poisson distribution up to ``max_k``."""
@@ -1066,9 +1086,9 @@ class MathInterface(ABC):
 
         if prob.ndim > 3 or len(other_probs) > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
-        if not all([q.ndim == 1 for q in other_probs]):
+        if not all((q.ndim == 1 for q in other_probs)):
             raise ValueError("other_probs must contain 1d arrays")
-        if not all([len(q) == s for q, s in zip(other_probs, prob.shape)]):
+        if not all((len(q) == s for q, s in zip(other_probs, prob.shape))):
             raise ValueError("The length of the 1d prob vectors must match shape of prob")
 
         q = other_probs[0]

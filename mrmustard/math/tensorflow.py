@@ -12,16 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the Tensorflow implementation of the :class:`Math` interface."""
+
 import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
-from .math_interface import MathInterface
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import *
+from mrmustard.types import (
+    List,
+    Tensor,
+    Sequence,
+    Tuple,
+    Optional,
+    Dict,
+    Trainable,
+    Callable,
+    Union,
+)
+from .math_interface import MathInterface
 
-
+# pylint: disable=too-many-public-methods,no-self-argument
 class TFMath(MathInterface):
+    r"""Tensorflow implemantion of the :class:`Math` interface."""
 
     float64 = tf.float64
     float32 = tf.float32
@@ -78,7 +91,7 @@ class TFMath(MathInterface):
             -np.inf if bounds[0] is None else bounds[0],
             np.inf if bounds[1] is None else bounds[1],
         )
-        if not bounds == (-np.inf, np.inf):
+        if bounds != (-np.inf, np.inf):
             constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
         else:
             constraint = None
@@ -135,8 +148,8 @@ class TFMath(MathInterface):
     def hash_tensor(self, tensor: tf.Tensor) -> int:
         try:
             REF = tensor.ref()
-        except AttributeError:
-            raise TypeError(f"Cannot hash tensor")
+        except AttributeError as e:
+            raise TypeError("Cannot hash tensor") from e
         return hash(REF)
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
@@ -260,7 +273,7 @@ class TFMath(MathInterface):
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
     def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
-        hash_dict = dict()
+        hash_dict = {}
         for tensor in lst:
             try:
                 if (hash := self.hash_tensor(tensor)) not in hash_dict:
@@ -301,7 +314,7 @@ class TFMath(MathInterface):
         with tf.GradientTape() as tape:
             loss = cost_fn()
         gradients = tape.gradient(loss, list(parameters.values()))
-        return loss, {p: g for p, g in zip(parameters.keys(), gradients)}
+        return loss, dict(zip(parameters.keys(), gradients))
 
     @tf.custom_gradient
     def hermite_renormalized(
@@ -336,23 +349,28 @@ class TFMath(MathInterface):
 
         return poly, grad
 
-    def eigvals(self, tensor: tf.Tensor) -> Tensor:
+    @staticmethod
+    def eigvals(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a matrix."""
         return tf.linalg.eigvals(tensor)
 
-    def eigvalsh(self, tensor: tf.Tensor) -> Tensor:
+    @staticmethod
+    def eigvalsh(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return tf.linalg.eigvalsh(tensor)
 
-    def svd(self, tensor: tf.Tensor) -> Tensor:
+    @staticmethod
+    def svd(tensor: tf.Tensor) -> Tensor:
         """Returns the Singular Value Decomposition of a matrix."""
         return tf.linalg.svd(tensor)
 
-    def xlogy(self, x: tf.Tensor, y: tf.Tensor) -> Tensor:
+    @staticmethod
+    def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
         """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
         return tf.math.xlogy(x, y)
 
-    def eigh(self, tensor: tf.Tensor) -> Tensor:
+    @staticmethod
+    def eigh(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues and eigenvectors of a matrix."""
         return tf.linalg.eigh(tensor)
 
@@ -362,10 +380,10 @@ class TFMath(MathInterface):
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
             return self.zeros_like(tensor)
-        else:
-            return tf.linalg.sqrtm(tensor)
+        return tf.linalg.sqrtm(tensor)
 
-    def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
+    @staticmethod
+    def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         """Returns a tensor based on the truth value of the boolean mask."""
         return tf.boolean_mask(tensor, mask)
 
@@ -388,17 +406,17 @@ class TFMath(MathInterface):
     @tf.custom_gradient
     def setitem(tensor, value, *, key):
         """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
-        tensor = np.array(tensor)
+        _tensor = np.array(tensor)
         value = np.array(value)
-        tensor[key] = value
+        _tensor[key] = value
 
         def grad(dy):
             dL_dtensor = np.array(dy)
             dL_dtensor[key] = 0.0
             # unbroadcasting the gradient
-            implicit_broadcast = list(range(tensor.ndim - value.ndim))
+            implicit_broadcast = list(range(_tensor.ndim - value.ndim))
             explicit_broadcast = [
-                tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
+                _tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
             ]
             dL_dvalue = np.sum(
                 np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)
@@ -408,4 +426,4 @@ class TFMath(MathInterface):
             )
             return dL_dtensor, dL_dvalue
 
-        return tensor, grad
+        return _tensor, grad
