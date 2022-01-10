@@ -97,6 +97,7 @@ class TFMath(MathInterface):
             constraint = None
         return constraint
 
+    # pylint: disable=arguments-differ
     @Autocast()
     def convolution(
         self,

@@ -226,8 +226,8 @@ class MathInterface(ABC):
         self,
         array: Tensor,
         filters: Tensor,
-        strides: Optional[List[int]] = None,
-        dilations: Optional[List[int]] = None,
+        padding="VALID",
+        data_format="NWC",
     ) -> Tensor:  # TODO: remove strides and data_format?
         r"""Performs a convolution on array with filters.
 
