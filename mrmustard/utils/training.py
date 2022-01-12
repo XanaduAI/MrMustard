@@ -73,8 +73,9 @@ class Optimizer:
                     update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                     self.opt_history.append(cost)
                     bar.step(math.asnumpy(cost))
-        except KeyboardInterrupt:  # graceful exit
-            return
+        except KeyboardInterrupt as e:  # graceful exit
+            print("KeyboardInterrupt: Stopping execution...")
+            raise StopExecution from e
 
     def should_stop(self, max_steps: int) -> bool:
         r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)."""
@@ -88,6 +89,11 @@ class Optimizer:
                 print("Loss looks stable, stopping here.")
                 return True
         return False
+
+class StopExecution(Exception):
+    """A helper class to quietly stop execution without printing a traceback."""
+    def _render_traceback_(self):
+        pass
 
 
 # ~~~~~~~~~~~~~~~~~
