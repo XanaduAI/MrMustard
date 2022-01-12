@@ -14,7 +14,7 @@
 
 import numpy as np
 
-from mrmustard.types import *
+from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -212,16 +212,15 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     if a_ket and b_ket:
-        min_cutoffs = tuple([slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)])
+        min_cutoffs = (slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape))
         state_a = state_a[min_cutoffs]
         state_b = state_b[min_cutoffs]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
-    elif a_ket:
-        min_cutoffs = tuple(
-            [
+
+    if a_ket:
+        min_cutoffs = (
                 slice(min(a, b))
                 for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])
-            ]
         )
         state_a = state_a[min_cutoffs]
         state_b = state_b[min_cutoffs * 2]
@@ -229,12 +228,11 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
         )
-    elif b_ket:
-        min_cutoffs = tuple(
-            [
+
+    if b_ket:
+        min_cutoffs = (
                 slice(min(a, b))
                 for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
-            ]
         )
         state_a = state_a[min_cutoffs * 2]
         state_b = state_b[min_cutoffs]
@@ -242,14 +240,14 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
         return math.real(
             math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
         )
-    else:
-        raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
+
+    raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
 
 
 def number_means(tensor, is_dm: bool):
     r"""Returns the mean of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = [m for m in range(len(probs.shape))]
+    modes = list(range(len(probs.shape)))
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
         [
@@ -262,7 +260,7 @@ def number_means(tensor, is_dm: bool):
 def number_variances(tensor, is_dm: bool):
     r"""Returns the variance of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = [m for m in range(len(probs.shape))]
+    modes = list(range(len(probs.shape)))
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
         [
@@ -308,17 +306,17 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
         Us = math.tensordot(U, fock_state, axes=(N1, N0))
         if not state_is_dm:
             return Us
-        else:  # is state is dm, the input indices of dm are still at the end of Us
-            return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
-    else:
-        C = transformation  # choi operator
-        if state_is_dm:
-            return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
-        else:
-            Cs = math.tensordot(C, fock_state, axes=(N1, N0))
-            return math.tensordot(
-                Cs, math.conj(fock_state), axes=(N2, N0)
-            )  # N2 is the last set of indices now
+        # is state is dm, the input indices of dm are still at the end of Us
+        return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
+
+    C = transformation  # choi operator
+    if state_is_dm:
+        return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
+
+    Cs = math.tensordot(C, fock_state, axes=(N1, N0))
+    return math.tensordot(
+        Cs, math.conj(fock_state), axes=(N2, N0)
+    )  # N2 is the last set of indices now
 
 
 def contract_states(
@@ -343,7 +341,8 @@ def contract_states(
         if normalize:
             out = out / math.norm(out)
         return out
-    elif a_is_mixed and not b_is_mixed:
+
+    if a_is_mixed and not b_is_mixed:
         Ab = math.tensordot(
             stateA, stateB, axes=([m + len(stateA.shape) // 2 for m in modes], indices)
         )
@@ -368,8 +367,8 @@ def contract_states(
 def normalize(fock: Tensor, is_dm: bool):
     if is_dm:
         return fock / math.sum(math.all_diagonals(fock, real=False))
-    else:
-        return fock / math.sum(math.norm(fock))
+
+    return fock / math.sum(math.norm(fock))
 
 
 def norm(state: Tensor, is_dm: bool):
@@ -381,8 +380,8 @@ def norm(state: Tensor, is_dm: bool):
     """
     if is_dm:
         return math.sum(math.all_diagonals(state, real=True))
-    else:
-        return math.abs(math.norm(state))
+
+    return math.abs(math.norm(state))
 
 
 def is_mixed_dm(dm):
