@@ -23,7 +23,7 @@ optimization routine.
 from mrmustard.physics import fock, gaussian
 from mrmustard import settings
 
-
+# pylint: disable=protected-access
 def fidelity(A, B) -> float:
     r"""Calculates the fidelity between two quantum states.
 
@@ -51,10 +51,11 @@ def normalize(A):
     if A.is_gaussian:
         A._norm = 1.0
         return A
+
     if A.is_mixed:
         return A.__class__(dm=fock.normalize(A.dm(), is_dm=True))
-    else:
-        return A.__class__(ket=fock.normalize(A.ket(), is_dm=False))
+
+    return A.__class__(ket=fock.normalize(A.ket(), is_dm=False))
 
 
 def norm(A) -> float:
@@ -87,7 +88,7 @@ def overlap(A, B) -> float:
     Returns:
         float: the overlap between the two states
     """
-    raise NotImplementedError
+
     if A.is_gaussian and B.is_gaussian:
         return gaussian.overlap(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.overlap(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
@@ -117,7 +118,6 @@ def relative_entropy(A, B) -> float:
     Returns:
         float: the relative entropy between the two states
     """
-    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.relative_entropy(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.relative_entropy(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
@@ -133,7 +133,6 @@ def trace_distance(A, B) -> float:
     Returns:
         float: the trace distance between the two states
     """
-    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.trace_distance(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.trace_distance(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
