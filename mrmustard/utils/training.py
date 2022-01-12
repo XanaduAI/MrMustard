@@ -90,8 +90,10 @@ class Optimizer:
                 return True
         return False
 
+
 class StopExecution(Exception):
     """A helper class to quietly stop execution without printing a traceback."""
+
     def _render_traceback_(self):
         pass
 
