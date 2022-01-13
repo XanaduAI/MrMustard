@@ -32,7 +32,7 @@ from mrmustard.types import (
 )
 from .math_interface import MathInterface
 
-# pylint: disable=too-many-public-methods,no-self-argument
+# pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
     r"""Tensorflow implemantion of the :class:`Math` interface."""
 
@@ -375,7 +375,6 @@ class TFMath(MathInterface):
         """Returns the eigenvalues and eigenvectors of a matrix."""
         return tf.linalg.eigh(tensor)
 
-    # pylint: disable=arguments-differ
     def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
         """Returns the matrix square root of a square matrix, such that ``sqrt(A) @ sqrt(A) = A``."""
 
