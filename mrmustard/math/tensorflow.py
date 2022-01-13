@@ -294,8 +294,9 @@ class TFMath(MathInterface):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
+    # TODO: is a wrapper class better?
     @staticmethod
-    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
+    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.Optimizer:
         r"""Default optimizer for the Euclidean parameters."""
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
