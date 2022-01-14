@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from thewalrus.quantum import is_pure_cov
 
+from typing import Tuple, Union, Sequence, Any
+from numpy import pi
+from thewalrus.quantum import is_pure_cov
 from mrmustard.types import Matrix, Vector, Scalar
-from typing import Tuple, Union, Sequence, List, Any
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
-from numpy import pi
 from mrmustard.math import Math
 
 math = Math()
@@ -121,11 +121,11 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
     """
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
-    else:
-        return math.matmul(
-            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
-            math.transpose(symplectic),
-        )
+
+    return math.matmul(
+        math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+        math.transpose(symplectic),
+    )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,15 +269,15 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
                 [ca + cb, sb - sa, -sa - sb, cb - ca],
             ]
         )
-    else:
-        return 0.5 * math.astensor(
-            [
-                [cp - ca, -sb, sa - sp, -1 - cb],
-                [-sa - sp, 1 - cb, -ca - cp, sb],
-                [sp - sa, 1 + cb, cp - ca, -sb],
-                [cp + ca, -sb, -sa - sp, 1 - cb],
-            ]
-        )
+
+    return 0.5 * math.astensor(
+        [
+            [cp - ca, -sb, sa - sp, -1 - cb],
+            [-sa - sp, 1 - cb, -ca - cp, sb],
+            [sp - sa, 1 + cb, cp - ca, -sb],
+            [cp + ca, -sb, -sa - sp, 1 - cb],
+        ]
+    )
 
 
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
@@ -838,8 +838,8 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
         return -math.sum(
             math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
         )
-    else:
-        return 0
+
+    return 0
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
@@ -853,7 +853,7 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     """
     modes = list(range(len(covs[0]) // 2))
     cov = XPMatrix.from_xxpp(covs[0], modes=(modes, modes), like_1=True)
-    for i, c in enumerate(covs[1:]):
+    for _, c in enumerate(covs[1:]):
         modes = list(range(cov.num_modes, cov.num_modes + c.shape[-1] // 2))
         cov = cov @ XPMatrix.from_xxpp(c, modes=(modes, modes), like_1=True)
     return cov.to_xxpp()
@@ -869,7 +869,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
         Vector: the joined means vector
     """
     mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0]) // 2)))
-    for i, m in enumerate(means[1:]):
+    for _, m in enumerate(means[1:]):
         mean = mean + XPVector.from_xxpp(
             m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2))
         )
