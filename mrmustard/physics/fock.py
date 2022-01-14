@@ -221,8 +221,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
 
     if a_ket:
         min_cutoffs = (
-                slice(min(a, b))
-                for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])
+            slice(min(a, b))
+            for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])
         )
         state_a = state_a[min_cutoffs]
         state_b = state_b[min_cutoffs * 2]
@@ -233,8 +233,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
 
     if b_ket:
         min_cutoffs = (
-                slice(min(a, b))
-                for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
+            slice(min(a, b))
+            for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
         )
         state_a = state_a[min_cutoffs * 2]
         state_b = state_b[min_cutoffs]
