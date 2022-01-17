@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from logging import Logger
 import numpy as np
 from scipy.linalg import expm
 from mrmustard.types import *
 from mrmustard.utils import graphics
+from mrmustard.logger import create_logger
 from mrmustard.math import Math
 
 math = Math()
@@ -38,6 +40,7 @@ class Optimizer:
         self.orthogonal_lr: float = orthogonal_lr
         self.euclidean_lr: float = euclidean_lr
         self.opt_history: List[float] = [0]
+        self.log = create_logger(__name__)
 
     def minimize(
         self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000
@@ -73,9 +76,10 @@ class Optimizer:
                     update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                     self.opt_history.append(cost)
                     bar.step(math.asnumpy(cost))
-        except KeyboardInterrupt as e:  # graceful exit
-            print("KeyboardInterrupt: Stopping execution...")
-            raise StopExecution from e
+        except KeyboardInterrupt:  # graceful exit
+            raise self.OptimizerInterruptedError(
+                "Stopping optimizer execution...", self.log
+            ) from None
 
     def should_stop(self, max_steps: int) -> bool:
         r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)."""
@@ -86,16 +90,19 @@ class Optimizer:
                 sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
                 < 1e-6
             ):
-                print("Loss looks stable, stopping here.")
+                self.log.info("Loss looks stable, stopping here.")
                 return True
         return False
 
+    class OptimizerInterruptedError(Exception):
+        """A helper class to quietly stop execution without printing a traceback."""
 
-class StopExecution(Exception):
-    """A helper class to quietly stop execution without printing a traceback."""
+        def __init__(self, message: str, logger: Logger) -> None:
+            super().__init__()
+            logger.info(message)
 
-    def _render_traceback_(self):
-        pass
+        def _render_traceback_(self):
+            pass
 
 
 # ~~~~~~~~~~~~~~~~~
