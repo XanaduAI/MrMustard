@@ -47,7 +47,6 @@ https://github.com/pallets/flask/blob/master/tests/test_logging.py
 
 # pylint: disable=no-self-use
 
-import re
 import logging
 import pytest
 from mrmustard.utils import training
