@@ -140,11 +140,9 @@ class TestLoggerIntegration:
         there were not other configurations made."""
 
         logger = create_logger(module.__name__)
-        stream_name = re.search(r"[0-9]", logger.handlers[0].stream.name).group()
-
         assert len(logger.handlers) == 1
         # checks if stream is stderr (stream name for stderr is 8 or 9, whereas stdout 6 or 7)
-        assert stream_name in ["8", "9"]
+        assert logger.handlers[0].stream.fileno() in [8, 9]
 
     @pytest.mark.parametrize("module", modules_contain_logging)
     def test_custom_logger_before_mm_logger_with_higher_level(self, module):
