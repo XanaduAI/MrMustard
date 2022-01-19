@@ -32,7 +32,7 @@ from mrmustard.types import (
 )
 from .math_interface import MathInterface
 
-# pylint: disable=too-many-public-methods,no-self-argument
+# pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
     r"""Tensorflow implemantion of the :class:`Math` interface."""
 
@@ -60,9 +60,9 @@ class TFMath(MathInterface):
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
         return np.array(tensor)
 
-    def assign(self, array: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
-        array.assign(value)
-        return array
+    def assign(self, tensor: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
+        tensor.assign(value)
+        return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
         return tf.convert_to_tensor(array, dtype=dtype)
@@ -70,10 +70,10 @@ class TFMath(MathInterface):
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
-    def cast(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
+    def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
-            return x
-        return tf.cast(x, dtype)
+            return array
+        return tf.cast(array, dtype)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
         return tf.clip_by_value(array, a_min, a_max)
@@ -97,6 +97,7 @@ class TFMath(MathInterface):
             constraint = None
         return constraint
 
+    # pylint: disable=arguments-differ
     @Autocast()
     def convolution(
         self,
@@ -115,8 +116,8 @@ class TFMath(MathInterface):
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
 
-    def det(self, a: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.det(a)
+    def det(self, matrix: tf.Tensor) -> tf.Tensor:
+        return tf.linalg.det(matrix)
 
     def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag(array, k=k)
@@ -139,8 +140,8 @@ class TFMath(MathInterface):
     def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
         return tf.eye(size, dtype=dtype)
 
-    def from_backend(self, thing) -> bool:
-        return isinstance(thing, (tf.Tensor, tf.Variable))
+    def from_backend(self, value) -> bool:
+        return isinstance(value, (tf.Tensor, tf.Variable))
 
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
@@ -155,8 +156,8 @@ class TFMath(MathInterface):
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
 
-    def inv(self, a: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.inv(a)
+    def inv(self, tensor: tf.Tensor) -> tf.Tensor:
+        return tf.linalg.inv(tensor)
 
     def is_trainable(self, tensor: tf.Tensor) -> bool:
         return isinstance(tensor, tf.Variable)
@@ -224,12 +225,13 @@ class TFMath(MathInterface):
     ) -> tf.Tensor:
         return tf.pad(array, paddings, mode, constant_values)
 
-    def pinv(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.pinv(array)
+    @staticmethod
+    def pinv(matrix: tf.Tensor) -> tf.Tensor:
+        return tf.linalg.pinv(matrix)
 
     @Autocast()
-    def pow(self, array: tf.Tensor, exponent: float) -> tf.Tensor:
-        return tf.math.pow(array, exponent)
+    def pow(self, x: tf.Tensor, y: float) -> tf.Tensor:
+        return tf.math.pow(x, y)
 
     def real(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.real(array)
@@ -292,9 +294,9 @@ class TFMath(MathInterface):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    def DefaultEuclideanOptimizer(
-        self,
-    ) -> tf.keras.optimizers.Optimizer:  # TODO: a wrapper class is better?
+    # TODO: is a wrapper class better?
+    @staticmethod
+    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.Optimizer:
         r"""Default optimizer for the Euclidean parameters."""
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
