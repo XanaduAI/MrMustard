@@ -77,9 +77,8 @@ class Optimizer:
                     self.opt_history.append(cost)
                     bar.step(math.asnumpy(cost))
         except KeyboardInterrupt:  # graceful exit
-            raise self.OptimizerInterruptedError(
-                "Stopping optimizer execution...", self.log
-            ) from None
+            logger.info("Optimizer execution halted due to keyboard interruption.")
+            raise self.OptimizerInterruptedError() from None
 
     def should_stop(self, max_steps: int) -> bool:
         r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)."""
@@ -97,9 +96,8 @@ class Optimizer:
     class OptimizerInterruptedError(Exception):
         """A helper class to quietly stop execution without printing a traceback."""
 
-        def __init__(self, message: str, logger: Logger) -> None:
+        def __init__(self) -> None:
             super().__init__()
-            logger.info(message)
 
         def _render_traceback_(self):
             pass
