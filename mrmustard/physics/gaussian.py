@@ -747,9 +747,7 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     return entropy
 
 
-def fidelity(
-    mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0
-) -> float:
+def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0) -> float:
     r"""Returns the fidelity of two gaussian states.
 
     Reference: `arXiv:2102.05748 <https://arxiv.org/pdf/2102.05748.pdf>`_, equations 95-99.

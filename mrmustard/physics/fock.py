@@ -400,8 +400,7 @@ def norm(state: Tensor, is_dm: bool):
 
 
 def is_mixed_dm(dm):
-    r"""Evaluates if a density matrix represents a mixed state.
-    """
+    r"""Evaluates if a density matrix represents a mixed state."""
     cutoffs = dm.shape[: len(dm.shape) // 2]
     square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
