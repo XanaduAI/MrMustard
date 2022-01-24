@@ -83,13 +83,14 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def arange(self, start: int, limit: int = None, delta: int = 1) -> Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
         r"""Returns an array of evenly spaced values within a given interval.
 
         Args:
             start (int): start of the interval
             limit (int): end of the interval
             delta (int): step size
+            dtype (type): dtype of the returned array
 
         Returns:
             array: array of evenly spaced values
@@ -532,7 +533,7 @@ class MathInterface(ABC):
 
     @abstractmethod
     def new_variable(
-        self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str
+        self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype: Any
     ) -> Tensor:
         r"""Returns a new variable with the given value and bounds.
 
@@ -540,19 +541,20 @@ class MathInterface(ABC):
             value (array): value of the new variable
             bounds (tuple): bounds of the new variable
             name (str): name of the new variable
-
+            dtype (type): dtype of the array
         Returns:
             array: new variable
         """
         ...
 
     @abstractmethod
-    def new_constant(self, value: Tensor, name: str) -> Tensor:
+    def new_constant(self, value: Tensor, name: str, dtype: Any) -> Tensor:
         r"""Returns a new constant with the given value.
 
         Args:
             value (array): value of the new constant
             name (str): name of the new constant
+            dtype (type): dtype of the array
 
         Returns:
             array: new constant
@@ -753,11 +755,12 @@ class MathInterface(ABC):
         ...
 
     @abstractmethod
-    def trace(self, array: Tensor) -> Tensor:
+    def trace(self, array: Tensor, dtype: Any = None) -> Tensor:
         r"""Returns the trace of array.
 
         Args:
             array (array): array to take the trace of
+            dtype (type): ``dtype`` of the output array
 
         Returns:
             array: trace of array
