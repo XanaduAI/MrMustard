@@ -14,6 +14,10 @@
 
 # pylint: disable=redefined-outer-name
 
+"""
+This module contains functions for performing calculations on Fock states.
+"""
+
 import numpy as np
 
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
@@ -367,6 +371,15 @@ def contract_states(
 
 
 def normalize(fock: Tensor, is_dm: bool):
+    r"""
+    Returns the normalized ket state.
+
+    Args:
+        fock (Tensor): the state to be normalized
+        is_dm (optioanl bool): whether the input tensor is a density matrix
+    Returns:
+        Tensor: the normalized state
+    """
     if is_dm:
         return fock / math.sum(math.all_diagonals(fock, real=False))
 
@@ -387,6 +400,8 @@ def norm(state: Tensor, is_dm: bool):
 
 
 def is_mixed_dm(dm):
+    r"""Evaluates if a density matrix represents a mixed state.
+    """
     cutoffs = dm.shape[: len(dm.shape) // 2]
     square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)

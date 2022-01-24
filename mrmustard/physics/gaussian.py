@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module contains functions for performing calculations on Gaussian states.
+"""
 
 from typing import Tuple, Union, Sequence, Any
 from numpy import pi
@@ -108,7 +111,7 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     return math.matmul(S, math.transpose(S)) * hbar / 2
 
 
-def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
+def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
     r"""Returns the covariance matrix of a Gaussian state.
 
     Args:
@@ -569,7 +572,6 @@ def general_dyne(
     """
     N = cov.shape[-1] // 2
     nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    nA = N - nB  # A is the leftover
     Amodes = [i for i in range(N) if i not in modes]
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
@@ -746,7 +748,7 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
 
 
 def fidelity(
-    mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08
+    mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0
 ) -> float:
     r"""Returns the fidelity of two gaussian states.
 
@@ -792,9 +794,9 @@ def fidelity(
         math.transpose(deltar) * math.matvec(cov12_inv, deltar)
     )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
-    fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
+    _fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
 
-    return math.cast(fidelity, "float64")
+    return math.cast(_fidelity, "float64")
 
 
 def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
