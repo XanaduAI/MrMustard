@@ -56,7 +56,9 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix, Vector: thermal state covariance matrix or means vector
     """
     return displacement(
-        math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar
+        math.zeros(num_modes, dtype="float64"),
+        math.zeros(num_modes, dtype="float64"),
+        hbar,
     )
 
 
@@ -111,7 +113,9 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     return math.matmul(S, math.transpose(S)) * hbar / 2
 
 
-def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
+def gaussian_cov(
+    symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0
+) -> Matrix:
     r"""Returns the covariance matrix of a Gaussian state.
 
     Args:
@@ -129,7 +133,9 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
         hbar
         / 2
         * math.matmul(
-            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+            math.matmul(
+                symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))
+            ),
             math.transpose(symplectic),
         )
     )
@@ -162,7 +168,9 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     )
 
 
-def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
+def squeezing_symplectic(
+    r: Union[Scalar, Vector], phi: Union[Scalar, Vector]
+) -> Matrix:
     r"""Symplectic matrix of a squeezing gate.
 
     The dimension depends on the dimension of ``r`` and ``phi``.
@@ -194,7 +202,9 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     )
 
 
-def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float) -> Vector:
+def displacement(
+    x: Union[Scalar, Vector], y: Union[Scalar, Vector], hbar: float
+) -> Vector:
     r"""Returns the displacement vector for a displacement by :math:`alpha = x + iy`.
     The dimension depends on the dimensions of ``x`` and ``y``.
 
@@ -477,7 +487,9 @@ def loss_XYd(
     return X, Y, None
 
 
-def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float) -> Matrix:
+def amp_XYd(
+    gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector], hbar: float
+) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
 
     The quantum limited amplifier channel is recovered for ``nbar = 0.0``.
@@ -627,12 +639,17 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     """
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
-    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-        2 * hbar ** 2
-    )
+    dd = math.diag(
+        math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])
+    ) / (2 * hbar ** 2)
     CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
     return (
-        CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
+        CC[:N, :N]
+        + CC[N:, N:]
+        + CC[:N, N:]
+        + CC[N:, :N]
+        + dd
+        - 0.25 * math.eye(N, dtype=CC.dtype)
     )
 
 
@@ -654,7 +671,8 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     """
     N = len(cov) // 2
     Aindices = math.astensor(
-        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+        [i for i in range(N) if i not in Bmodes]
+        + [i + N for i in range(N) if i not in Bmodes]
     )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)
@@ -673,7 +691,8 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
     """
     N = cov.shape[-1] // 2
     Bindices = math.cast(
-        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+        [i for i in range(N) if i not in Amodes]
+        + [i + N for i in range(N) if i not in Amodes],
         "int32",
     )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
@@ -695,7 +714,8 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
     """
     N = len(means) // 2
     Bindices = math.cast(
-        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+        [i for i in range(N) if i not in Amodes]
+        + [i + N for i in range(N) if i not in Amodes],
         "int32",
     )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
@@ -746,7 +766,9 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
         float: the Von Neumann entropy
     """
     symp_vals = symplectic_eigenvals(cov, hbar)
-    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy(
+        (x - 1) / 2, (x - 1) / 2 + 1e-9
+    )
     entropy = math.sum(g(symp_vals))
     return entropy
 
@@ -772,7 +794,9 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0) -> 
 
     mu1 = math.cast(mu1, "complex128")
     mu2 = math.cast(mu2, "complex128")
-    deltar = (mu2 - mu1) / math.sqrt(hbar, dtype=mu1.dtype)  # convert to units where hbar = 1
+    deltar = (mu2 - mu1) / math.sqrt(
+        hbar, dtype=mu1.dtype
+    )  # convert to units where hbar = 1
     J = math.J(cov1.shape[0] // 2)
     I = math.eye(cov1.shape[0])
     J = math.cast(J, "complex128")
@@ -840,7 +864,8 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
     )  # Get rid of terms that would lead to zero contribution.
     if len(vals_filtered) > 0:
         return -math.sum(
-            math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
+            math.log(vals_filtered)
+            / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
         )
 
     return 0
@@ -915,7 +940,9 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     d_dual = d
     if Y is not None:
         Y_dual = (
-            math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
+            math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual)))
+            if X_dual is not None
+            else Y
         )
     if d is not None:
         d_dual = math.matvec(X_dual, d) if X_dual is not None else d
