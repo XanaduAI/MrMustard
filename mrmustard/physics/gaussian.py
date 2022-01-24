@@ -111,7 +111,7 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     return math.matmul(S, math.transpose(S)) * hbar / 2
 
 
-def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
+def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
     r"""Returns the covariance matrix of a Gaussian state.
 
     Args:
@@ -123,9 +123,9 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
         Tensor: covariance matrix of the Gaussian state
     """
     if eigenvalues is None:
-        return math.matmul(symplectic, math.transpose(symplectic))
+        return hbar/2 * math.matmul(symplectic, math.transpose(symplectic))
 
-    return math.matmul(
+    return hbar/2 * math.matmul(
         math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
         math.transpose(symplectic),
     )
