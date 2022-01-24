@@ -123,11 +123,15 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
         Tensor: covariance matrix of the Gaussian state
     """
     if eigenvalues is None:
-        return hbar/2 * math.matmul(symplectic, math.transpose(symplectic))
+        return hbar / 2 * math.matmul(symplectic, math.transpose(symplectic))
 
-    return hbar/2 * math.matmul(
-        math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
-        math.transpose(symplectic),
+    return (
+        hbar
+        / 2
+        * math.matmul(
+            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+            math.transpose(symplectic),
+        )
     )
 
 
