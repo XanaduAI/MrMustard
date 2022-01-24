@@ -13,9 +13,7 @@
 # limitations under the License.
 
 
-from functools import reduce
-from mrmustard.utils import training
-from mrmustard.types import *
+from mrmustard.types import Tensor, Dict, List, Trainable
 from mrmustard.math import Math
 
 math = Math()
@@ -69,12 +67,12 @@ class Parametrized:
                     [p for item in self._ops for p in item.trainable_parameters["euclidean"]]
                 ),
             }
-        else:
-            return {
-                "symplectic": [],
-                "orthogonal": [],
-                "euclidean": self._trainable_parameters,
-            }  # default
+
+        return {
+            "symplectic": [],
+            "orthogonal": [],
+            "euclidean": self._trainable_parameters,
+        }  # default
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
@@ -91,9 +89,9 @@ class Parametrized:
                     [p for item in self._ops for p in item.constant_parameters["euclidean"]]
                 ),
             }
-        else:
-            return {
-                "symplectic": [],
-                "orthogonal": [],
-                "euclidean": self._constant_parameters,
-            }  # default
+
+        return {
+            "symplectic": [],
+            "orthogonal": [],
+            "euclidean": self._constant_parameters,
+        }  # default
