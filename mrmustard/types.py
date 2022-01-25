@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=unused-wildcard-import
+
 from typing import *
 
 # NOTE: when type-annotating with typevars, objects with the same typevars must have the same type
