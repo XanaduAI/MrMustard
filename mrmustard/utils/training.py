@@ -77,7 +77,7 @@ class Optimizer:
                     self.opt_history.append(cost)
                     bar.step(math.asnumpy(cost))
         except KeyboardInterrupt:  # graceful exit
-            logger.info("Optimizer execution halted due to keyboard interruption.")
+            self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
 
     def should_stop(self, max_steps: int) -> bool:
