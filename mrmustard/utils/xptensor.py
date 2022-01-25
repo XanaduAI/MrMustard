@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=too-many-return-statements,too-many-branches,missing-function-docstring
+
+"""This module contains the classes for representing Matrices and Vectors in phase space."""
+
 from __future__ import annotations
-from mrmustard.types import *
-from abc import ABC, abstractmethod, abstractproperty
-from itertools import product
-import numpy as np
+from abc import ABC, abstractmethod
+from typing_extensions import Self
+from mrmustard.types import Optional, Union, Matrix, Vector, List, Tensor, Tuple, Scalar
 from mrmustard.math import Math
 
 math = Math()
@@ -30,7 +33,7 @@ class XPTensor(ABC):
     There are two main orderings:
         - xxpp: matrix is a `2\times 2` block matrix where each block is an `xx`, `xp`, `px`, `pp` block on all modes.
         - xpxp: matrix is a `n\times n` block matrix of `2\times 2` blocks each corresponding to a mode or a coherence between modes
-    This creates some difficulties when we need to work in a mode-wise fashion, especially whith coherences.
+    This creates some difficulties when we need to work in a mode-wise fashion, especially with coherences.
     We solve this problem by reshaping the matrices to `(n,m,2,2)` and vectors to `(n,2)`.
 
     We call `n` the outmodes and `m` the inmodes.
@@ -156,7 +159,7 @@ class XPTensor(ABC):
             return None
         return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
-    def clone(self, times: int, modes=None) -> XPtensor:
+    def clone(self, times: int, modes=None) -> Self:
         r"""Create a new XPTensor made by cloning the system a given number of times
         (the modes are reset by default unless specified).
         """
@@ -174,13 +177,13 @@ class XPTensor(ABC):
             )  # shape = [2,2,NT,NT] = [2,2,O,O]
             tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
             return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
-        else:
-            tensor = math.tile(
-                self.expand_dims(self.modes_last(), axis=2), (1, 1, times)
-            )  # shape = [2,N,T]
-            tensor = math.reshape(tensor, (2, -1))  # shape = [2,NT] = [2,O]
-            tensor = math.transpose(tensor, (1, 0))  # shape = [NT,2] = [O,2]
-            return XPVector(tensor, [] if modes is None else modes)
+
+        tensor = math.tile(
+            self.expand_dims(self.modes_last(), axis=2), (1, 1, times)
+        )  # shape = [2,N,T]
+        tensor = math.reshape(tensor, (2, -1))  # shape = [2,NT] = [2,O]
+        tensor = math.transpose(tensor, (1, 0))  # shape = [NT,2] = [O,2]
+        return XPVector(tensor, [] if modes is None else modes)
 
     def clone_like(self, other: XPTensor):
         r"""Create a new XPTensor with the same shape and modes as other.
@@ -209,8 +212,7 @@ class XPTensor(ABC):
             raise ValueError("Cannot clone a vector into a matrix or viceversa")
         if self.isMatrix:
             return XPMatrix(tensor, self.like_0, self.like_1, (other.outmodes, other.inmodes))
-        else:
-            return XPVector(tensor, other.outmodes)
+        return XPVector(tensor, other.outmodes)
 
     ####################################################################################################################
     # Operators
@@ -221,8 +223,7 @@ class XPTensor(ABC):
         if self.tensor is None:
             if self.like_1:
                 raise NotImplementedError("Cannot multiply a scalar and a like_1 null tensor yet")
-            else:
-                return self
+            return self
         self.tensor = other * self.tensor
         return self
 
@@ -240,7 +241,7 @@ class XPTensor(ABC):
         if self.tensor is None and other.tensor is None:
             if self.isMatrix and other.isMatrix:
                 return XPMatrix(None, like_1=self.like_1 and other.like_1)
-            elif self.isVector or other.isVector:
+            if self.isVector or other.isVector:
                 return XPVector(None)
         # either is None
         if self.tensor is None:
@@ -251,17 +252,18 @@ class XPTensor(ABC):
         if self.isMatrix and other.isMatrix:
             tensor, modes = self._mode_aware_matmul(other)
             return XPMatrix(tensor, like_1=self.like_1 and other.like_1, modes=modes)
-        elif self.isMatrix and other.isVector:
+        if self.isMatrix and other.isVector:
             tensor, modes = self._mode_aware_matmul(other)
             return XPVector(
                 tensor, modes[0]
             )  # TODO: check if we can output modes as a list in _mode_aware_matmul
-        elif self.isVector and other.isMatrix:
+        if self.isVector and other.isMatrix:
             tensor, modes = other.T._mode_aware_matmul(self)
             return XPVector(tensor, modes[0])
-        else:  # self.isVector and other.isVector:
-            return self._mode_aware_vecvec(other)  # NOTE: this is a scalar, not an XPTensor
+        # self.isVector and other.isVector:
+        return self._mode_aware_vecvec(other)  # NOTE: this is a scalar, not an XPTensor
 
+    # pylint: disable=too-many-statements
     def _mode_aware_matmul(
         self, other: Union[XPMatrix, XPVector]
     ) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
@@ -371,14 +373,13 @@ class XPTensor(ABC):
                 raise ValueError("Cannot add two like_1 null tensors yet")  # because 1+1 = 2
             if self.isMatrix and other.isMatrix:
                 return XPMatrix(like_0=self.like_0 and other.like_0)
-            else:
-                return XPVector()
+            return XPVector()
         if self.tensor is None:  # only self is None
             if self.like_0:
                 return other
-            elif (
-                self.like_1
-            ):  # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
+
+            # other must be a matrix because self is like_1, so it must be a matrix and we can't add a vector to a matrix
+            if self.like_1:
                 indices = [
                     [i, i] for i in range(other.num_modes)
                 ]  # TODO: check if this is always correct
@@ -439,8 +440,8 @@ class XPTensor(ABC):
                 like_1=self.like_1 or other.like_1,
                 modes=(outmodes, inmodes),
             )
-        else:
-            return XPVector(to_update, outmodes)
+
+        return XPVector(to_update, outmodes)
 
     def __sub__(self, other: Union[XPMatrix, XPVector]) -> Optional[XPTensor]:
         return self + (-1) * other
@@ -472,40 +473,40 @@ class XPTensor(ABC):
             elif modes == slice(None, None, None):
                 _modes = self.outmodes
             else:
-                raise ValueError(f"Usage: V[1], V[[1,2,3]] or V[:]")
+                raise ValueError("Usage: V[1], V[[1,2,3]] or V[:]")
             rows = [self.outmodes.index(m) for m in modes]
             return XPVector(math.gather(self.tensor, rows, axis=0), modes)
+
+        _modes = [None, None]
+        if isinstance(modes, int):
+            _modes = ([modes], slice(None, None, None))
+        elif isinstance(modes, list) and all(isinstance(m, int) for m in modes):
+            _modes = (modes, slice(None, None, None))
+        elif modes == slice(None, None, None):
+            _modes = (slice(None, None, None), slice(None, None, None))
+        elif isinstance(modes, tuple) and len(modes) == 2:
+            for i, M in enumerate(modes):
+                if isinstance(M, int):
+                    _modes[i] = [M]
+                elif isinstance(M, list):
+                    _modes[i] = M
+                elif M == slice(None, None, None):
+                    _modes[i] = self.modes[i]
+                else:
+                    raise ValueError(
+                        f"Invalid modes: {M} from {modes} (tensor has modes {self.modes})"
+                    )
         else:
-            _modes = [None, None]
-            if isinstance(modes, int):
-                _modes = ([modes], slice(None, None, None))
-            elif isinstance(modes, list) and all(isinstance(m, int) for m in modes):
-                _modes = (modes, slice(None, None, None))
-            elif modes == slice(None, None, None):
-                _modes = (slice(None, None, None), slice(None, None, None))
-            elif isinstance(modes, tuple) and len(modes) == 2:
-                for i, M in enumerate(modes):
-                    if isinstance(M, int):
-                        _modes[i] = [M]
-                    elif isinstance(M, list):
-                        _modes[i] = M
-                    elif M == slice(None, None, None):
-                        _modes[i] = self.modes[i]
-                    else:
-                        raise ValueError(
-                            f"Invalid modes: {M} from {modes} (tensor has modes {self.modes})"
-                        )
-            else:
-                raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
-            rows = [self.outmodes.index(m) for m in _modes[0]]
-            columns = [self.inmodes.index(m) for m in _modes[1]]
-            subtensor = math.gather(self.tensor, rows, axis=0)
-            subtensor = math.gather(subtensor, columns, axis=1)
-            return XPMatrix(
-                subtensor,
-                like_1=_modes[0] == _modes[1] if self.like_1 else False,
-                modes=tuple(_modes),
-            )
+            raise ValueError(f"Invalid modes: {modes} (tensor has modes {self.modes})")
+        rows = [self.outmodes.index(m) for m in _modes[0]]
+        columns = [self.inmodes.index(m) for m in _modes[1]]
+        subtensor = math.gather(self.tensor, rows, axis=0)
+        subtensor = math.gather(subtensor, columns, axis=1)
+        return XPMatrix(
+            subtensor,
+            like_1=_modes[0] == _modes[1] if self.like_1 else False,
+            modes=tuple(_modes),
+        )
 
 
 class XPMatrix(XPTensor):
@@ -526,7 +527,7 @@ class XPMatrix(XPTensor):
         if like_0 == like_1:
             raise ValueError(f"like_0 and like_1 can't both be {like_0}")
         if not (
-            isinstance(modes, tuple) and len(modes) == 2 and all(type(m) == list for m in modes)
+            isinstance(modes, tuple) and len(modes) == 2 and all(isinstance(m, list) for m in modes)
         ):
             raise ValueError("modes should be a tuple containing two lists (outmodes and inmodes)")
         if len(modes[0]) == 0 and len(modes[1]) == 0 and tensor is not None:
@@ -573,10 +574,10 @@ class XPMatrix(XPTensor):
 class XPVector(XPTensor):
     r"""A convenience class for a vector in the XPTensor format."""
 
-    def __init__(self, tensor: Tensor = None, modes: List[int] = []):
-        if not (isinstance(modes, list) or all(type(m) == int for m in modes)):
-            raise ValueError(f"the modes of an XPVector should be a list of ints")
-        if len(modes) == 0 and tensor is not None:
+    def __init__(self, tensor: Tensor = None, modes: Union[List[int], None] = None):
+        if not (isinstance(modes, list) or all(isinstance(m, int) for m in modes)):
+            raise ValueError("the modes of an XPVector should be a list of ints")
+        if modes is None and tensor is not None:
             modes = list(range(tensor.shape[0]))
         super().__init__(tensor, like_0=True, isVector=True, modes=(modes, []))
 
@@ -584,7 +585,7 @@ class XPVector(XPTensor):
     def from_xxpp(
         cls,
         tensor: Optional[Union[Matrix, Vector]],
-        modes: List[int] = [],
+        modes: Union[List[int], None] = None,
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, (2, -1))
@@ -595,7 +596,7 @@ class XPVector(XPTensor):
     def from_xpxp(
         cls,
         tensor: Optional[Union[Matrix, Vector]],
-        modes: List[int] = [],
+        modes: Union[List[int], None] = None,
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, (-1, 2))
