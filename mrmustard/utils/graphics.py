@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""A module containing utility classes and functions for graphical display."""
+
+from copy import copy
+from typing import Tuple
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
 from matplotlib import cm
 import numpy as np
-from mrmustard.types import *
 from mrmustard import settings
-from numba import njit
-from copy import copy
 
-
+# pylint: disable=disallowed-name
 class Progressbar:
     "A spiffy loading bar to display the progress during an optimization."
 
@@ -52,6 +52,7 @@ class Progressbar:
         )
 
     def step(self, loss):
+        """Update bar step and the loss information associated with it."""
         speed = self.bar.tasks[0].speed or 0.0
         self.bar.update(self.taskID, advance=1, refresh=True, speed=speed, loss=loss)
 
@@ -110,7 +111,14 @@ def plot_wigner(rho, xvec, pvec, hbar):
     return W / hbar
 
 
-def mikkel_plot(rho: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-6, 6)):
+def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[int] = (-6, 6)):
+    """Plots the Wigner function of a state given its density matrix.
+
+    Args:
+        rho (np.ndarray): density matrix of the state
+        xbounds (Tuple[int]): range of the x axis
+        ybounds (Tuple[int]): range of the y axis
+    """
     X = np.linspace(xbounds[0], xbounds[1], 200)
     P = np.linspace(ybounds[0], ybounds[1], 200)
     W = plot_wigner(rho, X, P, settings.HBAR)
@@ -119,7 +127,7 @@ def mikkel_plot(rho: np.ndarray, filename: str = "", xbounds=(-6, 6), ybounds=(-
 
     ### PLOTTING ###
 
-    fig, ax = plt.subplots(
+    _, ax = plt.subplots(
         2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
     )
     ticks = [-5, 0, 5]
