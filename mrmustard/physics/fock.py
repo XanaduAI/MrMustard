@@ -371,12 +371,12 @@ def contract_states(
 
 
 def normalize(fock: Tensor, is_dm: bool):
-    r"""
-    Returns the normalized ket state.
+    r"""Returns the normalized ket state.
 
     Args:
         fock (Tensor): the state to be normalized
         is_dm (optioanl bool): whether the input tensor is a density matrix
+
     Returns:
         Tensor: the normalized state
     """
