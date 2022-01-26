@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the :class:`.Parametrized` class which acts as
+an abstract base class for all parametrized objects
+"""
 
 from mrmustard.types import Tensor, Dict, List, Trainable
 from mrmustard.math import Math
