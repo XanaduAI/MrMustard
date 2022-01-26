@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from thewalrus.quantum import is_pure_cov
+"""
+This module contains functions for performing calculations on Gaussian states.
+"""
 
+from typing import Tuple, Union, Sequence, Any
+from numpy import pi
+from thewalrus.quantum import is_pure_cov
 from mrmustard.types import Matrix, Vector, Scalar
-from typing import Tuple, Union, Sequence, List, Any
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
-from numpy import pi
 from mrmustard.math import Math
 
 math = Math()
@@ -53,7 +56,9 @@ def vacuum_means(num_modes: int, hbar: float) -> Tuple[Matrix, Vector]:
         Matrix, Vector: thermal state covariance matrix or means vector
     """
     return displacement(
-        math.zeros(num_modes, dtype="float64"), math.zeros(num_modes, dtype="float64"), hbar
+        math.zeros(num_modes, dtype="float64"),
+        math.zeros(num_modes, dtype="float64"),
+        hbar,
     )
 
 
@@ -120,12 +125,16 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2
         Tensor: covariance matrix of the Gaussian state
     """
     if eigenvalues is None:
-        return math.matmul(symplectic, math.transpose(symplectic))
-    else:
-        return math.matmul(
+        return hbar / 2 * math.matmul(symplectic, math.transpose(symplectic))
+
+    return (
+        hbar
+        / 2
+        * math.matmul(
             math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
             math.transpose(symplectic),
         )
+    )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,15 +278,15 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
                 [ca + cb, sb - sa, -sa - sb, cb - ca],
             ]
         )
-    else:
-        return 0.5 * math.astensor(
-            [
-                [cp - ca, -sb, sa - sp, -1 - cb],
-                [-sa - sp, 1 - cb, -ca - cp, sb],
-                [sp - sa, 1 + cb, cp - ca, -sb],
-                [cp + ca, -sb, -sa - sp, 1 - cb],
-            ]
-        )
+
+    return 0.5 * math.astensor(
+        [
+            [cp - ca, -sb, sa - sp, -1 - cb],
+            [-sa - sp, 1 - cb, -ca - cp, sb],
+            [sp - sa, 1 + cb, cp - ca, -sb],
+            [cp + ca, -sb, -sa - sp, 1 - cb],
+        ]
+    )
 
 
 def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
@@ -569,7 +578,6 @@ def general_dyne(
     """
     N = cov.shape[-1] // 2
     nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    nA = N - nB  # A is the leftover
     Amodes = [i for i in range(N) if i not in modes]
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
@@ -745,9 +753,7 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     return entropy
 
 
-def fidelity(
-    mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0, rtol=1e-05, atol=1e-08
-) -> float:
+def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0) -> float:
     r"""Returns the fidelity of two gaussian states.
 
     Reference: `arXiv:2102.05748 <https://arxiv.org/pdf/2102.05748.pdf>`_, equations 95-99.
@@ -792,9 +798,9 @@ def fidelity(
         math.transpose(deltar) * math.matvec(cov12_inv, deltar)
     )  # computing (mu2-mu1)/sqrt(hbar).T @ cov12_inv @ (mu2-mu1)/sqrt(hbar)
 
-    fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
+    _fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
 
-    return math.cast(fidelity, "float64")
+    return math.cast(_fidelity, "float64")
 
 
 def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
@@ -838,8 +844,8 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
         return -math.sum(
             math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
         )
-    else:
-        return 0
+
+    return 0
 
 
 def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
@@ -853,7 +859,7 @@ def join_covs(covs: Sequence[Matrix]) -> Tuple[Matrix, Vector]:
     """
     modes = list(range(len(covs[0]) // 2))
     cov = XPMatrix.from_xxpp(covs[0], modes=(modes, modes), like_1=True)
-    for i, c in enumerate(covs[1:]):
+    for _, c in enumerate(covs[1:]):
         modes = list(range(cov.num_modes, cov.num_modes + c.shape[-1] // 2))
         cov = cov @ XPMatrix.from_xxpp(c, modes=(modes, modes), like_1=True)
     return cov.to_xxpp()
@@ -869,7 +875,7 @@ def join_means(means: Sequence[Vector]) -> Vector:
         Vector: the joined means vector
     """
     mean = XPVector.from_xxpp(means[0], modes=list(range(len(means[0]) // 2)))
-    for i, m in enumerate(means[1:]):
+    for _, m in enumerate(means[1:]):
         mean = mean + XPVector.from_xxpp(
             m, modes=list(range(mean.num_modes, mean.num_modes + len(m) // 2))
         )
