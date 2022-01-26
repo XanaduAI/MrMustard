@@ -88,7 +88,7 @@ def overlap(A, B) -> float:
     Returns:
         float: the overlap between the two states
     """
-
+    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.overlap(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.overlap(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
@@ -118,6 +118,7 @@ def relative_entropy(A, B) -> float:
     Returns:
         float: the relative entropy between the two states
     """
+    raise NotImplementedError
     if A.is_gaussian and B.is_gaussian:
         return gaussian.relative_entropy(A.means, A.cov, B.means, B.cov, settings.HBAR)
     return fock.relative_entropy(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
