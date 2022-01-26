@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from logging import Logger
-import numpy as np
-from scipy.linalg import expm
-from mrmustard.types import *
+"""This module contains the implementation of optimization classes and functions
+used within Mr Mustard.
+"""
+
+from mrmustard.types import List, Callable, Sequence, Trainable, Tensor
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
 
 math = Math()
 
-
+# pylint: disable=disallowed-name
 class Optimizer:
     r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
 
@@ -96,9 +97,6 @@ class Optimizer:
     class OptimizerInterruptedError(Exception):
         """A helper class to quietly stop execution without printing a traceback."""
 
-        def __init__(self) -> None:
-            super().__init__()
-
         def _render_traceback_(self):
             pass
 
@@ -153,6 +151,7 @@ def new_symplectic(num_modes: int) -> Tensor:
 
 
 def new_orthogonal(num_modes: int) -> Tensor:
+    """Returns a random orthogonal matrix in :math:`O(2*num_modes)`."""
     return math.random_orthogonal(num_modes)
 
 
@@ -199,5 +198,6 @@ def update_orthogonal(
 def update_euclidean(
     euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float
 ):
+    """Updates the parameters using the euclidian gradients."""
     math.euclidean_opt.lr = euclidean_lr
     math.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
