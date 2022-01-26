@@ -4,7 +4,7 @@
 # install()
 from ._version import __version__
 
-
+# pylint: disable=too-many-instance-attributes
 class Settings:
     """Settings class."""
 

@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=unused-wildcard-import
+"""A module containing all base type annotations."""
+
+# pylint: disable=unused-wildcard-import,wildcard-import
 
 from typing import *
 
