@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing_extensions import Self
 from mrmustard.types import Optional, Union, Matrix, Vector, List, Tensor, Tuple, Scalar
 from mrmustard.math import Math
 
@@ -64,7 +63,7 @@ class XPTensor(ABC):
         tensor: Optional[Tensor],
         like_0: bool,
         isVector: bool,
-        modes: Tuple[List[int], List[int]],
+        modes: Union[Tuple[List[int], List[int]], None],
     ):
 
         self.like_0 = like_0
@@ -159,7 +158,7 @@ class XPTensor(ABC):
             return None
         return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
-    def clone(self, times: int, modes=None) -> Self:
+    def clone(self, times: int, modes=None) -> XPtensor:
         r"""Create a new XPTensor made by cloning the system a given number of times
         (the modes are reset by default unless specified).
         """
@@ -575,10 +574,14 @@ class XPVector(XPTensor):
     r"""A convenience class for a vector in the XPTensor format."""
 
     def __init__(self, tensor: Tensor = None, modes: Union[List[int], None] = None):
-        if not (isinstance(modes, list) or all(isinstance(m, int) for m in modes)):
-            raise ValueError("the modes of an XPVector should be a list of ints")
         if modes is None and tensor is not None:
             modes = list(range(tensor.shape[0]))
+        if modes is None and tensor is None:
+            modes = []
+        elif (modes is not None) and not (
+            isinstance(modes, list) or all(isinstance(m, int) for m in modes)
+        ):
+            raise ValueError("the modes of an XPVector should be a list of ints")
         super().__init__(tensor, like_0=True, isVector=True, modes=(modes, []))
 
     @classmethod
