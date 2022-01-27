@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=too-many-return-statements,too-many-branches,missing-function-docstring
+# pylint: disable=too-many-return-statements,too-many-branches
 
 """This module contains the classes for representing Matrices and Vectors in phase space."""
 
