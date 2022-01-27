@@ -63,25 +63,29 @@ def reset_logging(pytestconfig):
     logging.root.handlers = []
     root_level = logging.root.level
 
+    # Reset the logging specific configurations before test
+    for module in modules_contain_logging:
+        logger = logging.getLogger(module.__name__)
+        logger.handlers = []
+        logger.setLevel(logging.NOTSET)
+        logger.propagate = True
+
     logging_plugin = pytestconfig.pluginmanager.unregister(name="logging-plugin")
 
     yield
+
+    # Reset the logging specific configurations after test
+    for module in modules_contain_logging:
+        logger = logging.getLogger(module.__name__)
+        logger.handlers = []
+        logger.setLevel(logging.NOTSET)
+        logger.propagate = True
 
     logging.root.handlers[:] = root_handlers
     logging.root.setLevel(root_level)
 
     if logging_plugin:
         pytestconfig.pluginmanager.register(logging_plugin, "logging-plugin")
-
-
-@pytest.fixture(autouse=True)
-def reset_logging_module():
-    """Reset the logging specific configurations such as handlers or levels for
-    the module specific loggers."""
-    for module in modules_contain_logging:
-        logger = logging.getLogger(module.__name__)
-        logger.handlers = []
-        logger.setLevel(logging.NOTSET)
 
 
 @pytest.mark.parametrize("module", modules_contain_logging)
