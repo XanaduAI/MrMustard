@@ -25,7 +25,7 @@ r = st.floats(
     min_value=0, max_value=0.5, allow_infinity=False, allow_nan=False
 )  # reasonable squeezing magnitude
 real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.00001))
-integer = st.integers(min_value=0, max_value=2 ** 32 - 1)
+integer = st.integers(min_value=0, max_value=2**32 - 1)
 small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
 medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
 large_float = st.floats(min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False)

@@ -52,7 +52,7 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     mean = np.arange(len(ps)) @ ps.numpy()
     expected_mean = eta * np.sinh(r) ** 2 + dc
     assert np.allclose(mean, expected_mean)
-    variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean ** 2
+    variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean**2
     expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
     assert np.allclose(variance, expected_variance)
 
@@ -77,8 +77,8 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     n_i = eta_i * np.sinh(r) ** 2
     expected_mean_i = n_i + dc_i
     expected_mean_s = n_s + dc_s
-    var_s = np.sum(ps, axis=1) @ n ** 2 - mean_s ** 2
-    var_i = np.sum(ps, axis=0) @ n ** 2 - mean_i ** 2
+    var_s = np.sum(ps, axis=1) @ n**2 - mean_s**2
+    var_i = np.sum(ps, axis=0) @ n**2 - mean_i**2
     expected_var_s = n_s * (n_s + 1) + dc_s
     expected_var_i = n_i * (n_i + 1) + dc_i
     covar = n @ ps.numpy() @ n - mean_s * mean_i
@@ -203,18 +203,13 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     r = homodyne.r
     remaining_state = tmsv << homodyne[0]
     xb, xa, pb, pa = d
-    means = (
-        np.array(
-            [
-                xa
-                + (2 * np.sqrt(s * (s + 1)) * (X - xb))
-                / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
-                pa
-                + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
-            ]
-        )
-        * np.sqrt(2 * settings.HBAR)
-    )
+    means = np.array(
+        [
+            xa
+            + (2 * np.sqrt(s * (s + 1)) * (X - xb)) / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
+            pa + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+        ]
+    ) * np.sqrt(2 * settings.HBAR)
     assert np.allclose(remaining_state.means, means)
 
 
@@ -248,14 +243,14 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
 
 def test_norm_1mode():
     assert np.allclose(
-        Coherent(2.0) << Fock(3), np.abs((2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2
+        Coherent(2.0) << Fock(3), np.abs((2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2
     )
 
 
 def test_norm_2mode():
     leftover = Coherent(x=[2.0, 2.0]) << Fock(3)[0]
     assert np.isclose(
-        (2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0), physics.norm(leftover), atol=1e-5
+        (2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0), physics.norm(leftover), atol=1e-5
     )
 
 

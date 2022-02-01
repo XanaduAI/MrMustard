@@ -59,7 +59,7 @@ def test_gate_compositions(gates):
 @given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
 def test_fock_representation_displacement(x, y):
     D = Dgate(x=x, y=y)
-    expected = displacement(r=np.sqrt(x ** 2 + y ** 2), phi=np.arctan2(y, x), cutoff=20)
+    expected = displacement(r=np.sqrt(x**2 + y**2), phi=np.arctan2(y, x), cutoff=20)
     assert np.allclose(expected, D.U(cutoffs=[20]), atol=1e-5)
 
 
