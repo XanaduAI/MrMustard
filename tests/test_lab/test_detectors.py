@@ -262,3 +262,25 @@ def test_norm_2mode_normalized():
 def test_norm_2mode_gaussian_normalized():
     leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
     assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+
+def test_homodyne_mode_kwargs():
+
+    S1 = Sgate(modes=[0], r=1, phi=np.pi/2)
+    S2 = Sgate(modes=[1], r=1, phi=0)
+    initial_state = Vacuum(2) >> S1 >> S2
+    final_state = initial_state << Homodyne(modes=[1],quadrature_angle=0,result=[0.3])
+
+    expected_state = Vacuum(1) >> S1
+
+    assert np.allclose(final_state.dm(), expected_state.dm())
+
+def test_heterodyne_mode_kwargs():
+
+    S1 = Sgate(modes=[0], r=1, phi=np.pi/2)
+    S2 = Sgate(modes=[1], r=1, phi=0)
+    initial_state = Vacuum(2) >> S1 >> S2
+    final_state = initial_state << Heterodyne(modes=[1])
+
+    expected_state = Vacuum(1) >> S1
+
+    assert np.allclose(final_state.dm(), expected_state.dm())

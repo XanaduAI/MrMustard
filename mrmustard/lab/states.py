@@ -109,7 +109,7 @@ class Coherent(Parametrized, State):
         )
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def means(self):
@@ -367,7 +367,7 @@ class DisplacedSqueezed(Parametrized, State):
         )
         cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
         means = gaussian.displacement(self.x, self.y, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def cov(self):

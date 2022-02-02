@@ -19,6 +19,7 @@ from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian as gp
 from mrmustard.lab.states import *
 from mrmustard.lab.gates import *
+from mrmustard.lab.abstract import State
 from mrmustard import settings
 from tests import random
 
@@ -175,3 +176,17 @@ def test_random_state_is_entangled():
     assert N1 > 0
     assert N2 > 0
     assert np.allclose(N1, N2)
+
+
+@given(modes=st.lists(st.integers(), min_size=2, max_size=5, unique=True))
+def test_getitem_set_modes(modes):
+    """Test that using `State.__getitem__` and `modes` kwarg correctly set the modes of the state."""
+
+    cutoff = len(modes) + 1
+    ket = np.zeros([cutoff]*len(modes), dtype=np.complex128)
+    ket[1,1] = 1.0 + 0.0j
+
+    state1 = State(ket=ket)[modes]
+    state2 = State(ket=ket, modes=modes)
+
+    assert state1.modes == state2.modes
