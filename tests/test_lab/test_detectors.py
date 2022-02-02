@@ -43,7 +43,12 @@ def test_detector_coherent_state(alpha, eta, dc):
     assert np.allclose(ps, expected)
 
 
-@given(r=st.floats(0, 0.5), phi=st.floats(0, 2 * np.pi), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
+@given(
+    r=st.floats(0, 0.5),
+    phi=st.floats(0, 2 * np.pi),
+    eta=st.floats(0, 1),
+    dc=st.floats(0, 0.2),
+)
 def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
     S = Sgate(r=r, phi=phi)
@@ -52,8 +57,10 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     mean = np.arange(len(ps)) @ ps.numpy()
     expected_mean = eta * np.sinh(r) ** 2 + dc
     assert np.allclose(mean, expected_mean)
-    variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean**2
-    expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
+    variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean ** 2
+    expected_variance = (
+        eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
+    )
     assert np.allclose(variance, expected_variance)
 
 
@@ -77,8 +84,8 @@ def test_detector_two_mode_squeezed_state(r, phi, eta_s, eta_i, dc_s, dc_i):
     n_i = eta_i * np.sinh(r) ** 2
     expected_mean_i = n_i + dc_i
     expected_mean_s = n_s + dc_s
-    var_s = np.sum(ps, axis=1) @ n**2 - mean_s**2
-    var_i = np.sum(ps, axis=0) @ n**2 - mean_i**2
+    var_s = np.sum(ps, axis=1) @ n ** 2 - mean_s ** 2
+    var_i = np.sum(ps, axis=0) @ n ** 2 - mean_i ** 2
     expected_var_s = n_s * (n_s + 1) + dc_s
     expected_var_i = n_i * (n_i + 1) + dc_i
     covar = n @ ps.numpy() @ n - mean_s * mean_i
@@ -128,15 +135,18 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
     cov = (
         np.diag(
-            [1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]
+            [
+                1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s),
+                1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s),
+            ]
         )
         * settings.HBAR
         / 2.0
     )
     assert np.allclose(remaining_state.cov, cov)
-    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(
-        2 * settings.HBAR
-    )
+    means = np.array(
+        [2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
+    ) * np.sqrt(2 * settings.HBAR)
     assert np.allclose(remaining_state.means, means)
 
 
@@ -203,13 +213,19 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     r = homodyne.r
     remaining_state = tmsv << homodyne[0]
     xb, xa, pb, pa = d
-    means = np.array(
-        [
-            xa
-            + (2 * np.sqrt(s * (s + 1)) * (X - xb)) / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
-            pa + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
-        ]
-    ) * np.sqrt(2 * settings.HBAR)
+    means = (
+        np.array(
+            [
+                xa
+                + (2 * np.sqrt(s * (s + 1)) * (X - xb))
+                / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
+                pa
+                + (2 * np.sqrt(s * (s + 1)) * pb)
+                / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+            ]
+        )
+        * np.sqrt(2 * settings.HBAR)
+    )
     assert np.allclose(remaining_state.means, means)
 
 
@@ -243,14 +259,15 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
 
 def test_norm_1mode():
     assert np.allclose(
-        Coherent(2.0) << Fock(3), np.abs((2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2
+        Coherent(2.0) << Fock(3),
+        np.abs((2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2,
     )
 
 
 def test_norm_2mode():
     leftover = Coherent(x=[2.0, 2.0]) << Fock(3)[0]
     assert np.isclose(
-        (2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0), physics.norm(leftover), atol=1e-5
+        (2.0 ** 3) / np.sqrt(6) * np.exp(-0.5 * 4.0), physics.norm(leftover), atol=1e-5
     )
 
 
@@ -263,20 +280,22 @@ def test_norm_2mode_gaussian_normalized():
     leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
     assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
 
+
 def test_homodyne_mode_kwargs():
 
-    S1 = Sgate(modes=[0], r=1, phi=np.pi/2)
+    S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
     S2 = Sgate(modes=[1], r=1, phi=0)
     initial_state = Vacuum(2) >> S1 >> S2
-    final_state = initial_state << Homodyne(modes=[1],quadrature_angle=0,result=[0.3])
+    final_state = initial_state << Homodyne(modes=[1], quadrature_angle=0, result=[0.3])
 
     expected_state = Vacuum(1) >> S1
 
     assert np.allclose(final_state.dm(), expected_state.dm())
 
+
 def test_heterodyne_mode_kwargs():
 
-    S1 = Sgate(modes=[0], r=1, phi=np.pi/2)
+    S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
     S2 = Sgate(modes=[1], r=1, phi=0)
     initial_state = Vacuum(2) >> S1 >> S2
     final_state = initial_state << Heterodyne(modes=[1])
