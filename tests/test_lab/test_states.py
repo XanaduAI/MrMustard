@@ -27,9 +27,7 @@ from tests import random
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return draw(
-        arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0))
-    )
+    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 
 @st.composite
@@ -50,17 +48,13 @@ def test_vacuum_state(num_modes, hbar):
 @given(x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
-    assert np.allclose(
-        state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]])
-    )
+    assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
 def test_coherent_state_list(hbar, x, y):
-    assert np.allclose(
-        gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar)
-    )
+    assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
 @given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
@@ -77,9 +71,7 @@ def test_coherent_state_multiple(xy):
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
     assert len(x) == len(y)
-    assert np.allclose(
-        state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR)
-    )
+    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
 
 @given(xy=xy_arrays())

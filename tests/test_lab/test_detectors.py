@@ -58,9 +58,7 @@ def test_detector_squeezed_state(r, phi, eta, dc):
     expected_mean = eta * np.sinh(r) ** 2 + dc
     assert np.allclose(mean, expected_mean)
     variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean ** 2
-    expected_variance = (
-        eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
-    )
+    expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
     assert np.allclose(variance, expected_variance)
 
 
@@ -144,9 +142,9 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
         / 2.0
     )
     assert np.allclose(remaining_state.cov, cov)
-    means = np.array(
-        [2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
-    ) * np.sqrt(2 * settings.HBAR)
+    means = np.array([2 * np.sqrt(s * (1 + s)) * X / (np.exp(-2 * r) + 1 + 2 * s), 0.0]) * np.sqrt(
+        2 * settings.HBAR
+    )
     assert np.allclose(remaining_state.means, means)
 
 
@@ -220,8 +218,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
                 + (2 * np.sqrt(s * (s + 1)) * (X - xb))
                 / (1 + 2 * s + np.cosh(2 * r) - np.sinh(2 * r)),
                 pa
-                + (2 * np.sqrt(s * (s + 1)) * pb)
-                / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
+                + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         )
         * np.sqrt(2 * settings.HBAR)
