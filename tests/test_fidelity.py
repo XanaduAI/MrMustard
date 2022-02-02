@@ -5,8 +5,11 @@ import numpy as np
 import tensorflow as tf
 from thewalrus.random import random_covariance
 from thewalrus.quantum import real_to_complex_displacements
-from mrmustard.physics import gaussian as gp
+from mrmustard.physics import gaussian as gp, fock as fp
 
+from mrmustard.math import Math
+
+math = Math()
 
 @pytest.mark.parametrize("hbar", [1 / 2, 1.0, 2.0, 1.6])
 @pytest.mark.parametrize("num_modes", np.arange(5, 10))
@@ -87,3 +90,24 @@ def test_fidelity_vac_to_displaced_squeezed(r, alpha, hbar):
         np.exp(-np.abs(alpha) ** 2) * np.abs(np.exp(np.tanh(r) * np.conj(alpha) ** 2)) / np.cosh(r)
     )
     assert np.allclose(expected, gp.fidelity(means1, cov1, means2, cov2, hbar=hbar))
+
+
+
+state1 = 1/2*np.eye(2)
+
+state2 = 1/3*np.ones((2,2))
+state2[1,1] = 2/3
+
+def test_fidelity_with_self():
+    assert np.allclose(fp.fidelity(state1, state1, False, False), 1, atol=1e-4)
+
+def test_fidelity_is_symmetric():
+    """Test that the fidelity is symmetric and between 0 and 1"""
+    f12 = fp.fidelity(state1, state2, False, False)
+    f21 = fp.fidelity(state2, state1, False, False)
+    assert np.allclose(f12, f21)
+    assert 0 <= np.real_if_close(f12) < 1.0
+
+def test_fidelity_formula():
+    expected = math.trace( math.sqrtm( math.matmul( math.matmul( math.sqrtm(state1), state2), math.sqrtm(state1) ) ) )**2
+    assert np.allclose(expected, fp.fidelity(state1, state2, False, False))

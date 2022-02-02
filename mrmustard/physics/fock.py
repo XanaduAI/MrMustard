@@ -247,7 +247,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
         )
 
-    raise NotImplementedError("Fidelity between mixed states is not implemented yet.")
+    # mixed state
+    return math.trace( math.sqrtm( math.matmul( math.matmul( math.sqrtm(state_a), state_b), math.sqrtm(state_a) ) ) )**2
 
 
 def number_means(tensor, is_dm: bool):
