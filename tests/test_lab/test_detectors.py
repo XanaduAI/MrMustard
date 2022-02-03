@@ -14,19 +14,32 @@
 
 from hypothesis import settings, given, strategies as st
 from hypothesis.extra.numpy import arrays
-from mrmustard.math import Math
 
-math = Math()
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard.lab import *
+from mrmustard.math import Math
+from mrmustard.lab import (
+    PNRDetector,
+    Coherent,
+    Sgate,
+    Vacuum,
+    S2gate,
+    BSgate,
+    Attenuator,
+    Homodyne,
+    Heterodyne,
+    TMSV,
+    Dgate,
+    Fock,
+)
 from mrmustard.utils.training import Optimizer
 from mrmustard.physics import gaussian
 from mrmustard import physics
 from mrmustard import settings
 
+math = Math()
 np.random.seed(137)
 
 
