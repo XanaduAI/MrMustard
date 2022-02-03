@@ -274,6 +274,14 @@ def test_norm_2mode_gaussian_normalized():
 
 
 def test_homodyne_mode_kwargs():
+    """Test that S gates and Homodyne mesurements are applied to the correct modes via the `modes` kwarg.
+
+    Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
+    and a "vertical" (angle=0) squeezed state in mode 1.
+
+    Because the modes are separable, measuring in one mode should leave the state in the
+    other mode unchaged.
+    """
 
     S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
     S2 = Sgate(modes=[1], r=1, phi=0)
@@ -286,6 +294,14 @@ def test_homodyne_mode_kwargs():
 
 
 def test_heterodyne_mode_kwargs():
+    """Test that S gates and Heterodyne mesurements are applied to the correct modes via the `modes` kwarg.
+
+    Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
+    and a "vertical" (angle=0) squeezed state in mode 1.
+
+    Because the modes are separable, measuring in one mode should leave the state in the
+    other mode unchaged.
+    """
 
     S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
     S2 = Sgate(modes=[1], r=1, phi=0)
