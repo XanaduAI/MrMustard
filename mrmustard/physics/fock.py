@@ -248,7 +248,12 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
         )
 
     # mixed state
-    return math.trace( math.sqrtm( math.matmul( math.matmul( math.sqrtm(state_a), state_b), math.sqrtm(state_a) ) ) )**2
+    return (
+        math.trace(
+            math.sqrtm(math.matmul(math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a)))
+        )
+        ** 2
+    )
 
 
 def number_means(tensor, is_dm: bool):
