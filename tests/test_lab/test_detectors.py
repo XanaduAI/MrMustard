@@ -14,19 +14,32 @@
 
 from hypothesis import settings, given, strategies as st
 from hypothesis.extra.numpy import arrays
-from mrmustard.math import Math
 
-math = Math()
 import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard.lab import *
+from mrmustard.math import Math
+from mrmustard.lab import (
+    PNRDetector,
+    Coherent,
+    Sgate,
+    Vacuum,
+    S2gate,
+    BSgate,
+    Attenuator,
+    Homodyne,
+    Heterodyne,
+    TMSV,
+    Dgate,
+    Fock,
+)
 from mrmustard.utils.training import Optimizer
 from mrmustard.physics import gaussian
 from mrmustard import physics
 from mrmustard import settings
 
+math = Math()
 np.random.seed(137)
 
 
@@ -43,7 +56,12 @@ def test_detector_coherent_state(alpha, eta, dc):
     assert np.allclose(ps, expected)
 
 
-@given(r=st.floats(0, 0.5), phi=st.floats(0, 2 * np.pi), eta=st.floats(0, 1), dc=st.floats(0, 0.2))
+@given(
+    r=st.floats(0, 0.5),
+    phi=st.floats(0, 2 * np.pi),
+    eta=st.floats(0, 1),
+    dc=st.floats(0, 0.2),
+)
 def test_detector_squeezed_state(r, phi, eta, dc):
     """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
     S = Sgate(r=r, phi=phi)
@@ -128,7 +146,10 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
     cov = (
         np.diag(
-            [1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s), 1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s)]
+            [
+                1 - 2 * s / (1 / np.tanh(r) * (1 + s) + s),
+                1 + 2 * s / (1 / np.tanh(r) * (1 + s) - s),
+            ]
         )
         * settings.HBAR
         / 2.0
@@ -243,7 +264,8 @@ def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
 
 def test_norm_1mode():
     assert np.allclose(
-        Coherent(2.0) << Fock(3), np.abs((2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2
+        Coherent(2.0) << Fock(3),
+        np.abs((2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2,
     )
 
 
@@ -262,3 +284,43 @@ def test_norm_2mode_normalized():
 def test_norm_2mode_gaussian_normalized():
     leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
     assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)
+
+
+def test_homodyne_mode_kwargs():
+    """Test that S gates and Homodyne mesurements are applied to the correct modes via the `modes` kwarg.
+
+    Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
+    and a "vertical" (angle=0) squeezed state in mode 1.
+
+    Because the modes are separable, measuring in one mode should leave the state in the
+    other mode unchaged.
+    """
+
+    S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
+    S2 = Sgate(modes=[1], r=1, phi=0)
+    initial_state = Vacuum(2) >> S1 >> S2
+    final_state = initial_state << Homodyne(modes=[1], quadrature_angle=0, result=[0.3])
+
+    expected_state = Vacuum(1) >> S1
+
+    assert np.allclose(final_state.dm(), expected_state.dm())
+
+
+def test_heterodyne_mode_kwargs():
+    """Test that S gates and Heterodyne mesurements are applied to the correct modes via the `modes` kwarg.
+
+    Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
+    and a "vertical" (angle=0) squeezed state in mode 1.
+
+    Because the modes are separable, measuring in one mode should leave the state in the
+    other mode unchaged.
+    """
+
+    S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
+    S2 = Sgate(modes=[1], r=1, phi=0)
+    initial_state = Vacuum(2) >> S1 >> S2
+    final_state = initial_state << Heterodyne(modes=[1])
+
+    expected_state = Vacuum(1) >> S1
+
+    assert np.allclose(final_state.dm(), expected_state.dm())
