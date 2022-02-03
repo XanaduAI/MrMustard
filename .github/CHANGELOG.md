@@ -6,7 +6,7 @@
 
 ### Bug fixes
 
-* Setting the modes on which detectors and state acts using modes kwarg or __getitem__ give consistent results. [(#114)](https://github.com/XanaduAI/MrMustard/pull/114)
+* Setting the modes on which detectors and state acts using `modes` kwarg or __getitem__ give consistent results. [(#114)](https://github.com/XanaduAI/MrMustard/pull/114)
 ### Documentation
 
 ### Contributors
