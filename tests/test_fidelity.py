@@ -18,7 +18,7 @@ class TestGaussianStates:
     @pytest.mark.parametrize("pure", [True, False])
     @pytest.mark.parametrize("block_diag", [True, False])
     def test_fidelity_is_symmetric(self, num_modes, hbar, pure, block_diag):
-        """Test that the fidelity is symmetric and between 0 and 1"""
+        """Test that the fidelity is symmetric"""
         cov1 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
         means1 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
         cov2 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
@@ -26,6 +26,16 @@ class TestGaussianStates:
         f12 = gp.fidelity(means1, cov1, means2, cov2, hbar)
         f21 = gp.fidelity(means2, cov2, means1, cov1, hbar)
         assert np.allclose(f12, f21)
+
+    @pytest.mark.parametrize("hbar", [1 / 2, 1.0, 2.0, 1.6])
+    @pytest.mark.parametrize("num_modes", np.arange(5, 10))
+    @pytest.mark.parametrize("pure", [True, False])
+    @pytest.mark.parametrize("block_diag", [True, False])
+    def test_fidelity_is_leq_one(self, num_modes, hbar, pure, block_diag):
+        """Test that the fidelity is between 0 and 1"""
+        cov1 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
+        means1 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
+        f12 = gp.fidelity(means1, cov1, means2, cov2, hbar)
         assert 0 <= np.real_if_close(f12) < 1.0
 
     @pytest.mark.parametrize("hbar", [1 / 2, 1.0, 2.0, 1.6])
@@ -107,23 +117,13 @@ class TestMixedStates:
         f12 = fp.fidelity(self.state1, self.state2, False, False)
         f21 = fp.fidelity(self.state2, self.state1, False, False)
         assert np.allclose(f12, f21)
+    def test_fidelity_leq_one(self):
+        """Test that the fidelity is symmetric and between 0 and 1"""
+        f12 = fp.fidelity(self.state1, self.state2, False, False)
         assert 0 <= np.real_if_close(f12) < 1.0
 
     def test_fidelity_formula(self):
-        """Test fidelity of mixed states agrees with definition.
-
-        Richard Jozsa (1994) Fidelity for Mixed Quantum States,
-        Journal of Modern Optics, 41:12, 2315-2323,
-        DOI: 10.1080/09500349414552171
+        """Test fidelity of known mixed states.
         """
-        expected = (
-            math.trace(
-                math.sqrtm(
-                    math.matmul(
-                        math.matmul(math.sqrtm(self.state1), self.state2), math.sqrtm(self.state1)
-                    )
-                )
-            )
-            ** 2
-        )
+        expected = 5/6
         assert np.allclose(expected, fp.fidelity(self.state1, self.state2, False, False))
