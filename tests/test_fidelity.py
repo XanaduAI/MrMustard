@@ -119,13 +119,13 @@ class TestMixedStates:
         f12 = fp.fidelity(self.state1, self.state2, False, False)
         f21 = fp.fidelity(self.state2, self.state1, False, False)
         assert np.allclose(f12, f21)
+
     def test_fidelity_leq_one(self):
         """Test that the fidelity is symmetric and between 0 and 1"""
         f12 = fp.fidelity(self.state1, self.state2, False, False)
         assert 0 <= np.real_if_close(f12) < 1.0
 
     def test_fidelity_formula(self):
-        """Test fidelity of known mixed states.
-        """
-        expected = 5/6
+        """Test fidelity of known mixed states."""
+        expected = 5 / 6
         assert np.allclose(expected, fp.fidelity(self.state1, self.state2, False, False))
