@@ -35,6 +35,8 @@ class TestGaussianStates:
         """Test that the fidelity is between 0 and 1"""
         cov1 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
         means1 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
+        cov2 = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
+        means2 = np.sqrt(2 * hbar) * np.random.rand(2 * num_modes)
         f12 = gp.fidelity(means1, cov1, means2, cov2, hbar)
         assert 0 <= np.real_if_close(f12) < 1.0
 
