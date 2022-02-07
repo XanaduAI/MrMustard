@@ -2,6 +2,7 @@
 
 ### New features since last release
 
+* Fidelity can be calculated between two mixed states. [(#115)](https://github.com/XanaduAI/MrMustard/pull/115)
 ### Improvements since last release
 
 ### Bug fixes
