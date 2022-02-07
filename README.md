@@ -56,7 +56,7 @@ S  = Sgate(r=0.5)                 # Squeezer with r=0.5
 BS = BSgate(theta=np.pi/4)          # 50/50 beam splitter
 S2 = S2gate(r=0.5)                  # two-mode squeezer
 MZ = MZgate(phi_a=0.3, phi_b=0.1)   # Mach-Zehnder interferometer
-I  = Interferometer(8)              # 8-mode interferomter
+I  = Interferometer(8)              # 8-mode interferometer
 L  = Attenuator(0.5)                # pure lossy channel with 50% transmissivity
 A  = Amplifier(gain=2.0, nbar=1.0)  # noisy amplifier with 200% gain
 ```
