@@ -35,7 +35,7 @@ Mr Mustard supports:
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 # The lab module
-The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters. 
+The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
 
 
 ## 1. States and Gates
@@ -202,7 +202,7 @@ my_state >> Sgate(r=0.5)  # just works
 
 Alternatively,
 ```python
-my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25])  # no buffer 
+my_amplitudes = np.array([0.5, 0.25, -0.5, 0.25, 0.25, 0.5, -0.25])  # no buffer
 my_state = State(ket=my_amplitudes)
 my_state._cutoffs = [42]  # force the cutoff
 my_state >> Sgate(r=0.5)  # works too
@@ -216,7 +216,7 @@ The physics module contains a growing number of functions that we can apply to s
 
 
 # The math module
-The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) inferface 
+The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) inferface
 Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
 ```python
 from mrmustard import settings
@@ -233,10 +233,10 @@ math.cos(0.1)  # pytorch (upcoming)
 # Optimization
 The `Optimizer` (available in `mrmustard.utils.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
 
-We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: Hong-Ou-Mandel interference. We wish to find which 
+We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: Hong-Ou-Mandel interference. We wish to find which
 
 ```python
-from mrmustard.lab import Dgate, Attenuator, Vacuum
+from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum
 from mrmustard.physics import fidelity
 from mrmustard.utils.training import Optimizer
 
