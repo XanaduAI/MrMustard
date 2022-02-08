@@ -47,119 +47,55 @@ class TorchMath(MathInterface):
     # Basic ops
     # ~~~~~~~~~
 
-    def atleast_1d(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
-        return self.cast(torch.reshape(self.astensor(array), [-1]), dtype)
+    def abs(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.abs(array)
+
+    def any(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.any(array)
+
+    def arange(
+        self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64
+    ) -> torch.Tensor:
+        return torch.arange(start, limit, delta, dtype=dtype)
+
+    def asnumpy(self, tensor: torch.Tensor) -> Tensor:
+        return tensor.numpy()
+
+    def assign(self, tensor: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError  # Is this a TF-only feature?
 
     def astensor(self, array: Union[np.ndarray, torch.Tensor], dtype=None) -> torch.Tensor:
         return self.cast(torch.tensor(array), dtype)
 
+    def atleast_1d(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
+        return self.cast(torch.reshape(self.astensor(array), [-1]), dtype)
+
+    def cast(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
+        if dtype is None:
+            return array
+        return array.to(dtype)
+
+    def clip(self, array, a_min, a_max) -> torch.Tensor:
+        return torch.clamp(array, a_min, a_max)
+
+    def concat(self, values: Sequence[torch.Tensor], axis: int) -> torch.Tensor:
+        return torch.cat(values, axis)
+
     def conj(self, array: torch.Tensor) -> torch.Tensor:
         return torch.conj(array)
 
-    def real(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.real(array)
-
-    def imag(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.imag(array)
-
-    def cos(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.cos(array)
-
-    def cosh(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.cosh(array)
-
-    def sinh(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.sinh(array)
-
-    def sin(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.sin(array)
-
-    def exp(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.exp(array)
-
-    def sqrt(self, x: torch.Tensor, dtype=None) -> torch.Tensor:
-        return self.cast(torch.sqrt(x), dtype)
-
-    def lgamma(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.lgamma(x)
-
-    def log(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.log(x)
-
-    def cast(self, x: torch.Tensor, dtype=None) -> torch.Tensor:
-        if dtype is None:
-            return x
-        return x.to(dtype)
-
-    @Autocast()
-    def maximum(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        return torch.maximum(a, b)
-
-    @Autocast()
-    def minimum(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        return torch.minimum(a, b)
-
-    def abs(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.abs(array)
-
-    def expm(self, matrix: torch.Tensor) -> torch.Tensor:
-        return torch.matrix_exp(matrix)
-
-    def norm(self, array: torch.Tensor) -> torch.Tensor:
-        """Note that the norm preserves the type of array."""
-        return torch.norm(array)
-
-    @Autocast()
-    def matmul(
-        self,
-        a: torch.Tensor,
-        b: torch.Tensor,
-        transpose_a=False,
-        transpose_b=False,
-        adjoint_a=False,
-        adjoint_b=False,
-    ) -> torch.Tensor:
-        return torch.matmul(a, b)
-
-    @Autocast()
-    def matvec(
-        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False
-    ) -> torch.Tensor:
-        return torch.mv(a, b)
-
-    @Autocast()
-    def tensordot(self, a: torch.Tensor, b: torch.Tensor, axes: List[int]) -> torch.Tensor:
-        return torch.tensordot(a, b, axes)
-
-    def einsum(self, string: str, *tensors) -> torch.Tensor:
-        return torch.einsum(string, *tensors)
-
-    def inv(self, a: torch.Tensor) -> torch.Tensor:
-        return torch.inverse(a)
-
-    def pinv(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.pinverse(array)
-
-    def det(self, a: torch.Tensor) -> torch.Tensor:
-        return torch.det(a)
-
-    def tile(self, array: torch.Tensor, repeats: Sequence[int]) -> torch.Tensor:
-        return torch.tile(array, repeats)
-
-    def diag(self, array: torch.Tensor, k: int = 0) -> torch.Tensor:
-        return torch.diag(array, k=k)
-
-    def diag_part(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.diag_embed(array)
-
-    def pad(
-        self,
-        array: torch.Tensor,
-        paddings: Sequence[Tuple[int, int]],
-        mode="constant",
-        constant_values=0,
-    ) -> torch.Tensor:
-        return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
+    def constraint_func(
+        self, bounds: Tuple[Optional[float], Optional[float]]
+    ) -> Optional[Callable]:
+        bounds = (
+            -np.inf if bounds[0] is None else bounds[0],
+            np.inf if bounds[1] is None else bounds[1],
+        )
+        if bounds != (-np.inf, np.inf):
+            constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
+        else:
+            constraint = None
+        return constraint
 
     @Autocast()
     def convolution(
@@ -170,7 +106,7 @@ class TorchMath(MathInterface):
         padding="VALID",
         data_format="NWC",
         dilations: Optional[List[int]] = None,
-    ) -> torch.Tensor:
+    ) -> torch.Tensor:  # TODO: implement this...
         r"""Wrapper for ``torch.nn.Conv1d`` and ``torch.nn.Conv2d``.
 
         Args:
@@ -215,78 +151,86 @@ class TorchMath(MathInterface):
 
         raise NotImplementedError
 
-    def transpose(self, a: torch.Tensor, perm: List[int] = None) -> torch.Tensor:
-        if a is None:
-            return None  # TODO: remove and address None inputs where transpose is used
-        return torch.transpose(a, perm[0], perm[1])
+    def cos(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.cos(array)
 
-    def reshape(self, array: torch.Tensor, shape: Sequence[int]) -> torch.Tensor:
-        return torch.reshape(array, shape)
+    def cosh(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.cosh(array)
 
-    def sum(self, array: torch.Tensor, axes: Sequence[int] = None):
-        return torch.sum(array, axes)
+    def det(self, matrix: torch.Tensor) -> torch.Tensor:
+        return torch.det(matrix)
 
-    def arange(
-        self, start: int, limit: int = None, delta: int = 1, dtype=torch.float64
-    ) -> torch.Tensor:
-        return torch.arange(start, limit, delta, dtype=dtype)
+    def diag(self, array: torch.Tensor, k: int = 0) -> torch.Tensor:
+        return torch.diag(array, k=k)
 
-    @Autocast()
-    def outer(self, array1: torch.Tensor, array2: torch.Tensor) -> torch.Tensor:
-        return torch.tensordot(array1, array2, [[], []])
+    def diag_part(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.diag_embed(array)
+
+    def einsum(self, string: str, *tensors) -> torch.Tensor:
+        return torch.einsum(string, *tensors)
+
+    def exp(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.exp(array)
+
+    def expand_dims(self, array: torch.Tensor, axis: int) -> torch.Tensor:
+        raise NotImplementedError  # TODO: implement
+
+    def expm(self, matrix: torch.Tensor) -> torch.Tensor:
+        return torch.matrix_exp(matrix)
 
     def eye(self, size: int, dtype=torch.float64) -> torch.Tensor:
         return torch.eye(size, dtype=dtype)
 
-    def zeros(self, shape: Sequence[int], dtype=torch.float64) -> torch.Tensor:
-        return torch.zeros(shape, dtype=dtype)
-
-    def zeros_like(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.zeros_like(array)
-
-    def ones(self, shape: Sequence[int], dtype=torch.float64) -> torch.Tensor:
-        return torch.ones(shape, dtype=dtype)
-
-    def ones_like(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.ones_like(array)
+    def from_backend(self, value) -> bool:
+        return isinstance(value, (torch.Tensor))  # TODO: check if exists torch.Variable
 
     def gather(self, array: torch.Tensor, indices: torch.Tensor, axis: int = None) -> torch.Tensor:
         # TODO: gather works differently in Pytorch vs Tensorflow.
-
         return torch.gather(array, axis, indices)
 
-    def trace(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
-        return self.cast(torch.trace(array), dtype)
+    def hash_tensor(self, tensor: torch.Tensor) -> str:
+        return hash(tensor)
 
-    def concat(self, values: Sequence[torch.Tensor], axis: int) -> torch.Tensor:
-        return torch.cat(values, axis)
+    def imag(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.imag(array)
 
-    def update_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
-    ):
-        # TODO: dims need to be an argument, or should be interpreted from the other data
+    def inv(self, a: torch.Tensor) -> torch.Tensor:
+        return torch.inverse(a)
 
-        return tensor.scatter_(dims, indices, values)
+    def is_trainable(self, tensor: torch.Tensor) -> bool:
+        raise NotImplementedError  # TODO: check implementation
 
-    def update_add_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
-    ):
-        # TODO: dims need to be an argument, or should be interpreted from the other data
+    def lgamma(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.lgamma(x)
 
-        return tensor.scatter_add_(dims, indices, values)
+    def log(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.log(x)
 
-    def constraint_func(
-        self, bounds: Tuple[Optional[float], Optional[float]]
-    ) -> Optional[Callable]:
-        bounds = (
-            -np.inf if bounds[0] is None else bounds[0],
-            np.inf if bounds[1] is None else bounds[1],
-        )
-        if bounds != (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
-        else:
-            constraint = None
-        return constraint
+    @Autocast()
+    def matmul(
+        self,
+        a: torch.Tensor,
+        b: torch.Tensor,
+        transpose_a=False,
+        transpose_b=False,
+        adjoint_a=False,
+        adjoint_b=False,
+    ) -> torch.Tensor:
+        return torch.matmul(a, b)
+
+    @Autocast()
+    def matvec(
+        self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False
+    ) -> torch.Tensor:
+        return torch.mv(a, b)
+
+    @Autocast()
+    def maximum(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        return torch.maximum(a, b)
+
+    @Autocast()
+    def minimum(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        return torch.minimum(a, b)
 
     def new_variable(
         self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64
@@ -296,35 +240,82 @@ class TorchMath(MathInterface):
     def new_constant(self, value, name: str, dtype=torch.float64):
         return torch.tensor(value, dtype=dtype)
 
-    def asnumpy(self, tensor: torch.Tensor) -> Tensor:
-        return tensor.numpy()
+    def norm(self, array: torch.Tensor) -> torch.Tensor:
+        """Note that the norm preserves the type of array."""
+        return torch.norm(array)
 
-    def hash_tensor(self, tensor: torch.Tensor) -> str:
-        return hash(tensor)
+    def ones(self, shape: Sequence[int], dtype=torch.float64) -> torch.Tensor:
+        return torch.ones(shape, dtype=dtype)
 
-    def hermite_renormalized(
-        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
-    ) -> torch.Tensor:  # TODO this is not ready
-        r"""Renormalized multidimensional Hermite polynomial.
+    def ones_like(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.ones_like(array)
 
-        This is given by the "exponential" Taylor series of :math:`exp(Ax^2 + Bx + C)` at zero,
-        where the series has :math:`sqrt(n!)` at the denominator rather than `n!`.
+    @Autocast()
+    def outer(self, array1: torch.Tensor, array2: torch.Tensor) -> torch.Tensor:
+        return torch.tensordot(array1, array2, [[], []])
 
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The shape of the final tensor.
+    def pad(
+        self,
+        array: torch.Tensor,
+        paddings: Sequence[Tuple[int, int]],
+        mode="constant",
+        constant_values=0,
+    ) -> torch.Tensor:
+        return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        raise NotImplementedError
+    def pinv(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.pinverse(array)
 
-    def DefaultEuclideanOptimizer(self, params) -> torch.optim.Optimizer:
-        r"""Default optimizer for the Euclidean parameters."""
-        self.optimizer = torch.optim.Adam(params, lr=0.001)
-        return self.optimizer
+    def pow(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError  # TODO: implement
+
+    def real(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.real(array)
+
+    def reshape(self, array: torch.Tensor, shape: Sequence[int]) -> torch.Tensor:
+        return torch.reshape(array, shape)
+
+    def sin(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.sin(array)
+
+    def sinh(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.sinh(array)
+
+    def sqrt(self, x: torch.Tensor, dtype=None) -> torch.Tensor:
+        return self.cast(torch.sqrt(x), dtype)
+
+    def sum(self, array: torch.Tensor, axes: Sequence[int] = None):
+        return torch.sum(array, axes)
+
+    @Autocast()
+    def tensordot(self, a: torch.Tensor, b: torch.Tensor, axes: List[int]) -> torch.Tensor:
+        return torch.tensordot(a, b, axes)
+
+    def tile(self, array: torch.Tensor, repeats: Sequence[int]) -> torch.Tensor:
+        return torch.tile(array, repeats)
+
+    def trace(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
+        return self.cast(torch.trace(array), dtype)
+
+    def transpose(self, a: torch.Tensor, perm: List[int] = None) -> torch.Tensor:
+        if a is None:
+            return None  # TODO: remove and address None inputs where transpose is used
+        return torch.transpose(a, perm[0], perm[1])
+
+    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
+        raise NotImplementedError  # TODO: implement
+
+    def update_tensor(
+        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+    ):
+        # TODO: dims need to be an argument, or should be interpreted from the other data
+        return tensor.scatter_(dims, indices, values)
+
+    def update_add_tensor(
+        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+    ):
+        # TODO: dims need to be an argument, or should be interpreted from the other data
+        return tensor.scatter_add_(dims, indices, values)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
@@ -351,6 +342,36 @@ class TorchMath(MathInterface):
         grads = [p.grad for p in parameters]
 
         return loss, grads
+
+    def zeros(self, shape: Sequence[int], dtype=torch.float64) -> torch.Tensor:
+        return torch.zeros(shape, dtype=dtype)
+
+    def zeros_like(self, array: torch.Tensor) -> torch.Tensor:
+        return torch.zeros_like(array)
+
+    def hermite_renormalized(
+        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
+    ) -> torch.Tensor:  # TODO this is not ready
+        r"""Renormalized multidimensional Hermite polynomial.
+
+        This is given by the "exponential" Taylor series of :math:`exp(Ax^2 + Bx + C)` at zero,
+        where the series has :math:`sqrt(n!)` at the denominator rather than `n!`.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        raise NotImplementedError
+
+    def DefaultEuclideanOptimizer(self, params) -> torch.optim.Optimizer:
+        r"""Default optimizer for the Euclidean parameters."""
+        self.optimizer = torch.optim.Adam(params, lr=0.001)
+        return self.optimizer
 
     def eigvals(self, tensor: torch.Tensor) -> Tensor:
         """Returns the eigenvalues of a matrix."""
