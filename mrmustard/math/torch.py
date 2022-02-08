@@ -194,8 +194,8 @@ class TorchMath(MathInterface):
     def imag(self, array: torch.Tensor) -> torch.Tensor:
         return torch.imag(array)
 
-    def inv(self, a: torch.Tensor) -> torch.Tensor:
-        return torch.inverse(a)
+    def inv(self, tensor: torch.Tensor) -> torch.Tensor:
+        return torch.inverse(tensor)
 
     def is_trainable(self, tensor: torch.Tensor) -> bool:
         raise NotImplementedError  # TODO: check implementation
@@ -263,8 +263,8 @@ class TorchMath(MathInterface):
     ) -> torch.Tensor:
         return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
 
-    def pinv(self, array: torch.Tensor) -> torch.Tensor:
-        return torch.pinverse(array)
+    def pinv(self, matrix: torch.Tensor) -> torch.Tensor:
+        return torch.pinverse(matrix)
 
     def pow(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError  # TODO: implement
