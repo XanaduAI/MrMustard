@@ -13,10 +13,24 @@
 # limitations under the License.
 
 import os
-import pytest
+import random
 from hypothesis import settings, Verbosity
+import numpy as np
+from tensorflow.python.framework import random_seed as tf_random_seed
 
-print("pytest.conf -----------------------")
+seed_value = 42
+random.seed(seed_value)
+np.random.seed(seed_value)
+tf_random_seed.set_seed(seed_value)
+
+try:
+    import torch
+except (ImportError, ModuleNotFoundError) as e:
+    pass
+else:
+    torch.manual_seed(seed_value)
+
+# hypothesis configuration -----------------------
 
 settings.register_profile("ci", max_examples=1000, deadline=None)
 settings.register_profile("dev", max_examples=10, deadline=None)
