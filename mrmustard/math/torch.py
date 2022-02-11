@@ -14,8 +14,10 @@
 
 """This module contains the Pytorch implementation of the :class:`Math` interface."""
 
+from math import isinf
 import numpy as np
 import torch
+from functools import wraps
 
 from mrmustard.types import (
     List,
@@ -32,6 +34,7 @@ from mrmustard.math.autocast import Autocast
 from .math_interface import MathInterface
 
 # pylint: disable=too-many-public-methods,no-self-use
+
 class TorchMath(MathInterface):
     r"""Torch implemantion of the :class:`Math` interface."""
 
@@ -39,6 +42,7 @@ class TorchMath(MathInterface):
     float32 = torch.float32
     complex64 = torch.complex64
     complex128 = torch.complex128
+    dtypes_dict = {"float32": float32, "float64": float64, "complex64": complex64, "complex128": complex128}
 
     def __getattr__(self, name):
         return getattr(torch, name)
@@ -70,9 +74,12 @@ class TorchMath(MathInterface):
     def atleast_1d(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
         return self.cast(torch.reshape(self.astensor(array), [-1]), dtype)
 
-    def cast(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
+    def cast(self, array: torch.Tensor, dtype: str=None) -> torch.Tensor:
+        if isinstance(dtype, str):
+            dtype = self.dtypes_dict[dtype]
         if dtype is None:
             return array
+
         return array.to(dtype)
 
     def clip(self, array, a_min, a_max) -> torch.Tensor:
@@ -395,3 +402,29 @@ class TorchMath(MathInterface):
     def boolean_mask(self, tensor: torch.Tensor, mask: torch.Tensor) -> Tensor:
         """Returns a new 1-D tensor which indexes the `input` tensor according to the boolean mask `mask`."""
         return torch.masked_select(tensor, mask)
+
+class TorchCast:
+    """Casts function input arrays to torch tensors"""
+
+    def __init__(self) -> None:
+        self._torchmath = TorchMath()
+
+    def is_nparray(self, arg):
+        r"""Returns `True` if the `arg` can (and should) be casted to `proposed_dtype`."""
+        return isinstance(arg, (np.ndarray, np.generic, int, float, complex))
+
+    def cast_args(self, *args, **kwargs):
+        r"""Casts array arguments to torch Tensor."""
+        args = [torch.tensor(arg) if self.is_nparray(arg) else arg for arg in args]
+        kwargs = {k: torch.tensor(v) if self.is_nparray(v) else v for k, v in kwargs.items()}
+        return args, kwargs
+
+    def method(self, name):
+        func = object.__getattribute__(self._torchmath, name)
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            args, kwargs = self.cast_args(*args, **kwargs)
+            return func(*args, **kwargs)
+
+        return wrapper

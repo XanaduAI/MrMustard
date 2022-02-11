@@ -42,7 +42,7 @@ from mrmustard import settings
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
 if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch import TorchMath
+    from mrmustard.math.torch import TorchMath, TorchCast
 
 
 class Math:
@@ -54,7 +54,7 @@ class Math:
         if settings.backend == "tensorflow":
             return object.__getattribute__(TFMath(), name)
         elif settings.backend == "torch":
-            return object.__getattribute__(TorchMath(), name)
+            return TorchCast().method(name)
 
         raise ValueError(
             f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
