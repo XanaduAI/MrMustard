@@ -27,12 +27,14 @@ except ImportError:
 else:
     torch_available = True
 
+
 def test_backend_redirection_tf():
     """Test Math class is redirecting calls to the backend set on MM settings"""
     math = Math()
 
     settings.backend = "tensorflow"
     assert math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow"
+
 
 @pytest.mark.skipif(not torch_available, reason="Test only works if Torch is installed")
 def test_backend_redirection_torch():
@@ -41,6 +43,7 @@ def test_backend_redirection_torch():
 
     settings.backend = "torch"
     assert math._MathInterface__instance.__module__ == "mrmustard.math.torch"
+
 
 def test_error_for_wrong_backend():
     """Test error is raise when using a backend that is not allowed"""
