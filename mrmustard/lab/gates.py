@@ -429,6 +429,7 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
+        num_modes (int): the num_modes-mode interferometer
         orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
@@ -436,12 +437,18 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: Optional[List[int]] = None,
+        num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
+        if modes != None:
+            if num_modes != len(modes):
+                raise ValueError(
+                    f"Invalid number of modes and the mode list here!"
+                )
         if orthogonal is None:
-            orthogonal = training.new_orthogonal(num_modes=len(modes))
+            orthogonal = training.new_orthogonal(num_modes=num_modes)
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
