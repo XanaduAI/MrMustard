@@ -444,9 +444,7 @@ class Interferometer(Parametrized, Transformation):
     ):
         if modes != None:
             if num_modes != len(modes):
-                raise ValueError(
-                    "Invalid number of modes and the mode list here!"
-                )
+                raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             orthogonal = training.new_orthogonal(num_modes=num_modes)
         super().__init__(
@@ -680,7 +678,10 @@ class AdditiveNoise(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds, modes=modes
+            noise=noise,
+            noise_trainable=noise_trainable,
+            noise_bounds=noise_bounds,
+            modes=modes,
         )
         self.is_unitary = False
         self.is_gaussian = True
