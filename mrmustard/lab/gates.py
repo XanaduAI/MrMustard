@@ -445,7 +445,7 @@ class Interferometer(Parametrized, Transformation):
         if modes != None:
             if num_modes != len(modes):
                 raise ValueError(
-                    f"Invalid number of modes and the mode list here!"
+                    "Invalid number of modes and the mode list here!"
                 )
         if orthogonal is None:
             orthogonal = training.new_orthogonal(num_modes=num_modes)
