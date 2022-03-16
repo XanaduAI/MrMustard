@@ -42,7 +42,7 @@ from mrmustard import settings
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
 if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch import TorchMath, TorchCast
+    from mrmustard.math.torch import TorchCast
 
 
 class Math:
