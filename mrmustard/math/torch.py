@@ -304,9 +304,7 @@ class TorchMath(MathInterface):
     def trace(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
         return self.cast(torch.trace(array), dtype)
 
-    def transpose(self, a: torch.Tensor, perm: List[int] = None) -> torch.Tensor:
-        if a is None:
-            return None  # TODO: remove and address None inputs where transpose is used
+    def transpose(self, a: torch.Tensor, perm: List[int] = [0,1]) -> torch.Tensor:
         return torch.transpose(a, perm[0], perm[1])
 
     def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
