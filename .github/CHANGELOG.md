@@ -1,22 +1,49 @@
-# Release 0.2.0 (development release)
+# Release 0.2.0 (current release)
 
 ### New features since last release
 
-* Fidelity can be calculated between two mixed states. [(#115)](https://github.com/XanaduAI/MrMustard/pull/115)
-### Improvements since last release
+* Fidelity can now be calculated between two mixed states.
+  [(#115)](https://github.com/XanaduAI/MrMustard/pull/115)
+
+* A configurable logger module is added.
+  [(#107)](https://github.com/XanaduAI/MrMustard/pull/107)
+
+  ```python
+  from mrmustard.logger import create_logger
+
+  logger = create_logger(__name__)
+  logger.warning("Warning message")
+  ```
+
+### Improvements
+
+* The tensorflow and torch backend adhere to `MathInterface`.
+  [(#103)](https://github.com/XanaduAI/MrMustard/pull/103)
 
 ### Bug fixes
 
-* Setting the modes on which detectors and state acts using `modes` kwarg or __getitem__ give consistent results. [(#114)](https://github.com/XanaduAI/MrMustard/pull/114)
+* Setting the modes on which detectors and state acts using `modes` kwarg or `__getitem__` give consistent results.
+  [(#114)](https://github.com/XanaduAI/MrMustard/pull/114)
+
+* Lists are used instead of generators for indices in fidelity calculations.
+  [(#117)](https://github.com/XanaduAI/MrMustard/pull/117)
+
+* A raised `KeyboardInterrupt` while on a optimization loop now stops the execution of the program.
+  [#105](https://github.com/XanaduAI/MrMustard/pull/105)
+
 ### Documentation
 
-* [Basic API reference](https://mrmustard.readthedocs.io/en/latest/introduction/basic_reference.html) is updated to use the latest Mr Mustard API. [(#119)](https://github.com/XanaduAI/MrMustard/pull/119)
+* [Basic API reference](https://mrmustard.readthedocs.io/en/latest/introduction/basic_reference.html)
+  is updated to use the latest Mr Mustard API.
+  [(#119)](https://github.com/XanaduAI/MrMustard/pull/119)
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
 
+[Sebastián Duque](https://github.com/sduquemesa), [Theodor Isacsson](https://github.com/thisac/), [Filippo Miatto](https://github.com/ziofil)
 
-# Release 0.1.1 (current release)
+
+# Release 0.1.1
 
 ### New features since last release
 
