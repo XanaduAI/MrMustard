@@ -3,7 +3,7 @@
 
 [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue)](https://opensource.org/licenses/Apache-2.0)
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
-[![Python version](<https://img.shields.io/badge/python-3.8 | 3.9-blue>)](https://pypi.org/project/MrMustard/)
+[![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
 Alpha release (v0.1.0 - expect some bumps).
 
@@ -19,7 +19,7 @@ Mr Mustard supports:
     - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
 - two-mode gates:
     - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
-- N-mode gates (with dedicated Rimannian optimization):
+- N-mode gates (with dedicated Riemannian optimization):
     - interferometer (orthogonal), Gaussian transformation (symplectic)
 - single-mode states (parallelizable):
     - vacuum, coherent, squeezed, displaced-squeezed, thermal
@@ -216,7 +216,7 @@ The physics module contains a growing number of functions that we can apply to s
 
 
 # The math module
-The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) inferface
+The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface
 Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
 ```python
 from mrmustard import settings
