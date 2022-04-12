@@ -6,3 +6,5 @@ sphinx-copybutton
 sphinx-automodapi
 sphinxcontrib-bibtex
 mistune==0.8.4
+# TODO: Use the Xanadu-Sphinx-Theme package on PyPI once it has been released.
+git+https://github.com/XanaduAI/xanadu-sphinx-theme@phoenix#egg=xanadu_sphinx_theme

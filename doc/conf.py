@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(".")), "doc"))
 # -- Project information -----------------------------------------------------
 
 project = "Mr Mustard"
-copyright = "Copyright 2021, Xanadu Quantum Technologies Inc."
+copyright = "2022, Xanadu Quantum Technologies"
 author = "Filippo Miatto"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -63,7 +63,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates", "xanadu_theme"]
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -109,42 +109,16 @@ html_static_path = ["_static"]
 # to template names.
 html_sidebars = {
     "**": [
-        "logo-text.html",
         "searchbox.html",
         "globaltoc.html",
-        # 'sourcelink.html'
     ]
 }
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "mrmustarddoc"
-
-# -- Xanadu theme ---------------------------------------------------------
-html_theme = "xanadu_theme"
-html_theme_path = ["."]
-
-# xanadu theme options (see theme.conf for more information)
-html_theme_options = {
-    # Set the path to a special layout to include for the homepage
-    # "homepage": "special_index.html",
-    # Set the name of the project to appear in the left sidebar.
-    "project_nav_name": "Mr Mustard",
-    "touch_icon": "_static/logo_new.png",
-    # Set GA account ID to enable tracking
-    "google_analytics_account": "UA-116279123-2",
-    # colors
-    "navigation_button": "#b79226",
-    "navigation_button_hover": "#d7b348",
-    "toc_caption": "#b79226",
-    "toc_hover": "#b79226",
-    "table_header_bg": "#ffdce5",
-    "table_header_border": "#b79226",
-    "download_button": "#b79226",
-}
+htmlhelp_basename = "MrMustarddoc"
 
 edit_on_github_project = "XanaduAI/MrMustard"
 edit_on_github_branch = "master/doc"
-
 
 # the order in which autodoc lists the documented members
 autodoc_member_order = "bysource"
@@ -156,10 +130,32 @@ autodoc_mock_imports = ["torch"]
 inheritance_node_attrs = dict(color="lightskyblue1", style="filled")
 
 
-from custom_directives import CustomGalleryItemDirective, DetailsDirective
+# -- Xanadu theme ---------------------------------------------------------
+html_theme = "xanadu"
 
+html_theme_options = {
+    "navbar_name": "Mr Mustard",
+    "navbar_logo_path": "_static/x.png",
 
-def setup(app):
-    app.add_directive("customgalleryitem", CustomGalleryItemDirective)
-    app.add_directive("details", DetailsDirective)
-    app.add_css_file("xanadu_gallery.css")
+    "navbar_right_links": [
+        {
+            "name": "GitHub",
+            "href": "https://github.com/XanaduAI/MrMustard",
+            "icon": "fab fa-github",
+        }
+    ],
+
+    "extra_copyrights": [
+        "TensorFlow, the TensorFlow logo, and any related marks are trademarks "
+        "of Google Inc."
+    ],
+
+    "google_analytics_tracking_id": "UA-116279123-2",
+
+    "prev_next_button_colour": "#b79226",
+    "prev_next_button_hover_colour": "#d7b348",
+    "toc_marker_colour": "#b79226",
+    "table_header_background_colour": "#ffdce5",
+    "border_colour": "#b79226",
+    "text_accent_colour": "#b79226",
+}
