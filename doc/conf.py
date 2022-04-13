@@ -135,7 +135,7 @@ html_theme = "xanadu"
 
 html_theme_options = {
     "navbar_name": "Mr Mustard",
-    "navbar_logo_path": "_static/x.png",
+    "navbar_logo_path": "_static/mm_logo.png",
 
     "navbar_right_links": [
         {
