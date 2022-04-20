@@ -24,6 +24,8 @@ class Settings:
         # for the detectors
         self.PNR_INTERNAL_CUTOFF = 50
         self.HOMODYNE_SQUEEZING = 10.0
+        # misc
+        self.PROGRESSBAR = True
 
     @property
     def backend(self):

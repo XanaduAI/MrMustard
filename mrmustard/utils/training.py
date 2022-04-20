@@ -20,6 +20,7 @@ from mrmustard.types import List, Callable, Sequence, Trainable, Tensor
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
+from mrmustard import settings
 
 math = Math()
 
@@ -68,15 +69,23 @@ class Optimizer:
                     [p for item in by_optimizing for p in item.trainable_parameters["euclidean"]]
                 ),
             }
-            bar = graphics.Progressbar(max_steps)
-            with bar:
+            if settings.PROGRESSBAR:
+                bar = graphics.Progressbar(max_steps)
+                with bar:
+                    while not self.should_stop(max_steps):
+                        cost, grads = math.value_and_gradients(cost_fn, params)
+                        update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
+                        update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                        update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
+                        self.opt_history.append(cost)
+                        bar.step(math.asnumpy(cost))
+            else:
                 while not self.should_stop(max_steps):
                     cost, grads = math.value_and_gradients(cost_fn, params)
                     update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
                     update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
                     update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                     self.opt_history.append(cost)
-                    bar.step(math.asnumpy(cost))
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
