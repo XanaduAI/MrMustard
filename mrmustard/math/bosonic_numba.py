@@ -252,7 +252,7 @@ def fill_weight_plus_one_parallel(A, b, Aidx, bidx, G, weight, b_nonzero, PIVOTS
     pivots = all_pivots(M, weight, PIVOTS)
     F = 0.0#np.zeros(len(pivots), dtype=np.float64)
     for idx in prange(len(pivots)):
-        pivot = pivots[idx].copy()
+        pivot = pivots[idx]#.copy()
         F += consume_one_pivot(A, b, Aidx, bidx, G, upper(pivot, skips[idx]), lower(pivot), pivot, weight, idx, b_nonzero)
     return F#np.sum(F)
 
