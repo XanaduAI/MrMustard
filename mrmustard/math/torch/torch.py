@@ -14,9 +14,9 @@
 
 """This module contains the Pytorch implementation of the :class:`Math` interface."""
 
-from math import isinf
 import numpy as np
 import torch
+from .pytorch_utils import sqrtm as sqrtm_utils
 
 from mrmustard.types import (
     List,
@@ -29,7 +29,6 @@ from mrmustard.types import (
     Callable,
     Union,
 )
-from mrmustard.math.autocast import Autocast
 from mrmustard.math.math_interface import MathInterface
 
 # pylint: disable=too-many-public-methods,no-self-use
@@ -68,7 +67,7 @@ class TorchMath(MathInterface):
         return torch.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: torch.Tensor) -> Tensor:
-        return tensor.numpy()
+        return tensor.detach().cpu().numpy()
 
     def assign(self, tensor: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError  # Is this a TF-only feature?
@@ -109,7 +108,6 @@ class TorchMath(MathInterface):
             constraint = None
         return constraint
 
-    @Autocast()
     def convolution(
         self,
         array: torch.Tensor,
@@ -218,7 +216,6 @@ class TorchMath(MathInterface):
     def log(self, x: torch.Tensor) -> torch.Tensor:
         return torch.log(x)
 
-    @Autocast()
     def matmul(
         self,
         a: torch.Tensor,
@@ -230,17 +227,14 @@ class TorchMath(MathInterface):
     ) -> torch.Tensor:
         return torch.matmul(a, b)
 
-    @Autocast()
     def matvec(
         self, a: torch.Tensor, b: torch.Tensor, transpose_a=False, adjoint_a=False
     ) -> torch.Tensor:
         return torch.mv(a, b)
 
-    @Autocast()
     def maximum(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         return torch.maximum(a, b)
 
-    @Autocast()
     def minimum(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         return torch.minimum(a, b)
 
@@ -262,7 +256,6 @@ class TorchMath(MathInterface):
     def ones_like(self, array: torch.Tensor) -> torch.Tensor:
         return torch.ones_like(array)
 
-    @Autocast()
     def outer(self, array1: torch.Tensor, array2: torch.Tensor) -> torch.Tensor:
         return torch.tensordot(array1, array2, [[], []])
 
@@ -297,9 +290,11 @@ class TorchMath(MathInterface):
         return self.cast(torch.sqrt(x), dtype)
 
     def sum(self, array: torch.Tensor, axes: Sequence[int] = None):
-        return torch.sum(array, axes)
+        if axes:
+            return torch.sum(array, axes)
+        else:
+            return torch.sum(array)
 
-    @Autocast()
     def tensordot(self, a: torch.Tensor, b: torch.Tensor, axes: List[int]) -> torch.Tensor:
         return torch.tensordot(a, b, axes)
 
@@ -309,8 +304,8 @@ class TorchMath(MathInterface):
     def trace(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
         return self.cast(torch.trace(array), dtype)
 
-    def transpose(self, a: torch.Tensor, perm: List[int] = [0, 1]) -> torch.Tensor:
-        return torch.transpose(a, perm[0], perm[1])
+    def transpose(self, a: torch.Tensor, perm: List[int] = (0, 1)) -> torch.Tensor:
+        return torch.t(a)
 
     def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
         raise NotImplementedError  # TODO: implement
@@ -400,7 +395,7 @@ class TorchMath(MathInterface):
         return torch.xlogy(x, y)
 
     def sqrtm(self, tensor: torch.Tensor) -> Tensor:
-        raise NotImplementedError
+        return sqrtm_utils(tensor)
 
     def boolean_mask(self, tensor: torch.Tensor, mask: torch.Tensor) -> Tensor:
         """Returns a new 1-D tensor which indexes the `input` tensor according to the boolean mask `mask`."""
