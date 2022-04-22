@@ -288,6 +288,7 @@ def number_variances(tensor, is_dm: bool):
 
 def purity(dm: Tensor) -> Scalar:
     r"""Returns the purity of a density matrix."""
+    print(dm.shape)
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
@@ -420,13 +421,18 @@ def trace(dm, keep: List[int]):
         dm: the density matrix
         keep: the modes to keep
     """
+    # import pdb; pdb.set_trace()
     N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]
     # put at the end all of the indices to trace over
-    dm = math.transpose(
-        dm, [i for pair in [(k, k + N) for k in keep] + [(t, t + N) for t in trace] for i in pair]
-    )
-    d = int(np.prod(dm.shape[-len(trace) :]))
+    keep_idx = [i for pair in [(k, k + N) for k in keep] for i in pair]
+    keep_idx = keep_idx[::2] + keep_idx[1::2]
+    trace_idx = [i for pair in [(t, t + N) for t in trace] for i in pair]
+    trace_idx = trace_idx[::2] + trace_idx[1::2] # stagger the indices
+    dm = math.transpose(dm, keep_idx + trace_idx)
+
+    d = int(np.prod(dm.shape[-len(trace):]))
     # make it square on those indices
     dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
+    print('marignal shape', dm.shape)
     return math.trace(dm)

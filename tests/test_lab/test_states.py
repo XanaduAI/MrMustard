@@ -191,3 +191,11 @@ def test_getitem_set_modes(modes):
     state2 = State(ket=ket, modes=modes)
 
     assert state1.modes == state2.modes
+
+
+def test_concat_fock_gaussian_states():
+    Ga = Gaussian(1)
+    Gb = Gaussian(1)
+    a = State(dm=Ga.dm())
+    b = State(dm=Gb.dm())
+    a & Gb == Ga & b

@@ -394,12 +394,22 @@ class State:
             if self.is_mixed or other.is_mixed: # TODO: would be more efficient if we could keep pure states as kets
                 self_fock = self.dm()
                 other_fock = other.dm()
+                dm = fock.math.tensordot(self_fock, other_fock, [[],[]])
+                #e.g. self has shape [1,3,1,3] and other has shape [2,2]
+                # we want self & other to have shape [1,3,2,1,3,2]
+                # before transposing shape is [1,3,1,3]+[2,2]
+                self_idx = list(range(len(self_fock.shape)))
+                other_idx = list(range(len(self_idx), len(self_idx)+len(other_fock.shape)))
+                self_idx[:len(self_idx)//2]
+                other_idx[:len(other_idx)//2]
+                return State(dm=math.transpose(dm, self_idx[:len(self_idx)//2] + other_idx[:len(other_idx)//2] + self_idx[len(self_idx)//2:] + other_idx[len(other_idx)//2:]),
+                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes])
             else: # all states are pure
                 self_fock = self.ket()
                 other_fock = other.ket()
-            return State(dm=fock.math.tensordot(self_fock, other_fock, [[],[]]),
-                modes=self.modes + [m + self.num_modes for m in other.modes]
-            )
+                return State(ket=fock.math.tensordot(self_fock, other_fock, [[],[]]),
+                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes]
+                )
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
         return State(
@@ -437,8 +447,9 @@ class State:
 
         # if not gaussian
         fock_partitioned = fock.trace(
-            self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item]
+            self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
         )
+        print('returning', fock_partitioned.shape, item)
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
@@ -454,13 +465,14 @@ class State:
             if not np.allclose(self.cov, other.cov, atol=1e-6):
                 return False
             return True
-        if self.is_pure and other.is_pure:
+        try:
             return np.allclose(
                 self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
             )
-        return np.allclose(
-            self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
-        )
+        except TypeError:
+            return np.allclose(
+                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
+            )
 
     def __rshift__(self, other):
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
