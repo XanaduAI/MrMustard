@@ -390,11 +390,16 @@ class State:
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
-        if not (self.is_gaussian and other.is_gaussian):
-            raise NotImplementedError(
-                "Concatenation of non-gaussian states is not implemented yet."
+        if not self.is_gaussian or not other.is_gaussian: # convert all to fock now
+            if self.is_mixed or other.is_mixed: # TODO: would be more efficient if we could keep pure states as kets
+                self_fock = self.dm()
+                other_fock = other.dm()
+            else: # all states are pure
+                self_fock = self.ket()
+                other_fock = other.ket()
+            return State(dm=fock.math.tensordot(self_fock, other_fock, [[],[]]),
+                modes=self.modes + [m + self.num_modes for m in other.modes]
             )
-
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
         return State(
