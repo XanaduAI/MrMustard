@@ -400,8 +400,6 @@ class State:
                 # before transposing shape is [1,3,1,3]+[2,2]
                 self_idx = list(range(len(self_fock.shape)))
                 other_idx = list(range(len(self_idx), len(self_idx)+len(other_fock.shape)))
-                self_idx[:len(self_idx)//2]
-                other_idx[:len(other_idx)//2]
                 return State(dm=math.transpose(dm, self_idx[:len(self_idx)//2] + other_idx[:len(other_idx)//2] + self_idx[len(self_idx)//2:] + other_idx[len(other_idx)//2:]),
                     modes=self.modes + [m + max(self.modes) + 1 for m in other.modes])
             else: # all states are pure
@@ -449,7 +447,6 @@ class State:
         fock_partitioned = fock.trace(
             self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
         )
-        print('returning', fock_partitioned.shape, item)
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
