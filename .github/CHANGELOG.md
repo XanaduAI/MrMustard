@@ -1,6 +1,8 @@
 # Release 0.3.0 (development release)
 
 ### New features
+* Can switch progress bar on and off (default is on) from the settings via `settings.PROGRESSBAR = True/False`.
+  [(#128)](https://github.com/XanaduAI/MrMustard/issues/128)
 
 ### Breaking changes
 
@@ -13,6 +15,8 @@
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
+
+[Filippo Miatto](https://github.com/ziofil)
 
 ---
 
