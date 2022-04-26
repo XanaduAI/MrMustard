@@ -18,6 +18,8 @@
 This module contains functions for performing calculations on Fock states.
 """
 
+from ast import Raise
+from multiprocessing.sharedctypes import Value
 import numpy as np
 
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
@@ -121,6 +123,36 @@ def ket_to_dm(ket: Tensor) -> Tensor:
         Tensor: the density matrix
     """
     return math.outer(ket, math.conj(ket))
+
+def dm_to_ket(dm: Tensor) -> Tensor:
+    r"""Maps a density matrix to a ket if the state is pure.
+
+    If the state is pure :math:`\hat \rho= |\psi\rangle\langle \psi|` then the
+    ket is the eigenvector of ``\rho`` corresponding to the eigenvalue 1.
+
+    Args:
+        dm: the density matrix
+
+    Returns:
+        Tensor: the ket
+    """
+
+    is_pure_dm = np.isclose(purity(dm), 1.0, atol=1e-6)
+    if not is_pure_dm:
+        raise ValueError("Cannot calculate ket for mixed states.")
+
+    cutoffs = dm.shape[: len(dm.shape) // 2]
+    d = int(np.prod(cutoffs))
+    dm = math.reshape(dm, (d, d))
+    dm = normalize(dm, is_dm=True)
+
+    _, eigvecs = math.eigh(dm)
+    # eigenvalues and related eigenvectors are sorted in non-decreasing order,
+    # meaning the associated eigvec to eigval 1 is stored last.
+    ket = eigvecs[:,-1]
+    ket = math.reshape(ket, cutoffs)
+
+    return ket
 
 
 def ket_to_probs(ket: Tensor) -> Tensor:
