@@ -34,46 +34,67 @@ SKIPS = Dict.empty(key_type=typeof((0,0)), value_type=int64[:])
 
 
 @njit
-def num_amps(M, N):
-    r"""Returns the size of an M-mode level with N total photons"""
+def len_lvl(M, N):
+    r"""Returns the size of an M-mode level with N total photons.
+    Args:
+        M (int) number of modes
+        N (int) number of photons in level
+    Returns:
+        (int) the the size of an M-mode level with N total photons
+    """
     return BINOM[M-1+N, N]
 
 
 @njit
 def lvl_pivots(M, N, PIVOTS):
-    r"""Returns the pivots for the given M and N (num modes and total photons).
+    r"""Returns an array of pivots for the given M and N (num modes and total photons).
     If the pivots are already computed it returns them from the PIVOTS dictionary,
     otherwise it fills the PIVOTS[(M,N)] dictionary entry.
+    Args:
+        M (int) number of modes
+        N (int) number of photons in level
+        PIVOTS (dict) a reference to the "global" PIVOTS dictionary
+    Returns:
+        (2d array) the array of pivots for the given level
     """
     if (M,N) in PIVOTS:
         return PIVOTS[(M,N)]
-    T = 0
+    # recursive formulation:
     if M == 1:
         return np.array([[N]])
-    pivots = np.zeros((num_amps(M, N), M), dtype=np.int64)
-    for n in range(N+1):
-        pivots[T : T + num_amps(M-1, N-n), :1] = n
-        pivots[T : T + num_amps(M-1, N-n), 1:] = lvl_pivots(M-1, N-n, PIVOTS) # recursive formulation
-        T += num_amps(M-1, N-n)
-    PIVOTS[(M,N)] = pivots
-    return pivots
+    else:
+        T = 0
+        pivots = np.zeros((len_lvl(M, N), M), dtype=np.int64)
+        for n in range(N+1):
+            pivots[T : T + len_lvl(M-1, N-n), :1] = n
+            pivots[T : T + len_lvl(M-1, N-n), 1:] = lvl_pivots(M-1, N-n, PIVOTS)
+            T += len_lvl(M-1, N-n)
+        PIVOTS[(M,N)] = pivots
+        return pivots
 
 
 @njit
 def lvl_skips(M, N, SKIPS):
-    r"""Returns the skips for a given M and N (num modes and total photons).
+    r"""Returns the vector of skips for a given M and N (num modes and total photons).
     If the skips are already computed it returns them from the SKIPS dictionary,
     otherwise it fills the SKIPS[(M,N)] dictionary entry.
-    When computing an upper level, we go through a loop on zip(PIVOTS[(M,N)], SKIPS[(M,N)]) which
-    gives pairs (p, s) so we skip the last `s` upper amplitudes when consuming the pivot `p`.
+    What are the skips? When computing an upper level, we go through a loop
+    on zip(PIVOTS[(M,N)], SKIPS[(M,N)]) which gives pairs (p, s) so that we skip the
+    last `s` upper amplitudes when consuming the pivot `p`.
+    Args:
+        M (int) number of modes
+        N (int) number of photons in level
+        SKIPS (dict) a reference to the "global" SKIPS dictionary
+    Returns:
+        (1d array) the vector of skips for the given level
     """
     if (M,N) in SKIPS:
         return SKIPS[(M,N)]
     T = 0
-    skips = np.zeros(num_amps(M, N), dtype=np.int64)
+    skips = np.zeros(len_lvl(M, N), dtype=np.int64)
     for m in range(M):
-        skips[T : T + num_amps(m+1, N-1)] = m
-        T += num_amps(m+1, N-1)
+        skips[T : T + len_lvl(m+1, N-1)] = m
+        T += len_lvl(m+1, N-1)
     SKIPS[(M,N)] = skips
     return skips
 
@@ -82,13 +103,16 @@ def lvl_skips(M, N, SKIPS):
 def index(pivot):
     r"""Returns the binomial index (along 1-dim vector) of a given pivot.
     E.g. index(np.array([1,0,1])) = 3 (comes after 002, 011, 020).
-    Note: `pivot` needs to be a vector because numba can't handle
-    tuples of unspecified length."""
+    Args:
+        pivot (1d array): the array of M integers that identifies a single amplitude
+    Returns:
+        (int) the index of `pivot` in the 1-dim level array.
+    """
     idx = 0
     M = len(pivot)
     N = np.sum(pivot)
     for m,t in enumerate(pivot):
-        idx += num_amps(M-m, N) - num_amps(M-m, N-t)
+        idx += len_lvl(M-m, N) - len_lvl(M-m, N-t)
         N -= t
     return idx
 
@@ -99,8 +123,8 @@ def upper(pivot, UP, skip):
     of the amplitudes that we can compute when we consume `pivot`.
     Note: UP is passed by reference, so that it can be modified and not reallocated each time.
     Args:
-        pivot (np.array): the pivot of length M
-        UP: the array to fill with 1D indices
+        pivot (1-dim array of ints): the pivot of length M
+        UP (1-dim array of ints): the array to fill with binomial indices
     Returns:
         UP: the filled array
     """
@@ -118,7 +142,7 @@ def lower(pivot, LO):
     Note: LO is passed by reference, so that it can be modified and not reallocated each time.
     Args:
         pivot (np.array): the pivot of length M
-        LO: the array to fill with 1D indices
+        LO: the array to fill with binomial indices
     Returns:
         LO: the filled array
     """
@@ -135,18 +159,18 @@ def lower(pivot, LO):
 @njit
 def consume_one_pivot(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx):
     r"""
-    Fills at most M new amplitudes into G, where M is the dimension of the indices of A (or b).
+    Fills at most M new amplitudes of G[N+1], where M is the dimension of A and b and N = sum(pivot).
     It's sparse in the sense that it runs through the nonzero values of A and b (indices in Aidx and bidx).
     Arguments:
         A, b: A matrix and b vector from the recursive representation
         Aidx, bidx: tuples of indices of the nonzero values of A and b
-        G: the current dictionary of amplitudes
-        UP, LO: references to vectors that will hold the upper and lower indices of the current pivot
+        G: reference to the current dictionary of amplitudes
+        UP, LO: references to vectors that will hold the upper and lower indices for the current pivot
         skip: the number of upper amplitudes to skip
         pivot: the vector of indices that we use as pivot
-        pivot_idx: the index of the pivot in the array G[pivot_weight]
+        pivot_idx: the index of the pivot in the array G[N]
     returns:
-        the norm of the amplitudes computed from the pivot
+        the squared norm of the amplitudes that we computed from this pivot
     """
     N = np.sum(pivot)
     norm_squared = 0.0
@@ -156,7 +180,7 @@ def consume_one_pivot(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx):
         amplitude = 0.0
         if m in bidx:
             amplitude += b[m] * G[N][pivot_idx]
-        for n in Aidx[m]: # TODO: A is symmetric, so we can iterate over e.g. the upper triangle only
+        for n in Aidx[m]: # TODO: A is symmetric, so we could iterate over e.g. the upper triangle only and then x2
             amplitude += SQRT[pivot[n]] * A[m, n] * G[N-1][LO[n]]
         amplitude /= SQRT[pivot[m]+1]
         G[N+1][UP[m]] = amplitude
@@ -165,7 +189,7 @@ def consume_one_pivot(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx):
 
 
 @njit
-def consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx, b_nonzero, dL_dA, dL_db, dL_dG):
+def consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx, dL_dA, dL_db, dL_dG):
     r"""
     Computes the vector-jacobian product dL_dG @ dG_dA and dL_dG @ dG_db.
     """
@@ -174,7 +198,7 @@ def consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx, b
     # i.e. we have to sum along the G_up vector only dimension
     N = np.sum(pivot)
     for m in range(len(UP)-skip):
-        if b_nonzero and m in bidx:
+        if m in bidx:
             dL_db[m] += dL_dG[N+1][UP[m]] * G[N][pivot_idx] / SQRT[pivot[m]+1]
         for n in Aidx[m]:
             dL_dA[m,n] += dL_dG[N+1][UP[m]] * SQRT[pivot[n]] * G[N-1][LO[n]] / SQRT[pivot[m]+1]
@@ -259,7 +283,7 @@ def fill_all_fold_norm(A, b, C, min_norm=0.99, parallel=False):
     # 4. Fill the rest of the amplitudes and accumulate the norm
     
     while np.sqrt(norm_squared) < min_norm:
-        G[N + 1] = np.zeros(num_amps(M, N+1), dtype=np.complex128) # empty array for next level
+        G[N + 1] = np.zeros(len_lvl(M, N+1), dtype=np.complex128) # empty array for next level
         if parallel:
             cpus = max(4, multiprocessing.cpu_count())
             pivots = tuple(np.array_split(lvl_pivots(M, N, PIVOTS), cpus))
