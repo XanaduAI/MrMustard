@@ -263,25 +263,25 @@ def fill_all_fold_norm(A, b, C, min_norm=0.99, parallel=False):
         A, b, C: A matrix, b vector and C scalar from the recursive representation
         min_norm: the minimum norm to reach
     """
-    M = A.shape[-1]
-
     # 1. Sparse indices
-    Aidx = [[] for _ in range(M)]
+    Aidx = [[] for _ in range(A.shape[-1])]
     for m,n in np.transpose(np.nonzero(A)):
         Aidx[m].append(n)
     Aidx = tuple([tuple(row) for row in Aidx])
-    bidx = np.nonzero(b)
+    bidx = np.nonzero(b)[0]
 
     # 2. Some constants
-    b_nonzero = len(bidx[0]) > 0
-    N = 0 if b_nonzero else 1  # odd levels are zero so we skip building level 1
+    b_nonzero = len(bidx) > 0
+    N = 0 if b_nonzero else 1  # if b is zero then odd levels are zero, so we skip building level 1 and jump by two
+    M = A.shape[-1]
 
     # 3. Initialize norm and the dictionary of amplitudes
     norm_squared = np.abs(C)**2
     G = Dict.empty(key_type=int64, value_type=typeof(np.array([C])))
     G[0] = np.array([C])
+    G[-1] = np.array([0.0j]) # for when the pivot is at level zero
+
     # 4. Fill the rest of the amplitudes and accumulate the norm
-    
     while np.sqrt(norm_squared) < min_norm:
         G[N + 1] = np.zeros(len_lvl(M, N+1), dtype=np.complex128) # empty array for next level
         if parallel:
