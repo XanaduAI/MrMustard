@@ -74,8 +74,12 @@ class Optimizer:
                 with bar:
                     while not self.should_stop(max_steps):
                         cost, grads = math.value_and_gradients(cost_fn, params)
-                        update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
-                        update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
+                        update_symplectic(
+                            params["symplectic"], grads["symplectic"], self.symplectic_lr
+                        )
+                        update_orthogonal(
+                            params["orthogonal"], grads["orthogonal"], self.orthogonal_lr
+                        )
                         update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
                         self.opt_history.append(cost)
                         bar.step(math.asnumpy(cost))
