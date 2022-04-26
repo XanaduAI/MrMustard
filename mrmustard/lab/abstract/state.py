@@ -397,9 +397,8 @@ class State:
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
         if not self.is_gaussian or not other.is_gaussian:  # convert all to fock now
-            if (
-                self.is_mixed or other.is_mixed
-            ):  # TODO: would be more efficient if we could keep pure states as kets
+            # TODO: would be more efficient if we could keep pure states as kets
+            if self.is_mixed or other.is_mixed:
                 self_fock = self.dm()
                 other_fock = other.dm()
                 dm = fock.math.tensordot(self_fock, other_fock, [[], []])

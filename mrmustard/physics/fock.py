@@ -129,13 +129,16 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     r"""Maps a density matrix to a ket if the state is pure.
 
     If the state is pure :math:`\hat \rho= |\psi\rangle\langle \psi|` then the
-    ket is the eigenvector of ``\rho`` corresponding to the eigenvalue 1.
+    ket is the eigenvector of :math:`\rho` corresponding to the eigenvalue 1.
 
     Args:
-        dm: the density matrix
+        dm (Tensor): the density matrix
 
     Returns:
         Tensor: the ket
+        
+    Raises:
+        ValueError: if ket for mixed states cannot be calculated
     """
 
     is_pure_dm = np.isclose(purity(dm), 1.0, atol=1e-6)
