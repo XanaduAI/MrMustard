@@ -142,7 +142,16 @@ def test_density_matrix(num_modes):
     # rho_built = G(Vacuum(num_modes=num_modes)).dm(cutoffs=cutoffs)
     assert np.allclose(rho_legit, rho_made)
 
-@pytest.mark.parametrize("state", [Vacuum(num_modes=2), Fock(4), Coherent(x=0.1, y=-0.4, cutoffs=[15]), Gaussian(num_modes=2, cutoffs=[15])])
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        Vacuum(num_modes=2),
+        Fock(4),
+        Coherent(x=0.1, y=-0.4, cutoffs=[15]),
+        Gaussian(num_modes=2, cutoffs=[15]),
+    ],
+)
 def test_dm_to_ket(state):
     """Tests pure state density matrix conversion to ket"""
     dm = state.dm()
@@ -156,6 +165,7 @@ def test_dm_to_ket(state):
     dm_reconstructed = ket_to_dm(ket)
     # check ket leads to same dm
     assert np.allclose(dm, dm_reconstructed)
+
 
 def test_dm_to_ket_error():
     """Test dm_to_ket raises an error when state is mixed"""

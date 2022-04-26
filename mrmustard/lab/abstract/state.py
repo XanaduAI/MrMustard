@@ -396,23 +396,34 @@ class State:
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
-        if not self.is_gaussian or not other.is_gaussian: # convert all to fock now
-            if self.is_mixed or other.is_mixed: # TODO: would be more efficient if we could keep pure states as kets
+        if not self.is_gaussian or not other.is_gaussian:  # convert all to fock now
+            if (
+                self.is_mixed or other.is_mixed
+            ):  # TODO: would be more efficient if we could keep pure states as kets
                 self_fock = self.dm()
                 other_fock = other.dm()
-                dm = fock.math.tensordot(self_fock, other_fock, [[],[]])
-                #e.g. self has shape [1,3,1,3] and other has shape [2,2]
+                dm = fock.math.tensordot(self_fock, other_fock, [[], []])
+                # e.g. self has shape [1,3,1,3] and other has shape [2,2]
                 # we want self & other to have shape [1,3,2,1,3,2]
                 # before transposing shape is [1,3,1,3]+[2,2]
                 self_idx = list(range(len(self_fock.shape)))
-                other_idx = list(range(len(self_idx), len(self_idx)+len(other_fock.shape)))
-                return State(dm=math.transpose(dm, self_idx[:len(self_idx)//2] + other_idx[:len(other_idx)//2] + self_idx[len(self_idx)//2:] + other_idx[len(other_idx)//2:]),
-                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes])
-            else: # all states are pure
+                other_idx = list(range(len(self_idx), len(self_idx) + len(other_fock.shape)))
+                return State(
+                    dm=math.transpose(
+                        dm,
+                        self_idx[: len(self_idx) // 2]
+                        + other_idx[: len(other_idx) // 2]
+                        + self_idx[len(self_idx) // 2 :]
+                        + other_idx[len(other_idx) // 2 :],
+                    ),
+                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
+                )
+            else:  # all states are pure
                 self_fock = self.ket()
                 other_fock = other.ket()
-                return State(ket=fock.math.tensordot(self_fock, other_fock, [[],[]]),
-                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes]
+                return State(
+                    ket=fock.math.tensordot(self_fock, other_fock, [[], []]),
+                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
                 )
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])

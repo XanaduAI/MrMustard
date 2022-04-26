@@ -124,6 +124,7 @@ def ket_to_dm(ket: Tensor) -> Tensor:
     """
     return math.outer(ket, math.conj(ket))
 
+
 def dm_to_ket(dm: Tensor) -> Tensor:
     r"""Maps a density matrix to a ket if the state is pure.
 
@@ -149,7 +150,7 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     _, eigvecs = math.eigh(dm)
     # eigenvalues and related eigenvectors are sorted in non-decreasing order,
     # meaning the associated eigvec to eigval 1 is stored last.
-    ket = eigvecs[:,-1]
+    ket = eigvecs[:, -1]
     ket = math.reshape(ket, cutoffs)
 
     return ket
@@ -458,10 +459,10 @@ def trace(dm, keep: List[int]):
     keep_idx = [i for pair in [(k, k + N) for k in keep] for i in pair]
     keep_idx = keep_idx[::2] + keep_idx[1::2]
     trace_idx = [i for pair in [(t, t + N) for t in trace] for i in pair]
-    trace_idx = trace_idx[::2] + trace_idx[1::2] # stagger the indices
+    trace_idx = trace_idx[::2] + trace_idx[1::2]  # stagger the indices
     dm = math.transpose(dm, keep_idx + trace_idx)
 
-    d = int(np.prod(dm.shape[-len(trace):]))
+    d = int(np.prod(dm.shape[-len(trace) :]))
     # make it square on those indices
     dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
     return math.trace(dm)
