@@ -22,7 +22,7 @@ from mrmustard.lab.gates import *
 from mrmustard.lab.abstract import State
 from mrmustard import settings
 from tests import random
-
+from mrmustard.math import Math; math = Math()
 
 @st.composite
 def xy_arrays(draw):
@@ -192,10 +192,39 @@ def test_getitem_set_modes(modes):
 
     assert state1.modes == state2.modes
 
+@given(state1=random.pure_state(num_modes=1), state2=random.pure_state(num_modes=1))
+def test_concat_pure_states(state1, state2):
+    """Test that fock states concatenate correctly and are separable"""
+    psi = state1 & state2
 
-def test_concat_fock_gaussian_states():
-    Ga = Gaussian(1)
-    Gb = Gaussian(1)
-    a = State(dm=Ga.dm())
-    b = State(dm=Gb.dm())
-    a & Gb == Ga & b
+    # test concatenated state
+    psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0,2,1,3])
+    assert np.allclose(psi.dm(), psi_dm)
+
+    # trace state2 and check resulting dm corresponds to state 1
+    dm1 = math.trace(math.transpose(psi.dm(), [0,2,1,3]))
+    assert np.allclose(state1.dm(), dm1)
+
+    # trace state1 and check resulting dm corresponds to state 2
+    dm2 = math.trace(math.transpose(psi.dm(), [1,3,0,2]))
+    assert np.allclose(state2.dm(), dm2)
+
+
+def test_concat_mixed_states():
+    """Test that fock states concatenate correctly and are separable"""
+
+    s1 = Fock(4, cutoffs=[15]) >> Attenuator(transmissivity=0.5)
+    s2 = Fock(1, cutoffs=[15]) >> Attenuator(transmissivity=0.8)
+    psi = s1 & s2
+
+    # test concatenated state
+    psi_dm = math.transpose(math.tensordot(s1.dm(), s2.dm(), [[], []]), [0,2,1,3])
+    assert np.allclose(psi.dm(), psi_dm)
+
+    # trace state2 and check resulting dm corresponds to state 1
+    dm1 = math.trace(math.transpose(psi.dm(), [0,2,1,3]))
+    assert np.allclose(s1.dm(), dm1)
+
+    # trace state1 and check resulting dm corresponds to state 2
+    dm2 = math.trace(math.transpose(psi.dm(), [1,3,0,2]))
+    assert np.allclose(s2.dm(), dm2)
