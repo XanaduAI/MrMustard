@@ -17,7 +17,15 @@ import pytest
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian as gp
-from mrmustard.lab.states import Fock, Coherent, Vacuum, Gaussian, SqueezedVacuum, DisplacedSqueezed, Thermal
+from mrmustard.lab.states import (
+    Fock,
+    Coherent,
+    Vacuum,
+    Gaussian,
+    SqueezedVacuum,
+    DisplacedSqueezed,
+    Thermal,
+)
 from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
@@ -202,6 +210,7 @@ def test_getitem_set_modes(modes):
     state2 = State(ket=ket, modes=modes)
 
     assert state1.modes == state2.modes
+
 
 @pytest.mark.parametrize("pure", [True, False])
 def test_concat_pure_states(pure):
