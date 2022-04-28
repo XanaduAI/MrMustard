@@ -226,12 +226,12 @@ def test_concat_pure_states(pure):
 
     # test concatenated state
     psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3])
-    assert np.allclose(psi.dm(), psi_dm, rtol=1e-2)
+    assert np.allclose(psi.dm(), psi_dm)
 
     # trace state2 and check resulting dm corresponds to state 1
     dm1 = math.trace(math.transpose(psi.dm(), [0, 2, 1, 3]))
-    assert np.allclose(state1.dm(), dm1, rtol=1e-2)
+    assert np.allclose(state1.dm(), dm1)
 
     # trace state1 and check resulting dm corresponds to state 2
     dm2 = math.trace(math.transpose(psi.dm(), [1, 3, 0, 2]))
-    assert np.allclose(state2.dm(), dm2, rtol=1e-2)
+    assert np.allclose(state2.dm(), dm2)
