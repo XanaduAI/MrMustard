@@ -14,12 +14,11 @@
 
 import numpy as np
 import pytest
-from tests import random
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian as gp
-from mrmustard.lab.states import *
-from mrmustard.lab.gates import *
+from mrmustard.lab.states import Fock, Coherent, Vacuum, Gaussian, SqueezedVacuum, DisplacedSqueezed, Thermal
+from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
 
@@ -102,6 +101,7 @@ def test_the_purity_of_a_mixed_state(nbar):
     phi2=st.floats(0.0, 2 * np.pi),
 )
 def test_join_two_states(r1, phi1, r2, phi2):
+    """Test Sgate acts the same in parallel or individually for two states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
     S2 = Vacuum(1) >> Sgate(r=r2, phi=phi2)
     S12 = Vacuum(2) >> Sgate(r=[r1, r2], phi=[phi1, phi2])
@@ -117,6 +117,7 @@ def test_join_two_states(r1, phi1, r2, phi2):
     phi3=st.floats(0.0, 2 * np.pi),
 )
 def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
+    """Test Sgate acts the same in parallel or individually for three states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
     S2 = Vacuum(1) >> Sgate(r=r2, phi=phi2)
     S3 = Vacuum(1) >> Sgate(r=r3, phi=phi3)
@@ -126,12 +127,14 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
 
 @given(xy=xy_arrays())
 def test_coh_state(xy):
+    """Test coherent state preparation."""
     x, y = xy
     assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
 
 
 @given(r=st.floats(0.0, 1.0), phi=st.floats(0.0, 2 * np.pi))
 def test_sq_state(r, phi):
+    """Test squeezed vacuum preparation."""
     assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
 
 
@@ -142,10 +145,12 @@ def test_sq_state(r, phi):
     phi=st.floats(0.0, 2 * np.pi),
 )
 def test_dispsq_state(x, y, r, phi):
+    """Test displaced squeezed state."""
     assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
 
 
 def test_get_modes():
+    """Test get_modes returns the states as expected."""
     a = Gaussian(2)
     b = Gaussian(2)
     assert a == (a & b).get_modes([0, 1])
@@ -154,6 +159,7 @@ def test_get_modes():
 
 @given(m=st.integers(0, 3))
 def test_modes_after_projection(m):
+    """Test number of modes is correct after single projection."""
     a = Gaussian(4) << Fock(1)[m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m])
     assert len(a.modes) == 3
@@ -161,6 +167,7 @@ def test_modes_after_projection(m):
 
 @given(n=st.integers(0, 3), m=st.integers(0, 3))
 def test_modes_after_double_projection(n, m):
+    """Test number of modes is correct after double projection."""
     assume(n != m)
     a = Gaussian(4) << Fock([1, 2])[n, m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m and k != n])
@@ -168,7 +175,7 @@ def test_modes_after_double_projection(n, m):
 
 
 def test_random_state_is_entangled():
-    """Tests that a Gaussian state generated at random is entangled"""
+    """Tests that a Gaussian state generated at random is entangled."""
     state = Vacuum(2) >> Ggate(num_modes=2)
     mat = state.cov
     assert np.allclose(gp.log_negativity(mat, 2), 0.0)
