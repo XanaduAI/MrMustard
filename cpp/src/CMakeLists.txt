@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(GaussianAmplitudeComputer_src)
+
+add_library(gaussian_computer_src STATIC utils.cpp)
+target_include_directories(gaussian_computer_src PUBLIC .)
+target_link_libraries(gaussian_computer_src PUBLIC gaussian_computer_dependency)
