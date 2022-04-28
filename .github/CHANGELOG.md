@@ -4,6 +4,26 @@
 * Can switch progress bar on and off (default is on) from the settings via `settings.PROGRESSBAR = True/False`.
   [(#128)](https://github.com/XanaduAI/MrMustard/issues/128)
 
+* States in Gaussian and Fock representation now can be concatenated.
+  [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
+
+  ```python
+  from mrmustard.lab.states import Gaussian, Fock'
+  from mrmustard.lab.gates import Attenuator
+
+  # concatenate pure states
+  fock_state = Fock(4)
+  gaussian_state = Gaussian(1)
+  pure_state = fock_state & gaussian_state
+
+  # also can concatenate mixed states
+  mixed1 = fock_state >> Attenuator(0.8)
+  mixed2 = gaussian_state >> Attenuator(0.5)
+  mixed_state = mixed1 & mixed2
+
+  mixed_state.dm()
+  ```
+
 ### Breaking changes
 
 ### Improvements
