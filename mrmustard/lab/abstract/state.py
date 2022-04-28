@@ -417,13 +417,13 @@ class State:
                     ),
                     modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
                 )
-            else:  # all states are pure
-                self_fock = self.ket()
-                other_fock = other.ket()
-                return State(
-                    ket=fock.math.tensordot(self_fock, other_fock, [[], []]),
-                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
-                )
+            # else, all states are pure
+            self_fock = self.ket()
+            other_fock = other.ket()
+            return State(
+                ket=fock.math.tensordot(self_fock, other_fock, [[], []]),
+                modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
+            )
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
         return State(

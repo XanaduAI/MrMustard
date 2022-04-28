@@ -14,6 +14,7 @@
 
 import numpy as np
 import pytest
+from tests import random
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian as gp
@@ -21,8 +22,9 @@ from mrmustard.lab.states import *
 from mrmustard.lab.gates import *
 from mrmustard.lab.abstract import State
 from mrmustard import settings
-from tests import random
-from mrmustard.math import Math; math = Math()
+
+from mrmustard.math import Math
+math = Math()
 
 @st.composite
 def xy_arrays(draw):

@@ -18,8 +18,6 @@
 This module contains functions for performing calculations on Fock states.
 """
 
-from ast import Raise
-from multiprocessing.sharedctypes import Value
 import numpy as np
 
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
@@ -136,7 +134,7 @@ def dm_to_ket(dm: Tensor) -> Tensor:
 
     Returns:
         Tensor: the ket
-        
+
     Raises:
         ValueError: if ket for mixed states cannot be calculated
     """
