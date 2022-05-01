@@ -1,24 +1,24 @@
 #include <boost/dynamic_bitset.hpp>
 
-#include <iterator>
 #include <cstdlib>
-#include <unordered_map>
-#include <vector>
+#include <iterator>
 #include <mutex>
 #include <numeric>
+#include <unordered_map>
+#include <vector>
 
 namespace Mustard {
 using BigUInt = uint64_t;
 
-size_t binomial_coeff(size_t n, size_t k) {
+constexpr size_t binomial_coeff(size_t n, size_t k) {
     size_t res = 1;
 
-    if(k > n - k) {
+    if (k > n - k) {
         k = n - k;
     }
 
-    for(size_t i = 0; i < k; i++) {
-        res *= (n-i);
+    for (size_t i = 0; i < k; i++) {
+        res *= (n - i);
         res /= (i + 1);
     }
 
@@ -31,16 +31,15 @@ class BinomialCoeffs {
     std::vector<std::vector<size_t>> coeffs_;
 
   public:
-    explicit BinomialCoeffs(size_t max_n)
-        : coeffs_(max_n+1) {
-        for(size_t n = 0; n <= max_n; n++) {
-            coeffs_[n].resize(n+1);
+    explicit BinomialCoeffs(size_t max_n) : coeffs_(max_n + 1) {
+        for (size_t n = 0; n <= max_n; n++) {
+            coeffs_[n].resize(n + 1);
             coeffs_[n][0] = 1;
             coeffs_[n][n] = 1;
         }
-        for(size_t n = 1; n <= max_n; n++) {
-            for(size_t k = 1; k < n; k++) {
-                coeffs_[n][k] = coeffs_[n-1][k-1] + coeffs_[n-1][k];
+        for (size_t n = 1; n <= max_n; n++) {
+            for (size_t k = 1; k < n; k++) {
+                coeffs_[n][k] = coeffs_[n - 1][k - 1] + coeffs_[n - 1][k];
             }
         }
     }
@@ -53,11 +52,17 @@ class BinomialCoeffs {
 };
 
 constexpr auto count_trailing_zeros(uint64_t n) -> int {
-    return std::countl_zero(n);
+    return std::countr_zero(n);
 }
 
-constexpr auto count_ones(uint64_t n) -> int {
-    return std::popcount(n);
+constexpr auto count_trailing_ones(uint64_t n) -> int {
+    return std::countr_one(n);
+}
+
+constexpr auto count_ones(uint64_t n) -> int { return std::popcount(n); }
+
+constexpr auto fill_ones(uint32_t n) -> BigUInt {
+    return (BigUInt(1U) << n) - 1;
 }
 
 /*
@@ -72,9 +77,12 @@ constexpr auto count_trailing_zeros(unsigned __int128 n) -> int {
 }
 */
 
+BigUInt pivot_to_rep(const std::vector<size_t> &pivot);
+std::vector<size_t> rep_to_pivot(size_t modes, BigUInt val);
+
 class MultisetGenerator {
   private:
-    //using BigUInt = unsigned __int128;
+    // using BigUInt = unsigned __int128;
 
     size_t m_;
     size_t n_;
@@ -84,80 +92,68 @@ class MultisetGenerator {
      * @brief
      *
      * We use a binary representation of pivot to save it internally.
-     * In this representation, 0 means an element and 1 means the wall between
-     * bins. E.g. 0110 == [1,0,1]
+     * In this representation, 0 means a wall and 1 means the element.
+     * E.g. 0110 == [0,2,0]
      */
-    struct Iterator {
+    struct RepIterator {
         using iterator_category = std::forward_iterator_tag;
         using difference_type = BigUInt;
         using vaule_type = BigUInt;
 
-        const MultisetGenerator& mgntr_;
         BigUInt val_;
 
-        explicit Iterator(const MultisetGenerator& mgntr, BigUInt val)
-            : mgntr_{mgntr}, val_{val} {}
+        explicit RepIterator(BigUInt val) : val_{val} {}
 
-        Iterator& operator++() //prefix
+        RepIterator &operator++() // prefix
         {
             next();
             return *this;
         }
-        Iterator operator++(int) //postfix
+        RepIterator operator++(int) // postfix
         {
-            Iterator r(*this);
+            RepIterator r(*this);
             next();
             return r;
         }
 
         void next() {
             BigUInt t = val_ | (val_ - 1);
-            BigUInt w = (t + 1) | (((~t & -~t) - 1) >> (count_trailing_zeros(val_) + 1));
+            BigUInt w = (t + 1) |
+                        (((~t & -~t) - 1) >> (count_trailing_zeros(val_) + 1));
             val_ = w;
         }
 
-        auto operator*() const -> std::vector<size_t>;
+        auto operator*() const -> BigUInt { return val_; }
 
-        auto operator==(const Iterator& rhs) -> bool { return val_ == rhs.val_; }
-        auto operator!=(const Iterator& rhs) -> bool { return val_ != rhs.val_; }
+        auto operator==(const RepIterator &rhs) -> bool {
+            return val_ == rhs.val_;
+        }
+        auto operator!=(const RepIterator &rhs) -> bool {
+            return val_ != rhs.val_;
+        }
     };
 
     /**
      * @brief Create generator for dividing n elements to m bins.
      */
-    MultisetGenerator(size_t m, size_t n)
-        : m_{m}, n_{n} {
+    MultisetGenerator(size_t m, size_t n) : m_{m}, n_{n} { assert(m > 0); }
+
+    RepIterator begin() const {
+        return RepIterator{(BigUInt(1) << BigUInt(n_)) - 1};
     }
 
-    Iterator begin() const {
-        return Iterator{*this, (BigUInt(1) << BigUInt(m_-1)) - 1};
+    RepIterator end() const {
+        RepIterator r{((BigUInt(1) << BigUInt(n_)) - 1) << (m_ - 1)};
+        r.next();
+        return r;
     }
 
-    Iterator end() const {
-        return Iterator{*this, (BigUInt(1) << BigUInt(m_-1)) - 1};
-    }
+    size_t size() const { return binomial_coeff(n_ + m_ - 1, n_); }
 
     std::vector<size_t> to_pivot(BigUInt val) const {
         assert(count_ones(val) == n_);
-        std::vector<size_t> res;
 
-        while(val != 0) {
-            if((val & 1) == 1) {
-                val >>= 1;
-                res.emplace_back(0);
-            } else {
-                size_t cnt = count_trailing_zeros(val);
-                val >>= cnt;
-                res.push_back(cnt);
-            }
-        }
-
-        while (res.size() != m_) {
-            res.push_back(0);
-        }
-
-        std::reverse(res.begin(), res.end());
-        return res;
+        return Mustard::rep_to_pivot(m_, val);
     }
 };
 
