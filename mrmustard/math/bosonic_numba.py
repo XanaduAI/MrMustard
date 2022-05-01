@@ -197,6 +197,8 @@ def consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx, d
     # dL_db = dL_dG @ dG_db (1d @ 2d)
     # i.e. we have to sum along the G_up vector only dimension
     N = np.sum(pivot)
+    UP = upper(pivot, UP, skip)
+    LO = lower(pivot, LO)
     for m in range(len(UP)-skip):
         if m in bidx:
             dL_db[m] += dL_dG[N+1][UP[m]] * G[N][pivot_idx] / SQRT[pivot[m]+1]
@@ -213,9 +215,7 @@ def fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS):
         A, b: A matrix and b vector from the recursive representation
         Aidx, bidx: indices of the non-zero entries in A and b
         G: the dictionary of amplitudes (N -> vectorized amplitudes)
-        N: the weight of the pivot
-        f: a function to fold alongside the computation of the amplitudes
-        F: the initial value of f
+        N: the weight of the pivots
     """
     M = A.shape[-1]
     norm_squared = 0.0
@@ -226,6 +226,20 @@ def fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS):
     for i, pivot in enumerate(pivots):
         norm_squared += consume_one_pivot(A, b, Aidx, bidx, G, UP, LO, skips[i], pivot, i)
     return norm_squared
+
+
+@njit(parallel=False)
+def fill_N_plus_one_vjp(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS, dL_dA, dL_db, dL_dG):
+    r""" Computes the vector-jacobian product dL_dG @ dG_dA and dL_dG @ dG_db.
+    """
+    M = A.shape[-1]
+    UP = np.zeros(M, dtype=np.int64)
+    LO = np.zeros(M, dtype=np.int64)
+    pivots = lvl_pivots(M, N, PIVOTS)
+    skips = lvl_skips(M, N, SKIPS)
+    for i, pivot in enumerate(pivots):
+        dL_dA, dL_db = consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skips[i], pivot, i, dL_dA, dL_db, dL_dG)
+    return dL_dA, dL_db
 
 
 @njit(parallel=True)
@@ -239,13 +253,12 @@ def fill_N_plus_one_parallel(A, b, Aidx, bidx, G, N, P, S):
         Aidx, bidx: indices of the non-zero entries in A and b
         G: the dictionary of amplitudes (weight -> vectorized amplitudes)
         N: the weight of the pivot
-        b_nonzero: whether b is nonzero
-        f: a function to fold alongside the computation of the amplitudes
-        F: the initial value of f
+        P: the pivots broken into chunks (for parallelization)
+        S: the skips broken into chunks (for parallelization)
     """
     M = A.shape[-1]
     norm_squared = 0.0
-    for j in prange(len(P)):
+    for j in prange(len(P)): # need prange for parallelization
         pivots = P[j]
         skips = S[j]
         UP = np.zeros(M, dtype=np.int64)
@@ -263,34 +276,85 @@ def fill_all_fold_norm(A, b, C, min_norm=0.99, parallel=False):
         A, b, C: A matrix, b vector and C scalar from the recursive representation
         min_norm: the minimum norm to reach
     """
-    M = A.shape[-1]
-
     # 1. Sparse indices
-    Aidx = [[] for _ in range(M)]
+    Aidx = [[] for _ in range(A.shape[-1])]
     for m,n in np.transpose(np.nonzero(A)):
         Aidx[m].append(n)
     Aidx = tuple([tuple(row) for row in Aidx])
-    bidx = np.nonzero(b)
+    bidx = np.nonzero(b)[0]
 
     # 2. Some constants
-    b_nonzero = len(bidx[0]) > 0
-    N = 0 if b_nonzero else 1  # odd levels are zero so we skip building level 1
+    b_nonzero = len(bidx) > 0
+    N = 0 if b_nonzero else 1  # if b is zero then odd levels are zero, so we skip building level 1 and jump by two
+    M = A.shape[-1]
 
     # 3. Initialize norm and the dictionary of amplitudes
     norm_squared = np.abs(C)**2
     G = Dict.empty(key_type=int64, value_type=typeof(np.array([C])))
     G[0] = np.array([C])
+    G[-1] = np.array([0.0j]) # for when the pivot is at level zero
+
     # 4. Fill the rest of the amplitudes and accumulate the norm
-    
     while np.sqrt(norm_squared) < min_norm:
         G[N + 1] = np.zeros(len_lvl(M, N+1), dtype=np.complex128) # empty array for next level
         if parallel:
             cpus = max(4, multiprocessing.cpu_count())
             pivots = tuple(np.array_split(lvl_pivots(M, N, PIVOTS), cpus))
             skips = tuple(np.array_split(lvl_skips(M, N, SKIPS), cpus))
-            norm_ = fill_N_plus_one_parallel(A, b, List(Aidx), bidx, G, N, pivots, skips)
+            norm_squared += fill_N_plus_one_parallel(A, b, List(Aidx), bidx, G, N, pivots, skips)
         else:
-            norm_ = fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS)
-        norm_squared += norm_
+            norm_squared += fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS)
         N += 1 if b_nonzero else 2 # go to the next pivots
     return G, norm_squared
+
+
+# Integration
+
+class BinomialG:
+    def __init__(self, G):
+        self.multiplets = G
+        try:
+            self.modes = len(G[1])
+        except KeyError:
+            self.modes = int((np.sqrt(8*len(G[2]) + 1) - 1) / 2)
+        except KeyError:
+            raise ValueError("G[1] and G[2] don't exist")
+        
+    def __getitem__(self, tpl):
+        if type(tpl) is int:
+            tpl = (tpl,)
+        if len(tpl) > self.modes:
+            raise IndexError("too may indices")
+        N = np.sum(tpl)
+        if len(tpl) == self.modes: # a single amplitude
+            return self.multiplets[N][index(np.array(tpl))]
+        # otherwise we return a new BinomialG with only the relevant modes and amplitudes
+        G = dict()
+        for n in self.multiplets.keys():#range(N, max(self.multiplets)+1):
+            if n > N:
+                start = index(np.array(tpl + (0,)*(self.modes-len(tpl)-1) + (n,)))
+                end = index(np.array(tpl + (n,) + (0,)*(self.modes-len(tpl)-1)))
+                G[n-N] = self.multiplets[n][start:end+1]
+        return BinomialG(G)
+
+import tensorflow as tf
+
+@tf.custom_gradient
+def G_state(A, b, C, norm=0.99):
+    G, norm_squared = fill_all_fold_norm(A, b, C, min_norm=norm, parallel=False)
+
+    def grad(dL_dG):
+        dL_dA = np.zeros(A.shape, dtype=np.complex128)
+        dL_db = np.zeros(b.shape, dtype=np.complex128)
+        dL_dC = np.zeros(1, dtype=np.complex128)
+        M = A.shape[-1]
+        UP = np.zeros(M, dtype=np.int64)
+        LO = np.zeros(M, dtype=np.int64)
+        for N in G.keys():
+            pivots = lvl_pivots(M, N, PIVOTS)
+            skips = lvl_skips(M, N, SKIPS)
+            for i, pivot in enumerate(pivots):
+                dL_dA, dL_db, dL_dC = consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skips[i], pivot, pivot_idx, dL_dA, dL_db, dL_dC, dL_dG)
+        return np.conj(dL_dA), np.conj(dL_db), np.conj(dL_dC)
+
+    return G, grad
