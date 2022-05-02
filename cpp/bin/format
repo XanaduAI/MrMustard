@@ -9,18 +9,10 @@ import sys
 from utils import get_cpp_files
 
 CLANG_FMT_BIN = "clang-format"
-CLANG_FMT_STYLE_CFG = {
-    "BasedOnStyle": "llvm",
-    "BreakBeforeBraces": "Attach",
-    "IndentWidth": 4,
-    "IndentPPDirectives": "None",
-}
 
 IGNORE_PATTERNS = ["external"]
 
 DEFAULT_CLANG_FORMAT_VERSION=12
-
-BASE_ARGS = f"-style={json.dumps(CLANG_FMT_STYLE_CFG)}"
 
 def parse_version(version_string):
     version_rgx = "version (\d+)"
@@ -75,7 +67,7 @@ def parse_args():
 
 def fmt(args, command) -> int:
     files = get_cpp_files(args.paths)
-    cmd = (command, BASE_ARGS, "-i", *files)
+    cmd = (command, "-style=file", "-i", *files)
 
     sys.stderr.write(f"Formatting {len(files)} files in {args.paths}.\n")
 
@@ -88,7 +80,7 @@ def fmt(args, command) -> int:
 
 
 def check(args, command) -> int:
-    cmd = (command, BASE_ARGS, "--dry-run", "-Werror")
+    cmd = (command, "-style=file", "--dry-run", "-Werror")
 
     needs_reformatted_ct = 0
     files = get_cpp_files(args.paths)
