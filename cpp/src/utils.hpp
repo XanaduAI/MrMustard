@@ -146,7 +146,7 @@ public:
     size_t size() const { return binomial_coeff(n_ + m_ - 1, n_); }
 
     std::vector<size_t> to_pivot(BigUInt val) const {
-        assert(count_ones(val) == n_);
+        assert(static_cast<size_t>(count_ones(val)) == n_);
 
         return Mustard::rep_to_pivot(m_, val);
     }

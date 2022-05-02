@@ -56,7 +56,7 @@ public:
     }
 
     size_t get_rep_idx_in_level(size_t n, BigUInt rep) const {
-        assert(n == count_ones(rep));
+        assert(n == static_cast<size_t>(count_ones(rep)));
 
         const auto level_start_iter = pivot_reps_.begin() + starting_indices_[n];
         const auto level_end_iter = pivot_reps_.begin() + starting_indices_[n + 1];
@@ -65,7 +65,7 @@ public:
     }
 
     std::vector<size_t> upper_indices_in_level(size_t n, BigUInt rep, size_t skip) const {
-        assert(n == count_ones(rep));
+        assert(n == static_cast<size_t>(count_ones(rep)));
         MultisetGenerator mgntr(modes_, n);
 
         std::vector<size_t> indices;
@@ -80,18 +80,18 @@ public:
         return indices;
     }
 
-    std::vector<std::pair<size_t, size_t>> lower_indices_in_level(size_t n, BigUInt rep) const {
-        assert(n == count_ones(rep));
+    std::vector<size_t> lower_indices_in_level(size_t n, BigUInt rep) const {
+        assert(n == static_cast<size_t>(count_ones(rep)));
         MultisetGenerator mgntr(modes_, n);
 
-        std::vector<std::pair<size_t, size_t>> indices;
+        std::vector<size_t> indices(modes_, 0);
         auto pivot = mgntr.to_pivot(rep);
 
         for(size_t idx = 0; idx < pivot.size(); idx++) {
             if(pivot[idx] > 0) {
                 --pivot[idx];
                 const auto rep_low = pivot_to_rep(pivot);
-                indices.emplace_back(idx, get_rep_idx_in_level(n - 1, rep_low));
+                indices[idx] = get_rep_idx_in_level(n - 1, rep_low);
                 ++pivot[idx];
             }
         }
@@ -130,7 +130,7 @@ public:
         const auto pivot_idx = starting_idx + level_idx;
         const auto rep = pivot_reps_[pivot_idx];
 
-        assert(n == count_ones(rep));
+        assert(n == static_cast<size_t>(count_ones(rep)));
 
         const auto skip = skips_[pivot_idx];
         const auto pivot = rep_to_pivot(modes_, rep);
@@ -140,9 +140,7 @@ public:
         if(n == 0) { // Do not use lower level
             double norm_sqr = 0.0;
             for(size_t up_idx = 0; up_idx < up.size(); up_idx++) {
-                std::complex<double> amplitude = 0.0;
-
-                amplitude += b[up_idx] * G_curr_level[level_idx];
+                std::complex<double> amplitude = b[up_idx] * G_curr_level[level_idx];
                 amplitude /= sqrt(pivot[up_idx] + 1);
                 G_upper_level[up[up_idx]] = amplitude;
                 norm_sqr += std::norm(amplitude); // squared_norm
@@ -153,14 +151,17 @@ public:
         const auto lo = lower_indices_in_level(n, rep);
 
         double norm_sqr = 0.0;
+        const auto modes_l = modes_; // to stack for performance
 
         // TODO: add OpenMP
         for(size_t up_idx = 0; up_idx < up.size(); up_idx++) {
             std::complex<double> amplitude = 0.0;
 
             amplitude += b[up_idx] * G_curr_level[level_idx];
-            for(const auto [m, lower_idx] : lo) {
-                amplitude += sqrt(pivot[m]) * A[up_idx * modes_ + m] * G_lower_level[lower_idx];
+            for(size_t m = 0; m < modes_l; m++) {
+                // We have lo[m] == 0 if pivot[m] == 0. Still, as we multiply sqrt(pivot[m]),
+                // this does not contribute to amplitude
+                amplitude += sqrt(pivot[m]) * A[up_idx * modes_l + m] * G_lower_level[lo[m]];
             }
             amplitude /= sqrt(pivot[up_idx] + 1);
             G_upper_level[up[up_idx]] = amplitude;

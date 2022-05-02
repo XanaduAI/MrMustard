@@ -3,6 +3,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 .PHONY: help
 help:
 	@echo "  format [check=1]"
+	@echo "  test"
 
 .PHONY: format
 format:
@@ -15,6 +16,6 @@ endif
 .PHONY: test
 test:
 	rm -rf ./BuildTests
-	cmake . -BBuildTests -DCMAKE_BUILD_TYPE=Debug
+	cmake . -BBuildTests -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
 	cmake --build ./BuildTests --target runner
 	cmake --build ./BuildTests --target test
