@@ -7,21 +7,17 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Mustard
-{
+namespace Mustard {
 using BigUInt = uint64_t;
 
-constexpr size_t binomial_coeff(size_t n, size_t k)
-{
+constexpr size_t binomial_coeff(size_t n, size_t k) {
 	size_t res = 1;
 
-	if(k > n - k)
-	{
+	if(k > n - k) {
 		k = n - k;
 	}
 
-	for(size_t i = 0; i < k; i++)
-	{
+	for(size_t i = 0; i < k; i++) {
 		res *= (n - i);
 		res /= (i + 1);
 	}
@@ -29,55 +25,45 @@ constexpr size_t binomial_coeff(size_t n, size_t k)
 	return res;
 }
 
-class BinomialCoeffs
-{
+class BinomialCoeffs {
 private:
 	// May change to one dim vector for cache optimization
 	std::vector<std::vector<size_t>> coeffs_;
 
 public:
-	explicit BinomialCoeffs(size_t max_n) : coeffs_(max_n + 1)
-	{
-		for(size_t n = 0; n <= max_n; n++)
-		{
+	explicit BinomialCoeffs(size_t max_n) : coeffs_(max_n + 1) {
+		for(size_t n = 0; n <= max_n; n++) {
 			coeffs_[n].resize(n + 1);
 			coeffs_[n][0] = 1;
 			coeffs_[n][n] = 1;
 		}
-		for(size_t n = 1; n <= max_n; n++)
-		{
-			for(size_t k = 1; k < n; k++)
-			{
+		for(size_t n = 1; n <= max_n; n++) {
+			for(size_t k = 1; k < n; k++) {
 				coeffs_[n][k] = coeffs_[n - 1][k - 1] + coeffs_[n - 1][k];
 			}
 		}
 	}
 
-	size_t coeffs(size_t n, size_t k) const
-	{
+	size_t coeffs(size_t n, size_t k) const {
 		assert(k <= n);
 		assert(n < coeffs_.size());
 		return coeffs_[n][k];
 	}
 };
 
-constexpr auto count_trailing_zeros(uint64_t n) -> int
-{
+constexpr auto count_trailing_zeros(uint64_t n) -> int {
 	return std::countr_zero(n);
 }
 
-constexpr auto count_trailing_ones(uint64_t n) -> int
-{
+constexpr auto count_trailing_ones(uint64_t n) -> int {
 	return std::countr_one(n);
 }
 
-constexpr auto count_ones(uint64_t n) -> int
-{
+constexpr auto count_ones(uint64_t n) -> int {
 	return std::popcount(n);
 }
 
-constexpr auto fill_ones(uint32_t n) -> BigUInt
-{
+constexpr auto fill_ones(uint32_t n) -> BigUInt {
 	return (BigUInt(1U) << n) - 1;
 }
 
@@ -96,8 +82,7 @@ constexpr auto count_trailing_zeros(unsigned __int128 n) -> int {
 BigUInt pivot_to_rep(const std::vector<size_t>& pivot);
 std::vector<size_t> rep_to_pivot(size_t modes, BigUInt val);
 
-class MultisetGenerator
-{
+class MultisetGenerator {
 private:
 	// using BigUInt = unsigned __int128;
 
@@ -112,8 +97,7 @@ public:
 	 * In this representation, 0 means a wall and 1 means the element.
 	 * E.g. 0110 == [0,2,0]
 	 */
-	struct RepIterator
-	{
+	struct RepIterator {
 		using iterator_category = std::forward_iterator_tag;
 		using difference_type = BigUInt;
 		using vaule_type = BigUInt;
@@ -134,8 +118,7 @@ public:
 			return r;
 		}
 
-		void next()
-		{
+		void next() {
 			BigUInt t = val_ | (val_ - 1);
 			BigUInt w = (t + 1) | (((~t & -~t) - 1) >> (count_trailing_zeros(val_) + 1));
 			val_ = w;
@@ -154,8 +137,7 @@ public:
 
 	RepIterator begin() const { return RepIterator{(BigUInt(1) << BigUInt(n_)) - 1}; }
 
-	RepIterator end() const
-	{
+	RepIterator end() const {
 		RepIterator r{((BigUInt(1) << BigUInt(n_)) - 1) << (m_ - 1)};
 		r.next();
 		return r;
@@ -163,8 +145,7 @@ public:
 
 	size_t size() const { return binomial_coeff(n_ + m_ - 1, n_); }
 
-	std::vector<size_t> to_pivot(BigUInt val) const
-	{
+	std::vector<size_t> to_pivot(BigUInt val) const {
 		assert(count_ones(val) == n_);
 
 		return Mustard::rep_to_pivot(m_, val);

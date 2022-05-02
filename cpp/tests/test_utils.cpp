@@ -6,22 +6,17 @@
 
 using namespace Mustard;
 
-TEST_CASE("Binomial coefficients", "[utils]")
-{
-	SECTION("Coefficients are correct")
-	{
+TEST_CASE("Binomial coefficients", "[utils]") {
+	SECTION("Coefficients are correct") {
 		auto bc1 = BinomialCoeffs(10);
-		for(size_t n = 0; n < 10; n++)
-		{
-			for(size_t k = 0; k <= n; k++)
-			{
+		for(size_t n = 0; n < 10; n++) {
+			for(size_t k = 0; k <= n; k++) {
 				REQUIRE(bc1.coeffs(n, k) == binomial_coeff(n, k));
 			}
 		}
 	}
 
-	SECTION("Coefficient must not depend on max_n")
-	{
+	SECTION("Coefficient must not depend on max_n") {
 		auto bc1 = BinomialCoeffs(10);
 		auto bc2 = BinomialCoeffs(20);
 
@@ -36,16 +31,13 @@ TEST_CASE("Binomial coefficients", "[utils]")
 	}
 }
 
-TEST_CASE("Pivots are correct")
-{
-	SECTION("modes = 3, photons = 2")
-	{
+TEST_CASE("Pivots are correct") {
+	SECTION("modes = 3, photons = 2") {
 		MultisetGenerator mgntr(3, 2);
 
 		std::vector<BigUInt> reps;
 		reps.reserve(mgntr.size());
-		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter)
-		{
+		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter) {
 			reps.emplace_back(*iter);
 		}
 
@@ -66,14 +58,12 @@ TEST_CASE("Pivots are correct")
 		REQUIRE(mgntr.to_pivot(reps[5]) == std::vector<size_t>({2, 0, 0}));
 	}
 
-	SECTION("modes = 4, photons = 1")
-	{
+	SECTION("modes = 4, photons = 1") {
 		MultisetGenerator mgntr(4, 1);
 
 		std::vector<BigUInt> reps;
 		reps.reserve(mgntr.size());
-		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter)
-		{
+		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter) {
 			reps.emplace_back(*iter);
 		}
 
@@ -90,14 +80,12 @@ TEST_CASE("Pivots are correct")
 		REQUIRE(mgntr.to_pivot(reps[3]) == std::vector<size_t>({1, 0, 0, 0}));
 	}
 
-	SECTION("modes = 4, photons = 2")
-	{
+	SECTION("modes = 4, photons = 2") {
 		MultisetGenerator mgntr(4, 2);
 
 		std::vector<BigUInt> reps;
 		reps.reserve(mgntr.size());
-		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter)
-		{
+		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter) {
 			reps.emplace_back(*iter);
 		}
 
@@ -126,14 +114,12 @@ TEST_CASE("Pivots are correct")
 		REQUIRE(mgntr.to_pivot(reps[9]) == std::vector<size_t>({2, 0, 0, 0}));
 	}
 
-	SECTION("modes = 4, photons = 3")
-	{
+	SECTION("modes = 4, photons = 3") {
 		MultisetGenerator mgntr(4, 3);
 
 		std::vector<BigUInt> reps;
 		reps.reserve(mgntr.size());
-		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter)
-		{
+		for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter) {
 			reps.emplace_back(*iter);
 		}
 
@@ -161,23 +147,18 @@ TEST_CASE("Pivots are correct")
 		REQUIRE(mgntr.to_pivot(reps[19]) == std::vector<size_t>({3, 0, 0, 0}));
 	}
 
-	SECTION("Test to representation")
-	{
-		for(uint32_t modes = 1; modes <= 10; modes++)
-		{
-			for(uint32_t photons = 0; photons < 10; photons++)
-			{
+	SECTION("Test to representation") {
+		for(uint32_t modes = 1; modes <= 10; modes++) {
+			for(uint32_t photons = 0; photons < 10; photons++) {
 				MultisetGenerator mgntr(modes, photons);
 
 				std::vector<BigUInt> reps;
 				reps.reserve(mgntr.size());
-				for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter)
-				{
+				for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter) {
 					reps.emplace_back(*iter);
 				}
 
-				for(const auto& r : reps)
-				{
+				for(const auto& r : reps) {
 					REQUIRE(pivot_to_rep(mgntr.to_pivot(r)) == r);
 				}
 			}

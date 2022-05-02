@@ -8,42 +8,35 @@
 
 using namespace Mustard;
 
-std::vector<size_t> all_skips_in_level(const AmplitudeComputer& ac, size_t n)
-{
+std::vector<size_t> all_skips_in_level(const AmplitudeComputer& ac, size_t n) {
 	const size_t level_size = ac.level_size(n);
 	std::vector<size_t> res;
 	res.reserve(level_size);
 
-	for(size_t idx = 0; idx < level_size; idx++)
-	{
+	for(size_t idx = 0; idx < level_size; idx++) {
 		res.emplace_back(ac.skips_in_level(n, idx));
 	}
 	return res;
 }
 
-TEST_CASE("Test starting indices", "[AmplitudeComputer]")
-{
+TEST_CASE("Test starting indices", "[AmplitudeComputer]") {
 	auto test_modes = {1, 2, 3, 5, 8, 11, 15};
-	for(size_t modes : test_modes)
-	{
+	for(size_t modes : test_modes) {
 		auto ac = AmplitudeComputer(modes);
 
 		ac.increase_max_n(10);
 
 		REQUIRE(ac.modes() == modes);
 
-		for(size_t n = 0; n <= 10; n++)
-		{
+		for(size_t n = 0; n <= 10; n++) {
 			REQUIRE((ac.starting_indices(n + 1) - ac.starting_indices(n))
 					== binomial_coeff(modes + n - 1, modes - 1));
 		}
 	}
 }
 
-TEST_CASE("Test skips", "[AmplitudeComputer]")
-{
-	SECTION("Modes = 5")
-	{
+TEST_CASE("Test skips", "[AmplitudeComputer]") {
+	SECTION("Modes = 5") {
 		const size_t modes = 5;
 		auto ac = AmplitudeComputer(modes);
 		ac.increase_max_n(5);
@@ -68,8 +61,7 @@ TEST_CASE("Test skips", "[AmplitudeComputer]")
 					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 					4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4});
 	}
-	SECTION("Modes = 7")
-	{
+	SECTION("Modes = 7") {
 		const size_t modes = 7;
 		auto ac = AmplitudeComputer(modes);
 		ac.increase_max_n(4);
@@ -100,14 +92,12 @@ TEST_CASE("Test skips", "[AmplitudeComputer]")
 	}
 }
 
-TEST_CASE("Test fill next level", "[AmplitudeComputer]")
-{
+TEST_CASE("Test fill next level", "[AmplitudeComputer]") {
 	using namespace Catch::literals;
 	using Mustard::Approx;
 	std::complex<double> G_minus_one{0.0, 0.0};
 
-	SECTION("D(0.8 + 1.2j) * 5")
-	{
+	SECTION("D(0.8 + 1.2j) * 5") {
 		const size_t modes = 5;
 		std::vector<std::complex<double>> A(modes * modes, {0.0, 0.0});
 		std::vector<std::complex<double>> b(modes, {0.8, -1.2});

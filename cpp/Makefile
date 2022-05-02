@@ -7,9 +7,9 @@ help:
 .PHONY: format
 format:
 ifdef check
-	./bin/format --check --cfversion $(if $(version:-=),$(version),0) ./src ./tests
+	./bin/format --check --cfversion 13 ./src ./tests
 else
-	./bin/format --cfversion $(if $(version:-=),$(version),0) ./src ./tests
+	./bin/format --cfversion 13 ./src ./tests
 endif
 
 .PHONY: test
