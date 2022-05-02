@@ -123,6 +123,40 @@ def ket_to_dm(ket: Tensor) -> Tensor:
     return math.outer(ket, math.conj(ket))
 
 
+def dm_to_ket(dm: Tensor) -> Tensor:
+    r"""Maps a density matrix to a ket if the state is pure.
+
+    If the state is pure :math:`\hat \rho= |\psi\rangle\langle \psi|` then the
+    ket is the eigenvector of :math:`\rho` corresponding to the eigenvalue 1.
+
+    Args:
+        dm (Tensor): the density matrix
+
+    Returns:
+        Tensor: the ket
+
+    Raises:
+        ValueError: if ket for mixed states cannot be calculated
+    """
+
+    is_pure_dm = np.isclose(purity(dm), 1.0, atol=1e-6)
+    if not is_pure_dm:
+        raise ValueError("Cannot calculate ket for mixed states.")
+
+    cutoffs = dm.shape[: len(dm.shape) // 2]
+    d = int(np.prod(cutoffs))
+    dm = math.reshape(dm, (d, d))
+    dm = normalize(dm, is_dm=True)
+
+    _, eigvecs = math.eigh(dm)
+    # eigenvalues and related eigenvectors are sorted in non-decreasing order,
+    # meaning the associated eigvec to eigval 1 is stored last.
+    ket = eigvecs[:, -1]
+    ket = math.reshape(ket, cutoffs)
+
+    return ket
+
+
 def ket_to_probs(ket: Tensor) -> Tensor:
     r"""Maps a ket to probabilities.
 
@@ -423,9 +457,12 @@ def trace(dm, keep: List[int]):
     N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]
     # put at the end all of the indices to trace over
-    dm = math.transpose(
-        dm, [i for pair in [(k, k + N) for k in keep] + [(t, t + N) for t in trace] for i in pair]
-    )
+    keep_idx = [i for pair in [(k, k + N) for k in keep] for i in pair]
+    keep_idx = keep_idx[::2] + keep_idx[1::2]
+    trace_idx = [i for pair in [(t, t + N) for t in trace] for i in pair]
+    trace_idx = trace_idx[::2] + trace_idx[1::2]  # stagger the indices
+    dm = math.transpose(dm, keep_idx + trace_idx)
+
     d = int(np.prod(dm.shape[-len(trace) :]))
     # make it square on those indices
     dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
