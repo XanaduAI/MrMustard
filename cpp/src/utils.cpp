@@ -7,14 +7,14 @@ BigUInt pivot_to_rep(const std::vector<size_t>& pivot) {
     BigUInt res = 0;
     for(size_t n = 0; n < pivot.size() - 1; n++) {
         res <<= pivot[n];
-        res |= fill_ones(pivot[n]);
+        res |= lower_parity(pivot[n]);
         res <<= 1;
     }
 
     // n == 0
     const auto last = pivot.back();
     res <<= last;
-    res |= fill_ones(last);
+    res |= lower_parity(last);
     return res;
 }
 

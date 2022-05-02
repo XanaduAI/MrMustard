@@ -92,6 +92,22 @@ TEST_CASE("Test skips", "[AmplitudeComputer]") {
     }
 }
 
+/*
+TEST_CASE("Test indices are correct", "[AmplitudeComputer]") {
+
+    const size_t modes = 5;
+    auto ac = AmplitudeComputer(modes);
+    ac.increase_max_n(10);
+    for(size_t n = 0; n < 10; n++) {
+        MultisetGenerator mgntr(modes, n);
+
+        for(auto iter = mgntr.begin(); iter != mgntr.end(); ++iter) {
+            REQUIRE(ac.new_lower_indices_in_level(n, *iter) == ac.lower_indices_in_level(n, *iter));
+        }
+    }
+}
+*/
+
 TEST_CASE("Test fill next level", "[AmplitudeComputer]") {
     using namespace Catch::literals;
     using Mustard::Approx;
@@ -142,7 +158,7 @@ TEST_CASE("Test fill next level", "[AmplitudeComputer]") {
         REQUIRE(norm2 == 0.00164578868_a);
         REQUIRE(norm3 == 0.00570540076_a);
     }
-    SECTION("SqueezedVaccum([1.2] * 7)") {
+    SECTION("SqueezedVaccum([1.2] * 7) >> Interferometer") {
         const size_t modes = 7;
         std::vector<std::complex<double>> A{{
             {0.038036107637630705, -0.4723208200410345},

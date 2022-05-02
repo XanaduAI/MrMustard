@@ -9,9 +9,9 @@ using namespace Mustard;
 TEST_CASE("Binomial coefficients", "[utils]") {
     SECTION("Coefficients are correct") {
         auto bc1 = BinomialCoeffs(10);
-        for(size_t n = 0; n < 10; n++) {
+        for(size_t n = 1; n < 10; n++) {
             for(size_t k = 0; k <= n; k++) {
-                REQUIRE(bc1.coeffs(n, k) == binomial_coeff(n, k));
+                REQUIRE(bc1.coeff(n, k) == binomial_coeff(n, k));
             }
         }
     }
@@ -20,14 +20,14 @@ TEST_CASE("Binomial coefficients", "[utils]") {
         auto bc1 = BinomialCoeffs(10);
         auto bc2 = BinomialCoeffs(20);
 
-        REQUIRE(bc1.coeffs(5, 0) == bc2.coeffs(5, 0));
-        REQUIRE(bc1.coeffs(5, 3) == bc2.coeffs(5, 3));
-        REQUIRE(bc1.coeffs(5, 5) == bc2.coeffs(5, 5));
+        REQUIRE(bc1.coeff(5, 0) == bc2.coeff(5, 0));
+        REQUIRE(bc1.coeff(5, 3) == bc2.coeff(5, 3));
+        REQUIRE(bc1.coeff(5, 5) == bc2.coeff(5, 5));
 
-        REQUIRE(bc1.coeffs(7, 5) == bc2.coeffs(7, 5));
-        REQUIRE(bc1.coeffs(7, 7) == bc2.coeffs(7, 7));
+        REQUIRE(bc1.coeff(7, 5) == bc2.coeff(7, 5));
+        REQUIRE(bc1.coeff(7, 7) == bc2.coeff(7, 7));
 
-        REQUIRE(bc1.coeffs(10, 5) == bc2.coeffs(10, 5));
+        REQUIRE(bc1.coeff(10, 5) == bc2.coeff(10, 5));
     }
 }
 

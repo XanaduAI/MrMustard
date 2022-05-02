@@ -25,30 +25,45 @@ constexpr size_t binomial_coeff(size_t n, size_t k) {
     return res;
 }
 
+constexpr size_t multisubset_size(size_t m, size_t n) {
+    return binomial_coeff(m + n - 1, m - 1);
+}
+
 class BinomialCoeffs {
 private:
-    // May change to one dim vector for cache optimization
+    size_t max_n_;
     std::vector<std::vector<size_t>> coeffs_;
 
 public:
-    explicit BinomialCoeffs(size_t max_n) : coeffs_(max_n + 1) {
-        for(size_t n = 0; n <= max_n; n++) {
+    BinomialCoeffs() : max_n_{1}, coeffs_{{1}, {1, 1}} { }
+
+    explicit BinomialCoeffs(size_t max_n) : BinomialCoeffs() { resize(max_n); }
+
+    size_t coeff(size_t n, size_t k) const {
+        assert(k <= n);
+        assert(n < coeffs_.size());
+        return coeffs_[n][k];
+    }
+
+    void resize(size_t new_max_n) {
+        if(new_max_n <= max_n_)
+            return;
+
+        coeffs_.resize(new_max_n + 1);
+
+        for(size_t n = max_n_ + 1; n <= new_max_n; n++) {
             coeffs_[n].resize(n + 1);
             coeffs_[n][0] = 1;
             coeffs_[n][n] = 1;
         }
-        for(size_t n = 1; n <= max_n; n++) {
+        for(size_t n = max_n_ + 1; n <= new_max_n; n++) {
             for(size_t k = 1; k < n; k++) {
                 coeffs_[n][k] = coeffs_[n - 1][k - 1] + coeffs_[n - 1][k];
             }
         }
     }
 
-    size_t coeffs(size_t n, size_t k) const {
-        assert(k <= n);
-        assert(n < coeffs_.size());
-        return coeffs_[n][k];
-    }
+    size_t max_n() const { return max_n_; }
 };
 
 constexpr auto count_trailing_zeros(uint64_t n) -> int {
@@ -63,8 +78,18 @@ constexpr auto count_ones(uint64_t n) -> int {
     return std::popcount(n);
 }
 
-constexpr auto fill_ones(uint32_t n) -> BigUInt {
+/**
+ * @brief Fill LSB to n 1
+ */
+constexpr auto lower_parity(uint32_t n) -> BigUInt {
     return (BigUInt(1U) << n) - 1;
+}
+
+/**
+ * @brief Fill MSB to n 1
+ */
+constexpr auto upper_parity(uint32_t n) -> BigUInt {
+    return (~BigUInt(0)) << BigUInt{n};
 }
 
 /*

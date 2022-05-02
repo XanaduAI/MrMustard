@@ -30,6 +30,6 @@ include(Catch)
 set(TEST_SOURCES test_utils.cpp test_amplitude_computer.cpp)
 
 add_executable(runner ${TEST_SOURCES})
-target_link_libraries(runner PRIVATE Catch2::Catch2WithMain gaussian_computer_src)
+target_link_libraries(runner PRIVATE Catch2::Catch2WithMain gaussian_computer_lib)
 
 catch_discover_tests(runner)

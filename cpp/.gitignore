@@ -1,5 +1,6 @@
 .ycm_extra_conf.py
 build/
 BuildTests/
+BuildExamples/
 
 .lvimrc

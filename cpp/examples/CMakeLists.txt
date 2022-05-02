@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.14)
+
+project(GaussianAmplitudeComputer_examples)
+
+add_executable(squeezed squeezed.cpp)
+target_link_libraries(squeezed PRIVATE gaussian_computer_dependency gaussian_computer_lib)
