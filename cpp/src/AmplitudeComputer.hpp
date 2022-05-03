@@ -91,10 +91,6 @@ public:
 
         for(size_t idx = 0; idx < pivot.size() - skip; idx++) {
             ++pivot[idx];
-            /*
-            const auto rep_up = pivot_to_rep(pivot);
-            indices.push_back(get_rep_idx_in_level(n + 1, rep_up));
-            */
             indices.push_back(get_pivot_idx_in_level(n+1, pivot));
             --pivot[idx];
         }
@@ -110,8 +106,6 @@ public:
             if(pivot[idx] > 0) {
                 --pivot[idx];
                 indices[idx] = get_pivot_idx_in_level(n-1, pivot);
-                //const auto rep_low = pivot_to_rep(pivot);
-                //indices[idx] = get_rep_idx_in_level(n - 1, rep_low);
                 ++pivot[idx];
             }
         }
