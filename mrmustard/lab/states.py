@@ -435,6 +435,7 @@ class Gaussian(Parametrized, State):
             eigenvalues_trainable=eigenvalues_trainable,
             symplectic_trainable=symplectic_trainable,
             eigenvalues_bounds=eigenvalues_bounds,
+            symplectic_bounds=(None, None),
             modes=modes,
             normalize=normalize,
         )
