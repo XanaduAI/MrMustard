@@ -7,6 +7,9 @@
 * States in Gaussian and Fock representation now can be concatenated.
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
+* Parameter passthrough allows to use custom parameters in the model.
+  [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
+
   ```python
   from mrmustard.lab.states import Gaussian, Fock'
   from mrmustard.lab.gates import Attenuator
