@@ -36,15 +36,15 @@ class Parametrized:
         self._param_names = []
         owner = f"{self.__class__.__qualname__}"
         for name, value in kwargs.items():
-            trainable = name + "_trainable" in kwargs and kwargs[name + "_trainable"] is True
-            constant  = name + "_trainable" in kwargs and kwargs[name + "_trainable"] is False
+            trainable = (name + "_trainable" in kwargs and kwargs[name + "_trainable"] is True) or (math.from_backend(value) and math.is_trainable(value))
+            constant  = name + "_trainable" in kwargs and kwargs[name + "_trainable"] is False or (math.from_backend(value) and not math.is_trainable(value))
             param_type = 'symplectic' if name.startswith('symplectic') else 'orthogonal' if name.startswith('orthogonal') else 'euclidean'
             if trainable:
                 if not math.from_backend(value) or (math.from_backend(value) and not math.is_trainable(value)):
                     value = math.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
                 self._trainable_parameters[param_type].append(value)
             elif constant:
-                if not math.from_backend(value) or (math.from_backend(value) and math.is_trainable(value)):
+                if not math.from_backend(value):
                     value = math.new_constant(value, owner + ":" + name)
                 self._constant_parameters[param_type].append(value)
             else:
