@@ -587,7 +587,7 @@ def general_dyne(
     new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
     new_means = a + math.matvec(math.matmul(AB, inv), proj_means - b)
     prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * (proj_means - b))) / (
-        pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
+        pi ** nB * (hbar ** -nB) * math.sqrt(math.det(B + proj_cov))
     )  # TODO: check this (hbar part especially)
     return prob, new_cov, new_means
 
@@ -630,9 +630,9 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
     dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-        2 * hbar**2
+        2 * hbar ** 2
     )
-    CC = (cov**2 + mCm) / (2 * hbar**2)
+    CC = (cov ** 2 + mCm) / (2 * hbar ** 2)
     return (
         CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
     )

@@ -29,6 +29,7 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
 
 from mrmustard.math import Math
+
 math = Math()
 
 
@@ -235,11 +236,13 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
 
 def test_parameter_passthrough():
-    """Same as the test above, but with param passthrough
-    """
+    """Same as the test above, but with param passthrough"""
     tf.random.set_seed(137)
     r = np.arcsinh(1.0)
-    par = Parametrized(r=math.new_variable(r, (0.0,None),'r'), phi=math.new_variable(np.random.normal(),(None,None),'phi'))
+    par = Parametrized(
+        r=math.new_variable(r, (0.0, None), "r"),
+        phi=math.new_variable(np.random.normal(), (None, None), "phi"),
+    )
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
