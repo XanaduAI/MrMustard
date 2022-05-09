@@ -7,7 +7,16 @@
 * States in Gaussian and Fock representation now can be concatenated.
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
-* Parameter passthrough allows to use custom parameters in the model.
+* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example, 
+    ```python
+    from mrmustard.lab.gates import Sgate, BSgate
+    
+    BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
+    S0 = Sgate(r=BS.theta)[0]
+    S1 = Sgate(r=-BS.theta)[1]
+    
+    circ = S0 >> S1 >> BS
+    ```
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
 
   ```python
