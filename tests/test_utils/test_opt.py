@@ -23,9 +23,14 @@ from thewalrus.symplectic import two_mode_squeezing
 from mrmustard.lab.gates import Sgate, BSgate, S2gate, Ggate, Interferometer, Ggate
 from mrmustard.lab.circuit import Circuit
 from mrmustard.utils.training import Optimizer
+from mrmustard.utils.parametrized import Parametrized
 from mrmustard.lab.states import Vacuum
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
+
+from mrmustard.math import Math
+
+math = Math()
 
 
 @given(n=st.integers(0, 3))
@@ -227,6 +232,29 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+
+
+def test_parameter_passthrough():
+    """Same as the test above, but with param passthrough"""
+    tf.random.set_seed(137)
+    r = np.arcsinh(1.0)
+    par = Parametrized(
+        r=math.new_variable(r, (0.0, None), "r"),
+        phi=math.new_variable(np.random.normal(), (None, None), "phi"),
+    )
+    ops = [
+        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
+        S2gate(r=par.r, phi=par.phi)[1, 2],
+    ]
+    circ = Circuit(ops)
+
+    def cost_fn():
+        return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+
+    opt = Optimizer(euclidean_lr=0.001)
+    opt.minimize(cost_fn, by_optimizing=[par], max_steps=300)
     assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
 
 

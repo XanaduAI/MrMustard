@@ -31,25 +31,36 @@ class Parametrized:
     """
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
-        self._trainable_parameters = []
-        self._constant_parameters = []
+        self._trainable_parameters = {"symplectic": [], "euclidean": [], "orthogonal": []}
+        self._constant_parameters = {"symplectic": [], "euclidean": [], "orthogonal": []}
         self._param_names = []
         owner = f"{self.__class__.__qualname__}"
         for name, value in kwargs.items():
-            if math.from_backend(value):
-                if math.is_trainable(value):
-                    self._trainable_parameters.append(value)
-                elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
+            trainable = (name + "_trainable" in kwargs and kwargs[name + "_trainable"] is True) or (
+                math.from_backend(value) and math.is_trainable(value)
+            )
+            constant = (
+                name + "_trainable" in kwargs
+                and kwargs[name + "_trainable"] is False
+                or (math.from_backend(value) and not math.is_trainable(value))
+            )
+            param_type = (
+                "symplectic"
+                if name.startswith("symplectic")
+                else "orthogonal"
+                if name.startswith("orthogonal")
+                else "euclidean"
+            )
+            if trainable:
+                if not math.from_backend(value) or (
+                    math.from_backend(value) and not math.is_trainable(value)
+                ):
                     value = math.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
-                    self._trainable_parameters.append(value)
-                else:
-                    self._constant_parameters.append(value)
-            elif name + "_trainable" in kwargs and kwargs[name + "_trainable"]:
-                value = math.new_variable(value, kwargs[name + "_bounds"], owner + ":" + name)
-                self._trainable_parameters.append(value)
-            elif name + "_trainable" in kwargs and not kwargs[name + "_trainable"]:
-                value = math.new_constant(value, owner + ":" + name)
-                self._constant_parameters.append(value)
+                self._trainable_parameters[param_type].append(value)
+            elif constant:
+                if not math.from_backend(value):
+                    value = math.new_constant(value, owner + ":" + name)
+                self._constant_parameters[param_type].append(value)
             else:
                 name = "_" + name
             self.__dict__[name] = value
@@ -61,21 +72,17 @@ class Parametrized:
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(
-                    [p for item in self._ops for p in item.trainable_parameters["symplectic"]]
+                    [p for op in self._ops for p in op.trainable_parameters["symplectic"]]
                 ),
                 "orthogonal": math.unique_tensors(
-                    [p for item in self._ops for p in item.trainable_parameters["orthogonal"]]
+                    [p for op in self._ops for p in op.trainable_parameters["orthogonal"]]
                 ),
                 "euclidean": math.unique_tensors(
-                    [p for item in self._ops for p in item.trainable_parameters["euclidean"]]
+                    [p for op in self._ops for p in op.trainable_parameters["euclidean"]]
                 ),
             }
 
-        return {
-            "symplectic": [],
-            "orthogonal": [],
-            "euclidean": self._trainable_parameters,
-        }  # default
+        return self._trainable_parameters  # default
 
     @property
     def constant_parameters(self) -> Dict[str, List[Tensor]]:
@@ -83,18 +90,14 @@ class Parametrized:
         if hasattr(self, "_ops"):
             return {
                 "symplectic": math.unique_tensors(
-                    [p for item in self._ops for p in item.constant_parameters["symplectic"]]
+                    [p for op in self._ops for p in op.constant_parameters["symplectic"]]
                 ),
                 "orthogonal": math.unique_tensors(
-                    [p for item in self._ops for p in item.constant_parameters["orthogonal"]]
+                    [p for op in self._ops for p in op.constant_parameters["orthogonal"]]
                 ),
                 "euclidean": math.unique_tensors(
-                    [p for item in self._ops for p in item.constant_parameters["euclidean"]]
+                    [p for op in self._ops for p in op.constant_parameters["euclidean"]]
                 ),
             }
 
-        return {
-            "symplectic": [],
-            "orthogonal": [],
-            "euclidean": self._constant_parameters,
-        }  # default
+        return self._constant_parameters  # default
