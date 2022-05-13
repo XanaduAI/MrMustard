@@ -421,7 +421,7 @@ class Gaussian(Parametrized, State):
         normalize: bool = False,
     ):
         if symplectic is None:
-            symplectic = training.new_symplectic(num_modes=num_modes)
+            symplectic = math.random_symplectic(num_modes=num_modes)
         if eigenvalues is None:
             eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
         if math.any(math.atleast_1d(eigenvalues) < settings.HBAR / 2):
