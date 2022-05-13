@@ -19,7 +19,7 @@ from functools import lru_cache
 from itertools import product
 import numpy as np
 from scipy.special import binom
-from scipy.stats import unitary_group
+from scipy.stats import unitary_group, ortho_group
 
 from mrmustard.types import (
     List,
@@ -916,7 +916,7 @@ class MathInterface(ABC):
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
+    def random_symplectic(self, num_modes: int, max_r: float = 1.0) -> Tensor:
         r"""A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
@@ -933,13 +933,21 @@ class MathInterface(ABC):
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
         return OW @ dd @ OV
 
-    def random_orthogonal(self, num_modes: int = 1) -> Tensor:
-        """A random orthogonal matrix in :math:`O(2*num_modes)`."""
-        if num_modes == 1:
+    def random_orthogonal(self, N: int) -> Tensor:
+        """A random orthogonal matrix in :math:`O(N)`."""
+        if N == 1:
+            return np.array([[1.0]])
+        else:
+            return ortho_group.rvs(dim=N)
+
+
+    def random_unitary(self, N: int) -> Tensor:
+        """A random unitary matrix in :math:`U(N)`."""
+        if N == 1:
             W = self.exp(1j * np.random.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=num_modes)
-        return self.unitary_to_orthogonal(W)
+            W = unitary_group.rvs(dim=N)
+        return W
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
         r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""
