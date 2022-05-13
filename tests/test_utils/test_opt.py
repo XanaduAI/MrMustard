@@ -20,7 +20,15 @@ import tensorflow as tf
 
 from thewalrus.symplectic import two_mode_squeezing
 
-from mrmustard.lab.gates import Sgate, BSgate, S2gate, Ggate, Interferometer, Ggate, RealInterferometer
+from mrmustard.lab.gates import (
+    Sgate,
+    BSgate,
+    S2gate,
+    Ggate,
+    Interferometer,
+    Ggate,
+    RealInterferometer,
+)
 from mrmustard.lab.circuit import Circuit
 from mrmustard.utils.training import Optimizer
 from mrmustard.utils.parametrized import Parametrized
