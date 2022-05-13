@@ -6,7 +6,7 @@
 #                                                                              #
 ################################################################################
 @njit
-def next_pivot(vec, i=0, reset=False):
+def next_pivot(tup, i=0, reset=False):
     r"""Computes the next pivot (vector of integers) given the current pivot and
     an index specifying which of the integers is going to be decreased next.
     It recursively works its way through all the tuples of integers with constant sum.

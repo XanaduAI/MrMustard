@@ -15,7 +15,7 @@
 import multiprocessing
 import numpy as np
 from numba import njit, typeof, prange
-from numba.types import int64
+from numba.types import complex128
 from numba.typed import Dict, List
 from scipy.special import binom
 
@@ -29,8 +29,7 @@ for m in range(BINOM.shape[0]):
 SQRT = np.sqrt(np.arange(1000))
 
 # These are just for an attempt at parallelizing numba
-PIVOTS = Dict.empty(key_type=typeof((0,0)), value_type=int64[:,:])
-SKIPS = Dict.empty(key_type=typeof((0,0)), value_type=int64[:])
+
 
 
 @njit
@@ -62,7 +61,7 @@ def lvl_pivots(M, N, PIVOTS):
     # recursive formulation:
     # (doesn't matter if it's slowish because we're caching the results)
     if M == 1:
-        return np.array([[N]])
+        return (N,)
     else:
         T = 0
         pivots = np.zeros((len_lvl(M, N), M), dtype=np.int64)
@@ -189,28 +188,23 @@ def consume_one_pivot(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx):
     return norm_squared
 
 
+# @njit
+# def consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx, dL_dA, dL_db, dL_dG):
+#     r"""
+#     Computes the vector-jacobian product dL_dG @ dG_dA and dL_dG @ dG_db.
+#     """
+#     N = np.sum(pivot)
+#     UP = upper(pivot, UP, skip)
+#     LO = lower(pivot, LO)
+#     for m in range(len(UP)-skip):
+#         if m in bidx:
+#             dL_db[m] += dL_dG[N+1][UP[m]] * G[N][pivot_idx] * SQRT[pivot[m]+1]
+#         for n in Aidx[m]:
+#             dL_dA[m,n] += 1/2 * dL_dG[N+1][UP[m]] * SQRT[pivot[n]+1-np.int(m==n)] * SQRT[pivot[m]+1] * G[N-1][LO[n]]
+#     return dL_dA, dL_db
+
+
 @njit
-def consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skip, pivot, pivot_idx, dL_dA, dL_db, dL_dG):
-    r"""
-    Computes the vector-jacobian product dL_dG @ dG_dA and dL_dG @ dG_db.
-    """
-    # dL_dA = dL_dG @ dG_dA (1d @ 3d)
-    # dL_db = dL_dG @ dG_db (1d @ 2d)
-    # i.e. we have to sum along the G_up vector only dimension
-    N = np.sum(pivot)
-    UP = upper(pivot, UP, skip)
-    LO = lower(pivot, LO)
-    for m in range(len(UP)-skip):
-        if m in bidx:
-            # dL_db[m] += dL_dG[N+1][UP[m]] * G[N][pivot_idx] / SQRT[pivot[m]+1]
-            dL_db[m] += dL_dG[N+1][UP[m]] * G[N][pivot_idx] * SQRT[pivot[m]+1]
-        for n in Aidx[m]:
-            # dL_dA[m,n] += dL_dG[N+1][UP[m]] * SQRT[pivot[n]] * G[N-1][LO[n]] / SQRT[pivot[m]+1]
-            dL_dA[m,n] += 1/2 * dL_dG[N+1][UP[m]] * SQRT[pivot[n]+1-np.int(m==n)] * SQRT[pivot[m]+1] * G[N-1][LO[n]]
-    return dL_dA, dL_db
-
-
-@njit(parallel=False)
 def fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS):
     r""" Fills all the amplitudes with index of weight N+1 in G, using the diverge algorithm.
 
@@ -231,47 +225,24 @@ def fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS):
     return norm_squared
 
 
-@njit(parallel=False)
-def fill_N_plus_one_vjp(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS, dL_dA, dL_db, dL_dG):
-    r""" Computes the vector-jacobian product dL_dG @ dG_dA and dL_dG @ dG_db.
-    """
-    M = A.shape[-1]
-    UP = np.zeros(M, dtype=np.int64)
-    LO = np.zeros(M, dtype=np.int64)
-    pivots = lvl_pivots(M, N, PIVOTS)
-    skips = lvl_skips(M, N, SKIPS)
-    for i, pivot in enumerate(pivots):
-        dL_dA, dL_db = consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skips[i], pivot, i, dL_dA, dL_db, dL_dG)
-    return dL_dA, dL_db
+# @njit(parallel=False)
+# def fill_N_plus_one_vjp(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS, dL_dA, dL_db, dL_dG):
+#     r""" Computes the vector-jacobian product dL_dG @ dG_dA and dL_dG @ dG_db.
+#     """
+#     M = A.shape[-1]
+#     UP = np.zeros(M, dtype=np.int64)
+#     LO = np.zeros(M, dtype=np.int64)
+#     pivots = lvl_pivots(M, N, PIVOTS)
+#     skips = lvl_skips(M, N, SKIPS)
+#     for i, pivot in enumerate(pivots):
+#         dL_dA, dL_db = consume_one_pivot_vjp(A, b, Aidx, bidx, G, UP, LO, skips[i], pivot, i, dL_dA, dL_db, dL_dG)
+#     return dL_dA, dL_db
 
 
-@njit(parallel=True)
-def fill_N_plus_one_parallel(A, b, Aidx, bidx, G, N, P, S):
-    r""" Fills all the amplitudes with index of weight N+1 in G, using the diverge
-     algorithm. At the same time, the function f is called for each pivot of weight 'weight',
-     and its result is folded as F_i+1 = f(F_i, G[N+1]_i+1).
-
-    Args:
-        A, b: A matrix and b vector from the recursive representation
-        Aidx, bidx: indices of the non-zero entries in A and b
-        G: the dictionary of amplitudes (weight -> vectorized amplitudes)
-        N: the weight of the pivot
-        P: the pivots broken into chunks (for parallelization)
-        S: the skips broken into chunks (for parallelization)
-    """
-    M = A.shape[-1]
-    norm_squared = 0.0
-    for j in prange(len(P)): # need prange for parallelization
-        pivots = P[j]
-        skips = S[j]
-        UP = np.zeros(M, dtype=np.int64)
-        LO = np.zeros(M, dtype=np.int64)
-        for i,p in enumerate(pivots):
-            norm_squared += consume_one_pivot(A, b, Aidx, bidx, G, UP, LO, skips[i], pivots[i], i)
-    return norm_squared
 
 
-def fill_all_fold_norm(A, b, C, min_norm=0.99, parallel=False):
+
+def fill_all_fold_norm(A, b, C, min_norm=0.99):
     r""" Fills all the amplitudes in G, using the sparse fold
     algorithm while accumulating the norm. It stops when the norm reaches min_norm.
 
@@ -279,12 +250,6 @@ def fill_all_fold_norm(A, b, C, min_norm=0.99, parallel=False):
         A, b, C: A matrix, b vector and C scalar from the recursive representation
         min_norm: the minimum norm to reach
     """
-    # 1. Sparse indices
-    Aidx = [[] for _ in range(A.shape[-1])]
-    for m,n in np.transpose(np.nonzero(A)):
-        Aidx[m].append(n)
-    Aidx = tuple([tuple(row) for row in Aidx])
-    bidx = np.nonzero(b)[0]
 
     # 2. Some constants
     b_nonzero = len(bidx) > 0
@@ -293,20 +258,12 @@ def fill_all_fold_norm(A, b, C, min_norm=0.99, parallel=False):
 
     # 3. Initialize norm and the dictionary of amplitudes
     norm_squared = np.abs(C)**2
-    G = Dict.empty(key_type=int64, value_type=typeof(np.array([C])))
-    G[0] = np.array([C])
-    G[-1] = np.array([0.0j]) # for when the pivot is at level zero
+    G = Dict.empty(key_type=typeof((0,)*M), value_type=complex128)
+    G[(0,)*M] = C
 
     # 4. Fill the rest of the amplitudes and accumulate the norm
     while np.sqrt(norm_squared) < min_norm:
-        G[N + 1] = np.zeros(len_lvl(M, N+1), dtype=np.complex128) # empty array for next level
-        if parallel:
-            cpus = max(4, multiprocessing.cpu_count())
-            pivots = tuple(np.array_split(lvl_pivots(M, N, PIVOTS), cpus))
-            skips = tuple(np.array_split(lvl_skips(M, N, SKIPS), cpus))
-            norm_squared += fill_N_plus_one_parallel(A, b, List(Aidx), bidx, G, N, pivots, skips)
-        else:
-            norm_squared += fill_N_plus_one(A, b, Aidx, bidx, G, N, PIVOTS, SKIPS)
+        norm_squared += fill_N_plus_one(A, b, G, N, PIVOTS, SKIPS)
         N += 1 if b_nonzero else 2 # go to the next pivots
     return G, norm_squared
 

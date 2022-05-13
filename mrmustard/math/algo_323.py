@@ -4,20 +4,9 @@ from numba import njit
 from collections import defaultdict
 from copy import deepcopy
 
-# @njit
+@njit
 def largest(tup):
-    return np.argmax(np.array(tup))
-
-# @njit
-def smallest_nonzero(tup):
-    # e.g. if tup is (0,0,0,7,0,1), returns 3
-    smallest = tup[0]
-    position = 0
-    for i, val in enumerate(tup):
-        if val < smallest and val > 0:
-            smallest = val
-            position = i
-    return position
+    return tup.index(max(tup))
 
 # @njit
 def get_pivot(tup, strategy):
@@ -37,17 +26,6 @@ def get_lower_tuples(pivot):
 @njit
 def largest(vec):
     return np.argmax(vec)
-
-@njit
-def smallest_nonzero(vec):
-    # e.g. if tup is (0,0,0,7,0,1), returns 3
-    smallest = vec[0]
-    position = 0
-    for i, val in enumerate(vec):
-        if val < smallest and val > 0:
-            smallest = val
-            position = i
-    return position
 
 @njit
 def get_pivot(vec, strategy):
