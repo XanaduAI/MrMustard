@@ -26,6 +26,7 @@ class Settings:
         self.HOMODYNE_SQUEEZING = 10.0
         # misc
         self.PROGRESSBAR = True
+        self.LOGGING = True
 
     @property
     def backend(self):
