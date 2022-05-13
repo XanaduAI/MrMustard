@@ -103,8 +103,7 @@ class Optimizer:
                 sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
                 < 1e-6
             ):
-                if settings.LOGGING:
-                    self.log.info("Loss looks stable, stopping here.")
+                self.log.info("Loss looks stable, stopping here.")
                 return True
         return False
 
