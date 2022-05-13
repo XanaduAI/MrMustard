@@ -27,6 +27,7 @@ from mrmustard.utils import training
 from mrmustard.physics import gaussian
 
 from mrmustard.math import Math
+
 math = Math()
 
 __all__ = [
@@ -445,7 +446,7 @@ class Interferometer(Parametrized, Transformation):
     ):
         if orthogonal is None:
             U = math.random_unitary(num_modes)
-            orthogonal = math.block([[math.real(U), -math.imag(U)],[math.imag(U), math.real(U)]])
+            orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
@@ -489,7 +490,9 @@ class RealInterferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
     ):
         if orthogonal is None:
-            orthogonal = math.random_orthogonal(num_modes)#training.new_orthogonal(num_modes=num_modes)
+            orthogonal = math.random_orthogonal(
+                num_modes
+            )  # training.new_orthogonal(num_modes=num_modes)
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
@@ -497,10 +500,15 @@ class RealInterferometer(Parametrized, Transformation):
             modes=list(range(num_modes)),
         )
         self.is_gaussian = True
-    
+
     @property
     def X_matrix(self):
-        return math.block([[self.orthogonal, math.zeros_like(self.orthogonal)], [math.zeros_like(self.orthogonal), self.orthogonal]])
+        return math.block(
+            [
+                [self.orthogonal, math.zeros_like(self.orthogonal)],
+                [math.zeros_like(self.orthogonal), self.orthogonal],
+            ]
+        )
 
     def _validate_modes(self, modes):
         if len(modes) != self.orthogonal.shape[-1]:
@@ -536,7 +544,9 @@ class Ggate(Parametrized, Transformation):
         symplectic_trainable: bool = False,
     ):
         if symplectic is None:
-            symplectic = math.random_symplectic(num_modes)#training.new_symplectic(num_modes=num_modes)
+            symplectic = math.random_symplectic(
+                num_modes
+            )  # training.new_symplectic(num_modes=num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,

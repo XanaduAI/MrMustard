@@ -120,7 +120,6 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
-
 def update_symplectic(
     symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float
 ):

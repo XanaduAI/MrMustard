@@ -940,7 +940,6 @@ class MathInterface(ABC):
         else:
             return ortho_group.rvs(dim=N)
 
-
     def random_unitary(self, N: int) -> Tensor:
         """A random unitary matrix in :math:`U(N)`."""
         if N == 1:
