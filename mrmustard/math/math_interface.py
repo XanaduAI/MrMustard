@@ -872,12 +872,12 @@ class MathInterface(ABC):
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
         return OW @ dd @ OV
 
-    def random_orthogonal(self, N: int) -> Tensor:
+    @staticmethod
+    def random_orthogonal(N: int) -> Tensor:
         """A random orthogonal matrix in :math:`O(N)`."""
         if N == 1:
             return np.array([[1.0]])
-        else:
-            return ortho_group.rvs(dim=N)
+        return ortho_group.rvs(dim=N)
 
     def random_unitary(self, N: int) -> Tensor:
         """A random unitary matrix in :math:`U(N)`."""
