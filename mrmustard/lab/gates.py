@@ -23,7 +23,6 @@ from mrmustard.types import Tensor, Trainable
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard.utils import training
 from mrmustard.physics import gaussian
 
 from mrmustard.math import Math
