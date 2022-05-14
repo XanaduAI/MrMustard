@@ -68,7 +68,7 @@ class MathInterface(ABC):
         Returns:
             array: absolute value of array
         """
-        ...
+
 
     @abstractmethod
     def any(self, array: Tensor) -> bool:
@@ -80,7 +80,6 @@ class MathInterface(ABC):
         Returns:
             bool: True if any element of array is True
         """
-        ...
 
     @abstractmethod
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
@@ -95,7 +94,7 @@ class MathInterface(ABC):
         Returns:
             array: array of evenly spaced values
         """
-        ...  # NOTE: is float64 by default
+        # NOTE: is float64 by default
 
     @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
@@ -107,7 +106,6 @@ class MathInterface(ABC):
         Returns:
             array: NumPy array
         """
-        ...
 
     @abstractmethod
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
@@ -120,7 +118,6 @@ class MathInterface(ABC):
         Returns:
             array: tensor with value assigned
         """
-        ...
 
     @abstractmethod
     def astensor(self, array: Tensor, dtype: str) -> Tensor:
@@ -133,7 +130,6 @@ class MathInterface(ABC):
         Returns:
             array: tensor with dtype
         """
-        ...
 
     @abstractmethod
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
@@ -146,7 +142,6 @@ class MathInterface(ABC):
         Returns:
             array: array with at least one dimension
         """
-        ...
 
     @abstractmethod
     def cast(self, array: Tensor, dtype) -> Tensor:
@@ -159,7 +154,6 @@ class MathInterface(ABC):
         Returns:
             array: array cast to dtype
         """
-        ...
 
     @abstractmethod
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
@@ -173,7 +167,6 @@ class MathInterface(ABC):
         Returns:
             array: clipped array
         """
-        ...
 
     @abstractmethod
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
@@ -186,7 +179,6 @@ class MathInterface(ABC):
         Returns:
             array: concatenated values
         """
-        ...
 
     @abstractmethod
     def conj(self, array: Tensor) -> Tensor:
