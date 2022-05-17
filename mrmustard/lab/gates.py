@@ -433,7 +433,8 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
-        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
+        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`. 
+            If set to `None` a random orthogonal matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
