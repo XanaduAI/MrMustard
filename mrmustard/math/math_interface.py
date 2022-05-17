@@ -880,6 +880,10 @@ class MathInterface(ABC):
         return ortho_group.rvs(dim=N)
 
     def random_unitary(self, N: int) -> Tensor:
+        """a random unitary matrix in :math:`U(N)`"""
+        if N == 1:
+            return self.exp(1j * np.random.uniform(size=(1, 1)))
+        return unitary_group.rvs(dim=N)
         """A random unitary matrix in :math:`U(N)`."""
         if N == 1:
             W = self.exp(1j * np.random.uniform(size=(1, 1)))
