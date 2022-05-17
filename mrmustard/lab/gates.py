@@ -462,7 +462,7 @@ class Interferometer(Parametrized, Transformation):
     def _validate_modes(self, modes):
         if len(modes) != self.orthogonal.shape[-1] // 2:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[1] // 2})"
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1] // 2})"
             )
 
     @property
