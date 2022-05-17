@@ -433,7 +433,7 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
-        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`. 
+        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`.
             If set to `None` a random orthogonal matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
@@ -491,9 +491,7 @@ class RealInterferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
     ):
         if orthogonal is None:
-            orthogonal = math.random_orthogonal(
-                num_modes
-            )
+            orthogonal = math.random_orthogonal(num_modes)
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
@@ -545,9 +543,7 @@ class Ggate(Parametrized, Transformation):
         symplectic_trainable: bool = False,
     ):
         if symplectic is None:
-            symplectic = math.random_symplectic(
-                num_modes
-            )
+            symplectic = math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
