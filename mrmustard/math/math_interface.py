@@ -1305,19 +1305,19 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
                 if n in m2_modes:  # if mode goes through both, add contribution
                     for p in final_modes:
                         new_matrix[findices[m], findices[n]] += matrix1[m1indices[m], m1indices[p]] * matrix2[m2indices[p], m2indices[n]] + matrix1[m1indices[m], m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]]
-                        new_matrix[findices[m]+K, findices[n]] += matrix1[m1indices[m]+M, m1indices[p]] * matrix2[m2indices[p], m2indices[n]] + matrix1[m1indices[m]+M, m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]]
-                        new_matrix[findices[m], findices[n]+K] += matrix1[m1indices[m], m1indices[p]] * matrix2[m2indices[p], m2indices[n]+N] + matrix1[m1indices[m], m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]+N]
-                        new_matrix[findices[m]+K, findices[n]+K] += matrix1[m1indices[m]+M, m1indices[p]] * matrix2[m2indices[p], m2indices[n]+N] + matrix1[m1indices[m]+M, m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]+N]
-                elif not m2like_0: # if n is not in m2_modes it matters only if m2 is not like_0, in which case it copies the mode from m1
+                        new_matrix[findices[m]+F, findices[n]] += matrix1[m1indices[m]+M, m1indices[p]] * matrix2[m2indices[p], m2indices[n]] + matrix1[m1indices[m]+M, m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]]
+                        new_matrix[findices[m], findices[n]+F] += matrix1[m1indices[m], m1indices[p]] * matrix2[m2indices[p], m2indices[n]+N] + matrix1[m1indices[m], m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]+N]
+                        new_matrix[findices[m]+F, findices[n]+F] += matrix1[m1indices[m]+M, m1indices[p]] * matrix2[m2indices[p], m2indices[n]+N] + matrix1[m1indices[m]+M, m1indices[p]+M] * matrix2[m2indices[p]+N, m2indices[n]+N]
+                elif not m2like_0: # if n is not in m2_modes it contributes only if m2 is not like_0, in which case it copies the mode from m1
                     new_matrix[findices[m], findices[n]] += matrix1[m1indices[m], m1indices[n]]
-                    new_matrix[findices[m]+K, findices[n]] += matrix1[m1indices[m]+M, m1indices[n]]
-                    new_matrix[findices[m], findices[n]+K] += matrix1[m1indices[m], m1indices[n]+M]
-                    new_matrix[findices[m]+K, findices[n]+K] += matrix1[m1indices[m]+M, m1indices[n]+M]
+                    new_matrix[findices[m]+F, findices[n]] += matrix1[m1indices[m]+M, m1indices[n]]
+                    new_matrix[findices[m], findices[n]+F] += matrix1[m1indices[m], m1indices[n]+M]
+                    new_matrix[findices[m]+F, findices[n]+F] += matrix1[m1indices[m]+M, m1indices[n]+M]
             elif not m1like_0:  # if m is not in m1_modes it matters only if m1 is not like_0, in which case it copies the mode from m2
                 new_matrix[findices[m], findices[n]] += matrix2[m2indices[m], m2indices[n]]
-                new_matrix[findices[m]+K, findices[n]] += matrix2[m2indices[m]+N, m2indices[n]]
-                new_matrix[findices[m], findices[n]+K] += matrix2[m2indices[m], m2indices[n]+N]
-                new_matrix[findices[m]+K, findices[n]+K] += matrix2[m2indices[m]+N, m2indices[n]+N]
+                new_matrix[findices[m]+F, findices[n]] += matrix2[m2indices[m]+N, m2indices[n]]
+                new_matrix[findices[m], findices[n]+F] += matrix2[m2indices[m], m2indices[n]+N]
+                new_matrix[findices[m]+F, findices[n]+F] += matrix2[m2indices[m]+N, m2indices[n]+N]
     return new_matrix
             
 
@@ -1339,7 +1339,33 @@ def numba_sparse_matmul_vjp(self, dmatmul: Tensor, matrix1: Tensor, matrix2: Ten
 
     """
     final_modes, findices, m1indices, m2indices, B, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
-    dmatrix1 = np.zeros((B, 2*len(final_modes), 2*len(final_modes)), dtype=matrix1.dtype)  # TODO: revisit dtype
-    dmatrix2 = np.zeros((B, 2*len(final_modes), 2*len(final_modes)), dtype=matrix1.dtype)  # TODO: revisit dtype
+    dmatrix1 = np.zeros((B, 2*len(final_modes), 2*len(final_modes)), dtype=matrix1.dtype)
+    dmatrix2 = np.zeros((B, 2*len(final_modes), 2*len(final_modes)), dtype=matrix2.dtype)
     for m in final_modes:
-        
+        for n in final_modes:
+            if m in m1_modes:
+                if n in m2_modes:
+                    for p in final_modes:
+                        dmatrix1[m1indices[m], m1indices[p]] += dmatmul[findices[m], findices[n]] * matrix2[m2indices[p], m2indices[n]] + dmatmul[findices[m], findices[n]+F] * matrix2[m2indices[p], m2indices[n]+N]
+                        dmatrix1[m1indices[m], m1indices[p]+M] += dmatmul[findices[m], findices[n]] * matrix2[m2indices[p]+N, m2indices[n]] + dmatmul[findices[m], findices[n]+F] * matrix2[m2indices[p]+N, m2indices[n]+N]
+                        dmatrix1[m1indices[m]+M, m1indices[p]] += dmatmul[findices[m]+F, findices[n]] * matrix2[m2indices[p], m2indices[n]] + dmatmul[findices[m]+F, findices[n]+F] * matrix2[m2indices[p], m2indices[n]+N]
+                        dmatrix1[m1indices[m]+M, m1indices[p]+M] += dmatmul[findices[m]+F, findices[n]] * matrix2[m2indices[p]+N, m2indices[n]] + dmatmul[findices[m]+F, findices[n]+F] * matrix2[m2indices[p]+N, m2indices[n]+N]
+                        dmatrix2[m2indices[p], m2indices[n]] += dmatmul[findices[m], findices[n]] * matrix1[m1indices[m], m1indices[p]] + dmatmul[findices[m]+F, findices[n]] * matrix1[m1indices[m]+M, m1indices[p]]
+                        dmatrix2[m2indices[p], m2indices[n]+N] += dmatmul[findices[m], findices[n]+F] * matrix1[m1indices[m]+M, m1indices[p]] + dmatmul[findices[m]+F, findices[n]+F] * matrix1[m1indices[m]+M, m1indices[p]+M]
+                        dmatrix2[m2indices[p]+N, m2indices[n]] += dmatmul[findices[m], findices[n]] * matrix1[m1indices[m], m1indices[p]+M] + dmatmul[findices[m]+F, findices[n]] * matrix1[m1indices[m]+M, m1indices[p]+M]
+                        dmatrix2[m2indices[p]+N, m2indices[n]+N] += dmatmul[findices[m], findices[n]+F] * matrix1[m1indices[m], m1indices[p]+M] + dmatmul[findices[m]+F, findices[n]+F] * matrix1[m1indices[m]+M, m1indices[p]+M]
+                elif not m2like_0:
+                    dmatrix1[m1indices[m], m1indices[n]] += dmatmul[findices[m], findices[n]]
+                    dmatrix1[m1indices[m]+M, m1indices[n]] += dmatmul[findices[m]+F, findices[n]]
+                    dmatrix1[m1indices[m], m1indices[n]+M] += dmatmul[findices[m], findices[n]+F]
+                    dmatrix1[m1indices[m]+M, m1indices[n]+M] += dmatmul[findices[m]+F, findices[n]+F]
+            elif not m1like_0:
+                dmatrix2[m2indices[m], m2indices[n]] += dmatmul[findices[m], findices[n]]
+                dmatrix2[m2indices[m]+N, m2indices[n]] += dmatmul[findices[m]+F, findices[n]]
+                dmatrix2[m2indices[m], m2indices[n]+N] += dmatmul[findices[m], findices[n]+F]
+                dmatrix2[m2indices[m]+N, m2indices[n]+N] += dmatmul[findices[m]+F, findices[n]+F]
+    return dmatrix1, dmatrix2
+
+
+
+
