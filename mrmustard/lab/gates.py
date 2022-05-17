@@ -479,7 +479,8 @@ class RealInterferometer(Parametrized, Transformation):
     Does not mix q's and p's.
 
     Args:
-        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(N,N)`
+        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(N,N)`.
+            If set to `None` a random orthogonal matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
