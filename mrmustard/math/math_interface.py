@@ -884,12 +884,6 @@ class MathInterface(ABC):
         if N == 1:
             return self.exp(1j * np.random.uniform(size=(1, 1)))
         return unitary_group.rvs(dim=N)
-        """A random unitary matrix in :math:`U(N)`."""
-        if N == 1:
-            W = self.exp(1j * np.random.uniform(size=(1, 1)))
-        else:
-            W = unitary_group.rvs(dim=N)
-        return W
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
         r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""
