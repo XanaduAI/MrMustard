@@ -492,7 +492,7 @@ class RealInterferometer(Parametrized, Transformation):
         if orthogonal is None:
             orthogonal = math.random_orthogonal(
                 num_modes
-            )  # training.new_orthogonal(num_modes=num_modes)
+            )
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
