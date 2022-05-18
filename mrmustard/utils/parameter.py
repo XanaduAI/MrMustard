@@ -53,66 +53,68 @@ class Trainable(ABC):
 
 class Symplectic(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self.S = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self.value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
         self.name = name
         self.owner = owner
 
     def update(self, cost_fn, learning_rate):
-        _, grad = self.grad(cost_fn, self.S)
+        _, grad = self.grad(cost_fn, self.value)
         self._update_symplectic(grad, learning_rate)
 
     def _update_symplectic(self, dS_euclidean, symplectic_lr):
-        Y = math.euclidean_to_symplectic(self.S, dS_euclidean)
+        Y = math.euclidean_to_symplectic(self.value, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
-            self.S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
+            self.value, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
         )
-        math.assign(self.S, new_value)
+        math.assign(self.value, new_value)
 
 
 class Euclidian(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self.E = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self.value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
         self.name = name
         self.owner = owner
 
     def update(self, cost_fn, learning_rate):
-        _, grad = self.grad(cost_fn, self.E)
+        _, grad = self.grad(cost_fn, self.value)
         self._update_euclidian(grad, learning_rate)
 
     def _update_euclidian(self, euclidean_grad, euclidean_lr):
         math.euclidean_opt.lr = euclidean_lr
-        math.euclidean_opt.apply_gradients((euclidean_grad, self.E))
+        math.euclidean_opt.apply_gradients((euclidean_grad, self.value))
 
 
 class Orthogonal(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self.O = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self.value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
         self.name = name
         self.owner = owner
 
     def update(self, cost_fn, learning_rate):
-        _, grad = self.grad(cost_fn, self.O)
+        _, grad = self.grad(cost_fn, self.value)
         self._update_orthogonal(grad, learning_rate)
 
     def _update_euclidian(self, dO_euclidean, orthogonal_lr):
         dO_orthogonal = 0.5 * (
-            dO_euclidean - math.matmul(math.matmul(self.O, math.transpose(dO_euclidean)), self.O)
+            dO_euclidean
+            - math.matmul(math.matmul(self.value, math.transpose(dO_euclidean)), self.value)
         )
         new_value = math.matmul(
-            self.O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), self.O))
+            self.value,
+            math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), self.value)),
         )
-        math.assign(self.O, new_value)
+        math.assign(self.value, new_value)
 
 
 class Constant:
     def __init__(self, value, name, owner=None) -> None:
-        self.O = value if math.from_backend(value) else math.new_constant(value, name)
+        self.value = value if math.from_backend(value) else math.new_constant(value, name)
         self.name = name
         self.owner = owner
 
 
-def create_parameter(name, value, is_trainable=False, bounds=None, owner=None):
+def create_parameter(value, name, is_trainable=False, bounds=None, owner=None):
     if not is_trainable:
         return Constant(value, name, owner)
 

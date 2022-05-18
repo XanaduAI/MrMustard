@@ -39,7 +39,7 @@ class Parametrized:
             is_trainable = kwargs.get(f"{name}_trainable", False) or math.is_trainable(value)
             if math.from_backend(value) or is_trainable:
                 bounds = kwargs.get(f"{name}_bounds", None)
-                value = create_parameter(name, value, is_trainable, bounds, owner)
+                value = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign variable as attribute of the class
             self.__dict__[f"_{name}"] = value
