@@ -63,75 +63,34 @@ class XPTensor(ABC):
     def __init__(
         self,
         tensor: Optional[Tensor],
-        like_0: bool,
-        isVector: bool,
-        modes: Union[Tuple[List[int], List[int]], None],
+        outmodes: List[int],
+        inmodes: List[int],
     ):
 
-        self.like_0 = like_0
         self.shape = (
             None if tensor is None else tensor.shape[: len(tensor.shape) // 2]
         )  # NOTE: only (N,M) or (N,)
         self.ndim = None if tensor is None else len(self.shape)
-        self.isVector = isVector
-        if self.ndim == 1 and not self.isVector:
-            raise ValueError(
-                f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==4, got {len(tensor.shape)})"
-            )
-        if self.ndim == 2 and self.isVector:
-            raise ValueError(
-                f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==2, got {len(tensor.shape)})"
-            )
-        if self.isVector and self.like_1:
-            raise ValueError("vectors should be like_0")
         self.tensor = tensor
-        if not (set(modes[0]) == set(modes[1]) or set(modes[0]).isdisjoint(modes[1])):
+        if not (set(outmodes) == set(inmodes) or set(outmodes).isdisjoint(inmodes)):
             raise ValueError(
                 "The inmodes and outmodes should either contain the same modes or be disjoint"
             )
-        self.modes = modes
+        self.outmodes = outmodes
+        self.inmodes = inmodes
 
     @property
     def dtype(self):
         return None if self.tensor is None else self.tensor.dtype
 
-    @property
-    def outmodes(self) -> List[int]:
-        return self.modes[0]
+    # @property
+    # def num_modes(self) -> int:
+    #     # TODO: what about coherence blocks?
+    #     return len(self.outmodes)
 
-    @property
-    def inmodes(self) -> List[int]:
-        return self.modes[1]
-
-    @property
-    def num_modes(self) -> int:
-        # TODO: raise warning for coherence blocks?
-        return len(self.outmodes)
-
-    @property
-    def isMatrix(self) -> Optional[bool]: # TODO: move to XPMatrix
-        return not self.isVector
-
-    @property
-    def isCoherence(self) -> Optional[bool]:
-        return self.isMatrix and self.outmodes != self.inmodes
-
-    @property
-    def like_1(self) -> bool:
-        return not self.like_0
-
-    @property
-    def T(self) -> XPMatrix:
-        if self.isVector:
-            raise ValueError("Cannot transpose a vector")
-        if self.tensor is None:
-            return self
-        return XPMatrix(
-            math.transpose(self.tensor, (1, 0, 3, 2)),
-            self.like_0,
-            self.like_1,
-            (self.inmodes, self.outmodes),
-        )
+    # @property
+    # def like_1(self) -> bool:
+    #     return not self.like_0
 
     def to_xpxp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
@@ -164,9 +123,7 @@ class XPTensor(ABC):
         r"""Create a new XPTensor by cloning the system a given number of times
         (the modes are reset by default unless specified).
         """
-        if self.tensor is None:
-            return self
-        if times == 1:
+        if self.tensor is None or times == 1:
             return self
         if self.isMatrix:
             tensor = math.expand_dims(self.modes_last(), axis=4)  # shape = [2,2,N,N,1]
@@ -175,7 +132,7 @@ class XPTensor(ABC):
             tensor = math.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
             tensor = math.reshape(
                 tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times)
-            )  # shape = [2,2,NT,NT] = [2,2,O,O]
+            )  # shape = [2,2,NT,NT]
             tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
             return XPMatrix(tensor, self.like_0, self.like_1, ([], []) if modes is None else modes)
 
@@ -232,92 +189,7 @@ class XPTensor(ABC):
         return other * self
 
     # pylint: disable=too-many-statements
-    def _sparse_matmul(
-        self, other: Union[XPMatrix, XPVector]
-    ) -> Tuple[Tensor, Tuple[List[int], List[int]]]:
-        r"""Performs matrix multiplication only on the necessary modes and
-        takes care of keeping only the modes that are needed, in case of mismatch.
-
-        See documentation for a visual explanation with blocks.  #TODO: add link to figure
-        """
-        if list(self.inmodes) == list(other.outmodes):  # NOTE: they match including the ordering
-            prod = math.tensordot(
-                self.tensor, other.tensor, ((1, 3), (0, 2)) if other.isMatrix else ((1, 3), (0, 1))
-            )
-            return math.transpose(prod, (0, 2, 1, 3) if other.isMatrix else (0, 1)), (
-                self.outmodes,
-                other.inmodes,
-            )
-        contracted = [i for i in self.inmodes if i in other.outmodes]
-        uncontracted_self = [i for i in self.inmodes if i not in contracted]
-        uncontracted_other = [o for o in other.outmodes if o not in contracted]
-        if not (
-            set(self.outmodes).isdisjoint(uncontracted_other)
-            and set(other.inmodes).isdisjoint(uncontracted_self)
-        ):
-            raise ValueError("Invalid modes")
-        bulk = None
-        copied_rows = None
-        copied_cols = None
-        if len(contracted) > 0:
-            subtensor1 = math.gather(
-                self.tensor, [self.inmodes.index(m) for m in contracted], axis=1
-            )
-            subtensor2 = math.gather(
-                other.tensor, [other.outmodes.index(m) for m in contracted], axis=0
-            )
-            if other.isMatrix:
-                bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 2)))
-                bulk = math.transpose(bulk, (0, 2, 1, 3))
-            else:
-                bulk = math.tensordot(subtensor1, subtensor2, ((1, 3), (0, 1)))
-        if self.like_1 and len(uncontracted_other) > 0:
-            copied_rows = math.gather(
-                other.tensor, [other.outmodes.index(m) for m in uncontracted_other], axis=0
-            )
-        if other.like_1 and len(uncontracted_self) > 0:
-            copied_cols = math.gather(
-                self.tensor, [self.inmodes.index(m) for m in uncontracted_self], axis=1
-            )
-        if copied_rows is not None and copied_cols is not None:
-            if bulk is None:
-                bulk = math.zeros(
-                    (copied_cols.shape[0], copied_rows.shape[1], 2, 2), dtype=copied_cols.dtype
-                )
-            empty = math.zeros(
-                (copied_rows.shape[0], copied_cols.shape[1], 2, 2), dtype=copied_cols.dtype
-            )
-            final = math.block([[copied_cols, bulk], [empty, copied_rows]], axes=[0, 1])
-        elif copied_cols is None and copied_rows is not None:
-            if bulk is None:
-                final = copied_rows
-            else:
-                final = math.block([[bulk], [copied_rows]], axes=[0, 1])
-        elif copied_rows is None and copied_cols is not None:
-            if bulk is None:
-                final = copied_cols
-            else:
-                final = math.block([[copied_cols, bulk]], axes=[0, 1])
-        else:  # copied_rows and copied_cols are both None
-            final = bulk  # NOTE: could be None
-
-        outmodes = self.outmodes + uncontracted_other
-        if other.like_0 and len(contracted) == 0:
-            outmodes = uncontracted_other
-        if self.like_0:
-            outmodes = [m for m in outmodes if m in self.outmodes]
-
-        inmodes = uncontracted_self + other.inmodes
-        if self.like_0 and len(contracted) == 0:
-            inmodes = uncontracted_self
-        if other.like_0:
-            inmodes = [m for m in inmodes if m in other.inmodes]
-
-        if final is not None:
-            final = math.gather(final, [outmodes.index(o) for o in sorted(outmodes)], axis=0)
-            if other.isMatrix:
-                final = math.gather(final, [inmodes.index(i) for i in sorted(inmodes)], axis=1)
-        return final, (sorted(outmodes), sorted(inmodes))
+    
 
     def _sparse_vecvec(self, other: XPVector) -> Scalar:
         if list(self.outmodes) == list(other.outmodes):
@@ -477,6 +349,59 @@ class XPTensor(ABC):
         )
 
 
+class Symplectic(XPMatrix):
+    r"""A convenience class for a symplectic matrix in the XPTensor format.
+
+    # TODO: write docstring
+    """
+
+    def __init__(
+        self,
+        tensor: Union[XPMatrix, Tensor] = None,
+        modes: List[int] = [],
+    ):
+        if isinstance(tensor, XPMatrix): # assumes that the tensor is a symplectic matrix
+            super().__init__(tensor.like_0, tensor.tensor, tensor.outmodes, tensor.outmodes)
+        else:
+            super().__init__(False, tensor, modes, modes)
+        self.like_0 = False
+
+    @classmethod
+    def from_xxpp(
+        cls,
+        tensor: Optional[Matrix],
+        modes: List[int] = [],
+    ) -> Symplectic:
+        return cls(super().from_xxpp(tensor, False, modes, modes))
+
+    @classmethod
+    def from_xpxp(
+        cls,
+        tensor: Optional[Matrix],
+        modes: List[int] = [],
+    ) -> Symplectic:
+        return cls(super().from_xpxp(tensor, False, modes, modes))
+
+    def clone(self, times: int, modes: Optional[List[int]] = None) -> XPtensor:
+        r"""Create a new Symplectic by cloning the current one a given number of times
+        (the modes are reset by default unless specified).
+        """
+        return self.__class__(super().clone(times, modes, modes))
+
+    @property
+    def T(self) -> Symplectic:
+        return self.__class__(super().T)
+
+    @property
+    def inverse(self) -> Symplectic:
+        [[A,B],[C,D]] = self.modes_last()
+        return Symplectic(math.astensor([[math.transpose(D),-math.transpose(B)],
+                                        [-math.transpose(C),math.transpose(A)]]), self.modes)
+
+    def __repr__(self) -> str:
+        return f"Symplectic matrix in Sp({2*len(self.modes)},R) on modes {self.modes}."
+
+
 class XPMatrix(XPTensor):
     r"""A convenience class for a matrix in the XPTensor format.
 
@@ -485,55 +410,68 @@ class XPMatrix(XPTensor):
 
     def __init__(
         self,
+        like_0: bool,
         tensor: Tensor = None,
-        like_0: bool = None,
-        like_1: bool = None,
-        modes: Tuple[List[int], List[int]] = ([], []),
+        outmodes: List[int] = [],
+        inmodes: List[int] = [],
     ):
-        if like_0 is None and like_1 is None:
-            raise ValueError("At least one of like_0 or like_1 must be set")
-        if like_0 == like_1:
-            raise ValueError(f"like_0 and like_1 can't both be {like_0}")
-        if not (
-            isinstance(modes, tuple) and len(modes) == 2 and all(isinstance(m, list) for m in modes)
-        ):
-            raise ValueError("modes should be a tuple containing two lists (outmodes and inmodes)")
-        if len(modes[0]) == 0 and len(modes[1]) == 0 and tensor is not None:
-            if (
-                tensor.shape[0] != tensor.shape[1] and like_0
-            ):  # NOTE: we can't catch square coherences if no modes are specified
-                raise ValueError("Must specify the modes for a coherence block")
-            modes = tuple(
-                list(range(s)) for s in tensor.shape[:2]
-            )  # NOTE assuming that it isn't a coherence block
-        like_0 = like_0 if like_0 is not None else not like_1
-        super().__init__(tensor, like_0, isVector=False, modes=modes)
+        super().__init__(tensor, outmodes, inmodes)
+        self.like_0 = like_0
 
     @classmethod
     def from_xxpp(
         cls,
+        like_0: Optional[bool],
         tensor: Optional[Union[Matrix, Vector]],
-        like_0: Optional[bool] = None,
-        like_1: Optional[bool] = None,
-        modes: Tuple[List[int], List[int]] = ([], []),
+        outmodes: List[int] = [],
+        inmodes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (2, n // 2)])
             tensor = math.transpose(tensor, (1, 3, 0, 2))
-        return XPMatrix(tensor, like_0, like_1, modes)
+        return XPMatrix(tensor, like_0, outmodes, inmodes)
 
     @classmethod
     def from_xpxp(
         cls,
+        like_0: Optional[bool],
         tensor: Optional[Union[Matrix, Vector]],
-        like_0: bool = None,
-        like_1: bool = None,
-        modes: Tuple[List[int], List[int]] = ([], []),
+        outmodes: List[int] = [],
+        inmodes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
             tensor = math.reshape(tensor, [_ for n in tensor.shape for _ in (n // 2, 2)])
             tensor = math.transpose(tensor, (0, 2, 1, 3))
-        return XPMatrix(tensor, like_0, like_1, modes)
+        return XPMatrix(tensor, like_0, outmodes, inmodes)
+
+    def clone(self, times: int, outmodes: Optional[List[int]] = None, inmodes: Optional[List[int]] = None) -> XPtensor:
+        r"""Create a new XPTensor by cloning the system a given number of times
+        (the modes are reset by default unless specified).
+        """
+        if self.tensor is None or times == 1:
+            return self
+        tensor = math.expand_dims(self.modes_last(), axis=4)  # shape = [2,2,N,N,1]
+        tensor = math.tile(tensor, (1, 1, 1, 1, times))  # shape = [2,2,N,N,T]
+        tensor = math.diag(tensor)  # shape = [2,2,N,N,T,T]
+        tensor = math.transpose(tensor, (0, 1, 2, 4, 3, 5))  # shape = [2,2,N,T,N,T]
+        tensor = math.reshape(tensor, (2, 2, tensor.shape[2] * times, tensor.shape[4] * times))  # shape = [2,2,NT,NT]
+        tensor = math.transpose(tensor, (2, 3, 0, 1))  # shape = [NT,NT,2,2]
+        if outmodes is None:
+            outmodes = list(range(times*len(self.outmodes)))
+        if inmodes is None:
+            inmodes = list(range(times*len(self.inmodes)))
+        return XPMatrix(self.like_0, tensor, outmodes, inmodes)
+
+    @property
+    def T(self) -> XPMatrix:
+        if self.tensor is None:
+            return self
+        return XPMatrix(
+            self.like_0,
+            math.transpose(self.tensor, (1, 0, 3, 2)),
+            self.outmodes,
+            self.inmodes,
+        )
 
     def __repr__(self) -> str:
         return f"XPMatrix(like_0={self.like_0}, modes={self.modes}, tensor_xpxp=\n{self.to_xpxp()})"
@@ -541,28 +479,19 @@ class XPMatrix(XPTensor):
     def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
         if not isinstance(other, (XPMatrix, XPVector)):
             raise TypeError(f"Unsupported operand type(s) for @: 'XPMatrix' and '{other.__class__.__qualname__}'")
+        if not self.outmodes == self.inmodes or not other.outmodes == other.inmodes:
+            raise ValueError("Cannot multiply matrices with different in/out modes.")
         if other.tensor is None:
             return self if other.like_1 else other
         if self.tensor is None: # NOTE: other is not None now
             return other if self.like_1 else self
-        if other.isMatrix:
-            tensor, modes = self._sparse_matmul(other)
-            return XPMatrix(tensor, like_1=self.like_1 and other.like_1, modes=modes)
-        if other.isVector:
-            tensor, modes = self._sparse_matvec(other)
-            return XPVector(tensor, modes=modes)
-
-    def _sparse_matvec(self, other: XPVector) -> Tuple[Tensor, List[int]]:
-        r"""Performs a sparse matrix-vector multiplication.
-        Arguments:
-            other: the vector to multiply with
-        Returns:
-            The resulting vector and the modes of the resulting vector
-        """
-        new_vec = math.sparse_matvec(self.to_xxpp(), other.to_xxpp(), self.outmodes, self.inmodes, other.outmodes, self.like_0)
-        return new_vec, other.outmodes
-
-
+        if isinstance(other, XPMatrix):
+            tensor = math.sparse_matmul(self.to_xxpp(), other.to_xxpp(), (self.outmodes, self.inmodes), (other.outmodes, other.inmodes), self.like_0, other.like_0)
+            modes, *_ = math.sparse_matmul_data(self.to_xxpp(), other.to_xxpp(),self.outmodes, other.outmodes, self.like_0, other.like_0)
+            return XPMatrix(self.like_0 or other.like_0, tensor, outmodes=modes, inmodes=modes)
+        if isinstance(other, XPVector):
+            tensor = math.sparse_matvec(self.to_xxpp(), other.to_xxpp(), self.outmodes, self.inmodes, other.outmodes, self.like_0)
+            return XPVector(tensor, modes=other.outmodes)
 
     def __add__(self, other: XPMatrix) -> XPMatrix:
         if not isinstance(other, XPMatrix):
@@ -574,7 +503,6 @@ class XPMatrix(XPTensor):
         if self.tensor is not None and other.tensor is not None:
             return self._sparse_add(other)
         raise ValueError(f"Can't add a like_1 null XPMatrix and an XPMatrix that is not null and like_0.")
-
 
 class XPVector(XPTensor):
     r"""A convenience class for a vector in the XPTensor format."""
