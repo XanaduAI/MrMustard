@@ -30,13 +30,33 @@ There are three basic types of parameters:
 """
 # pylint: disable=super-init-not-called
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
+
 from mrmustard.math import Math
+from mrmustard.types import Tensor
 
 math = Math()
 
 
-class Trainable(ABC):
+class Parameter(ABC):
+    @abstractmethod
+    def __init__(self, value, name, owner=None) -> None:
+        pass
+
+    @property
+    def value(self) -> Tensor:
+        pass
+
+    @property
+    def name(self) -> str:
+        pass
+
+    @property
+    def owner(self) -> str:
+        pass
+
+
+class Trainable(Parameter, ABC):
     @abstractmethod
     def __init__(self, value, bounds, name, owner=None) -> None:
         pass
@@ -53,65 +73,113 @@ class Trainable(ABC):
 
 class Symplectic(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self.value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
-        self.name = name
-        self.owner = owner
+        self._value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self._name = name
+        self._owner = owner
 
     def update(self, cost_fn, learning_rate):
-        _, grad = self.grad(cost_fn, self.value)
+        _, grad = self.grad(cost_fn, self._value)
         self._update_symplectic(grad, learning_rate)
 
     def _update_symplectic(self, dS_euclidean, symplectic_lr):
-        Y = math.euclidean_to_symplectic(self.value, dS_euclidean)
+        Y = math.euclidean_to_symplectic(self._value, dS_euclidean)
         YT = math.transpose(Y)
         new_value = math.matmul(
-            self.value, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
+            self._value, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
         )
-        math.assign(self.value, new_value)
+        math.assign(self._value, new_value)
+
+    @property
+    def value(self) -> Tensor:
+        return self._value
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def owner(self) -> str:
+        return self._owner
 
 
 class Euclidian(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self.value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
-        self.name = name
-        self.owner = owner
+        self._value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self._name = name
+        self._owner = owner
 
     def update(self, cost_fn, learning_rate):
-        _, grad = self.grad(cost_fn, self.value)
+        _, grad = self.grad(cost_fn, self._value)
         self._update_euclidian(grad, learning_rate)
 
     def _update_euclidian(self, euclidean_grad, euclidean_lr):
         math.euclidean_opt.lr = euclidean_lr
-        math.euclidean_opt.apply_gradients((euclidean_grad, self.value))
+        math.euclidean_opt.apply_gradients((euclidean_grad, self._value))
+
+    @property
+    def value(self) -> Tensor:
+        return self._value
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def owner(self) -> str:
+        return self._owner
 
 
 class Orthogonal(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self.value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
-        self.name = name
-        self.owner = owner
+        self._value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self._name = name
+        self._owner = owner
 
     def update(self, cost_fn, learning_rate):
-        _, grad = self.grad(cost_fn, self.value)
+        _, grad = self.grad(cost_fn, self._value)
         self._update_orthogonal(grad, learning_rate)
 
     def _update_euclidian(self, dO_euclidean, orthogonal_lr):
         dO_orthogonal = 0.5 * (
             dO_euclidean
-            - math.matmul(math.matmul(self.value, math.transpose(dO_euclidean)), self.value)
+            - math.matmul(math.matmul(self._value, math.transpose(dO_euclidean)), self._value)
         )
         new_value = math.matmul(
-            self.value,
-            math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), self.value)),
+            self._value,
+            math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), self._value)),
         )
-        math.assign(self.value, new_value)
+        math.assign(self._value, new_value)
+
+    @property
+    def value(self) -> Tensor:
+        return self._value
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def owner(self) -> str:
+        return self._owner
 
 
-class Constant:
+class Constant(Parameter):
     def __init__(self, value, name, owner=None) -> None:
-        self.value = value if math.from_backend(value) else math.new_constant(value, name)
-        self.name = name
-        self.owner = owner
+        self._value = value if math.from_backend(value) else math.new_constant(value, name)
+        self._name = name
+        self._owner = owner
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def owner(self) -> str:
+        return self._owner
 
 
 def create_parameter(value, name, is_trainable=False, bounds=None, owner=None):

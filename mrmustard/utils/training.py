@@ -58,6 +58,7 @@ class Optimizer:
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
         """
         try:
+            # finding out which parameters are trainable from the ops
             params = {
                 "symplectic": math.unique_tensors(
                     [p for item in by_optimizing for p in item.trainable_parameters["symplectic"]]
@@ -69,6 +70,10 @@ class Optimizer:
                     [p for item in by_optimizing for p in item.trainable_parameters["euclidean"]]
                 ),
             }
+            for item in by_optimizing:
+                for p in item.trainable_parameters["symplectic"]:
+                    pass
+
             if settings.PROGRESSBAR:
                 bar = graphics.Progressbar(max_steps)
                 with bar:
