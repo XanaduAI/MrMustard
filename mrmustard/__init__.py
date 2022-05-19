@@ -35,7 +35,7 @@ class Settings:
         """
         return self._backend
 
-    @backend.setter
+    @BACKEND.setter
     def BACKEND(self, backend_name: str):
         if backend_name not in ["tensorflow", "torch"]:
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
@@ -48,14 +48,14 @@ class Settings:
             # if starts with a capital letter
             if attr[0].isupper() and attr[1].isupper():
                 print(f"{attr} = {getattr(self, attr)}")
-        print(f"BACKEND = {self.backend}")
+        print(f"BACKEND = {self.BACKEND}")
         return ""
 
 
 settings = Settings()
 """Settings object."""
 
-settings.backend = "tensorflow"
+settings.BACKEND = "tensorflow"
 
 
 def version():

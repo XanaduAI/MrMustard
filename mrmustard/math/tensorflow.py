@@ -381,6 +381,26 @@ class TFMath(MathInterface):
 
         return new_vec, grad
 
+    @tf.custom_gradient
+    def sparse_matmul(self, matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0: bool, m2like_0: bool):
+        r"""Computes the "sparse" matrix-matrix product of two matrices only in the specified modes.
+        Note that a phase space matrix is "like 0", meaning that entries that are not included
+        in the matrix are assumed to be 0s, otherwise it's assumed to be like the identity matrix in unspecified modes.
+
+        Args:
+            matrix1 (array): :math:`B1\times 2M\times 2M` array
+            matrix2 (array): :math:`B2\times 2N\times 2N` array
+            m1_modes (list(int)): list of ``M`` modes of the matrix1
+            m2_modes (list(int)): list of ``N`` modes of the matrix2
+            m1like_0 (bool): whether matrix1 is like_0 or not
+            m2like_0 (bool): whether matrix2 is like_0 or not
+        Returns:
+            array: :math:`(B1*B2)\times 2M\times 2N` new matrix
+        """
+        new_matrix = tf.numpy_function(self.numba_sparse_matmul, [matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0], matrix1.dtype)
+
+        def grad(dLdnew_matrix): # NOTE: dLdnew_matrix is the derivative of L with respect to new_matrix *conjugate*
+
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a matrix."""
