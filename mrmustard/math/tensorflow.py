@@ -193,8 +193,13 @@ class TFMath(MathInterface):
         return tf.minimum(a, b)
 
     def new_variable(
-        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64
+        self,
+        value,
+        bounds: Optional[Tuple[Optional[float], Optional[float]]],
+        name: str,
+        dtype=tf.float64,
     ):
+        bounds = bounds or (None, None)
         value = self.convert_to_tensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
