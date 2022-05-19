@@ -119,38 +119,6 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
-# def new_variable(
-#     value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=math.float64
-# ) -> Trainable:
-#     r"""Returns a new trainable variable from the current math backend
-#     with initial value set by `value` and bounds set by `bounds`.
-#
-#     Args:
-#         value (float): The initial value of the variable
-#         bounds (Tuple[float, float]): The bounds of the variable
-#         name (str): The name of the variable
-#         dtype: The dtype of the variable
-#
-#     Returns:
-#         variable (Trainable): The new variable
-#     """
-#     return math.new_variable(value, bounds, name, dtype)
-
-
-# def new_constant(value, name: str, dtype=math.float64) -> Tensor:
-#     r"""Returns a new constant (non-trainable) tensor from the current math backend
-#     with initial value set by `value`.
-#     Args:
-#         value (numeric): The initial value of the tensor
-#         name (str): The name of the constant
-#         dtype: The dtype of the constant
-#
-#     Returns:
-#         tensor (Tensor): The new constant tensor
-#     """
-#     return math.new_constant(value, name, dtype)
-
-
 def new_symplectic(num_modes: int) -> Tensor:
     r"""Returns a new symplectic matrix from the current math backend with ``num_modes`` modes.
 
