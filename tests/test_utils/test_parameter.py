@@ -49,7 +49,7 @@ def test_create_constant(from_backend):
 @pytest.mark.parametrize("trainable_class", (Euclidian, Orthogonal, Symplectic))
 @pytest.mark.parametrize("from_backend", [True, False])
 @pytest.mark.parametrize("bounds", [None, (0, 10)])
-def test_create_trainable_euclidian(trainable_class, from_backend, bounds):
+def test_create_trainable(trainable_class, from_backend, bounds):
     """Checks if the factory function `create_parameter`
     returns an instance of the Euclidian/Orthogonal/Symplectic class when args
     are trainable."""
