@@ -48,7 +48,7 @@ class Parametrized:
             param_value = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign variable as attribute of the class
-            self.__dict__[f"_{name}"] = param_value
+            self.__dict__[f"{name}"] = param_value
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:

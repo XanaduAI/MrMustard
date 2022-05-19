@@ -31,9 +31,9 @@ def test_attribute_assignment(kwargs):
     instance_attributes = parametrized.__dict__
 
     for name in kwargs.keys():
-        attrib = instance_attributes[f"_{name}"]
+        attrib = instance_attributes[f"{name}"]
         assert isinstance(attrib, (Trainable, Constant))
-        assert instance_attributes[f"_{name}"].name == name
+        assert instance_attributes[f"{name}"].name == name
 
 
 @pytest.mark.parametrize("trainable_class", (Euclidian, Orthogonal, Symplectic))
@@ -53,7 +53,7 @@ def test_attribute_from_backend_type_assignment(trainable_class, bounds):
     }
 
     parametrized = Parametrized(**kwargs)
-    attrib = getattr(parametrized, f"_{name}")
+    attrib = getattr(parametrized, f"{name}")
 
     assert isinstance(attrib, trainable_class)
     assert isinstance(attrib, Trainable)
@@ -72,7 +72,7 @@ def test_attribute_from_backend_constant_assignment():
     kwargs = {name: value, f"{name}_trainable": False}
 
     parametrized = Parametrized(**kwargs)
-    attrib = getattr(parametrized, f"_{name}")
+    attrib = getattr(parametrized, f"{name}")
 
     assert isinstance(attrib, Constant)
     assert math.from_backend(attrib.value)
