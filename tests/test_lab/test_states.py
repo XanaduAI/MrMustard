@@ -17,11 +17,22 @@ import pytest
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
 from mrmustard.physics import gaussian as gp
-from mrmustard.lab.states import *
-from mrmustard.lab.gates import *
+from mrmustard.lab.states import (
+    Fock,
+    Coherent,
+    Vacuum,
+    Gaussian,
+    SqueezedVacuum,
+    DisplacedSqueezed,
+    Thermal,
+)
+from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
-from tests import random
+
+from mrmustard.math import Math
+
+math = Math()
 
 
 @st.composite
@@ -98,6 +109,7 @@ def test_the_purity_of_a_mixed_state(nbar):
     phi2=st.floats(0.0, 2 * np.pi),
 )
 def test_join_two_states(r1, phi1, r2, phi2):
+    """Test Sgate acts the same in parallel or individually for two states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
     S2 = Vacuum(1) >> Sgate(r=r2, phi=phi2)
     S12 = Vacuum(2) >> Sgate(r=[r1, r2], phi=[phi1, phi2])
@@ -113,6 +125,7 @@ def test_join_two_states(r1, phi1, r2, phi2):
     phi3=st.floats(0.0, 2 * np.pi),
 )
 def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
+    """Test Sgate acts the same in parallel or individually for three states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
     S2 = Vacuum(1) >> Sgate(r=r2, phi=phi2)
     S3 = Vacuum(1) >> Sgate(r=r3, phi=phi3)
@@ -122,12 +135,14 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
 
 @given(xy=xy_arrays())
 def test_coh_state(xy):
+    """Test coherent state preparation."""
     x, y = xy
     assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
 
 
 @given(r=st.floats(0.0, 1.0), phi=st.floats(0.0, 2 * np.pi))
 def test_sq_state(r, phi):
+    """Test squeezed vacuum preparation."""
     assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
 
 
@@ -138,10 +153,12 @@ def test_sq_state(r, phi):
     phi=st.floats(0.0, 2 * np.pi),
 )
 def test_dispsq_state(x, y, r, phi):
+    """Test displaced squeezed state."""
     assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
 
 
 def test_get_modes():
+    """Test get_modes returns the states as expected."""
     a = Gaussian(2)
     b = Gaussian(2)
     assert a == (a & b).get_modes([0, 1])
@@ -150,6 +167,7 @@ def test_get_modes():
 
 @given(m=st.integers(0, 3))
 def test_modes_after_projection(m):
+    """Test number of modes is correct after single projection."""
     a = Gaussian(4) << Fock(1)[m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m])
     assert len(a.modes) == 3
@@ -157,6 +175,7 @@ def test_modes_after_projection(m):
 
 @given(n=st.integers(0, 3), m=st.integers(0, 3))
 def test_modes_after_double_projection(n, m):
+    """Test number of modes is correct after double projection."""
     assume(n != m)
     a = Gaussian(4) << Fock([1, 2])[n, m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m and k != n])
@@ -164,7 +183,7 @@ def test_modes_after_double_projection(n, m):
 
 
 def test_random_state_is_entangled():
-    """Tests that a Gaussian state generated at random is entangled"""
+    """Tests that a Gaussian state generated at random is entangled."""
     state = Vacuum(2) >> Ggate(num_modes=2)
     mat = state.cov
     assert np.allclose(gp.log_negativity(mat, 2), 0.0)
@@ -191,3 +210,28 @@ def test_getitem_set_modes(modes):
     state2 = State(ket=ket, modes=modes)
 
     assert state1.modes == state2.modes
+
+
+@pytest.mark.parametrize("pure", [True, False])
+def test_concat_pure_states(pure):
+    """Test that fock states concatenate correctly and are separable"""
+    state1 = Fock(1, cutoffs=[15])
+    state2 = Fock(4, cutoffs=[15])
+
+    if not pure:
+        state1 >>= Attenuator(transmissivity=0.95)
+        state2 >>= Attenuator(transmissivity=0.9)
+
+    psi = state1 & state2
+
+    # test concatenated state
+    psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3])
+    assert np.allclose(psi.dm(), psi_dm)
+
+    # trace state2 and check resulting dm corresponds to state 1
+    dm1 = math.trace(math.transpose(psi.dm(), [0, 2, 1, 3]))
+    assert np.allclose(state1.dm(), dm1)
+
+    # trace state1 and check resulting dm corresponds to state 2
+    dm2 = math.trace(math.transpose(psi.dm(), [1, 3, 0, 2]))
+    assert np.allclose(state2.dm(), dm2)

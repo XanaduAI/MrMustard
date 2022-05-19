@@ -163,6 +163,7 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
 
 @given(s=st.floats(1.0, 10.0), X=st.floats(-5.0, 5.0), angle=st.floats(0, np.pi))
 def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
+    r"""Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
     homodyne = Homodyne(quadrature_angle=angle, result=X)
     r = homodyne.r
     remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
@@ -243,6 +244,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
 def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
     s, x, y, d
 ):  # TODO: check if this is correct
+    r"""Check that heterodyne detection on TMSV works with an arbitrary displacement"""
     tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
     heterodyne = Heterodyne(modes=[0], x=x, y=y)
     remaining_state = tmsv << heterodyne[0]

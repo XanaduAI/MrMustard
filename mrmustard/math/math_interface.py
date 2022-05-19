@@ -19,8 +19,8 @@ from functools import lru_cache
 from itertools import product
 import numpy as np
 from scipy.special import binom
-from scipy.stats import unitary_group
 from numba import njit
+from scipy.stats import unitary_group, ortho_group
 
 from mrmustard.types import (
     List,
@@ -69,7 +69,6 @@ class MathInterface(ABC):
         Returns:
             array: absolute value of array
         """
-        ...
 
     @abstractmethod
     def any(self, array: Tensor) -> bool:
@@ -81,7 +80,6 @@ class MathInterface(ABC):
         Returns:
             bool: True if any element of array is True
         """
-        ...
 
     @abstractmethod
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype: Any = None) -> Tensor:
@@ -96,7 +94,7 @@ class MathInterface(ABC):
         Returns:
             array: array of evenly spaced values
         """
-        ...  # NOTE: is float64 by default
+        # NOTE: is float64 by default
 
     @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
@@ -108,7 +106,6 @@ class MathInterface(ABC):
         Returns:
             array: NumPy array
         """
-        ...
 
     @abstractmethod
     def assign(self, tensor: Tensor, value: Tensor) -> Tensor:
@@ -121,7 +118,6 @@ class MathInterface(ABC):
         Returns:
             array: tensor with value assigned
         """
-        ...
 
     @abstractmethod
     def astensor(self, array: Tensor, dtype: str) -> Tensor:
@@ -134,7 +130,6 @@ class MathInterface(ABC):
         Returns:
             array: tensor with dtype
         """
-        ...
 
     @abstractmethod
     def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
@@ -147,7 +142,6 @@ class MathInterface(ABC):
         Returns:
             array: array with at least one dimension
         """
-        ...
 
     @abstractmethod
     def cast(self, array: Tensor, dtype) -> Tensor:
@@ -160,7 +154,6 @@ class MathInterface(ABC):
         Returns:
             array: array cast to dtype
         """
-        ...
 
     @abstractmethod
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
@@ -174,7 +167,6 @@ class MathInterface(ABC):
         Returns:
             array: clipped array
         """
-        ...
 
     @abstractmethod
     def concat(self, values: Sequence[Tensor], axis: int) -> Tensor:
@@ -187,7 +179,6 @@ class MathInterface(ABC):
         Returns:
             array: concatenated values
         """
-        ...
 
     @abstractmethod
     def conj(self, array: Tensor) -> Tensor:
@@ -199,7 +190,6 @@ class MathInterface(ABC):
         Returns:
             array: complex conjugate of array
         """
-        ...
 
     @abstractmethod
     def constraint_func(
@@ -220,7 +210,6 @@ class MathInterface(ABC):
         Returns:
             function: constraint function
         """
-        ...
 
     @abstractmethod
     def convolution(
@@ -241,7 +230,6 @@ class MathInterface(ABC):
         Returns:
             array: convolved array
         """
-        ...
 
     @abstractmethod
     def cos(self, array: Tensor) -> Tensor:
@@ -253,7 +241,6 @@ class MathInterface(ABC):
         Returns:
             array: cosine of array
         """
-        ...
 
     @abstractmethod
     def cosh(self, array: Tensor) -> Tensor:
@@ -265,7 +252,6 @@ class MathInterface(ABC):
         Returns:
             array: hyperbolic cosine of array
         """
-        ...
 
     @abstractmethod
     def det(self, matrix: Tensor) -> Tensor:
@@ -277,7 +263,6 @@ class MathInterface(ABC):
         Returns:
             determinant of matrix
         """
-        ...
 
     @abstractmethod
     def diag(self, array: Tensor, k: int) -> Tensor:
@@ -290,7 +275,6 @@ class MathInterface(ABC):
         Returns:
             array: array with array inserted into the kth diagonal
         """
-        ...
 
     @abstractmethod
     def diag_part(self, array: Tensor) -> Tensor:
@@ -302,7 +286,10 @@ class MathInterface(ABC):
         Returns:
             array: array of the main diagonal of array
         """
-        ...
+
+    @abstractmethod
+    def eigvals(self, tensor: Tensor) -> Tensor:
+        r"""Returns the eigenvalues of a matrix."""
 
     @abstractmethod
     def einsum(self, string: str, *tensors) -> Tensor:
@@ -315,7 +302,6 @@ class MathInterface(ABC):
         Returns:
             array: result of the Einstein summation convention
         """
-        ...
 
     @abstractmethod
     def exp(self, array: Tensor) -> Tensor:
@@ -327,7 +313,6 @@ class MathInterface(ABC):
         Returns:
             array: exponential of array
         """
-        ...
 
     @abstractmethod
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
@@ -340,7 +325,6 @@ class MathInterface(ABC):
         Returns:
             array: array with an additional dimension inserted at the given axis
         """
-        ...
 
     @abstractmethod
     def expm(self, matrix: Tensor) -> Tensor:
@@ -352,7 +336,6 @@ class MathInterface(ABC):
         Returns:
             matrix: exponential of matrix
         """
-        ...
 
     @abstractmethod
     def eye(self, size: int, dtype) -> Tensor:
@@ -365,12 +348,10 @@ class MathInterface(ABC):
         Returns:
             matrix: identity matrix
         """
-        ...
 
     @abstractmethod
     def from_backend(self, value: Any) -> bool:
         r"""Returns whether the given tensor is a tensor of the concrete backend."""
-        ...
 
     @abstractmethod
     def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
@@ -384,7 +365,6 @@ class MathInterface(ABC):
         Returns:
             array: values of the array at the given indices
         """
-        ...
 
     @abstractmethod
     def hash_tensor(self, tensor: Tensor) -> int:
@@ -396,7 +376,6 @@ class MathInterface(ABC):
         Returns:
             int: hash of the given tensor
         """
-        ...
 
     @abstractmethod
     def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
@@ -411,7 +390,6 @@ class MathInterface(ABC):
         Returns:
             array: renormalized hermite polynomials
         """
-        ...
 
     @abstractmethod
     def imag(self, array: Tensor) -> Tensor:
@@ -423,7 +401,6 @@ class MathInterface(ABC):
         Returns:
             array: imaginary part of array
         """
-        ...
 
     @abstractmethod
     def inv(self, tensor: Tensor) -> Tensor:
@@ -435,12 +412,10 @@ class MathInterface(ABC):
         Returns:
             array: inverse of tensor
         """
-        ...
 
     @abstractmethod
     def is_trainable(self, tensor: Tensor) -> bool:
         r"""Returns whether the given tensor is trainable."""
-        ...
 
     @abstractmethod
     def lgamma(self, x: Tensor) -> Tensor:
@@ -452,7 +427,6 @@ class MathInterface(ABC):
         Returns:
             array: natural logarithm of the gamma function of ``x``
         """
-        ...
 
     @abstractmethod
     def log(self, x: Tensor) -> Tensor:
@@ -464,7 +438,6 @@ class MathInterface(ABC):
         Returns:
             array: natural logarithm of ``x``
         """
-        ...
 
     @abstractmethod
     def matmul(
@@ -489,7 +462,6 @@ class MathInterface(ABC):
         Returns:
             array: matrix product of ``a`` and ``b``
         """
-        ...
 
     @abstractmethod
     def matvec(self, a: Matrix, b: Vector, transpose_a=False, adjoint_a=False) -> Tensor:
@@ -504,7 +476,6 @@ class MathInterface(ABC):
         Returns:
             array: matrix vector product of ``a`` and ``b``
         """
-        ...
 
     @abstractmethod
     def maximum(self, a: Tensor, b: Tensor) -> Tensor:
@@ -517,7 +488,6 @@ class MathInterface(ABC):
         Returns:
             array: element-wise maximum of ``a`` and ``b``
         """
-        ...
 
     @abstractmethod
     def minimum(self, a: Tensor, b: Tensor) -> Tensor:
@@ -530,7 +500,6 @@ class MathInterface(ABC):
         Returns:
             array: element-wise minimum of ``a`` and ``b``
         """
-        ...
 
     @abstractmethod
     def new_variable(
@@ -546,7 +515,6 @@ class MathInterface(ABC):
         Returns:
             array: new variable
         """
-        ...
 
     @abstractmethod
     def new_constant(self, value: Tensor, name: str, dtype: Any) -> Tensor:
@@ -560,7 +528,6 @@ class MathInterface(ABC):
         Returns:
             array: new constant
         """
-        ...
 
     @abstractmethod
     def norm(self, array: Tensor) -> Tensor:
@@ -572,7 +539,6 @@ class MathInterface(ABC):
         Returns:
             array: norm of array
         """
-        ...
 
     @abstractmethod
     def ones(self, shape: Sequence[int], dtype) -> Tensor:
@@ -585,7 +551,7 @@ class MathInterface(ABC):
         Returns:
             array: array of ones
         """
-        ...  # NOTE : should be float64 by default
+        # NOTE : should be float64 by default
 
     @abstractmethod
     def ones_like(self, array: Tensor) -> Tensor:
@@ -597,7 +563,6 @@ class MathInterface(ABC):
         Returns:
             array: array of ones
         """
-        ...
 
     @abstractmethod
     def outer(self, array1: Tensor, array2: Tensor) -> Tensor:
@@ -610,7 +575,6 @@ class MathInterface(ABC):
         Returns:
             array: outer product of array1 and array2
         """
-        ...
 
     @abstractmethod
     def pad(
@@ -627,7 +591,6 @@ class MathInterface(ABC):
         Returns:
             array: padded array
         """
-        ...
 
     @abstractmethod
     def pinv(self, matrix: Tensor) -> Tensor:
@@ -639,7 +602,6 @@ class MathInterface(ABC):
         Returns:
             array: pseudo-inverse of matrix
         """
-        ...
 
     @abstractmethod
     def pow(self, x: Tensor, y: Tensor) -> Tensor:
@@ -651,7 +613,6 @@ class MathInterface(ABC):
         Returns:
             array: :math:`x^y`
         """
-        ...
 
     @abstractmethod
     def real(self, array: Tensor) -> Tensor:
@@ -663,7 +624,6 @@ class MathInterface(ABC):
         Returns:
             array: real part of ``array``
         """
-        ...
 
     @abstractmethod
     def reshape(self, array: Tensor, shape: Sequence[int]) -> Tensor:
@@ -676,7 +636,6 @@ class MathInterface(ABC):
         Returns:
             array: reshaped array
         """
-        ...
 
     @abstractmethod
     def sin(self, array: Tensor) -> Tensor:
@@ -688,7 +647,6 @@ class MathInterface(ABC):
         Returns:
             array: sine of ``array``
         """
-        ...
 
     @abstractmethod
     def sinh(self, array: Tensor) -> Tensor:
@@ -700,7 +658,6 @@ class MathInterface(ABC):
         Returns:
             array: hyperbolic sine of ``array``
         """
-        ...
 
     @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
@@ -713,7 +670,10 @@ class MathInterface(ABC):
         Returns:
             array: square root of ``x``
         """
-        ...
+
+    @abstractmethod
+    def sqrtm(self, tensor: Tensor) -> Tensor:
+        r"""Returns the matrix square root."""
 
     @abstractmethod
     def sum(self, array: Tensor, axes: Sequence[int] = None):
@@ -726,7 +686,6 @@ class MathInterface(ABC):
         Returns:
             array: sum of array
         """
-        ...
 
     @abstractmethod
     def tensordot(self, a: Tensor, b: Tensor, axes: Sequence[int]) -> Tensor:
@@ -740,7 +699,6 @@ class MathInterface(ABC):
         Returns:
             array: tensordot product of ``a`` and ``b``
         """
-        ...
 
     @abstractmethod
     def tile(self, array: Tensor, repeats: Sequence[int]) -> Tensor:
@@ -753,7 +711,6 @@ class MathInterface(ABC):
         Returns:
             array: tiled array
         """
-        ...
 
     @abstractmethod
     def trace(self, array: Tensor, dtype: Any = None) -> Tensor:
@@ -766,7 +723,6 @@ class MathInterface(ABC):
         Returns:
             array: trace of array
         """
-        ...
 
     @abstractmethod
     def transpose(self, a: Tensor, perm: Sequence[int] = None):
@@ -779,7 +735,6 @@ class MathInterface(ABC):
         Returns:
             array: transposed array
         """
-        ...
 
     @abstractmethod
     def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
@@ -791,7 +746,6 @@ class MathInterface(ABC):
         Returns:
             list: list of tensors without duplicates and non-tensors.
         """
-        ...
 
     @abstractmethod
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
@@ -802,7 +756,6 @@ class MathInterface(ABC):
             indices (array): indices to update
             values (array): values to update
         """
-        ...
 
     @abstractmethod
     def update_add_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
@@ -813,7 +766,6 @@ class MathInterface(ABC):
             indices (array): indices to update
             values (array): values to add
         """
-        ...
 
     @abstractmethod
     def value_and_gradients(
@@ -828,7 +780,6 @@ class MathInterface(ABC):
         Returns:
             tuple: loss and gradients (dict) of the given cost function
         """
-        ...
 
     @abstractmethod
     def zeros(self, shape: Sequence[int], dtype) -> Tensor:
@@ -841,7 +792,6 @@ class MathInterface(ABC):
         Returns:
             array: array of zeros
         """
-        ...
 
     @abstractmethod
     def zeros_like(self, array: Tensor) -> Tensor:
@@ -853,7 +803,6 @@ class MathInterface(ABC):
         Returns:
             array: array of zeros
         """
-        ...
 
     @property
     def euclidean_opt(self):
@@ -861,16 +810,6 @@ class MathInterface(ABC):
         if not self._euclidean_opt:
             self._euclidean_opt = self.DefaultEuclideanOptimizer()
         return self._euclidean_opt
-
-    # pylint: disable=no-self-use
-    def eigvals(self, tensor: Tensor) -> Tensor:
-        r"""Returns the eigenvalues of a matrix."""
-        ...
-
-    # pylint: disable=no-self-use
-    def sqrtm(self, tensor: Tensor) -> Tensor:
-        r"""Returns the matrix square root."""
-        ...
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
@@ -913,7 +852,7 @@ class MathInterface(ABC):
         Y = self.imag(U)
         return self.block([[X, -Y], [Y, X]])
 
-    def random_symplectic(self, num_modes: int = 1, max_r: float = 1.0) -> Tensor:
+    def random_symplectic(self, num_modes: int, max_r: float = 1.0) -> Tensor:
         r"""A random symplectic matrix in ``Sp(2*num_modes)``.
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
@@ -930,13 +869,18 @@ class MathInterface(ABC):
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
         return OW @ dd @ OV
 
-    def random_orthogonal(self, num_modes: int = 1) -> Tensor:
-        """A random orthogonal matrix in :math:`O(2*num_modes)`."""
-        if num_modes == 1:
-            W = self.exp(1j * np.random.uniform(size=(1, 1)))
-        else:
-            W = unitary_group.rvs(dim=num_modes)
-        return self.unitary_to_orthogonal(W)
+    @staticmethod
+    def random_orthogonal(N: int) -> Tensor:
+        """A random orthogonal matrix in :math:`O(N)`."""
+        if N == 1:
+            return np.array([[1.0]])
+        return ortho_group.rvs(dim=N)
+
+    def random_unitary(self, N: int) -> Tensor:
+        """a random unitary matrix in :math:`U(N)`"""
+        if N == 1:
+            return self.exp(1j * np.random.uniform(size=(1, 1)))
+        return unitary_group.rvs(dim=N)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
         r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""

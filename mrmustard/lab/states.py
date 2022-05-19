@@ -22,7 +22,6 @@ from mrmustard import settings
 from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian, fock
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard.utils import training
 from mrmustard.math import Math
 
 math = Math()
@@ -421,7 +420,7 @@ class Gaussian(Parametrized, State):
         normalize: bool = False,
     ):
         if symplectic is None:
-            symplectic = training.new_symplectic(num_modes=num_modes)
+            symplectic = math.random_symplectic(num_modes=num_modes)
         if eigenvalues is None:
             eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
         if math.any(math.atleast_1d(eigenvalues) < settings.HBAR / 2):
@@ -435,6 +434,7 @@ class Gaussian(Parametrized, State):
             eigenvalues_trainable=eigenvalues_trainable,
             symplectic_trainable=symplectic_trainable,
             eigenvalues_bounds=eigenvalues_bounds,
+            symplectic_bounds=(None, None),
             modes=modes,
             normalize=normalize,
         )
