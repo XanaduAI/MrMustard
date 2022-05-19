@@ -16,9 +16,11 @@
 an abstract base class for all parametrized objects.
 """
 
-from mrmustard.types import Tensor, Dict, List, Tuple, Union
+import inspect
+from functools import cached_property
+from mrmustard.types import Tensor, Dict, List, Tuple, Union, Sequence
 from mrmustard.math import Math
-from mrmustard.utils.parameter import create_parameter
+from mrmustard.utils.parameter import create_parameter, Trainable, Constant
 
 math = Math()
 
@@ -43,3 +45,11 @@ class Parametrized:
 
             # dynamically assign variable as attribute of the class
             self.__dict__[f"_{name}"] = value
+
+    @property
+    def trainable_parameters(self) -> Sequence[Trainable]:
+        return tuple(value for _, value in self.__dict__.items() if isinstance(value, Trainable))
+
+    @property
+    def constant_parameters(self) -> List[Constant]:
+        return tuple(value for _, value in self.__dict__.items() if isinstance(value, Constant))

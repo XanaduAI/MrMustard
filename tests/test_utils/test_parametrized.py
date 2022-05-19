@@ -98,3 +98,28 @@ def test_attribute_from_backend_constant_assignment():
     assert isinstance(attrib, Constant)
     assert math.from_backend(attrib.value)
     assert attrib.name == name
+
+
+def test_get_parameters():
+    """Test that the `get_trainable_parameters` property returns the correct
+    set of parameters"""
+
+    kwargs = {
+        "regular_attribute": "just_a_string",
+        "constant_attribute": math.new_constant(1, "constant_attribute"),
+        "symplectic_attribute": math.new_variable(2, None, "symplectic_attribute"),
+        "symplectic_attribute_trainable": True,
+        "euclidian_attribute": math.new_variable(3, None, "euclidian_attribute"),
+        "euclidian_attribute_trainable": True,
+        "orthogonal_attribute": math.new_variable(4, None, "orthogonal_attribute"),
+        "orthogonal_attribute_trainable": True,
+    }
+    parametrized = Parametrized(**kwargs)
+
+    trainable_params = parametrized.trainable_parameters
+    assert len(trainable_params) == 3
+    assert all(isinstance(param, Trainable) for param in trainable_params)
+
+    constant_params = parametrized.constant_parameters
+    assert len(constant_params) == 1
+    assert all(isinstance(param, Constant) for param in constant_params)
