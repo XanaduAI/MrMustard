@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-from hypothesis import given, strategies as st
+from ctypes import Union
 import pytest
 
 from mrmustard.utils.parametrized import Parametrized
@@ -23,38 +22,18 @@ from mrmustard.utils.parameter import Constant, Orthogonal, Euclidian, Symplecti
 math = Math()
 
 
-def from_python_types():
-    relevant_python_types = [int, float, complex, list, tuple, dict, str, set]
-    chosen_type = random.choice(relevant_python_types)
-    return st.from_type(chosen_type)
-
-
-@given(kwargs=st.dictionaries(st.from_regex("[a-zA-Z]+"), from_python_types(), min_size=1))
+@pytest.mark.parametrize("kwargs", [{"a": 5}, {"b": 4.5}])
 def test_attribute_assignment(kwargs):
-    """Test that arguments are assigned as attributes of the class."""
-    parametrized = Parametrized(**kwargs)
-    keys = kwargs.keys()
-
-    instance_attributes = parametrized.__dict__
-
-    # assert arguments are assigned as attributes of the class
-    expected_attribute_names = [f"_{key}" for key in keys]
-    instance_attribute_names = list(instance_attributes.keys())
-    assert all(attribute in instance_attribute_names for attribute in expected_attribute_names)
-
-    # assert attributes of the class are assigned the correct value
-    assert all(instance_attributes[f"_{key}"] == value for key, value in kwargs.items())
-
-
-@given(kwargs=st.dictionaries(st.from_regex("[a-zA-Z]+"), from_python_types(), min_size=1))
-def test_attribute_type_assignment(kwargs):
-    """Test that attributes of the class that do not belong
-    to the backend are assigned the correct type.
-    """
+    """Test that arguments are converted into Trainable or Constant and
+    assigned as attributes of the class."""
     parametrized = Parametrized(**kwargs)
 
     instance_attributes = parametrized.__dict__
-    assert all(type(instance_attributes[f"_{key}"]) is type(value) for key, value in kwargs.items())
+
+    for name in kwargs.keys():
+        attrib = instance_attributes[f"_{name}"]
+        assert isinstance(attrib, (Trainable, Constant))
+        assert instance_attributes[f"_{name}"].name == name
 
 
 @pytest.mark.parametrize("trainable_class", (Euclidian, Orthogonal, Symplectic))
@@ -105,7 +84,7 @@ def test_get_parameters():
     set of parameters"""
 
     kwargs = {
-        "regular_attribute": "just_a_string",
+        "numeric_attribute": 2,
         "constant_attribute": math.new_constant(1, "constant_attribute"),
         "symplectic_attribute": math.new_variable(2, None, "symplectic_attribute"),
         "symplectic_attribute_trainable": True,
@@ -121,5 +100,5 @@ def test_get_parameters():
     assert all(isinstance(param, Trainable) for param in trainable_params)
 
     constant_params = parametrized.constant_parameters
-    assert len(constant_params) == 1
+    assert len(constant_params) == 2
     assert all(isinstance(param, Constant) for param in constant_params)

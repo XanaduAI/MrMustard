@@ -16,8 +16,6 @@
 an abstract base class for all parametrized objects.
 """
 
-import inspect
-from functools import cached_property
 from mrmustard.types import Tensor, Dict, List, Tuple, Union, Sequence
 from mrmustard.math import Math
 from mrmustard.utils.parameter import create_parameter, Trainable, Constant
@@ -38,18 +36,24 @@ class Parametrized:
         owner = f"{self.__class__.__qualname__}"
 
         for name, value in kwargs.items():
+
+            # filter `{name}_trainable` or `{name}_bounds`` to become fields
+            # of the class as those kwargs are used to define the variables
+            if "_trainable" in name or "_bounds" in name:
+                continue
+
+            # convert into parameter class
             is_trainable = kwargs.get(f"{name}_trainable", False) or math.is_trainable(value)
-            if math.from_backend(value) or is_trainable:
-                bounds = kwargs.get(f"{name}_bounds", None)
-                value = create_parameter(value, name, is_trainable, bounds, owner)
+            bounds = kwargs.get(f"{name}_bounds", None)
+            param_value = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign variable as attribute of the class
-            self.__dict__[f"_{name}"] = value
+            self.__dict__[f"_{name}"] = param_value
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
-        return tuple(value for _, value in self.__dict__.items() if isinstance(value, Trainable))
+        return [value for value in self.__dict__.values() if isinstance(value, Trainable)]
 
     @property
     def constant_parameters(self) -> List[Constant]:
-        return tuple(value for _, value in self.__dict__.items() if isinstance(value, Constant))
+        return [value for value in self.__dict__.values() if isinstance(value, Constant)]
