@@ -16,11 +16,14 @@
 used within Mr Mustard.
 """
 
-from mrmustard.types import List, Callable, Sequence, Trainable, Tensor
+import itertools
+from mrmustard.types import List, Callable, Sequence, Tensor
+from mrmustard.utils.parameter import Parameter, Trainable
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
 from mrmustard import settings
+from mrmustard.utils.parametrized import Parametrized
 
 math = Math()
 
@@ -38,9 +41,11 @@ class Optimizer:
     def __init__(
         self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001
     ):
-        self.symplectic_lr: float = symplectic_lr
-        self.orthogonal_lr: float = orthogonal_lr
-        self.euclidean_lr: float = euclidean_lr
+        self.learning_rate = {
+            "euclidian": euclidean_lr,
+            "symplectic": symplectic_lr,
+            "orthogonal": orthogonal_lr,
+        }
         self.opt_history: List[float] = [0]
         self.log = create_logger(__name__)
 
@@ -59,42 +64,23 @@ class Optimizer:
         """
         try:
             # finding out which parameters are trainable from the ops
-            params = {
-                "symplectic": math.unique_tensors(
-                    [p for item in by_optimizing for p in item.trainable_parameters["symplectic"]]
-                ),
-                "orthogonal": math.unique_tensors(
-                    [p for item in by_optimizing for p in item.trainable_parameters["orthogonal"]]
-                ),
-                "euclidean": math.unique_tensors(
-                    [p for item in by_optimizing for p in item.trainable_parameters["euclidean"]]
-                ),
-            }
-            for item in by_optimizing:
-                for p in item.trainable_parameters["symplectic"]:
-                    pass
+            trainable_params = list(
+                itertools.chain(
+                    *[
+                        item.trainable_parameters
+                        for item in by_optimizing
+                        if isinstance(item, Parametrized)
+                    ]
+                )
+            )
 
-            if settings.PROGRESSBAR:
-                bar = graphics.Progressbar(max_steps)
-                with bar:
-                    while not self.should_stop(max_steps):
-                        cost, grads = math.value_and_gradients(cost_fn, params)
-                        update_symplectic(
-                            params["symplectic"], grads["symplectic"], self.symplectic_lr
-                        )
-                        update_orthogonal(
-                            params["orthogonal"], grads["orthogonal"], self.orthogonal_lr
-                        )
-                        update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
-                        self.opt_history.append(cost)
-                        bar.step(math.asnumpy(cost))
-            else:
-                while not self.should_stop(max_steps):
-                    cost, grads = math.value_and_gradients(cost_fn, params)
-                    update_symplectic(params["symplectic"], grads["symplectic"], self.symplectic_lr)
-                    update_orthogonal(params["orthogonal"], grads["orthogonal"], self.orthogonal_lr)
-                    update_euclidean(params["euclidean"], grads["euclidean"], self.euclidean_lr)
-                    self.opt_history.append(cost)
+            while not self.should_stop(max_steps):
+                cost, grads = loss_and_gradients(cost_fn, trainable_params)
+                self.opt_history.append(cost)
+                for param, grad in zip(trainable_params, grads):
+                    param_lr = self.learning_rate[param.type]
+                    param.update(grad, param_lr)
+
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
@@ -124,6 +110,27 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 
 
+def loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
+    r"""Uses the backend to compute the loss and gradients of the parameters
+    given a cost function.
+
+    This functions is a wrapper around the backend optimizer to extract tensors
+    from `parameters` and correctly compute the loss and gradients. Results of
+    the calculation are associated back again with the given parameters.
+
+    Args:
+        cost_fn (Callable with no args): The cost function.
+        parameters (List[Parameter]): The parameters to optimize.
+
+    Returns:
+        tuple(Tensor, List[Tensor]): The loss and the gradients.
+    """
+    param_tensors =  [p.value for p in parameters]
+    loss, grads = math.value_and_gradients(cost_fn, param_tensors)
+
+    return loss, grads
+
+
 def new_symplectic(num_modes: int) -> Tensor:
     r"""Returns a new symplectic matrix from the current math backend with ``num_modes`` modes.
 
@@ -139,51 +146,3 @@ def new_symplectic(num_modes: int) -> Tensor:
 def new_orthogonal(num_modes: int) -> Tensor:
     """Returns a random orthogonal matrix in :math:`O(2*num_modes)`."""
     return math.random_orthogonal(num_modes)
-
-
-def update_symplectic(
-    symplectic_params: Sequence[Trainable], symplectic_grads: Sequence[Tensor], symplectic_lr: float
-):
-
-    r"""Updates the symplectic parameters using the given symplectic gradients.
-
-    Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian‐steepest‐descent approach
-        for optimization on the real symplectic group.
-        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
-    """
-    for S, dS_euclidean in zip(symplectic_params, symplectic_grads):
-        Y = math.euclidean_to_symplectic(S, dS_euclidean)
-        YT = math.transpose(Y)
-        new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
-        )
-        math.assign(S, new_value)
-
-
-def update_orthogonal(
-    orthogonal_params: Sequence[Trainable], orthogonal_grads: Sequence[Tensor], orthogonal_lr: float
-):
-    r"""Updates the orthogonal parameters using the given orthogonal gradients.
-
-    Implemented from:
-        Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
-        Over the Orthogonal Group: A Tutorial.
-        Journal of Machine Learning Research. 2005 May 1;6(5).
-    """
-    for O, dO_euclidean in zip(orthogonal_params, orthogonal_grads):
-        dO_orthogonal = 0.5 * (
-            dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O)
-        )
-        new_value = math.matmul(
-            O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), O))
-        )
-        math.assign(O, new_value)
-
-
-def update_euclidean(
-    euclidean_params: Sequence[Trainable], euclidean_grads: Sequence[Tensor], euclidean_lr: float
-):
-    """Updates the parameters using the euclidian gradients."""
-    math.euclidean_opt.lr = euclidean_lr
-    math.euclidean_opt.apply_gradients(zip(euclidean_grads, euclidean_params))
