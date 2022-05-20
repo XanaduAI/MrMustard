@@ -142,7 +142,7 @@ def test_loss_probs(eta):
 @given(s=st.floats(min_value=0.0, max_value=10.0), X=st.floats(-10.0, 10.0))
 def test_homodyne_on_2mode_squeezed_vacuum(s, X):
     homodyne = Homodyne(quadrature_angle=0.0, result=X)
-    r = homodyne.r
+    r = homodyne.r.value
     remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
     cov = (
         np.diag(
@@ -165,7 +165,7 @@ def test_homodyne_on_2mode_squeezed_vacuum(s, X):
 def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
     r"""Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
     homodyne = Homodyne(quadrature_angle=angle, result=X)
-    r = homodyne.r
+    r = homodyne.r.value
     remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
     denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
     cov = (
@@ -222,7 +222,7 @@ def test_homodyne_on_2mode_squeezed_vacuum_with_angle(s, X, angle):
 def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(s, X, d):
     tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
     homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X)
-    r = homodyne.r
+    r = homodyne.r.value
     remaining_state = tmsv << homodyne[0]
     xb, xa, pb, pa = d
     means = np.array(

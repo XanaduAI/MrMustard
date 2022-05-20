@@ -165,7 +165,6 @@ class Rgate(Parametrized, Transformation):
             angle=angle,
             angle_trainable=angle_trainable,
             angle_bounds=angle_bounds,
-            modes=modes,
         )
         self._modes = modes
         self._is_gaussian = True
@@ -208,7 +207,7 @@ class Pgate(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.quadratic_phase(self.shearing.values)
+        return gaussian.quadratic_phase(self.shearing.value)
 
 
 class CXgate(Parametrized, Transformation):
@@ -363,17 +362,14 @@ class MZgate(Parametrized, Transformation):
             phi_b_trainable=phi_b_trainable,
             phi_a_bounds=phi_a_bounds,
             phi_b_bounds=phi_b_bounds,
-            internal=internal,
-            modes=modes,
         )
+        self._internal = internal
         self._modes = modes
         self._is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.mz_symplectic(
-            self.phi_a.value, self.phi_b.value, internal=self._internal.value
-        )
+        return gaussian.mz_symplectic(self.phi_a.value, self.phi_b.value, internal=self._internal)
 
     def _validate_modes(self, modes):
         if len(modes) != 2:

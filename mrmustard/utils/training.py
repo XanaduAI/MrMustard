@@ -125,7 +125,7 @@ def loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
     Returns:
         tuple(Tensor, List[Tensor]): The loss and the gradients.
     """
-    param_tensors =  [p.value for p in parameters]
+    param_tensors = [p.value for p in parameters]
     loss, grads = math.value_and_gradients(cost_fn, param_tensors)
 
     return loss, grads
