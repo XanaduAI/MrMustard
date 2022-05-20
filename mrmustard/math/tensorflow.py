@@ -361,23 +361,19 @@ class TFMath(MathInterface):
         are preserved (thye are either processed by the matrix or they are copied to the output).
 
         Args:
-            matrix (array): :math:`2M\times 2M` array
-            vector (array): :math:`2N` vector
+            matrix (array): :math:`B_1\times 2M\times 2M` array
+            vector (array): :math:`B_2\times 2N` vector
             m_modes (list(int)): list of ``M`` modes of the matrix
             v_outmodes (list(int)): list of ``N`` modes of the vector
             like_0 (bool): whether matrix is like_0 or not
         Returns:
-            array: :math:`2N` new vector
+            array: :math:`(B_1B_2)\times 2N` new vector
         """
 
         new_vec = tf.numpy_function(self.numba_sparse_matvec, [matrix, vector, m_modes, v_modes, like_0], vector.dtype)
 
-        def grad(dLdnew_vec): # NOTE: dLdnew_vec is the derivative of L with respect to new_vec *conjugate*
-            dnew_vec_dmatrix, dnew_vec_dvector = tf.numpy_function(self.numba_sparse_matvec_grad, [matrix, vector, m_modes, v_modes, like_0], [new_vec.dtype] * 2)
-            ax = tuple(range(dLdnew_vec.ndim))
-            dLdmatrix = self.sum(dLdnew_vec[..., None, None] * self.conj(dnew_vec_dmatrix), axes=ax)
-            dLdvector = self.sum(dLdnew_vec * self.conj(dnew_vec_dvector), axes=ax)
-            return dmatrix, dvector  # NOTE: dLdmatrix, dLdvector are derivatives with respect to matrix and vector *conjugate*
+        def grad(dmatvec): # NOTE: dLdnew_vec is the derivative of L with respect to new_vec *conjugate*
+            return tf.numpy_function(self.numba_sparse_matvec_vjp, [dmatvec, matrix, vector, m_modes, v_modes, like_0], [new_vec.dtype] * 2)
 
         return new_vec, grad
 
@@ -388,18 +384,21 @@ class TFMath(MathInterface):
         in the matrix are assumed to be 0s, otherwise it's assumed to be like the identity matrix in unspecified modes.
 
         Args:
-            matrix1 (array): :math:`B1\times 2M\times 2M` array
-            matrix2 (array): :math:`B2\times 2N\times 2N` array
+            matrix1 (array): :math:`B_1\times 2M\times 2M` array
+            matrix2 (array): :math:`B_2\times 2N\times 2N` array
             m1_modes (list(int)): list of ``M`` modes of the matrix1
             m2_modes (list(int)): list of ``N`` modes of the matrix2
             m1like_0 (bool): whether matrix1 is like_0 or not
             m2like_0 (bool): whether matrix2 is like_0 or not
         Returns:
-            array: :math:`(B1*B2)\times 2M\times 2N` new matrix
+            array: :math:`(B_1B_2)\times 2M\times 2N` new matrix
         """
         new_matrix = tf.numpy_function(self.numba_sparse_matmul, [matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0], matrix1.dtype)
 
-        def grad(dLdnew_matrix): # NOTE: dLdnew_matrix is the derivative of L with respect to new_matrix *conjugate*
+        def grad(dnewmatrix): # NOTE: dLdnew_matrix is the derivative of L with respect to new_matrix *conjugate*
+            return tf.numpy_function(self.numba_sparse_matmul_vjp, [dnewmatrix, matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0], [new_matrix.dtype] * 2)
+
+        return new_matrix, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
