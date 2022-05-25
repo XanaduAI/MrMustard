@@ -24,7 +24,7 @@ math = Math()
 
 
 class Parametrized:
-    r"""Abstract base class for all parametrized objects (gates, detectors, etc.)
+    r"""A class representing all parametrized objects (gates, detectors, etc.)
 
     For each trainable parameter keyword arguments must be passed for the initial value ``xxx``
     (tensor), the numerical bounds ``xxx_bounds`` (float, float), whether the parameter ``xxx`` will
@@ -48,7 +48,7 @@ class Parametrized:
             param_value = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign variable as attribute of the class
-            self.__dict__[f"{name}"] = param_value
+            self.__dict__[name] = param_value
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:

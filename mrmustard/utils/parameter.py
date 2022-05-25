@@ -62,7 +62,7 @@ class Parameter(ABC):
 
 class Trainable(Parameter, ABC):
     @abstractmethod
-    def __init__(self, value, bounds, name, owner=None) -> None:
+    def __init__(self, value, name, owner=None) -> None:
         pass
 
     @abstractmethod
@@ -71,8 +71,8 @@ class Trainable(Parameter, ABC):
 
 
 class Symplectic(Trainable):
-    def __init__(self, value, bounds, name, owner=None) -> None:
-        self._value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+    def __init__(self, value, name, owner=None) -> None:
+        self._value = value if math.from_backend(value) else math.new_variable(value, None, name)
         self._name = name
         self._owner = owner
 
@@ -111,8 +111,8 @@ class Euclidian(Trainable):
 
 
 class Orthogonal(Trainable):
-    def __init__(self, value, bounds, name, owner=None) -> None:
-        self._value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+    def __init__(self, value, name, owner=None) -> None:
+        self._value = value if math.from_backend(value) else math.new_variable(value, None, name)
         self._name = name
         self._owner = owner
 
@@ -149,16 +149,10 @@ def create_parameter(value, name, is_trainable=False, bounds=None, owner=None) -
     if not is_trainable:
         return Constant(value, name, owner)
 
-    trainable = _get_trainable_by_type(name)
-    return trainable(value, bounds, name, owner)
-
-
-def _get_trainable_by_type(name: str) -> Trainable:
-
     if name.startswith("symplectic"):
-        return Symplectic
+        return Symplectic(value, name, owner)
 
     if name.startswith("orthogonal"):
-        return Orthogonal
+        return Orthogonal(value, name, owner)
 
-    return Euclidian
+    return Euclidian(value, bounds, name, owner)
