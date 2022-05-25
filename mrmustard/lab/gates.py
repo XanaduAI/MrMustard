@@ -18,8 +18,9 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Dict
 from mrmustard.types import Tensor
+from mrmustard.utils.parameter import Trainable
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.utils.parametrized import Parametrized
@@ -492,11 +493,8 @@ class RealInterferometer(Parametrized, Transformation):
     ):
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
-        super().__init__(
-            orthogonal=orthogonal,
-            orthogonal_trainable=orthogonal_trainable
-        )
-        self._modes=list(range(num_modes))
+        super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
+        self._modes = list(range(num_modes))
         self._is_gaussian = True
 
     @property
