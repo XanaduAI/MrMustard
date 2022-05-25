@@ -45,10 +45,10 @@ class Parametrized:
             # convert into parameter class
             is_trainable = kwargs.get(f"{name}_trainable", False) or math.is_trainable(value)
             bounds = kwargs.get(f"{name}_bounds", None)
-            param_value = create_parameter(value, name, is_trainable, bounds, owner)
+            param = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign variable as attribute of the class
-            self.__dict__[name] = param_value
+            self.__dict__[name] = param
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
