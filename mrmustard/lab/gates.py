@@ -451,7 +451,6 @@ class Interferometer(Parametrized, Transformation):
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
-            orthogonal_bounds=None,
         )
         self._modes = list(range(num_modes))
         self.is_gaussian = True
@@ -536,7 +535,6 @@ class Ggate(Parametrized, Transformation):
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
-            symplectic_bounds=(None, None),
         )
         self._modes = list(range(num_modes))
         self.is_gaussian = True
