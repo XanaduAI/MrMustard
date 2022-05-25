@@ -16,7 +16,7 @@
 an abstract base class for all parametrized objects.
 """
 
-from mrmustard.types import Tensor, Dict, List, Tuple, Union, Sequence
+from mrmustard.types import Sequence, List
 from mrmustard.math import Math
 from mrmustard.utils.parameter import create_parameter, Trainable, Constant
 

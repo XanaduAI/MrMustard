@@ -30,7 +30,7 @@ There are three basic types of parameters:
 """
 # pylint: disable=super-init-not-called
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 from mrmustard.math import Math
 from mrmustard.types import Tensor, Tuple
