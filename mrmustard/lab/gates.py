@@ -83,7 +83,7 @@ class Dgate(Parametrized, Transformation):
             y_bounds=y_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def d_vector(self):
@@ -129,7 +129,7 @@ class Sgate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -167,7 +167,7 @@ class Rgate(Parametrized, Transformation):
             angle_bounds=angle_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -203,7 +203,7 @@ class Pgate(Parametrized, Transformation):
             shearing_bounds=shearing_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -236,7 +236,7 @@ class CXgate(Parametrized, Transformation):
             s_bounds=s_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -269,7 +269,7 @@ class CZgate(Parametrized, Transformation):
             s_bounds=s_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -311,7 +311,7 @@ class BSgate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -365,7 +365,7 @@ class MZgate(Parametrized, Transformation):
         )
         self._internal = internal
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -412,7 +412,7 @@ class S2gate(Parametrized, Transformation):
             phi_bounds=phi_bounds,
         )
         self._modes = modes
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -447,7 +447,7 @@ class Interferometer(Parametrized, Transformation):
             orthogonal_bounds=None,
         )
         self._modes = list(range(num_modes))
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -486,7 +486,7 @@ class Ggate(Parametrized, Transformation):
             symplectic_bounds=(None, None),
         )
         self._modes = list(range(num_modes))
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -554,7 +554,7 @@ class Attenuator(Parametrized, Transformation):
         )
         self._modes = modes
         self._is_unitary = False
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -610,7 +610,7 @@ class Amplifier(Parametrized, Transformation):
         )
         self._modes = modes
         self._is_unitary = False
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def X_matrix(self):
@@ -658,7 +658,7 @@ class AdditiveNoise(Parametrized, Transformation):
         super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds)
         self._modes = modes
         self._is_unitary = False
-        self._is_gaussian = True
+        self.is_gaussian = True
 
     @property
     def Y_matrix(self):
