@@ -23,8 +23,11 @@ from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.utils.parametrized import Parametrized
-from mrmustard.utils import training
 from mrmustard.physics import gaussian
+
+from mrmustard.math import Math
+
+math = Math()
 
 __all__ = [
     "Dgate",
@@ -38,6 +41,7 @@ __all__ = [
     "CZgate",
     "CXgate",
     "Interferometer",
+    "RealInterferometer",
     "Attenuator",
     "Amplifier",
     "AdditiveNoise",
@@ -429,7 +433,8 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
-        orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
+        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`.
+            If set to `None` a random orthogonal matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
@@ -440,7 +445,8 @@ class Interferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
     ):
         if orthogonal is None:
-            orthogonal = training.new_orthogonal(num_modes=num_modes)
+            U = math.random_unitary(num_modes)
+            orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
@@ -454,9 +460,58 @@ class Interferometer(Parametrized, Transformation):
         return self.orthogonal.value
 
     def _validate_modes(self, modes):
-        if len(modes) != self.orthogonal.value.shape[1] // 2:
+        if len(modes) != self.orthogonal.shape[-1] // 2:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.value.shape[1] // 2})"
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1] // 2})"
+            )
+
+    @property
+    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
+        return {
+            "symplectic": [],
+            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
+            "euclidean": [],
+        }
+
+
+class RealInterferometer(Parametrized, Transformation):
+    r"""N-mode interferometer with a real unitary matrix (or block-diagonal orthogonal matrix).
+    Does not mix q's and p's.
+
+    Args:
+        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(N,N)`.
+            If set to `None` a random orthogonal matrix is used.
+        orthogonal_trainable (bool): whether orthogonal is a trainable variable
+    """
+
+    def __init__(
+        self,
+        num_modes: int,
+        orthogonal: Optional[Tensor] = None,
+        orthogonal_trainable: bool = False,
+    ):
+        if orthogonal is None:
+            orthogonal = math.random_orthogonal(num_modes)
+        super().__init__(
+            orthogonal=orthogonal,
+            orthogonal_trainable=orthogonal_trainable
+        )
+        self._modes=list(range(num_modes))
+        self._is_gaussian = True
+
+    @property
+    def X_matrix(self):
+        return math.block(
+            [
+                [self.orthogonal, math.zeros_like(self.orthogonal)],
+                [math.zeros_like(self.orthogonal), self.orthogonal],
+            ]
+        )
+
+    def _validate_modes(self, modes):
+        if len(modes) != self.orthogonal.shape[-1]:
+            raise ValueError(
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1]})"
             )
 
 
@@ -479,7 +534,7 @@ class Ggate(Parametrized, Transformation):
         symplectic_trainable: bool = False,
     ):
         if symplectic is None:
-            symplectic = training.new_symplectic(num_modes=num_modes)
+            symplectic = math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
