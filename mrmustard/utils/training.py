@@ -74,12 +74,17 @@ class Optimizer:
                 )
             )
 
-            while not self.should_stop(max_steps):
-                cost, grads = loss_and_gradients(cost_fn, trainable_params)
-                self.opt_history.append(cost)
-                for param, grad in zip(trainable_params, grads):
-                    param_lr = self.learning_rate[param.type]
-                    param.update(grad, param_lr)
+            bar = graphics.Progressbar(max_steps)
+            with bar:
+
+                while not self.should_stop(max_steps):
+                    cost, grads = loss_and_gradients(cost_fn, trainable_params)
+                    for param, grad in zip(trainable_params, grads):
+                        param_lr = self.learning_rate[param.type]
+                        param.update(grad, param_lr)
+
+                    self.opt_history.append(cost)
+                    bar.step(math.asnumpy(cost))
 
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
