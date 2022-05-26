@@ -72,7 +72,7 @@ class Trainable(Parameter, ABC):
 
 class Symplectic(Trainable):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = value if math.from_backend(value) else math.new_variable(value, None, name)
+        self._value = math.new_variable(value, None, name)
         self._name = name
         self._owner = owner
 
@@ -97,7 +97,7 @@ class Symplectic(Trainable):
 
 class Euclidian(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self._value = value if math.from_backend(value) else math.new_variable(value, bounds, name)
+        self._value = math.new_variable(value, bounds, name)
         self._name = name
         self._owner = owner
 
@@ -114,7 +114,7 @@ class Euclidian(Trainable):
 
 class Orthogonal(Trainable):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = value if math.from_backend(value) else math.new_variable(value, None, name)
+        self._value = math.new_variable(value, None, name)
         self._name = name
         self._owner = owner
 
@@ -142,7 +142,7 @@ class Orthogonal(Trainable):
 
 class Constant(Parameter):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = value if math.from_backend(value) else math.new_constant(value, name)
+        self._value = math.new_constant(value, name)
         self._name = name
         self._owner = owner
 
