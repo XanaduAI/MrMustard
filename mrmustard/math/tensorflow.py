@@ -195,7 +195,7 @@ class TFMath(MathInterface):
     def new_variable(
         self,
         value,
-        bounds: Optional[Tuple[Optional[float], Optional[float]]],
+        bounds: Union[Tuple[Optional[float], Optional[float]], None],
         name: str,
         dtype=tf.float64,
     ):
