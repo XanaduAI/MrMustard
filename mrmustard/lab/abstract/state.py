@@ -242,17 +242,23 @@ class State:
         """
         if self.is_mixed:
             return None
+
         cutoffs = (
             self.cutoffs
             if cutoffs is None
             else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         )
+
         if self.is_gaussian:
             self._ket = fock.fock_representation(
                 self.cov, self.means, shape=cutoffs, return_dm=False
             )
         else:  # only fock representation is available
             if self._ket is None:
+                # if state is pure and has a density matrix, calculate the ket
+                if self.is_pure:
+                    self._ket = fock.dm_to_ket(self._dm)
+                    return self._ket
                 return None
             current_cutoffs = list(self._ket.shape[: self.num_modes])
             if cutoffs != current_cutoffs:
@@ -390,11 +396,34 @@ class State:
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
-        if not (self.is_gaussian and other.is_gaussian):
-            raise NotImplementedError(
-                "Concatenation of non-gaussian states is not implemented yet."
+        if not self.is_gaussian or not other.is_gaussian:  # convert all to fock now
+            # TODO: would be more efficient if we could keep pure states as kets
+            if self.is_mixed or other.is_mixed:
+                self_fock = self.dm()
+                other_fock = other.dm()
+                dm = fock.math.tensordot(self_fock, other_fock, [[], []])
+                # e.g. self has shape [1,3,1,3] and other has shape [2,2]
+                # we want self & other to have shape [1,3,2,1,3,2]
+                # before transposing shape is [1,3,1,3]+[2,2]
+                self_idx = list(range(len(self_fock.shape)))
+                other_idx = list(range(len(self_idx), len(self_idx) + len(other_fock.shape)))
+                return State(
+                    dm=math.transpose(
+                        dm,
+                        self_idx[: len(self_idx) // 2]
+                        + other_idx[: len(other_idx) // 2]
+                        + self_idx[len(self_idx) // 2 :]
+                        + other_idx[len(other_idx) // 2 :],
+                    ),
+                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
+                )
+            # else, all states are pure
+            self_fock = self.ket()
+            other_fock = other.ket()
+            return State(
+                ket=fock.math.tensordot(self_fock, other_fock, [[], []]),
+                modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
             )
-
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
         return State(
@@ -432,7 +461,7 @@ class State:
 
         # if not gaussian
         fock_partitioned = fock.trace(
-            self.dm(self.cutoffs), [m for m in range(self.num_modes) if m not in item]
+            self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
         )
         return State(dm=fock_partitioned, modes=item)
 
@@ -449,13 +478,14 @@ class State:
             if not np.allclose(self.cov, other.cov, atol=1e-6):
                 return False
             return True
-        if self.is_pure and other.is_pure:
+        try:
             return np.allclose(
                 self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
             )
-        return np.allclose(
-            self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
-        )
+        except TypeError:
+            return np.allclose(
+                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
+            )
 
     def __rshift__(self, other):
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
