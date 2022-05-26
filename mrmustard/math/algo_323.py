@@ -1,6 +1,7 @@
 import numpy as np
 from numba.cpython.unsafe.tuple import tuple_setitem
-from numba import njit
+from numba import njit, types
+from numba.typed import Dict
 from collections import defaultdict
 from copy import deepcopy
 
@@ -47,6 +48,7 @@ def get_lower_tuples(pivot):
 
 
 AMPS = defaultdict(set)  # will use tuples as indices
+AMPS = Dict.empty(key_type=types.int64, value_type=types.Set(UniTuple(int64, 2)))
 
 @njit
 def find_indices(vec) -> (set, set):
@@ -59,10 +61,17 @@ def find_indices(vec) -> (set, set):
         AMPS_N2.add(t.copy())
     return AMPS_N1, AMPS_N2
 
-def find_all_indices(vec, AMPS):
-    N = np.sum(vec)
-    AMPS[N].add(vec.copy())
+@njit
+def find_all_indices(tpl, AMPS):
+    AMPS = Dict.empty(key_type=types.int64, value_type=types.Set(UniTuple(int64, len(tpl))))
+    N = 0
+    for t in tpl:
+        N += t
+    AMPS[N] = set()
+    AMPS[N].add(tpl[:])
     for n in range(N, 0, -1):
+        AMPS[n-1] = set()
+        AMPS[n-2] = set()
         for t in AMPS[n]:
             AMPS_N1, AMPS_N2 = find_indices(t)
             AMPS[n-1].update(AMPS_N1)

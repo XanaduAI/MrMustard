@@ -4,31 +4,60 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 from collections import defaultdict
 
 @njit
+def sum_tpl(tpl):
+    N = 0
+    for t in tpl:
+        N += t
+    return N
+
+@njit
 def up(idx, i):
-    return tuple_setitem(idx, i, idx[i] + 1)
+    'increases idx[i] by 1'
+    return tuple_setitem(idx, i, idx[i] + 1) # why not idx[:i] + (idx[i] + 1,) + idx[i+1:] ?
 
 @njit
 def down(idx, i):
+    'returns a copy of idx, where idx[i] is decreased by 1'
     return tuple_setitem(idx, i, idx[i] - 1)
 
 @njit
 def reset_tpl(tpl, i, cutoffs):
-    N = 0
+    r'''Given a tuple `t`, let `S = sum(t_n, 0 <= n <= i)`. This function returns a tuple s_m such that:
+        - s_0 = sum(t_0, 0 <= n <= i)
+        - s_1, ..., s_i = 0
+        - s_i+1 = t_i+1
+    The cutoff on s_0 is used if it's smaller than s_0.
+    In that case s_0 is set to the cutoff and the rest of S is added to s_1 and so on
+    (that's the while loop).
+    '''
+    S = 0
     for j in range(i+1):
-        N += tpl[j]
+        S += tpl[j]
         tpl = tuple_setitem(tpl, j, 0)
     i = 0
-    while N > 0:
-        tpl = tuple_setitem(tpl, i, tpl[i]+min(N, cutoffs[i]))
-        N -= cutoffs[i]
+    while S > 0:
+        tpl = tuple_setitem(tpl, i, tpl[i]+min(S, cutoffs[i]))
+        S -= cutoffs[i]
         i += 1
-        
     return tpl
 
 @njit
 def next_tpl(tpl, i):
+    r'''Returns the next tuple in increasing numerical order
+    by increasing the i+1-th element of tpl and decreasing the i-th.
+    Assumes that tpl[i] > 0 and that 0 <= i < len(tpl)-1.
+    '''
     tpl = up(tpl, i+1)
     tpl = down(tpl, i)
+    return tpl
+
+@njit
+def prev_tpl(tpl, i):
+    r'''Returns the next tuple in decreasing numerical order
+    by decreasing the i+1-th element of tpl and increasing the i-th.
+    Assumes that tpl[i+1] > 0 and that 0 <= i < len(tpl)-1.'''
+    tpl = down(tpl, i+1)
+    tpl = up(tpl, i)
     return tpl
 
 @njit
@@ -38,15 +67,15 @@ def tuple_verify(tpl, cutoffs):
             raise ValueError("The tuple doesn't respect the cutoffs")
 
 @njit
-def _index_generator(tpl, cutoffs):
+def _index_generator(tpl, cutoffs): # would be great to simplify the logic
     i = 0
     reset = False
     yield tpl
     while i < len(tpl)-1:
         # print(i, tpl)
         if tpl[i] == 0 or tpl[i+1] >= cutoffs[i+1]:
-            reset = True
-            i += 1
+            reset = True # mark it for resetting
+            i += 1 # try to increment next index
         elif reset:
             tpl = next_tpl(tpl, i)
             tpl = reset_tpl(tpl, i, cutoffs)
@@ -58,9 +87,10 @@ def _index_generator(tpl, cutoffs):
             yield tpl
             
 
-def index_generator(tpl, cutoffs=None):
+
+def index_generator_factory(tpl, cutoffs=None):
     if cutoffs is None:
-        cutoffs = (sum(tpl),)*len(tpl)
+        cutoffs = (sum_tpl(tpl),)*len(tpl)
     tuple_verify(tpl, cutoffs)
     return _index_generator(tpl, cutoffs)
 
@@ -84,8 +114,7 @@ def get_pivot(tpl):
 def get_lower_tuples(pivot):
     for i,p in enumerate(pivot):
         if p > 0:
-            t = pivot[:]
-            yield tuple_setitem(t, i, p-1)
+            yield tuple_setitem(pivot, i, p-1)
 
 
 
@@ -95,7 +124,7 @@ def indices_for_tpl(tpl):
     return pivot, lt
 
 
-INDICES = defaultdict(defaultdict(set))
+INDICES = defaultdict(set)
 
 def save_to_dict(pivot, lt, INDICES):
     N = np.sum(pivot)
