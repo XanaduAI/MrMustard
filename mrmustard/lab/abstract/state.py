@@ -257,7 +257,7 @@ class State:
             if self._ket is None:
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
-                    self._ket = fock.dm_to_ket(self.dm)
+                    self._ket = fock.dm_to_ket(self._dm)
                     return self._ket
                 return None
             current_cutoffs = list(self._ket.shape[: self.num_modes])
