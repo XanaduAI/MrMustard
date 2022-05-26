@@ -530,8 +530,7 @@ class Ggate(Parametrized, Transformation):
         symplectic: Optional[Tensor] = None,
         symplectic_trainable: bool = False,
     ):
-        if symplectic is None:
-            symplectic = math.random_symplectic(num_modes)
+        symplectic = symplectic or math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
