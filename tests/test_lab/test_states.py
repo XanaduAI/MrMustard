@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from threading import currentThread
 import numpy as np
 import pytest
 from hypothesis import given, strategies as st, assume
@@ -29,6 +30,7 @@ from mrmustard.lab.states import (
 from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
+from tests.random import pure_state
 
 from mrmustard.math import Math
 
@@ -235,3 +237,20 @@ def test_concat_pure_states(pure):
     # trace state1 and check resulting dm corresponds to state 2
     dm2 = math.trace(math.transpose(psi.dm(), [1, 3, 0, 2]))
     assert np.allclose(state2.dm(), dm2)
+
+
+def test_ket_from_pure_dm():
+
+    # prepare a simple state with one photon
+    cutoff = 3
+    modes = 2
+    ket = np.zeros([cutoff] * modes, dtype=np.complex128)
+    ket[1, 1] = 1.0 + 0.0j
+    dm = np.outer(ket, ket)
+
+    # initialize a new state from the density matrix
+    test_state = State(dm=dm)
+    test_ket = np.reshape(test_state.ket(), [cutoff] * modes)
+
+    # check test and original states have the same ket
+    assert np.allclose(ket, test_ket)
