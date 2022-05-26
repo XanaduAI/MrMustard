@@ -43,6 +43,8 @@
 ### Improvements
 
 ### Bug fixes
+* Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
+  [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
 
 ### Documentation
 
