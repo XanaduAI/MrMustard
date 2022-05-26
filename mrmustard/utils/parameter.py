@@ -72,7 +72,11 @@ class Trainable(Parameter, ABC):
 
 class Symplectic(Trainable):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = math.new_variable(value, None, name)
+        self._value = (
+            value
+            if math.from_backend(value) and math.is_trainable(value)
+            else math.new_variable(value, None, name)
+        )
         self._name = name
         self._owner = owner
 
@@ -97,10 +101,13 @@ class Symplectic(Trainable):
 
 class Euclidian(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self._value = math.new_variable(value, bounds, name)
+        self._value = (
+            value
+            if math.from_backend(value) and math.is_trainable(value)
+            else math.new_variable(value, bounds, name)
+        )
         self._name = name
         self._owner = owner
-
         self.bounds = bounds
 
     def update(self, grad, learning_rate) -> None:
@@ -108,13 +115,16 @@ class Euclidian(Trainable):
 
     def _update_euclidian(self, euclidean_grad, euclidean_lr) -> None:
         """Updates the parameters using the euclidian gradients."""
-        math.euclidean_opt.lr = euclidean_lr
-        math.euclidean_opt.apply_gradients(zip([euclidean_grad], self._value))
+        self._value.assign_add(-euclidean_lr * euclidean_grad)
 
 
 class Orthogonal(Trainable):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = math.new_variable(value, None, name)
+        self._value = (
+            value
+            if math.from_backend(value) and math.is_trainable(value)
+            else math.new_variable(value, None, name)
+        )
         self._name = name
         self._owner = owner
 
@@ -142,12 +152,17 @@ class Orthogonal(Trainable):
 
 class Constant(Parameter):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = math.new_constant(value, name)
+        self._value = (
+            value
+            if math.from_backend(value) and not math.is_trainable(value)
+            else math.new_constant(value, name)
+        )
         self._name = name
         self._owner = owner
 
 
 def create_parameter(value, name, is_trainable=False, bounds=None, owner=None) -> Trainable:
+
     if not is_trainable:
         return Constant(value, name, owner)
 
