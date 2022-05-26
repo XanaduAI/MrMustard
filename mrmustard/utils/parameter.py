@@ -101,6 +101,8 @@ class Euclidian(Trainable):
         self._name = name
         self._owner = owner
 
+        self.bounds = bounds
+
     def update(self, grad, learning_rate) -> None:
         self._update_euclidian(grad, learning_rate)
 
