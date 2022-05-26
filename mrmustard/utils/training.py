@@ -134,20 +134,3 @@ def loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
     loss, grads = math.value_and_gradients(cost_fn, param_tensors)
 
     return loss, grads
-
-
-def new_symplectic(num_modes: int) -> Tensor:
-    r"""Returns a new symplectic matrix from the current math backend with ``num_modes`` modes.
-
-    Args:
-        num_modes (int): the number of modes in the symplectic matrix
-
-    Returns:
-        Tensor: the new symplectic matrix
-    """
-    return math.random_symplectic(num_modes)
-
-
-def new_orthogonal(num_modes: int) -> Tensor:
-    """Returns a random orthogonal matrix in :math:`O(2*num_modes)`."""
-    return math.random_orthogonal(num_modes)
