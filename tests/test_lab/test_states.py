@@ -239,18 +239,18 @@ def test_concat_pure_states(pure):
     assert np.allclose(state2.dm(), dm2)
 
 
-def test_ket_from_pure_dm():
+@pytest.mark.parametrize("n", ([1, 0, 0], [1, 1, 0], [0, 0, 1]))
+@pytest.mark.parametrize("cutoffs", ([2, 2, 2], [2, 3, 3], [3, 3, 2]))
+def test_ket_from_pure_dm(n, cutoffs):
 
-    # prepare a simple state with one photon
-    cutoff = 3
-    modes = 2
-    ket = np.zeros([cutoff] * modes, dtype=np.complex128)
-    ket[1, 1] = 1.0 + 0.0j
-    dm = np.outer(ket, ket)
+    # prepare a fock (pure) state
+    fock_state = Fock(n=n, cutoffs=cutoffs)
+    dm_fock = fock_state.dm()
 
     # initialize a new state from the density matrix
-    test_state = State(dm=dm)
-    test_ket = np.reshape(test_state.ket(), [cutoff] * modes)
+    # (no knowledge of the ket)
+    test_state = State(dm=dm_fock)
+    test_ket = test_state.ket()
 
-    # check test and original states have the same ket
-    assert np.allclose(ket, test_ket)
+    # check test state calculated the same ket as the original state
+    assert np.allclose(test_ket, fock_state.ket())
