@@ -312,7 +312,7 @@ def test_parameter_passthrough():
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=par.r, phi=par.phi)[1, 2],
+        S2gate(r=par.r.value, phi=par.phi.value)[1, 2],
     ]
     circ = Circuit(ops)
 
@@ -321,7 +321,7 @@ def test_parameter_passthrough():
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[par], max_steps=300)
-    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+    assert np.allclose(np.sinh(par.r.value) ** 2, 1, atol=1e-2)
 
 
 def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
