@@ -17,6 +17,8 @@ import pytest
 
 from mrmustard.utils.parametrized import Parametrized
 from mrmustard.math import Math
+from mrmustard.lab.circuit import Circuit
+from mrmustard.lab.gates import BSgate, S2gate
 from mrmustard.utils.parameter import Constant, Orthogonal, Euclidian, Symplectic, Trainable
 
 math = Math()
@@ -80,8 +82,8 @@ def test_attribute_from_backend_constant_assignment():
 
 
 def test_get_parameters():
-    """Test that the `get_trainable_parameters` property returns the correct
-    set of parameters"""
+    """Test that the `get_trainable_parameters` and `get_constant_parameters` properties
+    return the correct set of parameters"""
 
     kwargs = {
         "numeric_attribute": 2,
@@ -102,3 +104,26 @@ def test_get_parameters():
     constant_params = parametrized.constant_parameters
     assert len(constant_params) == 2
     assert all(isinstance(param, Constant) for param in constant_params)
+
+
+def test_get_nested_parameters():
+    """Test that nested Parametrized objects (e.g. a circuit) return all the trainable
+    and constant parameters via `get_trainable_parameters` and `get_constant_parameters`
+    properties"""
+
+    s2 = S2gate(r=0.0, phi=0.0, r_trainable=False, phi_trainable=True)
+    bs = BSgate(
+        theta=0.0,
+        phi=0.0,
+        theta_trainable=True,
+        phi_trainable=False,
+    )
+    circ = Circuit([s2, bs])
+
+    trainables = circ.trainable_parameters
+    constants = circ.constant_parameters
+    assert len(trainables) == 2
+    assert len(constants) == 2
+
+    assert (s2.phi in trainables) and (bs.theta in trainables)
+    assert (s2.r in constants) and (bs.phi in constants)

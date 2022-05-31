@@ -16,9 +16,9 @@
 an abstract base class for all parametrized objects.
 """
 
-from mrmustard.types import Sequence, List
+from mrmustard.types import Sequence, List, Generator, Iterable, Any
 from mrmustard.math import Math
-from mrmustard.utils.parameter import create_parameter, Trainable, Constant
+from mrmustard.utils.parameter import create_parameter, Trainable, Constant, Parameter
 
 math = Math()
 
@@ -52,8 +52,22 @@ class Parametrized:
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
-        return [value for value in self.__dict__.values() if isinstance(value, Trainable)]
+        return [value for value in _traverse_parametrized(self.__dict__.values(), Trainable)]
 
     @property
     def constant_parameters(self) -> List[Constant]:
-        return [value for value in self.__dict__.values() if isinstance(value, Constant)]
+        return [value for value in _traverse_parametrized(self.__dict__.values(), Constant)]
+
+
+def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
+    """This private method traverses recursively all the object's attributes for objects
+    present in ``iterable`` which are instances of ``parameter_type`` or ``Parametrized``
+    returning a generator with objects of type ``extract_type``."""
+
+    for obj in object_:
+        if isinstance(obj, Iterable):
+            yield from _traverse_parametrized(obj, extract_type)
+        elif isinstance(obj, Parametrized):
+            yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
+        elif isinstance(obj, extract_type):
+            yield obj
