@@ -71,7 +71,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     """
     tf.random.set_seed(137)
     r = np.arcsinh(1.0)
-    ops = [
+    s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
@@ -80,8 +80,8 @@ def test_hong_ou_mandel_optimizer(i, k):
             theta_trainable=True,
             phi_trainable=True,
         )[1, 2],
-    ]
-    circ = Circuit(ops)
+    )
+    circ = Circuit([s2_0, s2_1, bs])
     state_in = Vacuum(num_modes=4)
     cutoff = 1 + i + k
 
@@ -90,9 +90,7 @@ def test_hong_ou_mandel_optimizer(i, k):
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(
-        np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i + k), atol=1e-2
-    )
+    assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
 
 
 def test_squeezing_hong_ou_mandel_optimizer():
