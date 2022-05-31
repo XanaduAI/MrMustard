@@ -500,15 +500,15 @@ class RealInterferometer(Parametrized, Transformation):
     def X_matrix(self):
         return math.block(
             [
-                [self.orthogonal, math.zeros_like(self.orthogonal)],
-                [math.zeros_like(self.orthogonal), self.orthogonal],
+                [self.orthogonal.value, math.zeros_like(self.orthogonal.value)],
+                [math.zeros_like(self.orthogonal.value), self.orthogonal.value],
             ]
         )
 
     def _validate_modes(self, modes):
-        if len(modes) != self.orthogonal.shape[-1]:
+        if len(modes) != self.orthogonal.value.shape[-1]:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1]})"
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.value.shape[-1]})"
             )
 
 
