@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from threading import currentThread
 import numpy as np
 import pytest
 from hypothesis import given, strategies as st, assume
@@ -29,6 +30,7 @@ from mrmustard.lab.states import (
 from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
+from tests.random import pure_state
 
 from mrmustard.math import Math
 
@@ -235,3 +237,20 @@ def test_concat_pure_states(pure):
     # trace state1 and check resulting dm corresponds to state 2
     dm2 = math.trace(math.transpose(psi.dm(), [1, 3, 0, 2]))
     assert np.allclose(state2.dm(), dm2)
+
+
+@pytest.mark.parametrize("n", ([1, 0, 0], [1, 1, 0], [0, 0, 1]))
+@pytest.mark.parametrize("cutoffs", ([2, 2, 2], [2, 3, 3], [3, 3, 2]))
+def test_ket_from_pure_dm(n, cutoffs):
+
+    # prepare a fock (pure) state
+    fock_state = Fock(n=n, cutoffs=cutoffs)
+    dm_fock = fock_state.dm()
+
+    # initialize a new state from the density matrix
+    # (no knowledge of the ket)
+    test_state = State(dm=dm_fock)
+    test_ket = test_state.ket()
+
+    # check test state calculated the same ket as the original state
+    assert np.allclose(test_ket, fock_state.ket())
