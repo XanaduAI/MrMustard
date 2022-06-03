@@ -19,7 +19,7 @@ from mrmustard.utils.parametrized import Parametrized
 from mrmustard.math import Math
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import BSgate, S2gate
-from mrmustard.utils.parameter import Constant, Orthogonal, Euclidian, Symplectic, Trainable
+from mrmustard.utils.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
 
 math = Math()
 
@@ -38,7 +38,7 @@ def test_attribute_assignment(kwargs):
         assert instance_attributes[f"{name}"].name == name
 
 
-@pytest.mark.parametrize("trainable_class", (Euclidian, Orthogonal, Symplectic))
+@pytest.mark.parametrize("trainable_class", (Euclidean, Orthogonal, Symplectic))
 @pytest.mark.parametrize("bounds", [None, (0, 10)])
 def test_attribute_from_backend_type_assignment(trainable_class, bounds):
     """Test that arguments that are trainable get defined on the backend,
