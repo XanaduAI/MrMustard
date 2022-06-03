@@ -52,7 +52,7 @@ def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthog
         Over the Orthogonal Group: A Tutorial.
         Journal of Machine Learning Research. 2005 May 1;6(5).
     """
-    for O, dO_euclidean in grads_and_vars:
+    for dO_euclidean, O in grads_and_vars:
         dO_orthogonal = 0.5 * (
             dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O)
         )
