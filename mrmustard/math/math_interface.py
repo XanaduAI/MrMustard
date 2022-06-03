@@ -1109,8 +1109,10 @@ class MathInterface(ABC):
 def sparse_matvec_data(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool) -> tuple:
     r"""Computes the metadata for a sparse matrix-vector multiplication.
     """
+    # batch dimensions
     B1 = matrix.shape[0]
     B2 = vector.shape[0]
+    # matrix and vector dimensions
     M = matrix.shape[-1] // 2
     V = vector.shape[-1] // 2
     final_modes = [v for v in v_modes if v in m_modes] if like_0 else list(v_modes)
@@ -1148,12 +1150,12 @@ def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_m
     """
     final_modes, findices, mindices, vindices, B1, B2, F, M, V = sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
 
-    new_vec = np.zeros((B1*B2, 2*K), dtype=vector.dtype)
+    new_vec = np.zeros((B1*B2, 2*F), dtype=vector.dtype)
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
             for f in final_modes: # filling the final vector entries
-                if f in m_modes: # if matrix acts on mode we need to multiply
+                if f in m_modes: # we need to multiply only if matrix acts on mode f
                     for n in final_modes:
                         if n in m_modes:
                             new_vec[b,findices[f]] += matrix[b1,mindices[f], mindices[n]] * vector[b2,vindices[n]] + matrix[b1,mindices[f], mindices[n]+M] * vector[b2,vindices[n]+V]
@@ -1185,7 +1187,7 @@ def numba_sparse_matvec_vjp(self, dmatvec: Tensor, matrix: Tensor, vector: Tenso
     """
     final_modes, findices, mindices, vindices, B1, B2, F, M, V = sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
 
-    dm = np.zeros((B1, 2*M, 2*M), dtype=vector.dtype.name) # dL/dm_ik = sum_j dL/dmatvec_j * dmatvec_j/dm_ik = dL/dmatvec_i * v_k
+    dm = np.zeros((B1, 2*M, 2*M), dtype=vector.dtype.name) # dL/dm_ik = sum_j dL/dmatvec_j * dmatvec_j/dm_ik = dL/dmatvec_i * v_k because dmatvec_j/dm_ik = delta_ij * v_k
     dv = np.zeros((B2, 2*V), dtype=vector.dtype.name)   # dL/dv_i = sum_j dL/dmatvec_j * dmatvec_j/dv_i = sum_j dL/dmatvec_j * m_ji
     for b1 in range(B1):
         for b2 in range(B2):
@@ -1206,7 +1208,7 @@ def numba_sparse_matvec_vjp(self, dmatvec: Tensor, matrix: Tensor, vector: Tenso
 
 
 @njit
-def sparse_matmul_data(matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0: bool, m2ike_0: bool) -> tuple:
+def sparse_matmul_data(matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0: bool, m2like_0: bool) -> tuple:
     r"""Computes the data required for the mode-wise matrix multiplication of two matrices."""
     if m1like_0:  # final modes are a subset of m1_modes
         if m2like_0: # final modes are a subset of m2_modes
@@ -1276,7 +1278,7 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
     return new_matrix
             
 
-def numba_sparse_matmul_vjp(self, dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0:bool, m2like_0:bool):
+def numba_sparse_matmul_vjp(dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0:bool, m2like_0:bool):
     r"""Numba implementation of the mode-wise ("sparse") matrix-matrix multiplication `matrix1 @ matrix2`'s Jacobian.
     Assumes inputs are in xxpp ordering.
 
@@ -1323,6 +1325,62 @@ def numba_sparse_matmul_vjp(self, dmatmul: Tensor, matrix1: Tensor, matrix2: Ten
                         dmatrix2[b2, m2indices[m], m2indices[n]+N] += dmatmul[b, findices[m], findices[n]+F]
                         dmatrix2[b2, m2indices[m]+N, m2indices[n]+N] += dmatmul[b, findices[m]+F, findices[n]+F]
     return dmatrix1, dmatrix2
+
+
+
+def sparse_vec_add(vec1, vec2, modes1, modes2):
+    B1 = len(vec1)
+    B2 = len(vec2)
+    fmodes = set(modes1).union(modes2)
+    F = len(fmodes)
+
+    vec = np.zeros((B1*B2, 2*F), dtype=vec1.dtype)
+    for b1 in range(B1):
+        for b2 in range(B2):
+            b = b1*B2 + b2
+            for f in fmodes:
+                if f in modes1:
+                    vec[b, fmodes[f]] += vec1[b1, modes1[f]]
+                    vec[b, fmodes[f]+F] += vec1[b1, modes1[f]+F]
+                if f in modes2:
+                    vec[b, fmodes[f]] += vec2[b2, modes2[f]]
+                    vec[b, fmodes[f]+F] += vec2[b2, modes2[f]+F]
+    return vec
+
+
+def sparse_mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
+    B1 = len(mat1)
+    B2 = len(mat2)
+    fm
+
+
+#
+#  def sparse_matadd_data(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0:bool, m2like_0:bool):
+#     r"""Computes the data required for the mode-wise addition of two matrices."""
+#     assert m1like_0 or m2like_0  # TODO we can't add two like_1 matrices unless we say the result is like_1 and we store a 2 as overall coefficient
+    
+#     B1 = matrix1.shape[0]
+#     B2 = matrix2.shape[0]
+#     M = matrix1.shape[-1] // 2
+#     N = matrix2.shape[-1] // 2
+
+#     # if self contains other or other contains self (in the sense of the modes involved)
+#     # then we can simply update the containing matrix. Otherwise we need to fill a new zero matrix.
+#     if set(m1_modes).issubset(m2_modes):
+#         final_modes = m2_modes
+#     elif set(m2_modes).issubset(m1_modes):
+#         final_modes = m1_modes
+#     else:
+#         final_modes = list(set(m1_modes).union(m2_modes))
+    
+#     F = len(final_modes)
+
+#     # at which index to write a given mode:
+#     findices = {m:i for i,m in enumerate(final_modes)}
+#     m1indices = {m:i for i,m in enumerate(m1_modes)}
+#     m2indices = {m:i for i,m in enumerate(m2_modes)}
+
+#     return final_modes, findices, m1indices, m2indices, B, F, M, N
 
 
 

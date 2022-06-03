@@ -49,12 +49,8 @@ def vector(draw, size=None):
 
 
 def test_like_1_like_0():
-    assert XPMatrix(like_0=False, like_1=True).like_1
-    assert XPMatrix(like_0=True, like_1=False).like_0
-    assert XPMatrix(like_0=True).like_0
     assert XPMatrix(like_0=False).like_1
-    assert XPMatrix(like_1=True).like_1
-    assert XPMatrix(like_1=False).like_0
+    assert XPMatrix(like_0=True).like_0
     assert XPVector().like_0
 
 

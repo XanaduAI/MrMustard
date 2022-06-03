@@ -233,13 +233,13 @@ class XPMatrix(XPTensor):
 
     def __init__(
         self,
-        tensor: Union[Tensor, XPMatrix],
+        tensor: Optional[Union[Tensor, XPMatrix]],
         like_0: bool = None,
         outmodes: List[int] = [],
         inmodes: List[int] = [],
     ):
         if isinstance(tensor, XPMatrix):
-            super().__init__(tensor.tensor, tensor.outmodes, tensor.outmodes)
+            super().__init__(tensor.tensor, tensor.outmodes, tensor.inmodes)
             self.like_0 = tensor.like_0
         else:   
             super().__init__(tensor, outmodes, inmodes)
@@ -259,7 +259,7 @@ class XPMatrix(XPTensor):
                 tensor = math.expand_dims(tensor, 0)
             tensor = math.reshape(tensor, [tensor.shape[0]] + [_ for n in tensor.shape[1:] for _ in (2, n // 2)])
             tensor = math.transpose(tensor, (0, 2, 4, 1, 3))
-        return cls(XPMatrix(tensor, like_0, outmodes, inmodes))  #note cls is so that subclasses don't need to reimplement this method
+        return cls(XPMatrix(tensor, like_0, outmodes, inmodes))  # note cls is so that subclasses don't need to reimplement this method
 
     @classmethod
     def from_xpxp(
@@ -480,7 +480,10 @@ class XPVector(XPTensor):
         if other.isMatrix:
             return other.T @ self
         if self.tensor is not None and other.tensor is not None:
-            return self._sparse_vecvec(other)
+            if list(self.outmodes) == list(other.outmodes):
+                return math.sum(self.tensor * other.tensor)
+            common = list(set(self.outmodes) & set(other.outmodes))
+            return math.sum(self.tensor[common] * other.tensor[common])
         return 0.0
 
     def __add__(self, other: XPVector) -> XPVector:
@@ -491,15 +494,7 @@ class XPVector(XPTensor):
         if self.tensor is None:
             return other
         if self.tensor is not None and other.tensor is not None:
-            return self._sparse_add(other) 
-    
-    def _sparse_vecvec(self, other: XPVector) -> Scalar:
-        if list(self.outmodes) == list(other.outmodes):
-            return math.sum(self.tensor * other.tensor)
-        common = list(
-            set(self.outmodes) & set(other.outmodes)
-        )  # only the common modes (the others are like 0)
-        return math.sum(self.tensor[common] * other.tensor[common])
+            return math.sparse_vec_add(self.tensor, other.tensor, self.outmodes, other.outmodes)
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPVector:
         r"""Returns modes or subsets of modes from the XPMatrix or coherences between modes using an
