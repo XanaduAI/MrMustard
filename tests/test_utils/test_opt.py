@@ -91,28 +91,6 @@ def test_hong_ou_mandel_optimizer(i, k):
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
 
 
-def test_squeezing_hong_ou_mandel_optimizer():
-    """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
-    see https://www.pnas.org/content/117/52/33107/tab-article-info
-    """
-    tf.random.set_seed(137)
-    r = np.arcsinh(1.0)
-    ops = [
-        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
-    ]
-    circ = Circuit(ops)
-    state_in = Vacuum(num_modes=4)
-
-    def cost_fn():
-        return tf.abs((state_in >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
-
-    opt = Optimizer(euclidean_lr=0.001)
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
-
-
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     tf.random.set_seed(137)
@@ -282,19 +260,19 @@ def test_squeezing_hong_ou_mandel_optimizer():
     """
     tf.random.set_seed(137)
     r = np.arcsinh(1.0)
-    ops = [
-        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
-    ]
-    circ = Circuit(ops)
+
+    S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
+    S_23 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]
+    S_12 = S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+
+    circ = Circuit([S_01, S_23, S_12])
 
     def cost_fn():
         return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+    assert np.allclose(np.sinh(S_12.r.value) ** 2, 1, atol=1e-2)
 
 
 def test_parameter_passthrough():
