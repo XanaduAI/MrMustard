@@ -99,7 +99,7 @@ class Symplectic(Trainable):
         math.assign(self._value, new_value)
 
 
-class Euclidian(Trainable):
+class Euclidean(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
         self._value = (
             value
@@ -172,4 +172,4 @@ def create_parameter(value, name, is_trainable=False, bounds=None, owner=None) -
     if name.startswith("orthogonal"):
         return Orthogonal(value, name, owner)
 
-    return Euclidian(value, bounds, name, owner)
+    return Euclidean(value, bounds, name, owner)
