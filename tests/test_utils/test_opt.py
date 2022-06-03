@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from hypothesis import settings, given, strategies as st
-from hypothesis.extra.numpy import arrays
 
 import numpy as np
 import tensorflow as tf
@@ -26,7 +25,6 @@ from mrmustard.lab.gates import (
     S2gate,
     Ggate,
     Interferometer,
-    Ggate,
     RealInterferometer,
 )
 from mrmustard.lab.circuit import Circuit
@@ -337,8 +335,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 
     def cost_fn():
         state = Vacuum(2) >> G
-        cov1, mu1 = trace(state.cov, state.means, [0])
-        cov2, mu2 = trace(state.cov, state.means, [1])
+        cov1, _ = trace(state.cov, state.means, [0])
         mean1 = state.number_means[0]
         mean2 = state.number_means[1]
         entropy = von_neumann_entropy(cov1, settings.HBAR)
@@ -347,6 +344,6 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
-    S = G.symplectic.numpy()
+    S = G.symplectic.value.numpy()
     cov = S @ S.T
     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
