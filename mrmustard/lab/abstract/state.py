@@ -31,7 +31,6 @@ from mrmustard.types import (
     Optional,
     List,
     Iterable,
-    Iterator,
 )
 from mrmustard.utils import graphics
 from mrmustard import settings
@@ -395,7 +394,7 @@ class State:
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
 
-    def __iter__(self) -> Iterator[Tuple[int, Tensor]]:
+    def __iter__(self) -> Iterable[State]:
         """Iterates over the modes and their corresponding tensors."""
         return (self.get_modes(i) for i in range(self.num_modes))
 
