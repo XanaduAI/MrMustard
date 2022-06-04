@@ -394,6 +394,10 @@ class State:
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
 
+    def __iter__(self) -> Iterator[Tuple[int, Tensor]]:
+        """Iterates over the modes and their corresponding tensors."""
+        return (self.get_modes(i) for i in range(self.num_modes))
+
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
         if not self.is_gaussian or not other.is_gaussian:  # convert all to fock now
