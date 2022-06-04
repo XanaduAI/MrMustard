@@ -31,6 +31,7 @@ from mrmustard.types import (
     Optional,
     List,
     Iterable,
+    Iterator,
 )
 from mrmustard.utils import graphics
 from mrmustard import settings
