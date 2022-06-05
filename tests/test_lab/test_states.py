@@ -172,7 +172,7 @@ def test_iter():
     a = Gaussian(1)
     b = Gaussian(2)
     c = Gaussian(1)
-    for i,mode in enumerate(a & b & c):
+    for i, mode in enumerate(a & b & c):
         assert (a, b.get_modes(0), b.get_modes(1), c)[i] == mode
 
 
