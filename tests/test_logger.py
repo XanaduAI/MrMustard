@@ -49,10 +49,10 @@ https://github.com/pallets/flask/blob/master/tests/test_logging.py
 
 import logging
 import pytest
-from mrmustard.utils import training
+import mrmustard.training.optimizer as optimizer
 from mrmustard.logger import logging_handler_defined, default_handler, create_logger
 
-modules_contain_logging = [training]
+modules_contain_logging = [optimizer]
 
 
 @pytest.fixture(autouse=True)

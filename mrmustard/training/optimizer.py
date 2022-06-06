@@ -18,11 +18,11 @@ used within Mr Mustard.
 
 from itertools import chain, groupby
 from mrmustard.types import List, Callable, Sequence, Tensor, Tuple
-from mrmustard.utils.parameter import Parameter, Trainable
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
-from mrmustard.utils.parametrized import Parametrized
+from .parameter import Parameter, Trainable
+from .parametrized import Parametrized
 
 math = Math()
 

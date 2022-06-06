@@ -20,10 +20,10 @@ This module defines gates and operations that can be applied to quantum modes to
 
 from typing import Union, Optional, List, Tuple, Dict
 from mrmustard.types import Tensor
-from mrmustard.utils.parameter import Trainable
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
+from mrmustard.training.parameter import Trainable
 from mrmustard.physics import gaussian
 
 from mrmustard.math import Math

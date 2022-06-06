@@ -18,7 +18,7 @@ This module implements the set of detector classes that perform measurements on 
 
 from typing import List, Tuple, Union, Optional
 from mrmustard.types import Matrix
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
 from mrmustard.lab.abstract import FockMeasurement
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings

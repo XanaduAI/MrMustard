@@ -15,7 +15,7 @@
 import numpy as np
 import pytest
 
-from mrmustard.utils.parameter import (
+from mrmustard.training.parameter import (
     create_parameter,
     Constant,
     Orthogonal,

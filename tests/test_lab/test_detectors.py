@@ -34,8 +34,6 @@ from mrmustard.lab import (
     Dgate,
     Fock,
 )
-from mrmustard.utils.training import Optimizer
-from mrmustard.physics import gaussian
 from mrmustard import physics
 from mrmustard import settings
 

@@ -28,8 +28,7 @@ from mrmustard.lab.gates import (
     RealInterferometer,
 )
 from mrmustard.lab.circuit import Circuit
-from mrmustard.utils.training import Optimizer
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Optimizer, Parametrized
 from mrmustard.lab.states import Vacuum
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings

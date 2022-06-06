@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ctypes import Union
 import pytest
 
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
 from mrmustard.math import Math
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import BSgate, S2gate
-from mrmustard.utils.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
+from mrmustard.training.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
 
 math = Math()
 

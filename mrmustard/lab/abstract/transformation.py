@@ -34,7 +34,7 @@ from mrmustard.types import (
 )
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.utils.parameter import Parameter
+from mrmustard.training.parameter import Parameter
 from .state import State
 
 math = Math()
