@@ -65,10 +65,6 @@ class Trainable(Parameter, ABC):
     def __init__(self, value, name, owner=None) -> None:
         pass
 
-    @abstractmethod
-    def update(self, grad, learning_rate) -> Tuple[Tensor, Tensor]:
-        pass
-
 
 class Symplectic(Trainable):
     def __init__(self, value, name, owner=None) -> None:
@@ -79,24 +75,6 @@ class Symplectic(Trainable):
         )
         self._name = name
         self._owner = owner
-
-    def update(self, grad, learning_rate) -> None:
-        self._update_symplectic(grad, learning_rate)
-
-    def _update_symplectic(self, dS_euclidean, symplectic_lr) -> None:
-        r"""Updates the symplectic parameters using the given symplectic gradients.
-
-        Implemented from:
-            Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
-            for optimization on the real symplectic group.
-            Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
-        """
-        Y = math.euclidean_to_symplectic(self._value, dS_euclidean)
-        YT = math.transpose(Y)
-        new_value = math.matmul(
-            self._value, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
-        )
-        math.assign(self._value, new_value)
 
 
 class Euclidean(Trainable):
@@ -110,13 +88,6 @@ class Euclidean(Trainable):
         self._owner = owner
         self.bounds = bounds
 
-    def update(self, grad, learning_rate) -> None:
-        self._update_euclidian(grad, learning_rate)
-
-    def _update_euclidian(self, euclidean_grad, euclidean_lr) -> None:
-        """Updates the parameters using the euclidian gradients."""
-        self._value.assign_add(-euclidean_lr * euclidean_grad)
-
 
 class Orthogonal(Trainable):
     def __init__(self, value, name, owner=None) -> None:
@@ -127,27 +98,6 @@ class Orthogonal(Trainable):
         )
         self._name = name
         self._owner = owner
-
-    def update(self, grad, learning_rate) -> None:
-        self._update_orthogonal(grad, learning_rate)
-
-    def _update_orthogonal(self, dO_euclidean, orthogonal_lr) -> None:
-        r"""Updates the orthogonal parameters using the given orthogonal gradients.
-
-        Implemented from:
-            Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
-            Over the Orthogonal Group: A Tutorial.
-            Journal of Machine Learning Research. 2005 May 1;6(5).
-        """
-        dO_orthogonal = 0.5 * (
-            dO_euclidean
-            - math.matmul(math.matmul(self._value, math.transpose(dO_euclidean)), self._value)
-        )
-        new_value = math.matmul(
-            self._value,
-            math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), self._value)),
-        )
-        math.assign(self._value, new_value)
 
 
 class Constant(Parameter):

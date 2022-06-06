@@ -17,61 +17,15 @@ used within Mr Mustard.
 """
 
 from itertools import chain, groupby
-from mrmustard.types import List, Callable, Sequence, Tensor, Tuple
+from mrmustard.types import List, Callable, Sequence
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
 from .parameter import Parameter, Trainable
 from .parametrized import Parametrized
+from .parameter_update import param_update_method
 
 math = Math()
-
-
-def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):
-
-    r"""Updates the symplectic parameters using the given symplectic gradients.
-    Implemented from:
-        Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
-        for optimization on the real symplectic group.
-        Mathematical Methods in the Applied Sciences. 2018 Jul 30;41(11):4273-86.
-    """
-    for dS_euclidean, S in grads_and_vars:
-        Y = math.euclidean_to_symplectic(S, dS_euclidean)
-        YT = math.transpose(Y)
-        new_value = math.matmul(
-            S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
-        )
-        math.assign(S, new_value)
-
-
-def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float):
-    r"""Updates the orthogonal parameters using the given orthogonal gradients.
-    Implemented from:
-        Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
-        Over the Orthogonal Group: A Tutorial.
-        Journal of Machine Learning Research. 2005 May 1;6(5).
-    """
-    for dO_euclidean, O in grads_and_vars:
-        dO_orthogonal = 0.5 * (
-            dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O)
-        )
-        new_value = math.matmul(
-            O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), O))
-        )
-        math.assign(O, new_value)
-
-
-def update_euclidean(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclidean_lr: float):
-    """Updates the parameters using the euclidian gradients."""
-    math.euclidean_opt.lr = euclidean_lr
-    math.euclidean_opt.apply_gradients(grads_and_vars)
-
-
-update_method_dict = {
-    "euclidean": update_euclidean,
-    "symplectic": update_symplectic,
-    "orthogonal": update_orthogonal,
-}
 
 # pylint: disable=disallowed-name
 class Optimizer:
@@ -137,13 +91,14 @@ class Optimizer:
 
     def apply_gradients(self, trainable_params, grads):
 
-        # group grads and vars by type
+        # group grads and vars by type (i.e. euclidean, symplectic, orthogonal)
         grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
 
         for param_type, grads_vars in grouped_vars_and_grads.items():
             param_lr = self.learning_rate[param_type]
+            # extract value (tensor) from the parameter object and group with grad
             grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
-            update_method = update_method_dict.get(param_type)
+            update_method = param_update_method.get(param_type)
             update_method(grads_and_vars, param_lr)
 
     @staticmethod
@@ -199,8 +154,3 @@ class Optimizer:
 
         def _render_traceback_(self):
             pass
-
-
-# ~~~~~~~~~~~~~~~~~
-# Static functions
-# ~~~~~~~~~~~~~~~~~
