@@ -17,7 +17,6 @@ used within Mr Mustard.
 """
 
 from itertools import chain, groupby
-from nntplib import GroupInfo
 from mrmustard.types import List, Callable, Sequence, Tensor, Tuple
 from mrmustard.utils.parameter import Parameter, Trainable
 from mrmustard.utils import graphics
@@ -110,32 +109,33 @@ class Optimizer:
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
         """
         try:
-            # finding out which parameters are trainable from the ops
-            trainable_params = list(
-                chain(
-                    *[
-                        item.trainable_parameters
-                        for item in by_optimizing
-                        if isinstance(item, Parametrized)
-                    ]
-                )
-            )
-
-            bar = graphics.Progressbar(max_steps)
-            with bar:
-
-                while not self.should_stop(max_steps):
-                    cost, grads = loss_and_gradients(cost_fn, trainable_params)
-                    self.update_params(trainable_params, grads)
-
-                    self.opt_history.append(cost)
-                    bar.step(math.asnumpy(cost))
-
+            self._minimize(cost_fn, by_optimizing, max_steps)
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
 
-    def update_params(self, trainable_params, grads):
+    def _minimize(self, cost_fn, by_optimizing, max_steps):
+        # finding out which parameters are trainable from the ops
+        trainable_params = list(
+            chain(
+                *[
+                    item.trainable_parameters
+                    for item in by_optimizing
+                    if isinstance(item, Parametrized)
+                ]
+            )
+        )
+
+        bar = graphics.Progressbar(max_steps)
+        with bar:
+            while not self.should_stop(max_steps):
+                cost, grads = self.compute_loss_and_gradients(cost_fn, trainable_params)
+                self.apply_gradients(trainable_params, grads)
+
+                self.opt_history.append(cost)
+                bar.step(math.asnumpy(cost))
+
+    def apply_gradients(self, trainable_params, grads):
 
         # group grads and vars by type
         grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
@@ -160,6 +160,27 @@ class Optimizer:
 
         return grouped
 
+    @staticmethod
+    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
+        r"""Uses the backend to compute the loss and gradients of the parameters
+        given a cost function.
+
+        This functions is a wrapper around the backend optimizer to extract tensors
+        from `parameters` and correctly compute the loss and gradients. Results of
+        the calculation are associated back again with the given parameters.
+
+        Args:
+            cost_fn (Callable with no args): The cost function.
+            parameters (List[Parameter]): The parameters to optimize.
+
+        Returns:
+            tuple(Tensor, List[Tensor]): The loss and the gradients.
+        """
+        param_tensors = [p.value for p in parameters]
+        loss, grads = math.value_and_gradients(cost_fn, param_tensors)
+
+        return loss, grads
+
     def should_stop(self, max_steps: int) -> bool:
         r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)."""
         if max_steps != 0 and len(self.opt_history) > max_steps:
@@ -183,24 +204,3 @@ class Optimizer:
 # ~~~~~~~~~~~~~~~~~
 # Static functions
 # ~~~~~~~~~~~~~~~~~
-
-
-def loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
-    r"""Uses the backend to compute the loss and gradients of the parameters
-    given a cost function.
-
-    This functions is a wrapper around the backend optimizer to extract tensors
-    from `parameters` and correctly compute the loss and gradients. Results of
-    the calculation are associated back again with the given parameters.
-
-    Args:
-        cost_fn (Callable with no args): The cost function.
-        parameters (List[Parameter]): The parameters to optimize.
-
-    Returns:
-        tuple(Tensor, List[Tensor]): The loss and the gradients.
-    """
-    param_tensors = [p.value for p in parameters]
-    loss, grads = math.value_and_gradients(cost_fn, param_tensors)
-
-    return loss, grads
