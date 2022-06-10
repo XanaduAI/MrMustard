@@ -1167,7 +1167,7 @@ def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_m
 
 
 @njit
-def numba_sparse_matvec_vjp(self, dmatvec: Tensor, matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool):
+def numba_sparse_matvec_vjp(dmatvec: Tensor, matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool):
     r"""Numba implementation of the vector-jacobian product of the mode-wise matrix-vector multiplication of
     a batch of matrices and a batch of vectors in phase space. Assumes inputs are in xxpp ordering.
     Note that "sparse" is indended in the sense of modes, i.e. the matrix can contain
@@ -1210,29 +1210,39 @@ def numba_sparse_matvec_vjp(self, dmatvec: Tensor, matrix: Tensor, vector: Tenso
 @njit
 def sparse_matmul_data(matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0: bool, m2like_0: bool) -> tuple:
     r"""Computes the data required for the mode-wise matrix multiplication of two matrices."""
+    B1 = matrix1.shape[0]
+    B2 = matrix2.shape[0]
+    M = matrix1.shape[-1] // 2
+    N = matrix2.shape[-1] // 2
+
+    mode_union = list(set(m1_modes).union(set(m2_modes)))
+    mode_intersection = list(set(m1_modes).intersection(set(m2_modes)))
+
     if m1like_0:  # final modes are a subset of m1_modes
         if m2like_0: # final modes are a subset of m2_modes
-            final_modes = list(set(m1_modes).intersection(m2_modes))
+            final_modes = mode_intersection
         else:
             final_modes = list(m1_modes)
     else:
         if m2like_0: # final modes are a subset of m2_modes
             final_modes = list(m2_modes)
         else:
-            final_modes = list(set(m1_modes).union(m2_modes))
+            final_modes = mode_union
 
-        B1 = matrix1.shape[0]
-        B2 = matrix2.shape[0]
-        M = matrix1.shape[-1] // 2
-        N = matrix2.shape[-1] // 2
-        F = len(final_modes)
+    F = len(final_modes)
 
-        # at which index to write a given mode:
-        findices = {m:i for i,m in enumerate(final_modes)}
-        m1indices = {m:i for i,m in enumerate(m1_modes)}
-        m2indices = {m:i for i,m in enumerate(m2_modes)}
+    # at which index to write a given mode:
+    findices = {}
+    for i,m in enumerate(final_modes):
+        findices[m] = i
+    ind1 = {}
+    for i,m in enumerate(m1_modes):
+        ind1[m] = i
+    ind2 = {}
+    for i,m in enumerate(m2_modes):
+        ind2[m] = i
 
-        return final_modes, findices, m1indices, m2indices, B, F, M, N
+    return mode_union, mode_intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N
 
 @njit
 def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0:bool, m2like_0:bool):
@@ -1250,7 +1260,7 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
         new_matrix (array): :math:`B_1 B_2 \times 2F\times 2F` array where F is determined by the other arguments
 
     """
-    final_modes, findices, m1indices, m2indices, B1, B2, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
+    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
     
     new_matrix = np.zeros((B1*B2, 2*F, 2*F), dtype=matrix1.dtype)  # TODO: revisit dtype
     for b1 in range(B1):
@@ -1260,21 +1270,21 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
                 for n in final_modes:
                     if m in m1_modes:
                         if n in m2_modes:  # if mode goes through both, add contribution
-                            for p in final_modes:
-                                new_matrix[b, findices[m], findices[n]] += matrix1[b1, m1indices[m], m1indices[p]] * matrix2[b2, m2indices[p], m2indices[n]] + matrix1[b1, m1indices[m], m1indices[p]+M] * matrix2[b2, m2indices[p]+N, m2indices[n]]
-                                new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, m1indices[m]+M, m1indices[p]] * matrix2[b2, m2indices[p], m2indices[n]] + matrix1[b1, m1indices[m]+M, m1indices[p]+M] * matrix2[b2, m2indices[p]+N, m2indices[n]]
-                                new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, m1indices[m], m1indices[p]] * matrix2[b2, m2indices[p], m2indices[n]+N] + matrix1[b1, m1indices[m], m1indices[p]+M] * matrix2[b2, m2indices[p]+N, m2indices[n]+N]
-                                new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, m1indices[m]+M, m1indices[p]] * matrix2[b2, m2indices[p], m2indices[n]+N] + matrix1[b1, m1indices[m]+M, m1indices[p]+M] * matrix2[b2, m2indices[p]+N, m2indices[n]+N]
+                            for p in intersection:
+                                new_matrix[b, findices[m], findices[n]] += matrix1[b1, ind1[m], ind1[p]] * matrix2[b2, ind2[p], ind2[n]] + matrix1[b1, ind1[m], ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]]
+                                new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, ind1[m]+M, ind1[p]] * matrix2[b2, ind2[p], ind2[n]] + matrix1[b1, ind1[m]+M, ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]]
+                                new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, ind1[m], ind1[p]] * matrix2[b2, ind2[p], ind2[n]+N] + matrix1[b1, ind1[m], ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]+N]
+                                new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, ind1[m]+M, ind1[p]] * matrix2[b2, ind2[p], ind2[n]+N] + matrix1[b1, ind1[m]+M, ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]+N]
                         elif not m2like_0: # if n is not in m2_modes it contributes only if m2 is not like_0, in which case it copies the mode from m1
-                            new_matrix[b, findices[m], findices[n]] += matrix1[b1, m1indices[m], m1indices[n]]
-                            new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, m1indices[m]+M, m1indices[n]]
-                            new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, m1indices[m], m1indices[n]+M]
-                            new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, m1indices[m]+M, m1indices[n]+M]
+                            new_matrix[b, findices[m], findices[n]] += matrix1[b1, ind1[m], ind1[n]]
+                            new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, ind1[m]+M, ind1[n]]
+                            new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, ind1[m], ind1[n]+M]
+                            new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, ind1[m]+M, ind1[n]+M]
                     elif not m1like_0:  # if m is not in m1_modes it matters only if m1 is not like_0, in which case it copies the mode from m2
-                        new_matrix[b, findices[m], findices[n]] += matrix2[b2, m2indices[m], m2indices[n]]
-                        new_matrix[b, findices[m]+F, findices[n]] += matrix2[b2, m2indices[m]+N, m2indices[n]]
-                        new_matrix[b, findices[m], findices[n]+F] += matrix2[b2, m2indices[m], m2indices[n]+N]
-                        new_matrix[b, findices[m]+F, findices[n]+F] += matrix2[b2, m2indices[m]+N, m2indices[n]+N]
+                        new_matrix[b, findices[m], findices[n]] += matrix2[b2, ind2[m], ind2[n]]
+                        new_matrix[b, findices[m]+F, findices[n]] += matrix2[b2, ind2[m]+N, ind2[n]]
+                        new_matrix[b, findices[m], findices[n]+F] += matrix2[b2, ind2[m], ind2[n]+N]
+                        new_matrix[b, findices[m]+F, findices[n]+F] += matrix2[b2, ind2[m]+N, ind2[n]+N]
     return new_matrix
             
 
@@ -1295,7 +1305,7 @@ def numba_sparse_matmul_vjp(dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m
         dmatrix2 (array): :math:`B_2\times 2N\times 2N` array the downstream gradient of the cost with respect to the second matrix
 
     """
-    final_modes, findices, m1indices, m2indices, B1, B2, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
+    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
     dmatrix1 = np.zeros((B1, 2*M, 2*M), dtype=matrix1.dtype)
     dmatrix2 = np.zeros((B2, 2*N, 2*N), dtype=matrix2.dtype)
     for b1 in range(B1):
@@ -1305,25 +1315,25 @@ def numba_sparse_matmul_vjp(dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m
                 for n in final_modes:
                     if m in m1_modes:
                         if n in m2_modes:
-                            for p in final_modes:
-                                dmatrix1[b1, m1indices[m], m1indices[p]] += dmatmul[b, findices[m], findices[n]] * matrix2[b2, m2indices[p], m2indices[n]] + dmatmul[b, findices[m], findices[n]+F] * matrix2[b2, m2indices[p], m2indices[n]+N]
-                                dmatrix1[b1, m1indices[m], m1indices[p]+M] += dmatmul[b, findices[m], findices[n]] * matrix2[b2, m2indices[p]+N, m2indices[n]] + dmatmul[b, findices[m], findices[n]+F] * matrix2[b2, m2indices[p]+N, m2indices[n]+N]
-                                dmatrix1[b1, m1indices[m]+M, m1indices[p]] += dmatmul[b, findices[m]+F, findices[n]] * matrix2[b2, m2indices[p], m2indices[n]] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix2[b2, m2indices[p], m2indices[n]+N]
-                                dmatrix1[b1, m1indices[m]+M, m1indices[p]+M] += dmatmul[b, findices[m]+F, findices[n]] * matrix2[b2, m2indices[p]+N, m2indices[n]] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix2[b2, m2indices[p]+N, m2indices[n]+N]
-                                dmatrix2[b2, m2indices[p], m2indices[n]] += dmatmul[b, findices[m], findices[n]] * matrix1[b1, m1indices[m], m1indices[p]] + dmatmul[b, findices[m]+F, findices[n]] * matrix1[b1, m1indices[m]+M, m1indices[p]]
-                                dmatrix2[b2, m2indices[p], m2indices[n]+N] += dmatmul[b, findices[m], findices[n]+F] * matrix1[b1, m1indices[m]+M, m1indices[p]] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix1[b1, m1indices[m]+M, m1indices[p]+M]
-                                dmatrix2[b2, m2indices[p]+N, m2indices[n]] += dmatmul[b, findices[m], findices[n]] * matrix1[b1, m1indices[m], m1indices[p]+M] + dmatmul[b, findices[m]+F, findices[n]] * matrix1[b1, m1indices[m]+M, m1indices[p]+M]
-                                dmatrix2[b2, m2indices[p]+N, m2indices[n]+N] += dmatmul[b, findices[m], findices[n]+F] * matrix1[b1, m1indices[m], m1indices[p]+M] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix1[b1, m1indices[m]+M, m1indices[p]+M]
+                            for p in intersection:
+                                dmatrix1[b1, ind1[m], ind1[p]] += dmatmul[b, findices[m], findices[n]] * matrix2[b2, ind2[p], ind2[n]] + dmatmul[b, findices[m], findices[n]+F] * matrix2[b2, ind2[p], ind2[n]+N]
+                                dmatrix1[b1, ind1[m], ind1[p]+M] += dmatmul[b, findices[m], findices[n]] * matrix2[b2, ind2[p]+N, ind2[n]] + dmatmul[b, findices[m], findices[n]+F] * matrix2[b2, ind2[p]+N, ind2[n]+N]
+                                dmatrix1[b1, ind1[m]+M, ind1[p]] += dmatmul[b, findices[m]+F, findices[n]] * matrix2[b2, ind2[p], ind2[n]] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix2[b2, ind2[p], ind2[n]+N]
+                                dmatrix1[b1, ind1[m]+M, ind1[p]+M] += dmatmul[b, findices[m]+F, findices[n]] * matrix2[b2, ind2[p]+N, ind2[n]] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix2[b2, ind2[p]+N, ind2[n]+N]
+                                dmatrix2[b2, ind2[p], ind2[n]] += dmatmul[b, findices[m], findices[n]] * matrix1[b1, ind1[m], ind1[p]] + dmatmul[b, findices[m]+F, findices[n]] * matrix1[b1, ind1[m]+M, ind1[p]]
+                                dmatrix2[b2, ind2[p], ind2[n]+N] += dmatmul[b, findices[m], findices[n]+F] * matrix1[b1, ind1[m]+M, ind1[p]] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix1[b1, ind1[m]+M, ind1[p]+M]
+                                dmatrix2[b2, ind2[p]+N, ind2[n]] += dmatmul[b, findices[m], findices[n]] * matrix1[b1, ind1[m], ind1[p]+M] + dmatmul[b, findices[m]+F, findices[n]] * matrix1[b1, ind1[m]+M, ind1[p]+M]
+                                dmatrix2[b2, ind2[p]+N, ind2[n]+N] += dmatmul[b, findices[m], findices[n]+F] * matrix1[b1, ind1[m], ind1[p]+M] + dmatmul[b, findices[m]+F, findices[n]+F] * matrix1[b1, ind1[m]+M, ind1[p]+M]
                         elif not m2like_0:
-                            dmatrix1[b1, m1indices[m], m1indices[n]] += dmatmul[b, findices[m], findices[n]]
-                            dmatrix1[b1, m1indices[m]+M, m1indices[n]] += dmatmul[b, findices[m]+F, findices[n]]
-                            dmatrix1[b1, m1indices[m], m1indices[n]+M] += dmatmul[b, findices[m], findices[n]+F]
-                            dmatrix1[b1, m1indices[m]+M, m1indices[n]+M] += dmatmul[b, findices[m]+F, findices[n]+F]
+                            dmatrix1[b1, ind1[m], ind1[n]] += dmatmul[b, findices[m], findices[n]]
+                            dmatrix1[b1, ind1[m]+M, ind1[n]] += dmatmul[b, findices[m]+F, findices[n]]
+                            dmatrix1[b1, ind1[m], ind1[n]+M] += dmatmul[b, findices[m], findices[n]+F]
+                            dmatrix1[b1, ind1[m]+M, ind1[n]+M] += dmatmul[b, findices[m]+F, findices[n]+F]
                     elif not m1like_0:
-                        dmatrix2[b2, m2indices[m], m2indices[n]] += dmatmul[b, findices[m], findices[n]]
-                        dmatrix2[b2, m2indices[m]+N, m2indices[n]] += dmatmul[b, findices[m]+F, findices[n]]
-                        dmatrix2[b2, m2indices[m], m2indices[n]+N] += dmatmul[b, findices[m], findices[n]+F]
-                        dmatrix2[b2, m2indices[m]+N, m2indices[n]+N] += dmatmul[b, findices[m]+F, findices[n]+F]
+                        dmatrix2[b2, ind2[m], ind2[n]] += dmatmul[b, findices[m], findices[n]]
+                        dmatrix2[b2, ind2[m]+N, ind2[n]] += dmatmul[b, findices[m]+F, findices[n]]
+                        dmatrix2[b2, ind2[m], ind2[n]+N] += dmatmul[b, findices[m], findices[n]+F]
+                        dmatrix2[b2, ind2[m]+N, ind2[n]+N] += dmatmul[b, findices[m]+F, findices[n]+F]
     return dmatrix1, dmatrix2
 
 
@@ -1377,10 +1387,10 @@ def sparse_mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
 
 #     # at which index to write a given mode:
 #     findices = {m:i for i,m in enumerate(final_modes)}
-#     m1indices = {m:i for i,m in enumerate(m1_modes)}
-#     m2indices = {m:i for i,m in enumerate(m2_modes)}
+#     ind1 = {m:i for i,m in enumerate(m1_modes)}
+#     ind2 = {m:i for i,m in enumerate(m2_modes)}
 
-#     return final_modes, findices, m1indices, m2indices, B, F, M, N
+#     return final_modes, findices, ind1, ind2, B, F, M, N
 
 
 
