@@ -25,8 +25,8 @@ math = Math()
 class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 
-    Tensors in phase space have shape ``(2n, 2n)`` (e.g. X and Y matrices) or shape ``(2n,)`` (e.g. d vector)
-    where n is the number of modes.
+    Tensors in phase space have shape ``(2n, 2n)`` (e.g. symplectic matrices, covariance matrices) or shape ``(2n,)`` (e.g. d vector)
+    where n is the number of modes. 
 
     There are two main orderings of rows and columns:
         - xxpp: matrix is a `2\times 2` block matrix in which each block is `n\times n` (the four blocks correspond to `xx`, `xp`, `px`, `pp`).
@@ -35,20 +35,21 @@ class XPTensor(ABC):
     We solve this problem by reshaping the matrices to shape `(b,n,m,2,2)` and vectors to shape `(b,n,2)` where `b` is a batch dimension. This creates a unified ordering.
     The idea is for a user to forget about the (2,2) extra dimensions and just work with the `n` modes when multiplying, adding, getting submatrices, etc.
 
-    We call `n` the outmodes and `m` the inmodes. States have outmodes equal to the inmodes. For transformations they can differ.
-    Off-diagonal matrices like coherences have all the outmodes different from the inmodes.
-    Diagonal matrices like coviariances and symplectic transformations have the same outmodes as the inmodes.
-    Vectors have only outmodes.
+    We call `n` the outmodes and `m` the inmodes. Covariance matrices have outmodes equal to the inmodes.
+    For symplectic matrices they can differ because we include transformations that map a set of modes to a set of different modes.
+    Off-diagonal matrices have all the outmodes different from the inmodes. Vectors have only outmodes.
 
-    XPTensor objects are operationally sparse, in the sense that they support operations between modes where one or more tensors are undefined.
+    XPTensor objects are mode-wise sparse, in the sense that they support operations between modes where one or more of the tensors are undefined.
     There are two types of behaviour:
         * like_0: in modes where the tensor is undefined, it's like having a zero (a zero matrix)
         * like_1: in modes where the tensor is undefined, it's like having a one (an identity matrix)
 
     For example, in the expression :math:`X @ means + d` where `X` is a symplectic matrix and `d` is a displacement vector,
     if `X` is undefined it's like having the identity and the matrix product simply returns `means`, while in the expression
-    :math:`means + d` if `d` is undefined it simply returns `means`. In this cases no operation is actually computed.
+    :math:`means + d` if `d` is undefined it simply returns `means`. In these cases no operation is actually computed.
     Thanks to sparsity we can represent graph states and transformations on graph states using XPTensor objects.
+
+    Thanks to the batch dimension we can represent non-gaussian objects as linear superpositions of gaussian objects.
 
     Args:
         tensor: The tensor in (b,n,m,2,2) or (b,n,2) order.
@@ -56,7 +57,7 @@ class XPTensor(ABC):
         inmodes: a list of input modes
     """
 
-    @abstractmethod  # so that XPTensor can't be instantiated directly
+    @abstractmethod  # to prevent XPTensor to be instantiated directly
     def __init__(
         self,
         tensor: Optional[Tensor],
@@ -64,9 +65,9 @@ class XPTensor(ABC):
         inmodes: List[int],
     ):
         # NOTE: tensor is supposed to be rank 5: batch + outmodes + inmodes + 2 + 2
-        s = tensor.shape[1:]
-        self.shape = tuple() if tensor is None else s[:len(s)//2]  # NOTE: only (N,M) or (N,)
-        self.ndim = None if tensor is None else len(self.shape)
+        self.shape = tuple() if tensor is None else tensor.shape[:(len(tensor.shape)-1)//2]  # NOTE: (N,M) or (N,) or (,)
+        self.ndim = len(self.shape) # 0 if tensor is None
+        self.batch_size = tensor.shape[0] if tensor is not None else 0
         self.tensor = tensor
         if not (set(outmodes) == set(inmodes) or set(outmodes).isdisjoint(inmodes)):
             raise ValueError("inmodes and outmodes should contain the same modes or be disjoint")
@@ -87,15 +88,11 @@ class XPTensor(ABC):
             raise ValueError("The number of outmodes and inmodes doesn't match")
         return len(self.outmodes)
 
-    @property
-    def batch_size(self):
-        return self.shape[0]
-
     def to_xpxp(self) -> Optional[Union[Matrix, Vector]]:
         if self.tensor is None:
             return None
         tensor = math.transpose(
-            self.tensor, (0, 1, 3, 2, 4) if isinstance(self, XPMatrix) else (0, 1, 2)
+            self.tensor, (0, 1, 3, 2, 4) if self.ndim == 2 else (0, 1, 2)
         )  # from BNN22 to BN2N2 or from BN2 to BN2
         return math.reshape(tensor, [self.batch_size] + [2 * s for s in self.shape])
 
@@ -103,7 +100,7 @@ class XPTensor(ABC):
         if self.tensor is None:
             return None
         tensor = math.transpose(
-            self.tensor, (0, 3, 1, 4, 2) if isinstance(self, XPMatrix) else (0, 2, 1)
+            self.tensor, (0, 3, 1, 4, 2) if self.ndim == 2 else (0, 2, 1)
         )  # from BNN22 to B2N2N or from BN2 to B2N
         return math.reshape(tensor, [self.batch_size] + [2 * s for s in self.shape]) 
 
@@ -116,7 +113,7 @@ class XPTensor(ABC):
     def modes_last(self) -> Optional[Tensor]:
         if self.tensor is None:
             return None
-        return math.transpose(self.tensor, (0, 3, 4, 1, 2) if isinstance(self, XPMatrix) else (0, 2, 1))  # B22NM or B2N
+        return math.transpose(self.tensor, (0, 3, 4, 1, 2) if self.ndim == 2 else (0, 2, 1))  # B22NM or B2N
 
     ####################################################################################################################
     # Operators
@@ -218,14 +215,14 @@ class XPTensor(ABC):
 
     #     return XPVector(to_update, outmodes)
 
-    def __sub__(self, other: Union[XPMatrix, XPVector]) -> Optional[XPTensor]:
+    def __sub__(self, other: Optional[XPTensor]) -> Optional[XPTensor]:
         return self + (-1) * other
 
     def __truediv__(self, other: Scalar) -> Optional[XPTensor]:
         return (1 / other) * self
 
 
-class XPMatrix(XPTensor):
+class XPMatrix(XPTensor):  # TODO: should this be abstract too?
     r"""A convenience class for a matrix in the XPTensor format.
 
     # TODO: write docstring
@@ -255,11 +252,14 @@ class XPMatrix(XPTensor):
         inmodes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
-            if len(tensor.shape) == 2: # batch if necessary
+            # batch if necessary
+            if len(tensor.shape) == 2:
                 tensor = math.expand_dims(tensor, 0)
+            # split 2n -> 2,n for both input dimensions
             tensor = math.reshape(tensor, [tensor.shape[0]] + [_ for n in tensor.shape[1:] for _ in (2, n // 2)])
+            # transpose so that the index order is b,n,m,2,2
             tensor = math.transpose(tensor, (0, 2, 4, 1, 3))
-        return cls(XPMatrix(tensor, like_0, outmodes, inmodes))  # note cls is so that subclasses don't need to reimplement this method
+        return cls(XPMatrix(tensor, like_0, outmodes, inmodes))  # NOTE we use cls so that subclasses won't need to reimplement this method
 
     @classmethod
     def from_xpxp(
@@ -270,9 +270,12 @@ class XPMatrix(XPTensor):
         inmodes: List[int] = [],
     ) -> XPMatrix:
         if tensor is not None:
+            # batch if necessary
             if len(tensor.shape) == 2:
                 tensor = math.expand_dims(tensor, 0)
+            # split 2n -> 2,n for both input dimensions
             tensor = math.reshape(tensor, [tensor.shape[0]] + [_ for n in tensor.shape[1:] for _ in (n // 2, 2)])
+            # transpose so that the index order is b,n,m,2,2
             tensor = math.transpose(tensor, (0, 1, 3, 2, 4))
         return cls(XPMatrix(tensor, like_0, outmodes, inmodes)) #note cls is so that subclasses don't need to reimplement this method
 
@@ -289,7 +292,7 @@ class XPMatrix(XPTensor):
         tensor = math.reshape(tensor, (self.batch_size, 2, 2, tensor.shape[-4] * times, tensor.shape[-2] * times))  # shape = [B,2,2,NT,NT]
         tensor = math.transpose(tensor, (0, 3, 4, 1, 2))  # shape = [B,NT,NT,2,2]
         if outmodes is None:
-            outmodes = list(range(times*len(self.outmodes)))
+            outmodes = list(range(times*len(self.outmodes))) # NOTE: is this what we want? e.g. outmodes = [3,10] -> [3,10,13,20]. Should we reset the modes instead (i.e. [3,10]->[0,1,2,3])?
         if inmodes is None:
             inmodes = list(range(times*len(self.inmodes)))
         return self.__class__(XPMatrix(tensor, self.like_0, outmodes, inmodes))
@@ -327,7 +330,7 @@ class XPMatrix(XPTensor):
         ))
 
     def __repr__(self) -> str:
-        return f"XPMatrix(like_0={self.like_0}, tensor=..., outmodes={self.outmodes}, inmodes={self.inmodes})"
+        return f"{self.__class__.__qualname__}(tensor=..., like_0={self.like_0}, outmodes={self.outmodes}, inmodes={self.inmodes})"
 
     def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, XPVector]:
         if not isinstance(other, (XPMatrix, XPVector)):
@@ -337,11 +340,11 @@ class XPMatrix(XPTensor):
         if self.tensor is None: # NOTE: other is not None now
             return other if self.like_1 else self
         if isinstance(other, XPMatrix):
-            tensor = math.sparse_matmul(self.to_xxpp(), other.to_xxpp(), (self.outmodes, self.inmodes), (other.outmodes, other.inmodes), self.like_0, other.like_0)
+            tensor = math.sparse_matmul(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes, self.like_0, other.like_0)
             modes, *_ = math.sparse_matmul_data(self.to_xxpp(), other.to_xxpp(),self.outmodes, other.outmodes, self.like_0, other.like_0)
             return XPMatrix(tensor, self.like_0 or other.like_0, outmodes=modes, inmodes=modes)  # TODO: generalize to handle different in/out modes
         if isinstance(other, XPVector):
-            tensor = math.sparse_matvec(self.to_xxpp(), other.to_xxpp(), self.outmodes, self.inmodes, other.outmodes, self.like_0)
+            tensor = math.sparse_matvec(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes, self.like_0)
             return XPVector(tensor, modes=other.outmodes)
 
     def __add__(self, other: XPMatrix) -> XPMatrix:
@@ -352,7 +355,7 @@ class XPMatrix(XPTensor):
         if self.tensor is None and self.like_0:
             return other
         if self.tensor is not None and other.tensor is not None:
-            return self._sparse_add(other)
+            return self._sparse_mat_add(other)
         raise ValueError(f"Can't add a like_1 null XPMatrix and an XPMatrix that is not null and like_0.")
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPMatrix:

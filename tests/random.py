@@ -18,8 +18,9 @@ from hypothesis.extra.numpy import arrays
 from mrmustard.lab import *
 
 
-angle = st.floats(min_value=0, max_value=2 * np.pi)
+angle = st.floats(min_value=-2 * np.pi, max_value=2 * np.pi)
 positive = st.floats(min_value=0, allow_infinity=False, allow_nan=False)
+even = st.integers(min_value=2, max_value=10).filter(lambda x: x % 2 == 0)
 real = st.floats(allow_infinity=False, allow_nan=False)
 r = st.floats(
     min_value=0, max_value=0.5, allow_infinity=False, allow_nan=False
@@ -37,6 +38,10 @@ def vector(draw, length):
     return draw(
         st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length)
     )
+
+@st.composite
+def even_vector(draw):
+    return draw(arrays(np.float64, shape=(draw(even),), elements=real))
 
 
 # a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes

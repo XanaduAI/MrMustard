@@ -4,10 +4,10 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.math.math_interface import numba_sparse_matvec, numba_sparse_matmul
+from mrmustard.math.numba import numba_numba_sparse_matvec, numba_numba_sparse_matmul
 import thewalrus as tw
 
-def test_sparse_matvec_1_to_1():
+def test_numba_sparse_matvec_1_to_1():
     r"""tests that a 1-mode matrix is correctly applied to a 2-mode or 3-mode vector"""
     # 2-mode vector
     x = np.array([[1, 2, 3, 4]])
@@ -35,7 +35,7 @@ def test_sparse_matvec_1_to_1():
     assert np.allclose(numba_sparse_matvec(matrix=T, vector=x, m_modes=[2], v_modes=[1,2,3], like_0=True), np.array([[12, 26]]))
     assert np.allclose(numba_sparse_matvec(matrix=T, vector=x, m_modes=[0], v_modes=[1,2,3], like_0=False), x)
     
-def test_sparse_matmul_3_to_1():
+def test_numba_sparse_matmul_3_to_1():
     r"""tests that a batched 1-mode matrix is correctly composed with a 2-mode matrix"""
     # 2-mode matrix (batched)
     X = np.arange(3*16).reshape([3,4,4])
@@ -67,7 +67,7 @@ def test_sparse_matmul_3_to_1():
     assert np.allclose(res, reduced)
 
 
-def test_sparse_matmul_1_to_3():
+def test_numba_sparse_matmul_1_to_3():
     r"""tests that a 1-mode matrix is correctly composed with a batched 2-mode matrix"""
     # 2-mode matrix (batched)
     X = np.arange(1*16).reshape([1,4,4])
