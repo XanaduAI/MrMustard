@@ -43,6 +43,17 @@ def vector(draw, length):
 def even_vector(draw):
     return draw(arrays(np.float64, shape=(draw(even),), elements=real))
 
+# a strategy to produce a random matrix
+@st.composite
+def matrix(draw, shape):
+    return draw(arrays(np.float64, shape=shape, elements=real))
+
+# a strategy to produce a random matrix of shape (2n,2n) where n is an integer
+@st.composite
+def even_matrix(draw):
+    n = draw(even)
+    return draw(arrays(np.float64, shape=(n, n), elements=real))
+
 
 # a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes
 @st.composite

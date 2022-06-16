@@ -64,8 +64,9 @@ class XPTensor(ABC):
         outmodes: List[int],
         inmodes: List[int],
     ):
-        # NOTE: tensor is supposed to be rank 5: batch + outmodes + inmodes + 2 + 2
-        self.shape = tuple() if tensor is None else tensor.shape[:(len(tensor.shape)-1)//2]  # NOTE: (N,M) or (N,) or (,)
+        # NOTE: tensor is supposed to be rank 5 for matrices: batch + outmodes + inmodes + 2 + 2 or rank 3 for vectors: batch + outmodes + 2
+        assert tensor is None or tensor.ndim == 5 or tensor.ndim == 3
+        self.shape = tuple() if tensor is None else tensor.shape[1:1+(len(tensor.shape)-1)//2]  # NOTE: (N,M) or (N,) or (,)
         self.ndim = len(self.shape) # 0 if tensor is None
         self.batch_size = tensor.shape[0] if tensor is not None else 0
         self.tensor = tensor
@@ -93,7 +94,7 @@ class XPTensor(ABC):
             return None
         tensor = math.transpose(
             self.tensor, (0, 1, 3, 2, 4) if self.ndim == 2 else (0, 1, 2)
-        )  # from BNN22 to BN2N2 or from BN2 to BN2
+        )  # from BNN22 to B(N2)(N2) or from BN2 to B(N2)
         return math.reshape(tensor, [self.batch_size] + [2 * s for s in self.shape])
 
     def to_xxpp(self) -> Optional[Union[Matrix, Vector]]:
@@ -101,7 +102,7 @@ class XPTensor(ABC):
             return None
         tensor = math.transpose(
             self.tensor, (0, 3, 1, 4, 2) if self.ndim == 2 else (0, 2, 1)
-        )  # from BNN22 to B2N2N or from BN2 to B2N
+        )  # from BNN22 to B(2N)(2N) or from BN2 to B(2N)
         return math.reshape(tensor, [self.batch_size] + [2 * s for s in self.shape]) 
 
     def __array__(self):
@@ -355,7 +356,7 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
         if self.tensor is None and self.like_0:
             return other
         if self.tensor is not None and other.tensor is not None:
-            return self._sparse_mat_add(other)
+            return math.sparse_mat_add(other)
         raise ValueError(f"Can't add a like_1 null XPMatrix and an XPMatrix that is not null and like_0.")
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPMatrix:
@@ -411,9 +412,13 @@ class XPVector(XPTensor):
     r"""A convenience class for a vector in the XPTensor format."""
 
     def __init__(self, tensor: Tensor = None, modes: List[int] = []):
-        if modes == [] and tensor is not None:
-            modes = list(range(tensor.shape[-1]))
-        super().__init__(tensor, outmodes = modes, inmodes = [])
+        if isinstance(tensor, XPVector):
+            super().__init__(tensor.tensor, tensor.outmodes, tensor.inmodes)
+            self.like_0 = True
+        else:
+            if modes == [] and tensor is not None:
+                modes = list(range(tensor.shape[-2]))
+            super().__init__(tensor, outmodes = modes, inmodes = [])
 
     @classmethod
     def from_xxpp(
@@ -453,26 +458,26 @@ class XPVector(XPTensor):
         tensor = math.transpose(tensor, (0,2,1))  # shape = [B,NT,2]
         return XPVector(tensor, [] if modes is None else modes)
 
-    def clone_like(self, other: XPVector) -> XPVector:
-        r"""Create a new XPTensor with the same shape and modes as other.
+    # def clone_like(self, other: XPVector) -> XPVector:
+    #     r"""Create a new XPTensor with the same shape and modes as other.
 
-        The new tensor has the same content as self, cloned as many times as necessary to match the
-        shape and modes of other. The other properties are kept as is.
+    #     The new tensor has the same content as self, cloned as many times as necessary to match the
+    #     shape and modes of other. The other properties are kept as is.
 
-        Args:
-            other: the XPVector to clone like.
+    #     Args:
+    #         other: the XPVector to clone like.
 
-        Returns:
-            Tensor: A new XPVector with the same shape and modes as other.
-        """
-        if other.shape == self.shape:
-            return self
-        if bool(other.num_modes % self.num_modes):
-            raise ValueError(
-                f"No integer multiple of {self.num_modes} modes fits into {other.num_modes} modes"
-            )
-        times = other.num_modes // self.num_modes
-        return XPVector(self.clone(times, modes=other.modes).tensor, other.outmodes)
+    #     Returns:
+    #         Tensor: A new XPVector with the same shape and modes as other.
+    #     """
+    #     if other.shape == self.shape:
+    #         return self
+    #     if bool(other.num_modes % self.num_modes):
+    #         raise ValueError(
+    #             f"No integer multiple of {self.num_modes} modes fits into {other.num_modes} modes"
+    #         )
+    #     times = other.num_modes // self.num_modes
+    #     return XPVector(self.clone(times, modes=other.modes).tensor, other.outmodes)
 
     def __repr__(self) -> str:
         return f"XPVector(modes={self.outmodes}, tensor_xpxp=\n{self.to_xpxp()})"
@@ -480,13 +485,13 @@ class XPVector(XPTensor):
     def __matmul__(self, other: Union[XPMatrix, XPVector]) -> Union[XPMatrix, Scalar]:
         if not isinstance(other, (XPMatrix, XPVector)):
             raise TypeError(f"Unsupported operand type(s) for @: 'XPVector' and '{other.__class__.__qualname__}'. Only XPMatrix and XPVector are supported.")
-        if other.isMatrix:
+        if isinstance(other, XPMatrix):
             return other.T @ self
         if self.tensor is not None and other.tensor is not None:
             if list(self.outmodes) == list(other.outmodes):
                 return math.sum(self.tensor * other.tensor)
             common = list(set(self.outmodes) & set(other.outmodes))
-            return math.sum(self.tensor[common] * other.tensor[common])
+            return math.sum(self[common].tensor * other[common].tensor) # TODO: this is not batched in the right way
         return 0.0
 
     def __add__(self, other: XPVector) -> XPVector:
@@ -521,8 +526,8 @@ class XPVector(XPTensor):
             _modes = self.outmodes
         else:
             raise ValueError("Usage: V[1], V[[1,2,3]] or V[:]")
-        rows = [self.outmodes.index(m) for m in modes]
-        return XPVector(math.gather(self.tensor, rows, axis=-2), modes)
+        rows = [self.outmodes.index(m) for m in _modes]
+        return XPVector(math.gather(self.tensor, rows, axis=-2), _modes)
 
 
 class Symplectic(XPMatrix):

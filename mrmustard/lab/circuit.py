@@ -65,19 +65,19 @@ class Circuit(Transformation, Parametrized):
     def XYd(
         self,
     ) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency
-        X = XPMatrix(like_1=True)
+        X = XPMatrix(like_0=False)
         Y = XPMatrix(like_0=True)
         d = XPVector()
         for op in self._ops:
             opx, opy, opd = op.XYd
-            opX = XPMatrix.from_xxpp(opx, modes=(op.modes, op.modes), like_1=True)
-            opY = XPMatrix.from_xxpp(opy, modes=(op.modes, op.modes), like_0=True)
+            opX = XPMatrix.from_xxpp(opx, like_0=False, outmodes=op.modes, inmodes=op.modes)
+            opY = XPMatrix.from_xxpp(opy, like_0=True, outmodes=op.modes, inmodes=op.modes)
             opd = XPVector.from_xxpp(opd, modes=op.modes)
-            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
-                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
-            if opY.shape is not None and opY.shape[-1] == 1 and len(op.modes) > 1:
-                opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
-            if opd.shape is not None and opd.shape[-1] == 1 and len(op.modes) > 1:
+            if opX.num_modes == 1 and len(op.modes) > 1:
+                opX = opX.clone(len(op.modes), outmodes=op.modes, inmodes=op.modes)
+            if opY.num_modes == 1 and len(op.modes) > 1:
+                opY = opY.clone(len(op.modes), outmodes=op.modes, inmodes=op.modes)
+            if opd.num_modes == 1 and len(op.modes) > 1:
                 opd = opd.clone(len(op.modes), modes=op.modes)
             X = opX @ X
             Y = opX @ Y @ opX.T + opY

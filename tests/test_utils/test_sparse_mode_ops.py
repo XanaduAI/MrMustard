@@ -4,7 +4,7 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.math.numba import numba_numba_sparse_matvec, numba_numba_sparse_matmul
+from mrmustard.math.numba import numba_sparse_matvec, numba_sparse_matmul, numba_sparse_vec_add, numba_sparse_vec_add_inplace
 import thewalrus as tw
 
 def test_numba_sparse_matvec_1_to_1():
@@ -98,5 +98,41 @@ def test_numba_sparse_matmul_1_to_3():
     reduced = np.matmul(X, T0)[:,np.array([0,2])][:,:,np.array([0,2])]
     assert np.allclose(res, reduced)
 
+
+
+
+def test_numba_sparse_vec_add_inplace():
+    r"""tests that a 1-mode vector is correctly added to a 2-mode vector"""
+    # 1-mode vector in xxpp order
+    v1 = np.array([[1,2]])
+    # 2-mode vector in xxpp order
+    v2 = np.array([[3,4,5,6]])
+    # expected results if adding to mode 0
+    exp0= np.array([[4,4,7,6]])
+    # expected results if adding to mode 1
+    exp1 = np.array([[3,5,5,8]])
+
+    res0 = numba_sparse_vec_add_inplace(vec=v1, subvec=v2, modes=[0,1], submodes=[0])
+    assert np.allclose(res0, exp0)
+
+    res1 = numba_sparse_vec_add_inplace(vec=v1, subvec=v2, modes=[0,1], submodes=[1])
+    assert np.allclose(res1, exp1)
+
+def test_numba_sparse_vec_add():
+    r"""tests that a 1-mode vector is correctly added to a 2-mode vector"""
+    # 1-mode vector in xxpp order
+    v1 = np.array([[1,2]])
+    # 2-mode vector in xxpp order
+    v2 = np.array([[3,4,5,6]])
+    # expected results if adding to mode 0
+    exp0= np.array([[4,4,7,6]])
+    # expected results if adding to mode 1
+    exp1 = np.array([[3,5,5,8]])
+
+    res0 = numba_sparse_vec_add(vec=v2, subvec=v1, modes1=[0,1], modes2=[0])
+    assert np.allclose(res0, exp0)
+
+    res1 = numba_sparse_vec_add(vec=v2, subvec=v1, modes1=[0,1], modes2=[1])
+    assert np.allclose(res1, exp1)
 
 

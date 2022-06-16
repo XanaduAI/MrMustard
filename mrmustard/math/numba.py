@@ -16,6 +16,7 @@
 
 import numpy as np
 from numba import njit
+from mrmustard.types import *
 
 
 
@@ -63,7 +64,7 @@ def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_m
     Returns:
         array: :math: resulting vector (can have the same modes as the input vector or fewer)
     """
-    final_modes, findices, mindices, vindices, B1, B2, F, M, V = sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
+    final_modes, findices, mindices, vindices, B1, B2, F, M, V = numba_sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
 
     new_vec = np.zeros((B1*B2, 2*F), dtype=vector.dtype)
     for b1 in range(B1):
@@ -100,7 +101,7 @@ def numba_sparse_matvec_vjp(dmatvec: Tensor, matrix: Tensor, vector: Tensor, m_m
         dv (array): :math:`B\times 2N` downstream gradient of the cost function with respect to `vector`
         dm (array): :math:`B\times 2M\times 2M` downstream gradient of the cost function with respect to `matrix`
     """
-    final_modes, findices, mindices, vindices, B1, B2, F, M, V = sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
+    final_modes, findices, mindices, vindices, B1, B2, F, M, V = numba_sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
 
     dm = np.zeros((B1, 2*M, 2*M), dtype=vector.dtype.name) # dL/dm_ik = sum_j dL/dmatvec_j * dmatvec_j/dm_ik = dL/dmatvec_i * v_k because dmatvec_j/dm_ik = delta_ij * v_k
     dv = np.zeros((B2, 2*V), dtype=vector.dtype.name)   # dL/dv_i = sum_j dL/dmatvec_j * dmatvec_j/dv_i = sum_j dL/dmatvec_j * m_ji
@@ -175,7 +176,7 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
         new_matrix (array): :math:`B_1 B_2 \times 2F\times 2F` array where F is determined by the other arguments
 
     """
-    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
+    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = numba_sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
     
     new_matrix = np.zeros((B1*B2, 2*F, 2*F), dtype=matrix1.dtype)  # TODO: revisit dtype
     for b1 in range(B1):
@@ -220,7 +221,7 @@ def numba_sparse_matmul_vjp(dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m
         dmatrix2 (array): :math:`B_2\times 2N\times 2N` array the downstream gradient of the cost with respect to the second matrix
 
     """
-    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
+    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = numba_sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
     dmatrix1 = np.zeros((B1, 2*M, 2*M), dtype=matrix1.dtype)
     dmatrix2 = np.zeros((B2, 2*N, 2*N), dtype=matrix2.dtype)
     for b1 in range(B1):
@@ -252,30 +253,173 @@ def numba_sparse_matmul_vjp(dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m
     return dmatrix1, dmatrix2
 
 
+@njit
+def numba_sparse_vec_add_inplace(vec, subvec, modes, submodes):
+    r"""Mode-wise sparse addition of vec_sub to vec, with outer product on the batch dimension.
+    It assumes modes2 are a subset of modes1, hence we can just add to vec1 without creating a new array.
+    
+        Args:
+            vec (array): :math:`B1\times 2M` batched large vector
+            subvec (array): :math:`B2\times 2N` batched small vector
+            modes (list): list of modes in vec
+            submodes (list): list of modes in vec_sub, must be a subset of modes1
+        Returns:
+            array: :math:`(B1 B2)\times 2M` batched vec1 with added vec2
+    """
+    B1 = len(vec)
+    B2 = len(subvec)
+    if B2 > 1:
+        vec_ = vec
+        for _ in range(B2-1):
+            vec_ = np.vstack((vec_, vec))
+        vec = vec_
+    findices = [modes.index(m) for m in submodes]
+    for b1 in range(B1):
+        for b2 in range(B2):
+            b = b1*B2 + b2  # NOTE: isn't this giving the opposite vectorization order when vec1 and vec2 are swapped? isn't this a problem?
+            for i,m in enumerate(submodes):
+                vec[b, findices[m]] += subvec[b2, i]
+                vec[b, findices[m]+len(modes)] += subvec[b2, i+len(submodes)]
+    return vec
 
+@njit
 def numba_sparse_vec_add(vec1, vec2, modes1, modes2):
+    r"""Mode-wise sparse addition of two vectors in phase space.
+    Addition only takes place in the specified modes.
+    """
     B1 = len(vec1)
     B2 = len(vec2)
-    fmodes = set(modes1).union(modes2)
+    fmodes = set(modes1).union(set(modes2))
     F = len(fmodes)
+    M = len(modes1)
+    N = len(modes2)
+    ind1 = [modes1.index(m) for m in modes1]
+    ind2 = [modes2.index(m) for m in modes2]
 
-    vec = np.zeros((B1*B2, 2*F), dtype=vec1.dtype)
+    if set(modes2).issubset(set(modes1)):
+        # add to vec1
+        vec = numba_sparse_vec_add_inplace(vec1, vec2, modes1, modes2)
+    elif set(modes1).issubset(set(modes2)):
+        # add to vec2
+        vec = numba_sparse_vec_add_inplace(vec2, vec1, modes2, modes1)
+    else:
+        # add both to a new vector
+        vec = np.zeros((B1*B2, 2*F), dtype=vec1.dtype)
+        for b1 in range(B1):
+            for b2 in range(B2):
+                b = b1*B2 + b2
+                for k,f in enumerate(fmodes):
+                    if f in modes1:
+                        vec[b, k] += vec1[b1, modes1.index(f)]
+                        vec[b, k+F] += vec1[b1, modes1.index(f)+M]
+                    if f in modes2:
+                        vec[b, k] += vec2[b2, modes2.index(f)]
+                        vec[b, k+F] += vec2[b2, modes2.index(f)+N]
+    return vec
+
+@njit
+def numba_sparse_vec_add_vjp(dLdsum, vec1, vec2, modes1, modes2):
+    B1 = len(vec1)
+    B2 = len(vec2)
+    fmodes = set(modes1).union(set(modes2))
+    F = len(fmodes)
+    
+    dvec1 = np.zeros((B1, 2*F), dtype=vec1.dtype)
+    dvec2 = np.zeros((B2, 2*F), dtype=vec2.dtype)
+    for b in range(B1*B2):
+        b1 = b // B2
+        b2 = b % B2
+        for f in fmodes:
+            if f in modes1:
+                dvec1[b, fmodes[f]] += dLdsum[b, modes1[f]]
+                dvec1[b, fmodes[f]+F] += dLdsum[b, modes1[f]+F]
+            if f in modes2:
+                dvec2[b, fmodes[f]] += dLdsum[b, modes2[f]]
+                dvec2[b, fmodes[f]+F] += dLdsum[b, modes2[f]+F]
+    return dvec1, dvec2
+
+@njit
+def numba_sparse_mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
+    fmodes, findices, ind1, ind2, B1, B2, F, M, N = sparse_mat_add_prep(modes1, modes2, m1like_0, m2like_0)
+
+    matrix = np.zeros((B1*B2, 2*F, 2*F), dtype=mat1.dtype)
+    # loop over vectorized batches
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
-            for f in fmodes:
-                if f in modes1:
-                    vec[b, fmodes[f]] += vec1[b1, modes1[f]]
-                    vec[b, fmodes[f]+F] += vec1[b1, modes1[f]+F]
-                if f in modes2:
-                    vec[b, fmodes[f]] += vec2[b2, modes2[f]]
-                    vec[b, fmodes[f]+F] += vec2[b2, modes2[f]+F]
-    return vec
+            # loop over final modes of the final matrix
+            for f1,f2 in fmodes:
+                if f1 in modes1: # if f1 is in modes of the first matrix
+                    matrix[b, findices[f1], findices[f2]] += mat1[b1, ind1[f1], ind1[f2]]
+                    matrix[b, findices[f1]+F, findices[f2]] += mat1[b1, ind1[f1]+M, ind1[f2]]
+                    matrix[b, findices[f1], findices[f2]+F] += mat1[b1, ind1[f1], ind1[f2]+M]
+                    matrix[b, findices[f1]+F, findices[f2]+F] += mat1[b1, ind1[f1]+M, ind1[f2]+M]
+                # if not, we add a 1 but only in the diagonal and only if m1 is not like 0
+                elif f1==f2 and not m1like_0:
+                    matrix[b, findices[f1], findices[f1]] += 1
+                    matrix[b, findices[f1]+F, findices[f1]+F] += 1
+                if f2 in modes2:
+                    matrix[b, findices[f1], findices[f2]] += mat2[b2, ind2[f2], ind2[f1]]
+                    matrix[b, findices[f1]+F, findices[f2]] += mat2[b2, ind2[f2]+N, ind2[f1]]
+                    matrix[b, findices[f1], findices[f2]+F] += mat2[b2, ind2[f2], ind2[f1]+N]
+                    matrix[b, findices[f1]+F, findices[f2]+F] += mat2[b2, ind2[f2]+N, ind2[f1]+N]
+                elif f1==f2 and not m2like_0:
+                    matrix[b, findices[f1], findices[f1]] += 1
+                    matrix[b, findices[f1]+F, findices[f1]+F] += 1
+    return matrix
+
+@njit
+def numba_sparse_mat_add_vjp(dLdsum, B1, B2, modes1, modes2):
+    fmodes, findices, ind1, ind2, F, M, N = sparse_mat_add_prep(modes1, modes2)
+
+    dmatrix1 = np.zeros((B1, 2*M, 2*M), dtype=mat1.dtype)
+    dmatrix2 = np.zeros((B2, 2*N, 2*N), dtype=mat2.dtype)
+    # loop over vectorized batches
+    for b in range(B1*B2):
+        b1 = b // B2
+        b2 = b % B2
+        # loop over final modes of the final matrix and skip addition of constants
+        for f1 in fmodes:
+            for f2 in fmodes:
+                if f1 in modes1:
+                    dmatrix1[b1, ind1[f1], ind1[f2]] += dLdsum[b, indf[f1], indf[f2]]
+                    dmatrix1[b1, ind1[f1]+M, ind1[f2]] += dLdsum[b, indf[f1]+F, indf[f2]]
+                    dmatrix1[b1, ind1[f1], ind1[f2]+M] += dLdsum[b, indf[f1], indf[f2]+F]
+                    dmatrix1[b1, ind1[f1]+M, ind1[f2]+M] += dLdsum[b, indf[f1]+F, indf[f2]+F]
+                if f2 in modes2:
+                    dmatrix2[b2, ind2[f2], ind2[f1]] += dLdsum[b, indf[f1], indf[f2]]
+                    dmatrix2[b2, ind2[f2]+N, ind2[f1]] += dLdsum[b, indf[f1]+F, indf[f2]]
+                    dmatrix2[b2, ind2[f2], ind2[f1]+N] += dLdsum[b, indf[f1], indf[f2]+F]
+                    dmatrix2[b2, ind2[f2]+N, ind2[f1]+N] += dLdsum[b, indf[f1]+F, indf[f2]+F]
+    return dmatrix1, dmatrix2
 
 
-def numba_sparse_mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
-    B1 = len(mat1)
-    B2 = len(mat2)
+
+@njit
+def sparse_mat_add_prep(modes1, modes2, m1like_0, m2like_0):
+    """
+    Prepare the sparse matrix addition for numba.
+    """
+    # get the final modes as the union of the two input modes
+    final_modes = set(modes1).union(set(modes2))
+    # get the indices of the final modes
+    indf = dict()
+    for i,f in enumerate(final_modes):
+        fmodes[f] = i
+    # get the indices of the modes in the first matrix
+    ind1 = dict()
+    for i,m in enumerate(modes1):
+        ind1[m] = i
+    # get the indices of the modes in the second matrix
+    ind2 = dict()
+    for i,m in enumerate(modes2):
+        ind2[m] = i
+
+    return fmodes, findices, 
+
+    # get the indices of the final modes in the final matrix
+
+
 
 
 #

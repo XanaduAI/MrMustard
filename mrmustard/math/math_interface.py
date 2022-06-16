@@ -1033,6 +1033,38 @@ class MathInterface(ABC):
         """
         ...
 
+    @abstractmethod
+    def sparse_vec_add(self, vector1: Tensor, vector2: Tensor, v1_modes: List[int], v2_modes: List[int]) -> Tensor:
+        r"""Mode-wise vector addition of a phase space vector and a phase space vector.
+        If a mode is not specified, its amplitude is assumed to be zero.
+        Assumes inputs are in xxpp ordering.
+
+        Args:
+            vector1 (array): :math:`2N` vector on modes ``v1_modes``
+            vector2 (array): :math:`2M` vector on modes ``v2_modes``
+            v1_modes (list(int)): list of ``N`` modes of the first vector
+            v2_modes (list(int)): list of ``M`` modes of the second vector
+        Returns:
+            array: new vector
+        """
+        ...
+
+    @abstractmethod
+    def sparse_mat_add(self, matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0:bool, m2like_0:bool) -> Tensor:
+        r"""Mode-wise matrix addition of a phase space matrix and a phase space matrix.
+        Assumes inputs are in xxpp ordering.
+
+        Args:
+            matrix1 (array): :math:`2M\times 2M` array on modes ``m1_modes``
+            matrix2 (array): :math:`2N\times 2N` array on modes ``m2_modes``
+            m1_modes (list(int)): list of ``M`` modes of the first matrix
+            m2_modes (list(int)): list of ``N`` modes of the second matrix
+            m1like_0 (bool): whether first matrix is like_0 or not
+            m2like_0 (bool): whether second matrix is like_0 or not
+        Returns:
+            array: new matrix
+        """
+        ...
 
 
     def all_diagonals(self, rho: Tensor, real: bool) -> Tensor:
