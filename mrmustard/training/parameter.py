@@ -68,22 +68,14 @@ class Trainable(Parameter, ABC):
 
 class Symplectic(Trainable):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = (
-            value
-            if math.from_backend(value) and math.is_trainable(value)
-            else math.new_variable(value, None, name)
-        )
+        self._value = value_to_trainable(value, None, name)
         self._name = name
         self._owner = owner
 
 
 class Euclidean(Trainable):
     def __init__(self, value, bounds, name, owner=None) -> None:
-        self._value = (
-            value
-            if math.from_backend(value) and math.is_trainable(value)
-            else math.new_variable(value, bounds, name)
-        )
+        self._value = value_to_trainable(value, bounds, name)
         self._name = name
         self._owner = owner
         self.bounds = bounds
@@ -91,11 +83,7 @@ class Euclidean(Trainable):
 
 class Orthogonal(Trainable):
     def __init__(self, value, name, owner=None) -> None:
-        self._value = (
-            value
-            if math.from_backend(value) and math.is_trainable(value)
-            else math.new_variable(value, None, name)
-        )
+        self._value = value_to_trainable(value, None, name)
         self._name = name
         self._owner = owner
 
@@ -123,3 +111,11 @@ def create_parameter(value, name, is_trainable=False, bounds=None, owner=None) -
         return Orthogonal(value, name, owner)
 
     return Euclidean(value, bounds, name, owner)
+
+
+def value_to_trainable(value, bounds, name) -> Tensor:
+    return (
+        value
+        if math.from_backend(value) and math.is_trainable(value)
+        else math.new_variable(value, bounds, name)
+    )
