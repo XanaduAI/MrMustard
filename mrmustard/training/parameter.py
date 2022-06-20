@@ -13,60 +13,129 @@
 # limitations under the License.
 
 """
-The classes in this module represent parameters passed to the
-quantum operations represented by :class:`~.Parametrized` subclasses.
+The classes in this module contain the :class:`Parameter` passed to the
+quantum operations represented by :class:`Parametrized` subclasses.
 
 Parameter types
 ---------------
 There are three basic types of parameters:
-1. **Numerical parameters** (bound and fixed): An immediate, immutable numerical python objects
-   (float, complex, int, numerical array). Implemented as-is, not encapsulated in a class.
-   They are dynamically assigned to properties of the class.
+
+1. **Numerical parameters** (bound and fixed): An immediate python object
+   (float, complex, int, list, numerical array, ...). Implemented as-is, not encapsulated in a class
+   and has the typical python behaviour. They are assigned to properties of the relevant class.
+   For example,
+
+   .. code-block::
+
+        class Gate():
+            def __init__(self, modes: List):
+                self._modes = modes
+
 2. **Trainable parameters** (bound but not fixed): These are parameters that are updated by
-   the optimization procedure. There are three types of trainable parameters which define the
-   optimization procedure: symplectic, euclidian and orthogonal.
+   the optimization procedure. Tipically, this are defined via arguments of the
+   :class:`Parametrized` class constructor.
+
+      .. code-block::
+
+        class Gate(Parametrized):
+            def __init__(self, r: float, modes: List, r_trainable: bool):
+                super.__init__(r=r, r_trainable=r_trainable)
+                self._modes = modes
+
+        gate = Gate(r=0, modes=[1], r_trainable=True)
+        gate._r     # access the dynamically assigned property of the trainable parameter
+        isinstance(gate._r, Parameter)      # evaluates to True
+
+    The dynamically assigned property is an instance of :class:`Parameter` and contains the
+    ``value`` property which is a tensor of the autograd backend.
+
+    There are three types of trainable parameters: symplectic, euclidean and orthogonal.
+    Each type defines a different optimization procedure on the :py:training: module.
+
+    .. code-block::
+
+        class SymplecticGate(Parametrized):
+            def __init__(self, symplectic: Array):
+                super.__init__(symplectic=symplectic, symplectic_trainable=True)
+
+        class EuclideanGate(Parametrized):
+            def __init__(self, euclidean: Array):
+                super.__init__(euclidean=euclidean, euclidean_trainable=True)
+
+        class OrthogonalGate(Parametrized):
+            def __init__(self, orthogonal: Array):
+                super.__init__(orthogonal=orthogonal, orthogonal_trainable=True)
+
+    The optimization procedure updates the value of the trainables *in-place*.
+
 3. **Constant parameters** (bound and fixed): This class of parameters belong to the autograd
-   backend but remain fixed during the optimization procedure.
+   backend but remain fixed during the optimization procedure. They are created by setting the
+   trainable flag to False.
+
+    .. code-block::
+
+        class Gate(Parametrized):
+            def __init__(self, r: float):
+                super.__init__(r=r, r_trainable=False)
+
 """
 # pylint: disable=super-init-not-called
 
 from abc import ABC, abstractmethod
 
 from mrmustard.math import Math
-from mrmustard.types import Tensor, Tuple
+from mrmustard.types import Tensor, Optional, Sequence
 
 math = Math()
 
 
 class Parameter(ABC):
+    """Parameter abstract base class.
+
+    This class implements common methods for :class:`Trainable` and :class:`Constant` parameters.
+    """
+
     @abstractmethod
     def __init__(self, value, name, owner=None) -> None:
         pass
 
     @property
     def value(self) -> Tensor:
+        """tensor value of the parameter"""
         return self._value
 
     @property
     def name(self) -> str:
+        """name of the parameter"""
         return self._name
 
     @property
     def owner(self) -> str:
+        """parameter owner"""
         return self._owner
 
     @property
     def type(self) -> str:
+        """the lowercased name of the class of this parameter object"""
         return self.__class__.__name__.lower()
 
 
 class Trainable(Parameter, ABC):
+    """This abstract base class represent parameters that are mutable
+    and can updated by the optimization procedure.
+
+    Note that the class name of instances of ``Trainable`` are used
+    to infer the optimization procedure on the :py:training: module.
+    """
+
     @abstractmethod
     def __init__(self, value, name, owner=None) -> None:
         pass
 
 
 class Symplectic(Trainable):
+    """Symplectic trainable. Uses :meth:`training.parameter_update.update_symplectic`."""
+
     def __init__(self, value, name, owner=None) -> None:
         self._value = value_to_trainable(value, None, name)
         self._name = name
@@ -74,6 +143,8 @@ class Symplectic(Trainable):
 
 
 class Euclidean(Trainable):
+    """Euclidean trainable. Uses :meth:`training.parameter_update.update_euclidean`."""
+
     def __init__(self, value, bounds, name, owner=None) -> None:
         self._value = value_to_trainable(value, bounds, name)
         self._name = name
@@ -82,6 +153,8 @@ class Euclidean(Trainable):
 
 
 class Orthogonal(Trainable):
+    """Orthogonal trainable. Uses :meth:`training.parameter_update.update_orthogonal`."""
+
     def __init__(self, value, name, owner=None) -> None:
         self._value = value_to_trainable(value, None, name)
         self._name = name
@@ -89,6 +162,10 @@ class Orthogonal(Trainable):
 
 
 class Constant(Parameter):
+    """Constant parameter. It belongs to the autograd backend but remains fixed
+    during any optimization procedure
+    """
+
     def __init__(self, value, name, owner=None) -> None:
         self._value = (
             value
@@ -99,7 +176,25 @@ class Constant(Parameter):
         self._owner = owner
 
 
-def create_parameter(value, name, is_trainable=False, bounds=None, owner=None) -> Trainable:
+def create_parameter(
+    value, name: str, is_trainable: bool = False, bounds: Optional[Sequence] = None, owner=None
+) -> Trainable:
+    """A factory function that returns an instance of a :class:`Trainable` given
+    its arguments.
+
+    Args:
+        value: The value to be assigned to the parameter. This value
+            is casted into a Tensor belonging to the backend.
+        name (str): name of the parameter
+        is_trainable (bool): if ``True`` the returned object is instance
+            of :class:`Trainable`, else returns an instance of a :class:`Constant`
+        bounds (None or Sequence): value constraints for the parameter, only applicable
+            for Euclidean parameters
+
+    Returns:
+        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Orthogonal`
+            or :class:`Euclidean` trainable.
+    """
 
     if not is_trainable:
         return Constant(value, name, owner)
@@ -114,6 +209,14 @@ def create_parameter(value, name, is_trainable=False, bounds=None, owner=None) -
 
 
 def value_to_trainable(value, bounds, name) -> Tensor:
+    """Converts a value to a backend tensor variable if needed.
+
+    Args:
+        value: value to be casted into a tensor of the backend
+        bounds (None or Sequence): value constraints for the parameter, only applicable
+            for Euclidean parameters
+        name (str): name of the parameter
+    """
     return (
         value
         if math.from_backend(value) and math.is_trainable(value)
