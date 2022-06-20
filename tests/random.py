@@ -35,9 +35,15 @@ num_modes = st.integers(min_value=0, max_value=10)
 
 @st.composite
 def vector(draw, length):
-    return draw(
-        st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length)
-    )
+    return draw(arrays(np.float64, shape=(length,), elements=real))
+
+@st.composite
+def real_array(draw, shape):
+    return draw(arrays(np.float64, shape=shape, elements=real))
+
+@st.composite
+def complex_array(draw, shape):
+    return draw(arrays(np.complex128, shape=shape))
 
 @st.composite
 def even_vector(draw):

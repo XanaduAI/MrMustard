@@ -182,7 +182,7 @@ class Transformation:
     def X_matrix_dual(self) -> Optional[Matrix]:
         if (X := self.X_matrix) is None:
             return None
-        return gaussian.math.inv(X)
+        return gaussian.math.inv(X) # TODO: use symplectic inverse if X is symplectic
 
     @property
     def Y_matrix_dual(self) -> Optional[Matrix]:
