@@ -13,7 +13,9 @@
 # limitations under the License.
 
 """This module contains the :class:`.Parametrized` class which acts as
-an abstract base class for all parametrized objects.
+an abstract base class for all parametrized objects. Arguments of the
+class constructor generate a backend Tensor and are assigned to fields
+of the class.
 """
 
 from mrmustard.types import Sequence, List, Generator, Iterable, Any
@@ -24,7 +26,10 @@ math = Math()
 
 
 class Parametrized:
-    r"""A class representing all parametrized objects (gates, detectors, etc.)
+    r"""A class representing all parametrized objects (gates, detectors, etc.). This class
+    creates backend tensors out of the arguments of its class constructor and assigns it
+    to fields of the parent class. The main role of this class is classifying and providing
+    methods to keep track of trainable parameters.
 
     For each trainable parameter keyword arguments must be passed for the initial value ``xxx``
     (tensor), the numerical bounds ``xxx_bounds`` (float, float), whether the parameter ``xxx`` will
@@ -37,7 +42,7 @@ class Parametrized:
 
         for name, value in kwargs.items():
 
-            # filter `{name}_trainable` or `{name}_bounds`` to become fields
+            # filter out `{name}_trainable` or `{name}_bounds`` to become fields
             # of the class as those kwargs are used to define the variables
             if "_trainable" in name or "_bounds" in name:
                 continue
@@ -52,17 +57,24 @@ class Parametrized:
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
+        """Return a list of trainable parameters within the Parametrized object
+        by recursively traversing the object's fields
+        """
         return [value for value in _traverse_parametrized(self.__dict__.values(), Trainable)]
 
     @property
     def constant_parameters(self) -> List[Constant]:
+        """Return a list of constant parameters within the Parametrized object
+        by recursively traversing the object's fields
+        """
         return [value for value in _traverse_parametrized(self.__dict__.values(), Constant)]
 
 
 def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
     """This private method traverses recursively all the object's attributes for objects
     present in ``iterable`` which are instances of ``parameter_type`` or ``Parametrized``
-    returning a generator with objects of type ``extract_type``."""
+    returning a generator with objects of type ``extract_type``.
+    """
 
     for obj in object_:
         if isinstance(obj, Iterable):
