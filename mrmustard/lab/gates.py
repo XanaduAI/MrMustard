@@ -465,14 +465,6 @@ class Interferometer(Parametrized, Transformation):
                 f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1] // 2})"
             )
 
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [],
-            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
-            "euclidean": [],
-        }
-
 
 class RealInterferometer(Parametrized, Transformation):
     r"""N-mode interferometer with a real unitary matrix (or block-diagonal orthogonal matrix).
