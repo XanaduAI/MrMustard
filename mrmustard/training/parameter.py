@@ -84,7 +84,7 @@ There are three basic types of parameters:
 from abc import ABC, abstractmethod
 
 from mrmustard.math import Math
-from mrmustard.types import Tensor, Optional, Sequence
+from mrmustard.types import Tensor, Optional, Sequence, Any
 
 math = Math()
 
@@ -96,7 +96,7 @@ class Parameter(ABC):
     """
 
     @abstractmethod
-    def __init__(self, value, name, owner=None) -> None:
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         pass
 
     @property
@@ -129,14 +129,14 @@ class Trainable(Parameter, ABC):
     """
 
     @abstractmethod
-    def __init__(self, value, name, owner=None) -> None:
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         pass
 
 
 class Symplectic(Trainable):
     """Symplectic trainable. Uses :meth:`training.parameter_update.update_symplectic`."""
 
-    def __init__(self, value, name, owner=None) -> None:
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         self._value = value_to_trainable(value, None, name)
         self._name = name
         self._owner = owner
@@ -145,7 +145,9 @@ class Symplectic(Trainable):
 class Euclidean(Trainable):
     """Euclidean trainable. Uses :meth:`training.parameter_update.update_euclidean`."""
 
-    def __init__(self, value, bounds, name, owner=None) -> None:
+    def __init__(
+        self, value: Any, bounds: Optional[Sequence], name: str, owner: Optional[str] = None
+    ) -> None:
         self._value = value_to_trainable(value, bounds, name)
         self._name = name
         self._owner = owner
@@ -155,7 +157,7 @@ class Euclidean(Trainable):
 class Orthogonal(Trainable):
     """Orthogonal trainable. Uses :meth:`training.parameter_update.update_orthogonal`."""
 
-    def __init__(self, value, name, owner=None) -> None:
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         self._value = value_to_trainable(value, None, name)
         self._name = name
         self._owner = owner
@@ -166,7 +168,7 @@ class Constant(Parameter):
     during any optimization procedure
     """
 
-    def __init__(self, value, name, owner=None) -> None:
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         self._value = (
             value
             if math.from_backend(value) and not math.is_trainable(value)
@@ -177,7 +179,7 @@ class Constant(Parameter):
 
 
 def create_parameter(
-    value, name: str, is_trainable: bool = False, bounds: Optional[Sequence] = None, owner=None
+    value: Any, name: str, is_trainable: bool = False, bounds: Optional[Sequence] = None, owner=None
 ) -> Trainable:
     """A factory function that returns an instance of a :class:`Trainable` given
     its arguments.
@@ -208,7 +210,7 @@ def create_parameter(
     return Euclidean(value, bounds, name, owner)
 
 
-def value_to_trainable(value, bounds, name) -> Tensor:
+def value_to_trainable(value: Any, bounds: Optional[Sequence], name: str) -> Tensor:
     """Converts a value to a backend tensor variable if needed.
 
     Args:
