@@ -18,12 +18,11 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Dict
+from typing import Union, Optional, List, Tuple
 from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.training import Parametrized
-from mrmustard.training.parameter import Trainable
 from mrmustard.physics import gaussian
 
 from mrmustard.math import Math
