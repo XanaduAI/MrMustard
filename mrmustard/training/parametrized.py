@@ -60,14 +60,14 @@ class Parametrized:
         """Return a list of trainable parameters within the Parametrized object
         by recursively traversing the object's fields
         """
-        return [value for value in _traverse_parametrized(self.__dict__.values(), Trainable)]
+        return list(_traverse_parametrized(self.__dict__.values(), Trainable))
 
     @property
     def constant_parameters(self) -> List[Constant]:
         """Return a list of constant parameters within the Parametrized object
         by recursively traversing the object's fields
         """
-        return [value for value in _traverse_parametrized(self.__dict__.values(), Constant)]
+        return list(_traverse_parametrized(self.__dict__.values(), Constant))
 
 
 def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
