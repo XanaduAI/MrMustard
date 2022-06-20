@@ -90,6 +90,12 @@ class Optimizer:
                 bar.step(math.asnumpy(cost))
 
     def apply_gradients(self, trainable_params, grads):
+        """Apply gradients to variables.
+
+        This method group parameters by variable type (euclidean, symplectic, orthogonal) and
+        applies the corresponding update method for each variable type. Update methods are
+        registered on :mod:`parameter_update` module.
+        """
 
         # group grads and vars by type (i.e. euclidean, symplectic, orthogonal)
         grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
