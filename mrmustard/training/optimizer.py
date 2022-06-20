@@ -17,7 +17,7 @@ used within Mr Mustard.
 """
 
 from itertools import chain, groupby
-from mrmustard.types import List, Callable, Sequence
+from typing import List, Callable, Sequence
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math

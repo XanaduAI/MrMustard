@@ -18,7 +18,7 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from mrmustard.types import Sequence, List, Generator, Iterable, Any
+from typing import Sequence, List, Generator, Iterable, Any
 from mrmustard.math import Math
 from .parameter import create_parameter, Trainable, Constant, Parameter
 

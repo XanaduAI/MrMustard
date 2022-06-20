@@ -23,7 +23,6 @@ from thewalrus.fock_gradients import (
     mzgate,
 )
 import numpy as np
-from tests.random import single_mode_unitary
 from tests import random
 
 

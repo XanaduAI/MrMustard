@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests for the parametrized class."""
+
 import pytest
 
 from mrmustard.training import Parametrized

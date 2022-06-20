@@ -25,7 +25,6 @@ from mrmustard.types import (
     Sequence,
     Tuple,
     Optional,
-    Dict,
     Trainable,
     Callable,
     Union,
