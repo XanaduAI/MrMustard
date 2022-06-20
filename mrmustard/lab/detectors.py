@@ -18,7 +18,7 @@ This module implements the set of detector classes that perform measurements on 
 
 from typing import List, Tuple, Union, Optional
 from mrmustard.types import Matrix
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
 from mrmustard.lab.abstract import FockMeasurement
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
@@ -82,16 +82,18 @@ class PNRDetector(Parametrized, FockMeasurement):
             dark_counts_trainable=dark_counts_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
-            stochastic_channel=stochastic_channel,
-            modes=modes if modes is not None else list(range(num_modes)),
-            cutoffs=cutoffs if cutoffs is not None else [settings.PNR_INTERNAL_CUTOFF] * num_modes,
         )
         FockMeasurement.__init__(self)
+
+        self._stochastic_channel = stochastic_channel
+        self._modes = modes or list(range(num_modes))
+        self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * num_modes
+        self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
 
         self.recompute_stochastic_channel()
 
     def should_recompute_stochastic_channel(self):
-        return self._efficiency_trainable or self._dark_counts_trainable
+        return self._should_recompute_stochastic_channel
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         """recompute belief using the defined `stochastic channel`"""
@@ -102,14 +104,14 @@ class PNRDetector(Parametrized, FockMeasurement):
             self._internal_stochastic_channel = self._stochastic_channel
         else:
             efficiency = (
-                math.tile(math.atleast_1d(self.efficiency), [len(cutoffs)])
-                if len(math.atleast_1d(self.efficiency)) == 1
-                else self.efficiency
+                math.tile(math.atleast_1d(self.efficiency.value), [len(cutoffs)])
+                if len(math.atleast_1d(self.efficiency.value)) == 1
+                else self.efficiency.value
             )
             dark_counts = (
-                math.tile(math.atleast_1d(self.dark_counts), [len(cutoffs)])
-                if len(math.atleast_1d(self.dark_counts)) == 1
-                else self.dark_counts
+                math.tile(math.atleast_1d(self.dark_counts.value), [len(cutoffs)])
+                if len(math.atleast_1d(self.dark_counts.value)) == 1
+                else self.dark_counts.value
             )
             for c, qe, dc in zip(cutoffs, efficiency, dark_counts):
                 dark_prior = math.poisson(max_k=settings.PNR_INTERNAL_CUTOFF, rate=dc)
@@ -174,16 +176,20 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             dark_count_prob_trainable=dark_count_prob_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
-            stochastic_channel=stochastic_channel,
-            modes=modes or list(range(num_modes)),
-            cutoffs=[2] * num_modes,
         )
         FockMeasurement.__init__(self)
+
+        self._stochastic_channel = stochastic_channel
+        self._modes = modes or list(range(num_modes))
+        self._cutoffs = [2] * num_modes
+        self._should_recompute_stochastic_channel = (
+            efficiency_trainable or dark_count_prob_trainable
+        )
 
         self.recompute_stochastic_channel()
 
     def should_recompute_stochastic_channel(self):
-        return self._efficiency_trainable or self._dark_count_prob_trainable
+        return self._should_recompute_stochastic_channel
 
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         """recompute belief using the defined `stochastic channel`"""
@@ -195,11 +201,11 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         else:
             for cut, qe, dc in zip(
                 cutoffs,
-                math.atleast_1d(self.efficiency)[:],
-                math.atleast_1d(self.dark_count_prob)[:],
+                math.atleast_1d(self.efficiency.value)[:],
+                math.atleast_1d(self.dark_count_prob.value)[:],
             ):
                 row1 = math.pow(1.0 - qe, math.arange(cut)[None, :]) - math.cast(
-                    dc, self.efficiency.dtype
+                    dc, self.efficiency.value.dtype
                 )
                 row2 = 1.0 - row1
                 # rest = math.zeros((cut - 2, cut), dtype=row1.dtype)

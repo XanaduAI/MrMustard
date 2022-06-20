@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2022 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hypothesis import settings, given, strategies as st
-from hypothesis.extra.numpy import arrays
+"""optimization tests"""
+
+from hypothesis import given, strategies as st
 
 import numpy as np
 import tensorflow as tf
@@ -26,12 +27,10 @@ from mrmustard.lab.gates import (
     S2gate,
     Ggate,
     Interferometer,
-    Ggate,
     RealInterferometer,
 )
 from mrmustard.lab.circuit import Circuit
-from mrmustard.utils.training import Optimizer
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Optimizer, Parametrized
 from mrmustard.lab.states import Vacuum
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
@@ -71,7 +70,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     """
     tf.random.set_seed(137)
     r = np.arcsinh(1.0)
-    ops = [
+    s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
@@ -80,8 +79,8 @@ def test_hong_ou_mandel_optimizer(i, k):
             theta_trainable=True,
             phi_trainable=True,
         )[1, 2],
-    ]
-    circ = Circuit(ops)
+    )
+    circ = Circuit([s2_0, s2_1, bs])
     state_in = Vacuum(num_modes=4)
     cutoff = 1 + i + k
 
@@ -90,31 +89,7 @@ def test_hong_ou_mandel_optimizer(i, k):
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(
-        np.cos(circ.trainable_parameters["euclidean"][2]) ** 2, k / (i + k), atol=1e-2
-    )
-
-
-def test_squeezing_hong_ou_mandel_optimizer():
-    """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
-    see https://www.pnas.org/content/117/52/33107/tab-article-info
-    """
-    tf.random.set_seed(137)
-    r = np.arcsinh(1.0)
-    ops = [
-        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
-    ]
-    circ = Circuit(ops)
-    state_in = Vacuum(num_modes=4)
-
-    def cost_fn():
-        return tf.abs((state_in >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
-
-    opt = Optimizer(euclidean_lr=0.001)
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+    assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
 
 
 def test_learning_two_mode_squeezing():
@@ -286,19 +261,19 @@ def test_squeezing_hong_ou_mandel_optimizer():
     """
     tf.random.set_seed(137)
     r = np.arcsinh(1.0)
-    ops = [
-        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2],
-    ]
-    circ = Circuit(ops)
+
+    S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
+    S_23 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]
+    S_12 = S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+
+    circ = Circuit([S_01, S_23, S_12])
 
     def cost_fn():
         return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
-    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+    assert np.allclose(np.sinh(S_12.r.value) ** 2, 1, atol=1e-2)
 
 
 def test_parameter_passthrough():
@@ -312,7 +287,7 @@ def test_parameter_passthrough():
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-        S2gate(r=par.r, phi=par.phi)[1, 2],
+        S2gate(r=par.r.value, phi=par.phi.value)[1, 2],
     ]
     circ = Circuit(ops)
 
@@ -321,7 +296,7 @@ def test_parameter_passthrough():
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[par], max_steps=300)
-    assert np.allclose(np.sinh(circ.trainable_parameters["euclidean"][2]) ** 2, 1, atol=1e-2)
+    assert np.allclose(np.sinh(par.r.value) ** 2, 1, atol=1e-2)
 
 
 def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
@@ -339,8 +314,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 
     def cost_fn():
         state = Vacuum(2) >> G
-        cov1, mu1 = trace(state.cov, state.means, [0])
-        cov2, mu2 = trace(state.cov, state.means, [1])
+        cov1, _ = trace(state.cov, state.means, [0])
         mean1 = state.number_means[0]
         mean2 = state.number_means[1]
         entropy = von_neumann_entropy(cov1, settings.HBAR)
@@ -349,6 +323,6 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
-    S = G.symplectic.numpy()
+    S = G.symplectic.value.numpy()
     cov = S @ S.T
     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))

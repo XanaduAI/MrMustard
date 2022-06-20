@@ -34,6 +34,7 @@ from mrmustard.types import (
 )
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.training.parameter import Parameter
 from .state import State
 
 math = Math()
@@ -393,15 +394,15 @@ class Transformation:
         table.add_column("Shape")
         table.add_column("Trainable")
         with np.printoptions(precision=6, suppress=True):
-            for name in self._param_names:
-                par = self.__dict__[name]
+            parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
+            for name, par in parameters.items():
                 table.add_row(
                     name,
-                    par.dtype.name,
-                    f"{np.array(par)}",
-                    str(self.__dict__["_" + name + "_bounds"]),
-                    f"{par.shape}",
-                    str(self.__dict__["_" + name + "_trainable"]),
+                    par.value.dtype.name,
+                    f"{np.array(par.value)}",
+                    str(getattr(par.value, "bounds", "None")),
+                    f"{par.value.shape}",
+                    str(math.is_trainable(par.value)),
                 )
         rprint(table)
         return ""

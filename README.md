@@ -228,15 +228,16 @@ settings.BACKEND = 'torch'
 math.cos(0.1)  # pytorch (upcoming)
 ```
 
-# Optimization
-The `Optimizer` (available in `mrmustard.utils.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
+### Optimization
+The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
 
-We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: Hong-Ou-Mandel interference. We wish to find which
+We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
+displaced squeezed state.
 
 ```python
-from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum
+from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
 from mrmustard.physics import fidelity
-from mrmustard.utils.training import Optimizer
+from mrmustard.training import Optimizer
 
 D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
 L = Attenuator(transmissivity=0.5)
