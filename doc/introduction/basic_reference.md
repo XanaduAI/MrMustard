@@ -24,7 +24,7 @@ A  = Amplifier(gain=2.0, nbar=1.0)  # noisy amplifier with 200% gain
 ```
 
 The `repr` of single-mode states shows the Wigner function:
-<img width="571" alt="Screen Shot 2021-12-06 at 1 31 17 PM" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
+<img width="571" alt="single mode Wigner function" src="https://user-images.githubusercontent.com/8944955/144902008-8d26d59c-8600-4391-9144-ffcc1b2215c2.png">
 
 ```python
 cat_amps = Coherent(2.0).ket([20]) + Coherent(-2.0).ket([20])
@@ -32,13 +32,13 @@ cat_amps = cat_amps / np.linalg.norm(cat_amps)
 cat = State(ket=cat_amps)
 cat
 ```
-<img width="538" alt="Screen Shot 2021-12-06 at 8 27 06 PM" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
+<img width="538" alt="cat state Wigner function" src="https://user-images.githubusercontent.com/8944955/144949009-ebf7bbf8-9240-406c-ab99-bf8c36acd3f7.png">
 
 States (even those in Fock representation) are always compatible with gates:
 ```python
 cat >> Sgate(0.5)  # squeezed cat
 ```
-<img width="479" alt="Screen Shot 2021-12-07 at 2 03 14 PM" src="https://user-images.githubusercontent.com/8944955/145090219-298ca2ab-92e9-4ac2-beab-33ee33770fb2.png">
+<img width="479" alt="Squeezed cat state in Fock representation" src="https://user-images.githubusercontent.com/8944955/145090219-298ca2ab-92e9-4ac2-beab-33ee33770fb2.png">
 
 
 
@@ -178,7 +178,7 @@ The physics module contains a growing number of functions that we can apply to s
 
 
 ### The math module
-The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface
+The math module is the backbone of Mr Mustard, which consists in the [Math](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface
 Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
 ```python
 from mrmustard import settings
@@ -193,14 +193,15 @@ math.cos(0.1)  # pytorch (upcoming)
 ```
 
 ### Optimization
-The `Optimizer` (available in `mrmustard.utils.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
+The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
 
-We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: Hong-Ou-Mandel interference. We wish to find which
+We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
+displaced squeezed state.
 
 ```python
-from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum
+from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
 from mrmustard.physics import fidelity
-from mrmustard.utils.training import Optimizer
+from mrmustard.training import Optimizer
 
 D = Dgate(x = 0.1, y = -0.5, x_trainable=True, y_trainable=True)
 L = Attenuator(transmissivity=0.5)
