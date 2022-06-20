@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hypothesis import settings, given, strategies as st
+from hypothesis import given, strategies as st
 
 import numpy as np
 import tensorflow as tf
