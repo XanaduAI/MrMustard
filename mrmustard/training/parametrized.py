@@ -24,6 +24,8 @@ from .parameter import create_parameter, Trainable, Constant, Parameter
 
 math = Math()
 
+__all__ = ["Parametrized"]
+
 
 class Parametrized:
     r"""A class representing all parametrized objects (gates, detectors, etc.). This class

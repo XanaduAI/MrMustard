@@ -88,6 +88,16 @@ from mrmustard.types import Tensor, Optional, Sequence, Any
 
 math = Math()
 
+__all__ = [
+    "Parameter",
+    "Trainable",
+    "Symplectic",
+    "Euclidean",
+    "Orthogonal",
+    "Constant",
+    "create_parameter",
+]
+
 
 class Parameter(ABC):
     """Parameter abstract base class.

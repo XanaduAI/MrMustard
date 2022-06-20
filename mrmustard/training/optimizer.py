@@ -27,6 +27,8 @@ from .parameter_update import param_update_method
 
 math = Math()
 
+__all__ = ["Optimizer"]
+
 # pylint: disable=disallowed-name
 class Optimizer:
     r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
