@@ -23,14 +23,14 @@
   ```
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
-* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example, 
+* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example,
     ```python
     from mrmustard.lab.gates import Sgate, BSgate
-    
+
     BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
     S0 = Sgate(r=BS.theta)[0]
     S1 = Sgate(r=-BS.theta)[1]
-    
+
     circ = S0 >> S1 >> BS
     ```
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
@@ -42,6 +42,10 @@
 
 ### Improvements
 
+* The Parametrized and Training classes have been refactored. The new training module has been added
+  and with it the new Parameter class: now trainable tensors are wrapped in an instance of Parameter.
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133)
+
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
@@ -52,11 +56,15 @@
   is now used to style the Sphinx documentation.
   [(#126)](https://github.com/XanaduAI/MrMustard/pull/126)
 
+* The documentation now contains the `mm.training` section. The optimization examples on the README
+  and Basic API Reference section have been updated to use the latest API.
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133)
+
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
 
-[Mikhail Andrenkov](https://github.com/Mandrenkov), [Filippo Miatto](https://github.com/ziofil)
+[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 
 ---
