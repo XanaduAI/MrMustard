@@ -386,6 +386,16 @@ class Transformation:
         return True
 
     def __repr__(self):
+
+        class_name = self.__class__.__name__
+        modes = self._modes
+
+        parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
+        params_str = ", ".join(sorted([name for name in parameters.keys()]))
+
+        return f"{class_name}({params_str}, modes = {modes})"
+
+    def _ipython_display_(self):
         table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
         table.add_column("Parameters")
         table.add_column("dtype")
@@ -405,4 +415,5 @@ class Transformation:
                     str(math.is_trainable(par.value)),
                 )
         rprint(table)
+
         return ""
