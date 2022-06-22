@@ -99,4 +99,4 @@ class Circuit(Transformation, Parametrized):
     def __repr__(self) -> str:
         """String to display the object on the command line."""
         ops_repr = [repr(op) for op in self._ops]
-        return "Circuit([" + ",".join(ops_repr) + "])"
+        return " >> ".join(ops_repr)
