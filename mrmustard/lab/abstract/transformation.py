@@ -391,7 +391,7 @@ class Transformation:
         modes = self._modes
 
         parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
-        params_str = ", ".join(sorted([name for name in parameters.keys()]))
+        params_str = ", ".join(sorted(list(parameters.keys())))
 
         return f"{class_name}({params_str}, modes = {modes})"
 
