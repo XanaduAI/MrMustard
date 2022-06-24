@@ -18,7 +18,7 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Iterable
+from typing import Union, Optional, List, Tuple
 from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
@@ -433,7 +433,6 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
-        modes (int, List[int]): the number of or a list containing the modes in which the gate is acting on.
         orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`.
             If set to `None` a random orthogonal matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
@@ -441,25 +440,18 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: int | List[int],
+        num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
     ):
-        if isinstance(modes, int):
-            self._modes = list(range(modes))
-        elif isinstance(modes, Iterable):
-            self._modes = list(modes)
-        else:
-            raise ValueError("Unable to parse `modes`, make sure it is an `int` or an iterable.")
-
         if orthogonal is None:
-            U = math.random_unitary(len(self._modes))
+            U = math.random_unitary(num_modes)
             orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
-
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
         )
+        self._modes = list(range(num_modes))
         self.is_gaussian = True
 
     @property
@@ -478,7 +470,6 @@ class RealInterferometer(Parametrized, Transformation):
     Does not mix q's and p's.
 
     Args:
-        modes (int, List[int]): the number of or a list containing the modes in which the gate is acting on.
         orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(N,N)`.
             If set to `None` a random orthogonal matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
@@ -486,21 +477,14 @@ class RealInterferometer(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: int | List[int],
+        num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
     ):
-        if isinstance(modes, int):
-            self._modes = list(range(modes))
-        elif isinstance(modes, Iterable):
-            self._modes = list(modes)
-        else:
-            raise ValueError("Unable to parse `modes`, make sure it is an `int` or an iterable.")
-
         if orthogonal is None:
-            orthogonal = math.random_orthogonal(len(self._modes))
-
+            orthogonal = math.random_orthogonal(num_modes)
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
+        self._modes = list(range(num_modes))
         self._is_gaussian = True
 
     @property
@@ -526,33 +510,23 @@ class Ggate(Parametrized, Transformation):
     strength ``r`` in ``[0, 1]`` for each mode.
 
     Args:
-        modes (int, List[int]): the number of or a list containing the modes in which the gate is acting on.
+        num_modes (int): the number of modes this gate is acting on.
         symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape ``(2N,2N)``.
-            If set to `None` a random symplectic matrix is used.
         symplectic_trainable (bool): whether symplectic is a trainable variable.
     """
 
     def __init__(
         self,
-        modes: int | List[int],
+        num_modes: int,
         symplectic: Optional[Tensor] = None,
         symplectic_trainable: bool = False,
     ):
-        if isinstance(modes, int):
-            self._modes = list(range(modes))
-        elif isinstance(modes, Iterable):
-            self._modes = list(modes)
-        else:
-            raise ValueError("Unable to parse `modes`, make sure it is an `int` or an iterable.")
-
-        symplectic = (
-            symplectic if symplectic is not None else math.random_symplectic(len(self._modes))
-        )
-
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
         )
+        self._modes = list(range(num_modes))
         self.is_gaussian = True
 
     @property
