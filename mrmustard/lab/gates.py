@@ -441,7 +441,7 @@ class Interferometer(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: int | List[int],
+        modes: Union[int, List[int]],
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
     ):
@@ -486,7 +486,7 @@ class RealInterferometer(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: int | List[int],
+        modes: Union[int, List[int]],
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
     ):
@@ -534,7 +534,7 @@ class Ggate(Parametrized, Transformation):
 
     def __init__(
         self,
-        modes: int | List[int],
+        modes: Union[int, List[int]],
         symplectic: Optional[Tensor] = None,
         symplectic_trainable: bool = False,
     ):
