@@ -100,3 +100,7 @@ class Circuit(Transformation, Parametrized):
         """String to display the object on the command line."""
         ops_repr = [repr(op) for op in self._ops]
         return " >> ".join(ops_repr)
+
+    def __str__(self):
+        """String representation of the circuit."""
+        return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
