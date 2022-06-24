@@ -552,7 +552,7 @@ class Ggate(Parametrized, Transformation):
     def __repr__(self):
         modes = self.modes
         symplectic = repr(math.asnumpy(self.symplectic.value))
-        return f"Interferometer(symplectic = {symplectic}){modes}".replace("\n", "")
+        return f"Ggate(symplectic = {symplectic}){modes}".replace("\n", "")
 
 
 # ~~~~~~~~~~~~~
