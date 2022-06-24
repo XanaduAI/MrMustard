@@ -405,25 +405,26 @@ class Transformation:
         modes = self.modes
         return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"
 
-    def _ipython_display_(self):
-        table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
-        table.add_column("Parameters")
-        table.add_column("dtype")
-        table.add_column("Value")
-        table.add_column("Bounds")
-        table.add_column("Shape")
-        table.add_column("Trainable")
+    def _repr_markdown_(self):
+        header = (
+            f"##### {self.__class__.__qualname__} on modes {self.modes}\n"
+            "|Parameters|dtype|Value|Bounds|Shape|Trainable|\n"
+            "| :-:      | :-: | :-: | :-:  | :-: | :-:     |\n"
+        )
+
+        body = ""
         with np.printoptions(precision=6, suppress=True):
             parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
             for name, par in parameters.items():
-                table.add_row(
-                    name,
-                    par.value.dtype.name,
-                    f"{np.array(par.value)}",
-                    str(getattr(par.value, "bounds", "None")),
-                    f"{par.value.shape}",
-                    str(math.is_trainable(par.value)),
+                par_value = repr(math.asnumpy(par.value)).replace("\n", "<br>")
+                body += (
+                    f"| {name}"
+                    f"| {par.value.dtype.name}"
+                    f"| {par_value}"
+                    f"| {str(getattr(par.value, 'bounds', 'None'))}"
+                    f"| {par.value.shape}"
+                    f"| {str(math.is_trainable(par.value))}"
+                    "|\n"
                 )
-        rprint(table)
 
-        return ""
+        return header + body
