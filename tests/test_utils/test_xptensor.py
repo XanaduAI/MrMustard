@@ -144,10 +144,8 @@ def test_matmul_few_different_modes(xpxp_matrix):
 def test_matmul_all_different_modes(a, b):
     Na = a.shape[0] // 2
     Nb = b.shape[0] // 2
-    xp1 = XPMatrix.from_xpxp(a, modes=(list(range(Na)), list(range(Na))), like_1=True)
-    xp2 = XPMatrix.from_xpxp(
-        b, modes=(list(range(Na, Na + Nb)), list(range(Na, Na + Nb))), like_1=True
-    )
+    xp1 = XPMatrix.from_xpxp(a, False, list(range(Na)), list(range(Na)))
+    xp2 = XPMatrix.from_xpxp(b, False, list(range(Na, Na + Nb)), list(range(Na, Na + Nb)))
     matrix1 = np.block(
         [[a, np.zeros((2 * Na, 2 * Nb))], [np.zeros((2 * Nb, 2 * Na)), np.eye(2 * Nb)]]
     )  # add N empty modes at the end
@@ -162,7 +160,7 @@ def test_matmul_all_different_modes(a, b):
 def test_matmul_all_same_modes_coherence(coherence):
     N = coherence.shape[0] // 2
     M = coherence.shape[1] // 2
-    coh = XPMatrix.from_xpxp(coherence, modes=(list(range(N)), list(range(N, M + N))), like_0=True)
+    coh = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N, M + N)))
     assert np.allclose((coh @ coh.T).to_xpxp(), coherence @ coherence.T, rtol=1e-5)
 
 
@@ -170,10 +168,8 @@ def test_matmul_all_same_modes_coherence(coherence):
 def test_matmul_few_different_modes_coherence(coherence):
     N = coherence.shape[0] // 2
     M = coherence.shape[1] // 2
-    coh1 = XPMatrix.from_xpxp(coherence, modes=(list(range(N)), list(range(N, M + N))), like_0=True)
-    coh2 = XPMatrix.from_xpxp(
-        coherence, modes=(list(range(N)), list(range(N + 1, M + N + 1))), like_0=True
-    )
+    coh1 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N, M + N)))
+    coh2 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N + 1, M + N + 1)))
     matrix1 = np.block([[coherence, np.zeros((2 * N, 2))]])  # add a column on the right
     matrix2 = np.block([[np.zeros((2 * N, 2)), coherence]])  # add a column on the left
     assert np.allclose((coh1 @ coh2.T).to_xpxp(), (matrix1 @ matrix2.T), rtol=1e-5)
@@ -183,10 +179,8 @@ def test_matmul_few_different_modes_coherence(coherence):
 def test_matmul_all_different_modes_coherence(coherence):
     N = coherence.shape[0] // 2
     M = coherence.shape[1] // 2
-    coh1 = XPMatrix.from_xpxp(coherence, modes=(list(range(N)), list(range(N, N + M))), like_0=True)
-    coh2 = XPMatrix.from_xpxp(
-        coherence, modes=(list(range(N)), list(range(N + M, N + M + M))), like_0=True
-    )
+    coh1 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N, N + M)))
+    coh2 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N + M, N + M + M)))
     assert (coh1 @ coh2.T).to_xpxp() is None
 
 
@@ -203,8 +197,8 @@ def test_matvec_all_same_modes(mat_vec):
     mat, vec = mat_vec
     expected = mat @ vec
     N = mat.shape[0] // 2
-    mat = XPMatrix.from_xpxp(mat, modes=(list(range(N)), list(range(N))), like_1=True)
-    vec = XPVector.from_xpxp(vec, modes=list(range(N)))
+    mat = XPMatrix.from_xpxp(mat, False, list(range(N)), list(range(N)))
+    vec = XPVector.from_xpxp(vec, list(range(N)))
     assert np.allclose((mat @ vec).to_xpxp(), expected, rtol=1e-5)
 
 
@@ -213,10 +207,8 @@ def test_matvec_few_different_modes(mat_vec):
     mat, vec = mat_vec
     N = mat.shape[0] // 2
     expected = mat[:, 2:] @ vec[2:]  # 2 is skip one mode
-    mat = XPMatrix.from_xpxp(
-        mat, modes=(list(range(N)), [1000] + list(range(N, 2 * N - 1))), like_0=True
-    )
-    vec = XPVector.from_xpxp(vec, modes=[500] + list(range(N, 2 * N - 1)))
+    mat = XPMatrix.from_xpxp(mat, True, list(range(N)), [1000] + list(range(N, 2 * N - 1)))
+    vec = XPVector.from_xpxp(vec, [500] + list(range(N, 2 * N - 1)))
     assert np.allclose((mat @ vec).to_xpxp(), expected, rtol=1e-5)
 
 
@@ -226,8 +218,8 @@ def test_matvec_few_different_modes(mat_vec):
 @given(vector())
 def test_vecvec_all_same_modes(vec):
     N = vec.shape[0] // 2
-    vec1 = XPVector.from_xpxp(vec, modes=list(range(N)))
-    vec2 = XPVector.from_xpxp(vec, modes=list(range(N)))
+    vec1 = XPVector.from_xpxp(vec, list(range(N)))
+    vec2 = XPVector.from_xpxp(vec, list(range(N)))
     assert np.allclose(vec1 @ vec2, vec @ vec, rtol=1e-5)
 
 
@@ -237,8 +229,8 @@ def test_vecvec_all_same_modes(vec):
 @given(square_matrix())
 def test_addition_all_same_modes_cov(xpxp_matrix):
     N = xpxp_matrix.shape[0] // 2
-    xp1 = XPMatrix.from_xpxp(xpxp_matrix, modes=(list(range(N)), list(range(N))), like_1=True)
-    xp2 = XPMatrix.from_xpxp(xpxp_matrix, modes=(list(range(N)), list(range(N))), like_1=True)
+    xp1 = XPMatrix.from_xpxp(xpxp_matrix, False, list(range(N)), list(range(N)))
+    xp2 = XPMatrix.from_xpxp(xpxp_matrix, False, list(range(N)), list(range(N)))
     assert np.allclose((xp1 + xp2).to_xpxp(), xpxp_matrix + xpxp_matrix, rtol=1e-5)
 
 
@@ -246,10 +238,8 @@ def test_addition_all_same_modes_cov(xpxp_matrix):
 def test_addition_few_different_modes_coherences(coherence):
     N = coherence.shape[0] // 2
     M = coherence.shape[1] // 2
-    coh1 = XPMatrix.from_xpxp(coherence, modes=(list(range(N)), list(range(N, M + N))), like_0=True)
-    coh2 = XPMatrix.from_xpxp(
-        coherence, modes=(list(range(N)), list(range(N + 1, M + N + 1))), like_0=True
-    )
+    coh1 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N, M + N)))
+    coh2 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N + 1, M + N + 1)))
     matrix1 = np.block([[coherence, np.zeros((2 * N, 2))]])  # add a column on the right
     matrix2 = np.block([[np.zeros((2 * N, 2)), coherence]])  # add a column on the left
     assert np.allclose((coh1 + coh2).to_xpxp(), matrix1 + matrix2, rtol=1e-5)
@@ -259,10 +249,8 @@ def test_addition_few_different_modes_coherences(coherence):
 def test_addition_all_different_modes_coherences(coherence):
     N = coherence.shape[0] // 2
     M = coherence.shape[1] // 2
-    coh1 = XPMatrix.from_xpxp(coherence, modes=(list(range(N)), list(range(N, N + M))), like_0=True)
-    coh2 = XPMatrix.from_xpxp(
-        coherence, modes=(list(range(N)), list(range(N + M, N + M + M))), like_0=True
-    )
+    coh1 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N, N + M)))
+    coh2 = XPMatrix.from_xpxp(coherence, True, list(range(N)), list(range(N + M, N + M + M)))
     matrix1 = np.block([[coherence, np.zeros((2 * N, 2 * M))]])
     matrix2 = np.block([[np.zeros((2 * N, 2 * M)), coherence]])
     assert np.allclose((coh1 + coh2).to_xpxp(), matrix1 + matrix2, rtol=1e-5)

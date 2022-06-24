@@ -4,7 +4,7 @@ from hypothesis.extra.numpy import arrays
 import numpy as np
 import tensorflow as tf
 
-from mrmustard.math.numba import numba_sparse_matvec, numba_sparse_matmul, numba_sparse_vec_add, numba_sparse_vec_add_inplace
+from mrmustard.math.numba import *
 import thewalrus as tw
 
 from tests.random import vector

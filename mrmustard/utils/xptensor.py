@@ -356,7 +356,7 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
         if self.tensor is None and self.like_0:
             return other
         if self.tensor is not None and other.tensor is not None:
-            return math.sparse_mat_add(other)
+            return math.sparse_mat_add(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes, self.like_0, other.like_0)
         raise ValueError(f"Can't add a like_1 null XPMatrix and an XPMatrix that is not null and like_0.")
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPMatrix:
@@ -502,7 +502,7 @@ class XPVector(XPTensor):
         if self.tensor is None:
             return other
         if self.tensor is not None and other.tensor is not None:
-            return math.sparse_vec_add(self.tensor, other.tensor, self.outmodes, other.outmodes)
+            return math.sparse_vec_add(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes)
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPVector:
         r"""Returns modes or subsets of modes from the XPMatrix or coherences between modes using an

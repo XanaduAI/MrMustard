@@ -20,7 +20,7 @@ from mrmustard.types import *
 
 
 @njit
-def vec_add(vec1, vec2, modes1, modes2):
+def numba_vec_add(vec1, vec2, modes1, modes2):
     r"""Mode-wise sparse addition of vec1 and vec2, with outer product on the batch dimension.
     
         Args:
@@ -49,7 +49,7 @@ def vec_add(vec1, vec2, modes1, modes2):
 
 
 @njit
-def vec_add_inplace(vec, subvec, modes, submodes):
+def numba_vec_add_inplace(vec, subvec, modes, submodes):
     r"""Mode-wise sparse addition of vec_sub to vec, with outer product on the batch dimension.
     It assumes submodes are a subset of modes, hence we can just add to vec without creating a new array.
     Warning: it updates vec inplace.
@@ -84,7 +84,7 @@ def vec_add_inplace(vec, subvec, modes, submodes):
 
 
 @njit
-def vec_add_vjp(dL_dsum, vec1, vec2, modes1, modes2):
+def numba_vec_add_vjp(dL_dsum, vec1, vec2, modes1, modes2):
     r"""vjp of mode-wise sparse addition of vec1 to vec2.
     """
     s1 = set(modes1)
@@ -103,7 +103,7 @@ def vec_add_vjp(dL_dsum, vec1, vec2, modes1, modes2):
 
 
 @njit
-def vec_add_inplace_vjp(dL_sum, B, Bsub, modes, submodes):
+def numba_vec_add_inplace_vjp(dL_sum, B, Bsub, modes, submodes):
     r"""vjp of mode-wise sparse addition of vec_sub to vec.
     
         Args:
@@ -131,7 +131,7 @@ def vec_add_inplace_vjp(dL_sum, B, Bsub, modes, submodes):
 
 
 @njit
-def mat_add_inplace(mat, submat, modes, submodes, matlike_0, submatlike_0):
+def numba_mat_add_inplace(mat, submat, modes, submodes, matlike_0, submatlike_0):
     r"""Mode-wise sparse addition of mat_sub to mat, with outer product on the batch dimension.
     It assumes submodes are a subset of modes, hence we can just add to mat without creating a new array.
     Warning: it updates mat inplace.
@@ -172,8 +172,8 @@ def mat_add_inplace(mat, submat, modes, submodes, matlike_0, submatlike_0):
 
 
 @njit
-def mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
-    fmodes, findices, ind1, ind2, B1, B2, F, M, N = sparse_mat_add_prep(modes1, modes2, m1like_0, m2like_0)
+def numba_mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
+    fmodes, findices, ind1, ind2, B1, B2, F, M, N = numba_sparse_mat_add_prep(modes1, modes2, m1like_0, m2like_0)
 
     matrix = np.zeros((B1*B2, 2*F, 2*F), dtype=mat1.dtype)
     # loop over vectorized batches
@@ -202,8 +202,8 @@ def mat_add(mat1, mat2, modes1, modes2, m1like_0, m2like_0):
     return matrix
 
 @njit
-def mat_add_vjp(dLdsum, B1, B2, modes1, modes2):
-    fmodes, findices, ind1, ind2, F, M, N = sparse_mat_add_prep(modes1, modes2)
+def numba_mat_add_vjp(dLdsum, B1, B2, modes1, modes2):
+    fmodes, findices, ind1, ind2, F, M, N = numba_sparse_mat_add_prep(modes1, modes2)
 
     dmatrix1 = np.zeros((B1, 2*M, 2*M), dtype=mat1.dtype)
     dmatrix2 = np.zeros((B2, 2*N, 2*N), dtype=mat2.dtype)
@@ -229,7 +229,7 @@ def mat_add_vjp(dLdsum, B1, B2, modes1, modes2):
 
 
 @njit
-def mat_add_prep(modes1, modes2, m1like_0, m2like_0):
+def numba_mat_add_prep(modes1, modes2, m1like_0, m2like_0):
     """
     Prepare the sparse matrix addition for numba.
     """
