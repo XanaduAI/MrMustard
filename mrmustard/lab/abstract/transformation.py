@@ -388,7 +388,7 @@ class Transformation:
     def __repr__(self):
 
         class_name = self.__class__.__name__
-        modes = self._modes
+        modes = self.modes
 
         parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
         param_str_rep = [
@@ -402,7 +402,7 @@ class Transformation:
     def __str__(self):
 
         class_name = self.__class__.__name__
-        modes = self._modes
+        modes = self.modes
         return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"
 
     def _ipython_display_(self):
