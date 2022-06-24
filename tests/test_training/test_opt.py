@@ -126,7 +126,7 @@ def test_learning_two_mode_squeezing():
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
     tf.random.set_seed(137)
-    G = Ggate(num_modes=2, symplectic_trainable=True)
+    G = Ggate(modes=2, symplectic_trainable=True)
     tf.random.set_seed(20)
 
     def cost_fn():
@@ -149,7 +149,7 @@ def test_learning_two_mode_Interferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        Interferometer(num_modes=2, orthogonal_trainable=True),
+        Interferometer(modes=2, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=2)
@@ -174,7 +174,7 @@ def test_learning_two_mode_RealInterferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        RealInterferometer(num_modes=2, orthogonal_trainable=True),
+        RealInterferometer(modes=2, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=2)
@@ -199,7 +199,7 @@ def test_learning_four_mode_Interferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        Interferometer(num_modes=4, orthogonal_trainable=True),
+        Interferometer(modes=4, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
@@ -232,7 +232,7 @@ def test_learning_four_mode_RealInterferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        RealInterferometer(num_modes=4, orthogonal_trainable=True),
+        RealInterferometer(modes=4, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
@@ -310,7 +310,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     def thermal_entropy(nbar):
         return -(nbar * np.log((nbar) / (1 + nbar)) - np.log(1 + nbar))
 
-    G = Ggate(num_modes=2, symplectic_trainable=True, symplectic=S_init)
+    G = Ggate(modes=2, symplectic_trainable=True, symplectic=S_init)
 
     def cost_fn():
         state = Vacuum(2) >> G

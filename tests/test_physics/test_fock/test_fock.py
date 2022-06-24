@@ -134,7 +134,7 @@ def test_density_matrix(num_modes):
     """Tests the density matrix of a pure state is equal to |psi><psi|"""
     modes = list(range(num_modes))
     cutoffs = [num_modes + 1] * num_modes
-    G = Ggate(num_modes=num_modes)
+    G = Ggate(modes=num_modes)
     L = Attenuator(transmissivity=1.0)
     rho_legit = (Vacuum(num_modes) >> G >> L[modes]).dm(cutoffs=cutoffs)
     rho_made = (Vacuum(num_modes) >> G).dm(cutoffs=cutoffs)

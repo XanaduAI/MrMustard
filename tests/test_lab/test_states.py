@@ -186,7 +186,7 @@ def test_modes_after_double_projection(n, m):
 
 def test_random_state_is_entangled():
     """Tests that a Gaussian state generated at random is entangled."""
-    state = Vacuum(2) >> Ggate(num_modes=2)
+    state = Vacuum(2) >> Ggate(modes=2)
     mat = state.cov
     assert np.allclose(gp.log_negativity(mat, 2), 0.0)
     assert np.allclose(

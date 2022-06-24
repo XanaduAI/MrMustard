@@ -145,15 +145,15 @@ def random_MZgate(draw, trainable=False):
 
 
 @st.composite
-def random_Interferometer(draw, num_modes, trainable=False):
-    return Interferometer(num_modes=num_modes, orthogonal_trainable=trainable)
+def random_Interferometer(draw, modes, trainable=False):
+    return Interferometer(modes=modes, orthogonal_trainable=trainable)
 
 
 @st.composite
-def random_Ggate(draw, num_modes, trainable=False):
+def random_Ggate(draw, modes, trainable=False):
     displacement = vector(2 * num_modes)
     return Ggate(
-        num_modes=num_modes,
+        modes=modes,
         displacement=draw(displacement),
         displacement_trainable=trainable,
     )
@@ -173,8 +173,8 @@ def two_mode_gate(draw):
             random_S2gate(),
             random_BSgate(),
             random_MZgate(),
-            random_Ggate(num_modes=2),
-            random_Interferometer(num_modes=2),
+            random_Ggate(modes=2),
+            random_Interferometer(modes=2),
         )
     )
 
