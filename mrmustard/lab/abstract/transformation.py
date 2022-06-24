@@ -34,7 +34,7 @@ from mrmustard.types import (
 )
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.training.parameter import Parameter
+from mrmustard.training.parameter import Parameter, Trainable
 from .state import State
 
 math = Math()
@@ -391,9 +391,19 @@ class Transformation:
         modes = self._modes
 
         parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
-        params_str = ", ".join(sorted(list(parameters.keys())))
+        param_str_rep = [
+            f"{name}={repr(math.asnumpy(par.value))}" for name, par in parameters.items()
+        ]
 
-        return f"{class_name}({params_str}, modes = {modes})"
+        params_str = ", ".join(sorted(param_str_rep))
+
+        return f"{class_name}({params_str}, modes = {modes})".replace("\n", "")
+
+    def __str__(self):
+
+        class_name = self.__class__.__name__
+        modes = self._modes
+        return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"
 
     def _ipython_display_(self):
         table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
