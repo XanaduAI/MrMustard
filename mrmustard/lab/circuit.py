@@ -95,7 +95,7 @@ class Circuit(Transformation, Parametrized):
     def _repr_markdown_(self) -> str:
         """Markdown string to display the object on ipython notebooks."""
         header = f"#### Circuit  -  {len(self._ops)} ops  -  compiled = `{self._compiled}`\n\n"
-        ops_repr = [op._repr_markdown_() for op in self._ops]
+        ops_repr = [op._repr_markdown_() for op in self._ops]  # pylint: disable=protected-access
         return header + "\n".join(ops_repr)
 
     def __repr__(self) -> str:

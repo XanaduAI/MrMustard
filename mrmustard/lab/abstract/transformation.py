@@ -16,8 +16,6 @@
 
 from __future__ import annotations
 
-from rich.table import Table
-from rich import print as rprint
 import numpy as np
 
 from mrmustard.physics import gaussian, fock
