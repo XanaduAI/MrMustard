@@ -7,14 +7,14 @@ import tensorflow as tf
 from mrmustard.math.numba import *
 import thewalrus as tw
 
-from tests.random import vector
+from tests.random import vector, matrix
 
 
 
 @given(v1=vector(2), v2=vector(2))
 def test_numba_sparse_vec_add_newvec1(v1,v2):
     r"""tests that a 1-mode vector is correctly added to a 1-mode vector with different modes"""
-    summed = numba_sparse_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0], modes2=[1])
+    summed = numba_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0], modes2=[1])
     expected = np.array([[v1[0], v2[0], v1[1], v2[1]]])
     assert np.allclose(expected, summed)
 
@@ -22,7 +22,7 @@ def test_numba_sparse_vec_add_newvec1(v1,v2):
 @given(v1=vector(4), v2=vector(2))
 def test_numba_sparse_vec_add_inplace2(v1,v2):
     r"""tests that a 1-mode vector is correctly added to a 2-mode vector"""
-    summed = numba_sparse_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1], modes2=[0])
+    summed = numba_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1], modes2=[0])
     expected = np.array([[v1[0]+v2[0], v1[1], v1[2]+v2[1], v1[3]]])
     assert np.allclose(expected, summed)
 
@@ -31,17 +31,23 @@ def test_numba_sparse_vec_add_inplace2(v1,v2):
 def test_numba_sparse_vec_add_inplace3(v1,v2):
     r"""tests that a 1-mode vector is correctly added to a 3-mode vector"""
     expected = np.array([[v1[0]+v2[0], v1[1], v1[2], v1[3]+v2[1], v1[4], v1[5]]])
-    summed = numba_sparse_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1,2], modes2=[0])
+    summed = numba_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1,2], modes2=[0])
 
     expected = np.array([[v1[0], v1[1]+v2[0], v1[2], v1[3], v1[4]+v2[1], v1[5]]])
-    summed = numba_sparse_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1,2], modes2=[1])
+    summed = numba_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1,2], modes2=[1])
 
     expected = np.array([[v1[0], v1[1], v1[2]+v2[0], v1[3], v1[4], v1[5]+v2[1]]])
-    summed = numba_sparse_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1,2], modes2=[2])
+    summed = numba_vec_add(vec1=v1.copy()[None,:], vec2=v2[None,:], modes1=[0,1,2], modes2=[2])
     assert np.allclose(expected, summed)
 
 
-# @given(m1=matrix((4,4)), m2=matrix((2,2)))
-# def test_numba_sparse_add(m1,m2):
-#     r"""tests that a 1-mode matrix is correctly added to a 2-mode matrix"""
-#     pass
+@given(m1=matrix((1,4,4)), m2=matrix((1,2,2)))
+def test_numba_sparse_add(m1,m2):
+    r"""tests that a 1-mode matrix is correctly added to a 2-mode matrix"""
+    summed = numba_mat_add(mat1=m1.copy(), mat2=m2, modes1=(0,1), modes2=(0,), m1like_0=True, m2like_0=True)
+    expected = m1
+    expected[0,0,0] += m2[0,0,0]
+    expected[0,0,2] += m2[0,0,1]
+    expected[0,2,0] += m2[0,1,0]
+    expected[0,2,2] += m2[0,1,1]
+    assert np.allclose(expected, summed)

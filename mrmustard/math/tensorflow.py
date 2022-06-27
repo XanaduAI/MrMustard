@@ -372,7 +372,7 @@ class TFMath(MathInterface):
 
         new_vec = tf.numpy_function(self.numba_sparse_matvec, [matrix, vector, m_modes, v_modes, like_0], vector.dtype)
 
-        def grad(dmatvec): # NOTE: dLdnew_vec is the derivative of L with respect to new_vec *conjugate*
+        def grad(dmatvec): # NOTE: dmatvec is the derivative of L with respect to matvec *conjugate*
             return tf.numpy_function(self.numba_sparse_matvec_vjp, [dmatvec, matrix, vector, m_modes, v_modes, like_0], [new_vec.dtype] * 2)
 
         return new_vec, grad
@@ -414,10 +414,12 @@ class TFMath(MathInterface):
         Returns:
             array: new vector
         """
+        v1_plus_v2 = tf.numpy_function(numba_sparse_vec_add, [vector1, vector2, v1_modes, v2_modes], vector1.dtype)
 
-        def grad(dL_dvadd):
-            dvadd_dv1, dvadd_dv2 = tf.numpy_function(numba_sparse_vec_add_vjp, [dL_dvadd, vector1, vector2, v1_modes, v2_modes], [vector1.dtype] * 2)
-        return tf.numpy_function(numba_sparse_vec_add, [vector1, vector2, v1_modes, v2_modes], vector1.dtype)
+        def grad(dL_dsum):
+            return tf.numpy_function(numba_sparse_vec_add_vjp, [dL_dsum, vector1, vector2, v1_modes, v2_modes], [vector1.dtype] * 2)
+
+        return v1_plus_v2, grad
 
 
     def sparse_mat_add(self, matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0:bool, m2like_0:bool) -> Tensor:
