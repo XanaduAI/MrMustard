@@ -459,10 +459,15 @@ class Interferometer(Parametrized, Transformation):
         return self.orthogonal.value
 
     def _validate_modes(self, modes):
-        if len(modes) != self.orthogonal.shape[-1] // 2:
+        if len(modes) != self.orthogonal.value.shape[-1] // 2:
             raise ValueError(
                 f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1] // 2})"
             )
+
+    def __repr__(self):
+        modes = self.modes
+        orthogonal = repr(math.asnumpy(self.orthogonal.value)).replace("\n", "")
+        return f"Interferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
 class RealInterferometer(Parametrized, Transformation):
@@ -502,6 +507,11 @@ class RealInterferometer(Parametrized, Transformation):
                 f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.value.shape[-1]})"
             )
 
+    def __repr__(self):
+        modes = self.modes
+        orthogonal = repr(math.asnumpy(self.orthogonal.value)).replace("\n", "")
+        return f"RealInterferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
+
 
 class Ggate(Parametrized, Transformation):
     r"""A generic N-mode Gaussian unitary transformation with zero displacement.
@@ -538,6 +548,11 @@ class Ggate(Parametrized, Transformation):
             raise ValueError(
                 f"Invalid number of modes: {len(modes)} (should be {self.symplectic.value.shape[1] // 2})"
             )
+
+    def __repr__(self):
+        modes = self.modes
+        symplectic = repr(math.asnumpy(self.symplectic.value)).replace("\n", "")
+        return f"Ggate(num_modes = {len(modes)}, symplectic = {symplectic}){modes}"
 
 
 # ~~~~~~~~~~~~~
