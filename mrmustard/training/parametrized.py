@@ -79,7 +79,7 @@ def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
     """
 
     for obj in object_:
-        if isinstance(obj, Iterable):
+        if isinstance(obj, Sequence):
             yield from _traverse_parametrized(obj, extract_type)
         elif isinstance(obj, Parametrized):
             yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
