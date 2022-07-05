@@ -18,11 +18,11 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Dict
-from mrmustard.types import Tensor, Trainable
+from typing import Union, Optional, List, Tuple
+from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
 
 from mrmustard.math import Math
@@ -85,13 +85,13 @@ class Dgate(Parametrized, Transformation):
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def d_vector(self):
-        return gaussian.displacement(self.x, self.y, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
 
 class Sgate(Parametrized, Transformation):
@@ -131,13 +131,13 @@ class Sgate(Parametrized, Transformation):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.squeezing_symplectic(self.r, self.phi)
+        return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
 
 
 class Rgate(Parametrized, Transformation):
@@ -169,13 +169,13 @@ class Rgate(Parametrized, Transformation):
             angle=angle,
             angle_trainable=angle_trainable,
             angle_bounds=angle_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.rotation_symplectic(self.angle)
+        return gaussian.rotation_symplectic(self.angle.value)
 
 
 class Pgate(Parametrized, Transformation):
@@ -205,13 +205,13 @@ class Pgate(Parametrized, Transformation):
             shearing=shearing,
             shearing_trainable=shearing_trainable,
             shearing_bounds=shearing_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.quadratic_phase(self.shearing)
+        return gaussian.quadratic_phase(self.shearing.value)
 
 
 class CXgate(Parametrized, Transformation):
@@ -238,13 +238,13 @@ class CXgate(Parametrized, Transformation):
             s=s,
             s_trainable=s_trainable,
             s_bounds=s_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.controlled_X(self.s)
+        return gaussian.controlled_X(self.s.value)
 
 
 class CZgate(Parametrized, Transformation):
@@ -271,13 +271,13 @@ class CZgate(Parametrized, Transformation):
             s=s,
             s_trainable=s_trainable,
             s_bounds=s_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.controlled_Z(self.s)
+        return gaussian.controlled_Z(self.s.value)
 
 
 class BSgate(Parametrized, Transformation):
@@ -313,13 +313,13 @@ class BSgate(Parametrized, Transformation):
             phi_trainable=phi_trainable,
             theta_bounds=theta_bounds,
             phi_bounds=phi_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.beam_splitter_symplectic(self.theta, self.phi)
+        return gaussian.beam_splitter_symplectic(self.theta.value, self.phi.value)
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
@@ -366,14 +366,14 @@ class MZgate(Parametrized, Transformation):
             phi_b_trainable=phi_b_trainable,
             phi_a_bounds=phi_a_bounds,
             phi_b_bounds=phi_b_bounds,
-            internal=internal,
-            modes=modes,
         )
+        self._internal = internal
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.mz_symplectic(self.phi_a, self.phi_b, internal=self._internal)
+        return gaussian.mz_symplectic(self.phi_a.value, self.phi_b.value, internal=self._internal)
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
@@ -414,13 +414,13 @@ class S2gate(Parametrized, Transformation):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            modes=modes,
         )
+        self._modes = modes
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.two_mode_squeezing_symplectic(self.r, self.phi)
+        return gaussian.two_mode_squeezing_symplectic(self.r.value, self.phi.value)
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
@@ -450,28 +450,24 @@ class Interferometer(Parametrized, Transformation):
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
-            orthogonal_bounds=(None, None),
-            modes=list(range(num_modes)),
         )
+        self._modes = list(range(num_modes))
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return self.orthogonal
+        return self.orthogonal.value
 
     def _validate_modes(self, modes):
-        if len(modes) != self.orthogonal.shape[-1] // 2:
+        if len(modes) != self.orthogonal.value.shape[-1] // 2:
             raise ValueError(
                 f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1] // 2})"
             )
 
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [],
-            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
-            "euclidean": [],
-        }
+    def __repr__(self):
+        modes = self.modes
+        orthogonal = repr(math.asnumpy(self.orthogonal.value)).replace("\n", "")
+        return f"Interferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
 class RealInterferometer(Parametrized, Transformation):
@@ -492,36 +488,29 @@ class RealInterferometer(Parametrized, Transformation):
     ):
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
-        super().__init__(
-            orthogonal=orthogonal,
-            orthogonal_trainable=orthogonal_trainable,
-            orthogonal_bounds=(None, None),
-            modes=list(range(num_modes)),
-        )
-        self.is_gaussian = True
+        super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
+        self._modes = list(range(num_modes))
+        self._is_gaussian = True
 
     @property
     def X_matrix(self):
         return math.block(
             [
-                [self.orthogonal, math.zeros_like(self.orthogonal)],
-                [math.zeros_like(self.orthogonal), self.orthogonal],
+                [self.orthogonal.value, math.zeros_like(self.orthogonal.value)],
+                [math.zeros_like(self.orthogonal.value), self.orthogonal.value],
             ]
         )
 
     def _validate_modes(self, modes):
-        if len(modes) != self.orthogonal.shape[-1]:
+        if len(modes) != self.orthogonal.value.shape[-1]:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1]})"
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.value.shape[-1]})"
             )
 
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [],
-            "orthogonal": [self.orthogonal] if self._orthogonal_trainable else [],
-            "euclidean": [],
-        }
+    def __repr__(self):
+        modes = self.modes
+        orthogonal = repr(math.asnumpy(self.orthogonal.value)).replace("\n", "")
+        return f"RealInterferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
 class Ggate(Parametrized, Transformation):
@@ -542,33 +531,28 @@ class Ggate(Parametrized, Transformation):
         symplectic: Optional[Tensor] = None,
         symplectic_trainable: bool = False,
     ):
-        if symplectic is None:
-            symplectic = math.random_symplectic(num_modes)
+        symplectic = symplectic if symplectic is not None else math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
-            symplectic_bounds=(None, None),
-            modes=list(range(num_modes)),
         )
+        self._modes = list(range(num_modes))
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return self.symplectic
+        return self.symplectic.value
 
     def _validate_modes(self, modes):
-        if len(modes) != self.symplectic.shape[1] // 2:
+        if len(modes) != self.symplectic.value.shape[1] // 2:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.symplectic.shape[1] // 2})"
+                f"Invalid number of modes: {len(modes)} (should be {self.symplectic.value.shape[1] // 2})"
             )
 
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [self.symplectic] if self._symplectic_trainable else [],
-            "orthogonal": [],
-            "euclidean": [],
-        }
+    def __repr__(self):
+        modes = self.modes
+        symplectic = repr(math.asnumpy(self.symplectic.value)).replace("\n", "")
+        return f"Ggate(num_modes = {len(modes)}, symplectic = {symplectic}){modes}"
 
 
 # ~~~~~~~~~~~~~
@@ -623,18 +607,18 @@ class Attenuator(Parametrized, Transformation):
             nbar_trainable=nbar_trainable,
             transmissivity_bounds=transmissivity_bounds,
             nbar_bounds=nbar_bounds,
-            modes=modes,
         )
-        self.is_unitary = False
+        self._modes = modes
+        self._is_unitary = False
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.loss_XYd(self.transmissivity, self.nbar, settings.HBAR)[0]
+        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.loss_XYd(self.transmissivity, self.nbar, settings.HBAR)[1]
+        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[1]
 
 
 class Amplifier(Parametrized, Transformation):
@@ -679,18 +663,18 @@ class Amplifier(Parametrized, Transformation):
             nbar=nbar,
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
-            modes=modes,
         )
-        self.is_unitary = False
+        self._modes = modes
+        self._is_unitary = False
         self.is_gaussian = True
 
     @property
     def X_matrix(self):
-        return gaussian.amp_XYd(self.gain, self.nbar, settings.HBAR)[0]
+        return gaussian.amp_XYd(self.gain.value, self.nbar.value, settings.HBAR)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.amp_XYd(self.gain, self.nbar, settings.HBAR)[1]
+        return gaussian.amp_XYd(self.gain.value, self.nbar.value, settings.HBAR)[1]
 
 
 # pylint: disable=no-member
@@ -727,12 +711,11 @@ class AdditiveNoise(Parametrized, Transformation):
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        super().__init__(
-            noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds, modes=modes
-        )
-        self.is_unitary = False
+        super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds)
+        self._modes = modes
+        self._is_unitary = False
         self.is_gaussian = True
 
     @property
     def Y_matrix(self):
-        return gaussian.noise_Y(self.noise, settings.HBAR)
+        return gaussian.noise_Y(self.noise.value, settings.HBAR)

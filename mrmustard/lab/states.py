@@ -16,12 +16,12 @@
 This module implements the quantum states upon which a quantum circuits acts on.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence, Dict
-from mrmustard.types import Scalar, Vector, Matrix, Trainable
+from typing import Union, Optional, List, Tuple, Sequence
+from mrmustard.types import Scalar, Vector, Matrix
 from mrmustard import settings
 from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian, fock
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
 from mrmustard.math import Math
 
 math = Math()
@@ -103,16 +103,17 @@ class Coherent(Parametrized, State):
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
-            modes=modes,
-            normalize=normalize,
         )
-        means = gaussian.displacement(self.x, self.y, settings.HBAR)
+        self._modes = modes
+        self._normalize = normalize
+
+        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def means(self):
-        return gaussian.displacement(self.x, self.y, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
 
 class SqueezedVacuum(Parametrized, State):
@@ -169,16 +170,17 @@ class SqueezedVacuum(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            modes=modes,
-            normalize=normalize,
         )
-        cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
+        self._modes = modes
+        self._normalize = normalize
+
+        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
+        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
 
 
 class TMSV(Parametrized, State):
@@ -223,16 +225,17 @@ class TMSV(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
-            modes=modes,
-            normalize=normalize,
         )
-        cov = gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
+        self._modes = modes
+        self._normalize = normalize
+
+        cov = gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
         means = gaussian.vacuum_means(2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.two_mode_squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
+        return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
 
 
 class Thermal(Parametrized, State):
@@ -275,16 +278,17 @@ class Thermal(Parametrized, State):
             nbar=nbar,
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
-            modes=modes,
-            normalize=normalize,
         )
-        cov = gaussian.thermal_cov(self.nbar, settings.HBAR)
+        self._modes = modes
+        self._normalize = normalize
+
+        cov = gaussian.thermal_cov(self.nbar.value, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.thermal_cov(self.nbar, settings.HBAR)
+        return gaussian.thermal_cov(self.nbar.value, settings.HBAR)
 
 
 class DisplacedSqueezed(Parametrized, State):
@@ -361,20 +365,21 @@ class DisplacedSqueezed(Parametrized, State):
             phi_bounds=phi_bounds,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
-            modes=modes,
-            normalize=normalize,
         )
-        cov = gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
-        means = gaussian.displacement(self.x, self.y, settings.HBAR)
+        self._modes = modes
+        self._normalize = normalize
+
+        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r, self.phi, settings.HBAR)
+        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
 
     @property
     def means(self):
-        return gaussian.displacement(self.x, self.y, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
 
 class Gaussian(Parametrized, State):
@@ -435,28 +440,21 @@ class Gaussian(Parametrized, State):
             symplectic_trainable=symplectic_trainable,
             eigenvalues_bounds=eigenvalues_bounds,
             symplectic_bounds=(None, None),
-            modes=modes,
-            normalize=normalize,
         )
-        cov = gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
+        self._modes = modes
+        self._normalize = normalize
+
+        cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.gaussian_cov(self.symplectic, self.eigenvalues, settings.HBAR)
+        return gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value, settings.HBAR)
 
     @property
     def is_mixed(self):
-        return any(self.eigenvalues > settings.HBAR / 2)
-
-    @property
-    def trainable_parameters(self) -> Dict[str, List[Trainable]]:
-        return {
-            "symplectic": [self.symplectic] * self._symplectic_trainable,
-            "orthogonal": [],
-            "euclidean": ([self.eigenvalues] * self._eigenvalues_trainable),
-        }
+        return any(self.eigenvalues.value > settings.HBAR / 2)
 
 
 class Fock(Parametrized, State):
@@ -477,9 +475,11 @@ class Fock(Parametrized, State):
         normalize: bool = False,
     ):
         State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
-        Parametrized.__init__(
-            self, n=[n] if isinstance(n, int) else n, modes=modes, normalize=normalize
-        )
+        Parametrized.__init__(self)
+
+        self._n = [n] if isinstance(n, int) else n
+        self._modes = modes
+        self._normalize = normalize
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).

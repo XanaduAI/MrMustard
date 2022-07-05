@@ -239,14 +239,6 @@ def test_concat_pure_states(pure):
     psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3])
     assert np.allclose(psi.dm(), psi_dm)
 
-    # trace state2 and check resulting dm corresponds to state 1
-    dm1 = math.trace(math.transpose(psi.dm(), [0, 2, 1, 3]))
-    assert np.allclose(state1.dm(), dm1)
-
-    # trace state1 and check resulting dm corresponds to state 2
-    dm2 = math.trace(math.transpose(psi.dm(), [1, 3, 0, 2]))
-    assert np.allclose(state2.dm(), dm2)
-
 
 @pytest.mark.parametrize("n", ([1, 0, 0], [1, 1, 0], [0, 0, 1]))
 @pytest.mark.parametrize("cutoffs", ([2, 2, 2], [2, 3, 3], [3, 3, 2]))

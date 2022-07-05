@@ -23,7 +23,6 @@ from thewalrus.fock_gradients import (
     mzgate,
 )
 import numpy as np
-from tests.random import single_mode_unitary
 from tests import random
 
 
@@ -49,11 +48,6 @@ def test_1mode_fock_equals_gaussian():
     # via_phase_space = gate(gstate)
     # via_fock_space = gate(fstate)
     # assert via_phase_space == via_fock_space
-
-
-@given(gates=st.lists(single_mode_unitary(), min_size=1, max_size=5))
-def test_gate_compositions(gates):
-    pass  # TODO test that the gate composition is correct
 
 
 @given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
@@ -88,8 +82,8 @@ def test_fock_representation_two_mode_squeezing(r, phi):
 
 
 @given(
-    phi_a=st.floats(min_value=0, max_value=2 * np.pi),
-    phi_b=st.floats(min_value=0, max_value=2 * np.pi),
+    phi_a=st.floats(min_value=0, max_value=2 * np.pi, allow_infinity=False, allow_nan=False),
+    phi_b=st.floats(min_value=0, max_value=2 * np.pi, allow_infinity=False, allow_nan=False),
 )
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)

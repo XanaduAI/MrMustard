@@ -23,14 +23,14 @@
   ```
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
-* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example, 
+* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example,
     ```python
     from mrmustard.lab.gates import Sgate, BSgate
-    
+
     BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
     S0 = Sgate(r=BS.theta)[0]
     S1 = Sgate(r=-BS.theta)[1]
-    
+
     circ = S0 >> S1 >> BS
     ```
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
@@ -42,6 +42,19 @@
 
 ### Improvements
 
+* The Parametrized and Training classes have been refactored. The new training module has been added
+  and with it the new Parameter class: now trainable tensors are wrapped in an instance of Parameter.
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
+  patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
+
+* The string representations of the `Circuit` and `Transformation` objects have been improved:
+  the `Circuit.__repr__` method now produces a string that can be used to generate a circuit in
+  a identical state (same gates and parameters), the `Transformation.__str__` and objects
+  inheriting from it now prints the name, memory location of the object as well as the modes
+  of the circuit in which the transformation is acting on. The `_markdown_repr_` has been implemented
+  and on a jupyter notebook produces a table with valuable information of the Transformation objects.
+  [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
+
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
@@ -52,11 +65,15 @@
   is now used to style the Sphinx documentation.
   [(#126)](https://github.com/XanaduAI/MrMustard/pull/126)
 
+* The documentation now contains the `mm.training` section. The optimization examples on the README
+  and Basic API Reference section have been updated to use the latest API.
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133)
+
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
 
-[Mikhail Andrenkov](https://github.com/Mandrenkov), [Filippo Miatto](https://github.com/ziofil)
+[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 
 ---
