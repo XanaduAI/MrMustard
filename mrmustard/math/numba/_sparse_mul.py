@@ -21,16 +21,18 @@ from mrmustard.types import *
 
 
 @njit
-def numba_sparse_matvec_data(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool) -> tuple:
+def numba_sparse_matvec_data(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], mlike_0:bool) -> tuple:
     r"""Computes the metadata for a sparse matrix-vector multiplication.
+    matrix has shape `(b, m, m, 2, 2)`, i.e. a batch of `b` matrices of "shape" `(m, m)`, where each entry is a 2x2 matrix.
+    vector has shape `(b, v, 2)`, i.e. a batch of `b` vectors of "shape" `(v,)`, where each entry is a 2-dim vector.
     """
     # batch dimensions
     B1 = matrix.shape[0]
     B2 = vector.shape[0]
     # matrix and vector dimensions
-    M = matrix.shape[-1] // 2
-    V = vector.shape[-1] // 2
-    final_modes = [v for v in v_modes if v in m_modes] if like_0 else list(v_modes)
+    M = matrix.shape[1] // 2
+    V = vector.shape[1] // 2
+    final_modes = [v for v in v_modes if v in m_modes] if mlike_0 else list(v_modes)
     F = len(final_modes)
 
     # at which index to read/write a given mode: (note that numba doesn't support dict comprehensions)
@@ -48,7 +50,7 @@ def numba_sparse_matvec_data(matrix: Tensor, vector: Tensor, m_modes: Tuple[int]
 
 
 @njit
-def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool):
+def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], mlike_0:bool):
     r"""Numba implementation of the mode-wise matrix-vector multiplication of
     a batch of matrices and a batch of vectors in phase space. Assumes inputs are in xxpp ordering.
     Note that "sparse" is indended in the sense of modes, i.e. the matrix can contain
@@ -56,17 +58,66 @@ def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_m
     The operation will be performed only on the modes specified in the arguments.
 
     Args:
-        matrix (array): :math:`B \times 2M\times 2M` batched array
-        vector (array): :math:`B \times 2N` batched vector
+        matrix (array): :math:`B \times M\times M\times 2\times 2` batched array
+        vector (array): :math:`B \times N\ times 2` batched vector
         m_modes (list(int)): list of ``M`` modes of the matrix
         v_outmodes (list(int)): list of ``N`` modes of the vector
-        like_0 (bool): whether the values outside the matrix are to be considered as 0s.
+        mlike_0 (bool): whether the matrix is considered to be zero on unspecified modes.
+    Returns:
+        array: :math: resulting vector (can have the same modes as the input vector or fewer)
+    """
+    # notes:
+    # if mlike_0 is false, then we can always update vector in place
+    # if mlike_0 is true, then we can only update the vector in place if v_modes is a subset of m_modes, otherwise we need to update a new zero vector.
+
+    sv = set(v_modes)
+    sm = set(m_modes)
+    union = sv.union(sm)
+    intersection = sv.intersection(sm)
+    B1 = matrix.shape[0]
+    B2 = vector.shape[0]
+
+    if not mlike_0: # inplace update
+        if B2 > 1:
+            vec_ = vector
+            for _ in range(B2-1):
+                vec_ = np.vstack((vec_, vec))
+            output_vec = vec_
+        else:
+            output_vec = vector
+    else:
+        output_vec = np.zeros((B1*B2, len(intersection), 2))
+    
+    for b1 in range(B1):
+        for b2 in range(B2):
+            b = b1*B2 + b2
+            for i,m in enumerate(intersection):
+                
+
+
+    
+
+
+@njit
+def numba_sparse_matvec_old(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], mlike_0:bool):
+    r"""Numba implementation of the mode-wise matrix-vector multiplication of
+    a batch of matrices and a batch of vectors in phase space. Assumes inputs are in xxpp ordering.
+    Note that "sparse" is indended in the sense of modes, i.e. the matrix can contain
+    fewer modes than the vector or the vector can contain fewer modes than the matrix.
+    The operation will be performed only on the modes specified in the arguments.
+
+    Args:
+        matrix (array): :math:`B \times M\times M\times 2\times 2` batched array
+        vector (array): :math:`B \times N\ times 2` batched vector
+        m_modes (list(int)): list of ``M`` modes of the matrix
+        v_outmodes (list(int)): list of ``N`` modes of the vector
+        mlike_0 (bool): whether the matrix is considered to be zero on unspecified modes.
     Returns:
         array: :math: resulting vector (can have the same modes as the input vector or fewer)
     """
     final_modes, findices, mindices, vindices, B1, B2, F, M, V = numba_sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
 
-    new_vec = np.zeros((B1*B2, 2*F), dtype=vector.dtype)
+    new_vec = np.zeros((B1*B2, F, 2), dtype=vector.dtype)
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
@@ -76,7 +127,7 @@ def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_m
                         if n in m_modes:
                             new_vec[b,findices[f]] += matrix[b1,mindices[f], mindices[n]] * vector[b2,vindices[n]] + matrix[b1,mindices[f], mindices[n]+M] * vector[b2,vindices[n]+V]
                             new_vec[b,findices[f]+F] += matrix[b1,mindices[f]+M, mindices[n]] * vector[b2,vindices[n]] + matrix[b1,mindices[f]+M, mindices[n]+M] * vector[b2,vindices[n]+V]
-                elif not like_0: # if mode is not acted on we ignore it (like_0) or copy it (not like_0)
+                elif not mlike_0: # if mode is not acted on we ignore it (mlike_0) or copy it (not mlike_0)
                     new_vec[b,findices[f]] = vector[b2,vindices[f]]
                     new_vec[b,findices[f]+F] = vector[b2,V+vindices[f]]
     return new_vec
