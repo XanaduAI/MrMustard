@@ -38,11 +38,11 @@ def vector(draw, length):
     return draw(arrays(np.float64, shape=(length,), elements=real))
 
 @st.composite
-def real_array(draw, shape):
+def real_array(draw, *shape):
     return draw(arrays(np.float64, shape=shape, elements=real))
 
 @st.composite
-def complex_array(draw, shape):
+def complex_array(draw, *shape):
     return draw(arrays(np.complex128, shape=shape))
 
 @st.composite

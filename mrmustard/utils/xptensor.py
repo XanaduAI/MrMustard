@@ -260,7 +260,7 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
             tensor = math.reshape(tensor, [tensor.shape[0]] + [_ for n in tensor.shape[1:] for _ in (2, n // 2)])
             # transpose so that the index order is b,n,m,2,2
             tensor = math.transpose(tensor, (0, 2, 4, 1, 3))
-        return cls(XPMatrix(tensor, like_0, outmodes, inmodes))  # NOTE we use cls so that subclasses won't need to reimplement this method
+        return XPMatrix(tensor, like_0, outmodes, inmodes)  # NOTE we use cls so that subclasses won't need to reimplement this method
 
     @classmethod
     def from_xpxp(
@@ -278,7 +278,7 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
             tensor = math.reshape(tensor, [tensor.shape[0]] + [_ for n in tensor.shape[1:] for _ in (n // 2, 2)])
             # transpose so that the index order is b,n,m,2,2
             tensor = math.transpose(tensor, (0, 1, 3, 2, 4))
-        return cls(XPMatrix(tensor, like_0, outmodes, inmodes)) #note cls is so that subclasses don't need to reimplement this method
+        return XPMatrix(tensor, like_0, outmodes, inmodes) #note cls is so that subclasses don't need to reimplement this method
 
     def clone(self, times: int, outmodes: Optional[List[int]] = None, inmodes: Optional[List[int]] = None) -> XPtensor:
         r"""Create a new XPTensor by cloning the system a given number of times
@@ -296,7 +296,7 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
             outmodes = list(range(times*len(self.outmodes))) # NOTE: is this what we want? e.g. outmodes = [3,10] -> [3,10,13,20]. Should we reset the modes instead (i.e. [3,10]->[0,1,2,3])?
         if inmodes is None:
             inmodes = list(range(times*len(self.inmodes)))
-        return self.__class__(XPMatrix(tensor, self.like_0, outmodes, inmodes))
+        return XPMatrix(tensor, self.like_0, outmodes, inmodes)
 
     # def clone_like(self, other: XPMatrix) -> XPMatrix:
     #     r"""Create a new XPMatrix with the same shape and modes as other.
@@ -323,12 +323,12 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
     def T(self) -> XPMatrix:
         if self.tensor is None:
             return self
-        return self.__class__(XPMatrix(
+        return XPMatrix(
             math.transpose(self.tensor, (0, 2, 1, 4, 3)),
             self.like_0,
             self.outmodes,
             self.inmodes,
-        ))
+        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}(tensor=..., like_0={self.like_0}, outmodes={self.outmodes}, inmodes={self.inmodes})"
@@ -341,11 +341,11 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
         if self.tensor is None: # NOTE: other is not None now
             return other if self.like_1 else self
         if isinstance(other, XPMatrix):
-            tensor = math.sparse_matmul(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes, self.like_0, other.like_0)
-            modes, *_ = math.sparse_matmul_data(self.to_xxpp(), other.to_xxpp(),self.outmodes, other.outmodes, self.like_0, other.like_0)
+            tensor = math.sparse_matmul(self.tensor, other.tensor, self.outmodes, other.outmodes, self.like_0, other.like_0)
+            modes, *_ = math.sparse_matmul_data(self.tensor, other.tensor,self.outmodes, other.outmodes, self.like_0, other.like_0)
             return XPMatrix(tensor, self.like_0 or other.like_0, outmodes=modes, inmodes=modes)  # TODO: generalize to handle different in/out modes
         if isinstance(other, XPVector):
-            tensor = math.sparse_matvec(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes, self.like_0)
+            tensor = math.sparse_matvec(self.tensor, other.tensor, self.outmodes, other.outmodes, self.like_0)
             return XPVector(tensor, modes=other.outmodes)
 
     def __add__(self, other: XPMatrix) -> XPMatrix:
@@ -356,7 +356,10 @@ class XPMatrix(XPTensor):  # TODO: should this be abstract too?
         if self.tensor is None and self.like_0:
             return other
         if self.tensor is not None and other.tensor is not None:
-            return math.sparse_mat_add(self.to_xxpp(), other.to_xxpp(), self.outmodes, other.outmodes, self.like_0, other.like_0)
+            match_exactly = self.outmodes == other.outmodes and self.inmodes == other.inmodes
+            if match_exactly:
+                return XPMatrix(self.tensor + other.tensor, self.like_0 or other.like_0, self.outmodes, self.inmodes)
+            return math.sparse_mat_add(self.tensor, other.tensor, self.outmodes, other.outmodes, self.like_0, other.like_0)
         raise ValueError(f"Can't add a like_1 null XPMatrix and an XPMatrix that is not null and like_0.")
 
     def __getitem__(self, modes: Union[int, slice, List[int], Tuple]) -> XPMatrix:
