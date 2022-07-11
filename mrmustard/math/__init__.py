@@ -42,19 +42,19 @@ from mrmustard import settings
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
 if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch import TorchMath
+    from mrmustard.math.torch import TorchCast
 
 
 class Math:
     r"""
-    This class is a switcher for performing math operations on the currently active backend.
+    This class is a proxy for performing math operations on the currently active backend.
     """
     # pylint: disable=no-else-return
     def __getattribute__(self, name):
         if settings.backend == "tensorflow":
             return object.__getattribute__(TFMath(), name)
         elif settings.backend == "torch":
-            return object.__getattribute__(TorchMath(), name)
+            return TorchCast().method(name)
 
         raise ValueError(
             f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"

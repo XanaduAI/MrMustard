@@ -42,10 +42,7 @@ class Settings:
         self._backend = backend_name
 
 
-settings = Settings()
-"""Settings object."""
-
-settings.backend = "tensorflow"
+settings = Settings()  # Settings object
 
 
 def version():
