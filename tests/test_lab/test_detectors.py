@@ -324,3 +324,30 @@ def test_heterodyne_mode_kwargs():
     expected_state = Vacuum(1) >> S1
 
     assert np.allclose(final_state.dm(), expected_state.dm())
+
+
+N_MEAS = 500  # number of homodyne measurements to perform
+NUM_STDS = 10.0
+std_10 = NUM_STDS / np.sqrt(N_MEAS)
+
+
+class HomodyneSampling:
+    def test_mean_and_std_vacuum(self):
+
+        results = np.empty((N_MEAS, 2))
+        for idx in range(N_MEAS):
+            results[idx, :] = Vacuum(1) << Homodyne(0.0, result=None, modes=[0])
+
+        assert np.allclose(results.mean(axis=0)[0], 0.0, atol=std_10, rtol=0)
+        assert np.allclose(results.std(axis=0)[0], 1.0, atol=std_10, rtol=0)
+
+    def test_mean_coherent(self):
+
+        x = 2
+        y = 1
+
+        results = np.empty((N_MEAS, 2))
+        for idx in range(N_MEAS):
+            results[idx, :] = Coherent(x, y) << Homodyne(0.0, result=None, modes=[0])
+
+        assert np.allclose(results.mean(axis=0)[0], x**2, atol=std_10, rtol=0)
