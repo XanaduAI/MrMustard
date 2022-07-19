@@ -338,14 +338,28 @@ class State:
             remaining_modes = [m for m in other.modes if m not in self.modes]
 
             if self.is_gaussian and other.is_gaussian:
-                prob, cov, means = gaussian.general_dyne(
-                    other.cov,
-                    other.means,
-                    self.cov,
-                    self.means,
-                    other.indices(self.modes),
-                    settings.HBAR,
-                )
+
+                if getattr(self, "sample", False):
+                    quadrature_angle = getattr(self, "quadrature_angle")
+                    result, prob, cov, means = gaussian.general_dyne_sampling(
+                        other.cov,
+                        other.means,
+                        self.cov,
+                        quadrature_angle,
+                        other.indices(self.modes),
+                        settings.HBAR,
+                    )
+                else:
+                    prob, cov, means = gaussian.general_dyne(
+                        other.cov,
+                        other.means,
+                        self.cov,
+                        self.means,
+                        other.indices(self.modes),
+                        settings.HBAR,
+                    )
+                    result = self.means
+
                 if len(remaining_modes) > 0:
                     return State(
                         means=means,
@@ -353,7 +367,7 @@ class State:
                         modes=remaining_modes,
                         _norm=prob if not getattr(self, "_normalize", False) else 1.0,
                     )
-                return prob
+                return result
 
             # either self or other is not gaussian
             other_cutoffs = [

@@ -16,6 +16,8 @@
 This module contains functions for performing calculations on Gaussian states.
 """
 
+import tensorflow as tf
+import tensorflow_probability as tfp
 from typing import Tuple, Union, Sequence, Any
 from numpy import pi
 from thewalrus.quantum import is_pure_cov
@@ -590,6 +592,60 @@ def general_dyne(
         pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
     )  # TODO: check this (hbar part especially)
     return prob, new_cov, new_means
+
+
+def general_dyne_sampling(
+    cov: Matrix,
+    means: Vector,
+    proj_cov: Matrix,
+    quadrature_angle: Vector,
+    modes: Sequence[int],
+    hbar: float,
+) -> Tuple[Scalar, Matrix, Vector]:
+    r"""Returns the results of a general dyne measurement.
+
+    Args:
+        cov (Matrix): covariance matrix of the state being measured
+        means (Vector): means vector of the state being measured
+        quadrature_angle (Vector): measurement quadrature angle
+        proj_cov (Matrix): covariance matrix of the state being projected onto
+        modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
+
+    Returns:
+        Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
+    """
+    N = cov.shape[-1] // 2
+    nB = proj_cov.shape[-1] // 2  # B is the system being measured
+    Amodes = [i for i in range(N) if i not in modes]
+    A, B, AB = partition_cov(cov, Amodes)
+    a, b = partition_means(means, Amodes)
+
+    # rotate to homodyne basis
+    # S_r = rotation_symplectic(-quadrature_angle)
+    # b = math.matvec(S_r, b)
+    # B = S_r @ B @ math.transpose(S_r)
+
+    proj_cov = math.cast(proj_cov, B.dtype)
+
+    inv = math.inv(B + proj_cov)
+    new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
+
+    # projector means should be sampled
+    rescaled_cov = (B + proj_cov) * pi / 2  # rescaled to agree with standard definition
+    rescaled_loc = b / math.sqrt(pi, dtype="float64")
+    mvn = tfp.distributions.MultivariateNormalTriL(
+        loc=rescaled_loc, scale_tril=tf.linalg.cholesky(rescaled_cov)
+    )
+    # sample
+    s = tfp.distributions.Sample(mvn)
+    outcome = math.sqrt(pi, dtype="float64") * s.sample(dtype=b.dtype)
+
+    new_means = a + math.matvec(math.matmul(AB, inv), outcome - b)
+
+    prob = math.exp(-math.sum(math.matvec(inv, outcome - b) * (outcome - b))) / (
+        pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
+    )  # TODO: check this (hbar part especially)
+    return outcome, prob, new_cov, new_means
 
 
 # ~~~~~~~~~

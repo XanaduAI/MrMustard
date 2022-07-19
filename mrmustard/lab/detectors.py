@@ -16,7 +16,7 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional, Sequence
 from mrmustard.types import Matrix
 from mrmustard.training import Parametrized
 from mrmustard.lab.abstract import FockMeasurement
@@ -246,19 +246,26 @@ class Homodyne(DisplacedSqueezed):
     def __init__(
         self,
         quadrature_angle: Union[float, List[float]],
-        result: Union[float, List[float]] = 0.0,
-        modes: List[int] = None,
+        result: Optional[Union[float, List[float]]] = None,
+        modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
-        quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
-        result = math.astensor(result, dtype="float64")
-        x = result * math.cos(quadrature_angle)
-        y = result * math.sin(quadrature_angle)
-        r = math.astensor(r, dtype="float64")
-        super().__init__(
-            r=r,
-            phi=2 * quadrature_angle,
-            x=x,
-            y=y,
-            modes=modes,
-        )
+        if result is None:
+            self.sample = True
+            self.quadrature_angle = quadrature_angle
+            super().__init__(
+                r=r,
+                modes=modes,
+            )
+        else:
+            quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
+            result = math.astensor(result, dtype="float64")
+            x = result * math.cos(quadrature_angle)
+            y = result * math.sin(quadrature_angle)
+            super().__init__(
+                r=r,
+                phi=2 * quadrature_angle,
+                x=x,
+                y=y,
+                modes=modes,
+            )
