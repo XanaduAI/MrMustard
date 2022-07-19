@@ -565,6 +565,7 @@ def general_dyne(
     proj_means: Vector,
     modes: Sequence[int],
     hbar: float,
+    sample: bool,
 ) -> Tuple[Scalar, Matrix, Vector]:
     r"""Returns the results of a general dyne measurement.
 
@@ -574,9 +575,11 @@ def general_dyne(
         proj_cov (Matrix): covariance matrix of the state being projected onto
         proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
         modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
+        hbar (float): value of hbar to use, affects the value of the probability
+        sample (bool): if ``proj_means`` should be sampled from a distribution, replaces the given ``proj_means``
 
     Returns:
-        Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
+        Tuple[Vector, Scalar, Matrix, Vector]: the outcome (means vector), its probability, the post-measurement cov and means vector
     """
     N = cov.shape[-1] // 2
     nB = proj_cov.shape[-1] // 2  # B is the system being measured
@@ -584,61 +587,28 @@ def general_dyne(
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
     proj_cov = math.cast(proj_cov, B.dtype)
-    proj_means = math.cast(proj_means, b.dtype)
+
+    if not sample:
+        outcome = math.cast(proj_means, b.dtype)
+    else:
+        # means vector of the state being projected onto should be sampled
+        mvn = tfp.distributions.MultivariateNormalTriL(
+            loc=b, scale_tril=tf.linalg.cholesky(B + proj_cov)
+        )
+        # sample
+        s = tfp.distributions.Sample(mvn)
+        outcome = s.sample(dtype=b.dtype)
+
+    # calculate conditional output state of unmeasured modes and the probability
     inv = math.inv(B + proj_cov)
     new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
-    new_means = a + math.matvec(math.matmul(AB, inv), proj_means - b)
-    prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * (proj_means - b))) / (
-        pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
-    )  # TODO: check this (hbar part especially)
-    return prob, new_cov, new_means
-
-
-def general_dyne_sampling(
-    cov: Matrix,
-    means: Vector,
-    proj_cov: Matrix,
-    modes: Sequence[int],
-    hbar: float,
-) -> Tuple[Scalar, Matrix, Vector]:
-    r"""Returns the results of a general dyne measurement.
-
-    Args:
-        cov (Matrix): covariance matrix of the state being measured
-        means (Vector): means vector of the state being measured
-        quadrature_angle (Vector): measurement quadrature angle
-        proj_cov (Matrix): covariance matrix of the state being projected onto
-        modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
-
-    Returns:
-        Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
-    """
-    N = cov.shape[-1] // 2
-    nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    Amodes = [i for i in range(N) if i not in modes]
-    A, B, AB = partition_cov(cov, Amodes)
-    a, b = partition_means(means, Amodes)
-
-    proj_cov = math.cast(proj_cov, B.dtype)
-
-    inv = math.inv(B + proj_cov)
-    new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
-
-    # projector means should be sampled
-    rescaled_cov = B + proj_cov  # rescaled to agree with standard definition
-    rescaled_loc = b
-    mvn = tfp.distributions.MultivariateNormalTriL(
-        loc=rescaled_loc, scale_tril=tf.linalg.cholesky(rescaled_cov)
-    )
-    # sample
-    s = tfp.distributions.Sample(mvn)
-    outcome = s.sample(dtype=b.dtype)
 
     new_means = a + math.matvec(math.matmul(AB, inv), outcome - b)
 
     prob = math.exp(-math.sum(math.matvec(inv, outcome - b) * (outcome - b))) / (
         pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
     )  # TODO: check this (hbar part especially)
+
     return outcome, prob, new_cov, new_means
 
 

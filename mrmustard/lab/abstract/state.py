@@ -339,24 +339,15 @@ class State:
 
             if self.is_gaussian and other.is_gaussian:
 
-                if getattr(self, "sample", False):
-                    result, prob, cov, means = gaussian.general_dyne_sampling(
-                        other.cov,
-                        other.means,
-                        self.cov,
-                        other.indices(self.modes),
-                        settings.HBAR,
-                    )
-                else:
-                    prob, cov, means = gaussian.general_dyne(
-                        other.cov,
-                        other.means,
-                        self.cov,
-                        self.means,
-                        other.indices(self.modes),
-                        settings.HBAR,
-                    )
-                    result = self.means
+                result, prob, cov, means = gaussian.general_dyne(
+                    other.cov,
+                    other.means,
+                    self.cov,
+                    self.means,
+                    other.indices(self.modes),
+                    settings.HBAR,
+                    getattr(self, "sample", False),
+                )
 
                 if len(remaining_modes) > 0:
                     return State(
@@ -365,6 +356,7 @@ class State:
                         modes=remaining_modes,
                         _norm=prob if not getattr(self, "_normalize", False) else 1.0,
                     )
+
                 return result
 
             # either self or other is not gaussian
