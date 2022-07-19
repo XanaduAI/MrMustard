@@ -631,14 +631,14 @@ def general_dyne_sampling(
     new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
 
     # projector means should be sampled
-    rescaled_cov = (B + proj_cov) * pi / 2  # rescaled to agree with standard definition
-    rescaled_loc = b / math.sqrt(pi, dtype="float64")
+    rescaled_cov = B + proj_cov  # rescaled to agree with standard definition
+    rescaled_loc = b
     mvn = tfp.distributions.MultivariateNormalTriL(
         loc=rescaled_loc, scale_tril=tf.linalg.cholesky(rescaled_cov)
     )
     # sample
     s = tfp.distributions.Sample(mvn)
-    outcome = math.sqrt(pi, dtype="float64") * s.sample(dtype=b.dtype)
+    outcome = s.sample(dtype=b.dtype)
 
     new_means = a + math.matvec(math.matmul(AB, inv), outcome - b)
 
