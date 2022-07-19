@@ -340,12 +340,10 @@ class State:
             if self.is_gaussian and other.is_gaussian:
 
                 if getattr(self, "sample", False):
-                    quadrature_angle = getattr(self, "quadrature_angle")
                     result, prob, cov, means = gaussian.general_dyne_sampling(
                         other.cov,
                         other.means,
                         self.cov,
-                        quadrature_angle,
                         other.indices(self.modes),
                         settings.HBAR,
                     )

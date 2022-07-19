@@ -598,7 +598,6 @@ def general_dyne_sampling(
     cov: Matrix,
     means: Vector,
     proj_cov: Matrix,
-    quadrature_angle: Vector,
     modes: Sequence[int],
     hbar: float,
 ) -> Tuple[Scalar, Matrix, Vector]:
