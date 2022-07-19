@@ -620,11 +620,6 @@ def general_dyne_sampling(
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
 
-    # rotate to homodyne basis
-    # S_r = rotation_symplectic(-quadrature_angle)
-    # b = math.matvec(S_r, b)
-    # B = S_r @ B @ math.transpose(S_r)
-
     proj_cov = math.cast(proj_cov, B.dtype)
 
     inv = math.inv(B + proj_cov)

@@ -250,22 +250,21 @@ class Homodyne(DisplacedSqueezed):
         modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
+        quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
+
         if result is None:
             self.sample = True
-            self.quadrature_angle = quadrature_angle
-            super().__init__(
-                r=r,
-                modes=modes,
-            )
+            x = 0
+            y = 0
         else:
-            quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
             result = math.astensor(result, dtype="float64")
             x = result * math.cos(quadrature_angle)
             y = result * math.sin(quadrature_angle)
-            super().__init__(
-                r=r,
-                phi=2 * quadrature_angle,
-                x=x,
-                y=y,
-                modes=modes,
-            )
+
+        super().__init__(
+            r=r,
+            phi=2 * quadrature_angle,
+            x=x,
+            y=y,
+            modes=modes,
+        )
