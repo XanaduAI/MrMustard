@@ -19,36 +19,6 @@ from numba import njit
 from mrmustard.types import *
 
 
-
-@njit
-def numba_sparse_matvec_data(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], mlike_0:bool) -> tuple:
-    r"""Computes the metadata for a sparse matrix-vector multiplication.
-    matrix has shape `(b, m, m, 2, 2)`, i.e. a batch of `b` matrices of "shape" `(m, m)`, where each entry is a 2x2 matrix.
-    vector has shape `(b, v, 2)`, i.e. a batch of `b` vectors of "shape" `(v,)`, where each entry is a 2-dim vector.
-    """
-    # batch dimensions
-    B1 = matrix.shape[0]
-    B2 = vector.shape[0]
-    # matrix and vector dimensions
-    M = matrix.shape[1] // 2
-    V = vector.shape[1] // 2
-    final_modes = [v for v in v_modes if v in m_modes] if mlike_0 else list(v_modes)
-    F = len(final_modes)
-
-    # at which index to read/write a given mode: (note that numba doesn't support dict comprehensions)
-    findices = {}
-    for i,m in enumerate(final_modes):
-        findices[m] = i
-    mindices = {}
-    for i,m in enumerate(m_modes):
-        mindices[m] = i
-    vindices = {}
-    for i,m in enumerate(v_modes):
-        vindices[m] = i
-
-    return final_modes, findices, mindices, vindices, B1, B2, F, M, V
-
-
 @njit
 def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], mlike_0:bool):
     r"""Numba implementation of the mode-wise matrix-vector multiplication of
@@ -61,45 +31,47 @@ def numba_sparse_matvec(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_m
         matrix (array): :math:`B \times M\times M\times 2\times 2` batched array
         vector (array): :math:`B \times N\ times 2` batched vector
         m_modes (list(int)): list of ``M`` modes of the matrix
-        v_outmodes (list(int)): list of ``N`` modes of the vector
+        v_modes (list(int)): list of ``N`` modes of the vector
         mlike_0 (bool): whether the matrix is considered to be zero on unspecified modes.
     Returns:
         array: :math: resulting vector (can have the same modes as the input vector or fewer)
     """
     # notes:
-    # if mlike_0 is false, then we can always update vector in place
-    # if mlike_0 is true, then we can only update the vector in place if v_modes is a subset of m_modes, otherwise we need to update a new zero vector.
+    # if mlike_0 is false, then we can always update vector in place because we are not chopping off any modes (and we don't care if m has more modes, as the vector is always like_0)
+    # if mlike_0 is true, then we can update the vector in place only if v_modes is a subset of m_modes, otherwise we need to update a new (smaller) zero vector.
 
     sv = set(v_modes)
     sm = set(m_modes)
-    union = sv.union(sm)
-    intersection = sv.intersection(sm)
+    f_modes = list(v_modes) if not mlike_0 else [v for v in v_modes if v in m_modes]
     B1 = matrix.shape[0]
     B2 = vector.shape[0]
+    intersection = sv.intersection(sm)
 
-    if not mlike_0: # inplace update
-        if B2 > 1:
+    if mlike_0 and not sv.issubset(sm):
+        output_vec = np.zeros((B1*B2, len(f_modes), 2), dtype=vector.dtype)
+    else:
+        if B2 > 1: # how about just outer with np.ones?
             vec_ = vector
             for _ in range(B2-1):
-                vec_ = np.vstack((vec_, vec))
+                vec_ = np.vstack((vec_, vector))
             output_vec = vec_
         else:
             output_vec = vector
-    else:
-        output_vec = np.zeros((B1*B2, len(intersection), 2))
-    
+
+    find = [f_modes.index(m) for m in intersection]
+    mind = [m_modes.index(m) for m in intersection]
+    vind = [v_modes.index(m) for m in intersection]
+
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
-            for i,m in enumerate(intersection):
-                
+            for i in range(len(intersection)):
+                for j in range(len(intersection)):
+                    output_vec[b, find[i]] = np.dot(matrix[b1, mind[i], mind[j]], vector[b2, vind[j]])
+    return output_vec
 
 
-    
-
-
-@njit
-def numba_sparse_matvec_old(matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], mlike_0:bool):
+def numba_sparse_matvec_vjp(dmatvec: Tensor, matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool):
     r"""Numba implementation of the mode-wise matrix-vector multiplication of
     a batch of matrices and a batch of vectors in phase space. Assumes inputs are in xxpp ordering.
     Note that "sparse" is indended in the sense of modes, i.e. the matrix can contain
@@ -107,111 +79,121 @@ def numba_sparse_matvec_old(matrix: Tensor, vector: Tensor, m_modes: Tuple[int],
     The operation will be performed only on the modes specified in the arguments.
 
     Args:
+        dmatvec (array): :math:`B \times M\times M\times 2\times 2` batched array
         matrix (array): :math:`B \times M\times M\times 2\times 2` batched array
         vector (array): :math:`B \times N\ times 2` batched vector
         m_modes (list(int)): list of ``M`` modes of the matrix
-        v_outmodes (list(int)): list of ``N`` modes of the vector
-        mlike_0 (bool): whether the matrix is considered to be zero on unspecified modes.
+        v_modes (list(int)): list of ``N`` modes of the vector
+        like_0 (bool): whether the matrix is considered to be zero on unspecified modes.
     Returns:
         array: :math: resulting vector (can have the same modes as the input vector or fewer)
     """
-    final_modes, findices, mindices, vindices, B1, B2, F, M, V = numba_sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
+    sv = set(v_modes)
+    sm = set(m_modes)
+    f_modes = v_modes if not like_0 else [v for v in v_modes if v in m_modes]
+    B1 = matrix.shape[0]
+    B2 = vector.shape[0]
 
-    new_vec = np.zeros((B1*B2, F, 2), dtype=vector.dtype)
+    dvector = np.zeros_like(vector)
+    dmatrix = np.zeros_like(matrix)
+
+    find = [f_modes.index(m) for m in sv.intersection(sm)]
+    mind = [m_modes.index(m) for m in sv.intersection(sm)]
+    vind = [v_modes.index(m) for m in sv.intersection(sm)]
+
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
-            for f in final_modes: # filling the final vector entries
-                if f in m_modes: # we need to multiply only if matrix acts on mode f
-                    for n in final_modes:
-                        if n in m_modes:
-                            new_vec[b,findices[f]] += matrix[b1,mindices[f], mindices[n]] * vector[b2,vindices[n]] + matrix[b1,mindices[f], mindices[n]+M] * vector[b2,vindices[n]+V]
-                            new_vec[b,findices[f]+F] += matrix[b1,mindices[f]+M, mindices[n]] * vector[b2,vindices[n]] + matrix[b1,mindices[f]+M, mindices[n]+M] * vector[b2,vindices[n]+V]
-                elif not mlike_0: # if mode is not acted on we ignore it (mlike_0) or copy it (not mlike_0)
-                    new_vec[b,findices[f]] = vector[b2,vindices[f]]
-                    new_vec[b,findices[f]+F] = vector[b2,V+vindices[f]]
-    return new_vec
+            for i in range(len(intersection)):
+                for j in range(len(intersection)):
+                    # TODO: review order of products and transposes
+                    dvector[b2, vind[j]] += dmatvec[b, find[i]] @ matrix[b1, mind[i], mind[j]]
+                    dmatrix[b1, mind[i], mind[j]] += np.outer(vector[b2, vind[i]], matvec[b, find[j]])
+
+    return dvector, dmatrix
 
 
-@njit
-def numba_sparse_matvec_vjp(dmatvec: Tensor, matrix: Tensor, vector: Tensor, m_modes: Tuple[int], v_modes: Tuple[int], like_0:bool):
-    r"""Numba implementation of the vector-jacobian product of the mode-wise matrix-vector multiplication of
-    a batch of matrices and a batch of vectors in phase space. Assumes inputs are in xxpp ordering.
-    Note that "sparse" is indended in the sense of modes, i.e. the matrix can contain
-    fewer mode than the vector or the vector can contain fewer modes than the matrix.
-    The operation will be performed only on the modes specified in the arguments.
+# @njit
+# def numba_sparse_matmul_data(matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0: bool, m2like_0: bool) -> tuple:
+#     r"""Computes the data required for the mode-wise matrix multiplication of two matrices."""
+#     B1 = matrix1.shape[0]
+#     B2 = matrix2.shape[0]
+#     M = matrix1.shape[-1] // 2
+#     N = matrix2.shape[-1] // 2
 
-    Args:
-        dmatvec (array): :math:`B1\times B2\times 2K` upstream gradient of the cost function with respect to a batch of matrix-vector products
-        matrix (array): :math:`B1\times 2M\times 2M` array
-        vector (array): :math:`B2\times 2N` vector
-        m_modes (list(int)): list of ``M`` modes of the matrix (all elements of the batch are assumed to have the same modes)
-        v_modes (list(int)): list of ``N`` modes of the vector (all elements of the batch are assumed to have the same modes)
-        like_0 (bool): whether matrix is like_0 or not (all elements of the batch are assumed to have the same like_0)
-    Returns:
-        dv (array): :math:`B\times 2N` downstream gradient of the cost function with respect to `vector`
-        dm (array): :math:`B\times 2M\times 2M` downstream gradient of the cost function with respect to `matrix`
-    """
-    final_modes, findices, mindices, vindices, B1, B2, F, M, V = numba_sparse_matvec_data(matrix, vector, m_modes, v_modes, like_0)
+#     mode_union = list(set(m1_modes).union(set(m2_modes)))
+#     mode_intersection = list(set(m1_modes).intersection(set(m2_modes)))
 
-    dm = np.zeros((B1, 2*M, 2*M), dtype=vector.dtype.name) # dL/dm_ik = sum_j dL/dmatvec_j * dmatvec_j/dm_ik = dL/dmatvec_i * v_k because dmatvec_j/dm_ik = delta_ij * v_k
-    dv = np.zeros((B2, 2*V), dtype=vector.dtype.name)   # dL/dv_i = sum_j dL/dmatvec_j * dmatvec_j/dv_i = sum_j dL/dmatvec_j * m_ji
-    for b1 in range(B1):
-        for b2 in range(B2):
-            b = b1*B2 + b2
-            for f in final_modes:
-                if f in m_modes:
-                    for n in final_modes:
-                        dv[b2, vindices[n]] += dmatvec[b, findices[f]] * matrix[b1, mindices[f], mindices[n]] + dmatvec[b, findices[f]+F] * matrix[b1, mindices[f]+M, mindices[n]]
-                        dv[b2, vindices[n]+V] += dmatvec[b, findices[f]] * matrix[b1, mindices[f], mindices[n]+M] + dmatvec[b, findices[f]+F] * matrix[b1, mindices[f]+M, mindices[n]+M]
-                        dm[b1, mindices[f], mindices[n]] += dmatvec[b, findices[f]] * vector[b2, vindices[n]]
-                        dm[b1, mindices[f], mindices[n]+M] += dmatvec[b, findices[f]] * vector[b2, vindices[n]+V]
-                        dm[b1, mindices[f]+M, mindices[n]] += dmatvec[b, findices[f]+F] * vector[b2, vindices[n]]
-                        dm[b1, mindices[f]+M, mindices[n]+M] += dmatvec[b, findices[f]+F] * vector[b2, vindices[n]+V]
-                elif not like_0:
-                    dv[b2, vindices[f]] = dmatvec[b, findices[f]]
-                    dv[b2, vindices[f]+V] = dmatvec[b, findices[f]+F]
-    return dv, dm
+#     if m1like_0:  # final modes are a subset of m1_modes
+#         if m2like_0: # final modes are a subset of m2_modes
+#             final_modes = mode_intersection
+#         else:
+#             final_modes = list(m1_modes)
+#     else:
+#         if m2like_0: # final modes are a subset of m2_modes
+#             final_modes = list(m2_modes)
+#         else:
+#             final_modes = mode_union
 
+#     F = len(final_modes)
 
-@njit
-def numba_sparse_matmul_data(matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0: bool, m2like_0: bool) -> tuple:
-    r"""Computes the data required for the mode-wise matrix multiplication of two matrices."""
-    B1 = matrix1.shape[0]
-    B2 = matrix2.shape[0]
-    M = matrix1.shape[-1] // 2
-    N = matrix2.shape[-1] // 2
+#     # at which index to write a given mode:
+#     findices = {}
+#     for i,m in enumerate(final_modes):
+#         findices[m] = i
+#     ind1 = {}
+#     for i,m in enumerate(m1_modes):
+#         ind1[m] = i
+#     ind2 = {}
+#     for i,m in enumerate(m2_modes):
+#         ind2[m] = i
 
-    mode_union = list(set(m1_modes).union(set(m2_modes)))
-    mode_intersection = list(set(m1_modes).intersection(set(m2_modes)))
+#     return mode_union, mode_intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N
 
-    if m1like_0:  # final modes are a subset of m1_modes
-        if m2like_0: # final modes are a subset of m2_modes
-            final_modes = mode_intersection
-        else:
-            final_modes = list(m1_modes)
-    else:
-        if m2like_0: # final modes are a subset of m2_modes
-            final_modes = list(m2_modes)
-        else:
-            final_modes = mode_union
+# @njit
+# def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0:bool, m2like_0:bool):
+#     r"""Numba implementation of the mode-wise ("sparse") matrix-matrix multiplication `matrix1 @ matrix2`.
+#     Assumes inputs are in xxpp ordering.
 
-    F = len(final_modes)
+#     Args:
+#         matrix1 (array): :math:`B1\times 2M\times 2M` array
+#         matrix2 (array): :math:`B2\times 2N\times 2N` array
+#         m1_modes (list(int)): list of ``M`` modes of the first matrix
+#         m2_modes (list(int)): list of ``N`` modes of the second matrix
+#         m1like_0 (bool): whether first matrix is like_0 or not
+#         m2like_0 (bool): whether second matrix is like_0 or not
+#     Returns:
+#         new_matrix (array): :math:`B_1 B_2 \times 2F\times 2F` array where F is determined by the other arguments
 
-    # at which index to write a given mode:
-    findices = {}
-    for i,m in enumerate(final_modes):
-        findices[m] = i
-    ind1 = {}
-    for i,m in enumerate(m1_modes):
-        ind1[m] = i
-    ind2 = {}
-    for i,m in enumerate(m2_modes):
-        ind2[m] = i
+#     """
+#     union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = numba_sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
+    
+#     new_matrix = np.zeros((B1*B2, 2*F, 2*F), dtype=matrix1.dtype)  # TODO: revisit dtype
+#     for b1 in range(B1):
+#         for b2 in range(B2):
+#             b = b1*B2 + b2
+#             for m in final_modes:
+#                 for n in final_modes:
+#                     if m in m1_modes:
+#                         if n in m2_modes:  # if mode goes through both, add contribution
+#                             for p in intersection:
+#                                 new_matrix[b, findices[m], findices[n]] += matrix1[b1, ind1[m], ind1[p]] * matrix2[b2, ind2[p], ind2[n]] + matrix1[b1, ind1[m], ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]]
+#                                 new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, ind1[m]+M, ind1[p]] * matrix2[b2, ind2[p], ind2[n]] + matrix1[b1, ind1[m]+M, ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]]
+#                                 new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, ind1[m], ind1[p]] * matrix2[b2, ind2[p], ind2[n]+N] + matrix1[b1, ind1[m], ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]+N]
+#                                 new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, ind1[m]+M, ind1[p]] * matrix2[b2, ind2[p], ind2[n]+N] + matrix1[b1, ind1[m]+M, ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]+N]
+#                         elif not m2like_0: # if n is not in m2_modes it contributes only if m2 is not like_0, in which case it copies the mode from m1
+#                             new_matrix[b, findices[m], findices[n]] += matrix1[b1, ind1[m], ind1[n]]
+#                             new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, ind1[m]+M, ind1[n]]
+#                             new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, ind1[m], ind1[n]+M]
+#                             new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, ind1[m]+M, ind1[n]+M]
+#                     elif not m1like_0:  # if m is not in m1_modes it matters only if m1 is not like_0, in which case it copies the mode from m2
+#                         new_matrix[b, findices[m], findices[n]] += matrix2[b2, ind2[m], ind2[n]]
+#                         new_matrix[b, findices[m]+F, findices[n]] += matrix2[b2, ind2[m]+N, ind2[n]]
+#                         new_matrix[b, findices[m], findices[n]+F] += matrix2[b2, ind2[m], ind2[n]+N]
+#                         new_matrix[b, findices[m]+F, findices[n]+F] += matrix2[b2, ind2[m]+N, ind2[n]+N]
+#     return new_matrix
 
-    return mode_union, mode_intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N
-
-@njit
+# @njit
 def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int], m1like_0:bool, m2like_0:bool):
     r"""Numba implementation of the mode-wise ("sparse") matrix-matrix multiplication `matrix1 @ matrix2`.
     Assumes inputs are in xxpp ordering.
@@ -224,35 +206,91 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
         m1like_0 (bool): whether first matrix is like_0 or not
         m2like_0 (bool): whether second matrix is like_0 or not
     Returns:
-        new_matrix (array): :math:`B_1 B_2 \times 2F\times 2F` array where F is determined by the other arguments
+        new_matrix (array): :math:`B_1 B_2 \times F\times F \times 2 \times 2` array where F is determined by the other arguments
 
     """
-    union, intersection, final_modes, findices, ind1, ind2, B1, B2, F, M, N = numba_sparse_matmul_data(matrix1, matrix2, m1_modes, m2_modes, m1like_0, m2like_0)
+    B1 = matrix1.shape[0]
+    B2 = matrix2.shape[0]
+    s1 = set(m1_modes)
+    s2 = set(m2_modes)
+    union = s1.union(s2)
+    intersection = s1.intersection(s2)
+    I = len(intersection)
+    U = len(union)
+    # all cases fall in one of the following (we can always swap m1 and m2):
+    # 1) 00
+    # 2) 01 and 10
+    # 3) 11
+
+    if m1like_0 and m2like_0:
+        # 1) 00
+        if s1.issubset(s2):
+            # 1.1) same as m1
+            return numba_sparse_matmul_subset(matrix1, matrix2, m1_modes, m2_modes)
+        elif s2.issubset(s1):
+            # 1.2) same as m2
+            return np.transpose(numba_sparse_matmul_subset(matrix2, matrix1, m2_modes, m1_modes), (0,2,1,4,3))
+        elif len(intersection) == 0:
+            # 1.3) no mode overlap
+            return np.zeros((B1*B2, 0, 0, 2, 2), dtype=matrix1.dtype)
+        else:
+            # 1.4) some mode overlap
+            output_mat = np.outer(np.ones((1,2,2)),np.identity(I)).transpose((0,3,4,1,2))
+            output_mat = numba_sparse_matmul_subset(output_mat, matrix1, list(intersection), m1_modes)
+            return numba_sparse_matmul_subset(output_mat, matrix2, list(intersection), m2_modes)
+        
+    if not m1like_0 and not m2like_0:
+        # 3) 11
+        if s1.issubset(s2):
+            # 3.1) same as m2
+            return np.transpose(numba_sparse_matmul_subset(matrix2, matrix1, m2_modes, m1_modes), (0,2,1,4,3))
+        elif s2.issubset(s1):
+            # 3.2) same as m1
+            return numba_sparse_matmul_subset(matrix1, matrix2, m1_modes, m2_modes)
+        else:
+            # 3.3) some or no mode overlap
+            output_mat = np.outer(np.ones((1,2,2)),np.identity(U)).transpose((0,3,4,1,2))
+            output_mat = numba_sparse_matmul_subset(output_mat, matrix1, list(union), m1_modes)
+            return numba_sparse_matmul_subset(output_mat, matrix2, list(union), m2_modes)
+
+    if m1like_0 != m2like_0:
+        # 2) 01 and 10
+        # 2.1) same as whichever is like_0
+        if m1like_0:
+            return numba_sparse_matmul_subset(matrix1, matrix2, m1_modes, m2_modes)
+        else:
+            return np.transpose(numba_sparse_matmul_subset(matrix2, matrix1, m2_modes, m1_modes), (0,2,1,4,3))
     
-    new_matrix = np.zeros((B1*B2, 2*F, 2*F), dtype=matrix1.dtype)  # TODO: revisit dtype
+
+# @njit
+def numba_sparse_matmul_subset(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m2_modes: List[int]):
+    r"""Numba implementation of the mode-wise ("sparse") matrix-matrix multiplication `matrix1 @ matrix2` where the
+    result is guaranteed to have the same shape and modes as matrix1, i.e. m1_modes are a subset of m2_modes.
+
+    Args:
+        matrix1 (array): :math:`B1\times M\times M \times 2 \times 2` array
+        matrix2 (array): :math:`B2\times N\times N \times 2 \times 2` array
+        m1_modes (list(int)): list of ``M`` modes of the first matrix
+        m2_modes (list(int)): list of ``N`` modes of the second matrix
+    Returns:
+        new_matrix (array): :math:`B_1 B_2 \times M\times M \times 2 \times 2` array
+    """
+    B1 = matrix1.shape[0]
+    B2 = matrix2.shape[0]
+    matrix1 = np.outer(np.ones((B2,)), matrix1).reshape((B1*B2,)+matrix1.shape[1:])
+    output_mat = np.zeros_like(matrix1)
+
+    m2ind = [m2_modes.index(i) for i in m2_modes]
+
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
-            for m in final_modes:
-                for n in final_modes:
-                    if m in m1_modes:
-                        if n in m2_modes:  # if mode goes through both, add contribution
-                            for p in intersection:
-                                new_matrix[b, findices[m], findices[n]] += matrix1[b1, ind1[m], ind1[p]] * matrix2[b2, ind2[p], ind2[n]] + matrix1[b1, ind1[m], ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]]
-                                new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, ind1[m]+M, ind1[p]] * matrix2[b2, ind2[p], ind2[n]] + matrix1[b1, ind1[m]+M, ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]]
-                                new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, ind1[m], ind1[p]] * matrix2[b2, ind2[p], ind2[n]+N] + matrix1[b1, ind1[m], ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]+N]
-                                new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, ind1[m]+M, ind1[p]] * matrix2[b2, ind2[p], ind2[n]+N] + matrix1[b1, ind1[m]+M, ind1[p]+M] * matrix2[b2, ind2[p]+N, ind2[n]+N]
-                        elif not m2like_0: # if n is not in m2_modes it contributes only if m2 is not like_0, in which case it copies the mode from m1
-                            new_matrix[b, findices[m], findices[n]] += matrix1[b1, ind1[m], ind1[n]]
-                            new_matrix[b, findices[m]+F, findices[n]] += matrix1[b1, ind1[m]+M, ind1[n]]
-                            new_matrix[b, findices[m], findices[n]+F] += matrix1[b1, ind1[m], ind1[n]+M]
-                            new_matrix[b, findices[m]+F, findices[n]+F] += matrix1[b1, ind1[m]+M, ind1[n]+M]
-                    elif not m1like_0:  # if m is not in m1_modes it matters only if m1 is not like_0, in which case it copies the mode from m2
-                        new_matrix[b, findices[m], findices[n]] += matrix2[b2, ind2[m], ind2[n]]
-                        new_matrix[b, findices[m]+F, findices[n]] += matrix2[b2, ind2[m]+N, ind2[n]]
-                        new_matrix[b, findices[m], findices[n]+F] += matrix2[b2, ind2[m], ind2[n]+N]
-                        new_matrix[b, findices[m]+F, findices[n]+F] += matrix2[b2, ind2[m]+N, ind2[n]+N]
-    return new_matrix
+            for i in range(len(m1_modes)):
+                for k in range(len(m1_modes)):
+                    for j in range(len(m1_modes)):
+                        output_mat[b, i, k] += matrix1[b1, i, j] @ matrix2[b2, m2ind[j], m2ind[k]]
+    return output_mat
+
             
 
 def numba_sparse_matmul_vjp(dmatmul: Tensor, matrix1: Tensor, matrix2: Tensor, m1_modes: Tuple[int], m2_modes: Tuple[int], m1like_0:bool, m2like_0:bool):
