@@ -16,7 +16,7 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional, Sequence
 from mrmustard.types import Matrix
 from mrmustard.training import Parametrized
 from mrmustard.lab.abstract import FockMeasurement
@@ -217,10 +217,11 @@ class Heterodyne(Coherent):
     r"""Heterodyne measurement on given modes.
 
     This class is just a thin wrapper around the :class:`Coherent`.
+    If neither ``x`` or ``y`` is provided then values will be sampled.
 
     Args:
-        x (float or List[float]): the x-displacement of the coherent state
-        y (float or List[float]): the y-displacement of the coherent state
+        x (optional float or List[float]): the x-displacement of the coherent state, defaults to ``None``
+        y (optional or List[float]): the y-displacement of the coherent state, defaults to ``None``
         modes (List[int]): the modes of the coherent state
     """
 
@@ -230,11 +231,17 @@ class Heterodyne(Coherent):
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
+        # if no x and y provided, sample the outcome
+        if x is None or y is None:
+            x, y = 0.0, 0.0
+            self.sample = True
+
         super().__init__(x, y, modes=modes)
 
 
 class Homodyne(DisplacedSqueezed):
-    r"""Homodyne measurement on given modes.
+    r"""Homodyne measurement on given modes. If ``result`` is not provided then the value
+    is sampled.
 
     Args:
         quadrature_angle (float or List[float]): measurement quadrature angle
@@ -246,15 +253,21 @@ class Homodyne(DisplacedSqueezed):
     def __init__(
         self,
         quadrature_angle: Union[float, List[float]],
-        result: Union[float, List[float]] = 0.0,
-        modes: List[int] = None,
+        result: Optional[Union[float, List[float]]] = None,
+        modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
         quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
-        result = math.astensor(result, dtype="float64")
-        x = result * math.cos(quadrature_angle)
-        y = result * math.sin(quadrature_angle)
-        r = math.astensor(r, dtype="float64")
+
+        if result is None:
+            self.sample = True
+            x = 0
+            y = 0
+        else:
+            result = math.astensor(result, dtype="float64")
+            x = result * math.cos(quadrature_angle)
+            y = result * math.sin(quadrature_angle)
+
         super().__init__(
             r=r,
             phi=2 * quadrature_angle,
