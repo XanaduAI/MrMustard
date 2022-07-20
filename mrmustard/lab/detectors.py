@@ -217,10 +217,11 @@ class Heterodyne(Coherent):
     r"""Heterodyne measurement on given modes.
 
     This class is just a thin wrapper around the :class:`Coherent`.
+    If neither ``x`` or ``y`` is provided then values will be sampled.
 
     Args:
-        x (float or List[float]): the x-displacement of the coherent state
-        y (float or List[float]): the y-displacement of the coherent state
+        x (optional float or List[float]): the x-displacement of the coherent state, defaults to ``None``
+        y (optional or List[float]): the y-displacement of the coherent state, defaults to ``None``
         modes (List[int]): the modes of the coherent state
     """
 
@@ -230,11 +231,17 @@ class Heterodyne(Coherent):
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
+        # if no x and y provided, sample the outcome
+        if x is None or y is None:
+            x, y = 0.0, 0.0
+            self.sample = True
+
         super().__init__(x, y, modes=modes)
 
 
 class Homodyne(DisplacedSqueezed):
-    r"""Homodyne measurement on given modes.
+    r"""Homodyne measurement on given modes. If ``result`` is not provided then the value
+    is sampled.
 
     Args:
         quadrature_angle (float or List[float]): measurement quadrature angle
