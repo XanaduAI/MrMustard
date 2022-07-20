@@ -334,62 +334,8 @@ class State:
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        if issubclass(other.__class__, State):
-            remaining_modes = [m for m in other.modes if m not in self.modes]
-
-            if self.is_gaussian and other.is_gaussian:
-
-                result, prob, cov, means = gaussian.general_dyne(
-                    other.cov,
-                    other.means,
-                    self.cov,
-                    self.means,
-                    other.indices(self.modes),
-                    settings.HBAR,
-                    getattr(self, "sample", False),
-                )
-
-                if len(remaining_modes) > 0:
-                    return State(
-                        means=means,
-                        cov=cov,
-                        modes=remaining_modes,
-                        _norm=prob if not getattr(self, "_normalize", False) else 1.0,
-                    )
-
-                return result
-
-            # either self or other is not gaussian
-            other_cutoffs = [
-                None if m not in self.modes else other.cutoffs[other.indices(m)]
-                for m in other.modes
-            ]
-            try:
-                out_fock = self._preferred_projection(other, other.indices(self.modes))
-            except AttributeError:
-                # matching other's cutoffs
-                self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-                out_fock = fock.contract_states(
-                    stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                    stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                    a_is_mixed=other.is_mixed,
-                    b_is_mixed=self.is_mixed,
-                    modes=other.indices(self.modes),  # TODO: change arg name to indices
-                    normalize=self._normalize if hasattr(self, "_normalize") else False,
-                )
-
-            if len(remaining_modes) > 0:
-                return (
-                    State(dm=out_fock, modes=remaining_modes)
-                    if other.is_mixed or self.is_mixed
-                    else State(ket=out_fock, modes=remaining_modes)
-                )
-
-            return (
-                fock.math.abs(out_fock) ** 2
-                if other.is_pure and self.is_pure
-                else fock.math.abs(out_fock)
-            )
+        if isinstance(other, State):
+            return self._project_onto_state(other)
 
         try:
             return other.dual(self)
@@ -397,6 +343,74 @@ class State:
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
+
+    def _project_onto_state(self, other: State) -> Union[State, float]:
+
+        # if both states are gaussian
+        if self.is_gaussian and other.is_gaussian:
+            return self._project_onto_gaussian(other)
+
+        # either self or other is not gaussian
+        return self._project_onto_fock(other)
+
+    def _project_onto_fock(self, other):
+        from mrmustard.lab.states import Fock  # pylint: disable=import-outside-toplevel
+
+        remaining_modes = [m for m in other.modes if m not in self.modes]
+
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        if isinstance(other, Fock):
+            out_fock = self._preferred_projection(other, other.indices(self.modes))
+        else:
+            # matching other's cutoffs
+            self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+            out_fock = fock.contract_states(
+                stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                a_is_mixed=other.is_mixed,
+                b_is_mixed=self.is_mixed,
+                modes=other.indices(self.modes),  # TODO: change arg name to indices
+                normalize=self._normalize if hasattr(self, "_normalize") else False,
+            )
+
+        if len(remaining_modes) > 0:
+            return (
+                State(dm=out_fock, modes=remaining_modes)
+                if other.is_mixed or self.is_mixed
+                else State(ket=out_fock, modes=remaining_modes)
+            )
+
+        return (
+            fock.math.abs(out_fock) ** 2
+            if other.is_pure and self.is_pure
+            else fock.math.abs(out_fock)
+        )
+
+    def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+
+        remaining_modes = [m for m in other.modes if m not in self.modes]
+
+        result, prob, cov, means = gaussian.general_dyne(
+            other.cov,
+            other.means,
+            self.cov,
+            self.means,
+            other.indices(self.modes),
+            settings.HBAR,
+            getattr(self, "sample", False),
+        )
+
+        if len(remaining_modes) > 0:
+            return State(
+                means=means,
+                cov=cov,
+                modes=remaining_modes,
+                _norm=prob if not getattr(self, "_normalize", False) else 1.0,
+            )
+
+        return result
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
