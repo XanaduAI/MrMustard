@@ -142,14 +142,8 @@ class TestPNRDetector:
 class TestHomodyneDetector:
     """tests related to homodyne detectors"""
 
-    @pytest.mark.parametrize(
-        "homodyne_args",
-        [
-            {"modes": [1], "quadrature_angle": 0, "result": [0.3]},
-            {"modes": [1], "quadrature_angle": 0, "result": None},
-        ],
-    )
-    def test_homodyne_mode_kwargs(self, homodyne_args):
+    @pytest.mark.parametrize("outcome", [None] + np.random.uniform(-10, 10, size=10).tolist())
+    def test_homodyne_mode_kwargs(self, outcome):
         """Test that S gates and Homodyne mesurements are applied to the correct modes via the `modes` kwarg.
 
         Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
@@ -162,7 +156,7 @@ class TestHomodyneDetector:
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
         initial_state = Vacuum(2) >> S1 >> S2
-        final_state = initial_state << Homodyne(**homodyne_args)
+        final_state = initial_state << Homodyne(result=outcome, quadrature_angle=0.0, modes=[1])
 
         expected_state = Vacuum(1) >> S1
 
@@ -303,7 +297,9 @@ class TestHomodyneDetector:
 class TestHeterodyneDetector:
     """tests related to heterodyne detectors"""
 
-    def test_heterodyne_mode_kwargs(self):
+    @pytest.mark.parametrize("x", [None] + np.random.uniform(-10, 10, size=3).tolist())
+    @pytest.mark.parametrize("y", [None] + np.random.uniform(-10, 10, size=3).tolist())
+    def test_heterodyne_mode_kwargs(self, x, y):
         """Test that S gates and Heterodyne mesurements are applied to the correct modes via the `modes` kwarg.
 
         Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
@@ -316,7 +312,7 @@ class TestHeterodyneDetector:
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
         initial_state = Vacuum(2) >> S1 >> S2
-        final_state = initial_state << Heterodyne(modes=[1])
+        final_state = initial_state << Heterodyne(x, y, modes=[1])
 
         expected_state = Vacuum(1) >> S1
 
@@ -324,8 +320,8 @@ class TestHeterodyneDetector:
 
     @given(
         s=st.floats(min_value=0.0, max_value=10.0),
-        x=st.floats(-10.0, 10.0),
-        y=st.floats(-10.0, 10.0),
+        x=none_or_(st.floats(-10.0, 10.0)),
+        y=none_or_(st.floats(-10.0, 10.0)),
         d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
     )
     def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
@@ -335,20 +331,26 @@ class TestHeterodyneDetector:
         tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
         heterodyne = Heterodyne(modes=[0], x=x, y=y)
         remaining_state = tmsv << heterodyne[0]
+
+        # assert expected covariance
         cov = hbar / 2 * np.array([[1, 0], [0, 1]])
         assert np.allclose(remaining_state.cov, cov)
-        xb, xa, pb, pa = d
-        means = (
-            np.array(
-                [
-                    xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
-                    pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
-                ]
+
+        # assert expected means vector, not tested when x or y is None
+        # because we cannot access the sampled outcome value
+        if (x is not None) and (y is not None):
+            xb, xa, pb, pa = d
+            means = (
+                np.array(
+                    [
+                        xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
+                        pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
+                    ]
+                )
+                * np.sqrt(2 * hbar)
+                / (1 + s)
             )
-            * np.sqrt(2 * hbar)
-            / (1 + s)
-        )
-        assert np.allclose(remaining_state.means, means, atol=1e-5)
+            assert np.allclose(remaining_state.means, means, atol=1e-5)
 
 
 class TestNormalization:
