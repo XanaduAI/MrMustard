@@ -243,10 +243,11 @@ def numba_sparse_matmul(matrix1: Tensor, matrix2: Tensor, m1_modes: List[int], m
         # 3) 11
         if s1.issubset(s2):
             # 3.1) same as m2
-            return np.transpose(numba_sparse_matmul_subset(matrix2, matrix1, m2_modes, m1_modes), (0,2,1,4,3))
+            print(f'11 and {s1} subset of {s2}')
+            return numba_sparse_matmul_subset(matrix1, matrix2, m1_modes, m2_modes)
         elif s2.issubset(s1):
             # 3.2) same as m1
-            return numba_sparse_matmul_subset(matrix1, matrix2, m1_modes, m2_modes)
+            return np.transpose(numba_sparse_matmul_subset(matrix2, matrix1, m2_modes, m1_modes), (0,2,1,4,3))
         else:
             # 3.3) some or no mode overlap
             output_mat = np.outer(np.ones((1,2,2)),np.identity(U)).transpose((0,3,4,1,2))
@@ -278,15 +279,18 @@ def numba_sparse_matmul_subset(matrix1: Tensor, matrix2: Tensor, m1_modes: List[
     B1 = matrix1.shape[0]
     B2 = matrix2.shape[0]
     matrix1 = np.outer(np.ones((B2,)), matrix1).reshape((B1*B2,)+matrix1.shape[1:])
-    output_mat = np.zeros_like(matrix1)
+    output_mat = matrix1.copy()
+    print(output_mat.shape)
+    Z = np.zeros((2,2), dtype=matrix1.dtype)
 
-    m2ind = [m2_modes.index(i) for i in m2_modes]
+    m2ind = [m2_modes.index(i) for i in m1_modes]
 
     for b1 in range(B1):
         for b2 in range(B2):
             b = b1*B2 + b2
             for i in range(len(m1_modes)):
                 for k in range(len(m1_modes)):
+                    output_mat[b, i, k] = Z
                     for j in range(len(m1_modes)):
                         output_mat[b, i, k] += matrix1[b1, i, j] @ matrix2[b2, m2ind[j], m2ind[k]]
     return output_mat
