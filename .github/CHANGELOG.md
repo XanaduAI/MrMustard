@@ -55,6 +55,10 @@
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
 
+* We now use `_hermite_multidimensional_renorm` and `_grad_hermite_multidimensional_renorm` from 
+  thewalrus, bypassing the logic in `hermite_multidimensional` to eventually call those functions.
+  [(#145)](https://github.com/XanaduAI/MrMustard/pull/145)
+
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
