@@ -16,7 +16,7 @@
 
 import numpy as np
 import tensorflow as tf
-from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
+from thewalrus._hermite_multidimensional import _hermite_multidimensional_renorm, _grad_hermite_multidimensional_renorm
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -338,21 +338,24 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(
-            hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype
-        )
+        G = np.zeros(shape, dtype=np.complex128)
+        G[(0,)*len(shape)] = C
+        G = tf.numpy_function(_hermite_multidimensional_renorm, [A, B, G], G.dtype)
 
-        def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
+        def grad(dLdG): # NOTE: dLdG is the derivative of L with respect to poly *conjugate*
+            dG_dC = np.array(G / C, dtype=np.complex128)
+            dG_dA = np.zeros(G.shape + A.shape, dtype=np.complex128)
+            dG_dB = np.zeros(G.shape + B.shape, dtype=np.complex128)
+            dG_dA, dG_dB = tf.numpy_function(
+                _grad_hermite_multidimensional_renorm, [A, B, G, dG_dA, dG_dB], [G.dtype] * 2
             )
-            ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            return dLdA, dLdB, dLdC
+            ax = tuple(range(dLdG.ndim))
+            dLdA = self.sum(dLdG[..., None, None] * self.conj(dG_dA), axes=ax)
+            dLdB = self.sum(dLdG[..., None] * self.conj(dG_dB), axes=ax)
+            dLdC = self.sum(dLdG * self.conj(dG_dC), axes=ax)
+            return dLdA, dLdB, dLdC  # NOTE: dLdA, dLdB, dLdC are the derivatives of L with respect to A, B, C *conjugate*
 
-        return poly, grad
+        return G, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
