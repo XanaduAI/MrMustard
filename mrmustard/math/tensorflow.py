@@ -16,7 +16,10 @@
 
 import numpy as np
 import tensorflow as tf
-from thewalrus._hermite_multidimensional import _hermite_multidimensional_renorm, _grad_hermite_multidimensional_renorm
+from thewalrus._hermite_multidimensional import (
+    _hermite_multidimensional_renorm,
+    _grad_hermite_multidimensional_renorm,
+)
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -339,10 +342,10 @@ class TFMath(MathInterface):
             The renormalized Hermite polynomial of given shape.
         """
         G = np.zeros(shape, dtype=np.complex128)
-        G[(0,)*len(shape)] = C
+        G[(0,) * len(shape)] = C
         G = tf.numpy_function(_hermite_multidimensional_renorm, [A, B, G], G.dtype)
 
-        def grad(dLdG): # NOTE: dLdG is the derivative of L with respect to poly *conjugate*
+        def grad(dLdG):  # NOTE: dLdG is the derivative of L with respect to poly *conjugate*
             dG_dC = np.array(G / C, dtype=np.complex128)
             dG_dA = np.zeros(G.shape + A.shape, dtype=np.complex128)
             dG_dB = np.zeros(G.shape + B.shape, dtype=np.complex128)
@@ -353,7 +356,11 @@ class TFMath(MathInterface):
             dLdA = self.sum(dLdG[..., None, None] * self.conj(dG_dA), axes=ax)
             dLdB = self.sum(dLdG[..., None] * self.conj(dG_dB), axes=ax)
             dLdC = self.sum(dLdG * self.conj(dG_dC), axes=ax)
-            return dLdA, dLdB, dLdC  # NOTE: dLdA, dLdB, dLdC are the derivatives of L with respect to A, B, C *conjugate*
+            return (
+                dLdA,
+                dLdB,
+                dLdC,
+            )  # NOTE: dLdA, dLdB, dLdC are the derivatives of L with respect to A, B, C *conjugate*
 
         return G, grad
 
