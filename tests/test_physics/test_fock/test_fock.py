@@ -164,7 +164,7 @@ def test_dm_to_ket(state):
 
     dm_reconstructed = ket_to_dm(ket)
     # check ket leads to same dm
-    assert np.allclose(dm, dm_reconstructed, atol=1e-17)
+    assert np.allclose(dm, dm_reconstructed, atol=1e-15)
 
 
 def test_dm_to_ket_error():
