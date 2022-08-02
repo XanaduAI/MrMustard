@@ -147,8 +147,8 @@ def test_density_matrix(num_modes):
     "state",
     [
         Vacuum(num_modes=2),
-        Fock([4,3], modes=[0,1]),
-        Coherent(x=[0.1,0.2], y=[-0.4,0.4], cutoffs=[25]),
+        Fock([4, 3], modes=[0, 1]),
+        Coherent(x=[0.1, 0.2], y=[-0.4, 0.4], cutoffs=[25]),
         Gaussian(num_modes=2, cutoffs=[35]),
     ],
 )
