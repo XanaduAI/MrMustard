@@ -147,9 +147,9 @@ def test_density_matrix(num_modes):
     "state",
     [
         Vacuum(num_modes=2),
-        Fock(4),
-        Coherent(x=0.1, y=-0.4, cutoffs=[25]),
-        Gaussian(num_modes=1, cutoffs=[35]),
+        Fock([4,3], modes=[0,1]),
+        Coherent(x=[0.1,0.2], y=[-0.4,0.4], cutoffs=[25]),
+        Gaussian(num_modes=2, cutoffs=[35]),
     ],
 )
 def test_dm_to_ket(state):
@@ -164,7 +164,7 @@ def test_dm_to_ket(state):
 
     dm_reconstructed = ket_to_dm(ket)
     # check ket leads to same dm
-    assert np.allclose(dm, dm_reconstructed)
+    assert np.allclose(dm, dm_reconstructed, atol=1e-17)
 
 
 def test_dm_to_ket_error():
