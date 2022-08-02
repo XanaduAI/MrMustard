@@ -149,7 +149,7 @@ def test_density_matrix(num_modes):
         Vacuum(num_modes=2),
         Fock(4),
         Coherent(x=0.1, y=-0.4, cutoffs=[25]),
-        Gaussian(num_modes=2, cutoffs=[35]),
+        Gaussian(num_modes=1, cutoffs=[35]),
     ],
 )
 def test_dm_to_ket(state):
