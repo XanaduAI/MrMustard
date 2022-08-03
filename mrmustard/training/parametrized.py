@@ -18,7 +18,7 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from typing import Sequence, List, Generator, Iterable, Any
+from typing import Sequence, List, Generator, Any
 from mrmustard.math import Math
 from .parameter import create_parameter, Trainable, Constant, Parameter
 
@@ -79,7 +79,7 @@ def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
     """
 
     for obj in object_:
-        if isinstance(obj, Iterable):
+        if isinstance(obj, Sequence):  # pylint: disable=isinstance-second-argument-not-valid-type
             yield from _traverse_parametrized(obj, extract_type)
         elif isinstance(obj, Parametrized):
             yield from _traverse_parametrized(obj.__dict__.values(), extract_type)

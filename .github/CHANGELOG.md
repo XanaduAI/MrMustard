@@ -44,12 +44,13 @@
 
 * The Parametrized and Training classes have been refactored. The new training module has been added
   and with it the new Parameter class: now trainable tensors are wrapped in an instance of Parameter.
-  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133)
-  
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
+  patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
+
 * The string representations of the `Circuit` and `Transformation` objects have been improved:
   the `Circuit.__repr__` method now produces a string that can be used to generate a circuit in
   a identical state (same gates and parameters), the `Transformation.__str__` and objects
-  inheriting from it now prints the name, memory location of the object as well as the modes 
+  inheriting from it now prints the name, memory location of the object as well as the modes
   of the circuit in which the transformation is acting on. The `_markdown_repr_` has been implemented
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
