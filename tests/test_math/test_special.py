@@ -20,14 +20,13 @@ from mrmustard.math import Math
 
 math = Math()
 
+
 def test_reduction_to_renorm_physicists_polys():
     """Tests that the math interface provides the expected renormalized Hermite polys"""
     x = np.arange(-1, 1, 0.1)
     init = 1
     n_max = 5
     A = np.ones([init, init], dtype=complex)
-    vals = np.array(
-        [math.hermite(2 * A, np.array([x0], dtype=complex), 1, n_max) for x0 in x]
-    ).T
+    vals = np.array([math.hermite(2 * A, np.array([x0], dtype=complex), 1, n_max) for x0 in x]).T
     expected = np.array([eval_hermite(i, x) for i in range(len(vals))])
     assert np.allclose(vals, expected)

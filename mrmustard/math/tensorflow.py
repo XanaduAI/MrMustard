@@ -355,9 +355,7 @@ class TFMath(MathInterface):
         return poly, grad
 
     @tf.custom_gradient
-    def hermite(
-        self, R: tf.Tensor, y: tf.Tensor, C: tf.Tensor, cutoff: Tuple[int]
-    ) -> tf.Tensor:
+    def hermite(self, R: tf.Tensor, y: tf.Tensor, C: tf.Tensor, cutoff: Tuple[int]) -> tf.Tensor:
         r"""Multidimensional Hermite polynomials.
 
         Args:
@@ -369,9 +367,7 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(
-            hermite_multidimensional, [R, cutoff, y, C], R.dtype
-        )
+        poly = tf.numpy_function(hermite_multidimensional, [R, cutoff, y, C], R.dtype)
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
