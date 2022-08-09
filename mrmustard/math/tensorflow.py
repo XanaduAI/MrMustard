@@ -354,6 +354,37 @@ class TFMath(MathInterface):
 
         return poly, grad
 
+    @tf.custom_gradient
+    def hermite(
+        self, R: tf.Tensor, y: tf.Tensor, C: tf.Tensor, cutoff: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Multidimensional Hermite polynomials.
+
+        Args:
+            R (array): square matrix parametrizing the Hermite polynomial family
+            y (array): vector argument of the Hermite polynomial
+            C (complex): first value of the Hermite polynomials
+            cutoff (int): The shape of the final tensor.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        poly = tf.numpy_function(
+            hermite_multidimensional, [R, cutoff, y, C], R.dtype
+        )
+
+        def grad(dLdpoly):
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional, [poly, R, y, C], [poly.dtype] * 3
+            )
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly, grad
+
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a matrix."""
