@@ -592,12 +592,9 @@ def general_dyne(
         outcome = math.cast(proj_means, b.dtype)
     else:
         # means vector of the state being projected onto should be sampled
-        mvn = tfp.distributions.MultivariateNormalTriL(
-            loc=b, scale_tril=tf.linalg.cholesky(B + proj_cov)
-        )
+        mvn = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(B + proj_cov))
         # sample
-        s = tfp.distributions.Sample(mvn)
-        outcome = s.sample(dtype=b.dtype)
+        outcome = mvn.sample(dtype=b.dtype)
 
     # calculate conditional output state of unmeasured modes and the probability
     inv = math.inv(B + proj_cov)

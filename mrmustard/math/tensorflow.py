@@ -16,6 +16,7 @@
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from mrmustard.math.autocast import Autocast
@@ -293,6 +294,18 @@ class TFMath(MathInterface):
 
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
+
+    def map_fn(self, func, elements):
+        return tf.map_fn(func, elements)
+
+    def cholesky(self, input: Tensor):
+        return tf.linalg.cholesky(input)
+
+    def Categorical(self, probs: Tensor, name: str):
+        return tfp.distributions.Categorical(probs=probs, name=name)
+
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions

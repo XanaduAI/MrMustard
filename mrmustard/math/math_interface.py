@@ -803,6 +803,59 @@ class MathInterface(ABC):
             array: array of zeros
         """
 
+    @abstractmethod
+    def map_fn(self, func, elements: Tensor) -> Tensor:
+        """Transforms elems by applying fn to each element unstacked on axis 0.
+
+        Args:
+            func (func): The callable to be performed. It accepts one argument,
+                which will have the same (possibly nested) structure as elems.
+            elements (Tensor): A tensor or (possibly nested) sequence of tensors,
+                each of which will be unstacked along their first dimension.
+                ``func`` will be applied to the nested sequence of the resulting slices.
+
+        Returns:
+            Tensor: applied ``func`` on ``elements``
+        """
+
+    @abstractmethod
+    def cholesky(self, input: Tensor) -> Tensor:
+        """Computes the Cholesky decomposition of square matrices.
+
+        Args:
+            input (Tensor)
+
+        Returns:
+            Tensor: tensor with the same type as input
+        """
+
+    @abstractmethod
+    def Categorical(probs: Tensor, name: str):
+        """Categorical distribution over integers.
+
+        Args:
+            probs (Tensor): tensor representing the probabilities of a set of Categorical
+                distributions.
+            name (str): name prefixed to operations created by this class
+
+        Returns:
+            tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
+        """
+
+    @abstractmethod
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
+        vector (aka "mu") and a (batch of) k x k scale matrix; covariance = scale @ scale.T
+        where @ denotes matrix-multiplication.
+
+        Args:
+            loc (Tensor): if this is set to None, loc is implicitly 0
+            scale_tril: lower-triangular Tensor with non-zero diagonal elements
+
+        Returns:
+            tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
+        """
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

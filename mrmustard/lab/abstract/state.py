@@ -20,8 +20,6 @@ from typing import TYPE_CHECKING
 import warnings
 import numpy as np
 from scipy.special import factorial
-import tensorflow as tf
-import tensorflow_probability as tfp
 
 from mrmustard.types import (
     Matrix,
@@ -504,10 +502,10 @@ class State:
         omega_over_hbar = 1 / settings.HBAR
         q_tensor = math.new_constant(np.linspace(-q_mag, q_mag, num_bins), "q_tensor")
         x = np.sqrt(omega_over_hbar) * q_tensor
-        hermite_polys = tf.expand_dims(
-            tf.map_fn(f_hermite_polys, x), axis=-1
+        hermite_polys = math.expand_dims(
+            math.map_fn(f_hermite_polys, x), axis=-1
         )  # polys are x-symmetric? -> exploit
-        hermite_matrix = tf.matmul(hermite_polys, hermite_polys, transpose_b=True)
+        hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
 
         prefactor = np.empty_like(reduced_state.dm())
         for idx, _ in np.ndenumerate(prefactor):
@@ -516,22 +514,22 @@ class State:
 
         # build terms in the sum: `rho_{n,m} \psi_n(x) \psi_m(x)`
         sum_terms = (
-            tf.expand_dims(prefactor, 0)
-            * tf.expand_dims(reduced_state.dm(), 0)
-            * tf.cast(hermite_matrix, tf.complex128)
+            math.expand_dims(prefactor, 0)
+            * math.expand_dims(reduced_state.dm(), 0)
+            * math.cast(hermite_matrix, "complex128")
         )
 
         # calculate the pdf
         rho_dist = (
-            tf.cast(tf.reduce_sum(sum_terms, axis=[1, 2]), tf.float64)
+            math.cast(math.sum(sum_terms, axes=[1, 2]), "float64")
             * (omega_over_hbar / np.pi) ** 0.5
-            * tf.exp(-(x**2))
+            * math.exp(-(x**2))
         )
-        pdf = tfp.distributions.Categorical(probs=rho_dist, name="rho_dist")
+        pdf = math.Categorical(probs=rho_dist, name="rho_dist")
 
         # draw sample from the distribution
         sample_idx = pdf.sample()
-        homodyne_sample = tf.gather(q_tensor, sample_idx)
+        homodyne_sample = math.gather(q_tensor, sample_idx)
 
         # create "projector state" to calculate the conditional output state
         projector_state = DisplacedSqueezed(
