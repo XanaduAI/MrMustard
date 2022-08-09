@@ -15,7 +15,7 @@
 """Test special functions of the math backend"""
 
 import numpy as np
-from scipy.special import eval_hermitenorm, eval_hermite, factorial
+from scipy.special import eval_hermite
 from mrmustard.math import Math
 
 math = Math()

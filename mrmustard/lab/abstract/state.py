@@ -38,6 +38,7 @@ from mrmustard.types import (
 from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
+from mrmustard.lab import Rgate, DisplacedSqueezed
 from mrmustard.math import Math
 
 if TYPE_CHECKING:
@@ -452,7 +453,7 @@ class State:
         return result
 
     def _sample_homodyne_fock(self, other: State) -> Tuple[float, State]:
-        """Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
+        r"""Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
         where `\rho` is the reduced density matrix of the ``other`` state on the
         measured mode.
 
@@ -476,14 +477,15 @@ class State:
         Returns:
             tuple(float, State): homodyne outcome and projector state
         """
-        from mrmustard.lab import Rgate, DisplacedSqueezed
 
         # create reduced state of mode to be measured on the homodyne basis
         quadrature_angle = self.phi.value / 2  # TODO: check if we do need to divide by 2
         reduced_state = other.get_modes(self.modes) >> Rgate(-quadrature_angle)
 
         R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
-        f_hermite_polys = lambda x: math.hermite(R, math.astensor([x]), 1, reduced_state.cutoffs[0])
+
+        def f_hermite_polys(x):
+            return math.hermite(R, math.astensor([x]), 1, reduced_state.cutoffs[0])
 
         # pdf reconstruction parameters
         num_bins = int(1e3)  # TODO: make kwarg?

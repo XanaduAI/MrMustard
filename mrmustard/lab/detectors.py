@@ -16,7 +16,7 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional, Sequence
+from typing import List, Tuple, Union, Optional
 from mrmustard.types import Matrix
 from mrmustard.training import Parametrized
 from mrmustard.lab.abstract import FockMeasurement
