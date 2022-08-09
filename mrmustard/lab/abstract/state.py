@@ -348,6 +348,8 @@ class State:
             ) from e
 
     def _project_onto_state(self, other: State) -> Union[State, float]:
+        """If states are gaussian use generaldyne measurement, else use
+        the states' Fock representation."""
 
         # if both states are gaussian
         if self.is_gaussian and other.is_gaussian:
@@ -357,17 +359,27 @@ class State:
         return self._project_onto_fock(other)
 
     def _project_onto_fock(self, other: State) -> Union[State, float]:
+        """Returns the post-measurement state of the projection between two non-Gaussian
+        states on the remaining modes or the probability of the result. When doing homodyne sampling,
+        returns the the post-measurement state or the measument outcome if no modes remain.
+
+        Args:
+            other (State): state being projected onto self
+
+        Returns:
+            State or float: returns the output conditional state on the remaining modes
+                or the outcome of the homodyne measurement.
+        """
         # pylint: disable=import-outside-toplevel
         # imports for typechecking only
-        from mrmustard.lab.states import Fock
         from mrmustard.lab.detectors import Homodyne
-        from mrmustard.lab.states import DisplacedSqueezed
 
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
         ]
 
         projector_state = self  # state_m is the state used to project onto
+        outcome = None
         if isinstance(self, Homodyne) and getattr(self, "sample", False):
             # build pdf and sample homodyne outcome
             outcome, projector_state = self._sample_homodyne_fock(other)
@@ -396,13 +408,26 @@ class State:
                 else State(ket=out_fock, modes=remaining_modes)
             )
 
-        return (
+        # if outcome is defined (when doing homodyne sampling) returns
+        # the outcome else the value of the contaction
+        result = outcome or (
             fock.math.abs(out_fock) ** 2
             if other.is_pure and self.is_pure
             else fock.math.abs(out_fock)
         )
+        return result
 
     def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+        """Returns the result of a generaldyne measurement given that states ``self`` and
+        ``other`` are gaussian.
+
+        Args:
+            other (State): gaussian state being projected onto self
+
+        Returns:
+            State or float: returns the output conditional state on the remaining modes
+                or the outcome of the generaldyne measurement.
+        """
 
         remaining_modes = [m for m in other.modes if m not in self.modes]
 
@@ -427,6 +452,30 @@ class State:
         return result
 
     def _sample_homodyne_fock(self, other: State) -> Tuple[float, State]:
+        """Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
+        where `\rho` is the reduced density matrix of the ``other`` state on the
+        measured mode.
+
+        Here the following quadrature wavefunction for the Fock states are used:
+
+        .. math::
+
+            \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
+                \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
+
+        where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial. Hence, the
+        probability density function is
+
+        .. math ::
+
+            p(\rho|x) = \tr [ \rho |x><x| ] = \sum_{n,m} \rho_{n,m} \psi_n(x) \psi_m(x)
+
+        Args:
+            other (State): state used to build the pdf
+
+        Returns:
+            tuple(float, State): homodyne outcome and projector state
+        """
         from mrmustard.lab import Rgate, DisplacedSqueezed
 
         # create reduced state of mode to be measured on the homodyne basis
@@ -436,8 +485,11 @@ class State:
         R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
         f_hermite_polys = lambda x: math.hermite(R, math.astensor([x]), 1, reduced_state.cutoffs[0])
 
+        # pdf reconstruction parameters
         num_bins = int(1e3)  # TODO: make kwarg?
         q_mag = 7  # TODO: make kwarg?
+
+        # build `\psi_n(x) \psi_m(x)` terms
         omega_over_hbar = 1 / settings.HBAR
         q_tensor = math.new_constant(np.linspace(-q_mag, q_mag, num_bins), "q_tensor")
         x = np.sqrt(omega_over_hbar) * q_tensor
@@ -450,12 +502,15 @@ class State:
         for idx, _ in np.ndenumerate(prefactor):
             n, m = idx[0], idx[1]
             prefactor[idx] = 1 / (np.sqrt(2 ** (n + m) * factorial(n) * factorial(m)))
+
+        # build terms in the sum: `rho_{n,m} \psi_n(x) \psi_m(x)`
         sum_terms = (
             tf.expand_dims(prefactor, 0)
             * tf.expand_dims(reduced_state.dm(), 0)
             * tf.cast(hermite_matrix, tf.complex128)
         )
 
+        # calculate the pdf
         rho_dist = (
             tf.cast(tf.reduce_sum(sum_terms, axis=[1, 2]), tf.float64)
             * (omega_over_hbar / np.pi) ** 0.5
@@ -463,9 +518,11 @@ class State:
         )
         pdf = tfp.distributions.Categorical(probs=rho_dist, name="rho_dist")
 
+        # draw sample from the distribution
         sample_idx = pdf.sample()
         homodyne_sample = tf.gather(q_tensor, sample_idx)
 
+        # create "projector state" to help calculate the conditional output state
         projector_state = DisplacedSqueezed(
             r=settings.HOMODYNE_SQUEEZING, phi=0, x=homodyne_sample, y=0, modes=self.modes
         ) >> Rgate(quadrature_angle)
