@@ -830,7 +830,7 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def Categorical(probs: Tensor, name: str):
+    def Categorical(self, probs: Tensor, name: str):
         """Categorical distribution over integers.
 
         Args:

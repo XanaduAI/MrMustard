@@ -16,8 +16,6 @@
 This module contains functions for performing calculations on Gaussian states.
 """
 
-import tensorflow as tf
-import tensorflow_probability as tfp
 from typing import Tuple, Union, Sequence, Any
 from numpy import pi
 from thewalrus.quantum import is_pure_cov

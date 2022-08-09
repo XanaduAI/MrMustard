@@ -176,7 +176,7 @@ def test_get_single_mode():
 def test_get_single_mode_fail():
     """Test get_modes leaves a single-mode state untouched."""
     a = Gaussian(1)[1]
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         a.get_modes([0])
 
 
