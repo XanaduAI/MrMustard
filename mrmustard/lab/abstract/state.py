@@ -38,7 +38,6 @@ from mrmustard.types import (
 from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
-from mrmustard.lab import Rgate, DisplacedSqueezed
 from mrmustard.math import Math
 
 if TYPE_CHECKING:
@@ -477,6 +476,8 @@ class State:
         Returns:
             tuple(float, State): homodyne outcome and projector state
         """
+        # pylint: disable=import-outside-toplevel
+        from mrmustard.lab import Rgate, DisplacedSqueezed
 
         # create reduced state of mode to be measured on the homodyne basis
         quadrature_angle = self.phi.value / 2  # TODO: check if we do need to divide by 2
