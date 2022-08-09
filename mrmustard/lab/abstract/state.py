@@ -428,6 +428,9 @@ class State:
             State or float: returns the output conditional state on the remaining modes
                 or the outcome of the generaldyne measurement.
         """
+        # pylint: disable=import-outside-toplevel
+        # imports for typechecking only
+        from mrmustard.lab.detectors import Homodyne
 
         remaining_modes = [m for m in other.modes if m not in self.modes]
 
@@ -448,6 +451,11 @@ class State:
                 modes=remaining_modes,
                 _norm=prob if not getattr(self, "_normalize", False) else 1.0,
             )
+
+        # generaldyne measurements outcomes have two values, if doing homodyne measurement
+        # then return only the q-component of the outcome
+        if isinstance(self, Homodyne):
+            result = result[0]
 
         return result
 
@@ -481,7 +489,7 @@ class State:
 
         # create reduced state of mode to be measured on the homodyne basis
         quadrature_angle = self.phi.value / 2  # TODO: check if we do need to divide by 2
-        reduced_state = other.get_modes(self.modes) >> Rgate(-quadrature_angle)
+        reduced_state = other.get_modes(self.modes) >> Rgate(-quadrature_angle, modes=self.modes)
 
         R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
 
@@ -489,7 +497,7 @@ class State:
             return math.hermite(R, math.astensor([x]), 1, reduced_state.cutoffs[0])
 
         # pdf reconstruction parameters
-        num_bins = int(1e3)  # TODO: make kwarg?
+        num_bins = int(1e2)  # TODO: make kwarg?
         q_mag = 7  # TODO: make kwarg?
 
         # build `\psi_n(x) \psi_m(x)` terms
@@ -525,10 +533,10 @@ class State:
         sample_idx = pdf.sample()
         homodyne_sample = tf.gather(q_tensor, sample_idx)
 
-        # create "projector state" to help calculate the conditional output state
+        # create "projector state" to calculate the conditional output state
         projector_state = DisplacedSqueezed(
-            r=settings.HOMODYNE_SQUEEZING, phi=0, x=homodyne_sample, y=0, modes=self.modes
-        ) >> Rgate(quadrature_angle)
+            r=settings.HOMODYNE_SQUEEZING, phi=0, x=homodyne_sample, y=0, modes=reduced_state.modes
+        ) >> Rgate(quadrature_angle, modes=reduced_state.modes)
 
         return homodyne_sample, projector_state
 
@@ -591,6 +599,14 @@ class State:
             item = list(item)
         else:
             raise TypeError("item must be int or iterable")
+
+        if item == self.modes:
+            return self
+
+        if item not in self.modes:
+            raise ValueError(
+                f"Failed to request modes {item} for state {self} on modes {self.modes}."
+            )
 
         if self.is_gaussian:
             cov, _, _ = gaussian.partition_cov(self.cov, item)

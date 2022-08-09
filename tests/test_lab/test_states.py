@@ -167,6 +167,19 @@ def test_get_modes():
     assert b == (a & b).get_modes([2, 3])
 
 
+def test_get_single_mode():
+    """Test get_modes leaves a single-mode state untouched."""
+    a = Gaussian(1)[1]
+    assert a == a.get_modes([1])
+
+
+def test_get_single_mode_fail():
+    """Test get_modes leaves a single-mode state untouched."""
+    a = Gaussian(1)[1]
+    with pytest.raises(ValueError) as excinfo:
+        a.get_modes([0])
+
+
 @given(m=st.integers(0, 3))
 def test_modes_after_projection(m):
     """Test number of modes is correct after single projection."""

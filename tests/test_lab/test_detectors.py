@@ -269,17 +269,25 @@ class TestHomodyneDetector:
     NUM_STDS = 10.0
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 
-    def test_sampling_mean_and_std_vacuum(self):
+    @pytest.mark.parametrize("gaussian", [True, False])
+    def test_sampling_mean_and_std_vacuum(self, gaussian):
         """Tests that the mean and standard deviation estimates of many homodyne
         measurements are in agreement with the expected values for the
         vacuum state"""
 
-        results = np.empty((self.N_MEAS, 2))
-        for idx in range(self.N_MEAS):
-            results[idx, :] = Vacuum(1) << Homodyne(0.0, result=None, modes=[0])
+        if gaussian:
+            state = Vacuum(1)
+        else:
+            state = Fock([0], cutoffs=[4])
 
-        assert np.allclose(results.mean(axis=0)[0], 0.0, atol=self.std_10, rtol=0)
-        assert np.allclose(results.std(axis=0)[0], 1.0, atol=self.std_10, rtol=0)
+        measurement = Homodyne(0.0, result=None, modes=[0])
+        results = []
+        for _ in range(self.N_MEAS):
+            results.append(state << measurement)
+        results = np.asarray(results)
+
+        assert np.allclose(results.mean(axis=0), 0.0, atol=self.std_10, rtol=0)
+        assert np.allclose(results.std(axis=0), 1.0, atol=self.std_10, rtol=0)
 
     def test_sampling_mean_coherent(self):
         """Tests that the mean and standard deviation estimates of many homodyne
