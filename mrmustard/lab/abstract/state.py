@@ -19,6 +19,9 @@ from typing import TYPE_CHECKING
 
 import warnings
 import numpy as np
+from scipy.special import factorial
+import tensorflow as tf
+import tensorflow_probability as tfp
 
 from mrmustard.types import (
     Matrix,
@@ -353,28 +356,37 @@ class State:
         # either self or other is not gaussian
         return self._project_onto_fock(other)
 
-    def _project_onto_fock(self, other):
-        from mrmustard.lab.states import Fock  # pylint: disable=import-outside-toplevel
-
-        remaining_modes = [m for m in other.modes if m not in self.modes]
+    def _project_onto_fock(self, other: State) -> Union[State, float]:
+        # pylint: disable=import-outside-toplevel
+        # imports for typechecking only
+        from mrmustard.lab.states import Fock
+        from mrmustard.lab.detectors import Homodyne
+        from mrmustard.lab.states import DisplacedSqueezed
 
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
         ]
-        if isinstance(other, Fock):
+
+        projector_state = self     # state_m is the state used to project onto
+        if isinstance(self, Homodyne) and getattr(self, "sample", False):
+            # build pdf and sample homodyne outcome
+            outcome, projector_state = self._sample_homodyne_fock(other)
+
+        try:
             out_fock = self._preferred_projection(other, other.indices(self.modes))
-        else:
-            # matching other's cutoffs
+        except AttributeError:
+        # matching other's cutoffs
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
             out_fock = fock.contract_states(
                 stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                stateB=projector_state.ket(self_cutoffs) if projector_state.is_pure else projector_state.dm(self_cutoffs),
                 a_is_mixed=other.is_mixed,
-                b_is_mixed=self.is_mixed,
+                b_is_mixed=projector_state.is_mixed,
                 modes=other.indices(self.modes),  # TODO: change arg name to indices
                 normalize=self._normalize if hasattr(self, "_normalize") else False,
             )
 
+        remaining_modes = [m for m in other.modes if m not in self.modes]
         if len(remaining_modes) > 0:
             return (
                 State(dm=out_fock, modes=remaining_modes)
@@ -411,6 +423,43 @@ class State:
             )
 
         return result
+
+    def _sample_homodyne_fock(self, other: State) -> Tuple[float, State]:
+        from mrmustard.lab import Rgate, DisplacedSqueezed
+        # create reduced state of mode to be measured on the homodyne basis
+        quadrature_angle = self.phi.value / 2  # TODO: check if we do need to divide by 2
+        reduced_state = other.get_modes(self.modes) >> Rgate(-quadrature_angle)
+
+        R = math.astensor(2 * np.ones([1, 1])) # to get the physicist polys
+        f_hermite_polys = lambda x: math.hermite(R, math.astensor([x]), 1, reduced_state.cutoffs[0])
+
+        num_bins = int(1e3)     # TODO: make kwarg?
+        q_mag = 7               # TODO: make kwarg?
+        omega_over_hbar = 1 / settings.HBAR
+        q_tensor = math.new_constant(np.linspace(-q_mag, q_mag, num_bins), "q_tensor")
+        x = np.sqrt(omega_over_hbar) * q_tensor
+        hermite_polys = tf.expand_dims(tf.map_fn(f_hermite_polys, x), axis=-1)  # polys are x-symmetric? -> exploit
+        hermite_matrix = tf.matmul(hermite_polys, hermite_polys, transpose_b=True)
+
+        prefactor = np.empty_like(reduced_state.dm())
+        for idx, _ in np.ndenumerate(prefactor):
+            n, m = idx[0], idx[1]
+            prefactor[idx] = 1/(np.sqrt(2**(n+m)*factorial(n)*factorial(m)))
+        sum_terms =  tf.expand_dims(prefactor, 0) * tf.expand_dims(reduced_state.dm(), 0) * tf.cast(hermite_matrix, tf.complex128)
+
+        rho_dist = (
+            tf.cast(tf.reduce_sum(sum_terms, axis=[1, 2]), tf.float64)
+            * (omega_over_hbar / np.pi) ** 0.5
+            * tf.exp(-x**2)
+        )
+        pdf = tfp.distributions.Categorical(probs=rho_dist, name="rho_dist")
+
+        sample_idx = pdf.sample()
+        homodyne_sample = tf.gather(q_tensor, sample_idx)
+
+        projector_state = DisplacedSqueezed(r = settings.HOMODYNE_SQUEEZING, phi = 0, x = homodyne_sample, y = 0, modes=self.modes) >> Rgate(quadrature_angle)
+
+        return homodyne_sample, projector_state
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
