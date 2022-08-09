@@ -35,6 +35,7 @@ from mrmustard.lab import (
     TMSV,
     Dgate,
     Fock,
+    State,
 )
 from mrmustard import physics, settings
 from tests.random import none_or_
@@ -265,20 +266,20 @@ class TestHomodyneDetector:
         ) * np.sqrt(2 * hbar)
         assert np.allclose(remaining_state.means, means)
 
-    N_MEAS = 500  # number of homodyne measurements to perform
+    N_MEAS = 250  # number of homodyne measurements to perform
     NUM_STDS = 10.0
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 
-    @pytest.mark.parametrize("gaussian", [True, False])
-    def test_sampling_mean_and_std_vacuum(self, gaussian):
+    @pytest.mark.parametrize("is_gaussian_state", [True, False])
+    @pytest.mark.parametrize(
+        "state, mean_expected, std_expected", [(Vacuum(1), 0.0, 1.0), (Coherent(2, 1), 4.0, 1.0)]
+    )
+    def test_sampling_mean_and_std(self, state, mean_expected, std_expected, is_gaussian_state):
         """Tests that the mean and standard deviation estimates of many homodyne
-        measurements are in agreement with the expected values for the
-        vacuum state"""
+        measurements are in agreement with the expected values for the states"""
 
-        if gaussian:
-            state = Vacuum(1)
-        else:
-            state = Fock([0], cutoffs=[4])
+        if not is_gaussian_state:
+            state = State(dm=state.dm(cutoffs=[20]))
 
         measurement = Homodyne(0.0, result=None, modes=[0])
         results = []
@@ -286,22 +287,10 @@ class TestHomodyneDetector:
             results.append(state << measurement)
         results = np.asarray(results)
 
-        assert np.allclose(results.mean(axis=0), 0.0, atol=self.std_10, rtol=0)
-        assert np.allclose(results.std(axis=0), 1.0, atol=self.std_10, rtol=0)
-
-    def test_sampling_mean_coherent(self):
-        """Tests that the mean and standard deviation estimates of many homodyne
-        measurements are in agreement with the expected values for a
-        coherent state"""
-
-        x = 2
-        y = 1
-
-        results = np.empty((self.N_MEAS, 2))
-        for idx in range(self.N_MEAS):
-            results[idx, :] = Coherent(x, y) << Homodyne(0.0, result=None, modes=[0])
-
-        assert np.allclose(results.mean(axis=0)[0], x**2, atol=self.std_10, rtol=0)
+        mean = results.mean(axis=0)
+        std = results.std(axis=0)
+        assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
+        assert np.allclose(std, std_expected, atol=self.std_10, rtol=0)
 
 
 class TestHeterodyneDetector:
