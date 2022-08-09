@@ -603,7 +603,7 @@ class State:
         if item == self.modes:
             return self
 
-        if item not in self.modes:
+        if not set(item) & set(self.modes):
             raise ValueError(
                 f"Failed to request modes {item} for state {self} on modes {self.modes}."
             )
