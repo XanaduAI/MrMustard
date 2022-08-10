@@ -38,6 +38,21 @@
 * Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
+* Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
+  specified by the user, such value is sampled from the reduced state probability distribution and the
+  conditional state on the remaining modes is generated.
+  [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+    ```python
+    import numpy as np
+    from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+
+    # conditional state from measurement
+    conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+
+    # measurement outcome
+    measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+    ```
+
 ### Breaking changes
 
 ### Improvements
