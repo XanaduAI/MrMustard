@@ -253,7 +253,7 @@ class Homodyne(DisplacedSqueezed):
     def __init__(
         self,
         quadrature_angle: Union[float, List[float]],
-        result: Optional[Union[float, List[float]]] = None,
+        result: Optional[Union[float, List[float]]] = 0.0,
         modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
