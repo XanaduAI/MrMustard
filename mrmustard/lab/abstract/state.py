@@ -33,7 +33,7 @@ from mrmustard.types import (
     List,
     Iterable,
 )
-from mrmustard.utils import graphics
+from mrmustard.utils import graphics, homodyne
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
@@ -380,7 +380,9 @@ class State:
         outcome = None
         if isinstance(self, Homodyne) and getattr(self, "sample", False):
             # build pdf and sample homodyne outcome
-            outcome, projector_state = self._sample_homodyne_fock(other)
+            outcome, projector_state = homodyne.sample_homodyne_fock(
+                state=other, quadrature_angle=self.phi.value / 2, mode=self.modes
+            )
 
         try:
             out_fock = self._preferred_projection(other, other.indices(self.modes))
@@ -456,87 +458,6 @@ class State:
             result = result[0]
 
         return result
-
-    def _sample_homodyne_fock(self, other: State) -> Tuple[float, State]:
-        r"""Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
-        where `\rho` is the reduced density matrix of the ``other`` state on the
-        measured mode.
-
-        Here the following quadrature wavefunction for the Fock states are used:
-
-        .. math::
-
-            \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
-                \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
-
-        where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial. Hence, the
-        probability density function is
-
-        .. math ::
-
-            p(\rho|x) = \tr [ \rho |x><x| ] = \sum_{n,m} \rho_{n,m} \psi_n(x) \psi_m(x)
-
-        Args:
-            other (State): state used to build the pdf
-
-        Returns:
-            tuple(float, State): homodyne outcome and projector state
-        """
-        # pylint: disable=import-outside-toplevel
-        from mrmustard.lab import Rgate, DisplacedSqueezed
-
-        # create reduced state of mode to be measured on the homodyne basis
-        quadrature_angle = self.phi.value / 2  # TODO: check if we do need to divide by 2
-        reduced_state = other.get_modes(self.modes) >> Rgate(-quadrature_angle, modes=self.modes)
-
-        R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
-
-        def f_hermite_polys(x):
-            return math.hermite(R, math.astensor([x]), 1, reduced_state.cutoffs[0])
-
-        # pdf reconstruction parameters
-        num_bins = int(1e2)  # TODO: make kwarg?
-        q_mag = 7  # TODO: make kwarg?
-
-        # build `\psi_n(x) \psi_m(x)` terms
-        omega_over_hbar = 1 / settings.HBAR
-        q_tensor = math.new_constant(np.linspace(-q_mag, q_mag, num_bins), "q_tensor")
-        x = np.sqrt(omega_over_hbar) * q_tensor
-        hermite_polys = math.expand_dims(
-            math.map_fn(f_hermite_polys, x), axis=-1
-        )  # polys are x-symmetric? -> exploit
-        hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
-
-        prefactor = np.empty_like(reduced_state.dm())
-        for idx, _ in np.ndenumerate(prefactor):
-            n, m = idx[0], idx[1]
-            prefactor[idx] = 1 / (np.sqrt(2 ** (n + m) * factorial(n) * factorial(m)))
-
-        # build terms in the sum: `rho_{n,m} \psi_n(x) \psi_m(x)`
-        sum_terms = (
-            math.expand_dims(prefactor, 0)
-            * math.expand_dims(reduced_state.dm(), 0)
-            * math.cast(hermite_matrix, "complex128")
-        )
-
-        # calculate the pdf
-        rho_dist = (
-            math.cast(math.sum(sum_terms, axes=[1, 2]), "float64")
-            * (omega_over_hbar / np.pi) ** 0.5
-            * math.exp(-(x**2))
-        )
-        pdf = math.Categorical(probs=rho_dist, name="rho_dist")
-
-        # draw sample from the distribution
-        sample_idx = pdf.sample()
-        homodyne_sample = math.gather(q_tensor, sample_idx)
-
-        # create "projector state" to calculate the conditional output state
-        projector_state = DisplacedSqueezed(
-            r=settings.HOMODYNE_SQUEEZING, phi=0, x=homodyne_sample, y=0, modes=reduced_state.modes
-        ) >> Rgate(quadrature_angle, modes=reduced_state.modes)
-
-        return homodyne_sample, projector_state
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
