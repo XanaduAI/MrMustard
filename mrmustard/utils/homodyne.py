@@ -36,12 +36,11 @@ def physicist_hermite_polys(x: Tensor, cutoff: int):
     physicist polys.
 
     Args:
-        x (float): evaluate
-        cutoff (int):
+        x (Tensor): argument values of the Hermite polynomial
+        cutoff (int): maximum size of the subindices in the Hermite polynomial
 
     Returns:
-
-
+        Tensor: the evaluated Hermite polynomials
     """
     R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
 
@@ -73,13 +72,13 @@ def sample_homodyne_fock(
         p(\rho|x) = \tr [ \rho |x><x| ] = \sum_{n,m} \rho_{n,m} \psi_n(x) \psi_m(x)
 
     Args:
-        other (State): state used to build the pdf
+        state (State): state being measured
+        quadrature_angle (float): measurement quadrature angle
+        mode: the modes of the state being measured
 
     Returns:
         tuple(float, State): homodyne outcome and projector state
     """
-    # pylint: disable=import-outside-toplevel
-    # from mrmustard.lab import Rgate, DisplacedSqueezed
 
     if isinstance(mode, int):
         mode = [mode]
