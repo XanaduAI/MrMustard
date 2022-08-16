@@ -50,6 +50,78 @@ def physicist_hermite_polys(x: Tensor, cutoff: int):
     return math.map_fn(f_hermite_polys, x)
 
 
+def estimate_dx(cutoff, period_resolution=20):
+    r"""Estimates a suitable quadrature discretization interval `dx`. Uses the fact
+    that Fock state `n` oscillates with angular frequency :math:`\sqrt{2(n + 1)}`,
+    which follows from the relation
+
+    .. math::
+
+            \psi^{[n]}'(q) = q - sqrt(2*(n + 1))*\psi^{[n+1]}(q)
+
+    by setting q = 0, and approximating the oscillation amplitude by `\psi^{[n+1]}(0)
+
+    Ref: https://en.wikipedia.org/wiki/Hermite_polynomials#Hermite_functions
+
+    Args
+        cutoff (int): Fock cutoff
+        period_resolution (int): Number of points used to sample one Fock
+            wavefunction oscillation. Larger values yields better approximations
+            and thus smaller `dx`.
+
+    Returns
+        (float): discretization value of quadrature
+    """
+    fock_cutoff_frequency = np.sqrt(2 * (cutoff + 1))
+    fock_cutoff_period = 2 * np.pi / fock_cutoff_frequency
+    dx_estimate = fock_cutoff_period / period_resolution
+    return dx_estimate
+
+
+def estimate_xmax(cutoff, minimum=5):
+    r"""Estimates a suitable quadrature axis length
+
+    Args
+        cutoff (int): Fock cutoff
+        minimum (float): Minimum value of the returned xmax
+
+    Returns
+        (float): maximum quadrature value
+    """
+    if cutoff == 0:
+        xmax_estimate = 3
+    else:
+        # maximum q for a classical particle with energy n=cutoff
+        classical_endpoint = np.sqrt(2 * cutoff)
+        # approximate probability of finding particle outside classical region (see Wikipedia)
+        excess_probability = 1 / (7.464 * cutoff ** (1 / 3))
+        # Emperical factor that yields reasonable results
+        A = 5
+        xmax_estimate = classical_endpoint * (1 + A * excess_probability)
+    return max(minimum, xmax_estimate)
+
+
+def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
+    """Generates a suitable quadrature axis.
+
+    Args
+        cutoff (int): Fock cutoff
+        minimum (float): Minimum value of the returned xmax
+        period_resolution (int): Number of points used to sample one Fock
+            wavefunction oscillation. Larger values yields better approximations
+            and thus smaller dx.
+
+    Returns
+        (array): quadrature axis
+    """
+    xmax = estimate_xmax(cutoff, minimum=minimum)
+    dx = estimate_dx(cutoff, period_resolution=period_resolution)
+    xaxis = np.arange(-xmax, xmax, dx)
+    xaxis = np.append(xaxis, xaxis[-1] + dx)
+    xaxis = xaxis - np.mean(xaxis)  # center around 0
+    return xaxis
+
+
 def sample_homodyne_fock(
     state: State, quadrature_angle: float, mode: Union[int, List[int]]
 ) -> Tuple[float, State]:
@@ -92,13 +164,9 @@ def sample_homodyne_fock(
     reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
     cutoff = reduced_state.cutoffs[0]
 
-    # pdf reconstruction parameters
-    num_bins = int(1e2)  # TODO: make kwarg?
-    q_mag = 7  # TODO: make kwarg?
-
     # build `\psi_n(x) \psi_m(x)` terms
     omega_over_hbar = 1 / settings.HBAR
-    q_tensor = math.new_constant(np.linspace(-q_mag, q_mag, num_bins), "q_tensor")
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
     x = np.sqrt(omega_over_hbar) * q_tensor
     hermite_polys = math.expand_dims(physicist_hermite_polys(x, cutoff), axis=-1)
     hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
