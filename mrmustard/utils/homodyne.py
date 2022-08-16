@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from functools import lru_cache, wraps
 
 import numpy as np
 from scipy.special import factorial
@@ -31,6 +32,29 @@ if TYPE_CHECKING:
 math = Math()
 
 
+def hermite_cache(fn):
+    """Decorator function to cache outcomes of a the physicist_hermite_polys
+    function. To do so the input tensor (non-hashable) is converted into a
+    numpy array (non-hashable) and then a tuple (hashable) is used in conjuntion
+    with ``functools.lru_cache``."""
+
+    @lru_cache()
+    def cached_wrapper(hashable_array, cutoff):
+        array = np.array(hashable_array)
+        return fn(array, cutoff)
+
+    @wraps(fn)
+    def wrapper(tensor, cutoff):
+        return cached_wrapper(tuple(tensor.numpy()), cutoff)
+
+    # copy lru_cache attributes over too
+    wrapper.cache_info = cached_wrapper.cache_info
+    wrapper.cache_clear = cached_wrapper.cache_clear
+
+    return wrapper
+
+
+@hermite_cache
 def physicist_hermite_polys(x: Tensor, cutoff: int):
     r"""Reduction of the multidimensional hermite polynomials into the one-dimensional
     physicist polys.
