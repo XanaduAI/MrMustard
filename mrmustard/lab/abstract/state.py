@@ -359,7 +359,7 @@ class State:
     def _project_onto_fock(self, other: State) -> Union[State, float]:
         """Returns the post-measurement state of the projection between two non-Gaussian
         states on the remaining modes or the probability of the result. When doing homodyne sampling,
-        returns the the post-measurement state or the measument outcome if no modes remain.
+        returns the post-measurement state or the measument outcome if no modes remain.
 
         Args:
             other (State): state being projected onto self
@@ -409,7 +409,7 @@ class State:
             )
 
         # if outcome is defined (when doing homodyne sampling) returns
-        # the outcome else the value of the contaction
+        # the outcome else the value of the contraction
         result = outcome or (
             fock.math.abs(out_fock) ** 2
             if other.is_pure and self.is_pure

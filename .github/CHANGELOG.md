@@ -39,7 +39,7 @@
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
 * Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
-  specified by the user, such value is sampled from the reduced state probability distribution and the
+  specified by the user, a value is sampled from the reduced state probability distribution and the
   conditional state on the remaining modes is generated.
   [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
     ```python

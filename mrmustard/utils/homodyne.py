@@ -33,7 +33,7 @@ math = Math()
 
 
 def hermite_cache(fn):
-    """Decorator function to cache outcomes of a the physicist_hermite_polys
+    """Decorator function to cache outcomes of the physicist_hermite_polys
     function. To do so the input tensor (non-hashable) is converted into a
     numpy array (non-hashable) and then a tuple (hashable) is used in conjuntion
     with ``functools.lru_cache``."""
