@@ -93,6 +93,19 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
+    def U(self, cutoffs: List[int]):
+        r"""Returns the unitary representation of the Displacement gate using the Laguerre
+        polynomials."""
+        if len(cutoffs) != self.num_modes:
+            raise ValueError(
+                f"Expected `len(cutoffs)={len(self.num_modes)}` but {len(cutoffs)} cutoffs were given."
+            )
+
+        r = math.sqrt(self.x.value**2 + self.y.value**2)
+        phi = math.atan(self.y.value / self.x.value)
+
+        return math.displacement(r, phi, cutoffs)
+
 
 class Sgate(Parametrized, Transformation):
     r"""Squeezing gate.
