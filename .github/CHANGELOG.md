@@ -55,6 +55,9 @@
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
 
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
+  providing better numerical stability for larger cutoff and displacement values. [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
