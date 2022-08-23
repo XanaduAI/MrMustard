@@ -336,7 +336,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], modified: bool = False
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -347,44 +347,19 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
+            modified (bool): whether to return the modified multidimensional
+                Hermite polynomials or the standard ones
 
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(
-            hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype
+        poly = hermite_multidimensional(
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, modified
         )
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
                 grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
-            )
-            ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            return dLdA, dLdB, dLdC
-
-        return poly, grad
-
-    @tf.custom_gradient
-    def hermite(self, R: tf.Tensor, y: tf.Tensor, C: tf.Tensor, cutoff: Tuple[int]) -> tf.Tensor:
-        r"""Multidimensional Hermite polynomials.
-
-        Args:
-            R (array): square matrix parametrizing the Hermite polynomial family
-            y (array): vector argument of the Hermite polynomial
-            C (complex): first value of the Hermite polynomials
-            cutoff (int): The shape of the final tensor.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        poly = tf.numpy_function(hermite_multidimensional, [R, cutoff, y, C], R.dtype)
-
-        def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional, [poly, R, y, C], [poly.dtype] * 3
             )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)

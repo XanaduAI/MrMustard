@@ -69,7 +69,7 @@ def physicist_hermite_polys(x: Tensor, cutoff: int):
     R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        return math.hermite(R, math.astensor([xi]), 1, cutoff)
+        return math.hermite_renormalized(R, math.astensor([xi]), 1, cutoff)
 
     return math.map_fn(f_hermite_polys, x)
 
@@ -188,34 +188,33 @@ def sample_homodyne_fock(
     reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
     cutoff = reduced_state.cutoffs[0]
 
-    # build `\psi_n(x) \psi_m(x)` terms
     omega_over_hbar = 1 / settings.HBAR
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
     x = np.sqrt(omega_over_hbar) * q_tensor
-    hermite_polys = math.expand_dims(physicist_hermite_polys(x, cutoff), axis=-1)
+    hermite_polys = physicist_hermite_polys(x, cutoff)
+
+    # taking onle the real part because the imaginary part cancels out during summation,
+    # this saves some type casting of real matrices into complex ones.
+    reduced_dm = math.real(reduced_state.dm())
+
+    # build matrix of terms Hn Hm / sqrt(n! m!)
+    hermite_polys = math.expand_dims(hermite_polys, axis=-1)
     hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
 
-    prefactor = np.empty_like(reduced_state.dm())
-    for idx, _ in np.ndenumerate(prefactor):
-        n, m = idx[0], idx[1]
-        prefactor[idx] = 1 / (np.sqrt(2 ** (n + m) * factorial(n) * factorial(m)))
+    # build matrix of terms 1 / sqrt( 2**(n+m) )
+    prefactor = math.expand_dims(2 ** (-math.arange(0, cutoff) / 2), axis=-1)
+    prefactor = math.matmul(prefactor, prefactor, transpose_b=True)
 
-    # build terms in the sum: `rho_{n,m} \psi_n(x) \psi_m(x)`
-    sum_terms = (
-        math.expand_dims(prefactor, 0)
-        * math.expand_dims(reduced_state.dm(), 0)
-        * math.cast(hermite_matrix, "complex128")
-    )
+    # build terms inside the sum: `\rho_{n,m} Hn Hm / sqrt( 2**(n+m) n! m!)`
+    sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
 
-    # calculate the pdf
+    # calculate the pdf and multiply by factors outside the sum
     rho_dist = (
-        math.cast(math.sum(sum_terms, axes=[1, 2]), "float64")
-        * (omega_over_hbar / np.pi) ** 0.5
-        * math.exp(-(x**2))
+        math.sum(sum_terms, axes=[1, 2]) * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
     )
-    pdf = math.Categorical(probs=rho_dist, name="rho_dist")
 
-    # draw sample from the distribution
+    # draw a sample from the distribution
+    pdf = math.Categorical(probs=rho_dist, name="rho_dist")
     sample_idx = pdf.sample()
     homodyne_sample = math.gather(q_tensor, sample_idx)
 
