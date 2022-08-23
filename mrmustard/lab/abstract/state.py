@@ -368,9 +368,6 @@ class State:
             State or float: returns the output conditional state on the remaining modes
                 or the outcome of the homodyne measurement.
         """
-        # pylint: disable=import-outside-toplevel
-        # imports for typechecking only
-        from mrmustard.lab.detectors import Homodyne
 
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
@@ -378,7 +375,9 @@ class State:
 
         projector_state = self  # state_m is the state used to project onto
         outcome = None
-        if isinstance(self, Homodyne) and getattr(self, "sample", False):
+        # Only instances of `Homodyne` define the attribute "sampling". If this is
+        # True then homodyne sampling is performed.
+        if getattr(self, "sample", False):
             # build pdf and sample homodyne outcome
             outcome, projector_state = homodyne.sample_homodyne_fock(
                 state=other, quadrature_angle=self.phi.value / 2, mode=self.modes
@@ -428,9 +427,6 @@ class State:
             State or float: returns the output conditional state on the remaining modes
                 or the outcome of the generaldyne measurement.
         """
-        # pylint: disable=import-outside-toplevel
-        # imports for typechecking only
-        from mrmustard.lab.detectors import Homodyne
 
         remaining_modes = [m for m in other.modes if m not in self.modes]
 
@@ -452,9 +448,10 @@ class State:
                 _norm=prob if not getattr(self, "_normalize", False) else 1.0,
             )
 
-        # generaldyne measurements outcomes have two values, if doing homodyne measurement
-        # then return only the q-component of the outcome
-        if isinstance(self, Homodyne):
+        # Generaldyne measurements have as outcomes two values, if doing homodyne measurement
+        # then return only the q-component of the outcome.
+        # Note only instances of `Homodyne` define the attribute "sampling".
+        if getattr(self, "sample", False):
             result = result[0]
 
         return result
