@@ -17,6 +17,10 @@
 import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
+from thewalrus.fock_gradients import (
+    displacement as displacement_tw,
+    grad_displacement as grad_displacement_tw,
+)
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -114,6 +118,9 @@ class TFMath(MathInterface):
 
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
+
+    def atan(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.atan(array)
 
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
@@ -353,6 +360,27 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly, grad
+
+    @tf.custom_gradient
+    def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype):
+        """creates a single mode displacement matrix"""
+
+        if isinstance(cutoff, List) and len(cutoff) == 1:
+            cutoff = cutoff[0]
+        else:
+            raise NotImplementedError("Displacement is only implemented for a single mode.")
+
+        r = r.numpy()
+        phi = phi.numpy()
+        gate = displacement_tw(r, phi, cutoff, dtype)
+
+        def grad(dy):  # pragma: no cover
+            Dr, Dphi = grad_displacement_tw(gate, r, phi)
+            grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
+            grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
+            return grad_r, grad_phi, None
+
+        return gate, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
