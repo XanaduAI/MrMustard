@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING
 from functools import lru_cache, wraps
 
 import numpy as np
-from scipy.special import factorial
 
 from mrmustard import settings
 from mrmustard.types import Tuple, List, Union, Iterable, Tensor
@@ -38,7 +37,7 @@ def hermite_cache(fn):
     numpy array (non-hashable) and then a tuple (hashable) is used in conjuntion
     with ``functools.lru_cache``."""
 
-    @lru_cache()
+    @lru_cache
     def cached_wrapper(hashable_array, cutoff):
         array = np.array(hashable_array)
         return fn(array, cutoff)
@@ -74,6 +73,7 @@ def physicist_hermite_polys(x: Tensor, cutoff: int):
     return math.map_fn(f_hermite_polys, x)
 
 
+@lru_cache
 def estimate_dx(cutoff, period_resolution=20):
     r"""Estimates a suitable quadrature discretization interval `dx`. Uses the fact
     that Fock state `n` oscillates with angular frequency :math:`\sqrt{2(n + 1)}`,
@@ -102,6 +102,7 @@ def estimate_dx(cutoff, period_resolution=20):
     return dx_estimate
 
 
+@lru_cache
 def estimate_xmax(cutoff, minimum=5):
     r"""Estimates a suitable quadrature axis length
 
@@ -117,7 +118,7 @@ def estimate_xmax(cutoff, minimum=5):
     else:
         # maximum q for a classical particle with energy n=cutoff
         classical_endpoint = np.sqrt(2 * cutoff)
-        # approximate probability of finding particle outside classical region (see Wikipedia)
+        # approximate probability of finding particle outside classical region
         excess_probability = 1 / (7.464 * cutoff ** (1 / 3))
         # Emperical factor that yields reasonable results
         A = 5
@@ -125,6 +126,7 @@ def estimate_xmax(cutoff, minimum=5):
     return max(minimum, xmax_estimate)
 
 
+@lru_cache
 def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     """Generates a suitable quadrature axis.
 
