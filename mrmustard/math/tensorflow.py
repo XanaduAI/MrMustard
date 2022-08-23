@@ -353,6 +353,9 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
+        if isinstance(shape, List) and len(shape) == 1:
+            shape = shape[0]
+
         poly = hermite_multidimensional(
             self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, modified
         )
