@@ -823,6 +823,19 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def squeeze(self, tensor: Tensor, axis: Optional[List[int]]) -> Tensor:
+        """Removes dimensions of size 1 from the shape of a tensor.
+
+        Args:
+            tensor (Tensor): the tensor to squeeze
+            axis (Optional[List[int]]): if specified, only squeezes the
+                dimensions listed, defaults to []
+
+        Returns:
+            Tensor: tensor with one or more dimensions of size 1 removed
+        """
+
+    @abstractmethod
     def cholesky(self, input: Tensor) -> Tensor:
         """Computes the Cholesky decomposition of square matrices.
 
