@@ -193,25 +193,46 @@ def sample_homodyne_fock(
     x = np.sqrt(omega_over_hbar) * q_tensor
     hermite_polys = physicist_hermite_polys(x, cutoff)
 
-    # taking onle the real part because the imaginary part cancels out during summation,
-    # this saves some type casting of real matrices into complex ones.
-    reduced_dm = math.real(reduced_state.dm())
+    if reduced_state.is_pure:
 
-    # build matrix of terms Hn Hm / sqrt(n! m!)
-    hermite_polys = math.expand_dims(hermite_polys, axis=-1)
-    hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
+        reduced_ket = math.real(reduced_state.ket())
 
-    # build matrix of terms 1 / sqrt( 2**(n+m) )
-    prefactor = math.expand_dims(2 ** (-math.arange(0, cutoff) / 2), axis=-1)
-    prefactor = math.matmul(prefactor, prefactor, transpose_b=True)
+        prefactor = 2 ** (-math.arange(0, cutoff) / 2)
 
-    # build terms inside the sum: `\rho_{n,m} Hn Hm / sqrt( 2**(n+m) n! m!)`
-    sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
+        sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
 
-    # calculate the pdf and multiply by factors outside the sum
-    rho_dist = (
-        math.sum(sum_terms, axes=[1, 2]) * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
-    )
+        rho_dist = (
+            math.sum(sum_terms, axes=[1]) ** 2
+            * (omega_over_hbar / np.pi) ** 0.5
+            * math.exp(-(x**2))
+        )
+
+    else:
+        # mixed state
+
+        # taking only the real part because the imaginary part cancels out during summation,
+        # this saves some type casting of real matrices into complex ones.
+        reduced_dm = math.real(reduced_state.dm())
+
+        # build matrix of terms Hn Hm / sqrt(n! m!)
+        hermite_polys = math.expand_dims(hermite_polys, axis=-1)
+        hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
+
+        # build matrix of terms 1 / sqrt( 2**(n+m) )
+        prefactor = math.expand_dims(2 ** (-math.arange(0, cutoff) / 2), axis=-1)
+        prefactor = math.matmul(prefactor, prefactor, transpose_b=True)
+
+        # build terms inside the sum: `\rho_{n,m} Hn Hm / sqrt( 2**(n+m) n! m!)`
+        sum_terms = (
+            math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
+        )
+
+        # calculate the pdf and multiply by factors outside the sum
+        rho_dist = (
+            math.sum(sum_terms, axes=[1, 2])
+            * (omega_over_hbar / np.pi) ** 0.5
+            * math.exp(-(x**2))
+        )
 
     # draw a sample from the distribution
     pdf = math.Categorical(probs=rho_dist, name="rho_dist")
