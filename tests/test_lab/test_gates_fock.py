@@ -50,11 +50,54 @@ def test_1mode_fock_equals_gaussian():
     # assert via_phase_space == via_fock_space
 
 
-@given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
-def test_fock_representation_displacement(x, y):
-    D = Dgate(x=x, y=y)
-    expected = displacement(r=np.sqrt(x**2 + y**2), phi=np.arctan2(y, x), cutoff=20)
-    assert np.allclose(expected, D.U(cutoffs=[20]), atol=1e-5)
+def test_fock_representation_displacement():
+    """Tests the correct construction of the single mode displacement operation.
+    Since the displacement uses the walrus, this is the same test as in the walrus."""
+    cutoff = 5
+    alpha = 0.3 + 0.5 * 1j
+    # This data is obtained by using qutip
+    # np.array(displace(40,alpha).data.todense())[0:5,0:5]
+    expected = np.array(
+        [
+            [
+                0.84366482 + 0.00000000e00j,
+                -0.25309944 + 4.21832408e-01j,
+                -0.09544978 - 1.78968334e-01j,
+                0.06819609 + 3.44424719e-03j,
+                -0.01109048 + 1.65323865e-02j,
+            ],
+            [
+                0.25309944 + 4.21832408e-01j,
+                0.55681878 + 0.00000000e00j,
+                -0.29708743 + 4.95145724e-01j,
+                -0.14658716 - 2.74850926e-01j,
+                0.12479885 + 6.30297236e-03j,
+            ],
+            [
+                -0.09544978 + 1.78968334e-01j,
+                0.29708743 + 4.95145724e-01j,
+                0.31873657 + 0.00000000e00j,
+                -0.29777767 + 4.96296112e-01j,
+                -0.18306015 - 3.43237787e-01j,
+            ],
+            [
+                -0.06819609 + 3.44424719e-03j,
+                -0.14658716 + 2.74850926e-01j,
+                0.29777767 + 4.96296112e-01j,
+                0.12389162 + 1.10385981e-17j,
+                -0.27646677 + 4.60777945e-01j,
+            ],
+            [
+                -0.01109048 - 1.65323865e-02j,
+                -0.12479885 + 6.30297236e-03j,
+                -0.18306015 + 3.43237787e-01j,
+                0.27646677 + 4.60777945e-01j,
+                -0.03277289 + 1.88440656e-17j,
+            ],
+        ]
+    )
+    D = Dgate(x=alpha.real, y=alpha.imag)
+    assert np.allclose(expected, D.U(cutoffs=[cutoff]), atol=1e-5)
 
 
 @given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
