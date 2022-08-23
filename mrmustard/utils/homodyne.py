@@ -56,14 +56,14 @@ def hermite_cache(fn):
 @hermite_cache
 def physicist_hermite_polys(x: Tensor, cutoff: int):
     r"""Reduction of the multidimensional hermite polynomials into the one-dimensional
-    physicist polys.
+    renormalized physicist polys.
 
     Args:
         x (Tensor): argument values of the Hermite polynomial
         cutoff (int): maximum size of the subindices in the Hermite polynomial
 
     Returns:
-        Tensor: the evaluated Hermite polynomials
+        Tensor: the evaluated renormalized Hermite polynomials
     """
     R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
 
@@ -190,51 +190,17 @@ def sample_homodyne_fock(
     reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
     cutoff = reduced_state.cutoffs[0]
 
+    # calculate prefactors of the PDF
     omega_over_hbar = 1 / settings.HBAR
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
     x = np.sqrt(omega_over_hbar) * q_tensor
     hermite_polys = physicist_hermite_polys(x, cutoff)
 
     if reduced_state.is_pure:
-
-        reduced_ket = math.real(reduced_state.ket())
-
-        prefactor = 2 ** (-math.arange(0, cutoff) / 2)
-
-        sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
-
-        rho_dist = (
-            math.sum(sum_terms, axes=[1]) ** 2
-            * (omega_over_hbar / np.pi) ** 0.5
-            * math.exp(-(x**2))
-        )
-
+        rho_dist = _probs_homodyne_pure(reduced_state.ket())
     else:
         # mixed state
-
-        # taking only the real part because the imaginary part cancels out during summation,
-        # this saves some type casting of real matrices into complex ones.
-        reduced_dm = math.real(reduced_state.dm())
-
-        # build matrix of terms Hn Hm / sqrt(n! m!)
-        hermite_polys = math.expand_dims(hermite_polys, axis=-1)
-        hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
-
-        # build matrix of terms 1 / sqrt( 2**(n+m) )
-        prefactor = math.expand_dims(2 ** (-math.arange(0, cutoff) / 2), axis=-1)
-        prefactor = math.matmul(prefactor, prefactor, transpose_b=True)
-
-        # build terms inside the sum: `\rho_{n,m} Hn Hm / sqrt( 2**(n+m) n! m!)`
-        sum_terms = (
-            math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
-        )
-
-        # calculate the pdf and multiply by factors outside the sum
-        rho_dist = (
-            math.sum(sum_terms, axes=[1, 2])
-            * (omega_over_hbar / np.pi) ** 0.5
-            * math.exp(-(x**2))
-        )
+        rho_dist = _probs_homodyne_mixed(reduced_state.dm())
 
     # draw a sample from the distribution
     pdf = math.Categorical(probs=rho_dist, name="rho_dist")
@@ -247,3 +213,60 @@ def sample_homodyne_fock(
     ) >> lab.Rgate(quadrature_angle, modes=reduced_state.modes)
 
     return homodyne_sample, projector_state
+
+
+def _probs_homodyne_pure(state_ket):
+
+    cutoff = state_ket.shape[0]
+
+    # calculate prefactors of the PDF
+    omega_over_hbar = 1 / settings.HBAR
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+    x = np.sqrt(omega_over_hbar) * q_tensor
+
+    # Hn / sqrt(n!)
+    hermite_polys = physicist_hermite_polys(x, cutoff)
+
+    # taking only the real part because the imaginary part cancels out during summation,
+    # this saves some type casting of real matrices into complex ones.
+    reduced_ket = math.real(state_ket)
+
+    # prefactor term 1 / 2**n
+    prefactor = 2 ** (-math.arange(0, cutoff) / 2)
+
+    # build terms inside the sum: `\ket_{n} Hn / ( 2**n n! )`
+    sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
+
+    # calculate the pdf and multiply by factors outside the sum
+    return (
+        math.sum(sum_terms, axes=[1]) ** 2 * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
+    )
+
+
+def _probs_homodyne_mixed(state_dm):
+
+    cutoff = state_dm.shape[0]
+
+    # calculate prefactors of the PDF
+    omega_over_hbar = 1 / settings.HBAR
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+    x = np.sqrt(omega_over_hbar) * q_tensor
+    hermite_polys = physicist_hermite_polys(x, cutoff)
+
+    # taking only the real part because the imaginary part cancels out during summation,
+    # this saves some type casting of real matrices into complex ones.
+    reduced_dm = math.real(state_dm)
+
+    # build matrix of terms Hn Hm / sqrt(n! m!)
+    hermite_polys = math.expand_dims(hermite_polys, axis=-1)
+    hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
+
+    # build matrix of terms 1 / sqrt( 2**(n+m) )
+    prefactor = math.expand_dims(2 ** (-math.arange(0, cutoff) / 2), axis=-1)
+    prefactor = math.matmul(prefactor, prefactor, transpose_b=True)
+
+    # build terms inside the sum: `\rho_{n,m} Hn Hm / sqrt( 2**(n+m) n! m!)`
+    sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
+
+    # calculate the pdf and multiply by factors outside the sum
+    return math.sum(sum_terms, axes=[1, 2]) * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
