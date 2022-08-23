@@ -188,22 +188,15 @@ def sample_homodyne_fock(
 
     # create reduced state of mode to be measured on the homodyne basis
     reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
-    cutoff = reduced_state.cutoffs[0]
 
-    # calculate prefactors of the PDF
-    omega_over_hbar = 1 / settings.HBAR
-    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
-    x = np.sqrt(omega_over_hbar) * q_tensor
-    hermite_polys = physicist_hermite_polys(x, cutoff)
-
-    rho_dist = (
+    q_tensor, probs = (
         _probs_homodyne_pure(reduced_state.ket())
         if reduced_state.is_pure
         else _probs_homodyne_mixed(reduced_state.dm())
     )
 
     # draw a sample from the distribution
-    pdf = math.Categorical(probs=rho_dist, name="rho_dist")
+    pdf = math.Categorical(probs=probs, name="homodyne_dist")
     sample_idx = pdf.sample()
     homodyne_sample = math.gather(q_tensor, sample_idx)
 
@@ -238,9 +231,11 @@ def _probs_homodyne_pure(state_ket):
     sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
 
     # calculate the pdf and multiply by factors outside the sum
-    return (
+    probs = (
         math.sum(sum_terms, axes=[1]) ** 2 * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
     )
+
+    return q_tensor, probs
 
 
 def _probs_homodyne_mixed(state_dm):
@@ -269,4 +264,8 @@ def _probs_homodyne_mixed(state_dm):
     sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
 
     # calculate the pdf and multiply by factors outside the sum
-    return math.sum(sum_terms, axes=[1, 2]) * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
+    probs = (
+        math.sum(sum_terms, axes=[1, 2]) * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
+    )
+
+    return q_tensor, probs
