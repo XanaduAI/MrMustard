@@ -196,11 +196,11 @@ def sample_homodyne_fock(
     x = np.sqrt(omega_over_hbar) * q_tensor
     hermite_polys = physicist_hermite_polys(x, cutoff)
 
-    if reduced_state.is_pure:
-        rho_dist = _probs_homodyne_pure(reduced_state.ket())
-    else:
-        # mixed state
-        rho_dist = _probs_homodyne_mixed(reduced_state.dm())
+    rho_dist = (
+        _probs_homodyne_pure(reduced_state.ket())
+        if reduced_state.is_pure
+        else _probs_homodyne_mixed(reduced_state.dm())
+    )
 
     # draw a sample from the distribution
     pdf = math.Categorical(probs=rho_dist, name="rho_dist")
