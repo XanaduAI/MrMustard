@@ -364,12 +364,6 @@ class TFMath(MathInterface):
     @tf.custom_gradient
     def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype):
         """creates a single mode displacement matrix"""
-
-        if isinstance(cutoff, List) and len(cutoff) == 1:
-            cutoff = cutoff[0]
-        else:
-            raise NotImplementedError("Displacement is only implemented for a single mode.")
-
         r = r.numpy()
         phi = phi.numpy()
         gate = displacement_tw(r, phi, cutoff, dtype)

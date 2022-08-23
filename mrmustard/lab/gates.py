@@ -101,10 +101,15 @@ class Dgate(Parametrized, Transformation):
                 f"Expected `len(cutoffs)={len(self.num_modes)}` but {len(cutoffs)} cutoffs were given."
             )
 
+        if isinstance(cutoffs, List) and len(cutoffs) == 1:
+            cutoff = cutoffs[0]
+        else:
+            raise NotImplementedError("Displacement is only implemented for a single mode.")
+
         r = math.sqrt(self.x.value**2 + self.y.value**2)
         phi = math.atan(self.y.value / self.x.value)
 
-        return math.displacement(r, phi, cutoffs)
+        return math.displacement(r, phi, cutoff)
 
 
 class Sgate(Parametrized, Transformation):
