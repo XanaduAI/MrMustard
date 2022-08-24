@@ -751,16 +751,15 @@ class MUX:
 
     def rebalance_ket(self, ket):
         old_probs = math.sum(math.abs(ket) ** 2, axes=[0])
-        order = math.argsort(
-            [self.value_function(ket[:, i] / math.norm(ket[:, i])) for i in range(ket.shape[1])]
-        )[::-1]
+        renorm_ket = ket / math.sqrt(old_probs[None, :], dtype=ket.dtype)
+        order = math.argsort([self.value_function(renorm_ket[:,i]) for i in range(ket.shape[1])])[::-1]
         old_probs_reordered = math.gather(old_probs, order)
         new_probs_reordered = self.muximize(old_probs_reordered)
         rescaling_old_order = math.gather(
             math.sqrt(new_probs_reordered / old_probs_reordered, dtype=ket.dtype),
             math.argsort(order),
         )
-        return ket * rescaling_old_order
+        return ket * rescaling_old_order[None, :]
 
     def muximize(self, probs):
         P = math.cumsum(math.concat([math.zeros(1), probs], axis=0))
