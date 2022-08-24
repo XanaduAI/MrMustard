@@ -49,7 +49,7 @@ settings = Settings()
 settings.BACKEND = "tensorflow"
 
 math = Math(backend=settings.backend)
-
+"""Singleton Math class object."""
 
 def version():
     r"""Version number of Mr Mustard.
