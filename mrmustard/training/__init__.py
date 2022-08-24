@@ -32,9 +32,8 @@ many-photon setting.
     from mrmustard.lab.states import Vacuum
     from mrmustard.lab.circuit import Circuit
     from mrmustard.training import Optimizer
-    from mrmustard.math import Math
+    from mrmustard import math
 
-    math = Math()
 
     r = np.arcsinh(1.0)
     s2_0 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
