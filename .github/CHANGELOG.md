@@ -38,6 +38,14 @@
 * Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
+* Makes it possible to use backends by simply running
+    ```python
+    from mrmustard import math
+
+    math.cos(x)
+    ```
+  [(#150)](https://github.com/XanaduAI/MrMustard/pull/150)
+
 ### Breaking changes
 
 ### Improvements
