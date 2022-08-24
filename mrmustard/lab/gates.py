@@ -728,7 +728,7 @@ class MUX:
     The selection takes place by evaluating a value function on the conditional outputs of an N-mode 
     circuit, with the assumption that all but the first mode are measured by PNR detectors.
     It effectively changes the probability of the conditional outcomes, making better outcomes
-    more likely. At the moment it works only for N = 2.
+    more likely. At the moment it works only for N = 2 and for pure states.
 
     Arguments:
         value_function (callable): a function that evaluates the value of a conditional state
