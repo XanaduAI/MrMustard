@@ -724,8 +724,8 @@ class AdditiveNoise(Parametrized, Transformation):
 
 
 class MUX:
-    r""" The MUX gate emulates an actual MUX circuit that selects the best out of many inputs.
-    The selection takes place by evaluating a value function on the conditional outputs of an N-mode 
+    r"""The MUX gate emulates an actual MUX circuit that selects the best out of many inputs.
+    The selection takes place by evaluating a value function on the conditional outputs of an N-mode
     circuit, with the assumption that all but the first mode are measured by PNR detectors.
     It effectively changes the probability of the conditional outcomes, making better outcomes
     more likely. At the moment it works only for N = 2 and for pure states.
@@ -745,19 +745,23 @@ class MUX:
 
     def primal(self, state: State) -> State:
         if state.is_pure:
-            return State(ket = self.rebalance_ket(state.ket()))
+            return State(ket=self.rebalance_ket(state.ket()))
         else:
             raise NotImplementedError("MUX is not implemented for mixed states")
 
     def rebalance_ket(self, ket):
-        old_probs = math.sum(math.abs(ket)**2, axes=[0])
-        order = math.argsort([self.value_function(ket[:,i]/math.norm(ket[:,i])) for i in range(ket.shape[1])])[::-1]
+        old_probs = math.sum(math.abs(ket) ** 2, axes=[0])
+        order = math.argsort(
+            [self.value_function(ket[:, i] / math.norm(ket[:, i])) for i in range(ket.shape[1])]
+        )[::-1]
         old_probs_reordered = math.gather(old_probs, order)
         new_probs_reordered = self.muximize(old_probs_reordered)
-        rescaling_old_order = math.gather(math.sqrt(new_probs_reordered/old_probs_reordered, dtype=ket.dtype), math.argsort(order))
+        rescaling_old_order = math.gather(
+            math.sqrt(new_probs_reordered / old_probs_reordered, dtype=ket.dtype),
+            math.argsort(order),
+        )
         return ket * rescaling_old_order
 
     def muximize(self, probs):
         P = math.cumsum(math.concat([math.zeros(1), probs], axis=0))
-        return (1-P[:-1])**self.copies - (1-P[1:])**self.copies
-    
+        return (1 - P[:-1]) ** self.copies - (1 - P[1:]) ** self.copies
