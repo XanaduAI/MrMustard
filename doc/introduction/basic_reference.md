@@ -182,8 +182,7 @@ The math module is the backbone of Mr Mustard, which consists in the [Math](http
 Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
 ```python
 from mrmustard import settings
-from mrmustard.math import Math
-math = Math()
+from mrmustard import math
 
 math.cos(0.1)  # tensorflow
 

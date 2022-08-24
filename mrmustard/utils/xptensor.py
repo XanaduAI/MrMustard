@@ -19,9 +19,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from mrmustard.types import Optional, Union, Matrix, Vector, List, Tensor, Tuple, Scalar
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard import math
 
 
 class XPTensor(ABC):

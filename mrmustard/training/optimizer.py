@@ -20,12 +20,10 @@ from itertools import chain, groupby
 from typing import List, Callable, Sequence
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
-from mrmustard.math import Math
+from mrmustard import math
 from .parameter import Parameter, Trainable
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
-
-math = Math()
 
 __all__ = ["Optimizer"]
 

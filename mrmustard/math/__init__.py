@@ -25,8 +25,7 @@ greater degree of flexibility and code reuse.
 
 .. code-block::
 
-    from mrmustard.math import Math
-    math = Math()
+    from mrmustard import math
     math.cos(x)  # tensorflow backend
 
     from mrmustard import settings
@@ -37,7 +36,6 @@ greater degree of flexibility and code reuse.
 
 
 import importlib
-from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
@@ -50,12 +48,19 @@ class Math:
     This class is a switcher for performing math operations on the currently active backend.
     """
     # pylint: disable=no-else-return
+
+    def __init__(self, backend=['tensorflow']):
+        self._backend = backend
+
     def __getattribute__(self, name):
-        if settings.backend == "tensorflow":
-            return object.__getattribute__(TFMath(), name)
-        elif settings.backend == "torch":
-            return object.__getattribute__(TorchMath(), name)
+        if name == '_backend':
+            return object.__getattribute__(self, name)
+        else:
+            if self._backend == ["tensorflow"]:
+                return object.__getattribute__(TFMath(), name)
+            elif self._backend == ["torch"]:
+                return object.__getattribute__(TorchMath(), name)
 
         raise ValueError(
-            f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
+            f"No `{self._backend[0]}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
         )

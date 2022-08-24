@@ -2,6 +2,7 @@
 
 # from rich.pretty import install  # NOTE: just for the looks
 # install()
+from mrmustard.math import Math
 from ._version import __version__
 
 # pylint: disable=too-many-instance-attributes
@@ -9,7 +10,7 @@ class Settings:
     """Settings class."""
 
     def __init__(self):
-        self._backend = "tensorflow"
+        self.backend = ["tensorflow"]
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
@@ -28,25 +29,26 @@ class Settings:
         self.PROGRESSBAR = True
 
     @property
-    def backend(self):
+    def BACKEND(self):
         """The backend which is used.
 
         Can be either ``'tensorflow'`` or ``'torch'``.
         """
-        return self._backend
+        return self.backend[0]
 
-    @backend.setter
-    def backend(self, backend_name: str):
+    @BACKEND.setter
+    def BACKEND(self, backend_name: str):
         if backend_name not in ["tensorflow", "torch"]:
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
-        self._backend = backend_name
+        self.backend[0] = backend_name
 
 
 settings = Settings()
 """Settings object."""
 
-settings.backend = "tensorflow"
+settings.BACKEND = "tensorflow"
 
+math = Math(backend=settings.backend)
 
 def version():
     r"""Version number of Mr Mustard.

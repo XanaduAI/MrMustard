@@ -32,9 +32,7 @@ from mrmustard.lab.abstract import State
 from mrmustard import settings
 from tests.random import pure_state
 
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard import math
 
 
 @st.composite

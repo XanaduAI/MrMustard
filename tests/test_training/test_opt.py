@@ -35,9 +35,7 @@ from mrmustard.lab.states import Vacuum
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
 
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard import math
 
 
 @given(n=st.integers(0, 3))

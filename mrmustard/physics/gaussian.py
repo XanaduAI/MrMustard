@@ -22,9 +22,7 @@ from thewalrus.quantum import is_pure_cov
 from mrmustard.types import Matrix, Vector, Scalar
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard import math
 
 
 #  ~~~~~~

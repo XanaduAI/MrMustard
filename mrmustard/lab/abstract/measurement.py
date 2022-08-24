@@ -16,13 +16,11 @@
 
 from __future__ import annotations
 from abc import ABC
-from mrmustard.math import Math
+from mrmustard import math
 
 from mrmustard.types import Tensor, Callable, Sequence, Iterable
 from mrmustard import settings
 from .state import State
-
-math = Math()
 
 
 class FockMeasurement(ABC):

@@ -31,11 +31,9 @@ from mrmustard.types import (
     Union,
 )
 from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math
 from mrmustard.training.parameter import Parameter
 from .state import State
-
-math = Math()
 
 
 class Transformation:

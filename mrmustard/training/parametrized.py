@@ -19,10 +19,8 @@ of the class.
 """
 
 from typing import Sequence, List, Generator, Any
-from mrmustard.math import Math
+from mrmustard import math
 from .parameter import create_parameter, Trainable, Constant, Parameter
-
-math = Math()
 
 __all__ = ["Parametrized"]
 

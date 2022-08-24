@@ -16,10 +16,8 @@
 """
 
 from mrmustard.types import Sequence, Tensor, Tuple
-from mrmustard.math import Math
+from mrmustard import math
 from .parameter import Trainable
-
-math = Math()
 
 
 def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):

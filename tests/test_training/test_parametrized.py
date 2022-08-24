@@ -17,12 +17,10 @@
 import pytest
 
 from mrmustard.training import Parametrized
-from mrmustard.math import Math
+from mrmustard import math
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import BSgate, S2gate
 from mrmustard.training.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
-
-math = Math()
 
 
 @pytest.mark.parametrize("kwargs", [{"a": 5}, {"b": 4.5}])
