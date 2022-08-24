@@ -173,3 +173,23 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
+
+
+def test_MUX_1copy():
+    value_fn = lambda ket: np.abs(ket[0]) ** 2  # look at vacuum amplitude
+    # [(sqrt(1/2)|0> + sqrt(1/2)|1>)|0> + (sqrt(1/3)|0> + sqrt(2/3)|1>)|1>]/sqrt(2)
+    ket = np.sqrt(np.array([[1/2,1/2],[1/3,2/3]])) # pure state 
+    ket /= np.sqrt(2) # normalize
+
+    # 1 copy does nothing
+    assert State(ket=ket) >> MUX(value_fn, 1) == State(ket = ket)
+
+
+def test_MUX_1000copies(): # TODO fix this test
+    value_fn = lambda ket: np.abs(ket[0]) ** 2  # look at vacuum amplitude
+    # (sqrt(1/2)|0> + sqrt(1/2)|1>)|0> + (sqrt(1/3)|0> + sqrt(2/3)|1>)|1>
+    ket = np.sqrt(np.array([[1/2,1/2],[1/3,2/3]])) # pure state 
+    ket /= np.sqrt(2) # normalize
+
+    # 1000 copies always yields the 1st mode
+    assert State(ket=ket) >> MUX(value_fn, 1000) == State(ket=ket[:,0]/np.linalg.norm(ket[:,0])) & Vacuum(1)
