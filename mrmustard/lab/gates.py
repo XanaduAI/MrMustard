@@ -28,7 +28,6 @@ from mrmustard.physics import gaussian
 from mrmustard import math
 
 
-
 __all__ = [
     "Dgate",
     "Sgate",

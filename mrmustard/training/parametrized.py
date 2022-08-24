@@ -23,7 +23,6 @@ from mrmustard import math
 from .parameter import create_parameter, Trainable, Constant, Parameter
 
 
-
 __all__ = ["Parametrized"]
 
 

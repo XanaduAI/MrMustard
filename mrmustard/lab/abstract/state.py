@@ -41,7 +41,6 @@ if TYPE_CHECKING:
     from .transformation import Transformation
 
 
-
 # pylint: disable=too-many-instance-attributes
 class State:
     r"""Base class for quantum states."""

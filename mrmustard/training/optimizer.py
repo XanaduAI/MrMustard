@@ -26,7 +26,6 @@ from .parametrized import Parametrized
 from .parameter_update import param_update_method
 
 
-
 __all__ = ["Optimizer"]
 
 # pylint: disable=disallowed-name

@@ -23,8 +23,6 @@ from mrmustard.lab.gates import BSgate, S2gate
 from mrmustard.training.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
 
 
-
-
 @pytest.mark.parametrize("kwargs", [{"a": 5}, {"b": 4.5}])
 def test_attribute_assignment(kwargs):
     """Test that arguments are converted into Trainable or Constant and

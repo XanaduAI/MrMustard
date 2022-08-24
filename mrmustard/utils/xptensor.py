@@ -22,8 +22,6 @@ from mrmustard.types import Optional, Union, Matrix, Vector, List, Tensor, Tuple
 from mrmustard import math
 
 
-
-
 class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 

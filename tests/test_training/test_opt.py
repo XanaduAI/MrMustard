@@ -38,8 +38,6 @@ from mrmustard import settings
 from mrmustard import math
 
 
-
-
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""

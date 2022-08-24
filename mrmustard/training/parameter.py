@@ -88,7 +88,6 @@ from mrmustard import math
 from mrmustard.types import Tensor
 
 
-
 __all__ = [
     "Parameter",
     "Trainable",

@@ -20,8 +20,6 @@ from mrmustard import math
 from .parameter import Trainable
 
 
-
-
 def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):
 
     r"""Updates the symplectic parameters using the given symplectic gradients.

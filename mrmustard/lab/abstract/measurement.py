@@ -23,8 +23,6 @@ from mrmustard import settings
 from .state import State
 
 
-
-
 class FockMeasurement(ABC):
     r"""A Fock measurement projecting onto a Fock measurement pattern.
 

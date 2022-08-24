@@ -28,8 +28,6 @@ from mrmustard.training.parameter import (
 from mrmustard import math
 
 
-
-
 @pytest.mark.parametrize("from_backend", [True, False])
 def test_create_constant(from_backend):
     """Checks if the factory function `create_parameter`

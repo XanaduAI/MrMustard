@@ -48,7 +48,7 @@ class MathInterface(ABC):
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
-        return cls.__instance    
+        return cls.__instance
 
     @abstractmethod
     def __getattr__(self, name):
@@ -1086,4 +1086,3 @@ class MathInterface(ABC):
         Jmat = self.J(S.shape[-1] // 2)
         Z = self.matmul(self.transpose(S), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
-

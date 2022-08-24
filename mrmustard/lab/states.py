@@ -25,8 +25,6 @@ from mrmustard.training import Parametrized
 from mrmustard import math
 
 
-
-
 __all__ = [
     "Vacuum",
     "SqueezedVacuum",

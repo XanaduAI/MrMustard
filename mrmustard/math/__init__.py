@@ -59,7 +59,8 @@ class Math:
         raise ValueError(
             f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
         )
-    
-    __all__ = list(set(vars().keys()) - {'__module__', '__qualname__'})    
+
+    __all__ = list(set(vars().keys()) - {"__module__", "__qualname__"})
+
 
 sys.modules[__name__] = Math()

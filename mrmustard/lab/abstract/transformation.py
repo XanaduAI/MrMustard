@@ -36,8 +36,6 @@ from mrmustard.training.parameter import Parameter
 from .state import State
 
 
-
-
 class Transformation:
     r"""Base class for all Transformations."""
     _bell = None  # single-mode TMSV state for gaussian-to-fock conversion

@@ -10,8 +10,6 @@ from mrmustard.physics import gaussian as gp, fock as fp
 from mrmustard import math
 
 
-
-
 class TestGaussianStates:
     @pytest.mark.parametrize("hbar", [1 / 2, 1.0, 2.0, 1.6])
     @pytest.mark.parametrize("num_modes", np.arange(5, 10))

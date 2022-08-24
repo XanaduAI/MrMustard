@@ -25,7 +25,6 @@ from mrmustard import settings
 from mrmustard import math
 
 
-
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 
 # pylint: disable=no-member

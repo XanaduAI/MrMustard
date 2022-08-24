@@ -35,8 +35,6 @@ from tests.random import pure_state
 from mrmustard import math
 
 
-
-
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
