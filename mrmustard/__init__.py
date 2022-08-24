@@ -50,6 +50,7 @@ settings.BACKEND = "tensorflow"
 
 math = Math(backend=settings.backend)
 
+
 def version():
     r"""Version number of Mr Mustard.
 

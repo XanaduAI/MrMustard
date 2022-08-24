@@ -49,11 +49,11 @@ class Math:
     """
     # pylint: disable=no-else-return
 
-    def __init__(self, backend=['tensorflow']):
+    def __init__(self, backend=["tensorflow"]):
         self._backend = backend
 
     def __getattribute__(self, name):
-        if name == '_backend':
+        if name == "_backend":
             return object.__getattribute__(self, name)
         else:
             if self._backend == ["tensorflow"]:
