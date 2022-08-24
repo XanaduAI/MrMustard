@@ -15,8 +15,6 @@
 r"""
 The ``math`` module contains low-level functions for performing mathematical operations.
 
-It is recommended that users access the backends using the an instance of the :class:`Math` class rather than the backends themselves.
-
 The Math class is a wrapper that passes the calls to the currently active backend, which is determined by
 the ``BACKEND`` parameter in ``mrmustard.settings`` (the default is ``tensorflow``).
 
@@ -25,8 +23,7 @@ greater degree of flexibility and code reuse.
 
 .. code-block::
 
-    from mrmustard.math import Math
-    math = Math()
+    from mrmustard import math
     math.cos(x)  # tensorflow backend
 
     from mrmustard import settings
