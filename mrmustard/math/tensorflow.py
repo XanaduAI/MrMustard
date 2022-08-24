@@ -56,6 +56,9 @@ class TFMath(MathInterface):
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
         return tf.range(start, limit, delta, dtype=dtype)
 
+    def argsort(self, array: tf.Tensor, axis: int = -1) -> tf.Tensor:
+        return tf.argsort(array, axis=axis)
+
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
         return np.array(tensor)
 
@@ -114,6 +117,9 @@ class TFMath(MathInterface):
 
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
+
+    def cumsum(self, array: tf.Tensor, axis: int = 0) -> tf.Tensor:
+        return tf.math.cumsum(array, axis=axis)
 
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)

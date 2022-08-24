@@ -96,6 +96,17 @@ class MathInterface(ABC):
         # NOTE: is float64 by default
 
     @abstractmethod
+    def argsort(self, array: Tensor) -> Tensor:
+        r"""Returns the indices that would sort an array.
+
+        Args:
+            array (array): array to sort
+
+        Returns:
+            array: indices that would sort the array
+        """
+
+    @abstractmethod
     def asnumpy(self, tensor: Tensor) -> Tensor:
         r"""Converts a tensor to a NumPy array.
 
@@ -250,6 +261,18 @@ class MathInterface(ABC):
 
         Returns:
             array: hyperbolic cosine of array
+        """
+
+    @abstractmethod
+    def cumsum(self, array: Tensor, axis: int = None) -> Tensor:
+        r"""Returns the cumulative sum of array along the given axis.
+
+        Args:
+            array (array): array to take the cumulative sum of
+            axis (int): axis along which to take the cumulative sum
+
+        Returns:
+            array: cumulative sum of array
         """
 
     @abstractmethod
