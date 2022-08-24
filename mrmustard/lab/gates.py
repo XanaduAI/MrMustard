@@ -18,7 +18,7 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Callable
 from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
@@ -26,6 +26,7 @@ from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
 
 from mrmustard.math import Math
+from mrmustard.lab.abstract import State
 
 math = Math()
 
@@ -45,6 +46,7 @@ __all__ = [
     "Attenuator",
     "Amplifier",
     "AdditiveNoise",
+    "MUX",
 ]
 
 
@@ -719,3 +721,43 @@ class AdditiveNoise(Parametrized, Transformation):
     @property
     def Y_matrix(self):
         return gaussian.noise_Y(self.noise.value, settings.HBAR)
+
+
+class MUX:
+    r""" The MUX gate emulates an actual MUX circuit that selects the best out of many inputs.
+    The selection takes place by evaluating a value function on the conditional outputs of an N-mode 
+    circuit, with the assumption that all but the first mode are measured by PNR detectors.
+    It effectively changes the probability of the conditional outcomes, making better outcomes
+    more likely. At the moment it works only for N = 2.
+
+    Arguments:
+        value_function (callable): a function that evaluates the value of a conditional state
+        copies (int): number of copies of the circuit that produces the conditional state
+
+    Example:
+        Vacuum(2) >> Sgate(r=[1.15,-1.15]) >> BSgate(theta=0.9) >> MUX(-cost_function, 16)
+
+    """
+
+    def __init__(self, value_function: Callable[[Tensor], float], copies: int = 1):
+        self.value_function = value_function
+        self.copies = copies
+
+    def primal(self, state: State) -> State:
+        if state.is_pure:
+            return State(ket = self.rebalance_ket(state.ket()))
+        else:
+            raise NotImplementedError("MUX is not implemented for mixed states")
+
+    def rebalance_ket(self, ket):
+        old_probs = math.sum(math.abs(ket)**2, axes=[0])
+        order = math.argsort([self.value_function(ket[:,i]/math.norm(ket[:,i])) for i in range(ket.shape[1])])[::-1]
+        old_probs_reordered = math.gather(old_probs, order)
+        new_probs_reordered = self.muximize(old_probs_reordered)
+        rescaling_old_order = math.gather(math.sqrt(new_probs_reordered/old_probs_reordered, dtype=ket.dtype), math.argsort(order))
+        return ket * rescaling_old_order
+
+    def muximize(self, probs):
+        P = math.cumsum(math.concat([math.zeros(1), probs], axis=0))
+        return (1-P[:-1])**self.copies - (1-P[1:])**self.copies
+    
