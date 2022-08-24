@@ -22,9 +22,9 @@ from mrmustard.training import Parametrized
 from mrmustard.lab.abstract import FockMeasurement
 from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math
 
-math = Math()
+
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 

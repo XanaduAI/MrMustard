@@ -22,9 +22,9 @@ import numpy as np
 
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math
 
-math = Math()
+
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -7,9 +7,9 @@ from thewalrus.random import random_covariance
 from thewalrus.quantum import real_to_complex_displacements
 from mrmustard.physics import gaussian as gp, fock as fp
 
-from mrmustard.math import Math
+from mrmustard import math
 
-math = Math()
+
 
 
 class TestGaussianStates:

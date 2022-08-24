@@ -19,7 +19,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.stats import poisson
 
-from mrmustard.math import Math
+from mrmustard import math
 from mrmustard.lab import (
     PNRDetector,
     Coherent,
@@ -37,7 +37,7 @@ from mrmustard.lab import (
 from mrmustard import physics
 from mrmustard import settings
 
-math = Math()
+
 np.random.seed(137)
 
 

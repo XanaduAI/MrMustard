@@ -25,9 +25,9 @@ from mrmustard.lab.abstract import Transformation
 from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
 
-from mrmustard.math import Math
+from mrmustard import math
 
-math = Math()
+
 
 __all__ = [
     "Dgate",

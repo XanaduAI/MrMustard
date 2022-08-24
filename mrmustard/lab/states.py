@@ -22,9 +22,9 @@ from mrmustard import settings
 from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian, fock
 from mrmustard.training import Parametrized
-from mrmustard.math import Math
+from mrmustard import math
 
-math = Math()
+
 
 
 __all__ = [
