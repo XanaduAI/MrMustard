@@ -731,17 +731,23 @@ class MUX:
     more likely. At the moment it works only for N = 2 and for pure states.
 
     Arguments:
-        value_function (callable): a function that evaluates the value of a conditional state
-        copies (int): number of copies of the circuit that produces the conditional state
+        pnr_order (optional list(int)): the order of preference of the PNR outcomes. If some values are absent, they are append to the end.
+        value_function (optional callable): in alternative to the pnr order, a function that evaluates the value of a conditional state
+        copies (int): number of copies of the circuit at the input of the mux
 
     Example:
-        Vacuum(2) >> Sgate(r=[1.15,-1.15]) >> BSgate(theta=0.9) >> MUX(-cost_function, 16)
+        Vacuum(2) >> Sgate(r=[1.15,-1.15]) >> BSgate(theta=0.9) >> MUX(pnr_order=[6,4,2], copies = 16)
 
     """
 
-    def __init__(self, value_function: Callable[[Tensor], float], copies: int = 1):
+    def __init__(self, pnr_order: List[int] = None, value_function: Callable[[Tensor], float] = None, copies: int = 1):
+        if value_function is not None and pnr_order is not None:
+            raise ValueError("Cannot specify both pnr_order and value_function")
+        if pnr_order is None and value_function is None:
+            raise ValueError("Must specify either pnr_order or value_function")
         self.value_function = value_function
         self.copies = copies
+        self.pnr_order = pnr_order
 
     def primal(self, state: State) -> State:
         if state.is_pure:
@@ -752,7 +758,10 @@ class MUX:
     def rebalance_ket(self, ket):
         old_probs = math.sum(math.abs(ket) ** 2, axes=[0])
         renorm_ket = ket / math.sqrt(old_probs[None, :], dtype=ket.dtype)
-        order = math.argsort([self.value_function(renorm_ket[:,i]) for i in range(ket.shape[1])])[::-1]
+        if self.value_function is not None:
+            order = math.argsort([self.value_function(renorm_ket[:,i]) for i in range(ket.shape[1])])[::-1]
+        else:
+            order = self.pnr_order + [i for i in range(ket.shape[1]) if i not in self.pnr_order]
         old_probs_reordered = math.gather(old_probs, order)
         new_probs_reordered = self.muximize(old_probs_reordered)
         rescaling_old_order = math.gather(
@@ -761,6 +770,6 @@ class MUX:
         )
         return ket * rescaling_old_order[None, :]
 
-    def muximize(self, probs):
-        P = math.cumsum(math.concat([math.zeros(1), probs], axis=0))
+    def muximize(self, old_probs):
+        P = math.cumsum(math.concat([math.zeros(1), old_probs], axis=0))
         return (1 - P[:-1]) ** self.copies - (1 - P[1:]) ** self.copies
