@@ -798,10 +798,10 @@ class MUX:
         ket_rescaling_ranked = math.sqrt(new_probs_ranked, dtype=ket.dtype)
         swap_in_ket = self.swap_in.ket(cutoffs=[ket.shape[0]])
         swap_in_rescaling = math.sqrt(swap_in_prob, dtype=ket.dtype)
-        ket_t = math.transpose(ket, (len(cutoffs), *range(len(cutoffs)))) # 1st mode at the end
-        rebalanced_ket_t = math.tile(swap_in_ket.__getitem__(*([None]*len(cutoffs)), slice(None)), (*cutoffs, 1)) * swap_in_rescaling
-        rebalanced_pnr_columns = math.astensor([self.normalize(ket_t[pnr]) * ket_rescaling_ranked[i] for i,pnr in enumerate(self.pnr_ranking)])
-        pnr_indices = math.astensor(self.pnr_ranking)[:,None].__getitem__(slice(None), *([None]*(len(cutoffs)-1)))
+        ket_t = math.transpose(ket, (*range(1,len(cutoffs)+1), 0)) # 1st mode at the end
+        rebalanced_ket_t = math.tile(math.reshape(swap_in_ket,((1,)*len(cutoffs)+(swap_in_ket.shape[0],))), (*cutoffs, 1)) * swap_in_rescaling
+        rebalanced_pnr_columns = [self.normalize(ket_t[pnr]) * ket_rescaling_ranked[i] for i,pnr in enumerate(self.pnr_ranking)]
+        pnr_indices = math.reshape(math.astensor(self.pnr_ranking), (len(self.pnr_ranking), -1))
         rebalanced_ket_t = math.update_tensor(rebalanced_ket_t, pnr_indices, rebalanced_pnr_columns)
         return math.transpose(rebalanced_ket_t, (len(cutoffs), *range(len(cutoffs)))) # 1st mode at the beginning
 
