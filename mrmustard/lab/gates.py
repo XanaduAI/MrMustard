@@ -27,6 +27,7 @@ from mrmustard.physics import gaussian
 
 from mrmustard.math import Math
 from mrmustard.lab.abstract import State
+from mrmustard.lab import SqueezedVacuum
 
 math = Math()
 
@@ -731,44 +732,57 @@ class MUX:
     more likely. At the moment it works only for N = 2 and for pure states.
 
     Arguments:
-        pnr_order (optional list(int)): the order of preference of the PNR outcomes. If some values are absent, they are append to the end.
-        value_function (optional callable): in alternative to the pnr order, a function that evaluates the value of a conditional state
         copies (int): number of copies of the circuit at the input of the mux
+        pnr_order (optional list(int)): the order of preference of the PNR outcomes. If some values are absent, a fixed state is swapped in.
+        value_function (optional callable): in alternative to the pnr order, a function that evaluates the value of a conditional state
+        swap_in (State): the state to swap in if the PNR outcomes are not in the pnr_order list
 
     Example:
         Vacuum(2) >> Sgate(r=[1.15,-1.15]) >> BSgate(theta=0.9) >> MUX(pnr_order=[6,4,2], copies = 16)
 
     """
 
-    def __init__(self, pnr_order: List[int] = None, value_function: Callable[[Tensor], float] = None, copies: int = 1):
+    def __init__(self, copies: int = 1, pnr_order: List[int] = None, value_function: Callable[[Tensor], float] = None, swap_in: Optional[State] = SqueezedVacuum(r=1.15)):
         if value_function is not None and pnr_order is not None:
             raise ValueError("Cannot specify both pnr_order and value_function")
         if pnr_order is None and value_function is None:
             raise ValueError("Must specify either pnr_order or value_function")
-        self.value_function = value_function
         self.copies = copies
+        self.value_function = value_function
         self.pnr_order = pnr_order
+        self.swap_in = swap_in
 
     def primal(self, state: State) -> State:
-        if state.is_pure:
-            return State(ket=self.rebalance_ket(state.ket()))
-        else:
+        if not state.is_pure:
             raise NotImplementedError("MUX is not implemented for mixed states")
+        return State(ket=self.rebalance_ket(state.ket()))
 
     def rebalance_ket(self, ket):
-        old_probs = math.sum(math.abs(ket) ** 2, axes=[0])
-        renorm_ket = ket / math.sqrt(old_probs[None, :], dtype=ket.dtype)
+        c1,c2 = ket.shape
         if self.value_function is not None:
-            order = math.argsort([self.value_function(renorm_ket[:,i]) for i in range(ket.shape[1])])[::-1]
+            values = [self.value_function(ket[:,i]/math.norm(ket[:,i])) for i in range(c2)]
+            ranking = math.argsort(values)[::-1]
         else:
-            order = self.pnr_order + [i for i in range(ket.shape[1]) if i not in self.pnr_order]
-        old_probs_reordered = math.gather(old_probs, order)
-        new_probs_reordered = self.muximize(old_probs_reordered)
-        rescaling_old_order = math.gather(
-            math.sqrt(new_probs_reordered / old_probs_reordered, dtype=ket.dtype),
-            math.argsort(order),
-        )
-        return ket * rescaling_old_order[None, :]
+            swap_in = [i for i in range(c2) if i not in self.pnr_order]
+            ranking = self.pnr_order + swap_in
+        probs = math.sum(math.abs(ket) ** 2, axes=[0])
+        new_probs = math.gather(self.muximize(math.gather(probs, ranking)), math.argsort(ranking))
+        rescaling = math.sqrt(new_probs / probs, dtype=ket.dtype)
+        if self.swap_in is not None:
+            swap_in_state = self.swap_in.ket(cutoffs=[ket.shape[0]])
+            swap_in_prob = math.sum(math.gather(new_probs, swap_in), axes=[0])/len(swap_in)
+            swap_in_sqrt_prob = math.sqrt(swap_in_prob, dtype=swap_in_state.dtype)
+            columns = []
+            for i in range(c2):
+                if i in self.pnr_order:
+                    columns.append(ket[:,i][:,None] * rescaling[i])
+                if i in swap_in:
+                    columns.append(swap_in_state[:,None] * swap_in_sqrt_prob)
+            final_ket = math.concat(columns, axis=1)
+        else:
+            final_ket = ket * rescaling[None, :]
+        return final_ket
+
 
     def muximize(self, old_probs):
         P = math.cumsum(math.concat([math.zeros(1), old_probs], axis=0))
