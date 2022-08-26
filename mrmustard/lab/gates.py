@@ -18,6 +18,7 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
+import numpy as np
 from typing import Union, Optional, List, Tuple, Callable
 from mrmustard.types import Tensor
 from mrmustard import settings
@@ -725,65 +726,86 @@ class AdditiveNoise(Parametrized, Transformation):
 
 
 class MUX:
-    r"""The MUX gate emulates an actual MUX circuit that selects the best out of many inputs.
-    The selection takes place by evaluating a value function on the conditional outputs of an N-mode
-    circuit, with the assumption that all but the first mode are measured by PNR detectors.
-    It effectively changes the probability of the conditional outcomes, making better outcomes
-    more likely. At the moment it works only for N = 2 and for pure states.
+    r"""The MUX gate emulates an actual MUX circuit that takes ``copies`` copies of the circuit at the input and that 
+    selects the best conditional state on the first mode, given pnr outcomes on the remaining modes. If the best pnr_outcome
+    doesn't occur, it selects the second best, etc... If none of the pnr_outcomes occur, it swaps is the state given by the ``swap_in`` argument.
+    The MUX effectively changes the probability of the conditional outcomes, making better outcomes more likely, with a fallback ``swap_in`` state.
+    The conditional states are ranked in the pnr_ranking list, unless ``value_function`` is provided, in which case
+    they are ranked according to the value of the function.
+    NOTE: At the moment it works only for two modes and for pure states.
 
     Arguments:
         copies (int): number of copies of the circuit at the input of the mux
-        pnr_order (optional list(int)): the order of preference of the PNR outcomes. If some values are absent, a fixed state is swapped in.
-        value_function (optional callable): in alternative to the pnr order, a function that evaluates the value of a conditional state
+        pnr_ranking (optional list(int)): the ranking of preference of the PNR outcomes. If some values are absent, a fixed state is swapped in.
+        value_function (optional callable): in alternative to the pnr ranking, a function that evaluates the value of conditional states
         swap_in (State): the state to swap in if the PNR outcomes are not in the pnr_order list
 
     Example:
-        Vacuum(2) >> Sgate(r=[1.15,-1.15]) >> BSgate(theta=0.9) >> MUX(pnr_order=[6,4,2], copies = 16)
+        Vacuum(2) >> Sgate(r=[1.15,-1.15]) >> BSgate(theta=0.9) >> MUX(pnr_ranking=[6,4,2], copies = 16)
 
     """
 
-    def __init__(self, copies: int = 1, pnr_order: List[int] = None, value_function: Callable[[Tensor], float] = None, swap_in: Optional[State] = SqueezedVacuum(r=1.15)):
-        if value_function is not None and pnr_order is not None:
-            raise ValueError("Cannot specify both pnr_order and value_function")
-        if pnr_order is None and value_function is None:
-            raise ValueError("Must specify either pnr_order or value_function")
+    def __init__(self, copies: int = 1, pnr_ranking: List[int] = None, value_function: Callable[[Tensor], float] = None, swap_in: Optional[State] = SqueezedVacuum(r=1.15)):
+        if pnr_ranking is None and value_function is None:
+            raise ValueError("Must specify at least one of pnr_ranking and value_function")
         self.copies = copies
         self.value_function = value_function
-        self.pnr_order = pnr_order
+        self.pnr_ranking = pnr_ranking
         self.swap_in = swap_in
 
     def primal(self, state: State) -> State:
         if not state.is_pure:
-            raise NotImplementedError("MUX is not implemented for mixed states")
+            raise NotImplementedError("MUX is not implemented for density matrices yet")
         return State(ket=self.rebalance_ket(state.ket()))
 
-    def rebalance_ket(self, ket):
-        c1,c2 = ket.shape
+    def normalize(self, ket):
+        return ket / math.norm(ket)
+
+    def cutoffs(self, ket):
+        _, *cutoffs = ket.shape
+        if type(cutoffs) == int:
+            cutoffs = (cutoffs,)
+        return tuple(cutoffs)
+
+    def ranking(self, ket):
+        cutoffs = self.cutoffs(ket)
         if self.value_function is not None:
-            values = [self.value_function(ket[:,i]/math.norm(ket[:,i])) for i in range(c2)]
+            values = []
+            ket_t = math.transpose(ket, (len(cutoffs), *range(len(cutoffs)))) # 1st mode at the end
+            for pnr in self.pnr_ranking:
+                values.append(self.value_function(self.normalize(ket_t[pnr])))
             ranking = math.argsort(values)[::-1]
         else:
-            swap_in = [i for i in range(c2) if i not in self.pnr_order]
-            ranking = self.pnr_order + swap_in
-        probs = math.sum(math.abs(ket) ** 2, axes=[0])
-        new_probs = math.gather(self.muximize(math.gather(probs, ranking)), math.argsort(ranking))
-        rescaling = math.sqrt(new_probs / probs, dtype=ket.dtype)
-        if self.swap_in is not None:
-            swap_in_state = self.swap_in.ket(cutoffs=[ket.shape[0]])
-            swap_in_prob = math.sum(math.gather(new_probs, swap_in), axes=[0])/len(swap_in)
-            swap_in_sqrt_prob = math.sqrt(swap_in_prob, dtype=swap_in_state.dtype)
-            columns = []
-            for i in range(c2):
-                if i in self.pnr_order:
-                    columns.append(ket[:,i][:,None] * rescaling[i])
-                if i in swap_in:
-                    columns.append(swap_in_state[:,None] * swap_in_sqrt_prob)
-            final_ket = math.concat(columns, axis=1)
-        else:
-            final_ket = ket * rescaling[None, :]
-        return final_ket
+            ranking = self.pnr_ranking
+        return ranking
+
+    def new_probs(self, ket):
+        cutoffs = self.cutoffs(ket)
+        ranking = self.ranking(ket)
+        ket_t = math.transpose(ket, (len(cutoffs), *range(len(cutoffs)))) # 1st mode at the end
+        probs_ranked = [math.norm(ket_t[pnr])**2 for pnr in ranking]
+        probs_ranked.append(1-math.sum(probs_ranked))
+        new_probs_ranked = self.muximize(probs_ranked)
+        swap_in_prob = new_probs_ranked[-1]/(np.prod(cutoffs)-len(self.pnr_ranking))
+        return new_probs_ranked, swap_in_prob
+
+    def match_dimensions(self, arr, depth):
+        return arr.__getitem__(*([None]*depth), slice(None))
+
+    def rebalance_ket(self, ket):
+        cutoffs = self.cutoffs(ket)
+        new_probs_ranked, swap_in_prob = self.new_probs(ket)
+        ket_rescaling_ranked = math.sqrt(new_probs_ranked, dtype=ket.dtype)
+        swap_in_ket = self.swap_in.ket(cutoffs=[ket.shape[0]])
+        swap_in_rescaling = math.sqrt(swap_in_prob, dtype=ket.dtype)
+        ket_t = math.transpose(ket, (len(cutoffs), *range(len(cutoffs)))) # 1st mode at the end
+        rebalanced_ket_t = math.tile(swap_in_ket.__getitem__(*([None]*len(cutoffs)), slice(None)), (*cutoffs, 1)) * swap_in_rescaling
+        rebalanced_pnr_columns = math.astensor([self.normalize(ket_t[pnr]) * ket_rescaling_ranked[i] for i,pnr in enumerate(self.pnr_ranking)])
+        pnr_indices = math.astensor(self.pnr_ranking)[:,None].__getitem__(slice(None), *([None]*(len(cutoffs)-1)))
+        rebalanced_ket_t = math.update_tensor(rebalanced_ket_t, pnr_indices, rebalanced_pnr_columns)
+        return math.transpose(rebalanced_ket_t, (len(cutoffs), *range(len(cutoffs)))) # 1st mode at the beginning
 
 
-    def muximize(self, old_probs):
-        P = math.cumsum(math.concat([math.zeros(1), old_probs], axis=0))
+    def muximize(self, probs):
+        P = math.cumsum(math.concat([math.zeros(1, dtype=probs[0].dtype), math.astensor(probs)], axis=0))
         return (1 - P[:-1]) ** self.copies - (1 - P[1:]) ** self.copies
