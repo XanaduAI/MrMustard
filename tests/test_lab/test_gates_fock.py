@@ -70,6 +70,8 @@ def test_fock_representation_displacement(cutoffs, x, y):
     dgate = Dgate(x, y)
     Ud = dgate.U(cutoffs)
 
+    # compare with the standard way of calculating
+    # transformation unitaries using the Choi isomorphism
     choi_state = dgate.bell >> dgate
     expected_Ud = fock.fock_representation(
         choi_state.cov,
@@ -79,7 +81,7 @@ def test_fock_representation_displacement(cutoffs, x, y):
         choi_r=settings.CHOI_R,
     )
 
-    assert np.allclose(Ud, expected_Ud)
+    assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
 
 @given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
