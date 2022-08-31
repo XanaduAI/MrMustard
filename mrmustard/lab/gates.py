@@ -96,20 +96,40 @@ class Dgate(Parametrized, Transformation):
     def U(self, cutoffs: List[int]):
         r"""Returns the unitary representation of the Displacement gate using the Laguerre
         polynomials."""
-        if len(cutoffs) != self.num_modes:
+        N = len(cutoffs)
+        if N != self.num_modes:
             raise ValueError(
                 f"Expected `len(cutoffs)={len(self.num_modes)}` but {len(cutoffs)} cutoffs were given."
             )
 
-        if isinstance(cutoffs, List) and len(cutoffs) == 1:
-            cutoff = cutoffs[0]
-        else:
-            raise NotImplementedError("Displacement is only implemented for a single mode.")
-
         r = math.sqrt(self.x.value**2 + self.y.value**2)
         phi = math.atan(self.y.value / self.x.value)
 
-        return math.displacement(r, phi, cutoff)
+        if N > 1:
+            # calculate displacement independently for each mode
+            # and return the outer product
+            unitaries = []
+            for idx, cutoff in enumerate(cutoffs):
+                if math.abs(r[idx]) < 1e-15 and math.abs(phi[idx]) < 1e-15:
+                    Ud = math.eyes(cutoff)
+                else:
+                    Ud = math.displacement(r[idx], phi[idx], cutoff)
+
+                unitaries.append(Ud)
+
+            outer = unitaries[0]
+            for i in range(N - 1):
+                outer = math.outer(outer, unitaries[i + 1])
+
+            return math.transpose(
+                outer,
+                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+            )
+
+        if math.abs(r) < 1e-15 and math.abs(phi) < 1e-15:
+            return math.eye(cutoffs[0])
+        else:
+            return math.displacement(r, phi, cutoffs[0])
 
 
 class Sgate(Parametrized, Transformation):
