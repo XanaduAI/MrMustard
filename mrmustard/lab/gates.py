@@ -110,8 +110,9 @@ class Dgate(Parametrized, Transformation):
             # and return the outer product
             unitaries = []
             for idx, cutoff in enumerate(cutoffs):
-                if math.abs(r[idx]) < 1e-15 and math.abs(phi[idx]) < 1e-15:
-                    Ud = math.eyes(cutoff)
+                # if args are close to zero, return the identity
+                if math.abs(r[idx]).numpy() < 1e-15:
+                    Ud = math.eye(cutoff)
                 else:
                     Ud = math.displacement(r[idx], phi[idx], cutoff)
 
@@ -126,7 +127,8 @@ class Dgate(Parametrized, Transformation):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
 
-        if math.abs(r) < 1e-15 and math.abs(phi) < 1e-15:
+        # if args are close to zero, return the identity
+        if math.abs(r).numpy() < 1e-15:
             return math.eye(cutoffs[0])
         else:
             return math.displacement(r, phi, cutoffs[0])
