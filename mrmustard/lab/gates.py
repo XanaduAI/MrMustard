@@ -94,44 +94,46 @@ class Dgate(Parametrized, Transformation):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
     def U(self, cutoffs: List[int]):
-        r"""Returns the unitary representation of the Displacement gate using the Laguerre
+        """Returns the unitary representation of the Displacement gate using the Laguerre
         polynomials."""
+
         N = len(cutoffs)
         if N != self.num_modes:
             raise ValueError(
                 f"Expected `len(cutoffs)={len(self.num_modes)}` but {len(cutoffs)} cutoffs were given."
             )
 
-        r = math.sqrt(self.x.value**2 + self.y.value**2)
-        phi = math.atan(self.y.value / self.x.value)
+        r = (
+            math.sqrt(self.x.value**2 + self.y.value**2)
+            if N > 1
+            else math.sqrt([self.x.value**2 + self.y.value**2])
+        )
+        phi = (
+            math.atan(self.y.value / self.x.value)
+            if N > 1
+            else math.atan([self.y.value / self.x.value])
+        )
 
-        if N > 1:
-            # calculate displacement independently for each mode
-            # and return the outer product
-            unitaries = []
-            for idx, cutoff in enumerate(cutoffs):
-                # if args are close to zero, return the identity
-                if math.abs(r[idx]).numpy() < 1e-15:
-                    Ud = math.eye(cutoff)
-                else:
-                    Ud = math.displacement(r[idx], phi[idx], cutoff)
+        # calculate displacement independently for each mode
+        unitaries = []
+        for idx, cutoff in enumerate(cutoffs):
+            # if args are close to zero, give back the identity
+            if math.abs(r[idx]).numpy() < 1e-15:
+                Ud = math.eye(cutoff)
+            else:
+                Ud = math.displacement(r[idx], phi[idx], cutoff)
 
-                unitaries.append(Ud)
+            unitaries.append(Ud)
 
-            outer = unitaries[0]
-            for i in range(N - 1):
-                outer = math.outer(outer, unitaries[i + 1])
+        # calculate the outer product of the unitaries
+        outer = unitaries[0]
+        for i in range(N - 1):
+            outer = math.outer(outer, unitaries[i + 1])
 
-            return math.transpose(
-                outer,
-                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
-            )
-
-        # if args are close to zero, return the identity
-        if math.abs(r).numpy() < 1e-15:
-            return math.eye(cutoffs[0])
-        else:
-            return math.displacement(r, phi, cutoffs[0])
+        return math.transpose(
+            outer,
+            list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        )
 
 
 class Sgate(Parametrized, Transformation):
