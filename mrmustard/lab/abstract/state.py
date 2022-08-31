@@ -146,7 +146,7 @@ class State:
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return np.isclose(self.purity, 1.0, atol=1e-6)
+        return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[Vector]:
@@ -530,6 +530,9 @@ class State:
             return State(cov=cov, means=means, modes=item)
 
         # if not gaussian
+        if self.is_pure:
+            return State(ket=self._ket[item], modes=item)
+
         fock_partitioned = fock.trace(
             self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
         )
