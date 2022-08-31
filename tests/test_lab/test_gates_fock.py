@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.lab.circuit import Circuit
+from mrmustard import settings
 from mrmustard.lab.gates import Dgate, Sgate, BSgate, MZgate, S2gate
 from hypothesis import given, strategies as st
+from mrmustard.physics import fock
 from thewalrus.fock_gradients import (
     displacement,
     squeezing,
@@ -24,6 +25,7 @@ from thewalrus.fock_gradients import (
 )
 import numpy as np
 from tests import random
+import pytest
 
 
 @given(state=random.pure_state(num_modes=1), xy=random.vector(2))
@@ -98,6 +100,37 @@ def test_fock_representation_displacement():
     )
     D = Dgate(x=alpha.real, y=alpha.imag)
     assert np.allclose(expected, D.U(cutoffs=[cutoff]), atol=1e-5)
+
+
+@pytest.mark.parametrize(
+    "cutoffs,x,y",
+    [
+        [[5], 1.0, 1.0],
+        [[5], 0.0, 0.0],
+        [[2, 2], [0.1, 0.1], [0.25, -0.2]],
+        [[2, 5, 1], [0.1, 5.0, 1.0], [-0.3, 0.1, 0.0]],
+        [[3, 3, 3, 3], [0.1, 0.2, 0.3, 0.4], [-0.5, -4, 3.1, 4.2]],
+        [[3, 3], [0.0, 0.0], [0.0, 0.0]],
+    ],
+)
+# @pytest.mark.parametrize("cutoffs,x,y", [[[5], [10], [10]]])
+def test_fock_representation_multimode_displacement(cutoffs, x, y):
+    """Tests the correct construction of the multiple mode displacement operation."""
+
+    # apply gate
+    dgate = Dgate(x, y)
+    Ud = dgate.U(cutoffs)
+
+    choi_state = dgate.bell >> dgate
+    expected_Ud = fock.fock_representation(
+        choi_state.cov,
+        choi_state.means,
+        shape=cutoffs * 2,
+        return_unitary=True,
+        choi_r=settings.CHOI_R,
+    )
+
+    assert np.allclose(Ud, expected_Ud)
 
 
 @given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
