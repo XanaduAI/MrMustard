@@ -37,6 +37,7 @@ def test_Dgate_1mode(state, xy):
 def test_attenuator_on_fock():
     assert (Fock(10) >> Attenuator(0.5)).is_pure == False
 
+
 @given(state=random.pure_state(num_modes=2), xxyy=random.vector(4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
