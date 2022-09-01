@@ -17,19 +17,34 @@
 from .representation import Representation
 
 class Characteristic(Representation):
+    def from_characteristic_gaussian(self, characteristic):
+        return Gaussian(characteristic.covariance, characteristic.mean)
+
     def from_wigner_gaussian(self, wigner):
         return Gaussian(math.inv(wigner.covariance), wigner.mean)
         
 class Wigner(Representation):
+
+    def from_wigner_gaussian(self, wigner):
+        return Gaussian(wigner.covariance, wigner.mean)
+
     def from_characteristic_gaussian(self, characteristic):
         return Gaussian(math.inv(characteristic.covariance), characteristic.mean)
 
 class Husimi(Representation):
+
+    def from_husimi_gaussian(self, husimi):
+        return Gaussian(husimi.covariance, husimi.mean)
+
     def from_characteristic_gaussian(self, characteristic):
         cov = characteristic.covariance
         return Gaussian(cov + math.identity(cov.shape[-1])/2, characteristic.mean)
 
 class Bargmann(Representation):
+
+    def from_bargmann_gaussian(self, bargmann):
+        return Gaussian(bargmann.covariance, bargmann.mean, bargmann.scalar)
+
     def from_characteristic_gaussian(self, characteristic):
         Q = Husimi.from_characteristic_gaussian(characteristic).covariance
         Q_inv =  math.inv(Q)
@@ -39,23 +54,15 @@ class Bargmann(Representation):
         Q_inv =  math.inv(husimi.covariance)
         return Gaussian(X @ (math.identity(Q_inv.shape[-1]) - Q_inv), X @ Q_inv @ husimi.mean)
 
+
+class Position(Representation):
+    def from_characteristic_gaussian(self, characteristic):
+        return Gaussian(characteristic.covariance, characteristic.mean)
+
+
 class Gaussian:
 
-    def __init__(self, matrix, vector, scalar, coefficients = [1.0]):
-        """Vector of Gaussian objects in any representation.
-
-        Args:
-            matrix (Array): the batched covariance matrix
-            vector (Array): the batched mean vector
-            scalar (float): the scalar prefactor
-            coefficients (Array): the coefficients of the 'linear combination' of Gaussian objects
-        """
-        self.matrix = matrix
-        self.vector = vector
+    def __init__(self, covariance, mean, scalar=1):
+        self.covariance = covariance
+        self.mean = mean
         self.scalar = scalar
-        self.coefficients = coefficients
-
-
-
-    def __repr__(self):
-        return f"{self.__class__.__qualname__} | matrix.shape = {self.matrix.shape} | vector.shape = {self.vector.shape}"
