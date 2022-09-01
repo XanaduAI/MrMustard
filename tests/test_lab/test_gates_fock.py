@@ -35,7 +35,7 @@ def test_Dgate_1mode(state, xy):
 
 
 def test_attenuator_on_fock():
-    'tests that attenuating a fock state makes it mixed'
+    "tests that attenuating a fock state makes it mixed"
     assert (Fock(10) >> Attenuator(0.5)).is_pure == False
 
 
