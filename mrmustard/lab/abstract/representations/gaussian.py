@@ -14,7 +14,32 @@
 
 """Gaussian representation of quantum states, i.e. in terms of a covariance matrix and a mean vector."""
 
-class Gaussians(Representation):
+from .representation import Representation
+
+class Characteristic(Representation):
+    def from_wigner_gaussian(self, wigner):
+        return Gaussian(math.inv(wigner.covariance), wigner.mean)
+        
+class Wigner(Representation):
+    def from_characteristic_gaussian(self, characteristic):
+        return Gaussian(math.inv(characteristic.covariance), characteristic.mean)
+
+class Husimi(Representation):
+    def from_characteristic_gaussian(self, characteristic):
+        cov = characteristic.covariance
+        return Gaussian(cov + math.identity(cov.shape[-1])/2, characteristic.mean)
+
+class Bargmann(Representation):
+    def from_characteristic_gaussian(self, characteristic):
+        Q = Husimi.from_characteristic_gaussian(characteristic).covariance
+        Q_inv =  math.inv(Q)
+        return Gaussian(X @ (math.identity(Q.shape[-1]) - Q_inv), X @ Q_inv @ characteristic.mean)
+
+    def from_husimi_gaussian(self, husimi):
+        Q_inv =  math.inv(husimi.covariance)
+        return Gaussian(X @ (math.identity(Q_inv.shape[-1]) - Q_inv), X @ Q_inv @ husimi.mean)
+
+class Gaussian:
 
     def __init__(self, matrix, vector, scalar, coefficients = [1.0]):
         """Vector of Gaussian objects in any representation.

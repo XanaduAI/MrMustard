@@ -36,31 +36,6 @@ def Ket(Representation):
         else:
             super().__init__(data)
 
-    def from_characteristic(self, characteristic):
-        characteristic.
-
-    def from_wigner(self, wigner):
-        
-
-    def from_bargmann(self, bargmann):
-        A,b,c = bargmann.data
-        self.data = math.hermite_renormalized(A,b,c)
-
-    def from_fock(self, bargmann):
-        if purity(dm) < 1:
-            raise ValueError("Cannot convert a mixed state to a ket")
-        else:
-            self.array = dm_to_ket(dm.array)
-        
-
-    def from_position(self, bargmann):
-        A,b,c = bargmann.data
-        self.array = math.hermite_renormalized(A,b,c)
-
-    def from_momentum(self, bargmann):
-        A,b,c = bargmann.data
-        self.array = math.hermite_renormalized(A,b,c)
-
     def __repr__(self):
         return f"{self.__class__.__qualname__} | shape = {self.data.shape}"
 

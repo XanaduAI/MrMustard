@@ -23,34 +23,83 @@ class Representation(ABC):
     @abstractmethod # so that Representation can't be instantiated but subclasses can still call super().__init__()
     def __init__(self, representation: Representation):
         if isinstance(representation, Characteristic):
-            self.from_characteristic(representation)
-            print(f'Characteristic->{self.__class__.__qualname__}')
+            try:
+                self.from_characteristic_gaussian(representation)
+            except AttributeError:
+                self.from_characteristic_array(representation)
         elif isinstance(representation, Wigner):
-            self.from_wigner(representation)
-            print(f'Wigner->{self.__class__.__qualname__}')
+            try:
+                self.from_wigner_gaussian(representation)
+            except AttributeError:
+                self.from_wigner_array(representation)
         elif isinstance(representation, Bargmann):
-            self.from_bargmann(representation)
-            print(f'Bargmann->{self.__class__.__qualname__}')
+            try:
+                self.from_bargmann_gaussian(representation)
+            except AttributeError:
+                self.from_bargmann_array(representation)
         elif isinstance(representation, Fock):
-            self.from_fock(representation)
-            print(f'Fock->{self.__class__.__qualname__}')
+            try:
+                self.from_fock_gaussian(representation)
+            except AttributeError:
+                self.from_fock_array(representation)
         elif isinstance(representation, Position):
-            self.from_position(representation)
-            print(f'Position->{self.__class__.__qualname__}')
+            try:
+                self.from_position_gaussian(representation)
+            except AttributeError:
+                self.from_position_array(representation)
         elif isinstance(representation, Momentum):
-            self.from_momentum(representation)
-            print(f'Momentum->{self.__class__.__qualname__}')
+            try:
+                self.from_momentum_gaussian(representation)
+            except AttributeError:
+                self.from_momentum_array(representation)
         else:
             raise ValueError("Cannot convert representation {representation.__class__.__name__} to {self.__class__.__name__}")
 
-    def from_unitary(self, representation):
-        raise NotImplementedError("Cannot convert a ket to {cls.__qualname__}")
+    @abstractmethod
+    def from_characteristic_gaussian(self, characteristic: Characteristic):
+        raise NotImplementedError(f'Converting from characteristic gaussian to {self.__class__.__name__} is not implemented')
 
-    def from_projective_unitary(self, representation):
-        raise NotImplementedError("Cannot convert a density matrix to {cls.__qualname__}")
+    @abstractmethod
+    def from_characteristic_array(self, characteristic: Characteristic):
+        raise NotImplementedError(f'Converting from characteristic array to {self.__class__.__name__} is not implemented')
 
-    def from_symplectic(self, representation):
-        raise NotImplementedError("Cannot convert bargmann to {cls.__qualname__}")
+    @abstractmethod
+    def from_wigner_gaussian(self, wigner: Wigner):
+        raise NotImplementedError(f'Converting from wigner gaussian to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_wigner_array(self, wigner: Wigner):
+        raise NotImplementedError(f'Converting from wigner array to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_bargmann_gaussian(self, bargmann: Bargmann):
+        raise NotImplementedError(f'Converting from bargmann gaussian to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_bargmann_array(self, bargmann: Bargmann):
+        raise NotImplementedError(f'Converting from bargmann array to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_fock_gaussian(self, fock: Fock):
+        raise NotImplementedError(f'Converting from fock gaussian to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_fock_array(self, fock: Fock):
+        raise NotImplementedError(f'Converting from fock array to {self.__class__.__name__} is not implemented')
     
-    def from_wf(self, Wavefunction):
-        raise NotImplementedError("Cannot convert a wavefunction to {cls.__qualname__}")
+    @abstractmethod
+    def from_position_gaussian(self, position: Position):
+        raise NotImplementedError(f'Converting from position gaussian to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_position_array(self, position: Position):
+        raise NotImplementedError(f'Converting from position array to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_momentum_gaussian(self, momentum: Momentum):
+        raise NotImplementedError(f'Converting from momentum gaussian to {self.__class__.__name__} is not implemented')
+
+    @abstractmethod
+    def from_momentum_array(self, momentum: Momentum):
+        raise NotImplementedError(f'Converting from momentum array to {self.__class__.__name__} is not implemented')
+        

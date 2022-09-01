@@ -29,29 +29,6 @@ class DensityMatrix(Representation):
         else:
            super().__init__(data)
 
-    @cached_property
-    def purity(self):
-        return math.sum(math.abs(self.data)**2)
-
-    @cached_property
-    def norm(self):
-        return math.trace(self.data)
-
-    def from_ket(self, ket):
-        print(f'ket->{self.__class__.__qualname__}')
-        self.data = ket_to_dm(ket.data)
-
-    def from_dm(self, dm):
-        print(f'dm->{self.__class__.__qualname__}')
-        self.data = dm.data
-
-    def from_bargmann(self, bargmann):
-        A,b,c = bargmann.data
-        self.data = math.hermite_renormalized(A,b,c)
-    
-    def from_wf(self, wavefunction):
-        print(f'wf->{self.__class__.__qualname__}')
-
     def __repr__(self):
         return f"{self.__class__.__qualname__} | shape = {self.data.shape}"
 
