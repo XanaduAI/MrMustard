@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from mrmustard.lab.circuit import Circuit
-from mrmustard.lab.gates import Dgate, Sgate, BSgate, MZgate, S2gate
+from mrmustard.lab.states import Fock
+from mrmustard.lab.gates import Dgate, Sgate, BSgate, MZgate, S2gate, Attenuator
 from hypothesis import given, strategies as st
 from thewalrus.fock_gradients import (
     displacement,
@@ -32,6 +33,9 @@ def test_Dgate_1mode(state, xy):
     state_out = state >> Dgate(x, y) >> Dgate(-x, -y)
     assert state_out == state
 
+
+def test_attenuator_on_fock():
+    assert (Fock(10) >> Attenuator(0.5)).is_pure == False
 
 @given(state=random.pure_state(num_modes=2), xxyy=random.vector(4))
 def test_Dgate_2mode(state, xxyy):
