@@ -24,6 +24,6 @@ class WaveFunction(Ket):
             super().__init__(data)
 
     def from_bargmann(self, bargmann):
-        print('implementing bargmann->ket transform...')
-        A,b,c = bargmann.data
-        self.data = math.hermite_renormalized(A,b,c)
+        pass
+
+]
