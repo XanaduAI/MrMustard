@@ -24,33 +24,42 @@ from numbers import Number
 from mrmustard.physics.fock import dm_to_ket
 
 def Ket(Representation):
+    """Array-based coherent representation of quantum states as a vector in a Hilbert space.
+    The nature of the Hilbert space is determined by the representation.
+    """
 
     def __init__(self, data: Union[Representation, Array]):
         if isinstance(data, Array):
             self.array = data
-        elif purity(data) < 1: # assume it's a Representation
+        elif purity(data) < 1:
             raise ValueError("Cannot convert a mixed state to a ket")
         else:
             super().__init__(data)
-    
-    def purity(self):
-        "assumes normalized purity"
-        return 1.0
 
-    @cached_property
-    def norm(self):
-        return math.sqrt(math.sum(math.abs(self.data)**2))
+    def from_characteristic(self, characteristic):
+        characteristic.
 
-    def from_ket(self, ket):
-        print('implementing ket->ket transform...')
-        self.data = ket.data
+    def from_wigner(self, wigner):
+        
 
-    def from_dm(self, dm):
-        print('implementing dm->ket transform...')
-        self.data = dm_to_ket(dm.data)
+    def from_bargmann(self, bargmann):
+        A,b,c = bargmann.data
+        self.data = math.hermite_renormalized(A,b,c)
 
-    def from_wf(self, wavefunction):
-        print('implementing wf->ket transform...')
+    def from_fock(self, bargmann):
+        if purity(dm) < 1:
+            raise ValueError("Cannot convert a mixed state to a ket")
+        else:
+            self.array = dm_to_ket(dm.array)
+        
+
+    def from_position(self, bargmann):
+        A,b,c = bargmann.data
+        self.array = math.hermite_renormalized(A,b,c)
+
+    def from_momentum(self, bargmann):
+        A,b,c = bargmann.data
+        self.array = math.hermite_renormalized(A,b,c)
 
     def __repr__(self):
         return f"{self.__class__.__qualname__} | shape = {self.data.shape}"
@@ -58,12 +67,12 @@ def Ket(Representation):
     def __add__(self, other):
         if not isinstance(other, Ket):
             raise ValueError("Can only add a ket to a ket")
-        return Ket(self.data + other.data)
+        if self.array.shape != other.array.shape:
+            raise ValueError("Cannot add kets of different shape")
+        return Ket(self.array + other.array)
 
     def __mul__(self, other):
         if not isinstance(other, Number):
             raise ValueError("Can only multiply a ket by a number")
-        k = Ket(self.data * other)
-        k.purity = self.purity * math.abs(other)**2
-        return k
+        return Ket(self.data * other)
     

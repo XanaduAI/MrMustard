@@ -18,9 +18,6 @@ from mrmustard.math import Math; math = Math()
 from mrmustard.physics.fock import ket_to_dm
 from .representation import Representation
 from .densitymatrix import DensityMatrix
-from .wavefunction import WaveFunction
-from .bargmann import Bargmann
-from .wigner import Wigner
 
 class DensityMatrix(Representation):
 
@@ -30,7 +27,7 @@ class DensityMatrix(Representation):
         elif purity(data) < 1: # assume it's a Representation
             raise ValueError("Cannot convert a mixed state to a ket")
         else:
-            super().__init__(data)
+           super().__init__(data)
 
     @cached_property
     def purity(self):
@@ -41,20 +38,31 @@ class DensityMatrix(Representation):
         return math.trace(self.data)
 
     def from_ket(self, ket):
-        print('implementing ket->dm transform...')
+        print(f'ket->{self.__class__.__qualname__}')
         self.data = ket_to_dm(ket.data)
 
     def from_dm(self, dm):
-        print('implementing dm->dm transform...')
+        print(f'dm->{self.__class__.__qualname__}')
         self.data = dm.data
 
     def from_bargmann(self, bargmann):
-        print('implementing bargmann->dm transform...')
         A,b,c = bargmann.data
         self.data = math.hermite_renormalized(A,b,c)
     
     def from_wf(self, wavefunction):
-        print('implementing wf->dm transform...')
+        print(f'wf->{self.__class__.__qualname__}')
 
     def __repr__(self):
         return f"{self.__class__.__qualname__} | shape = {self.data.shape}"
+
+    def __add__(self, other):
+        if not isinstance(other, Ket):
+            raise ValueError("Can only add a density matrix to a density matrix")
+        if self.array.shape != other.array.shape:
+            raise ValueError("Cannot add density matrices of different shape")
+        return DensityMatrix(self.data + other.data)
+
+    def __mul__(self, other):
+        if not isinstance(other, Number):
+            raise ValueError("Can only multiply by a scalar")
+        return DensityMatrix(self.data * other)

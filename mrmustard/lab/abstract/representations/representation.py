@@ -22,26 +22,34 @@ class Representation(ABC):
 
     @abstractmethod # so that Representation can't be instantiated but subclasses can still call super().__init__()
     def __init__(self, representation: Representation):
-        if isinstance(representation, DensityMatrix):
-            self.from_dm(representation)
-        if isinstance(representation, Ket):
-            self.from_ket(representation)
-        if isinstance(representation, WaveFunction):
-            self.from_wf(representation)
-        if isinstance(representation, Bargmann):
-            self.from_bargmann(representation)
-        if isinstance(representation, Wigner):
+        if isinstance(representation, Characteristic):
+            self.from_characteristic(representation)
+            print(f'Characteristic->{self.__class__.__qualname__}')
+        elif isinstance(representation, Wigner):
             self.from_wigner(representation)
+            print(f'Wigner->{self.__class__.__qualname__}')
+        elif isinstance(representation, Bargmann):
+            self.from_bargmann(representation)
+            print(f'Bargmann->{self.__class__.__qualname__}')
+        elif isinstance(representation, Fock):
+            self.from_fock(representation)
+            print(f'Fock->{self.__class__.__qualname__}')
+        elif isinstance(representation, Position):
+            self.from_position(representation)
+            print(f'Position->{self.__class__.__qualname__}')
+        elif isinstance(representation, Momentum):
+            self.from_momentum(representation)
+            print(f'Momentum->{self.__class__.__qualname__}')
         else:
-            raise ValueError("Cannot convert representation {representation.__class__.__name__} to {cls.__name__}")
+            raise ValueError("Cannot convert representation {representation.__class__.__name__} to {self.__class__.__name__}")
 
-    def from_ket(self, Ket):
+    def from_unitary(self, representation):
         raise NotImplementedError("Cannot convert a ket to {cls.__qualname__}")
 
-    def from_dm(self, DensityMatrix):
+    def from_projective_unitary(self, representation):
         raise NotImplementedError("Cannot convert a density matrix to {cls.__qualname__}")
 
-    def from_bargmann(self, Bargmann):
+    def from_symplectic(self, representation):
         raise NotImplementedError("Cannot convert bargmann to {cls.__qualname__}")
     
     def from_wf(self, Wavefunction):
