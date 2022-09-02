@@ -189,7 +189,7 @@ def sample_homodyne_fock(
     # create reduced state of mode to be measured on the homodyne basis
     reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
 
-    q_tensor, probs = (
+    x, probs = (
         _probs_homodyne_pure(reduced_state.ket())
         if reduced_state.is_pure
         else _probs_homodyne_mixed(reduced_state.dm())
@@ -198,11 +198,15 @@ def sample_homodyne_fock(
     # draw a sample from the distribution
     pdf = math.Categorical(probs=probs, name="homodyne_dist")
     sample_idx = pdf.sample()
-    homodyne_sample = math.gather(q_tensor, sample_idx)
+    homodyne_sample = math.gather(x, sample_idx)
 
     # create "projector state" to calculate the conditional output state
     projector_state = lab.DisplacedSqueezed(
-        r=settings.HOMODYNE_SQUEEZING, phi=0, x=homodyne_sample, y=0, modes=reduced_state.modes
+        r=settings.HOMODYNE_SQUEEZING,
+        phi=0,
+        x=homodyne_sample / np.sqrt(2 * settings.HBAR),
+        y=0,
+        modes=reduced_state.modes,
     ) >> lab.Rgate(quadrature_angle, modes=reduced_state.modes)
 
     return homodyne_sample, projector_state
@@ -215,27 +219,30 @@ def _probs_homodyne_pure(state_ket):
     # calculate prefactors of the PDF
     omega_over_hbar = 1 / settings.HBAR
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
-    x = np.sqrt(omega_over_hbar) * q_tensor
+    x = np.sqrt(settings.HBAR) * q_tensor
 
     # Hn / sqrt(n!)
-    hermite_polys = physicist_hermite_polys(x, cutoff)
+    hermite_polys = math.cast(physicist_hermite_polys(q_tensor, cutoff), "complex128")
 
     # taking only the real part because the imaginary part cancels out during summation,
     # this saves some type casting of real matrices into complex ones.
-    reduced_ket = math.real(state_ket)
+    reduced_ket = state_ket
 
     # prefactor term 1 / 2**n
-    prefactor = 2 ** (-math.arange(0, cutoff) / 2)
+    prefactor = math.cast(2 ** (-math.arange(0, cutoff) / 2), "complex128")
 
     # build terms inside the sum: `\ket_{n} Hn / ( 2**n n! )`
     sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
 
     # calculate the pdf and multiply by factors outside the sum
     probs = (
-        math.sum(sum_terms, axes=[1]) ** 2 * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
+        math.abs(math.sum(sum_terms, axes=[1])) ** 2
+        * (omega_over_hbar / np.pi) ** 0.5
+        * math.exp(-(q_tensor**2))
+        * (x[1] - x[0])
     )
 
-    return q_tensor, probs
+    return x, probs
 
 
 def _probs_homodyne_mixed(state_dm):
@@ -245,8 +252,8 @@ def _probs_homodyne_mixed(state_dm):
     # calculate prefactors of the PDF
     omega_over_hbar = 1 / settings.HBAR
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
-    x = np.sqrt(omega_over_hbar) * q_tensor
-    hermite_polys = physicist_hermite_polys(x, cutoff)
+    x = np.sqrt(settings.HBAR) * q_tensor
+    hermite_polys = physicist_hermite_polys(q_tensor, cutoff)
 
     # taking only the real part because the imaginary part cancels out during summation,
     # this saves some type casting of real matrices into complex ones.
@@ -265,7 +272,10 @@ def _probs_homodyne_mixed(state_dm):
 
     # calculate the pdf and multiply by factors outside the sum
     probs = (
-        math.sum(sum_terms, axes=[1, 2]) * (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(x**2))
+        math.sum(sum_terms, axes=[1, 2])
+        * (omega_over_hbar / np.pi) ** 0.5
+        * math.exp(-(q_tensor**2))
+        * (x[1] - x[0])
     )
 
-    return q_tensor, probs
+    return x, probs
