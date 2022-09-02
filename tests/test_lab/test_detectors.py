@@ -270,7 +270,8 @@ class TestHomodyneDetector:
 
     @pytest.mark.parametrize("is_gaussian_state", [True, False])
     @pytest.mark.parametrize(
-        "state, mean_expected, std_expected", [(Vacuum(1), 0.0, 1.0), (Coherent(2, 1), 4.0, 1.0)]
+        "state, mean_expected, std_expected",
+        [(Vacuum(1), 0.0, 1.0), (Coherent(2, 0), 2.0 * np.sqrt(2 * settings.HBAR), 1.0)],
     )
     def test_sampling_mean_and_std(self, state, mean_expected, std_expected, is_gaussian_state):
         """Tests that the mean and standard deviation estimates of many homodyne
