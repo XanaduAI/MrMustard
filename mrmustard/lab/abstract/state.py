@@ -529,10 +529,6 @@ class State:
             means, _ = gaussian.partition_means(self.means, item)
             return State(cov=cov, means=means, modes=item)
 
-        # if not gaussian
-        if self.is_pure:
-            return State(ket=self._ket[item], modes=item)
-
         fock_partitioned = fock.trace(
             self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
         )
