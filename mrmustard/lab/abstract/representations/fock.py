@@ -24,8 +24,7 @@ from numbers import Number
 from mrmustard.physics.fock import dm_to_ket
 
 def Ket(Representation):
-    """Array-based coherent representation of quantum states as a vector in a Hilbert space.
-    The nature of the Hilbert space is determined by the representation.
+    """Array-based coherent representation of quantum states as a vector in a Fock space.
     """
 
     def __init__(self, data: Union[Representation, Array]):
