@@ -609,7 +609,7 @@ class Attenuator(Parametrized, Transformation):
             nbar_bounds=nbar_bounds,
         )
         self._modes = modes
-        self._is_unitary = False
+        self.is_unitary = False
         self.is_gaussian = True
 
     @property
@@ -665,7 +665,7 @@ class Amplifier(Parametrized, Transformation):
             nbar_bounds=nbar_bounds,
         )
         self._modes = modes
-        self._is_unitary = False
+        self.is_unitary = False
         self.is_gaussian = True
 
     @property
@@ -713,7 +713,7 @@ class AdditiveNoise(Parametrized, Transformation):
     ):
         super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds)
         self._modes = modes
-        self._is_unitary = False
+        self.is_unitary = False
         self.is_gaussian = True
 
     @property
