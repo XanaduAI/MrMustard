@@ -119,8 +119,8 @@ class TFMath(MathInterface):
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
 
-    def atan(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.math.atan(array)
+    def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
+        return tf.math.atan2(y, x)
 
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)

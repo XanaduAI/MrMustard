@@ -253,14 +253,15 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def atan(self, array: Tensor) -> Tensor:
-        r"""Computes the trignometric inverse tangent of array element-wise.
+    def atan2(self, y: Tensor, x: Tensor) -> Tensor:
+        r"""Computes the trignometric inverse tangent of y/x element-wise.
 
         Args:
-            array (array): array to take the arctan of
+            y (array): numerator array
+            x (array): denominator array
 
         Returns:
-            array: arctan of array
+            array: arctan of y/x
         """
 
     @abstractmethod
