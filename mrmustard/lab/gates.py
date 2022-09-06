@@ -108,11 +108,7 @@ class Dgate(Parametrized, Transformation):
             if N > 1
             else math.sqrt([self.x.value**2 + self.y.value**2])
         )
-        phi = (
-            math.atan(self.y.value / self.x.value)
-            if N > 1
-            else math.atan([self.y.value / self.x.value])
-        )
+        phi = math.atan2(self.y.value, self.x.value)
 
         # calculate displacement independently for each mode
         unitaries = []
