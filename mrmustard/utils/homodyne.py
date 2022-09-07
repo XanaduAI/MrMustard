@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility functions related to homodyne sampling on Fock representation"""
-
+"""Utility functions related to homodyne sampling in Fock representation"""
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from functools import lru_cache, wraps
@@ -22,7 +21,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.types import Tuple, List, Union, Iterable, Tensor
-import mrmustard.lab as lab
+from mrmustard import lab
 from mrmustard.math import Math
 
 if TYPE_CHECKING:

@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING
 
 import warnings
 import numpy as np
-from scipy.special import factorial
 
 from mrmustard.types import (
     Matrix,
