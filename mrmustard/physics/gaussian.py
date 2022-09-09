@@ -557,11 +557,10 @@ def compose_channels_XYd(
 
 
 def general_dyne(
-    cov: Matrix,
-    means: Vector,
-    proj_cov: Matrix,
-    proj_means: Vector,
-    modes: Sequence[int],
+    covIn: Matrix,
+    means_In: Vector,
+    covM: Matrix,
+    means_M: Vector,
     hbar: float,
     sample: bool,
 ) -> Tuple[Scalar, Matrix, Vector]:
@@ -579,32 +578,12 @@ def general_dyne(
     Returns:
         Tuple[Vector, Scalar, Matrix, Vector]: the outcome (means vector), its probability, the post-measurement cov and means vector
     """
-    N = cov.shape[-1] // 2
-    nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    Amodes = [i for i in range(N) if i not in modes]
-    A, B, AB = partition_cov(cov, Amodes)
-    a, b = partition_means(means, Amodes)
-    proj_cov = math.cast(proj_cov, B.dtype)
 
-    if not sample:
-        outcome = math.cast(proj_means, b.dtype)
-    else:
-        # means vector of the state being projected onto should be sampled
-        mvn = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(B + proj_cov))
-        # sample
-        outcome = mvn.sample(dtype=b.dtype)
+    pdf = math.MultivariateNormalTriL(loc=means_In, scale_tril=math.cholesky(covIn + covM))
+    outcome = pdf.sample(dtype=means_In.dtype) if sample else math.cast(means_M, means_In.dtype)
+    prob = pdf.prob(outcome)
 
-    # calculate conditional output state of unmeasured modes and the probability
-    inv = math.inv(B + proj_cov)
-    new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
-
-    new_means = a + math.matvec(math.matmul(AB, inv), outcome - b)
-
-    prob = math.exp(-math.sum(math.matvec(inv, outcome - b) * (outcome - b))) / (
-        pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
-    )  # TODO: check this (hbar part especially)
-
-    return outcome, prob, new_cov, new_means
+    return outcome, prob
 
 
 # ~~~~~~~~~
