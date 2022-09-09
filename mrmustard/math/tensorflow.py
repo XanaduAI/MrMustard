@@ -17,6 +17,7 @@
 import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
+from mrmustard.math.compactFockAmplitudes import fock_representation_compact
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -346,6 +347,38 @@ class TFMath(MathInterface):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
                 grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
             )
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly, grad
+
+    @tf.custom_gradient
+    def hermite_renormalized_diagonal(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, num_modes: int, cutoff: int
+    ) -> tf.Tensor:  # TODO this is not ready
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        poly, dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+            fock_representation_compact, [A, B, C, num_modes, cutoff], [A.dtype]*4
+        )
+
+        def grad(dLdpoly):
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
