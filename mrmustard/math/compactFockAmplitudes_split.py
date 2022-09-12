@@ -112,39 +112,17 @@ def calc_dA(i,G_dA,G_in,A,B,read_GB,K_l,K_i,pivot,M):
         read = pivot.copy()
         read[l] -= 1
         if np.min(read)>=0:
-            # print('i,l,read:',i,l,read)
             # dA += K_l[l] * A[i,l] * G_dA[tuple(read)]
             for a1 in range(A.shape[0]):
                 for a2 in range(A.shape[1]):
                     dA[a1,a2] += K_l[l] * A[i,l] * G_dA[tuple(read)+tuple([a1,a2])]
-            # print('G_dA[tuple(read)]',G_dA[tuple(read)])
-            # print(dA)
             dA[i,l] += G_in[l]
-            # print(dA)
     dA /= K_i[i]
-    # print(dA)
-
-    # print('I')
-    # print(B[i] * G_dA[tuple(read_GB)] / K_i[i])
-    # print('II')
-    # for l in range(2*M):
-    #     read = pivot.copy()
-    #     read[l] -= 1
-    #     if np.min(read)>=0:
-    #         print('i,l',i,l,K_l[l] * A[i,l] * G_dA[tuple(read)] / K_i[i])
-    # print('III')
-    # print(G_in / K_i[i])
-    #
-    # print('Robbe')
-    # print(dA)
-    # print('TW')
-    # print(-dG_dR_ref[tuple(write)])
     return dA
 
 
 def use_offDiag_pivot(A, B, M, cutoff, params, d, G, G_dA):
     pivot = calc_offDiag_pivot(params, d)
-    # print('pivot:', pivot)
     K_l = np.sqrt(pivot)  # automatic conversion to float
     K_i = np.sqrt(pivot + 1)  # automatic conversion to float
     G_in = np.zeros(2 * M, dtype=np.complex128)
@@ -211,12 +189,32 @@ def fock_representation_compact(A,B,G,G_dA,G_dB):
                         G,G_dA = use_offDiag_pivot(A,B,M,cutoff,params,d,G,G_dA)
     return G,G_dA,G_dB
 
-def hermite_multidimensional_diagonal(A,B,G0,cutoff):
+# def hermite_multidimensional_diagonal(A,B,G0,cutoff):
+#     M = A.shape[0]//2
+#     G = np.zeros([cutoff]*(2*M),dtype=np.complex128)
+#     G[tuple([0] * (2 * M))] = G0
+#     G_dA = np.zeros(G.shape + A.shape, dtype=np.complex128)
+#     G_dB = np.zeros(G.shape + B.shape, dtype=np.complex128)
+#     G_dG0 = np.array(G / G0).astype(np.complex128)
+#     G,G_dA,G_dB = fock_representation_compact(A, B, G, G_dA, G_dB)
+#     return G,G_dG0,G_dA,G_dB
+
+def amps_hermite_multidimensional_diagonal(A,B,G0,cutoff):
     M = A.shape[0]//2
     G = np.zeros([cutoff]*(2*M),dtype=np.complex128)
     G[tuple([0] * (2 * M))] = G0
     G_dA = np.zeros(G.shape + A.shape, dtype=np.complex128)
     G_dB = np.zeros(G.shape + B.shape, dtype=np.complex128)
-    G,G_dA,G_dB = fock_representation_compact(A, B, G, G_dA, G_dB)
     G_dG0 = np.array(G / G0).astype(np.complex128)
-    return G,G_dG0,G_dA,G_dB
+    G,_,_ = fock_representation_compact(A, B, G, G_dA, G_dB)
+    return G
+
+def grad_hermite_multidimensional_diagonal(G,A,B,G0,cutoff):
+    M = A.shape[0]//2
+    G = np.zeros([cutoff]*(2*M),dtype=np.complex128)
+    G[tuple([0] * (2 * M))] = G0
+    G_dA = np.zeros(G.shape + A.shape, dtype=np.complex128)
+    G_dB = np.zeros(G.shape + B.shape, dtype=np.complex128)
+    G_dG0 = np.array(G / G0).astype(np.complex128)
+    G,_,_ = fock_representation_compact(A, B, G, G_dA, G_dB)
+    return G_dG0,G_dA,G_dB
