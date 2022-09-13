@@ -362,11 +362,11 @@ class TFMath(MathInterface):
         return poly, grad
 
     @tf.custom_gradient
-    def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype):
+    def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype, tol=1e-15):
         """creates a single mode displacement matrix"""
         r = r.numpy()
         phi = phi.numpy()
-        gate = displacement_tw(r, phi, cutoff, dtype)
+        gate = displacement_tw(r, phi, cutoff, dtype) if r > tol else self.eye(cutoff)
 
         def grad(dy):  # pragma: no cover
             Dr, Dphi = grad_displacement_tw(gate, r, phi)
