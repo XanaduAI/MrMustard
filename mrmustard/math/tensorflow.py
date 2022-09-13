@@ -25,7 +25,6 @@ from mrmustard.types import (
     Sequence,
     Tuple,
     Optional,
-    Dict,
     Trainable,
     Callable,
     Union,
@@ -193,8 +192,13 @@ class TFMath(MathInterface):
         return tf.minimum(a, b)
 
     def new_variable(
-        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=tf.float64
+        self,
+        value,
+        bounds: Union[Tuple[Optional[float], Optional[float]], None],
+        name: str,
+        dtype=tf.float64,
     ):
+        bounds = bounds or (None, None)
         value = self.convert_to_tensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
@@ -301,22 +305,21 @@ class TFMath(MathInterface):
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
     def value_and_gradients(
-        self, cost_fn: Callable, parameters: Dict[str, List[Trainable]]
-    ) -> Tuple[tf.Tensor, Dict[str, List[tf.Tensor]]]:
+        self, cost_fn: Callable, parameters: List[Trainable]
+    ) -> Tuple[tf.Tensor, List[tf.Tensor]]:
         r"""Computes the loss and gradients of the given cost function.
 
         Args:
             cost_fn (Callable with no args): The cost function.
-            parameters (Dict): The parameters to optimize in three kinds:
-                symplectic, orthogonal and euclidean.
+            parameters (List[Trainable]): The parameters to optimize.
 
         Returns:
-            The loss and the gradients.
+            tuple(Tensor, List[Tensor]): the loss and the gradients
         """
         with tf.GradientTape() as tape:
             loss = cost_fn()
-        gradients = tape.gradient(loss, list(parameters.values()))
-        return loss, dict(zip(parameters.keys(), gradients))
+        gradients = tape.gradient(loss, parameters)
+        return loss, gradients
 
     @tf.custom_gradient
     def hermite_renormalized(

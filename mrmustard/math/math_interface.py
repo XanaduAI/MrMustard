@@ -832,7 +832,8 @@ class MathInterface(ABC):
         return self.concat(rows, axis=axes[0])
 
     def dagger(self, array: Tensor) -> Tensor:
-        r"""Returns the adjoint of ``array``.
+        """Returns the adjoint of ``array``. This operation swaps the first
+        and second half of the indexes and then conjugates the matrix.
 
         Args:
             array (array): array to take the adjoint of
@@ -840,7 +841,9 @@ class MathInterface(ABC):
         Returns:
             array: adjoint of ``array``
         """
-        return self.conj(self.transpose(array))
+        N = len(array.shape) // 2
+        perm = list(range(N, 2 * N)) + list(range(0, N))
+        return self.conj(self.transpose(array, perm=perm))
 
     def unitary_to_orthogonal(self, U):
         r"""Unitary to orthogonal mapping.

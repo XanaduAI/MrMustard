@@ -16,8 +16,6 @@
 
 from __future__ import annotations
 
-from rich.table import Table
-from rich import print as rprint
 import numpy as np
 
 from mrmustard.physics import gaussian, fock
@@ -34,6 +32,7 @@ from mrmustard.types import (
 )
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.training.parameter import Parameter
 from .state import State
 
 math = Math()
@@ -385,23 +384,45 @@ class Transformation:
         return True
 
     def __repr__(self):
-        table = Table(title=f"{self.__class__.__qualname__} on modes {self.modes}")
-        table.add_column("Parameters")
-        table.add_column("dtype")
-        table.add_column("Value")
-        table.add_column("Bounds")
-        table.add_column("Shape")
-        table.add_column("Trainable")
+
+        class_name = self.__class__.__name__
+        modes = self.modes
+
+        parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
+        param_str_rep = [
+            f"{name}={repr(math.asnumpy(par.value))}" for name, par in parameters.items()
+        ]
+
+        params_str = ", ".join(sorted(param_str_rep))
+
+        return f"{class_name}({params_str}, modes = {modes})".replace("\n", "")
+
+    def __str__(self):
+
+        class_name = self.__class__.__name__
+        modes = self.modes
+        return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"
+
+    def _repr_markdown_(self):
+        header = (
+            f"##### {self.__class__.__qualname__} on modes {self.modes}\n"
+            "|Parameters|dtype|Value|Bounds|Shape|Trainable|\n"
+            "| :-:      | :-: | :-: | :-:  | :-: | :-:     |\n"
+        )
+
+        body = ""
         with np.printoptions(precision=6, suppress=True):
-            for name in self._param_names:
-                par = self.__dict__[name]
-                table.add_row(
-                    name,
-                    par.dtype.name,
-                    f"{np.array(par)}",
-                    str(self.__dict__["_" + name + "_bounds"]),
-                    f"{par.shape}",
-                    str(self.__dict__["_" + name + "_trainable"]),
+            parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
+            for name, par in parameters.items():
+                par_value = repr(math.asnumpy(par.value)).replace("\n", "<br>")
+                body += (
+                    f"| {name}"
+                    f"| {par.value.dtype.name}"
+                    f"| {par_value}"
+                    f"| {str(getattr(par.value, 'bounds', 'None'))}"
+                    f"| {par.value.shape}"
+                    f"| {str(math.is_trainable(par.value))}"
+                    "|\n"
                 )
-        rprint(table)
-        return ""
+
+        return header + body

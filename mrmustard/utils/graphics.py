@@ -49,6 +49,7 @@ class Progressbar:
             total=max_steps,
             loss=1.0,
             refresh=True,
+            visible=settings.PROGRESSBAR,
         )
 
     def step(self, loss):

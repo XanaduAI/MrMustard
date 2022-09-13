@@ -23,7 +23,7 @@ __all__ = ["Circuit"]
 
 from typing import List, Tuple, Optional
 from mrmustard.types import Matrix, Vector
-from mrmustard.utils.parametrized import Parametrized
+from mrmustard.training import Parametrized
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard.lab.abstract import Transformation
 from mrmustard.lab.abstract import State
@@ -94,9 +94,15 @@ class Circuit(Transformation, Parametrized):
 
     def _repr_markdown_(self) -> str:
         """Markdown string to display the object on ipython notebooks."""
-        return f"Circuit | {len(self._ops)} ops | compiled = `{self._compiled}`"
+        header = f"#### Circuit  -  {len(self._ops)} ops  -  compiled = `{self._compiled}`\n\n"
+        ops_repr = [op._repr_markdown_() for op in self._ops]  # pylint: disable=protected-access
+        return header + "\n".join(ops_repr)
 
     def __repr__(self) -> str:
         """String to display the object on the command line."""
         ops_repr = [repr(op) for op in self._ops]
-        return "Circuit([" + ",".join(ops_repr) + "])"
+        return " >> ".join(ops_repr)
+
+    def __str__(self):
+        """String representation of the circuit."""
+        return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
