@@ -19,6 +19,7 @@ This module defines gates and operations that can be applied to quantum modes to
 """
 
 from typing import Union, Optional, List, Tuple
+import numpy as np
 from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
@@ -98,42 +99,51 @@ class Dgate(Parametrized, Transformation):
         polynomials."""
 
         N = len(cutoffs)
-        if N != self.num_modes:
-            raise ValueError(
-                f"Expected `len(cutoffs)={len(self.num_modes)}` but {len(cutoffs)} cutoffs were given."
-            )
+        x, y = self._parse_modes_and_args(cutoffs)
 
-        r = (
-            math.sqrt(self.x.value**2 + self.y.value**2)
-            if N > 1
-            else math.sqrt([self.x.value**2 + self.y.value**2])
-        )
-        phi = (
-            math.atan2(self.y.value, self.x.value)
-            if N > 1
-            else math.atan2([self.y.value], [self.x.value])
-        )
+        r = math.sqrt(x**2 + y**2)
+        phi = math.atan2(y, x)
 
-        # calculate displacement independently for each mode
-        unitaries = []
+        # calculate displacement unitary for each mode and concatenate with outer product
+        Ud = None
         for idx, cutoff in enumerate(cutoffs):
-            # if args are close to zero, give back the identity
-            if math.abs(r[idx]).numpy() < 1e-15:
-                Ud = math.eye(cutoff)
-            else:
+            if Ud is None:
                 Ud = math.displacement(r[idx], phi[idx], cutoff)
-
-            unitaries.append(Ud)
-
-        # calculate the outer product of the unitaries
-        outer = unitaries[0]
-        for i in range(N - 1):
-            outer = math.outer(outer, unitaries[i + 1])
+            else:
+                U_next = math.displacement(r[idx], phi[idx], cutoff)
+                Ud = math.outer(Ud, U_next)
 
         return math.transpose(
-            outer,
+            Ud,
             list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
         )
+
+    def _parse_modes_and_args(self, cutoffs):
+        num_modes = len(cutoffs)
+        modes = self.modes  # modes in which the gate is acting on
+        xargs = self.x.value
+        yargs = self.y.value
+        num_args_x = (
+            xargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
+        )  # number or arguments given to the gate
+        num_args_y = (
+            yargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
+        )  # number or arguments given to the gate
+        x = np.zeros((num_modes,))
+        y = np.zeros((num_modes,))
+
+        if num_args_x != num_args_y:
+            raise ValueError("Number of parameters for `x` and `y` is different.")
+
+        if num_args_x == 1 or num_args_x == len(modes):
+            # one arg for all modes
+            x[modes] = xargs
+            y[modes] = yargs
+        elif num_args_x == len(modes):
+            # number of args and number of modes don't match
+            raise ValueError("Number of args and modes don't match")
+
+        return x, y
 
 
 class Sgate(Parametrized, Transformation):
