@@ -18,7 +18,8 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Sequence
+import numpy as np
 from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
@@ -176,6 +177,47 @@ class Rgate(Parametrized, Transformation):
     @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle.value)
+
+    def U(self, cutoffs: Sequence[int]):
+
+        angles = self._parse_modes_and_args(cutoffs)
+        num_modes = len(cutoffs)
+
+        # calculate rotation unitary for each mode and concatenate with outer product
+        Ur = None
+        for idx, cutoff in enumerate(cutoffs):
+            theta = math.arange(cutoff) * angles[idx]
+            if Ur is None:
+                Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+            else:
+                U_next = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+                Ur = math.outer(Ur, U_next)
+
+        # return total unitary with indexes reordered according to MM convetion
+        return math.transpose(
+            Ur,
+            list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
+        )
+
+    def _parse_modes_and_args(self, cutoffs):
+        num_modes = len(cutoffs)
+        modes = self.modes  # modes in which the gate is acting on
+        args = self.angle.value
+        num_args = (
+            args.shape[0] if len(args.shape.as_list()) > 0 else 1
+        )  # number or arguments given to the gate
+        angles = np.zeros((num_modes,))
+        if num_args == 1:
+            # one arg for all modes
+            angles[modes] = args
+        elif num_args == len(modes):
+            # an arg for each mode
+            angles[modes] = args
+        elif num_args == len(modes):
+            # number of args and number of modes don't match
+            raise ValueError("Number of args and modes don't match")
+
+        return angles
 
 
 class Pgate(Parametrized, Transformation):
