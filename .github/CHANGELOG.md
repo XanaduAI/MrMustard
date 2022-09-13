@@ -59,6 +59,11 @@
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
 
+* The `math.dagger` function applying the hermitian conjugate to an operator was incorrectly
+transposing the indices of the input tensor. Now `math.dagger` appropiately calculates the
+Hermitian conjugate of an operator.
+  [(#156)](https://github.com/XanaduAI/MrMustard/pull/156)
+
 ### Documentation
 
 * The centralized [Xanadu Sphinx Theme](https://github.com/XanaduAI/xanadu-sphinx-theme)
