@@ -151,14 +151,13 @@ def random_Interferometer(draw, num_modes, trainable=False):
 
 @st.composite
 def random_Interferometer_param(draw, trainable=False):
-    n_modes = [0,1,2]
-    modes = [2,5,6]
+    n_modes = [0, 1, 2]
+    modes = [2, 5, 6]
     try:
         Interferometer(num_modes=num_modes, orthogonal_trainable=trainable, modes=modes)
-    except:
-        pass
-    else:
-        raise AssertionError("No error here!")
+        assert False
+    except Exception:
+        assert True
 
 
 @st.composite
