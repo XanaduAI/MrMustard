@@ -446,8 +446,7 @@ class Interferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes != None:
-            if num_modes != len(modes):
+        if modes is not None and num_modes != len(modes):
                 raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             U = math.random_unitary(num_modes)
@@ -456,7 +455,7 @@ class Interferometer(Parametrized, Transformation):
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
         )
-        self._modes = modes
+        self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
 
     @property
