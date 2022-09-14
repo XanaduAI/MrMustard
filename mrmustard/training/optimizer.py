@@ -103,17 +103,24 @@ class Optimizer:
 
     @staticmethod
     def _get_trainable_params(trainable_items):
+        """Returns a list of trainable parameters from instances of Parametrized or
+        items that belong to the backend and are trainable
+        """
         trainables = []
         for item in trainable_items:
             if isinstance(item, Parametrized):
                 trainables.append(item.trainable_parameters)
             elif math.from_backend(item) and math.is_trainable(item):
-                trainables.append([create_parameter(item, name = "from_backend", is_trainable = True)])
+                # the created parameter is wrapped into a list because the case above
+                # returns a list, hence ensuring we have a list of lists
+                trainables.append([create_parameter(item, name="from_backend", is_trainable=True)])
 
         return list(chain(*trainables))
 
     @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
+        """Groups `trainable_params` and `grads` by type into a dict of the form
+        `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}`."""
         sorted_grads_and_vars = sorted(
             zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
         )
