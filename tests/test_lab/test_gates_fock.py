@@ -26,6 +26,7 @@ from mrmustard.lab.gates import (
     MZgate,
     S2gate,
     Attenuator,
+    Interferometer,
 )
 from hypothesis import given, strategies as st
 from thewalrus.fock_gradients import (
