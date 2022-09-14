@@ -455,9 +455,8 @@ class Interferometer(Parametrized, Transformation):
         super().__init__(
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
-            modes=modes,
         )
-        self._modes = list(range(num_modes))
+        self._modes = modes
         self.is_gaussian = True
 
     @property
