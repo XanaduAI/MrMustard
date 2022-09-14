@@ -125,3 +125,10 @@ def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
     assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
+
+
+def random_Interferometer_param():
+    n_modes = [0,1,2]
+    modes = [2,5,6]
+    with pytest.raises(ValueError):
+        Interferometer(num_modes=num_modes, modes=modes)
