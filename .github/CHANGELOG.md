@@ -54,7 +54,7 @@
 * Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures.
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
-* Now multimode states can be iterate over the single-mode marginals.
+* Now multimode states can be iterated over the single-mode marginals.
   ```python
   for mode in state:
     print(mode.purity)
@@ -73,7 +73,7 @@
   )
   ```
   which will automatically define the properties `magnitude` and `angle` on the `params` object.
-  To acces the backend tensor defining the values of such parameters use the `value` property
+  To access the backend tensor defining the values of such parameters use the `value` property
   ```python
   params.angle.value
   params.angle.bounds
@@ -81,7 +81,7 @@
   params.magnitude.value
   ```
 
-  Gates will automatically be an instace of the `Parametrized` class, for example
+  Gates will automatically be an instance of the `Parametrized` class, for example
   ```python
   from mrmustard.lab import BSgate
 
@@ -98,13 +98,13 @@
 ### Improvements
 
 * The Parametrized and Training classes have been refactored. The new training module has been added
-  and with it the new `Parameter` class: now trainable tensors are wrapped in an instance of `Parameter`.
+  and with it the new `Parameter` class: now trainable tensors are being wrapped in an instance of `Parameter`.
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
   patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
 
 * The string representations of the `Circuit` and `Transformation` objects have been improved:
   the `Circuit.__repr__` method now produces a string that can be used to generate a circuit in
-  a identical state (same gates and parameters), the `Transformation.__str__` and objects
+  an identical state (same gates and parameters), the `Transformation.__str__` and objects
   inheriting from it now prints the name, memory location of the object as well as the modes
   of the circuit in which the transformation is acting on. The `_markdown_repr_` has been implemented
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
@@ -115,7 +115,7 @@
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
 
 * The `math.dagger` function applying the hermitian conjugate to an operator was incorrectly
-transposing the indices of the input tensor. Now `math.dagger` appropiately calculates the
+transposing the indices of the input tensor. Now `math.dagger` appropriately calculates the
 Hermitian conjugate of an operator.
   [(#156)](https://github.com/XanaduAI/MrMustard/pull/156)
 
