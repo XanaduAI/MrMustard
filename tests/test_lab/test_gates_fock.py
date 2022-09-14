@@ -128,7 +128,8 @@ def test_fock_representation_mzgate(phi_a, phi_b):
     assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
 
 
-def random_Interferometer_param():
+def test_raise_interferometer_error():
+    """test Interferometer raises an error when both `modes` and `num_modes` are given"""
     num_modes = 3
     modes = [0, 2]
     with pytest.raises(ValueError):
