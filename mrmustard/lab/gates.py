@@ -446,7 +446,11 @@ class Interferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes is not None and num_modes != len(modes):
+        if (
+            modes is not None
+            and num_modes != len(modes)
+            and all(mode <= num_modes for mode in modes)
+        ):
             raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             U = math.random_unitary(num_modes)
