@@ -447,7 +447,7 @@ class Interferometer(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and num_modes != len(modes):
-                raise ValueError("Invalid number of modes and the mode list here!")
+            raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             U = math.random_unitary(num_modes)
             orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
