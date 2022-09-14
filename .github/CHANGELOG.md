@@ -62,6 +62,10 @@
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
 
+* Add the argument 'modes' to the `Interferometer` operation to indicate which modes the Interferometer is
+  applied to.
+  [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
+
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
