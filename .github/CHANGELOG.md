@@ -23,7 +23,7 @@
   ```
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
-* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example,
+* Parameter passthrough allows one to use custom variables and/or functions as parameters. For example we can use parameters of other gates:
     ```python
     from mrmustard.lab.gates import Sgate, BSgate
 
@@ -33,6 +33,22 @@
 
     circ = S0 >> S1 >> BS
     ```
+  Another possibility is with functions:
+  ```python
+
+  def my_r(x):
+      return x**2
+
+  x = math.new_variable(0.5, bounds = (None, None), name="x")
+
+  def cost_fn():
+    # note that my_r needs to be in the cost function
+    # in order to track the gradient
+    S = Sgate(r=my_r(x), theta_trainable=True)[0,1]
+    return # some function of S
+
+  opt.Optimize(cost_fn, by_optimizing=[x])
+  ```
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
 
 * Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures.
