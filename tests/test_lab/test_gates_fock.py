@@ -128,6 +128,7 @@ def test_fock_representation_mzgate(phi_a, phi_b):
 
 
 def random_Interferometer_param():
+    num_modes = 3
     modes = [0, 2]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
