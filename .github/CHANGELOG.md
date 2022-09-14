@@ -54,7 +54,7 @@
 * Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures.
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
-* Now multimode states can be iterated over the single-mode marginals.
+* Now marginals can be iterated over:
   ```python
   for mode in state:
     print(mode.purity)
