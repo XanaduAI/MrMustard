@@ -93,7 +93,8 @@
   bs.phi.value
   ```
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
-  patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144).
+  patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
+  and [(#158)](https://github.com/XanaduAI/MrMustard/pull/158).
 
 ### Improvements
 
