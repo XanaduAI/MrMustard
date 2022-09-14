@@ -21,7 +21,7 @@ from typing import List, Callable, Sequence
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
-from .parameter import Parameter, Trainable
+from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
 
@@ -72,15 +72,7 @@ class Optimizer:
 
     def _minimize(self, cost_fn, by_optimizing, max_steps):
         # finding out which parameters are trainable from the ops
-        trainable_params = list(
-            chain(
-                *[
-                    item.trainable_parameters
-                    for item in by_optimizing
-                    if isinstance(item, Parametrized)
-                ]
-            )
-        )
+        trainable_params = self._get_trainable_params(by_optimizing)
 
         bar = graphics.Progressbar(max_steps)
         with bar:
@@ -108,6 +100,17 @@ class Optimizer:
             grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
             update_method = param_update_method.get(param_type)
             update_method(grads_and_vars, param_lr)
+
+    @staticmethod
+    def _get_trainable_params(trainable_items):
+        trainables = []
+        for item in trainable_items:
+            if isinstance(item, Parametrized):
+                trainables.append(item.trainable_parameters)
+            elif math.from_backend(item) and math.is_trainable(item):
+                trainables.append([create_parameter(item, name = "from_backend", is_trainable = True)])
+
+        return list(chain(*trainables))
 
     @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
