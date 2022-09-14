@@ -47,10 +47,42 @@
 
 ### Breaking changes
 
+* The Parametrized and Training classes have been refactored: now trainable tensors are wrapped in an instance of the `Parameter` class. To define a set of parameters do
+  ```python
+  from mrmustard.training import Parametrized
+
+  params = Parametrized(
+      magnitude=10, magnitude_trainable=False, magnitude_bounds=None,
+      angle=0.1, angle_trainable=True, angle_bounds=(-0.1,0.1)
+  )
+  ```
+  which will automatically define the properties `magnitude` and `angle` on the `params` object.
+  To acces the backend tensor defining the values of such parameters use the `value` property
+  ```python
+  params.angle.value
+  params.angle.bounds
+
+  params.magnitude.value
+  ```
+
+  Gates will automatically be an instace of the `Parametrized` class, for example
+  ```python
+  from mrmustard.lab import BSgate
+
+  bs = BSgate(theta = 0.3, phi = 0.0, theta_trainable: True)
+
+  # access params
+  bs.theta.value
+  bs.theta.bounds
+  bs.phi.value
+  ```
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
+  patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144).
+
 ### Improvements
 
 * The Parametrized and Training classes have been refactored. The new training module has been added
-  and with it the new Parameter class: now trainable tensors are wrapped in an instance of Parameter.
+  and with it the new `Parameter` class: now trainable tensors are wrapped in an instance of `Parameter`.
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
   patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
 
@@ -85,7 +117,8 @@ Hermitian conjugate of an operator.
 
 This release contains contributions from (in alphabetical order):
 
-[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
+[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa),
+[Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
 
 ---
