@@ -26,24 +26,16 @@ r = st.floats(
 )  # reasonable squeezing magnitude
 real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.00001))
 integer = st.integers(min_value=0, max_value=2**32 - 1)
-small_float = st.floats(
-    min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False
-)
-medium_float = st.floats(
-    min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False
-)
-large_float = st.floats(
-    min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False
-)
+small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
+medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
+large_float = st.floats(min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False)
 num_modes = st.integers(min_value=0, max_value=10)
 
 
 @st.composite
 def vector(draw, length):
     return draw(
-        st.lists(
-            st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length
-        )
+        st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length)
     )
 
 
@@ -52,17 +44,13 @@ def vector(draw, length):
 def modes(draw, num_modes):
     return draw(
         st.lists(
-            st.integers(min_value=0, max_value=num_modes),
-            min_size=num_modes,
-            max_size=num_modes,
+            st.integers(min_value=0, max_value=num_modes), min_size=num_modes, max_size=num_modes
         ).filter(lambda x: len(set(x)) == len(x))
     )
 
 
 def array_of_(strategy, minlen=0, maxlen=None):
-    return arrays(
-        dtype=np.float64, shape=(st.integers(minlen, maxlen),), elements=strategy
-    )
+    return arrays(dtype=np.float64, shape=(st.integers(minlen, maxlen),), elements=strategy)
 
 
 def none_or_(strategy):
@@ -163,8 +151,8 @@ def random_Interferometer(draw, num_modes, trainable=False):
 
 @st.composite
 def random_Interferometer_param(draw, trainable=False):
-    n_modes = [0, 1, 2]
-    modes = [2, 5, 6]
+    n_modes = [0,1,2]
+    modes = [2,5,6]
     try:
         Interferometer(num_modes=num_modes, orthogonal_trainable=trainable, modes=modes)
     except:
@@ -186,9 +174,7 @@ def random_Ggate(draw, num_modes, trainable=False):
 @st.composite
 def single_mode_unitary(draw, small=False):
     return draw(
-        st.one_of(
-            random_Rgate(1), random_Sgate(1, small=small), random_Dgate(1, small=small)
-        )
+        st.one_of(random_Rgate(1), random_Sgate(1, small=small), random_Dgate(1, small=small))
     )
 
 
