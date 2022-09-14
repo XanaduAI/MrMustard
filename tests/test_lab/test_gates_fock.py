@@ -26,6 +26,7 @@ from mrmustard.lab.gates import (
     MZgate,
     S2gate,
     Attenuator,
+    Interferometer,
 )
 from hypothesis import given, strategies as st
 from thewalrus.fock_gradients import (
@@ -125,3 +126,14 @@ def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
     assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
+
+
+def test_raise_interferometer_error():
+    """test Interferometer raises an error when both `modes` and `num_modes` are given"""
+    num_modes = 3
+    modes = [0, 2]
+    with pytest.raises(ValueError):
+        Interferometer(num_modes=num_modes, modes=modes)
+    modes = [2, 5, 6]
+    with pytest.raises(ValueError):
+        Interferometer(num_modes=num_modes, modes=modes)
