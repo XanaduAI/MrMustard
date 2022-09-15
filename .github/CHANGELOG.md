@@ -1,4 +1,4 @@
-# Release 0.3.0
+# Release 0.3.0 (current release)
 
 ### New features
 * Can switch progress bar on and off (default is on) from the settings via `settings.PROGRESSBAR = True/False`.
@@ -144,7 +144,7 @@ This release contains contributions from (in alphabetical order):
 
 ---
 
-# Release 0.2.0 (current release)
+# Release 0.2.0
 
 ### New features since last release
 
