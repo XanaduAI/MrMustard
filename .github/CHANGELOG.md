@@ -111,6 +111,10 @@
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
 
+* Add the argument 'modes' to the `Interferometer` operation to indicate which modes the Interferometer is
+  applied to.
+  [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
+
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
@@ -134,8 +138,8 @@ Hermitian conjugate of an operator.
 
 This release contains contributions from (in alphabetical order):
 
-[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa),
-[Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
+[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
+
 
 
 ---
