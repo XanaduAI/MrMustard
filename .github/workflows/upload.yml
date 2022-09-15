@@ -48,5 +48,5 @@ jobs:
 
       - name: Print about
         run: |
-        echo "import mrmustard; print(mrmustard.about())" > test_install.py
-        python test_install.py
+          echo "import mrmustard; print(mrmustard.about())" > test_install.py
+          python test_install.py
