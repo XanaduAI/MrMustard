@@ -234,12 +234,8 @@ def _probs_homodyne_pure(state_ket):
     sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
 
     # calculate the pdf and multiply by factors outside the sum
-    probs = (
-        math.abs(math.sum(sum_terms, axes=[1])) ** 2
-        * (omega_over_hbar / np.pi) ** 0.5
-        * math.exp(-(q_tensor**2))
-        * (x[1] - x[0])
-    )
+    out_factor = (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(q_tensor**2)) * (x[1] - x[0])
+    probs = out_factor * math.abs(math.sum(sum_terms, axes=[1])) ** 2
 
     return x, probs
 
@@ -268,11 +264,7 @@ def _probs_homodyne_mixed(state_dm):
     sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(state_dm, 0) * hermite_matrix
 
     # calculate the pdf and multiply by factors outside the sum
-    probs = (
-        math.sum(sum_terms, axes=[1, 2])
-        * (omega_over_hbar / np.pi) ** 0.5
-        * math.exp(-(q_tensor**2))
-        * (x[1] - x[0])
-    )
+    out_factor = (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(q_tensor**2)) * (x[1] - x[0])
+    probs = out_factor * math.real(math.sum(sum_terms, axes=[1, 2]))
 
     return x, probs
