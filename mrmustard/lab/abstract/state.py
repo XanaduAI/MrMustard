@@ -382,9 +382,9 @@ class State:
                 state=other, quadrature_angle=self.phi.value / 2, mode=self.modes
             )
 
-        try:
+        if hasattr(self, "_preferred_projection"):
             out_fock = self._preferred_projection(other, other.indices(self.modes))
-        except AttributeError:
+        else:
             # matching other's cutoffs
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
             out_fock = fock.contract_states(
