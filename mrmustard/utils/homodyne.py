@@ -254,20 +254,18 @@ def _probs_homodyne_mixed(state_dm):
     x = np.sqrt(settings.HBAR) * q_tensor
     hermite_polys = physicist_hermite_polys(q_tensor, cutoff)
 
-    # taking only the real part because the imaginary part cancels out during summation,
-    # this saves some type casting of real matrices into complex ones.
-    reduced_dm = math.real(state_dm)
-
     # build matrix of terms Hn Hm / sqrt(n! m!)
     hermite_polys = math.expand_dims(hermite_polys, axis=-1)
     hermite_matrix = math.matmul(hermite_polys, hermite_polys, transpose_b=True)
+    hermite_matrix = math.cast(hermite_matrix, "complex128")
 
     # build matrix of terms 1 / sqrt( 2**(n+m) )
     prefactor = math.expand_dims(2 ** (-math.arange(0, cutoff) / 2), axis=-1)
     prefactor = math.matmul(prefactor, prefactor, transpose_b=True)
+    prefactor = math.cast(prefactor, "complex128")
 
     # build terms inside the sum: `\rho_{n,m} Hn Hm / sqrt( 2**(n+m) n! m!)`
-    sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(reduced_dm, 0) * hermite_matrix
+    sum_terms = math.expand_dims(prefactor, 0) * math.expand_dims(state_dm, 0) * hermite_matrix
 
     # calculate the pdf and multiply by factors outside the sum
     probs = (
