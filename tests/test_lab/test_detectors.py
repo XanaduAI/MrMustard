@@ -18,6 +18,7 @@ from hypothesis.extra.numpy import arrays
 
 import numpy as np
 from scipy.stats import poisson
+import tensorflow as tf
 
 from mrmustard.math import Math
 from mrmustard.lab import (
@@ -283,6 +284,7 @@ class TestHomodyneDetector:
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
 
+        tf.random.set_seed(123)
         state = State(dm=state.dm(cutoffs=[20]))
 
         results = np.empty((self.N_MEAS,))
@@ -307,6 +309,7 @@ class TestHomodyneDetector:
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
 
+        tf.random.set_seed(123)
         meas_state = SqueezedVacuum(settings.HOMODYNE_SQUEEZING, 0.0)
 
         results = np.empty((self.N_MEAS,))
