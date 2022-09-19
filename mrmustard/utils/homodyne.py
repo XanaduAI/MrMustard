@@ -149,7 +149,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 def sample_homodyne_fock(
     state: State, quadrature_angle: float, mode: Union[int, List[int]], hbar: float
-) -> Tuple[float, State]:
+) -> Tuple[float, float, State]:
     r"""Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
     where `\rho` is the reduced density matrix of the ``other`` state on the
     measured mode.
@@ -172,9 +172,10 @@ def sample_homodyne_fock(
         state (State): state being measured
         quadrature_angle (float): measurement quadrature angle
         mode: the modes of the state being measured
+        hbar: value of hbar
 
     Returns:
-        tuple(float, State): homodyne outcome and projector state
+        tuple(float, float, State): homodyne outcome, probability of the outcome and projector state
     """
 
     if isinstance(mode, int):
@@ -198,6 +199,7 @@ def sample_homodyne_fock(
     pdf = math.Categorical(probs=probs, name="homodyne_dist")
     sample_idx = pdf.sample()
     homodyne_sample = math.gather(x, sample_idx)
+    sample_probability = math.gather(x, probs)
 
     # create "projector state" to calculate the conditional output state
     projector_state = lab.DisplacedSqueezed(
@@ -208,7 +210,7 @@ def sample_homodyne_fock(
         modes=reduced_state.modes,
     ) >> lab.Rgate(quadrature_angle, modes=reduced_state.modes)
 
-    return homodyne_sample, projector_state
+    return homodyne_sample, sample_probability, projector_state
 
 
 def _probs_homodyne_pure(state_ket, hbar):

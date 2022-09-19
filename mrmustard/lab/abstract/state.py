@@ -371,17 +371,38 @@ class State:
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
         ]
+        remaining_modes = [m for m in other.modes if m not in self.modes]
 
-        projector_state = self  # state_m is the state used to project onto
-        outcome = None
+        projector_state = self  # projector_state is the state used to project onto
         # Only instances of `Homodyne` define the attribute "sampling". If this is
         # True then homodyne sampling is performed.
         if getattr(self, "sample", False):
             # build pdf and sample homodyne outcome
-            outcome, projector_state = homodyne.sample_homodyne_fock(
-                state=other, quadrature_angle=self.phi.value / 2, mode=self.modes
+            outcome, probability, projector_state = homodyne.sample_homodyne_fock(
+                state=other,
+                quadrature_angle=self.phi.value / 2,
+                mode=self.modes,
+                hbar=settings.HBAR,
+            )
+            if remaining_modes == 0:
+                return probability
+
+        out_fock = self._contract_states(other, other_cutoffs, projector_state)
+        if len(remaining_modes) > 0:
+            return (
+                State(dm=out_fock, modes=remaining_modes)
+                if other.is_mixed or self.is_mixed
+                else State(ket=out_fock, modes=remaining_modes)
             )
 
+        # return the probability (norm) of the state when there are no modes left
+        return (
+            fock.math.abs(out_fock) ** 2
+            if other.is_pure and self.is_pure
+            else fock.math.abs(out_fock)
+        )
+
+    def _contract_states(self, other, other_cutoffs, projector_state):
         if hasattr(self, "_preferred_projection"):
             out_fock = self._preferred_projection(other, other.indices(self.modes))
         else:
@@ -398,22 +419,7 @@ class State:
                 normalize=self._normalize if hasattr(self, "_normalize") else False,
             )
 
-        remaining_modes = [m for m in other.modes if m not in self.modes]
-        if len(remaining_modes) > 0:
-            return (
-                State(dm=out_fock, modes=remaining_modes)
-                if other.is_mixed or self.is_mixed
-                else State(ket=out_fock, modes=remaining_modes)
-            )
-
-        # if outcome is defined (when doing homodyne sampling) returns
-        # the outcome else the value of the contraction
-        result = outcome or (
-            fock.math.abs(out_fock) ** 2
-            if other.is_pure and self.is_pure
-            else fock.math.abs(out_fock)
-        )
-        return result
+        return out_fock
 
     def _project_onto_gaussian(self, other: State) -> Union[State, float]:
         """Returns the result of a generaldyne measurement given that states ``self`` and
