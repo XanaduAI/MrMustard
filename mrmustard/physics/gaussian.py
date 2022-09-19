@@ -579,7 +579,10 @@ def general_dyne(
         Tuple[Vector, Scalar, Matrix, Vector]: the outcome (means vector), its probability, the post-measurement cov and means vector
     """
 
-    pdf = math.MultivariateNormalTriL(loc=means_In, scale_tril=math.cholesky(covIn + covM))
+    # covariances are divided by 2 to match tensorflow and MrMustard conventions
+    # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
+    cov = (covIn + covM) / 2
+    pdf = math.MultivariateNormalTriL(loc=means_In, scale_tril=math.cholesky(cov))
     outcome = pdf.sample(dtype=means_In.dtype) if sample else math.cast(means_M, means_In.dtype)
     prob = pdf.prob(outcome)
 

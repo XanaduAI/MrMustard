@@ -34,6 +34,7 @@ from mrmustard.lab import (
     Dgate,
     Fock,
     State,
+    SqueezedVacuum,
 )
 from mrmustard import physics, settings
 from tests.random import none_or_
@@ -264,32 +265,45 @@ class TestHomodyneDetector:
         ) * np.sqrt(2 * hbar)
         assert np.allclose(remaining_state.means, means)
 
-    N_MEAS = 250  # number of homodyne measurements to perform
+    N_MEAS = 350  # number of homodyne measurements to perform
     NUM_STDS = 10.0
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 
     @pytest.mark.parametrize("is_gaussian_state", [True, False])
     @pytest.mark.parametrize(
-        "state, mean_expected, std_expected",
-        [(Vacuum(1), 0.0, 1.0), (Coherent(2, 0), 2.0 * np.sqrt(2 * settings.HBAR), 1.0)],
+        "state, mean_expected, var_expected",
+        [
+            (Vacuum(1), 0.0, settings.HBAR / 2),
+            (Coherent(2.0, 0.5), 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
+        ],
     )
-    def test_sampling_mean_and_std(self, state, mean_expected, std_expected, is_gaussian_state):
-        """Tests that the mean and standard deviation estimates of many homodyne
+    def test_sampling_mean_and_var(self, state, mean_expected, var_expected, is_gaussian_state):
+        """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
 
         if not is_gaussian_state:
             state = State(dm=state.dm(cutoffs=[20]))
 
         measurement = Homodyne(0.0, result=None, modes=[0])
-        results = []
-        for _ in range(self.N_MEAS):
-            results.append(state << measurement)
-        results = np.asarray(results)
+        results = np.empty((self.N_MEAS,))
+        for i in range(self.N_MEAS):
+            results[i] = state << measurement
 
         mean = results.mean(axis=0)
-        std = results.std(axis=0)
         assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
-        assert np.allclose(std, std_expected, atol=self.std_10, rtol=0)
+        var = results.var(axis=0)
+        assert np.allclose(var, var_expected, atol=self.std_10, rtol=0)
+
+    def test_homodyne_squeezing_setting(self):
+        """Check default homodyne squeezing on settings leads to the correct generaldyne
+        covarince matrix: one that has tends to :math:`diag(1/\sigma[1,1],0)`."""
+
+        sigma = np.identity(2)
+        sigma_m = SqueezedVacuum(r=settings.HOMODYNE_SQUEEZING, phi=0).cov.numpy()
+
+        inverse_covariace = np.linalg.inv(sigma + sigma_m)
+        assert np.allclose(inverse_covariace, np.diag([1 / sigma[1, 1], 0]))
 
 
 class TestHeterodyneDetector:
