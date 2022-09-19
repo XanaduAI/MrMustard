@@ -37,6 +37,8 @@ from mrmustard.lab import (
     SqueezedVacuum,
 )
 from mrmustard import physics, settings
+from mrmustard.utils import homodyne
+from mrmustard.physics import gaussian
 from tests.random import none_or_
 
 math = Math()
@@ -269,7 +271,6 @@ class TestHomodyneDetector:
     NUM_STDS = 10.0
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 
-    @pytest.mark.parametrize("is_gaussian_state", [True, False])
     @pytest.mark.parametrize(
         "state, mean_expected, var_expected",
         [
@@ -278,17 +279,42 @@ class TestHomodyneDetector:
             (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
         ],
     )
-    def test_sampling_mean_and_var(self, state, mean_expected, var_expected, is_gaussian_state):
+    def test_fock_sampling_mean_and_var(self, state, mean_expected, var_expected):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
 
-        if not is_gaussian_state:
-            state = State(dm=state.dm(cutoffs=[20]))
+        state = State(dm=state.dm(cutoffs=[20]))
 
-        measurement = Homodyne(0.0, result=None, modes=[0])
         results = np.empty((self.N_MEAS,))
         for i in range(self.N_MEAS):
-            results[i] = state << measurement
+            outcome, _, _ = homodyne.sample_homodyne_fock(state, 0, mode=0, hbar=settings.HBAR)
+            results[i] = outcome
+
+        mean = results.mean(axis=0)
+        assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
+        var = results.var(axis=0)
+        assert np.allclose(var, var_expected, atol=self.std_10, rtol=0)
+
+    @pytest.mark.parametrize(
+        "state, mean_expected, var_expected",
+        [
+            (Vacuum(1), 0.0, settings.HBAR / 2),
+            (Coherent(2.0, 0.5), 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
+        ],
+    )
+    def test_gaussian_sampling_mean_and_var(self, state, mean_expected, var_expected):
+        """Tests that the mean and variance estimates of many homodyne
+        measurements are in agreement with the expected values for the states"""
+
+        meas_state = SqueezedVacuum(settings.HOMODYNE_SQUEEZING, 0.0)
+
+        results = np.empty((self.N_MEAS,))
+        for i in range(self.N_MEAS):
+            outcome, _ = gaussian.general_dyne(
+                state.cov, state.means, meas_state.cov, meas_state.means, settings.HBAR, True
+            )
+            results[i] = outcome[0]
 
         mean = results.mean(axis=0)
         assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)

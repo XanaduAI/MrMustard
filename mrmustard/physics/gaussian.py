@@ -576,7 +576,7 @@ def general_dyne(
         sample (bool): if ``proj_means`` should be sampled from a distribution, replaces the given ``proj_means``
 
     Returns:
-        Tuple[Vector, Scalar, Matrix, Vector]: the outcome (means vector), its probability, the post-measurement cov and means vector
+        Tuple[Vector, Scalar]: the outcome (means vector) and its probability.
     """
 
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
