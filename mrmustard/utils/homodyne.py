@@ -199,7 +199,7 @@ def sample_homodyne_fock(
     pdf = math.Categorical(probs=probs, name="homodyne_dist")
     sample_idx = pdf.sample()
     homodyne_sample = math.gather(x, sample_idx)
-    sample_probability = math.gather(x, probs)
+    sample_probability = math.gather(probs, sample_idx)
 
     # create "projector state" to calculate the conditional output state
     projector_state = lab.DisplacedSqueezed(
