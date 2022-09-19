@@ -12,9 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from mrmustard.lab.circuit import Circuit
-from mrmustard.lab.states import Fock
-from mrmustard.lab.gates import Dgate, Sgate, BSgate, MZgate, S2gate, Attenuator
+from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
+from mrmustard.lab.gates import (
+    Dgate,
+    Sgate,
+    Pgate,
+    Rgate,
+    CZgate,
+    CXgate,
+    BSgate,
+    MZgate,
+    S2gate,
+    Attenuator,
+    Interferometer,
+)
 from hypothesis import given, strategies as st
 from thewalrus.fock_gradients import (
     displacement,
@@ -46,14 +59,32 @@ def test_Dgate_2mode(state, xxyy):
     assert state_out == state
 
 
-def test_1mode_fock_equals_gaussian():
-    pass  # TODO: implement with weak states and gates
-    # gate = Ggate(num_modes=1)  # too much squeezing probably
-    # gstate = Gaussian(num_modes=1)  # too much squeezing probably
-    # fstate = State(fock=gstate.ket(cutoffs=[40]))
-    # via_phase_space = gate(gstate)
-    # via_fock_space = gate(fstate)
-    # assert via_phase_space == via_fock_space
+@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2)])
+def test_single_mode_fock_equals_gaussian(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [30]
+    gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
+    fock_state = State(dm=gaussian_state.dm(cutoffs))
+
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
+
+
+@pytest.mark.parametrize(
+    "gate", [BSgate(np.pi / 2), MZgate(np.pi / 2), CZgate(0.1), CXgate(0.1), S2gate(0.1)]
+)
+def test_two_mode_fock_equals_gaussian(gate):
+    """Test same state is obtained via fock representation or phase space
+    for two modes circuits."""
+    cutoffs = [20, 20]
+    gaussian_state = TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)
+    fock_state = State(dm=gaussian_state.dm(cutoffs))
+
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
 @given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
@@ -95,3 +126,14 @@ def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
     assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
+
+
+def test_raise_interferometer_error():
+    """test Interferometer raises an error when both `modes` and `num_modes` are given"""
+    num_modes = 3
+    modes = [0, 2]
+    with pytest.raises(ValueError):
+        Interferometer(num_modes=num_modes, modes=modes)
+    modes = [2, 5, 6]
+    with pytest.raises(ValueError):
+        Interferometer(num_modes=num_modes, modes=modes)

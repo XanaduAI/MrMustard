@@ -344,6 +344,7 @@ class State:
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
 
+            
     def _project_onto_state(self, other: State) -> Union[State, float]:
         """If states are gaussian use generaldyne measurement, else use
         the states' Fock representation."""
@@ -467,6 +468,12 @@ class State:
             outcome = outcome[0]
 
         return outcome
+
+
+    def __iter__(self) -> Iterable[State]:
+        """Iterates over the modes and their corresponding tensors."""
+        return (self.get_modes(i) for i in range(self.num_modes))
+
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
