@@ -179,6 +179,7 @@ def test_get_single_mode_fail():
     with pytest.raises(ValueError):
         a.get_modes([0])
 
+
 def test_iter():
     """Test we can iterate individual modes in states."""
     a = Gaussian(1)
