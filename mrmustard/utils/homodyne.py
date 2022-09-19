@@ -148,7 +148,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 
 def sample_homodyne_fock(
-    state: State, quadrature_angle: float, mode: Union[int, List[int]]
+    state: State, quadrature_angle: float, mode: Union[int, List[int]], hbar: float
 ) -> Tuple[float, State]:
     r"""Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
     where `\rho` is the reduced density matrix of the ``other`` state on the
@@ -189,9 +189,9 @@ def sample_homodyne_fock(
     reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
 
     x, probs = (
-        _probs_homodyne_pure(reduced_state.ket())
+        _probs_homodyne_pure(reduced_state.ket(), hbar)
         if reduced_state.is_pure
-        else _probs_homodyne_mixed(reduced_state.dm())
+        else _probs_homodyne_mixed(reduced_state.dm(), hbar)
     )
 
     # draw a sample from the distribution
@@ -203,7 +203,7 @@ def sample_homodyne_fock(
     projector_state = lab.DisplacedSqueezed(
         r=settings.HOMODYNE_SQUEEZING,
         phi=0,
-        x=homodyne_sample / np.sqrt(2 * settings.HBAR),
+        x=homodyne_sample / np.sqrt(2 * hbar),
         y=0,
         modes=reduced_state.modes,
     ) >> lab.Rgate(quadrature_angle, modes=reduced_state.modes)
@@ -211,14 +211,14 @@ def sample_homodyne_fock(
     return homodyne_sample, projector_state
 
 
-def _probs_homodyne_pure(state_ket):
+def _probs_homodyne_pure(state_ket, hbar):
 
     cutoff = state_ket.shape[0]
 
     # calculate prefactors of the PDF
-    omega_over_hbar = 1 / settings.HBAR
+    omega_over_hbar = 1 / hbar
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
-    x = np.sqrt(settings.HBAR) * q_tensor
+    x = np.sqrt(hbar) * q_tensor
 
     # Hn / sqrt(n!)
     hermite_polys = math.cast(physicist_hermite_polys(q_tensor, cutoff), "complex128")
@@ -240,14 +240,14 @@ def _probs_homodyne_pure(state_ket):
     return x, probs
 
 
-def _probs_homodyne_mixed(state_dm):
+def _probs_homodyne_mixed(state_dm, hbar):
 
     cutoff = state_dm.shape[0]
 
     # calculate prefactors of the PDF
-    omega_over_hbar = 1 / settings.HBAR
+    omega_over_hbar = 1 / hbar
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
-    x = np.sqrt(settings.HBAR) * q_tensor
+    x = np.sqrt(hbar) * q_tensor
     hermite_polys = physicist_hermite_polys(q_tensor, cutoff)
 
     # build matrix of terms Hn Hm / sqrt(n! m!)
