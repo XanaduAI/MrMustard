@@ -432,9 +432,10 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
-        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`.
-            If set to `None` a random orthogonal matrix is used.
+        num_modes (int): the num_modes-mode interferometer
+        orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
     """
 
     def __init__(
@@ -442,7 +443,12 @@ class Interferometer(Parametrized, Transformation):
         num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
+        if modes is not None and (
+            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
+        ):
+            raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             U = math.random_unitary(num_modes)
             orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
@@ -450,7 +456,7 @@ class Interferometer(Parametrized, Transformation):
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
         )
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
 
     @property
@@ -710,7 +716,12 @@ class AdditiveNoise(Parametrized, Transformation):
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds)
+        super().__init__(
+            noise=noise,
+            noise_trainable=noise_trainable,
+            noise_bounds=noise_bounds,
+            modes=modes,
+        )
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True

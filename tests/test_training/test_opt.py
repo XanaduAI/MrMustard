@@ -23,6 +23,7 @@ from thewalrus.symplectic import two_mode_squeezing
 
 from mrmustard.lab.gates import (
     Sgate,
+    Rgate,
     BSgate,
     S2gate,
     Ggate,
@@ -31,7 +32,8 @@ from mrmustard.lab.gates import (
 )
 from mrmustard.lab.circuit import Circuit
 from mrmustard.training import Optimizer, Parametrized
-from mrmustard.lab.states import Vacuum
+from mrmustard.lab.states import Vacuum, SqueezedVacuum
+from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
 
@@ -326,3 +328,24 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     S = G.symplectic.value.numpy()
     cov = S @ S.T
     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
+
+
+def test_opt_backend_param():
+    """Test the optimization of a backend parameter defined outside a gate."""
+    # rotated displaced squeezed state
+    rotation_angle = np.pi / 2
+    target_state = SqueezedVacuum(r=1.0, phi=rotation_angle)
+
+    # angle of rotation gate
+    r_angle = math.new_variable(0, bounds=(0, np.pi), name="r_angle")
+    # trainable squeezing
+    S = Sgate(r=0.1, phi=0, r_trainable=True, phi_trainable=False)
+
+    def cost_fn_sympl():
+        state_out = Vacuum(1) >> S >> Rgate(angle=r_angle)
+        return 1 - fidelity(state_out, target_state)
+
+    opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.1)
+    opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
+
+    print(np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2))
