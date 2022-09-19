@@ -364,8 +364,8 @@ class State:
             other (State): state being projected onto self
 
         Returns:
-            State or float: returns the output conditional state on the remaining modes
-                or the outcome of the homodyne measurement.
+            State or float: returns the conditional state on the remaining modes
+                or the probability.
         """
 
         other_cutoffs = [
@@ -430,7 +430,7 @@ class State:
 
         Returns:
             State or float: returns the output conditional state on the remaining modes
-                or the outcome of the generaldyne measurement.
+                or the probability.
         """
 
         # here `self` is the measurement device state and `other` is the incoming state
@@ -444,7 +444,7 @@ class State:
         covA, covB, AB = gaussian.partition_cov(other.cov, Amodes)
         means_a, means_b = gaussian.partition_means(other.means, Amodes)
 
-        outcome, prob = gaussian.general_dyne(
+        outcome, probability = gaussian.general_dyne(
             covB,
             means_b,
             self.cov,
@@ -453,26 +453,19 @@ class State:
             getattr(self, "sample", False),
         )
 
-        # calculate conditional output state of unmeasured modes
-        inv = math.inv(covB + self.cov)
-        new_cov = covA - math.matmul(math.matmul(AB, inv), math.transpose(AB))
-        new_means = means_a + math.matvec(math.matmul(AB, inv), outcome - means_b)
-
         if len(remaining_modes) > 0:
+            # calculate conditional output state of unmeasured modes
+            inv = math.inv(covB + self.cov)
+            new_cov = covA - math.matmul(math.matmul(AB, inv), math.transpose(AB))
+            new_means = means_a + math.matvec(math.matmul(AB, inv), outcome - means_b)
             return State(
                 means=new_means,
                 cov=new_cov,
                 modes=remaining_modes,
-                _norm=prob if not getattr(self, "_normalize", False) else 1.0,
+                _norm=probability if not getattr(self, "_normalize", False) else 1.0,
             )
 
-        # Generaldyne measurements have as outcomes two values, if doing homodyne measurement
-        # then return only the q-component of the outcome.
-        # Note only instances of `Homodyne` define the attribute "sampling".
-        if getattr(self, "sample", False):
-            outcome = outcome[0]
-
-        return outcome
+        return probability
 
     def __iter__(self) -> Iterable[State]:
         """Iterates over the modes and their corresponding tensors."""
