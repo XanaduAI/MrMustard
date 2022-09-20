@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 from mrmustard.math.compactFockAmplitudes import hermite_multidimensional_diagonal
-# from mrmustard.math.compactFockAmplitudes_split import amps_hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
+from mrmustard.math.compactFockAmplitudes_1leftoverMode import hermite_multidimensional_1leftoverMode
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -350,18 +350,22 @@ class TFMath(MathInterface):
                 grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
             )
             # print('dpoly_dC, dpoly_dA, dpoly_dB', dpoly_dC, dpoly_dA, dpoly_dB)
+            # print('dpoly_dA', dpoly_dA)
+            # print('dpoly_dB', dpoly_dB)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            # print('dLdA, dLdB, dLdC',dLdA, dLdB, dLdC)
             return dLdA, dLdB, dLdC
 
         return poly, grad
 
+
     @tf.custom_gradient
     def hermite_renormalized_diagonal(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoff: int
-    ) -> tf.Tensor:  # TODO this is not ready
+    ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
         denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
@@ -392,40 +396,43 @@ class TFMath(MathInterface):
 
         return poly, grad
 
-    # @tf.custom_gradient
-    # def hermite_renormalized_diagonal(
-    #     self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoff: int
-    # ) -> tf.Tensor:  # TODO this is not ready
-    #     r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-    #     series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-    #     denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-    #
-    #     Calculates the diagonal of the Fock representation by applying the recursion relation in a selective manner.
-    #
-    #     Args:
-    #         A: The A matrix.
-    #         B: The B vector.
-    #         C: The C scalar.
-    #         cutoff: cutoff that is equal on each mode
-    #
-    #     Returns:
-    #         The renormalized Hermite polynomial of given shape.
-    #     """
-    #     poly = tf.numpy_function(
-    #         amps_hermite_multidimensional_diagonal, [A, B, C, cutoff], [A.dtype]*4
-    #     )
-    #
-    #     def grad(dLdpoly):
-    #         dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-    #             grad_hermite_multidimensional_diagonal, [poly, A, B, C, cutoff], [A.dtype] * 4
-    #         )
-    #         ax = tuple(range(dLdpoly.ndim))
-    #         dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-    #         dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-    #         dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-    #         return dLdA, dLdB, dLdC
-    #
-    #     return poly, grad
+    @tf.custom_gradient
+    def hermite_renormalized_1leftoverMode(
+            self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, *, cutoff: int, cutoff_leftoverMode: int
+    ) -> tf.Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoff: cutoff that is equal on each mode
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        poly, dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+            hermite_multidimensional_1leftoverMode, [A, B, C, cutoff,cutoff_leftoverMode], [A.dtype] * 4
+        )
+
+        def grad(dLdpoly):
+            # print('dLdpoly',dLdpoly)
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            # print('dpoly_dC, dpoly_dA, dpoly_dB',dpoly_dC, dpoly_dA, dpoly_dB)
+            # print('dpoly_dA',dpoly_dA)
+            # print('dpoly_dB', dpoly_dB)
+            # print('dpoly_dA[:,:,2]', dpoly_dA[:,:,2])
+            # print('dLdA, dLdB, dLdC', dLdA, dLdB, dLdC)
+            return dLdA, dLdB, dLdC
+
+        return poly, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:

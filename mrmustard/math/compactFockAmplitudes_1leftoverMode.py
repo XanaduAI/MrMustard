@@ -4,11 +4,6 @@ from numba.typed import Dict
 from scipy.special import binom
 from numba.cpython.unsafe.tuple import tuple_setitem
 
-# # Can be used as an alternative for numba.cpython.unsafe.tuple.tuple_setitem (if you want to run code without numba)
-# def tuple_setitem(tup,idx,item):
-#     lis = list(tup).copy()
-#     lis[idx] = item
-#     return tuple(lis)
 # Partitions
 PARTITIONS = Dict.empty(key_type=typeof((0, 0)), value_type=int64[:, :])
 
@@ -182,68 +177,87 @@ def mn_tup(m, n, tup):
 
 
 @njit
-def calc_dA_dB(m, n, i, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, cutoff, cutoff_leftoverMode,
-               arr_read_pivot_dA, G_in_dA_adapted, l_range):
-    i_prime = i - 2
-    dA = arr_read_pivot_dA[mn_tup(m, n, read_GB)] * B[i_prime]
+def calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, cutoff,
+               cutoff_leftoverMode, arr_read_pivot_dA, G_in_dA_adapted, arr_read_pivot_dB, G_in_dB_adapted, l_range):
+    dA = arr_read_pivot_dA[mn_tup(m, n, read_GB)] * B[i]
+    dB = arr_read_pivot_dB[mn_tup(m, n, read_GB)] * B[i]
+    dB[i] += arr_read_pivot[mn_tup(m, n, read_GB)]
     for l_prime, l in enumerate(l_range):
         dA += K_l_adapted[l_prime] * A_adapted[l_prime] * G_in_dA_adapted[l_prime]
+        dB += K_l_adapted[l_prime] * A_adapted[l_prime] * G_in_dB_adapted[l_prime]
         dA[i, l] += G_in_adapted[l_prime]
-    return dA / K_i[i_prime]
+    return dA / K_i[i - 2], dB / K_i[i - 2]
 
 
 @njit
 def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, B, K_i, K_l, cutoff, cutoff_leftoverMode,
-                arr_write_dA, arr_read_pivot_dA, G_in_dA):
-    i += 2
-    i_prime = i - 2
-
+                arr_write_dA, arr_read_pivot_dA, G_in_dA, arr_write_dB, arr_read_pivot_dB, G_in_dB):
     # m,n = 0,0
     m, n = 0, 0
     l_range = np.arange(2, A.shape[1])
-    A_adapted = A[i_prime, 2:]
+    A_adapted = A[i, 2:]
     G_in_adapted = G_in[0, 0]
     G_in_dA_adapted = G_in_dA[0, 0]
+    G_in_dB_adapted = G_in_dB[0, 0]
     K_l_adapted = K_l
-    arr_write[mn_tup(0, 0, write)] = (GB[0, 0, i_prime] + A_adapted @ G_in_adapted) / K_i[i_prime]
-    arr_write_dA[mn_tup(0, 0, write)] = calc_dA_dB(m, n, i, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted,
-                                                   cutoff, cutoff_leftoverMode, arr_read_pivot_dA, G_in_dA_adapted,
-                                                   l_range)
+    arr_write[mn_tup(0, 0, write)] = (GB[0, 0, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
+    arr_write_dA[mn_tup(0, 0, write)], arr_write_dB[mn_tup(0, 0, write)] = calc_dA_dB(m, n, i, arr_read_pivot, read_GB,
+                                                                                      G_in_adapted, A_adapted, B, K_i,
+                                                                                      K_l_adapted, cutoff,
+                                                                                      cutoff_leftoverMode,
+                                                                                      arr_read_pivot_dA,
+                                                                                      G_in_dA_adapted,
+                                                                                      arr_read_pivot_dB,
+                                                                                      G_in_dB_adapted, l_range)
 
     # m=0
     m = 0
     l_range = np.arange(1, A.shape[1])
-    A_adapted = A[i_prime, 1:]
+    A_adapted = A[i, 1:]
     for n in range(1, cutoff_leftoverMode):
         K_l_adapted = np.hstack((np.array([np.sqrt(n)]), K_l))
         G_in_adapted = np.hstack((np.array([arr_read_pivot[mn_tup(0, n - 1, read_GB)] * np.sqrt(n)]), G_in[0, n]))
         G_in_dA_adapted = np.concatenate(
             (np.expand_dims(arr_read_pivot_dA[mn_tup(0, n - 1, read_GB)], axis=0), G_in_dA[0, n]), axis=0)
-        arr_write[mn_tup(0, n, write)] = (GB[0, n, i_prime] + A_adapted @ G_in_adapted) / K_i[i_prime]
-        arr_write_dA[mn_tup(0, n, write)] = calc_dA_dB(m, n, i, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted,
-                                                       cutoff, cutoff_leftoverMode, arr_read_pivot_dA, G_in_dA_adapted,
-                                                       l_range)
+        G_in_dB_adapted = np.concatenate(
+            (np.expand_dims(arr_read_pivot_dB[mn_tup(0, n - 1, read_GB)], axis=0), G_in_dB[0, n]), axis=0)
+        arr_write[mn_tup(0, n, write)] = (GB[0, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
+        arr_write_dA[mn_tup(0, n, write)], arr_write_dB[mn_tup(0, n, write)] = calc_dA_dB(m, n, i, arr_read_pivot,
+                                                                                          read_GB, G_in_adapted,
+                                                                                          A_adapted, B, K_i,
+                                                                                          K_l_adapted, cutoff,
+                                                                                          cutoff_leftoverMode,
+                                                                                          arr_read_pivot_dA,
+                                                                                          G_in_dA_adapted,
+                                                                                          arr_read_pivot_dB,
+                                                                                          G_in_dB_adapted, l_range)
 
     # n=0
     n = 0
     l_range = np.arange(1, A.shape[1])
     l_range[0] = 0
-    # print('l_range',l_range)
-    A_adapted = np.hstack((np.array([A[i_prime, 0]]), A[i_prime, 2:]))
+    A_adapted = np.hstack((np.array([A[i, 0]]), A[i, 2:]))
     for m in range(1, cutoff_leftoverMode):
         K_l_adapted = np.hstack((np.array([np.sqrt(m)]), K_l))
         G_in_adapted = np.hstack((np.array([arr_read_pivot[mn_tup(m - 1, 0, read_GB)] * np.sqrt(m)]), G_in[m, 0]))
-
         G_in_dA_adapted = np.concatenate(
             (np.expand_dims(arr_read_pivot_dA[mn_tup(m - 1, 0, read_GB)], axis=0), G_in_dA[m, 0]), axis=0)
-        arr_write[mn_tup(m, 0, write)] = (GB[m, 0, i_prime] + A_adapted @ G_in_adapted) / K_i[i_prime]
-        arr_write_dA[mn_tup(m, 0, write)] = calc_dA_dB(m, n, i, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted,
-                                                       cutoff, cutoff_leftoverMode, arr_read_pivot_dA, G_in_dA_adapted,
-                                                       l_range)
+        G_in_dB_adapted = np.concatenate(
+            (np.expand_dims(arr_read_pivot_dB[mn_tup(m - 1, 0, read_GB)], axis=0), G_in_dB[m, 0]), axis=0)
+        arr_write[mn_tup(m, 0, write)] = (GB[m, 0, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
+        arr_write_dA[mn_tup(m, 0, write)], arr_write_dB[mn_tup(m, 0, write)] = calc_dA_dB(m, n, i, arr_read_pivot,
+                                                                                          read_GB, G_in_adapted,
+                                                                                          A_adapted, B, K_i,
+                                                                                          K_l_adapted, cutoff,
+                                                                                          cutoff_leftoverMode,
+                                                                                          arr_read_pivot_dA,
+                                                                                          G_in_dA_adapted,
+                                                                                          arr_read_pivot_dB,
+                                                                                          G_in_dB_adapted, l_range)
 
     # m>0,n>0
     l_range = np.arange(A.shape[1])
-    A_adapted = A[i_prime]
+    A_adapted = A[i]
     for m in range(1, cutoff_leftoverMode):
         for n in range(1, cutoff_leftoverMode):
             K_l_adapted = np.hstack((np.array([np.sqrt(m), np.sqrt(n)]), K_l))
@@ -252,12 +266,21 @@ def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, B, K_
             G_in_dA_adapted = np.concatenate((np.expand_dims(arr_read_pivot_dA[mn_tup(m - 1, n, read_GB)], axis=0),
                                               np.expand_dims(arr_read_pivot_dA[mn_tup(m, n - 1, read_GB)], axis=0),
                                               G_in_dA[m, n]), axis=0)
-            arr_write[mn_tup(m, n, write)] = (GB[m, n, i_prime] + A_adapted @ G_in_adapted) / K_i[i_prime]
-            arr_write_dA[mn_tup(m, n, write)] = calc_dA_dB(m, n, i, read_GB, G_in_adapted, A_adapted, B, K_i,
-                                                           K_l_adapted, cutoff, cutoff_leftoverMode, arr_read_pivot_dA,
-                                                           G_in_dA_adapted, l_range)
+            G_in_dB_adapted = np.concatenate((np.expand_dims(arr_read_pivot_dB[mn_tup(m - 1, n, read_GB)], axis=0),
+                                              np.expand_dims(arr_read_pivot_dB[mn_tup(m, n - 1, read_GB)], axis=0),
+                                              G_in_dB[m, n]), axis=0)
+            arr_write[mn_tup(m, n, write)] = (GB[m, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
+            arr_write_dA[mn_tup(m, n, write)], arr_write_dB[mn_tup(m, n, write)] = calc_dA_dB(m, n, i, arr_read_pivot,
+                                                                                              read_GB, G_in_adapted,
+                                                                                              A_adapted, B, K_i,
+                                                                                              K_l_adapted, cutoff,
+                                                                                              cutoff_leftoverMode,
+                                                                                              arr_read_pivot_dA,
+                                                                                              G_in_dA_adapted,
+                                                                                              arr_read_pivot_dB,
+                                                                                              G_in_dB_adapted, l_range)
 
-    return arr_write, arr_write_dA
+    return arr_write, arr_write_dA, arr_write_dB
 
 
 @njit
@@ -267,10 +290,8 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
     K_l = np.sqrt(pivot)  # automatic conversion to float
     K_i = np.sqrt(pivot + 1)  # automatic conversion to float
     G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128)  # M is actually M-1 here
-    # G_in_dA = np.zeros(G_in.shape+A.shape,dtype=np.complex128)
-    # G_in_dB = np.zeros(G_in.shape+B.shape,dtype=np.complex128)
-    G_in_dA = np.zeros(G_in.shape + (A.shape[0] + 2, A.shape[1]), dtype=np.complex128)
-    G_in_dB = np.zeros(G_in.shape + (B.shape[0] + 2,), dtype=np.complex128)
+    G_in_dA = np.zeros(G_in.shape + A.shape, dtype=np.complex128)
+    G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     read_GB = tuple_setitem(zero_tuple, 3, 2 * d)
     read_GB = tuple_setitem(read_GB, 4, params[d])
@@ -289,6 +310,7 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
         for n in range(cutoff_leftoverMode):
             G_in[m, n, 2 * d] = arr0[mn_tup(m, n, read0)]
             G_in_dA[m, n, 2 * d] = arr0_dA[mn_tup(m, n, read0)]
+            G_in_dB[m, n, 2 * d] = arr0_dB[mn_tup(m, n, read0)]
 
     # read from Array2
     if params[d] > 0:  # params[d]-1>=0
@@ -300,6 +322,7 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
             for n in range(cutoff_leftoverMode):
                 G_in[m, n, 2 * d + 1] = arr2[mn_tup(m, n, read)]
                 G_in_dA[m, n, 2 * d + 1] = arr2_dA[mn_tup(m, n, read)]
+                G_in_dB[m, n, 2 * d + 1] = arr2_dB[mn_tup(m, n, read)]
 
     # read from Array11
     for i in range(d + 1, M):  # i>d
@@ -312,9 +335,11 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
             for m in range(cutoff_leftoverMode):
                 for n in range(cutoff_leftoverMode):
                     G_in[m, n, 2 * i] = arr11[mn_tup(m, n, tuple_setitem(read, 2, 1))]  # READ green (1001)
-                    G_in_dA[m, n, 2 * i] = arr11_dA[mn_tup(m, n, tuple_setitem(read, 2, 1))]  # READ green (1001)
+                    G_in_dA[m, n, 2 * i] = arr11_dA[mn_tup(m, n, tuple_setitem(read, 2, 1))]
+                    G_in_dB[m, n, 2 * i] = arr11_dB[mn_tup(m, n, tuple_setitem(read, 2, 1))]
                     G_in[m, n, 2 * i + 1] = arr11[mn_tup(m, n, read)]  # READ red (1010)
-                    G_in_dA[m, n, 2 * i + 1] = arr11_dA[mn_tup(m, n, read)]  # READ red (1010)
+                    G_in_dA[m, n, 2 * i + 1] = arr11_dA[mn_tup(m, n, read)]
+                    G_in_dB[m, n, 2 * i + 1] = arr11_dB[mn_tup(m, n, read)]
 
     for i in range(d):  # i<d
         if params[i] > 0:
@@ -326,9 +351,11 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
             for m in range(cutoff_leftoverMode):
                 for n in range(cutoff_leftoverMode):
                     G_in[m, n, 2 * i] = arr11[mn_tup(m, n, tuple_setitem(read, 2, 2))]  # READ blue (0110)
-                    G_in_dA[m, n, 2 * i] = arr11_dA[mn_tup(m, n, tuple_setitem(read, 2, 2))]  # READ blue (0110)
+                    G_in_dA[m, n, 2 * i] = arr11_dA[mn_tup(m, n, tuple_setitem(read, 2, 2))]
+                    G_in_dB[m, n, 2 * i] = arr11_dB[mn_tup(m, n, tuple_setitem(read, 2, 2))]
                     G_in[m, n, 2 * i + 1] = arr11[mn_tup(m, n, read)]  # READ red (1010)
-                    G_in_dA[m, n, 2 * i + 1] = arr11_dA[mn_tup(m, n, read)]  # READ red (1010)
+                    G_in_dA[m, n, 2 * i + 1] = arr11_dA[mn_tup(m, n, read)]
+                    G_in_dB[m, n, 2 * i + 1] = arr11_dB[mn_tup(m, n, read)]
 
     ########## WRITE ##########
 
@@ -339,8 +366,8 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
     # Array0
     if d == 0 or np.all(params[:d] == 0):
         write0 = tuple_setitem(read0, d + 4, params[d] + 1)
-        arr0, arr0_dA = write_block(2 * d + 1, arr0, write0, arr1, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
-                                    cutoff_leftoverMode, arr0_dA, arr1_dA, G_in_dA)
+        arr0, arr0_dA, arr0_dB = write_block(2 * d + 3, arr0, write0, arr1, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
+                                             cutoff_leftoverMode, arr0_dA, arr1_dA, G_in_dA, arr0_dB, arr1_dB, G_in_dB)
 
     # Array2
     if params[d] + 2 < cutoff:
@@ -348,8 +375,8 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
         write = tuple_setitem(write, 3, d)
         write = tuple_setitem(write, 4, params[d])
         write = fill_tuple_tail_Array2(write, d, params, M)
-        arr2, arr2_dA = write_block(2 * d, arr2, write, arr1, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
-                                    cutoff_leftoverMode, arr2_dA, arr1_dA, G_in_dA)
+        arr2, arr2_dA, arr2_dB = write_block(2 * d + 2, arr2, write, arr1, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
+                                             cutoff_leftoverMode, arr2_dA, arr1_dA, G_in_dA, arr2_dB, arr1_dB, G_in_dB)
 
     # Array11
     for i in range(d + 1, M):
@@ -359,11 +386,12 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
             write = tuple_setitem(write, 4, params[d])
             write = tuple_setitem(write, 5, params[i])
             write = fill_tuple_tail_Array11(write, d, i, params, M)
-            arr11, arr11_dA = write_block(2 * i, arr11, write, arr1, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
-                                          cutoff_leftoverMode, arr11_dA, arr1_dA, G_in_dA)  # WRITE red (1010)
-            arr11, arr11_dA = write_block(2 * i + 1, arr11, tuple_setitem(write, 2, 1), arr1, read_GB, G_in, GB, A, B,
-                                          K_i, K_l, cutoff, cutoff_leftoverMode, arr11_dA, arr1_dA,
-                                          G_in_dA)  # WRITE green (1001)
+            arr11, arr11_dA, arr11_dB = write_block(2 * i + 2, arr11, write, arr1, read_GB, G_in, GB, A, B, K_i, K_l,
+                                                    cutoff, cutoff_leftoverMode, arr11_dA, arr1_dA, G_in_dA, arr11_dB,
+                                                    arr1_dB, G_in_dB)  # WRITE red (1010)
+            arr11, arr11_dA, arr11_dB = write_block(2 * i + 3, arr11, tuple_setitem(write, 2, 1), arr1, read_GB, G_in,
+                                                    GB, A, B, K_i, K_l, cutoff, cutoff_leftoverMode, arr11_dA, arr1_dA,
+                                                    G_in_dA, arr11_dB, arr1_dB, G_in_dB)  # WRITE green (1001)
 
     for i in range(d):
         if params[i] + 1 < cutoff:
@@ -372,9 +400,9 @@ def use_offDiag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, d, arr0, arr
             write = tuple_setitem(write, 4, params[i])
             write = tuple_setitem(write, 5, params[d])
             write = fill_tuple_tail_Array11(write, i, d, params, M)
-            arr11, arr11_dA = write_block(2 * i + 1, arr11, tuple_setitem(write, 2, 2), arr1, read_GB, G_in, GB, A, B,
-                                          K_i, K_l, cutoff, cutoff_leftoverMode, arr11_dA, arr1_dA,
-                                          G_in_dA)  # WRITE blue (0110)
+            arr11, arr11_dA, arr11_dB = write_block(2 * i + 3, arr11, tuple_setitem(write, 2, 2), arr1, read_GB, G_in,
+                                                    GB, A, B, K_i, K_l, cutoff, cutoff_leftoverMode, arr11_dA, arr1_dA,
+                                                    G_in_dA, arr11_dB, arr1_dB, G_in_dB)  # WRITE blue (0110)
 
     return arr0, arr2, arr11, arr1, arr0_dA, arr2_dA, arr11_dA, arr1_dA, arr0_dB, arr2_dB, arr11_dB, arr1_dB
 
@@ -387,10 +415,8 @@ def use_diag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, arr0, arr1, zer
     K_i = np.sqrt(pivot + 1)  # automatic conversion to float
 
     G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128)
-    # G_in_dA = np.zeros(G_in.shape+A.shape,dtype=np.complex128)
-    # G_in_dB = np.zeros(G_in.shape+B.shape,dtype=np.complex128)
-    G_in_dA = np.zeros(G_in.shape + (A.shape[0] + 2, A.shape[1]), dtype=np.complex128)
-    G_in_dB = np.zeros(G_in.shape + (B.shape[0] + 2,), dtype=np.complex128)
+    G_in_dA = np.zeros(G_in.shape + A.shape, dtype=np.complex128)
+    G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     read_GB = fill_tuple_tail_Array0(zero_tuple, params, M)
     GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
@@ -410,6 +436,7 @@ def use_diag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, arr0, arr1, zer
                 for n in range(cutoff_leftoverMode):
                     G_in[m, n, i] = arr1[mn_tup(m, n, read)]
                     G_in_dA[m, n, i] = arr1_dA[mn_tup(m, n, read)]
+                    G_in_dB[m, n, i] = arr1_dB[mn_tup(m, n, read)]
 
     ########## WRITE ##########
     for m in range(cutoff_leftoverMode):
@@ -423,8 +450,9 @@ def use_diag_pivot(A, B, M, cutoff, cutoff_leftoverMode, params, arr0, arr1, zer
             write = tuple_setitem(write, 3, i)
             write = tuple_setitem(write, 4, params[i // 2])
             write = fill_tuple_tail_Array2(write, i // 2, params, M)
-            arr1, arr1_dA = write_block(i, arr1, write, arr0, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
-                                        cutoff_leftoverMode, arr1_dA, arr0_dA, G_in_dA)
+            arr1, arr1_dA, arr1_dB = write_block(i + 2, arr1, write, arr0, read_GB, G_in, GB, A, B, K_i, K_l, cutoff,
+                                                 cutoff_leftoverMode, arr1_dA, arr0_dA, G_in_dA, arr1_dB, arr0_dB,
+                                                 G_in_dB)
 
     return arr0, arr1
 
@@ -457,31 +485,37 @@ def fock_representation_compact_NUMBA(A, B, G0, M, cutoff, cutoff_leftoverMode, 
     arr1_dB = np.zeros(arr1.shape + B.shape, dtype=np.complex128)
 
     arr0[zero_tuple] = G0
-    cutoff_leftoverMode = cutoff_leftoverMode.item()
-    # print(type(cutoff_leftoverMode))
 
     # fill first mode for all PNR detections equal to zero
     for m in range(cutoff_leftoverMode - 1):
         arr0[tuple_setitem(zero_tuple, 0, m + 1)] = (arr0[tuple_setitem(zero_tuple, 0, m)] * B[0] + np.sqrt(m) * A[
             0, 0] * arr0[tuple_setitem(zero_tuple, 0, m - 1)]) / np.sqrt(m + 1)
-        # arr0_dA[tuple_setitem(zero_tuple,0,m+1)] = (arr0_dA[tuple_setitem(zero_tuple,0,m)]*B[0] + np.sqrt(m) * A[0, 0] * arr0_dA[tuple_setitem(zero_tuple,0,m-1)]) / np.sqrt(m+1)
-        arr0_dA[tuple_setitem(zero_tuple, 0, m + 1)] = (np.sqrt(m) * A[0, 0] * arr0_dA[
-            tuple_setitem(zero_tuple, 0, m - 1)]) / np.sqrt(m + 1)
+        arr0_dA[tuple_setitem(zero_tuple, 0, m + 1)] = (arr0_dA[tuple_setitem(zero_tuple, 0, m)] * B[0] + np.sqrt(m) *
+                                                        A[0, 0] * arr0_dA[
+                                                            tuple_setitem(zero_tuple, 0, m - 1)]) / np.sqrt(m + 1)
         arr0_dA[tuple_setitem(zero_tuple, 0, m + 1)][0, 0] += (np.sqrt(m) * arr0[
             tuple_setitem(zero_tuple, 0, m - 1)]) / np.sqrt(m + 1)
+        arr0_dB[tuple_setitem(zero_tuple, 0, m + 1)] = (arr0_dB[tuple_setitem(zero_tuple, 0, m)] * B[0] + np.sqrt(m) *
+                                                        A[0, 0] * arr0_dB[
+                                                            tuple_setitem(zero_tuple, 0, m - 1)]) / np.sqrt(m + 1)
+        arr0_dB[tuple_setitem(zero_tuple, 0, m + 1)][0] += arr0[tuple_setitem(zero_tuple, 0, m)] / np.sqrt(m + 1)
+
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode - 1):
             arr0[mn_tup(m, n + 1, zero_tuple)] = (arr0[mn_tup(m, n, zero_tuple)] * B[1] + np.sqrt(m) * A[1, 0] * arr0[
                 mn_tup(m - 1, n, zero_tuple)] + np.sqrt(n) * A[1, 1] * arr0[mn_tup(m, n - 1, zero_tuple)]) / np.sqrt(
                 n + 1)
-            # arr0_dA[mn_tup(m,n+1,zero_tuple)] = (arr0_dA[mn_tup(m,n,zero_tuple)]*B[1] + np.sqrt(m) * A[1, 0] * arr0_dA[mn_tup(m-1,n,zero_tuple)] + np.sqrt(n) * A[1, 1] * arr0_dA[mn_tup(m,n-1,zero_tuple)]) / np.sqrt(n+1)
-            arr0_dA[mn_tup(m, n + 1, zero_tuple)] = (np.sqrt(m) * A[1, 0] * arr0_dA[
-                mn_tup(m - 1, n, zero_tuple)] + np.sqrt(n) * A[1, 1] * arr0_dA[mn_tup(m, n - 1, zero_tuple)]) / np.sqrt(
-                n + 1)
+            arr0_dA[mn_tup(m, n + 1, zero_tuple)] = (arr0_dA[mn_tup(m, n, zero_tuple)] * B[1] + np.sqrt(m) * A[1, 0] *
+                                                     arr0_dA[mn_tup(m - 1, n, zero_tuple)] + np.sqrt(n) * A[1, 1] *
+                                                     arr0_dA[mn_tup(m, n - 1, zero_tuple)]) / np.sqrt(n + 1)
             arr0_dA[mn_tup(m, n + 1, zero_tuple)][1, 0] += (np.sqrt(m) * arr0[mn_tup(m - 1, n, zero_tuple)]) / np.sqrt(
                 n + 1)
             arr0_dA[mn_tup(m, n + 1, zero_tuple)][1, 1] += (np.sqrt(n) * arr0[mn_tup(m, n - 1, zero_tuple)]) / np.sqrt(
                 n + 1)
+            arr0_dB[mn_tup(m, n + 1, zero_tuple)] = (arr0_dB[mn_tup(m, n, zero_tuple)] * B[1] + np.sqrt(m) * A[1, 0] *
+                                                     arr0_dB[mn_tup(m - 1, n, zero_tuple)] + np.sqrt(n) * A[1, 1] *
+                                                     arr0_dB[mn_tup(m, n - 1, zero_tuple)]) / np.sqrt(n + 1)
+            arr0_dB[mn_tup(m, n + 1, zero_tuple)][1] += arr0[mn_tup(m, n, zero_tuple)] / np.sqrt(n + 1)
 
     # act as if leftover mode is one element in the nested representation and perform algorithm for diagonal case on M-1 modes
     staggered_range = calc_staggered_range_2M(M - 1)
@@ -490,15 +524,15 @@ def fock_representation_compact_NUMBA(A, B, G0, M, cutoff, cutoff_leftoverMode, 
         for params in get_partitions((M - 1), count, PARTITIONS):
             if np.max(params) < cutoff:
                 # diagonal pivots: aa,bb,cc,dd,...
-                arr0, arr1 = use_diag_pivot(A[2:], B[2:], M - 1, cutoff, cutoff_leftoverMode, params, arr0, arr1,
-                                            zero_tuple, staggered_range, arr0_dA, arr1_dA, arr0_dB, arr1_dB)
+                arr0, arr1 = use_diag_pivot(A, B, M - 1, cutoff, cutoff_leftoverMode, params, arr0, arr1, zero_tuple,
+                                            staggered_range, arr0_dA, arr1_dA, arr0_dB, arr1_dB)
 
                 # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: aa,(b+1)b,cc,dd | ...
                 for d in range((M - 1)):  # for over pivot off-diagonals
                     if params[d] < cutoff - 1:
                         arr0, arr2, arr11, arr1, arr0_dA, arr2_dA, arr11_dA, arr1_dA, arr0_dB, arr2_dB, arr11_dB, arr1_dB = use_offDiag_pivot(
-                            A[2:], B[2:], M - 1, cutoff, cutoff_leftoverMode, params, d, arr0, arr2, arr11, arr1,
-                            zero_tuple, arr0_dA, arr2_dA, arr11_dA, arr1_dA, arr0_dB, arr2_dB, arr11_dB, arr1_dB)
+                            A, B, M - 1, cutoff, cutoff_leftoverMode, params, d, arr0, arr2, arr11, arr1, zero_tuple,
+                            arr0_dA, arr2_dA, arr11_dA, arr1_dA, arr0_dB, arr2_dB, arr11_dB, arr1_dB)
 
     return arr0[:, :, 0, 0], arr0_dA[:, :, 0, 0], arr0_dB[:, :, 0, 0]
 
@@ -522,11 +556,12 @@ def fock_representation_compact(A, B, G0, M, cutoff, cutoff_leftoverMode):
     arr1 = np.zeros([cutoff_leftoverMode] * 2 + [1, 2 * (M - 1)] + [cutoff - 1] + [cutoff] * (M - 2),
                     dtype=np.complex128)
     zero_tuple = tuple([0] * (M + 3))
-    # print(type(cutoff_leftoverMode))
-    return fock_representation_compact_NUMBA(A, B, G0, M, cutoff, cutoff_leftoverMode, PARTITIONS, arr0, arr2, arr11, arr1, zero_tuple)
+    return fock_representation_compact_NUMBA(A, B, G0, M, cutoff, cutoff_leftoverMode, PARTITIONS, arr0, arr2, arr11,
+                                             arr1, zero_tuple)
 
 
 def hermite_multidimensional_1leftoverMode(A,B,G0,cutoff, cutoff_leftoverMode):
+    cutoff_leftoverMode = cutoff_leftoverMode.item() # tf.numpy_function() wraps this into an array, which leads to numba error if we want to iterate range(cutoff_leftoverMode)
     M = A.shape[0]//2
     assert M>1
     G,G_dA,G_dB = fock_representation_compact(A, B, G0, M, cutoff, cutoff_leftoverMode)
