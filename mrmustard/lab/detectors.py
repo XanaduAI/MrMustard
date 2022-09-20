@@ -233,10 +233,19 @@ class Heterodyne(Measurement):
     ):
         super().__init__(modes=modes)
         # if no x and y provided, sample the outcome
+
+        if (x is None) ^ (y is None):  # XOR
+            raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
+
         if x is None and y is None:
+            self.sample = True
             num_modes = len(modes) if modes is not None else 1
             x, y = math.zeros([num_modes]), math.zeros([num_modes])
-            self.sample = True
+        else:
+            self.sample = False
+            x = math.atleast_1d(x, dtype="float64")
+            y = math.atleast_1d(y, dtype="float64")
+            self._set_outcome(math.concat([x, y], axis=0))  # XXPP ordering
 
         self.state = Coherent(x, y, modes=modes)
 
@@ -279,6 +288,7 @@ class Homodyne(Measurement):
 
             x = result * math.cos(quadrature_angle)
             y = result * math.sin(quadrature_angle)
+            self._set_outcome(math.concat([x, y], axis=0))  # XXPP ordering
 
         self.state = DisplacedSqueezed(r=r, phi=2 * quadrature_angle, x=x, y=y, modes=modes)
 
