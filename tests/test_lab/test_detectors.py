@@ -341,22 +341,24 @@ class TestHomodyneDetector:
 class TestHeterodyneDetector:
     """tests related to heterodyne detectors"""
 
-    @pytest.mark.parametrize("x", [None] + np.random.uniform(-10, 10, size=3).tolist())
-    @pytest.mark.parametrize("y", [None] + np.random.uniform(-10, 10, size=3).tolist())
-    def test_heterodyne_mode_kwargs(self, x, y):
+    @pytest.mark.parametrize(
+        "xy", [[None, None]] + np.random.uniform(-10, 10, size=(5, 2, 2)).tolist()
+    )
+    def test_heterodyne_mode_kwargs(self, xy):
         """Test that S gates and Heterodyne mesurements are applied to the correct modes via the `modes` kwarg.
 
-        Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
-        and a "vertical" (angle=0) squeezed state in mode 1.
+        Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0,
+        a "vertical" (angle=0) squeezed state in mode 1 and vacumm state in mode 2.
 
-        Because the modes are separable, measuring in one mode should leave the state in the
-        other mode unchaged.
+        Because the modes are separable, measuring in mode 1 and 2 should leave the state in the
+        0th mode unchaged.
         """
+        x, y = xy
 
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
-        initial_state = Vacuum(2) >> S1 >> S2
-        final_state = initial_state << Heterodyne(x, y, modes=[1])
+        initial_state = Vacuum(3) >> S1 >> S2
+        final_state = initial_state << Heterodyne(x, y, modes=[1, 2])
 
         expected_state = Vacuum(1) >> S1
 
