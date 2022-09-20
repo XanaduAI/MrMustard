@@ -18,15 +18,53 @@ from __future__ import annotations
 from abc import ABC
 from mrmustard.math import Math
 
-from mrmustard.types import Tensor, Callable, Sequence, Iterable
+from mrmustard.types import Tensor, Callable, Sequence, Iterable, Optional
 from mrmustard import settings
 from .state import State
 
 math = Math()
 
 
-class FockMeasurement(ABC):
-    r"""A Fock measurement projecting onto a Fock measurement pattern.
+class Measurement(ABC):
+    def __init__(self, modes: Optional[Iterable[int]] = None) -> None:
+        super().__init__()
+        self._modes = modes
+        self._outcome = None
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    def _set_outcome(self, outcome):
+        self._outcome = outcome
+
+    def __lshift__(self, other) -> Tensor:
+        if isinstance(other, State):
+            self.primal(other)
+        else:
+            raise TypeError(
+                f"unsupported operand type(s) '{type(self).__name__}' << '{type(other).__name__}'"
+            )
+
+    def __getitem__(self, items) -> Callable:
+        """Allows measurements to be used as ``output = meas[0,1](input)``,
+        e.g. measuring modes 0 and 1.
+        """
+
+        if isinstance(items, int):
+            modes = [items]
+        elif isinstance(items, slice):
+            modes = list(range(items.start, items.stop, items.step))
+        elif isinstance(items, (Sequence, Iterable)):
+            modes = list(items)
+        else:
+            raise ValueError(f"{items} is not a valid slice or list of modes.")
+        self._modes = modes
+        return self
+
+
+class FockMeasurement(Measurement):
+    """A Fock measurement projecting onto a Fock measurement pattern.
 
     It works by representing the state in the Fock basis and then applying a stochastic channel
     matrix ``P(meas|n)`` to the Fock probabilities (belief propagation).
@@ -90,28 +128,3 @@ class FockMeasurement(ABC):
         This method should be overriden by subclasses accordingly.
         """
         return False
-
-    def __lshift__(self, other) -> Tensor:
-        if isinstance(other, State):
-            self.primal(other)
-        else:
-            raise TypeError(
-                f"unsupported operand type(s) '{type(self).__name__}' << '{type(other).__name__}'"
-            )
-
-    def __getitem__(self, items) -> Callable:
-        r"""
-        Allows measurements to be used as ``output = meas[0,1](input)``, e.g. measuring modes 0
-        and 1.
-        """
-
-        if isinstance(items, int):
-            modes = [items]
-        elif isinstance(items, slice):
-            modes = list(range(items.start, items.stop, items.step))
-        elif isinstance(items, (Sequence, Iterable)):
-            modes = list(items)
-        else:
-            raise ValueError(f"{items} is not a valid slice or list of modes.")
-        self.modes = modes
-        return self
