@@ -213,7 +213,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 self._internal_stochastic_channel.append(condprob)
 
 
-class Heterodyne(Coherent):
+class Heterodyne(Measurement):
     r"""Heterodyne measurement on given modes.
 
     This class is just a thin wrapper around the :class:`Coherent`.
@@ -231,13 +231,17 @@ class Heterodyne(Coherent):
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
+        super().__init__(modes=modes)
         # if no x and y provided, sample the outcome
         if x is None and y is None:
             num_modes = len(modes) if modes is not None else 1
             x, y = math.zeros([num_modes]), math.zeros([num_modes])
             self.sample = True
 
-        super().__init__(x, y, modes=modes)
+        self.state = Coherent(x, y, modes=modes)
+
+    def primal(self, other):
+        return self.state.primal(other)
 
 
 class Homodyne(Measurement):
@@ -276,9 +280,7 @@ class Homodyne(Measurement):
             x = result * math.cos(quadrature_angle)
             y = result * math.sin(quadrature_angle)
 
-        self.displaced_squeezed = DisplacedSqueezed(
-            r=r, phi=2 * quadrature_angle, x=x, y=y, modes=modes
-        )
+        self.state = DisplacedSqueezed(r=r, phi=2 * quadrature_angle, x=x, y=y, modes=modes)
 
     def primal(self, other):
-        return self.displaced_squeezed.primal(other)
+        return self.state.primal(other)
