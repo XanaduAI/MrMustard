@@ -21,7 +21,7 @@ from mrmustard.types import Matrix
 from mrmustard.training import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
-from .abstract import FockMeasurement
+from .abstract import FockMeasurement, Measurement
 from .states import DisplacedSqueezed, Coherent
 
 math = Math()
@@ -240,7 +240,7 @@ class Heterodyne(Coherent):
         super().__init__(x, y, modes=modes)
 
 
-class Homodyne(DisplacedSqueezed):
+class Homodyne(Measurement):
     r"""Homodyne measurement on given modes. If ``result`` is not provided then the value
     is sampled.
 
@@ -258,6 +258,9 @@ class Homodyne(DisplacedSqueezed):
         modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
+
+        super().__init__(modes=modes)
+
         quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
 
         if result is None:
@@ -273,10 +276,9 @@ class Homodyne(DisplacedSqueezed):
             x = result * math.cos(quadrature_angle)
             y = result * math.sin(quadrature_angle)
 
-        super().__init__(
-            r=r,
-            phi=2 * quadrature_angle,
-            x=x,
-            y=y,
-            modes=modes,
+        self.displaced_squeezed = DisplacedSqueezed(
+            r=r, phi=2 * quadrature_angle, x=x, y=y, modes=modes
         )
+
+    def primal(self, other):
+        return self.displaced_squeezed.primal(other)

@@ -173,8 +173,8 @@ class TestHomodyneDetector:
     @given(s=st.floats(min_value=0.0, max_value=10.0), outcome=none_or_(st.floats(-10.0, 10.0)))
     def test_homodyne_on_2mode_squeezed_vacuum(self, s, outcome):
         """Check that homodyne detection on TMSV for q-quadrature (``quadrature_angle=0.0``)"""
-        homodyne = Homodyne(quadrature_angle=0.0, result=outcome)
-        r = homodyne.r.value
+        r = settings.HOMODYNE_SQUEEZING
+        homodyne = Homodyne(quadrature_angle=0.0, result=outcome, r=r)
         remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
 
         # assert expected covariance matrix
@@ -199,8 +199,8 @@ class TestHomodyneDetector:
     )
     def test_homodyne_on_2mode_squeezed_vacuum_with_angle(self, s, outcome, angle):
         """Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
-        homodyne = Homodyne(quadrature_angle=angle, result=outcome)
-        r = homodyne.r.value
+        r = settings.HOMODYNE_SQUEEZING
+        homodyne = Homodyne(quadrature_angle=angle, result=outcome, r=r)
         remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
         denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
         cov = (
@@ -256,8 +256,8 @@ class TestHomodyneDetector:
     def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(self, s, X, d):
         """Check that homodyne detection on displaced TMSV works"""
         tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
-        homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X)
-        r = homodyne.r.value
+        r = settings.HOMODYNE_SQUEEZING
+        homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
         remaining_state = tmsv << homodyne[0]
         xb, xa, pb, pa = d
         means = np.array(
