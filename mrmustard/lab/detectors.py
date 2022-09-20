@@ -232,8 +232,9 @@ class Heterodyne(Coherent):
         modes: List[int] = None,
     ):
         # if no x and y provided, sample the outcome
-        if x is None or y is None:
-            x, y = 0.0, 0.0
+        if x is None and y is None:
+            num_modes = len(modes) if modes is not None else 1
+            x, y = math.zeros([num_modes]), math.zeros([num_modes])
             self.sample = True
 
         super().__init__(x, y, modes=modes)
@@ -264,6 +265,7 @@ class Homodyne(DisplacedSqueezed):
             x = math.zeros_like(quadrature_angle)
             y = math.zeros_like(quadrature_angle)
         else:
+            self.sample = False
             result = math.atleast_1d(result, dtype="float64")
             if result.shape[-1] == 1:
                 result = math.tile(result, quadrature_angle.shape)

@@ -367,6 +367,7 @@ class State:
             State or float: returns the conditional state on the remaining modes
                 or the probability.
         """
+        from ..detectors import Homodyne, Heterodyne
 
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
@@ -374,9 +375,8 @@ class State:
         remaining_modes = [m for m in other.modes if m not in self.modes]
 
         projector_state = self  # projector_state is the state used to project onto
-        # Only instances of `Homodyne` define the attribute "sampling". If this is
-        # True then homodyne sampling is performed.
-        if getattr(self, "sample", False):
+        # Instances of `Homodyne` and `Heterodyne` define the attribute "sampling".
+        if isinstance(self, Homodyne) and getattr(self, "sample", False):
             # build pdf and sample homodyne outcome
             outcome, probability, projector_state = homodyne.sample_homodyne_fock(
                 state=other,
@@ -386,6 +386,11 @@ class State:
             )
             if remaining_modes == 0:
                 return probability
+
+        if isinstance(self, Heterodyne) and getattr(self, "sample", False):
+            raise NotImplementedError(
+                "Heterodyne sampling in Fock representation is not yet implemented."
+            )
 
         out_fock = self._contract_fock_states(other, other_cutoffs, projector_state)
         if len(remaining_modes) > 0:
