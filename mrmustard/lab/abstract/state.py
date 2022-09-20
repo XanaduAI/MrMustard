@@ -387,7 +387,7 @@ class State:
             if remaining_modes == 0:
                 return probability
 
-        out_fock = self._contract_states(other, other_cutoffs, projector_state)
+        out_fock = self._contract_fock_states(other, other_cutoffs, projector_state)
         if len(remaining_modes) > 0:
             return (
                 State(dm=out_fock, modes=remaining_modes)
@@ -402,7 +402,7 @@ class State:
             else fock.math.abs(out_fock)
         )
 
-    def _contract_states(self, other, other_cutoffs, projector_state):
+    def _contract_fock_states(self, other, other_cutoffs, projector_state):
         if hasattr(self, "_preferred_projection"):
             out_fock = self._preferred_projection(other, other.indices(self.modes))
         else:

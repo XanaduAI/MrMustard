@@ -147,21 +147,24 @@ class TestPNRDetector:
 class TestHomodyneDetector:
     """tests related to homodyne detectors"""
 
-    @pytest.mark.parametrize("outcome", [None] + np.random.uniform(-10, 10, size=10).tolist())
+    @pytest.mark.parametrize("outcome", [None] + np.random.uniform(-5, 5, size=(10, 2)).tolist())
     def test_homodyne_mode_kwargs(self, outcome):
-        """Test that S gates and Homodyne mesurements are applied to the correct modes via the `modes` kwarg.
+        """Test that S gates and Homodyne mesurements are applied to the correct modes via the
+        `modes` kwarg.
 
-        Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0
-        and a "vertical" (angle=0) squeezed state in mode 1.
+        Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0, a "vertical"
+        (angle=0) squeezed state in mode 1 and vacuum in mode 2.
 
-        Because the modes are separable, measuring in one mode should leave the state in the
-        other mode unchaged.
+        Because the modes are separable, measuring modes 1 and 2 should leave the state in the
+        mode 0 unchaged.
         """
 
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
-        initial_state = Vacuum(2) >> S1 >> S2
-        final_state = initial_state << Homodyne(result=outcome, quadrature_angle=0.0, modes=[1])
+        initial_state = Vacuum(3) >> S1 >> S2
+        final_state = initial_state << Homodyne(
+            result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2]
+        )
 
         expected_state = Vacuum(1) >> S1
 
@@ -331,8 +334,8 @@ class TestHomodyneDetector:
         sigma = np.identity(2)
         sigma_m = SqueezedVacuum(r=settings.HOMODYNE_SQUEEZING, phi=0).cov.numpy()
 
-        inverse_covariace = np.linalg.inv(sigma + sigma_m)
-        assert np.allclose(inverse_covariace, np.diag([1 / sigma[1, 1], 0]))
+        inverse_covariance = np.linalg.inv(sigma + sigma_m)
+        assert np.allclose(inverse_covariance, np.diag([1 / sigma[1, 1], 0]))
 
 
 class TestHeterodyneDetector:
