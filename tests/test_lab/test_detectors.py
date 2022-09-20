@@ -374,6 +374,9 @@ class TestHeterodyneDetector:
         self, s, x, y, d
     ):  # TODO: check if this is correct
         """Check that heterodyne detection on TMSV works with an arbitrary displacement"""
+        if x is None or y is None:
+            x, y = None, None
+
         tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
         heterodyne = Heterodyne(modes=[0], x=x, y=y)
         remaining_state = tmsv << heterodyne[0]
