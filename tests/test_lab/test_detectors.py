@@ -112,9 +112,7 @@ class TestPNRDetector:
         assert np.allclose(var_i, expected_var_i)
         assert np.allclose(covar, expected_covar)
 
-    def test_postselection(
-        self,
-    ):
+    def test_postselection(self):
         """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
         n_mean = 1.0
         n_measured = 1
