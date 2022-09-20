@@ -32,6 +32,13 @@ class Measurement(ABC):
         self._outcome = None
 
     @property
+    def modes(self):
+        r"""Returns the modes being measured."""
+        if self._modes is None:
+            return list(range(self.num_modes))
+        return self._modes
+
+    @property
     def outcome(self):
         return self._outcome
 
@@ -75,7 +82,7 @@ class FockMeasurement(Measurement):
 
     def __init__(self) -> None:
         super().__init__()
-        self.modes = None
+        self._modes = None
 
     def primal(self, state: State) -> Tensor:
         r"""
