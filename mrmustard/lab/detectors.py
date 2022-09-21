@@ -16,12 +16,12 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional
-from mrmustard.types import Matrix
+from typing import List, Tuple, Union, Optional, Iterable
+from mrmustard.types import Matrix, Tensor
 from mrmustard.training import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
-from .abstract import FockMeasurement, Measurement
+from .abstract import FockMeasurement, Measurement, State
 from .states import DisplacedSqueezed, Coherent
 
 math = Math()
@@ -67,13 +67,6 @@ class PNRDetector(Parametrized, FockMeasurement):
         modes: List[int] = None,
         cutoffs: Union[int, List[int]] = None,
     ):
-        if modes is not None:
-            num_modes = len(modes)
-        elif cutoffs is not None:
-            num_modes = len(cutoffs)
-        else:
-            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
-
         Parametrized.__init__(
             self,
             efficiency=math.atleast_1d(efficiency),
@@ -83,12 +76,20 @@ class PNRDetector(Parametrized, FockMeasurement):
             efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
         )
-        FockMeasurement.__init__(self)
 
         self._stochastic_channel = stochastic_channel
-        self._modes = modes or list(range(num_modes))
-        self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * num_modes
         self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
+
+        if modes is not None:
+            num_modes = len(modes)
+        elif cutoffs is not None:
+            num_modes = len(cutoffs)
+        else:
+            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+
+        modes = modes or list(range(num_modes))
+        outcome = None
+        FockMeasurement.__init__(outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
@@ -164,10 +165,14 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             num_modes = len(modes)
         else:
             num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_count_prob)))
+
         if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
             efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
         if len(math.atleast_1d(dark_count_prob)) == 1 and num_modes > 1:
             dark_count_prob = math.tile(math.atleast_1d(dark_count_prob), [num_modes])
+
+        modes = modes or list(range(num_modes))
+
         Parametrized.__init__(
             self,
             efficiency=efficiency,
@@ -177,14 +182,16 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
         )
-        FockMeasurement.__init__(self)
 
         self._stochastic_channel = stochastic_channel
-        self._modes = modes or list(range(num_modes))
-        self._cutoffs = [2] * num_modes
+
+        cutoffs = [2] * num_modes
         self._should_recompute_stochastic_channel = (
             efficiency_trainable or dark_count_prob_trainable
         )
+
+        outcome = None
+        FockMeasurement.__init__(outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
@@ -213,7 +220,33 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 self._internal_stochastic_channel.append(condprob)
 
 
-class Heterodyne(Measurement):
+class Generaldyne(Measurement):
+    def __init__(
+        self, state: State, outcome: Optional[Tensor] = None, modes: Optional[Iterable[int]] = None
+    ) -> None:
+
+        if not state.is_gaussian:
+            raise TypeError("Generaldyne measurement state must be Gaussian.")
+        if outcome is not None and not (outcome.shape == state.means.shape):
+            raise TypeError(
+                f"Expected `outcome` of size {state.means.shape} but got {outcome.shape}."
+            )
+
+        self.state = state
+
+        if modes is None:
+            modes = self.state.modes
+        else:
+            # ensure measurement and state act on the same modes
+            self.state = state[modes]
+
+        super().__init__(outcome, modes)
+
+    def primal(self, other):
+        return self.state.primal(other)
+
+
+class Heterodyne(Generaldyne):
     r"""Heterodyne measurement on given modes.
 
     This class is just a thin wrapper around the :class:`Coherent`.
@@ -231,29 +264,29 @@ class Heterodyne(Measurement):
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
-        super().__init__(modes=modes)
-        # if no x and y provided, sample the outcome
 
         if (x is None) ^ (y is None):  # XOR
             raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
 
+        # if no x and y provided, sample the outcome
         if x is None and y is None:
             self.sample = True
             num_modes = len(modes) if modes is not None else 1
             x, y = math.zeros([num_modes]), math.zeros([num_modes])
+            outcome = None
         else:
             self.sample = False
             x = math.atleast_1d(x, dtype="float64")
             y = math.atleast_1d(y, dtype="float64")
-            self._set_outcome(math.concat([x, y], axis=0))  # XXPP ordering
+            outcome = math.concat([x, y], axis=0)  # XXPP ordering
 
-        self.state = Coherent(x, y, modes=modes)
+        modes = modes or list(range(x.shape[0]))
 
-    def primal(self, other):
-        return self.state.primal(other)
+        internal_state = Coherent(x, y)
+        super().__init__(state=internal_state, outcome=outcome, modes=modes)
 
 
-class Homodyne(Measurement):
+class Homodyne(Generaldyne):
     r"""Homodyne measurement on given modes. If ``result`` is not provided then the value
     is sampled.
 
@@ -272,14 +305,14 @@ class Homodyne(Measurement):
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
 
-        super().__init__(modes=modes)
-
         quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
 
+        # if no ``result`` provided, sample the outcome
         if result is None:
             self.sample = True
             x = math.zeros_like(quadrature_angle)
             y = math.zeros_like(quadrature_angle)
+            outcome = None
         else:
             self.sample = False
             result = math.atleast_1d(result, dtype="float64")
@@ -288,9 +321,9 @@ class Homodyne(Measurement):
 
             x = result * math.cos(quadrature_angle)
             y = result * math.sin(quadrature_angle)
-            self._set_outcome(math.concat([x, y], axis=0))  # XXPP ordering
+            outcome = math.concat([x, y], axis=0)  # XXPP ordering
 
-        self.state = DisplacedSqueezed(r=r, phi=2 * quadrature_angle, x=x, y=y, modes=modes)
+        modes = modes or list(range(quadrature_angle.shape[0]))
 
-    def primal(self, other):
-        return self.state.primal(other)
+        internal_state = DisplacedSqueezed(r=r, phi=2 * quadrature_angle, x=x, y=y)
+        super().__init__(state=internal_state, outcome=outcome, modes=modes)
