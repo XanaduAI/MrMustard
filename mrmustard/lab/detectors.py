@@ -89,7 +89,7 @@ class PNRDetector(Parametrized, FockMeasurement):
 
         modes = modes or list(range(num_modes))
         outcome = None
-        FockMeasurement.__init__(outcome, modes, cutoffs)
+        FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 

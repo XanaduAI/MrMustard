@@ -87,7 +87,7 @@ class FockMeasurement(Measurement):
 
     def __init__(self, outcome: Tensor, modes: Iterable[int], cutoffs: Iterable[int]) -> None:
 
-        self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * num_modes
+        self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
         super().__init__(outcome, modes)
 
     def primal(self, state: State) -> Tensor:
