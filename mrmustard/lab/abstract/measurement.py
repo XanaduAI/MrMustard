@@ -26,10 +26,15 @@ math = Math()
 
 
 class Measurement(ABC):
-    def __init__(self, modes: Optional[Iterable[int]] = None) -> None:
+    def __init__(self, outcome: Tensor, modes: Iterable[int]) -> None:
         super().__init__()
         self._modes = modes
-        self._outcome = None
+
+        # stores the outcome of a measurement
+        self._outcome = outcome
+        # used to evaluate if the measurement outcome should be
+        # sampled or is already defined by the user (postselection)
+        self.postselected = False if outcome is None else True
 
     @property
     def modes(self):
@@ -50,7 +55,7 @@ class Measurement(ABC):
             self.primal(other)
         else:
             raise TypeError(
-                f"unsupported operand type(s) '{type(self).__name__}' << '{type(other).__name__}'"
+                f"Cannot apply Measurement '{type(self).__name__}' to '{type(other).__name__}'."
             )
 
     def __getitem__(self, items) -> Callable:
@@ -80,9 +85,10 @@ class FockMeasurement(Measurement):
     in the Fock basis.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._modes = None
+    def __init__(self, outcome: Tensor, modes: Iterable[int], cutoffs: Iterable[int]) -> None:
+
+        self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * num_modes
+        super().__init__(outcome, modes)
 
     def primal(self, state: State) -> Tensor:
         r"""
