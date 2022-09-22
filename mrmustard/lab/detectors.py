@@ -243,9 +243,6 @@ class Generaldyne(Measurement):
 
         super().__init__(outcome, modes)
 
-    def outcome(self):
-        return self._outcome
-
     def primal(self, other) -> Union[State, float]:
         if self.postselected:
             return self.state.primal(other)
@@ -318,7 +315,7 @@ class Heterodyne(Generaldyne):
 
 
 class Homodyne(Generaldyne):
-    r"""Homodyne measurement on given modes. If ``result`` is not provided then the value
+    """Homodyne measurement on given modes. If ``result`` is not provided then the value
     is sampled.
 
     Args:
@@ -331,7 +328,7 @@ class Homodyne(Generaldyne):
     def __init__(
         self,
         quadrature_angle: Union[float, List[float]],
-        result: Optional[Union[float, List[float]]],
+        result: Optional[Union[float, List[float]]] = None,
         modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
@@ -358,3 +355,6 @@ class Homodyne(Generaldyne):
 
         internal_state = DisplacedSqueezed(r=r, phi=2 * quadrature_angle, x=x, y=y)
         super().__init__(state=internal_state, outcome=outcome, modes=modes)
+
+    def _sample_fock(self, other) -> Union[State, float]:
+        return super()._sample_fock(other)

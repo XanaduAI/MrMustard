@@ -311,17 +311,17 @@ class TestHomodyneDetector:
         measurements are in agreement with the expected values for the states"""
 
         tf.random.set_seed(123)
-        meas_state = SqueezedVacuum(settings.HOMODYNE_SQUEEZING, 0.0)
+        detector = Homodyne(0.0)
 
-        results = np.empty((self.N_MEAS,))
+        results = np.empty((self.N_MEAS, 2))
         for i in range(self.N_MEAS):
-            outcome, _, _, _ = gaussian.general_dyne(state.cov, state.means, meas_state.cov)
-            results[i] = outcome[0]
+            state << detector
+            results[i] = detector.outcome.numpy()
 
         mean = results.mean(axis=0)
-        assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
+        assert np.allclose(mean[0], mean_expected, atol=self.std_10, rtol=0)
         var = results.var(axis=0)
-        assert np.allclose(var, var_expected, atol=self.std_10, rtol=0)
+        assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
 
     def test_homodyne_squeezing_setting(self):
         """Check default homodyne squeezing on settings leads to the correct generaldyne
