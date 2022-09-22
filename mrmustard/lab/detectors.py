@@ -29,7 +29,7 @@ from .gates import Rgate
 
 math = Math()
 
-__all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
+__all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heterodyne"]
 
 # pylint: disable=no-member
 class PNRDetector(Parametrized, FockMeasurement):
@@ -263,6 +263,7 @@ class Generaldyne(Measurement):
         outcome, prob, new_cov, new_means = gaussian.general_dyne(
             other.cov, other.means, self.state.cov, None, modes=self.modes
         )
+        self.state = State(cov=self.state.cov, means=outcome)
         self._outcome = outcome
 
         return (
