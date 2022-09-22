@@ -21,6 +21,7 @@ from mrmustard.types import Matrix, Tensor
 from mrmustard.training import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics import gaussian
 from .abstract import FockMeasurement, Measurement, State
 from .states import DisplacedSqueezed, Coherent
 
@@ -242,8 +243,38 @@ class Generaldyne(Measurement):
 
         super().__init__(outcome, modes)
 
-    def primal(self, other):
-        return self.state.primal(other)
+    def outcome(self):
+        return self._outcome
+
+    def primal(self, other) -> Union[State, float]:
+        if self.postselected:
+            return self.state.primal(other)
+
+        return self.sample(other)
+
+    def sample(self, other: State) -> Union[State, float]:
+        if other.is_gaussian:
+            return self._sample_gaussian(other)
+        else:
+            return self._sample_fock(other)
+
+    def _sample_gaussian(self, other) -> Union[State, float]:
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        measurement_outcome, measurement_probability, new_cov, new_means = gaussian.general_dyne(
+            other.cov, other.means, self.state.cov, None, modes=self.modes
+        )
+        self._outcome = measurement_outcome
+
+        if len(remaining_modes) == 0:
+            return measurement_probability
+
+        return State(
+            cov=new_cov, means=new_means, modes=remaining_modes, _norm=measurement_probability
+        )
+
+    def _sample_fock(self, other) -> Union[State, float]:
+        raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
 
 
 class Heterodyne(Generaldyne):
@@ -270,12 +301,12 @@ class Heterodyne(Generaldyne):
 
         # if no x and y provided, sample the outcome
         if x is None and y is None:
-            self.sample = True
+            self.postselected = False
             num_modes = len(modes) if modes is not None else 1
             x, y = math.zeros([num_modes]), math.zeros([num_modes])
             outcome = None
         else:
-            self.sample = False
+            self.postselected = True
             x = math.atleast_1d(x, dtype="float64")
             y = math.atleast_1d(y, dtype="float64")
             outcome = math.concat([x, y], axis=0)  # XXPP ordering
@@ -309,12 +340,12 @@ class Homodyne(Generaldyne):
 
         # if no ``result`` provided, sample the outcome
         if result is None:
-            self.sample = True
+            self.postselected = False
             x = math.zeros_like(quadrature_angle)
             y = math.zeros_like(quadrature_angle)
             outcome = None
         else:
-            self.sample = False
+            self.postselected = True
             result = math.atleast_1d(result, dtype="float64")
             if result.shape[-1] == 1:
                 result = math.tile(result, quadrature_angle.shape)

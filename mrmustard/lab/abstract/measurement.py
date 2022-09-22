@@ -15,7 +15,7 @@
 """This module contains the implementation of the class :class:`FockMeasurement`."""
 
 from __future__ import annotations
-from abc import ABC
+from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.math import Math
 
 from mrmustard.types import Tensor, Callable, Sequence, Iterable, Optional
@@ -47,8 +47,9 @@ class Measurement(ABC):
     def outcome(self):
         return self._outcome
 
-    def _set_outcome(self, outcome):
-        self._outcome = outcome
+    def sample(self, other):
+        """stores the outcome of a measurement"""
+        ...
 
     def __lshift__(self, other) -> Tensor:
         if isinstance(other, State):
@@ -62,7 +63,6 @@ class Measurement(ABC):
         """Allows measurements to be used as ``output = meas[0,1](input)``,
         e.g. measuring modes 0 and 1.
         """
-
         if isinstance(items, int):
             modes = [items]
         elif isinstance(items, slice):
@@ -72,6 +72,7 @@ class Measurement(ABC):
         else:
             raise ValueError(f"{items} is not a valid slice or list of modes.")
         self._modes = modes
+
         return self
 
 
