@@ -217,7 +217,7 @@ class Rgate(Parametrized, Transformation):
             # number of args and number of modes don't match
             raise ValueError("Number of args and modes don't match")
 
-        return angles
+        return math.new_variable(angles, bounds=None, name="Rgate_angles")
 
 
 class Pgate(Parametrized, Transformation):
