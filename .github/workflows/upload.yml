@@ -1,0 +1,52 @@
+name: Upload
+on:
+  release:
+    types: [published]
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    env:
+      HYPOTHESIS_PROFILE: ci
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Build and install Mr Mustard
+        run: |
+          python -m pip install --upgrade pip wheel
+          python setup.py bdist_wheel
+          pip install dist/mrmustard*.whl
+
+      - name: Install test dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install wheel pytest pytest-cov pytest-mock hypothesis --upgrade
+
+      - name: Run tests
+        run: |
+          python -m pytest tests -p no:warnings --tb=native
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PIPY_TOKEN }}
+
+      - name: Uninstall existing versions and pause
+        run: |
+          python -m pip uninstall mrmustard -y
+          sleep 5m
+
+      - name: Install MrMustard from pypi
+        run: python -m pip install mrmustard
+
+      - name: Print about
+        run: |
+          echo "import mrmustard; print(mrmustard.about())" > test_install.py
+          python test_install.py

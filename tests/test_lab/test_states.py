@@ -167,6 +167,15 @@ def test_get_modes():
     assert b == (a & b).get_modes([2, 3])
 
 
+def test_iter():
+    """Test we can iterate individual modes in states."""
+    a = Gaussian(1)
+    b = Gaussian(2)
+    c = Gaussian(1)
+    for i, mode in enumerate(a & b & c):
+        assert (a, b.get_modes(0), b.get_modes(1), c)[i] == mode
+
+
 @given(m=st.integers(0, 3))
 def test_modes_after_projection(m):
     """Test number of modes is correct after single projection."""
