@@ -367,32 +367,9 @@ class State:
             State or float: returns the conditional state on the remaining modes
                 or the probability.
         """
-        from ..detectors import Homodyne, Heterodyne
+        remaining_modes = list(set(other.modes) - set(self.modes))
 
-        other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
-        ]
-        remaining_modes = [m for m in other.modes if m not in self.modes]
-
-        projector_state = self  # projector_state is the state used to project onto
-        # Instances of `Homodyne` and `Heterodyne` define the attribute "sampling".
-        if isinstance(self, Homodyne) and getattr(self, "sample", False):
-            # build pdf and sample homodyne outcome
-            outcome, probability, projector_state = homodyne.sample_homodyne_fock(
-                state=other,
-                quadrature_angle=self.phi.value / 2,
-                mode=self.modes,
-                hbar=settings.HBAR,
-            )
-            if remaining_modes == 0:
-                return probability
-
-        if isinstance(self, Heterodyne) and getattr(self, "sample", False):
-            raise NotImplementedError(
-                "Heterodyne sampling in Fock representation is not yet implemented."
-            )
-
-        out_fock = self._contract_fock_states(other, other_cutoffs, projector_state)
+        out_fock = self._contract_fock_states(other)
         if len(remaining_modes) > 0:
             return (
                 State(dm=out_fock, modes=remaining_modes)
@@ -407,7 +384,10 @@ class State:
             else fock.math.abs(out_fock)
         )
 
-    def _contract_fock_states(self, other, other_cutoffs, projector_state):
+    def _contract_with_other(self, other):
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
         if hasattr(self, "_preferred_projection"):
             out_fock = self._preferred_projection(other, other.indices(self.modes))
         else:
@@ -415,11 +395,9 @@ class State:
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
             out_fock = fock.contract_states(
                 stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                stateB=projector_state.ket(self_cutoffs)
-                if projector_state.is_pure
-                else projector_state.dm(self_cutoffs),
+                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
                 a_is_mixed=other.is_mixed,
-                b_is_mixed=projector_state.is_mixed,
+                b_is_mixed=self.is_mixed,
                 modes=other.indices(self.modes),  # TODO: change arg name to indices
                 normalize=self._normalize if hasattr(self, "_normalize") else False,
             )

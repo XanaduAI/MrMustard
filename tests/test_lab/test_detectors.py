@@ -281,36 +281,14 @@ class TestHomodyneDetector:
             (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
         ],
     )
-    def test_fock_sampling_mean_and_var(self, state, mean_expected, var_expected):
+    @pytest.mark.parametrize("gaussian_state", [True, False])
+    def test_sampling_mean_and_var(self, state, mean_expected, var_expected, gaussian_state):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
 
         tf.random.set_seed(123)
-        state = State(dm=state.dm(cutoffs=[20]))
-
-        results = np.empty((self.N_MEAS,))
-        for i in range(self.N_MEAS):
-            outcome, _, _ = homodyne.sample_homodyne_fock(state, 0, mode=0, hbar=settings.HBAR)
-            results[i] = outcome
-
-        mean = results.mean(axis=0)
-        assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
-        var = results.var(axis=0)
-        assert np.allclose(var, var_expected, atol=self.std_10, rtol=0)
-
-    @pytest.mark.parametrize(
-        "state, mean_expected, var_expected",
-        [
-            (Vacuum(1), 0.0, settings.HBAR / 2),
-            (Coherent(2.0, 0.5), 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
-            (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
-        ],
-    )
-    def test_gaussian_sampling_mean_and_var(self, state, mean_expected, var_expected):
-        """Tests that the mean and variance estimates of many homodyne
-        measurements are in agreement with the expected values for the states"""
-
-        tf.random.set_seed(123)
+        if not gaussian_state:
+            state = State(dm=state.dm(cutoffs=[40]))
         detector = Homodyne(0.0)
 
         results = np.empty((self.N_MEAS, 2))

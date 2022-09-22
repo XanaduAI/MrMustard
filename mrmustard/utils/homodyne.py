@@ -147,10 +147,8 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     return xaxis
 
 
-def sample_homodyne_fock(
-    state: State, quadrature_angle: float, mode: Union[int, List[int]], hbar: float
-) -> Tuple[float, float, State]:
-    r"""Given a state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
+def sample_homodyne_fock(state: State, hbar: float) -> Tuple[float, float, State]:
+    r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
     where `\rho` is the reduced density matrix of the ``other`` state on the
     measured mode.
 
@@ -170,47 +168,29 @@ def sample_homodyne_fock(
 
     Args:
         state (State): state being measured
-        quadrature_angle (float): measurement quadrature angle
-        mode: the modes of the state being measured
         hbar: value of hbar
 
     Returns:
-        tuple(float, float, State): homodyne outcome, probability of the outcome and projector state
+        tuple(float, float): outcome and probability of the outcome
     """
-
-    if isinstance(mode, int):
-        mode = [mode]
-    elif isinstance(mode, Iterable) and len(mode) != 1:
+    if len(state.shape) == 1:
+        is_pure = True
+    elif len(state.shape) == 2:
+        is_pure = False
+    else:
         raise ValueError(
-            f"Requested homodyne sampling for {len(mode)} modes. \
-                Homodyne sampling is supported on a single mode."
+            "Input state has dimension {state.shape}. Make sure is either a single mode ket or dm."
         )
 
-    # create reduced state of mode to be measured on the homodyne basis
-    reduced_state = state.get_modes(mode) >> lab.Rgate(-quadrature_angle, modes=mode)
-
-    x, probs = (
-        _probs_homodyne_pure(reduced_state.ket(), hbar)
-        if reduced_state.is_pure
-        else _probs_homodyne_mixed(reduced_state.dm(), hbar)
-    )
+    x, probs = _probs_homodyne_pure(state, hbar) if is_pure else _probs_homodyne_mixed(state, hbar)
 
     # draw a sample from the distribution
     pdf = math.Categorical(probs=probs, name="homodyne_dist")
     sample_idx = pdf.sample()
     homodyne_sample = math.gather(x, sample_idx)
-    sample_probability = math.gather(probs, sample_idx)
+    probability_sample = math.gather(probs, sample_idx)
 
-    # create "projector state" to calculate the conditional output state
-    projector_state = lab.DisplacedSqueezed(
-        r=settings.HOMODYNE_SQUEEZING,
-        phi=0,
-        x=homodyne_sample / np.sqrt(2 * hbar),
-        y=0,
-        modes=reduced_state.modes,
-    ) >> lab.Rgate(quadrature_angle, modes=reduced_state.modes)
-
-    return homodyne_sample, sample_probability, projector_state
+    return homodyne_sample, probability_sample
 
 
 def _probs_homodyne_pure(state_ket, hbar):
@@ -224,17 +204,10 @@ def _probs_homodyne_pure(state_ket, hbar):
 
     # Hn / sqrt(n!)
     hermite_polys = math.cast(physicist_hermite_polys(q_tensor, cutoff), "complex128")
-
-    # taking only the real part because the imaginary part cancels out during summation,
-    # this saves some type casting of real matrices into complex ones.
-    reduced_ket = state_ket
-
     # prefactor term 1 / 2**n
     prefactor = math.cast(2 ** (-math.arange(0, cutoff) / 2), "complex128")
-
     # build terms inside the sum: `\ket_{n} Hn / ( 2**n n! )`
-    sum_terms = math.squeeze(prefactor * reduced_ket * math.expand_dims(hermite_polys, 0))
-
+    sum_terms = math.squeeze(prefactor * state_ket * math.expand_dims(hermite_polys, 0))
     # calculate the pdf and multiply by factors outside the sum
     out_factor = (omega_over_hbar / np.pi) ** 0.5 * math.exp(-(q_tensor**2)) * (x[1] - x[0])
     probs = out_factor * math.abs(math.sum(sum_terms, axes=[1])) ** 2

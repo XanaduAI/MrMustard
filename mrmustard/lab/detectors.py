@@ -21,9 +21,11 @@ from mrmustard.types import Matrix, Tensor
 from mrmustard.training import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import gaussian
+from mrmustard.physics import gaussian, fock
+from mrmustard.utils import homodyne as utils_homodyne
 from .abstract import FockMeasurement, Measurement, State
 from .states import DisplacedSqueezed, Coherent
+from .gates import Rgate
 
 math = Math()
 
@@ -258,16 +260,15 @@ class Generaldyne(Measurement):
     def _sample_gaussian(self, other) -> Union[State, float]:
         remaining_modes = list(set(other.modes) - set(self.modes))
 
-        measurement_outcome, measurement_probability, new_cov, new_means = gaussian.general_dyne(
+        outcome, prob, new_cov, new_means = gaussian.general_dyne(
             other.cov, other.means, self.state.cov, None, modes=self.modes
         )
-        self._outcome = measurement_outcome
+        self._outcome = outcome
 
-        if len(remaining_modes) == 0:
-            return measurement_probability
-
-        return State(
-            cov=new_cov, means=new_means, modes=remaining_modes, _norm=measurement_probability
+        return (
+            prob
+            if len(remaining_modes) == 0
+            else State(cov=new_cov, means=new_means, modes=remaining_modes, _norm=prob)
         )
 
     def _sample_fock(self, other) -> Union[State, float]:
@@ -333,28 +334,80 @@ class Homodyne(Generaldyne):
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
 
-        quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
+        self.r = r
+        self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
 
         # if no ``result`` provided, sample the outcome
         if result is None:
             self.postselected = False
-            x = math.zeros_like(quadrature_angle)
-            y = math.zeros_like(quadrature_angle)
+            x = math.zeros_like(self.quadrature_angle)
+            y = math.zeros_like(self.quadrature_angle)
             outcome = None
         else:
             self.postselected = True
             result = math.atleast_1d(result, dtype="float64")
             if result.shape[-1] == 1:
-                result = math.tile(result, quadrature_angle.shape)
+                result = math.tile(result, self.quadrature_angle.shape)
 
-            x = result * math.cos(quadrature_angle)
-            y = result * math.sin(quadrature_angle)
+            x = result * math.cos(self.quadrature_angle)
+            y = result * math.sin(self.quadrature_angle)
             outcome = math.concat([x, y], axis=0)  # XXPP ordering
 
-        modes = modes or list(range(quadrature_angle.shape[0]))
+        modes = modes or list(range(self.quadrature_angle.shape[0]))
 
-        internal_state = DisplacedSqueezed(r=r, phi=2 * quadrature_angle, x=x, y=y)
+        internal_state = DisplacedSqueezed(r=r, phi=2 * self.quadrature_angle, x=x, y=y)
         super().__init__(state=internal_state, outcome=outcome, modes=modes)
 
     def _sample_fock(self, other) -> Union[State, float]:
-        return super()._sample_fock(other)
+
+        if len(self.modes) > 1:
+            raise NotImplementedError(
+                "Multimode Homodyne sampling for Fock representation is not yet implemented."
+            )
+
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        # create reduced state of modes to be measured on the homodyne basis
+        reduced_state = other.get_modes(self.modes) >> Rgate(
+            -self.quadrature_angle, modes=self.modes
+        )
+
+        # build pdf and sample homodyne outcome
+        x_outcome, probability = utils_homodyne.sample_homodyne_fock(
+            state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
+            hbar=settings.HBAR,
+        )
+
+        # Define conditional state of the homodyne measurement device and rotate back to the original basis.
+        # Note: x_outcome already has units of sqrt(hbar). Here is divided by sqrt(2*hbar) to cancel the multiplication
+        # factor of the displacement symplectic inside the DisplacedSqueezed state.
+        x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        self.state = DisplacedSqueezed(r=self.r, phi=0.0, x=x_arg, y=0.0) >> Rgate(
+            self.quadrature_angle
+        )
+        self._outcome = self.state.means
+
+        if remaining_modes == 0:
+            return probability
+
+        self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        out_fock = fock.contract_states(
+            stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+            stateB=self.state.ket(self_cutoffs),
+            a_is_mixed=other.is_mixed,
+            b_is_mixed=False,
+            modes=other.indices(self.modes),
+            normalize=False,
+        )
+
+        return (
+            State(dm=out_fock, modes=remaining_modes, _norm=probability)
+            if other.is_mixed
+            else State(ket=out_fock, modes=remaining_modes, _norm=probability)
+        )
