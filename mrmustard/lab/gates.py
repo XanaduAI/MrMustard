@@ -210,12 +210,9 @@ class Rgate(Parametrized, Transformation):
         if num_args == 1:
             # one arg for all modes
             angles[modes] = args
-        elif num_args == len(modes):
+        else:
             # an arg for each mode
             angles = args
-        elif num_args != len(modes):
-            # number of args and number of modes don't match
-            raise ValueError("Number of args and modes don't match")
 
         return math.new_variable(angles, bounds=None, name="Rgate_angles")
 
