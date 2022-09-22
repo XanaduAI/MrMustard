@@ -16,7 +16,7 @@
 This module contains functions for performing calculations on Gaussian states.
 """
 
-from typing import Tuple, Union, Sequence, Any
+from typing import Tuple, Union, Sequence, Any, Optional
 from numpy import pi
 from thewalrus.quantum import is_pure_cov
 from mrmustard.types import Matrix, Vector, Scalar
@@ -557,36 +557,59 @@ def compose_channels_XYd(
 
 
 def general_dyne(
-    covIn: Matrix,
-    means_In: Vector,
-    covM: Matrix,
-    means_M: Vector,
-    hbar: float,
-    sample: bool,
+    cov: Matrix,
+    means: Vector,
+    proj_cov: Matrix,
+    proj_means: Optional[Vector] = None,
+    modes: Optional[Sequence[int]] = None,
 ) -> Tuple[Scalar, Matrix, Vector]:
-    r"""Returns the results of a general dyne measurement.
+    r"""Returns the results of a general-dyne measurement. If ``proj_means`` are not provided
+    (as ``None``), they are sampled from the probability distribution.
 
     Args:
-        cov (Matrix): covariance matrix of the state being measured
-        means (Vector): means vector of the state being measured
-        proj_cov (Matrix): covariance matrix of the state being projected onto
-        proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
-        modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
-        hbar (float): value of hbar to use, affects the value of the probability
-        sample (bool): if ``proj_means`` should be sampled from a distribution, replaces the given ``proj_means``
+        cov (Matrix): covariance matrix of the state being measured [units of `2\hbar`]
+        means (Vector): means vector of the state being measured [units of `\sqrt(\hbar)`]
+        proj_cov (Matrix): covariance matrix of the state being projected onto [units of `2\hbar`]
+        proj_means (Optional Vector): means vector of the state being projected onto
+            (i.e. the measurement outcome) [units of `\sqrt(\hbar)`]. If not provided, the means vector
+            is sampled from the generaldyne probability distribution.
+        modes (Optional Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1),
+            if modes are not provided then the first modes (according to the size of ``cov``) are measured.
 
     Returns:
-        Tuple[Vector, Scalar]: the outcome (means vector) and its probability.
+        Tuple[Scalar, Scalar, Matrix, Vector]:
+            outcome (sampled means vector of the measured subsystem) [units of `\sqrt(\hbar)`],
+            oucome probability [units of `\hbar**N`],
+            post-measurement covariace [units of `2\hbar`]
+            post-measurement means vector [units of `\sqrt{\hbar}`].
     """
+    N, M = cov.shape[-1] // 2, proj_cov.shape[-1] // 2
+    # Bmodes are the modes being measured and Amodes are the leftover modes
+    Bmodes = modes or list(range(M))
+    Amodes = list(set(list(range(N))) - set(Bmodes))
+
+    A, B, AB = partition_cov(cov, Amodes)
+    a, b = partition_means(means, Amodes)
+    reduced_cov = B + proj_cov
 
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
-    cov = (covIn + covM) / 2
-    pdf = math.MultivariateNormalTriL(loc=means_In, scale_tril=math.cholesky(cov))
-    outcome = pdf.sample(dtype=means_In.dtype) if sample else math.cast(means_M, means_In.dtype)
+    pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
+    outcome = (
+        pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
+    )
     prob = pdf.prob(outcome)
 
-    return outcome, prob
+    # calculate conditional output state of unmeasured modes
+    num_remaining_modes = N - M
+    if num_remaining_modes == 0:
+        return outcome, prob, None, None
+
+    AB_inv = math.matmul(AB, math.inv(reduced_cov))
+    new_cov = A - math.matmul(AB_inv, math.transpose(AB))
+    new_means = a + math.matvec(AB_inv, outcome - b)
+
+    return outcome, prob, new_cov, new_means
 
 
 # ~~~~~~~~~

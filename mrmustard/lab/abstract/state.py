@@ -437,32 +437,19 @@ class State:
             State or float: returns the output conditional state on the remaining modes
                 or the probability.
         """
-
         # here `self` is the measurement device state and `other` is the incoming state
         # being projected onto the measurement state
+        remaining_modes = list(set(other.modes) - set(self.modes))
 
-        remaining_modes = [m for m in other.modes if m not in self.modes]
-
-        # calculate marginal of the incoming state
-        N = other.cov.shape[-1] // 2
-        Amodes = [i for i in range(N) if i not in other.indices(self.modes)]
-        covA, covB, AB = gaussian.partition_cov(other.cov, Amodes)
-        means_a, means_b = gaussian.partition_means(other.means, Amodes)
-
-        outcome, probability = gaussian.general_dyne(
-            covB,
-            means_b,
+        _, probability, new_cov, new_means = gaussian.general_dyne(
+            other.cov,
+            other.means,
             self.cov,
             self.means,
-            settings.HBAR,
-            getattr(self, "sample", False),
+            self.modes,
         )
 
         if len(remaining_modes) > 0:
-            # calculate conditional output state of unmeasured modes
-            inv = math.inv(covB + self.cov)
-            new_cov = covA - math.matmul(math.matmul(AB, inv), math.transpose(AB))
-            new_means = means_a + math.matvec(math.matmul(AB, inv), outcome - means_b)
             return State(
                 means=new_means,
                 cov=new_cov,

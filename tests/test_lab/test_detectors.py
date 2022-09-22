@@ -256,7 +256,7 @@ class TestHomodyneDetector:
         tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
         r = settings.HOMODYNE_SQUEEZING
         homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
-        remaining_state = tmsv << homodyne[0]
+        remaining_state = tmsv << homodyne
         xb, xa, pb, pa = d
         means = np.array(
             [
@@ -315,9 +315,7 @@ class TestHomodyneDetector:
 
         results = np.empty((self.N_MEAS,))
         for i in range(self.N_MEAS):
-            outcome, _ = gaussian.general_dyne(
-                state.cov, state.means, meas_state.cov, meas_state.means, settings.HBAR, True
-            )
+            outcome, _, _, _ = gaussian.general_dyne(state.cov, state.means, meas_state.cov)
             results[i] = outcome[0]
 
         mean = results.mean(axis=0)
