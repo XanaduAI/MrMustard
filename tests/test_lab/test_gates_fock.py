@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import pytest
-from mrmustard.lab.circuit import Circuit
+from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
+from mrmustard.physics import fock
 from mrmustard.lab.gates import (
     Dgate,
     Sgate,
