@@ -369,7 +369,7 @@ class State:
         """
         remaining_modes = list(set(other.modes) - set(self.modes))
 
-        out_fock = self._contract_fock_states(other)
+        out_fock = self._contract_with_other(other)
         if len(remaining_modes) > 0:
             return (
                 State(dm=out_fock, modes=remaining_modes)
