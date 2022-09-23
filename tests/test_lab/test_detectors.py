@@ -195,62 +195,55 @@ class TestHomodyneDetector:
         if outcome is not None:
             means = np.array(
                 [2 * np.sqrt(s * (1 + s)) * outcome / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
-            ) * np.sqrt(2 * hbar)
+            )
             assert np.allclose(remaining_state.means.numpy(), means)
 
-    @given(
-        s=st.floats(1.0, 10.0), outcome=none_or_(st.floats(-10.0, 10.0)), angle=st.floats(0, np.pi)
-    )
+    @given(s=st.floats(1.0, 10.0), outcome=none_or_(st.floats(-2, 2)), angle=st.floats(0, np.pi))
     def test_homodyne_on_2mode_squeezed_vacuum_with_angle(self, s, outcome, angle):
         """Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
         r = settings.HOMODYNE_SQUEEZING
         homodyne = Homodyne(quadrature_angle=angle, result=outcome, r=r)
         remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
         denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
-        cov = (
-            hbar
-            / 2
-            * np.array(
+        cov = np.array(
+            [
                 [
-                    [
+                    1
+                    + 2 * s
+                    - 2
+                    * s
+                    * (s + 1)
+                    * (1 + 2 * s + np.cosh(2 * r) + np.cos(2 * angle) * np.sinh(2 * r))
+                    / denom,
+                    2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
+                ],
+                [
+                    2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
+                    (
                         1
                         + 2 * s
-                        - 2
-                        * s
-                        * (s + 1)
-                        * (1 + 2 * s + np.cosh(2 * r) + np.cos(2 * angle) * np.sinh(2 * r))
-                        / denom,
-                        2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
-                    ],
-                    [
-                        2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
-                        (
-                            1
-                            + 2 * s
-                            + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
-                            + 2 * s * (s + 1) * np.cos(2 * angle) * np.sinh(2 * r)
-                        )
-                        / denom,
-                    ],
-                ]
-            )
+                        + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
+                        + 2 * s * (s + 1) * np.cos(2 * angle) * np.sinh(2 * r)
+                    )
+                    / denom,
+                ],
+            ]
         )
-        assert np.allclose(remaining_state.cov, cov)
+        assert np.allclose(remaining_state.cov.numpy(), cov, atol=1e-5)
         # TODO: figure out why this is not working
-        # denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
-        # means = (
-        #     np.array(
-        #         [
-        #             np.sqrt(s * (1 + s))
-        #             * outcome
-        #             * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r))
-        #             / denom,
-        #             -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
-        #         ]
+        # if outcome is not None:
+        #     outcome = outcome * np.sqrt(hbar)
+        #     denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
+        #     expected_means = (
+        #         np.array(
+        #             [
+        #                 np.sqrt(s * (1 + s)) * outcome * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
+        #                 -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom
+        #             ]
+        #         )
         #     )
-        #     * np.sqrt(2 * hbar)
-        # )
-        # assert np.allclose(remaining_state.means, means)
+        #     means = remaining_state.means.numpy()
+        #     assert np.allclose(means, expected_means)
 
     @given(
         s=st.floats(min_value=0.0, max_value=10.0),
@@ -263,8 +256,8 @@ class TestHomodyneDetector:
         r = settings.HOMODYNE_SQUEEZING
         homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
         remaining_state = tmsv << homodyne
-        xb, xa, pb, pa = d
-        means = np.array(
+        xb, xa, pb, pa = np.sqrt(2 * hbar) * d
+        expected_means = np.array(
             [
                 xa
                 + (2 * np.sqrt(s * (s + 1)) * (X - xb))
@@ -272,8 +265,10 @@ class TestHomodyneDetector:
                 pa
                 + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
-        ) * np.sqrt(2 * hbar)
-        assert np.allclose(remaining_state.means.numpy(), means)
+        )
+
+        means = remaining_state.means.numpy()
+        assert np.allclose(means, expected_means)
 
     N_MEAS = 350  # number of homodyne measurements to perform
     NUM_STDS = 10.0
@@ -368,17 +363,13 @@ class TestHeterodyneDetector:
         # assert expected means vector, not tested when x or y is None
         # because we cannot access the sampled outcome value
         if (x is not None) and (y is not None):
-            xb, xa, pb, pa = d
-            means = (
-                np.array(
-                    [
-                        xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
-                        pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
-                    ]
-                )
-                * np.sqrt(2 * hbar)
-                / (1 + s)
-            )
+            xb, xa, pb, pa = d * np.sqrt(2 * hbar)
+            means = np.array(
+                [
+                    xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
+                    pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
+                ]
+            ) / (1 + s)
             assert np.allclose(remaining_state.means, means, atol=1e-5)
 
 

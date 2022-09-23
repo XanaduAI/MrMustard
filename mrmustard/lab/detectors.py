@@ -264,7 +264,6 @@ class Generaldyne(Measurement):
             other.cov, other.means, self.state.cov, None, modes=self.modes
         )
         self.state = State(cov=self.state.cov, means=outcome)
-        self._outcome = outcome
 
         return (
             prob
