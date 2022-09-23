@@ -17,8 +17,8 @@
 import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-from mrmustard.math.compactFockAmplitudes import hermite_multidimensional_diagonal
-from mrmustard.math.compactFockAmplitudes_1leftoverMode import hermite_multidimensional_1leftoverMode
+from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_diagonal
+from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_1leftoverMode
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -345,18 +345,13 @@ class TFMath(MathInterface):
         )
 
         def grad(dLdpoly):
-            # print('dLdpoly', dLdpoly)
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
                 grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
             )
-            # print('dpoly_dC, dpoly_dA, dpoly_dB', dpoly_dC, dpoly_dA, dpoly_dB)
-            # print('dpoly_dA', dpoly_dA)
-            # print('dpoly_dB', dpoly_dB)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            # print('dLdA, dLdB, dLdC',dLdA, dLdB, dLdC)
             return dLdA, dLdB, dLdC
 
         return poly, grad
@@ -386,12 +381,10 @@ class TFMath(MathInterface):
         )
 
         def grad(dLdpoly):
-            # print('dLdpoly',dLdpoly)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            # print('dpoly_dC, dpoly_dA, dpoly_dB',dpoly_dC, dpoly_dA, dpoly_dB)
             return dLdA, dLdB, dLdC
 
         return poly, grad
@@ -420,16 +413,10 @@ class TFMath(MathInterface):
         )
 
         def grad(dLdpoly):
-            # print('dLdpoly',dLdpoly)
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            # print('dpoly_dC, dpoly_dA, dpoly_dB',dpoly_dC, dpoly_dA, dpoly_dB)
-            # print('dpoly_dA',dpoly_dA)
-            # print('dpoly_dB', dpoly_dB)
-            # print('dpoly_dA[:,:,2]', dpoly_dA[:,:,2])
-            # print('dLdA, dLdB, dLdC', dLdA, dLdB, dLdC)
             return dLdA, dLdB, dLdC
 
         return poly, grad
