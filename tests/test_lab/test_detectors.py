@@ -151,22 +151,28 @@ class TestHomodyneDetector:
         `modes` kwarg.
 
         Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0, a "vertical"
-        (angle=0) squeezed state in mode 1 and vacuum in mode 2.
+        (angle=0) squeezed state in mode 1 and vacuum in mode 2. Because the modes are separable,
+        measuring modes 1 and 2 should leave the state in the mode 0 unchaged.
 
-        Because the modes are separable, measuring modes 1 and 2 should leave the state in the
-        mode 0 unchaged.
+        Also checks postselection ensuring the x-quadrature value is consistent with the
+        postselected value.
         """
 
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
         initial_state = Vacuum(3) >> S1 >> S2
-        final_state = initial_state << Homodyne(
-            result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2]
-        )
+        homodyne = Homodyne(result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2])
+        final_state = initial_state << homodyne
 
         expected_state = Vacuum(1) >> S1
 
         assert np.allclose(final_state.dm(), expected_state.dm())
+
+        if outcome is not None:
+            # checks postselection ensuring the x-quadrature
+            # value is consistent with the postselected value
+            x_outcome = homodyne.outcome.numpy()[:2]
+            assert np.allclose(x_outcome, outcome)
 
     @given(s=st.floats(min_value=0.0, max_value=10.0), outcome=none_or_(st.floats(-10.0, 10.0)))
     def test_homodyne_on_2mode_squeezed_vacuum(self, s, outcome):
@@ -190,7 +196,7 @@ class TestHomodyneDetector:
             means = np.array(
                 [2 * np.sqrt(s * (1 + s)) * outcome / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
             ) * np.sqrt(2 * hbar)
-            assert np.allclose(remaining_state.means, means)
+            assert np.allclose(remaining_state.means.numpy(), means)
 
     @given(
         s=st.floats(1.0, 10.0), outcome=none_or_(st.floats(-10.0, 10.0)), angle=st.floats(0, np.pi)
@@ -267,7 +273,7 @@ class TestHomodyneDetector:
                 + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
         ) * np.sqrt(2 * hbar)
-        assert np.allclose(remaining_state.means, means)
+        assert np.allclose(remaining_state.means.numpy(), means)
 
     N_MEAS = 350  # number of homodyne measurements to perform
     NUM_STDS = 10.0
@@ -357,7 +363,7 @@ class TestHeterodyneDetector:
 
         # assert expected covariance
         cov = hbar / 2 * np.array([[1, 0], [0, 1]])
-        assert np.allclose(remaining_state.cov, cov)
+        assert np.allclose(remaining_state.cov.numpy(), cov)
 
         # assert expected means vector, not tested when x or y is None
         # because we cannot access the sampled outcome value

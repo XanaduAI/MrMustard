@@ -245,19 +245,19 @@ class Generaldyne(Measurement):
 
         super().__init__(outcome, modes)
 
-    def primal(self, other) -> Union[State, float]:
+    @property
+    def outcome(self) -> Tensor:
+        return self.state.means
+
+    def primal(self, other: State) -> Union[State, float]:
         if self.postselected:
+            # return the projection of self.state onto other
             return self.state.primal(other)
 
-        return self.sample(other)
+        return super().primal(other)
 
-    def sample(self, other: State) -> Union[State, float]:
-        if other.is_gaussian:
-            return self._sample_gaussian(other)
-        else:
-            return self._sample_fock(other)
+    def _measure_gaussian(self, other) -> Union[State, float]:
 
-    def _sample_gaussian(self, other) -> Union[State, float]:
         remaining_modes = list(set(other.modes) - set(self.modes))
 
         outcome, prob, new_cov, new_means = gaussian.general_dyne(
@@ -272,7 +272,7 @@ class Generaldyne(Measurement):
             else State(cov=new_cov, means=new_means, modes=remaining_modes, _norm=prob)
         )
 
-    def _sample_fock(self, other) -> Union[State, float]:
+    def _measure_fock(self, other) -> Union[State, float]:
         raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
 
 
@@ -300,20 +300,19 @@ class Heterodyne(Generaldyne):
 
         # if no x and y provided, sample the outcome
         if x is None and y is None:
-            self.postselected = False
             num_modes = len(modes) if modes is not None else 1
             x, y = math.zeros([num_modes]), math.zeros([num_modes])
             outcome = None
         else:
-            self.postselected = True
             x = math.atleast_1d(x, dtype="float64")
             y = math.atleast_1d(y, dtype="float64")
             outcome = math.concat([x, y], axis=0)  # XXPP ordering
 
         modes = modes or list(range(x.shape[0]))
 
-        internal_state = Coherent(x, y)
-        super().__init__(state=internal_state, outcome=outcome, modes=modes)
+        units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        state = Coherent(x / units_factor, y / units_factor)
+        super().__init__(state=state, outcome=outcome, modes=modes)
 
 
 class Homodyne(Generaldyne):
@@ -340,12 +339,10 @@ class Homodyne(Generaldyne):
 
         # if no ``result`` provided, sample the outcome
         if result is None:
-            self.postselected = False
             x = math.zeros_like(self.quadrature_angle)
             y = math.zeros_like(self.quadrature_angle)
             outcome = None
         else:
-            self.postselected = True
             result = math.atleast_1d(result, dtype="float64")
             if result.shape[-1] == 1:
                 result = math.tile(result, self.quadrature_angle.shape)
@@ -356,10 +353,13 @@ class Homodyne(Generaldyne):
 
         modes = modes or list(range(self.quadrature_angle.shape[0]))
 
-        internal_state = DisplacedSqueezed(r=r, phi=2 * self.quadrature_angle, x=x, y=y)
-        super().__init__(state=internal_state, outcome=outcome, modes=modes)
+        units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        state = DisplacedSqueezed(
+            r=r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+        )
+        super().__init__(state=state, outcome=outcome, modes=modes)
 
-    def _sample_fock(self, other) -> Union[State, float]:
+    def _measure_fock(self, other) -> Union[State, float]:
 
         if len(self.modes) > 1:
             raise NotImplementedError(
@@ -389,7 +389,6 @@ class Homodyne(Generaldyne):
         self.state = DisplacedSqueezed(r=self.r, phi=0.0, x=x_arg, y=0.0) >> Rgate(
             self.quadrature_angle
         )
-        self._outcome = self.state.means
 
         if remaining_modes == 0:
             return probability

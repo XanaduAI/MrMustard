@@ -18,7 +18,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.math import Math
 
-from mrmustard.types import Tensor, Callable, Sequence, Iterable, Optional
+from mrmustard.types import Tensor, Callable, Sequence, Iterable, Optional, Union
 from mrmustard import settings
 from .state import State
 
@@ -30,11 +30,9 @@ class Measurement(ABC):
         super().__init__()
         self._modes = modes
 
-        # stores the outcome of a measurement
-        self._outcome = outcome
         # used to evaluate if the measurement outcome should be
         # sampled or is already defined by the user (postselection)
-        self.postselected = False if outcome is None else True
+        self._postselect = False if outcome is None else True
 
     @property
     def modes(self):
@@ -44,14 +42,29 @@ class Measurement(ABC):
         return self._modes
 
     @property
-    def outcome(self):
-        return self._outcome
+    def postselected(self):
+        return self._postselect
 
-    def sample(self, other):
-        """stores the outcome of a measurement"""
+    @abstractproperty
+    def outcome(self):
         ...
 
-    def __lshift__(self, other) -> Tensor:
+    def primal(self, other: State) -> Union[State, float]:
+        """performs the measurement according to the representation of the incoming state"""
+        if other.is_gaussian:
+            return self._measure_gaussian(other)
+        else:
+            return self._measure_fock(other)
+
+    @abstractmethod
+    def _measure_fock(self, other: State) -> Union[State, float]:
+        ...
+
+    @abstractmethod
+    def _measure_gaussian(self, other: State) -> Union[State, float]:
+        ...
+
+    def __lshift__(self, other) -> Union[State, float]:
         if isinstance(other, State):
             self.primal(other)
         else:
@@ -91,7 +104,13 @@ class FockMeasurement(Measurement):
         self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
         super().__init__(outcome, modes)
 
-    def primal(self, state: State) -> Tensor:
+    def outcome(self):
+        raise NotImplementedError
+
+    def _measure_gaussian(self, other: State) -> Union[State, float]:
+        raise NotImplementedError
+
+    def _measure_fock(self, other: State) -> Union[State, float]:
         r"""
         Returns a tensor representing the post-measurement state in the unmeasured modes in the Fock basis.
         The first `N` indices of the returned tensor correspond to the Fock measurements of the `N` modes that
@@ -104,22 +123,22 @@ class FockMeasurement(Measurement):
         """
         cutoffs = []
         used = 0
-        for mode in state.modes:
+        for mode in other.modes:
             if mode in self._modes:
                 cutoffs.append(
-                    max(settings.PNR_INTERNAL_CUTOFF, state.cutoffs[state.indices(mode)])
+                    max(settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)])
                 )
                 used += 1
             else:
-                cutoffs.append(state.cutoffs[state.indices(mode)])
+                cutoffs.append(other.cutoffs[other.indices(mode)])
         if self.should_recompute_stochastic_channel() or math.any(
-            [c > settings.PNR_INTERNAL_CUTOFF for c in state.cutoffs]
+            [c > settings.PNR_INTERNAL_CUTOFF for c in other.cutoffs]
         ):
             self.recompute_stochastic_channel(cutoffs)
-        dm = state.dm(cutoffs)
+        dm = other.dm(cutoffs)
         for k, (mode, stoch) in enumerate(zip(self._modes, self._internal_stochastic_channel)):
             # move the mode indices to the end
-            last = [mode - k, mode + state.num_modes - 2 * k]
+            last = [mode - k, mode + other.num_modes - 2 * k]
             perm = [m for m in range(dm.ndim) if m not in last] + last
             dm = math.transpose(dm, perm)
             # compute sum_m P(meas|m)rho_mm
