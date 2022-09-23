@@ -358,6 +358,21 @@ class Homodyne(Generaldyne):
         )
         super().__init__(state=state, outcome=outcome, modes=modes)
 
+    def _measure_gaussian(self, other) -> Union[State, float]:
+
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        outcome, prob, new_cov, new_means = gaussian.general_dyne(
+            other.cov, other.means, self.state.cov, None, modes=self.modes
+        )
+        self.state = State(cov=self.state.cov, means=outcome)
+
+        return (
+            prob
+            if len(remaining_modes) == 0
+            else State(cov=new_cov, means=new_means, modes=remaining_modes, _norm=prob)
+        )
+
     def _measure_fock(self, other) -> Union[State, float]:
 
         if len(self.modes) > 1:
@@ -385,9 +400,7 @@ class Homodyne(Generaldyne):
         # Note: x_outcome already has units of sqrt(hbar). Here is divided by sqrt(2*hbar) to cancel the multiplication
         # factor of the displacement symplectic inside the DisplacedSqueezed state.
         x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
-        self.state = DisplacedSqueezed(r=self.r, phi=0.0, x=x_arg, y=0.0) >> Rgate(
-            self.quadrature_angle
-        )
+        self.state = DisplacedSqueezed(r=self.r, phi=self.quadrature_angle, x=x_arg, y=0.0)
 
         if remaining_modes == 0:
             return probability
