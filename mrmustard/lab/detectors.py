@@ -364,13 +364,15 @@ class Homodyne(Generaldyne):
         other >>= Rgate(-self.quadrature_angle, modes=self.modes)
         self.state >>= Rgate(-self.quadrature_angle, modes=self.modes)
 
+        # perform homodyne measurement as a generaldyne one
         out = super()._measure_gaussian(other)
 
-        # set p-outcomes to 0 and rotate back to the original basis
-        out_means = math.concat(
+        # set p-outcomes to 0 and rotate the measurement device state back to the original basis,
+        # this is in turn rotating the outcomes to the original basis
+        self_state_means = math.concat(
             [self.state.means[: self.num_modes], math.zeros((self.num_modes,))], axis=0
         )
-        self.state = State(cov=self.state.cov, means=out_means) >> Rgate(
+        self.state = State(cov=self.state.cov, means=self_state_means, modes=self.modes) >> Rgate(
             self.quadrature_angle, modes=self.modes
         )
 
