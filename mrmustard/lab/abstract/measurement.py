@@ -28,6 +28,9 @@ math = Math()
 class Measurement(ABC):
     def __init__(self, outcome: Tensor, modes: Iterable[int]) -> None:
         super().__init__()
+
+        if modes is None:
+            raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._modes = modes
 
         # used to evaluate if the measurement outcome should be
@@ -37,9 +40,12 @@ class Measurement(ABC):
     @property
     def modes(self):
         r"""Returns the modes being measured."""
-        if self._modes is None:
-            return list(range(self.num_modes))
         return self._modes
+
+    @property
+    def num_modes(self):
+        r"""Returns the modes being measured."""
+        return len(self.modes)
 
     @property
     def postselected(self):
