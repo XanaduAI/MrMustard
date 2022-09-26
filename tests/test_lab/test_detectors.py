@@ -205,7 +205,7 @@ class TestHomodyneDetector:
         homodyne = Homodyne(quadrature_angle=angle, result=outcome, r=r)
         remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
         denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
-        cov = np.array(
+        cov = (hbar / 2) * np.array(
             [
                 [
                     1
