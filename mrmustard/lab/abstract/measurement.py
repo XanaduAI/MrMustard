@@ -114,7 +114,7 @@ class FockMeasurement(Measurement):
         raise NotImplementedError
 
     def _measure_gaussian(self, other: State) -> Union[State, float]:
-        raise NotImplementedError
+        return self._measure_fock(other)
 
     def _measure_fock(self, other: State) -> Union[State, float]:
         r"""
