@@ -74,6 +74,9 @@ class TFMath(MathInterface):
             return array
         return tf.cast(array, dtype)
 
+    def ceil(self, array: tf.Tensor) -> tf.Tensor:
+        return tf.math.ceil(array)
+
     def clip(self, array, a_min, a_max) -> tf.Tensor:
         return tf.clip_by_value(array, a_min, a_max)
 
@@ -114,6 +117,9 @@ class TFMath(MathInterface):
 
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
+
+    def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
+        return tf.complex(real, imag)
 
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
@@ -206,9 +212,9 @@ class TFMath(MathInterface):
         value = self.convert_to_tensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
-    def norm(self, array: tf.Tensor) -> tf.Tensor:
+    def norm(self, array: tf.Tensor, axis=None) -> tf.Tensor:
         """Note that the norm preserves the type of array."""
-        return tf.linalg.norm(array)
+        return tf.linalg.norm(array, axis=axis)
 
     def ones(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
         return tf.ones(shape, dtype=dtype)

@@ -17,6 +17,7 @@ This module implements the quantum states upon which a quantum circuits acts on.
 """
 
 from typing import Union, Optional, List, Tuple, Sequence
+from numpy import pi
 from mrmustard.types import Scalar, Vector, Matrix
 from mrmustard import settings
 from mrmustard.lab.abstract import State
@@ -36,6 +37,7 @@ __all__ = [
     "TMSV",
     "Gaussian",
     "Fock",
+    "Cat",
 ]
 
 
@@ -503,3 +505,131 @@ class Fock(Parametrized, State):
         if self._normalize:
             return fock.normalize(output, is_dm=other.is_mixed)
         return output
+
+
+class GKP(Parametrized, State):
+    r"""The finite energy Gottesman-Kitaev-Preskill (GKP) state.
+
+    In their ideal form, square lattice GKP states are linear combinations of position eigenkets
+    :math:`\ket{\cdot}_q` spaced every :math:`\sqrt{\pi\hbar}`. Finite energy GKPs are attained by
+    applying the Fock damping operator :math:`e^{-\epsilon\hat{n}}` to the ideal states.
+
+    GKP states are qubits, with the qubit state defined by:
+
+    .. math::
+        \ket{\psi}_{gkp} = \cos\frac{\theta}{2}\ket{0}_{gkp} + e^{-i\phi}\sin\frac{\theta}{2}\ket{1}_{gkp}
+
+    where the computational basis states are :math:`\ket{\mu}_{gkp} = \sum_{n} \ket{(2n+\mu)\sqrt{\pi\hbar}}_{q}`.
+
+    Square lattice GKPs have Wigner functions with peaks arranged on a square lattice, whereas alternative
+    lattices, such has hexagonal GKPs, can be obtained by applying symplectic transformations to the
+    square lattice GKPs.
+
+    Args:
+        theta (float or List[float]): [theta,phi] for qubit definition above
+        phi (float or List[float]): [theta,phi] for qubit definition above
+        epsilon (float or List[float]): finite energy parameter of the state
+        shape (str): shape of the lattice; default ``'square'``
+        ampl_cutoff (optional, float): determines how many terms to keep in the Hilbert space expansion
+        modes (optional, List[int]): the modes of the GKP state; defaults to ``None`` modes are automatically assigned
+        cutoffs (optional, Sequence[int]): set to force the cutoff dimensions of the state; default ``None``
+            cutoffs are automatically assigned
+        normalize (bool): whether to normalize the leftover state when projecting onto another state; default ``False``
+    """
+
+    def __init__(
+        self,
+        theta: Union[float, Sequence[float]],
+        phi: Union[float, Sequence[float]],
+        epsilon: Union[float, Sequence[float]],
+        shape: str = "square",
+        ampl_cutoff: float = 1e-12,
+        modes: Optional[List[int]] = None,
+        cutoffs: Optional[Sequence[int]] = None,
+        normalize: bool = False,
+    ):
+        State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs, modes=modes)
+        Parametrized.__init__(self)
+
+        self._modes = modes
+        self._normalize = normalize
+
+
+class Cat(Parametrized, State):
+    r"""Prepare modes in a cat state.
+
+    A cat state is the non-Gaussian coherent superposition of two coherent states,
+
+    .. math::
+       \ket{\text{cat}(\alpha)} = \frac{1}{N} (\ket{\alpha} +e^{i\theta} \ket{-\alpha}),
+
+    where :math:`N = \exp{|\alpha|**2/2 }\sqrt{2 (1+\cos(\theta)e^{-2|\alpha|^2})}` is the normalization factor and
+    :math:`\alpha = a e^{i\phi}`. Here, the even cat state given for :math:`\theta=0`,
+    and the odd cat state given for :math:`\theta=\pi`.
+
+    Args:
+        alpha (float): displacement magnitude :math:`|\alpha|`
+        phi (float): displacement angle :math:`\phi`
+        p (float): parity, where :math:`\theta=p\pi`; ``p=0`` corresponds to an even cat state, and ``p=1`` an odd cat state.
+        modes (optional, List[int]): the modes of the GKP state; defaults to ``None`` modes are automatically assigned
+        cutoffs (optional, Sequence[int]): set to force the cutoff dimensions of the state; default ``None``
+            cutoffs are automatically assigned
+        normalize (bool): whether to normalize the leftover state when projecting onto another state; default ``False``
+    """
+
+    def __init__(
+        self,
+        alpha: Union[float, Sequence[float]],
+        phi: Union[float, Sequence[float]],
+        p: Union[float, Sequence[float]],
+        alpha_trainable: bool = False,
+        phi_trainable: bool = False,
+        p_trainable: bool = False,
+        alpha_bounds: bool = None,
+        phi_bounds=None,
+        p_bounds=None,
+        modes: Optional[List[int]] = None,
+        cutoffs: Optional[Sequence[int]] = None,
+        normalize: bool = False,
+    ):
+        Parametrized.__init__(
+            self,
+            alpha=alpha,
+            phi=phi,
+            p=p,
+            alpha_trainable=alpha_trainable,
+            phi_trainable=phi_trainable,
+            p_trainable=p_trainable,
+            alpha_bounds=alpha_bounds,
+            phi_bounds=phi_bounds,
+            p_bounds=p_bounds,
+        )
+        ket, cutoffs = self._prepare_cat(cutoffs)
+        State.__init__(self, ket=ket, cutoffs=cutoffs, modes=modes)
+
+        self._modes = modes
+        self._normalize = normalize
+
+    def _prepare_cat(self, cutoffs):
+        x = self.alpha.value * math.cos(self.phi.value)
+        y = self.alpha.value * math.sin(self.phi.value)
+        theta = self.p.value * pi
+
+        c1 = Coherent(x, y)
+        c2 = Coherent(-x, -y)
+
+        # auto-calculate cutoffs if not defined
+        cutoffs = cutoffs or c1.cutoffs
+
+        phase = math.make_complex(math.cos(theta), math.sin(theta))
+
+        # normalization constant
+        temp = math.exp(-0.5 * math.abs(self.alpha.value) ** 2)
+        N = math.sqrt(2 * (1 + math.cos(theta) * temp**4))
+
+        # ket
+        c1k = c1.ket(cutoffs)
+        c2k = c2.ket(cutoffs)
+        ket = (c1k + c2k) / math.cast(N, "complex128")
+
+        return ket, cutoffs

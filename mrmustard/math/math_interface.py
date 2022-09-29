@@ -155,6 +155,17 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def ceil(self, array: Tensor) -> Tensor:
+        """Return the ceiling of the input element-wise
+
+        Args:
+            array (array): input array
+
+        Returns:
+            array: array of the same type as input
+        """
+
+    @abstractmethod
     def clip(self, array: Tensor, a_min: float, a_max: float) -> Tensor:
         r"""Clips array to the interval ``[a_min, a_max]``.
 
@@ -239,6 +250,17 @@ class MathInterface(ABC):
 
         Returns:
             array: cosine of array
+        """
+
+    @abstractmethod
+    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
+        """Given two real tensors representing the real and imaginary part of a complex number,
+        this operation returns a complex tensor. The input tensors must have the same shape.
+        Args:
+            real (array): real part of the complex number
+            imag (array): imaginary part of the complex number
+        Returns:
+            array: complex array ``real + 1j * imag``
         """
 
     @abstractmethod
