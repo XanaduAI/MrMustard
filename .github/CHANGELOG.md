@@ -1,4 +1,25 @@
-# Release 0.3.0 (development release)
+# Release 0.4.0 (development release)
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
+  providing better numerical stability for larger cutoff and displacement values. [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+
+### Bug fixes
+
+### Documentation
+
+### Contributors
+
+This release contains contributions from (in alphabetical order):
+
+---
+
+# Release 0.3.0 (current release)
 
 ### New features
 * Can switch progress bar on and off (default is on) from the settings via `settings.PROGRESSBAR = True/False`.
@@ -23,7 +44,7 @@
   ```
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
-* Parameter passthrough allows to use custom parameters in the model, that is, objects accept correlated parameters. For example,
+* Parameter passthrough allows one to use custom variables and/or functions as parameters. For example we can use parameters of other gates:
     ```python
     from mrmustard.lab.gates import Sgate, BSgate
 
@@ -33,34 +54,97 @@
 
     circ = S0 >> S1 >> BS
     ```
+  Another possibility is with functions:
+  ```python
+
+  def my_r(x):
+      return x**2
+
+  x = math.new_variable(0.5, bounds = (None, None), name="x")
+
+  def cost_fn():
+    # note that my_r needs to be in the cost function
+    # in order to track the gradient
+    S = Sgate(r=my_r(x), theta_trainable=True)[0,1]
+    return # some function of S
+
+  opt.Optimize(cost_fn, by_optimizing=[x])
+  ```
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
 
-* Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures
+* Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures.
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
+* Now marginals can be iterated over:
+  ```python
+  for mode in state:
+    print(mode.purity)
+  ```
+  [(#140)](https://github.com/XanaduAI/MrMustard/pull/140)
+
 ### Breaking changes
+
+* The Parametrized and Training classes have been refactored: now trainable tensors are wrapped in an instance of the `Parameter` class. To define a set of parameters do
+  ```python
+  from mrmustard.training import Parametrized
+
+  params = Parametrized(
+      magnitude=10, magnitude_trainable=False, magnitude_bounds=None,
+      angle=0.1, angle_trainable=True, angle_bounds=(-0.1,0.1)
+  )
+  ```
+  which will automatically define the properties `magnitude` and `angle` on the `params` object.
+  To access the backend tensor defining the values of such parameters use the `value` property
+  ```python
+  params.angle.value
+  params.angle.bounds
+
+  params.magnitude.value
+  ```
+
+  Gates will automatically be an instance of the `Parametrized` class, for example
+  ```python
+  from mrmustard.lab import BSgate
+
+  bs = BSgate(theta = 0.3, phi = 0.0, theta_trainable: True)
+
+  # access params
+  bs.theta.value
+  bs.theta.bounds
+  bs.phi.value
+  ```
+  [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
+  patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
+  and [(#158)](https://github.com/XanaduAI/MrMustard/pull/158).
 
 ### Improvements
 
 * The Parametrized and Training classes have been refactored. The new training module has been added
-  and with it the new Parameter class: now trainable tensors are wrapped in an instance of Parameter.
+  and with it the new `Parameter` class: now trainable tensors are being wrapped in an instance of `Parameter`.
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
   patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
 
 * The string representations of the `Circuit` and `Transformation` objects have been improved:
   the `Circuit.__repr__` method now produces a string that can be used to generate a circuit in
-  a identical state (same gates and parameters), the `Transformation.__str__` and objects
+  an identical state (same gates and parameters), the `Transformation.__str__` and objects
   inheriting from it now prints the name, memory location of the object as well as the modes
   of the circuit in which the transformation is acting on. The `_markdown_repr_` has been implemented
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values. [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+* Add the argument 'modes' to the `Interferometer` operation to indicate which modes the Interferometer is
+  applied to.
+  [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
+
 
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
+
+* The `math.dagger` function applying the hermitian conjugate to an operator was incorrectly
+transposing the indices of the input tensor. Now `math.dagger` appropriately calculates the
+Hermitian conjugate of an operator.
+  [(#156)](https://github.com/XanaduAI/MrMustard/pull/156)
 
 ### Documentation
 
@@ -76,12 +160,13 @@
 
 This release contains contributions from (in alphabetical order):
 
-[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
+[Mikhail Andrenkov](https://github.com/Mandrenkov), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
+
 
 
 ---
 
-# Release 0.2.0 (current release)
+# Release 0.2.0
 
 ### New features since last release
 

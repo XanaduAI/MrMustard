@@ -21,7 +21,7 @@ from typing import List, Callable, Sequence
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
-from .parameter import Parameter, Trainable
+from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
 
@@ -72,15 +72,7 @@ class Optimizer:
 
     def _minimize(self, cost_fn, by_optimizing, max_steps):
         # finding out which parameters are trainable from the ops
-        trainable_params = list(
-            chain(
-                *[
-                    item.trainable_parameters
-                    for item in by_optimizing
-                    if isinstance(item, Parametrized)
-                ]
-            )
-        )
+        trainable_params = self._get_trainable_params(by_optimizing)
 
         bar = graphics.Progressbar(max_steps)
         with bar:
@@ -110,7 +102,25 @@ class Optimizer:
             update_method(grads_and_vars, param_lr)
 
     @staticmethod
+    def _get_trainable_params(trainable_items):
+        """Returns a list of trainable parameters from instances of Parametrized or
+        items that belong to the backend and are trainable
+        """
+        trainables = []
+        for item in trainable_items:
+            if isinstance(item, Parametrized):
+                trainables.append(item.trainable_parameters)
+            elif math.from_backend(item) and math.is_trainable(item):
+                # the created parameter is wrapped into a list because the case above
+                # returns a list, hence ensuring we have a list of lists
+                trainables.append([create_parameter(item, name="from_backend", is_trainable=True)])
+
+        return list(chain(*trainables))
+
+    @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
+        """Groups `trainable_params` and `grads` by type into a dict of the form
+        `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}`."""
         sorted_grads_and_vars = sorted(
             zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
         )
