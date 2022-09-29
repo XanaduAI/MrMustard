@@ -13,7 +13,18 @@
 # limitations under the License.
 
 import pytest
-from mrmustard.lab.circuit import Circuit
+from hypothesis import given, strategies as st
+import numpy as np
+from thewalrus.fock_gradients import (
+    squeezing,
+    beamsplitter,
+    two_mode_squeezing,
+    mzgate,
+)
+
+from tests import random
+from mrmustard.physics import fock
+from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.lab.gates import (
     Dgate,
@@ -28,18 +39,6 @@ from mrmustard.lab.gates import (
     Attenuator,
     Interferometer,
 )
-from hypothesis import given, strategies as st
-from mrmustard.physics import fock
-from thewalrus.fock_gradients import (
-    displacement,
-    squeezing,
-    beamsplitter,
-    two_mode_squeezing,
-    mzgate,
-)
-import numpy as np
-from tests import random
-import pytest
 
 
 @given(state=random.pure_state(num_modes=1), xy=random.vector(2))
