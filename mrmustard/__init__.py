@@ -37,7 +37,7 @@ class Settings:
 
     @backend.setter
     def backend(self, backend_name: str):
-        if backend_name not in ["tensorflow", "torch"]:
+        if backend_name.lower() not in ["tensorflow", "torch"]:
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = backend_name
 
@@ -110,6 +110,6 @@ def about():
         import torch
 
         torch_version = torch.__version__
-        print("Torch version:             {}".format(torch_version))
+        print(f"Torch version:             {torch_version}")
     except ImportError:
         torch_version = None
