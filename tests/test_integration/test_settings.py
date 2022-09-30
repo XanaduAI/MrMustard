@@ -1,5 +1,5 @@
 from mrmustard import settings
-from pytest
+import pytest
 
 
 def test_backend_name():
