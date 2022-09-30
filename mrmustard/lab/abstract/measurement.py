@@ -75,7 +75,7 @@ class Measurement(ABC):
             self.primal(other)
         else:
             raise TypeError(
-                f"Cannot apply Measurement '{type(self).__name__}' to '{type(other).__name__}'."
+                f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
             )
 
     def __getitem__(self, items) -> Callable:
