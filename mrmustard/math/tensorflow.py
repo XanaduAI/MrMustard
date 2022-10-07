@@ -17,7 +17,7 @@
 import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_diagonal
+from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
 # from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_1leftoverMode
 
 from mrmustard.math.autocast import Autocast
@@ -382,7 +382,7 @@ class TFMath(MathInterface):
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_diagonal, [A, B, C, poly0, poly2, poly1010, poly1001, poly1], [poly.dtype] * 3
+                grad_hermite_multidimensional_diagonal, [A, B, C, poly0, poly2, poly1010, poly1001, poly1], [poly0.dtype] * 3
             )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
@@ -390,7 +390,7 @@ class TFMath(MathInterface):
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
             return dLdA, dLdB, dLdC
 
-        return poly, grad
+        return poly0, grad
 
     # @tf.custom_gradient
     # def hermite_renormalized_1leftoverMode(

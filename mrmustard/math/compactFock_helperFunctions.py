@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit, int64
 from numba.typed import Dict
+import numba
 
 SQRT = np.sqrt(np.arange(1000))  # saving the time to recompute square roots
 

@@ -193,13 +193,14 @@ def fock_representation_diagonal_grad_NUMBA(A, B, M, cutoffs, arr0, arr2, arr101
     return arr0_dA, arr0_dB
 
 
-def fock_representation_diagonal_grad(A, B, G0, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1):
+def fock_representation_diagonal_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr1):
     '''
     First initialise the submatrices of G (of which the shape depends on cutoff and M)
     and some other constants
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     '''
+    cutoffs = arr0.shape
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)
     return fock_representation_diagonal_grad_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type,
