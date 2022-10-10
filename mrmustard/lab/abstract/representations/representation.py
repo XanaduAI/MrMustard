@@ -1,34 +1,379 @@
-# Copyright 2022 Xanadu Quantum Technologies Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""This file contains the abstract Representation class."""
-
-
-
+# abstract representation class
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Tuple, Union
+from mrmustard.types import Array, Matrix, Vector, Number
+
+
+@dataclass
+class Data(Protocol):
+    pure_cov: Optional[Matrix] = None
+    mixed_cov: Optional[Matrix] = None
+    mean: Optional[Vector] = None
+    ket: Optional[Array] = None
+    dm: Optional[Array] = None
+    mesh: Optional[(Matrix, Vector)] = None
+    is_hilbert_vector: bool = False
+
 
 class Representation:
-    
-    @classmethod
-    def from_repr(cls, representation: Representation):
-        try:
-            rep = representation.__class__.__qualname__.lower()
-            cls.__dict__['from_'+ rep + '_gaussian'](representation)
-        except (AttributeError, KeyError):
-            cls.__dict__['from_'+ rep + '_ket'](representation)
-        except (AttributeError, KeyError):
-            cls.__dict__['from_'+ rep + '_densitymatrix'](representation)
-        except (AttributeError, KeyError):
-            raise ValueError("Cannot convert representation of type {} to {}".format(representation.__class__.__qualname__, self.__class__.__qualname__))
+    """Abstract representation class, no implementations in here, just
+    the right calls to the appropriate repA -> repB methods with default
+    routing via Q function.
+    """
 
+    def __init__(self, data: Union[Data, Representation]):
+        if isinstance(data, Representation):
+            return self.from_representation(data) # this calls the generic repA->repB transformation
+        else:
+            self.pure_gaussian = Gaussian(data.pure_cov, data.mean, data.coeff)
+            self.mixed_gaussian = Gaussian(data.mixed_cov, data.mean, data.coeff)
+            self.ket = data.ket
+            self.dm = data.dm
+            self.pointcloud = data.pointcloud
+            self.is_hilbert_vector = data.is_hilbert_vector
+
+    @property
+    def gaussian(self):
+        return self.pure_gaussian or self.mixed_gaussian
+
+    @property
+    def array(self):
+        return self.ket or self.dm
+    
+    @property
+    def preferred_data(self):
+        return self.gaussian or self.array or self.pointcloud
+
+    @property
+    def cov(self): # raises AttributeError if no gaussian data
+        return self.preferred_data.cov
+
+    @property
+    def mean(self): # raises AttributeError if no gaussian data
+        return self.preferred_data.mean
+
+    @property
+    def coeff(self): # raises AttributeError if no gaussian data
+        return self.preferred_data.coeff
+
+    def from_representation(self, representation): # to avoid having to implement all the combinations
+        if isinstance(representation, self.__class__):
+            return self
+        return getattr(self, f'from_{representation.__class__.__name__.lower()}')(representation)
+
+    # From branches = from trunk
+    def from_stellar(self, stellar):
+        return self.from_husimi(Husimi(stellar))
+
+    def from_wavefunctionx(self, wavefunctionX):
+        return self.from_husimi(Husimi(wavefunctionX))
+
+    def from_wigner(self, wigner):
+        return self.from_husimi(Husimi(wigner))
+
+    def from_glauber(self, glauber):
+        return self.from_husimi(Husimi(glauber))
+
+    # From leaves = from branch
+    def from_charp(self, charP):
+        return self.from_glauber(Glauber(charP))
+
+    def from_charq(self, charQ):
+        return self.from_husimi(Husimi(charQ))
+
+    def from_charw(self, charW):
+        return self.from_wigner(Wigner(charW))
+
+    def from_wavefunctionp(self, wavefunctionP):
+        return self.from_husimi(Husimi(wavefunctionP))
+
+    def _typecheck(self, other, operation: str):
+        if self.__class__ != other.__class__:
+            raise TypeError(f"Cannot {operation} representations of different types: {self.__class__} and {other.__class__}")
+
+    def __add__(self, other):
+        self._typecheck(other, 'add')
+        return self.__class__(self.preferred_data + other.preferred_data)
+    
+    def __sub__(self, other):
+        self._typecheck(other, 'subtract')
+        return self.__class__(self.preferred_data - other.preferred_data)
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            return self.__class__(self.preferred_data * other)
+
+    def __truediv__(self, other):
+        if isinstance(other, Number):
+            return self.__class__(self.preferred_data / other)
+
+from matplotlib import pyplot as plt
+from matplotlib import cm
+
+# plot x = [1,2,3,...,10] and y = [1,4,9,...,100] in a plot with figsize = (10,10)
+x = range(1, 11)
+y = [i**2 for i in x]
+plt.figure(figsize=(10,10))
+plt.plot(x, y)
+
+
+
+plt.contourf(X, P, W, 60, cmap=cm.RdBu, vmin=-abs(W).max(), vmax=abs(W).max())
+
+# TRUNK
+
+class Husimi(Representation):
+    def from_charq(self, charQ):
+        try:
+            return Husimi(Gaussian(math.inv(charQ.cov), charQ.mean, charQ.coeff))
+        except AttributeError:
+            print('Fourier transform of of charQ.ket')
+        except AttributeError:
+            print("Fourier transform of of charQ.dm")
+
+    def from_wigner(self, wigner):
+        try:
+            return Husimi(Gaussian(wigner.cov + math.eye_like(wigner.cov)/2, wigner.mean, wigner.coeff))
+        except AttributeError:
+            print(f'wigner.dm * exp(|alpha|^2/2)')
+
+    def from_glauber(self, glauber):
+        try:
+            return Husimi(Gaussian(glauber.cov + math.eye_like(glauber.cov), glauber.mean))
+        except AttributeError:
+            print(f'glauber.dm * exp(|alpha|^2)')
+
+
+    def from_wavefunctionx(self, wavefunctionX):
+        try:
+            print(f'wavefunctionX.gaussian to Husimi...')
+        except AttributeError:
+            print(f'wavefunctionX.ket to Husimi...')
+
+    def from_stellar(self, stellar): # what if hilbert vector?
+        try:
+            X = math.Xmat(stellar.cov.shape[-1])
+            Q = math.inv(math.eye_like(stellar.cov)-math.Xmat @ stellar.cov)
+            return Husimi(Gaussian(Q, Q @ math.Xmat @ stellar.mean))
+        except AttributeError:
+            print(f'stellar.ket/dm to Husimi...')
+
+
+# BRANCHES
+
+class Wigner(Representation):
+    def from_husimi(self, husimi):
+        try:
+            return Wigner(Gaussian(husimi.cov - math.eye_like(husimi.cov)/2, husimi.mean))
+        except AttributeError:
+            print(f'husimi.ket * exp(-|alpha|^2/2)')
+        except AttributeError:
+            print(f'husimi.dm * exp(-|alpha|^2)')
+
+    def from_charw(self, charw):
+        try:
+            return Wigner(Gaussian(math.inv(charw.cov), charw.mean))
+        except AttributeError:
+            print(f'Fourier transform of charw.ket')
+        except AttributeError:
+            print(f'Fourier transform of charw.dm')
+
+class Glauber(Representation):
+    def from_husimi(self, husimi):
+        try:
+            return Glauber(Gaussian(husimi.cov - math.eye_like(husimi.cov), husimi.mean))
+        except AttributeError:
+            print(f'husimi.dm * exp(-|alpha|^2)')
+
+    def from_charp(self, charp):
+        try:
+            return Glauber(Gaussian(math.inv(charp.cov), charp.mean))
+        except AttributeError:
+            print(f'Fourier transform of charp.ket')
+        except AttributeError:
+            print(f'Fourier transform of charp.dm')
+
+class WavefunctionX(Representation):
+    def from_husimi(self, husimi):
+        try:
+            print(f'husimi.gaussian to wavefunctionX.gaussian')
+        except AttributeError:
+            print(f'husimi.ket to wavefunctionX.ket...')
+
+    def from_wavefunctionp(self, wavefunctionP):
+        try:
+            return WavefunctionX(Gaussian(math.inv(wavefunctionP.cov), wavefunctionP.mean))
+        except AttributeError:
+            print(f'Fourier transform of wavefunctionP.ket')
+
+class Stellar(Representation):
+    # TODO: implement polynomial part
+    def from_husimi(self, husimi):
+        try:
+            X = math.Xmat(husimi.cov.shape[-1])
+            Qinv = math.inv(husimi.cov)
+            A = X @ (math.eye_like(husimi.cov) - Qinv)
+            return Stellar(Gaussian(A, X @ Qinv @ husimi.mean))
+        except AttributeError:
+            print(f'husimi.ket to stellar...')
+        except AttributeError:
+            print(f'husimi.dm to sellar...')
+
+# LEAVES
+
+class CharP(Representation):
+    def from_glauber(self, glauber):
+        try:
+            return CharP(Gaussian(math.inv(glauber.cov), glauber.mean))
+        except AttributeError:
+            print(f'Fourier transform of glauber.dm')
+
+    def from_husimi(self, husimi):
+        return self.from_glauber(Glauber(husimi))
+
+class CharQ(Representation):
+    def from_husimi(self, husimi):
+        try:
+            return CharQ(Gaussian(math.inv(husimi.cov), husimi.mean))
+        except AttributeError:
+            print(f'Fourier transform of husimi.ket')
+        except AttributeError:
+            print(f'Fourier transform of husimi.dm')
+
+class CharW(Representation):
+    def from_wigner(self, wigner):
+        try:
+            return CharW(Gaussian(math.inv(wigner.cov), wigner.mean))
+        except AttributeError:
+            print(f'Fourier transform of wigner.dm')
+
+    def from_husimi(self, husimi):
+        return self.from_wigner(Wigner(husimi))
+
+class WavefunctionP(Representation):
+    def from_wavefunctionx(self, wavefunctionX):
+        try:
+            return WavefunctionP(Gaussian(math.inv(wavefunctionX.cov), wavefunctionX.mean))
+        except AttributeError:
+            print(f'Fourier transform of wavefunctionX.ket')
+
+    def from_husimi(self, husimi):
+        self.from_wavefunctionx(WavefunctionX(husimi))
+
+class Fock(Representation):
+    def from_stellar(self, stellar):
+        try:
+            print(f'Recurrence relations')
+        except AttributeError:
+            print(f'stellar.ket to Fock...')
+        except AttributeError:
+            print(f'stellar.dm to Fock...')
+
+
+# Data types
+
+class Gaussian:
+    def __init__(cov, mean, coeff):
+        self.cov = math.atleast_3d(cov)
+        self.mean = math.atleast_2d(mean)
+        self.coeff = coeff or math.ones(1, dtype=mean.dtype)
+        assert len(self.cov) == len(self.mean) == len(self.coeff)
+        
+    def __add__(self, other): # W1(x) + W2(x)
+        if type(self) != type(other):
+            return TypeError(f'Cannot add {self.__class__.__qualname__} and {other.__class__.__qualname__}')
+        cov = math.concat(self.cov, other.cov, axis=0)
+        means = math.concat(self.means, other.means, axis=0)
+        coeffs = math.concat(self.coeffs, other.coeffs, axis=0)
+        return Gaussian(cov=cov, means=means, coeff=coeffs)
+
+    def __sub__(self, other):
+        if type(self) != type(other):
+            return TypeError(f'Cannot subtract {self.__class__.__qualname__} and {other.__class__.__qualname__}')
+        return self + (-other)
+
+    def __rmul__(self, other: Number):
+        return self * other
+
+    def __mul__(self, other: Number):
+        return Gaussian(cov=self.cov, means=self.means, coeff=self.coeffs * other)
+
+    def __neg__(self):
+        return self * -1
+
+    def outer(self, other: Gaussian):
+        covs = math.astensor([math.block_diag([math.conj(cov_other),cov_self]) for cov_other in other.cov for cov_self in self.cov])
+        means = math.astensor([math.concat([math.conj(mean_other), mean_self], axis=0) for mean_other in other.mean for mean_self in self.mean])
+        coeffs = math.astensor([coeff_other * coeff_self for coeff_other in other.coeff for coeff_self in self.coeff])
+        return Gaussian(cov=covs, mean=means, coeff=coeffs)
+        
+
+
+
+
+class Linear:
+    # hilbert space algebra
+    pass
+
+class Convex(Linear):
+    # convex algebra
+    pass
+
+
+
+class Ket:
+    def __init__(self, array):
+        self.array = array
+    
+    def __add__(self, other):
+        return Ket(self.array + other.array)
+
+    def __sub__(self, other):
+        return Ket(self.array - other.array)
+
+    def __mul__(self, other):
+        return Ket(self.array * other.array)
+
+    def __matmul__(self, other):
+        return Ket(self.array @ other.array)
+    
+    def __truediv__(self, other):
+        return Ket(self.array / other.array)
+
+
+
+class DensityMatrix:
+    def __init__(self, array):
+        self.array = array
+
+    def __add__(self, other):
+        try:
+            DensityMatrix(self.array + other.array)
+        except AttributeError:
+            try:
+               return DensityMatrix(other + self.array)
+            except (TypeError, ValueError):
+                return DensityMatrix(self.array + other)
+
+    def __sub__(self, other):
+        try:
+            DensityMatrix(self.array + other)
+        except (TypeError, ValueError):
+            return DensityMatrix(self.array - other.array)
+
+    def __mul__(self, other):
+        try:
+            DensityMatrix(self.array * other)
+        except (TypeError, ValueError):
+            return DensityMatrix(self.array * other.array)
+
+    def __matmul__(self, other):
+        try:
+            DensityMatrix(self.array @ other)
+        except (TypeError, ValueError):
+            return DensityMatrix(self.array @ other.array)
+    
