@@ -18,7 +18,7 @@ This module implements the quantum states upon which a quantum circuits acts on.
 
 from typing import Union, Optional, List, Tuple, Sequence
 from numpy import pi
-from mrmustard.types import Scalar, Vector, Matrix
+from mrmustard.types import Scalar, Vector, Matrix, Tensor
 from mrmustard import settings
 from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian, fock
@@ -604,32 +604,56 @@ class Cat(Parametrized, State):
             phi_bounds=phi_bounds,
             p_bounds=p_bounds,
         )
-        ket, cutoffs = self._prepare_cat(cutoffs)
+        a, phi, p = self.alpha.value, self.phi.value, self.p.value
+        ket, cutoffs = self._prepare_cats(a, phi, p, cutoffs)
         State.__init__(self, ket=ket, cutoffs=cutoffs, modes=modes)
 
-        self._modes = modes
         self._normalize = normalize
 
-    def _prepare_cat(self, cutoffs):
-        x = self.alpha.value * math.cos(self.phi.value)
-        y = self.alpha.value * math.sin(self.phi.value)
-        theta = self.p.value * pi
+    def _prepare_cats(self, a, phi, p, cutoffs):
+
+        a = math.atleast_1d(a)
+        phi = math.atleast_1d(phi)
+        if phi.shape[-1] == 1:
+            phi = math.tile(phi, a.shape)
+        p = math.atleast_1d(p)
+        if p.shape[-1] == 1:
+            p = math.tile(p, a.shape)
+
+        num_modes = a.shape[0]
+        # calculate cat each mode and concatenate with outer product
+        cats = None
+        new_cutoffs = []
+        for idx in range(num_modes):
+            cutoff = None if cutoffs is None else cutoffs[idx]
+
+            if cats is None:
+                cats, new_cutoff = self._prepare_single_cat(a[idx], phi[idx], p[idx], cutoff)
+            else:
+                next_cat, new_cutoff = self._prepare_single_cat(a[idx], phi[idx], p[idx], cutoff)
+                cats = math.outer(cats, next_cat)
+            new_cutoffs.append(new_cutoff)
+
+        return cats, cutoffs
+
+    @staticmethod
+    def _prepare_single_cat(a, phi, p, cutoff) -> Union[Tensor, int]:
+        x = a * math.cos(phi)
+        y = a * math.sin(phi)
+        theta = p * pi
+        phase = math.make_complex(math.cos(theta), math.sin(theta))
 
         c1 = Coherent(x, y)
         c2 = Coherent(-x, -y)
 
         # auto-calculate cutoffs if not defined
-        cutoffs = cutoffs or c1.cutoffs
-
-        phase = math.make_complex(math.cos(theta), math.sin(theta))
+        cutoff = cutoff or c1.cutoffs[0]
 
         # normalization constant
-        temp = math.exp(-0.5 * math.abs(self.alpha.value) ** 2)
-        N = math.sqrt(2 * (1 + math.cos(theta) * temp**4))
+        temp = math.exp(-2 * a**2)
+        N = math.sqrt(2 * (1 + math.cos(theta) * temp))
 
-        # ket
-        c1k = c1.ket(cutoffs)
-        c2k = c2.ket(cutoffs)
-        ket = (c1k + c2k) / math.cast(N, "complex128")
+        # make the ket
+        ket = (c1.ket([cutoff]) + phase * c2.ket([cutoff])) / math.cast(N, "complex128")
 
-        return ket, cutoffs
+        return ket, cutoff
