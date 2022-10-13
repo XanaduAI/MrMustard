@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HYPOTHESIS_PROFILE: ci
+      PYTEST_FLAGS: "-p no:warnings --tb=native"
+      COVERAGE_FLAGS: "--cov=mrmustard --cov-report=term-missing --cov-report=xml"
+      XDIST_FLAGS: "-n auto --dist=loadfile"
 
     steps:
       - uses: actions/checkout@v2
@@ -23,13 +26,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-          pip install wheel pytest pytest-cov --upgrade
+          pip install wheel pytest pytest-cov pytest-xdist hypothesis --upgrade
           python setup.py bdist_wheel
           pip install dist/*.whl
 
       - name: Run tests
-        run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
+        run: python -m pytest tests $PYTEST_FLAGS $COVERAGE_FLAGS $XDIST_FLAGS
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
