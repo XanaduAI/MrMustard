@@ -8,9 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HYPOTHESIS_PROFILE: ci
-      PYTEST_FLAGS: "-p no:warnings --tb=native"
-      COVERAGE_FLAGS: "--cov=mrmustard --cov-report=term-missing --cov-report=xml"
-      XDIST_FLAGS: "-n auto --dist=loadfile"
 
     steps:
       - uses: actions/checkout@v2
@@ -29,11 +26,11 @@ jobs:
       - name: Install test dependencies
         run: |
           pip install -r requirements.txt
-          pip install wheel pytest pytest-cov pytest-xdist hypothesis --upgrade
+          pip install wheel pytest pytest-cov pytest-mock hypothesis --upgrade
 
       - name: Run tests
         run: |
-          python -m pytest tests $PYTEST_FLAGS $COVERAGE_FLAGS $XDIST_FLAGS
+          python -m pytest tests -p no:warnings --tb=native
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@master

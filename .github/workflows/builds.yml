@@ -12,9 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HYPOTHESIS_PROFILE: ci
-      PYTEST_FLAGS: "-p no:warnings --tb=native"
-      COVERAGE_FLAGS: "--cov=mrmustard --cov-report=term-missing --cov-report=xml"
-      XDIST_FLAGS: "-n auto --dist=loadfile"
 
     strategy:
       fail-fast: false
@@ -38,12 +35,13 @@ jobs:
       - name: Install test dependencies
         run: |
           pip install -r requirements.txt
-          pip install wheel pytest pytest-cov pytest-xdist hypothesis --upgrade
+          pip install -r requirements-dev.txt
+          pip install wheel pytest pytest-cov pytest-mock hypothesis --upgrade
 
       - name: Run tests
         run: |
-          if [ ${{ matrix.python-version }} != "3.8" ]; then COVERAGE_FLAGS=""; fi
-          python -m pytest tests -p $PYTEST_FLAGS $COVERAGE_FLAGS $XDIST_FLAGS
+          if [ ${{ matrix.python-version }} == "3.8" ]; then COVERAGE="--cov=mrmustard --cov-report=term-missing --cov-report=xml"; else COVERAGE=""; fi
+          python -m pytest tests -p no:warnings --tb=native ${{COVERAGE}}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
