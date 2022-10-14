@@ -350,8 +350,6 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
-            modified (bool): whether to return the modified multidimensional
-                Hermite polynomials or the standard ones
 
         Returns:
             The renormalized Hermite polynomial of given shape.
