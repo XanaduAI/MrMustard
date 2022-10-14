@@ -1,0 +1,20 @@
+# Due to path filtering, a pull request that points to the develop branch of the repo will not
+# trigger the build workflow on `builds.yml` and then workflows will stay stale and prevent merging.
+# This generic workflow, with the same name, will return true in any case `the build workflow in
+# builds.yml` is not triggered.
+# see https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
+
+name: builds
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No build required" '
