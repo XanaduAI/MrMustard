@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  python38:
+  pytest:
     runs-on: ubuntu-latest
     env:
       HYPOTHESIS_PROFILE: ci
