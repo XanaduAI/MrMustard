@@ -112,9 +112,7 @@ class TestPNRDetector:
         assert np.allclose(var_i, expected_var_i)
         assert np.allclose(covar, expected_covar)
 
-    def test_postselection(
-        self,
-    ):
+    def test_postselection(self):
         """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
         n_mean = 1.0
         n_measured = 1
@@ -153,28 +151,34 @@ class TestHomodyneDetector:
         `modes` kwarg.
 
         Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0, a "vertical"
-        (angle=0) squeezed state in mode 1 and vacuum in mode 2.
+        (angle=0) squeezed state in mode 1 and vacuum in mode 2. Because the modes are separable,
+        measuring modes 1 and 2 should leave the state in the mode 0 unchaged.
 
-        Because the modes are separable, measuring modes 1 and 2 should leave the state in the
-        mode 0 unchaged.
+        Also checks postselection ensuring the x-quadrature value is consistent with the
+        postselected value.
         """
 
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
         initial_state = Vacuum(3) >> S1 >> S2
-        final_state = initial_state << Homodyne(
-            result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2]
-        )
+        homodyne = Homodyne(result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2])
+        final_state = initial_state << homodyne
 
         expected_state = Vacuum(1) >> S1
 
         assert np.allclose(final_state.dm(), expected_state.dm())
 
+        if outcome is not None:
+            # checks postselection ensuring the x-quadrature
+            # value is consistent with the postselected value
+            x_outcome = homodyne.outcome.numpy()[:2]
+            assert np.allclose(x_outcome, outcome)
+
     @given(s=st.floats(min_value=0.0, max_value=10.0), outcome=none_or_(st.floats(-10.0, 10.0)))
     def test_homodyne_on_2mode_squeezed_vacuum(self, s, outcome):
         """Check that homodyne detection on TMSV for q-quadrature (``quadrature_angle=0.0``)"""
-        homodyne = Homodyne(quadrature_angle=0.0, result=outcome)
-        r = homodyne.r.value
+        r = settings.HOMODYNE_SQUEEZING
+        homodyne = Homodyne(quadrature_angle=0.0, result=outcome, r=r)
         remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
 
         # assert expected covariance matrix
@@ -191,62 +195,55 @@ class TestHomodyneDetector:
         if outcome is not None:
             means = np.array(
                 [2 * np.sqrt(s * (1 + s)) * outcome / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
-            ) * np.sqrt(2 * hbar)
-            assert np.allclose(remaining_state.means, means)
+            )
+            assert np.allclose(remaining_state.means.numpy(), means)
 
-    @given(
-        s=st.floats(1.0, 10.0), outcome=none_or_(st.floats(-10.0, 10.0)), angle=st.floats(0, np.pi)
-    )
+    @given(s=st.floats(1.0, 10.0), outcome=none_or_(st.floats(-2, 2)), angle=st.floats(0, np.pi))
     def test_homodyne_on_2mode_squeezed_vacuum_with_angle(self, s, outcome, angle):
         """Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
-        homodyne = Homodyne(quadrature_angle=angle, result=outcome)
-        r = homodyne.r.value
+        r = settings.HOMODYNE_SQUEEZING
+        homodyne = Homodyne(quadrature_angle=angle, result=outcome, r=r)
         remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
         denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
-        cov = (
-            hbar
-            / 2
-            * np.array(
+        cov = (hbar / 2) * np.array(
+            [
                 [
-                    [
+                    1
+                    + 2 * s
+                    - 2
+                    * s
+                    * (s + 1)
+                    * (1 + 2 * s + np.cosh(2 * r) + np.cos(2 * angle) * np.sinh(2 * r))
+                    / denom,
+                    2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
+                ],
+                [
+                    2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
+                    (
                         1
                         + 2 * s
-                        - 2
-                        * s
-                        * (s + 1)
-                        * (1 + 2 * s + np.cosh(2 * r) + np.cos(2 * angle) * np.sinh(2 * r))
-                        / denom,
-                        2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
-                    ],
-                    [
-                        2 * s * (1 + s) * np.sin(2 * angle) * np.sinh(2 * r) / denom,
-                        (
-                            1
-                            + 2 * s
-                            + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
-                            + 2 * s * (s + 1) * np.cos(2 * angle) * np.sinh(2 * r)
-                        )
-                        / denom,
-                    ],
-                ]
-            )
+                        + (1 + 2 * s * (1 + s)) * np.cosh(2 * r)
+                        + 2 * s * (s + 1) * np.cos(2 * angle) * np.sinh(2 * r)
+                    )
+                    / denom,
+                ],
+            ]
         )
-        assert np.allclose(remaining_state.cov, cov)
+        assert np.allclose(remaining_state.cov.numpy(), cov, atol=1e-5)
         # TODO: figure out why this is not working
-        # denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
-        # means = (
-        #     np.array(
-        #         [
-        #             np.sqrt(s * (1 + s))
-        #             * outcome
-        #             * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r))
-        #             / denom,
-        #             -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom,
-        #         ]
+        # if outcome is not None:
+        #     outcome = outcome * np.sqrt(hbar)
+        #     denom = 1 + 2 * s * (1 + s) + (1 + 2 * s) * np.cosh(2 * r)
+        #     expected_means = (
+        #         np.array(
+        #             [
+        #                 np.sqrt(s * (1 + s)) * outcome * (np.cos(angle) * (1 + 2 * s + np.cosh(2 * r)) + np.sinh(2 * r)) / denom,
+        #                 -np.sqrt(s * (1 + s)) * outcome * (np.sin(angle) * (1 + 2 * s + np.cosh(2 * r))) / denom
+        #             ]
+        #         )
         #     )
-        #     * np.sqrt(2 * hbar)
-        # )
-        # assert np.allclose(remaining_state.means, means)
+        #     means = remaining_state.means.numpy()
+        #     assert np.allclose(means, expected_means)
 
     @given(
         s=st.floats(min_value=0.0, max_value=10.0),
@@ -256,11 +253,11 @@ class TestHomodyneDetector:
     def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(self, s, X, d):
         """Check that homodyne detection on displaced TMSV works"""
         tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
-        homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X)
-        r = homodyne.r.value
-        remaining_state = tmsv << homodyne[0]
-        xb, xa, pb, pa = d
-        means = np.array(
+        r = settings.HOMODYNE_SQUEEZING
+        homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
+        remaining_state = tmsv << homodyne
+        xb, xa, pb, pa = np.sqrt(2 * hbar) * d
+        expected_means = np.array(
             [
                 xa
                 + (2 * np.sqrt(s * (s + 1)) * (X - xb))
@@ -268,8 +265,10 @@ class TestHomodyneDetector:
                 pa
                 + (2 * np.sqrt(s * (s + 1)) * pb) / (1 + 2 * s + np.cosh(2 * r) + np.sinh(2 * r)),
             ]
-        ) * np.sqrt(2 * hbar)
-        assert np.allclose(remaining_state.means, means)
+        )
+
+        means = remaining_state.means.numpy()
+        assert np.allclose(means, expected_means)
 
     N_MEAS = 350  # number of homodyne measurements to perform
     NUM_STDS = 10.0
@@ -283,49 +282,25 @@ class TestHomodyneDetector:
             (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
         ],
     )
-    def test_fock_sampling_mean_and_var(self, state, mean_expected, var_expected):
+    @pytest.mark.parametrize("gaussian_state", [True, False])
+    def test_sampling_mean_and_var(self, state, mean_expected, var_expected, gaussian_state):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
 
         tf.random.set_seed(123)
-        state = State(dm=state.dm(cutoffs=[20]))
+        if not gaussian_state:
+            state = State(dm=state.dm(cutoffs=[40]))
+        detector = Homodyne(0.0)
 
-        results = np.empty((self.N_MEAS,))
+        results = np.empty((self.N_MEAS, 2))
         for i in range(self.N_MEAS):
-            outcome, _, _ = homodyne.sample_homodyne_fock(state, 0, mode=0, hbar=settings.HBAR)
-            results[i] = outcome
+            state << detector
+            results[i] = detector.outcome.numpy()
 
         mean = results.mean(axis=0)
-        assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
+        assert np.allclose(mean[0], mean_expected, atol=self.std_10, rtol=0)
         var = results.var(axis=0)
-        assert np.allclose(var, var_expected, atol=self.std_10, rtol=0)
-
-    @pytest.mark.parametrize(
-        "state, mean_expected, var_expected",
-        [
-            (Vacuum(1), 0.0, settings.HBAR / 2),
-            (Coherent(2.0, 0.5), 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
-            (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
-        ],
-    )
-    def test_gaussian_sampling_mean_and_var(self, state, mean_expected, var_expected):
-        """Tests that the mean and variance estimates of many homodyne
-        measurements are in agreement with the expected values for the states"""
-
-        tf.random.set_seed(123)
-        meas_state = SqueezedVacuum(settings.HOMODYNE_SQUEEZING, 0.0)
-
-        results = np.empty((self.N_MEAS,))
-        for i in range(self.N_MEAS):
-            outcome, _ = gaussian.general_dyne(
-                state.cov, state.means, meas_state.cov, meas_state.means, settings.HBAR, True
-            )
-            results[i] = outcome[0]
-
-        mean = results.mean(axis=0)
-        assert np.allclose(mean, mean_expected, atol=self.std_10, rtol=0)
-        var = results.var(axis=0)
-        assert np.allclose(var, var_expected, atol=self.std_10, rtol=0)
+        assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
 
     def test_homodyne_squeezing_setting(self):
         """Check default homodyne squeezing on settings leads to the correct generaldyne
@@ -383,22 +358,18 @@ class TestHeterodyneDetector:
 
         # assert expected covariance
         cov = hbar / 2 * np.array([[1, 0], [0, 1]])
-        assert np.allclose(remaining_state.cov, cov)
+        assert np.allclose(remaining_state.cov.numpy(), cov)
 
         # assert expected means vector, not tested when x or y is None
         # because we cannot access the sampled outcome value
         if (x is not None) and (y is not None):
-            xb, xa, pb, pa = d
-            means = (
-                np.array(
-                    [
-                        xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
-                        pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
-                    ]
-                )
-                * np.sqrt(2 * hbar)
-                / (1 + s)
-            )
+            xb, xa, pb, pa = d * np.sqrt(2 * hbar)
+            means = np.array(
+                [
+                    xa * (1 + s) + np.sqrt(s * (1 + s)) * (x - xb),
+                    pa * (1 + s) + np.sqrt(s * (1 + s)) * (pb - y),
+                ]
+            ) / (1 + s)
             assert np.allclose(remaining_state.means, means, atol=1e-5)
 
 
