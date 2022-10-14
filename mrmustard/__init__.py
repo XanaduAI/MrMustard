@@ -1,7 +1,19 @@
-# this is the topmost __init__.py file of the mrmustard package
+# Copyright 2022 Xanadu Quantum Technologies Inc.
 
-# from rich.pretty import install  # NOTE: just for the looks
-# install()
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""This is the top-most `__init__.py` file of MrMustard package."""
+
 from ._version import __version__
 
 # pylint: disable=too-many-instance-attributes
@@ -110,7 +122,6 @@ def about():
         import torch
 
         torch_version = torch.__version__
+        print("Torch version:             {}".format(torch_version))
     except ImportError:
         torch_version = None
-
-    print("Torch version:             {}".format(torch_version))
