@@ -118,7 +118,7 @@ def about():
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
 
-    try:
+    try:  # pragma: no cover
         import torch
 
         torch_version = torch.__version__
