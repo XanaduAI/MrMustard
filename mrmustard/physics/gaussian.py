@@ -17,7 +17,6 @@ This module contains functions for performing calculations on Gaussian states.
 """
 
 from typing import Tuple, Union, Sequence, Any, Optional
-from numpy import pi
 from thewalrus.quantum import is_pure_cov
 from mrmustard.types import Matrix, Vector, Scalar
 from mrmustard.utils.xptensor import XPMatrix, XPVector
@@ -767,8 +766,11 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the Von Neumann entropy
     """
+
+    def g(x):
+        return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+
     symp_vals = symplectic_eigenvals(cov, hbar)
-    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
 

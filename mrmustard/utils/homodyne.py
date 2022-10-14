@@ -19,9 +19,7 @@ from functools import lru_cache, wraps
 
 import numpy as np
 
-from mrmustard import settings
-from mrmustard.types import Tuple, List, Union, Iterable, Tensor
-from mrmustard import lab
+from mrmustard.types import Tuple, Tensor
 from mrmustard.math import Math
 
 if TYPE_CHECKING:

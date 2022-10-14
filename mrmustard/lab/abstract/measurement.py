@@ -18,7 +18,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.math import Math
 
-from mrmustard.types import Tensor, Callable, Sequence, Iterable, Optional, Union
+from mrmustard.types import Tensor, Callable, Sequence, Iterable, Union
 from mrmustard import settings
 from .state import State
 
@@ -35,7 +35,7 @@ class Measurement(ABC):
 
         # used to evaluate if the measurement outcome should be
         # sampled or is already defined by the user (postselection)
-        self._postselect = False if outcome is None else True
+        self._postselect = bool(None)
 
     @property
     def modes(self):
@@ -51,7 +51,7 @@ class Measurement(ABC):
     def postselected(self):
         return self._postselect
 
-    @abstractproperty
+    @property
     def outcome(self):
         ...
 
@@ -59,8 +59,8 @@ class Measurement(ABC):
         """performs the measurement according to the representation of the incoming state"""
         if other.is_gaussian:
             return self._measure_gaussian(other)
-        else:
-            return self._measure_fock(other)
+
+        return self._measure_fock(other)
 
     @abstractmethod
     def _measure_fock(self, other: State) -> Union[State, float]:
@@ -73,10 +73,10 @@ class Measurement(ABC):
     def __lshift__(self, other) -> Union[State, float]:
         if isinstance(other, State):
             self.primal(other)
-        else:
-            raise TypeError(
-                f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
-            )
+
+        raise TypeError(
+            f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
+        )
 
     def __getitem__(self, items) -> Callable:
         """Allows measurements to be used as ``output = meas[0,1](input)``,
@@ -110,6 +110,7 @@ class FockMeasurement(Measurement):
         self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
         super().__init__(outcome, modes)
 
+    @property
     def outcome(self):
         raise NotImplementedError
 

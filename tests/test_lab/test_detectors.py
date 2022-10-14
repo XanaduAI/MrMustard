@@ -38,8 +38,6 @@ from mrmustard.lab import (
     SqueezedVacuum,
 )
 from mrmustard import physics, settings
-from mrmustard.utils import homodyne
-from mrmustard.physics import gaussian
 from tests.random import none_or_
 
 math = Math()
@@ -161,8 +159,8 @@ class TestHomodyneDetector:
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
         initial_state = Vacuum(3) >> S1 >> S2
-        homodyne = Homodyne(result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2])
-        final_state = initial_state << homodyne
+        detector = Homodyne(result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2])
+        final_state = initial_state << detector
 
         expected_state = Vacuum(1) >> S1
 
@@ -171,15 +169,15 @@ class TestHomodyneDetector:
         if outcome is not None:
             # checks postselection ensuring the x-quadrature
             # value is consistent with the postselected value
-            x_outcome = homodyne.outcome.numpy()[:2]
+            x_outcome = detector.outcome.numpy()[:2]
             assert np.allclose(x_outcome, outcome)
 
     @given(s=st.floats(min_value=0.0, max_value=10.0), outcome=none_or_(st.floats(-10.0, 10.0)))
     def test_homodyne_on_2mode_squeezed_vacuum(self, s, outcome):
         """Check that homodyne detection on TMSV for q-quadrature (``quadrature_angle=0.0``)"""
         r = settings.HOMODYNE_SQUEEZING
-        homodyne = Homodyne(quadrature_angle=0.0, result=outcome, r=r)
-        remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
+        detector = Homodyne(quadrature_angle=0.0, result=outcome, r=r)
+        remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << detector[0]
 
         # assert expected covariance matrix
         cov = (hbar / 2.0) * np.diag(
@@ -202,8 +200,8 @@ class TestHomodyneDetector:
     def test_homodyne_on_2mode_squeezed_vacuum_with_angle(self, s, outcome, angle):
         """Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
         r = settings.HOMODYNE_SQUEEZING
-        homodyne = Homodyne(quadrature_angle=angle, result=outcome, r=r)
-        remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << homodyne[0]
+        detector = Homodyne(quadrature_angle=angle, result=outcome, r=r)
+        remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << detector[0]
         denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
         cov = (hbar / 2) * np.array(
             [
@@ -254,8 +252,8 @@ class TestHomodyneDetector:
         """Check that homodyne detection on displaced TMSV works"""
         tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
         r = settings.HOMODYNE_SQUEEZING
-        homodyne = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
-        remaining_state = tmsv << homodyne
+        detector = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
+        remaining_state = tmsv << detector
         xb, xa, pb, pa = np.sqrt(2 * hbar) * d
         expected_means = np.array(
             [
@@ -294,7 +292,7 @@ class TestHomodyneDetector:
 
         results = np.empty((self.N_MEAS, 2))
         for i in range(self.N_MEAS):
-            state << detector
+            _ = state << detector
             results[i] = detector.outcome.numpy()
 
         mean = results.mean(axis=0)
@@ -303,7 +301,7 @@ class TestHomodyneDetector:
         assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
 
     def test_homodyne_squeezing_setting(self):
-        """Check default homodyne squeezing on settings leads to the correct generaldyne
+        r"""Check default homodyne squeezing on settings leads to the correct generaldyne
         covarince matrix: one that has tends to :math:`diag(1/\sigma[1,1],0)`."""
 
         sigma = np.identity(2)

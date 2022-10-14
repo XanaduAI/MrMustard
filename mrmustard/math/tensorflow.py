@@ -298,8 +298,8 @@ class TFMath(MathInterface):
     def map_fn(self, func, elements):
         return tf.map_fn(func, elements)
 
-    def squeeze(self, input, axis=[]):
-        return tf.squeeze(input, axis=axis)
+    def squeeze(self, tensor, axis=None):
+        return tf.squeeze(tensor, axis=axis or [])
 
     def cholesky(self, input: Tensor):
         return tf.linalg.cholesky(input)

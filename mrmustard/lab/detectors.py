@@ -224,13 +224,21 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
 
 class Generaldyne(Measurement):
+    r"""Generaldyne measurement on given modes.
+
+    Args:
+        state (State): the Gaussian state of the measurment device
+        outcome (optional or List[float]): the means of the measurement state, defaults to ``None``
+        modes (List[int]): the modes on which the measurement is acting on
+    """
+
     def __init__(
         self, state: State, outcome: Optional[Tensor] = None, modes: Optional[Iterable[int]] = None
     ) -> None:
 
         if not state.is_gaussian:
             raise TypeError("Generaldyne measurement state must be Gaussian.")
-        if outcome is not None and not (outcome.shape == state.means.shape):
+        if outcome is not None and not outcome.shape == state.means.shape:
             raise TypeError(
                 f"Expected `outcome` of size {state.means.shape} but got {outcome.shape}."
             )

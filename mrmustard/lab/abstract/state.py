@@ -32,7 +32,7 @@ from mrmustard.types import (
     List,
     Iterable,
 )
-from mrmustard.utils import graphics, homodyne
+from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
