@@ -1,13 +1,24 @@
 name: Formatting check
 on:
-- pull_request
+  pull_request:
 
 jobs:
   black:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v1
-    - name: Black Code Formatter
-      uses: lgeiger/black-action@v1.0.1
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        args: "-l 100 mrmustard/ tests/ --check"
+        python-version: 3.8
+
+    - name: Install black formatter
+      run: |
+        python -m pip install --upgrade pip
+        pip install black
+
+    - name: Check formatting
+      run: |
+        python -m black -l 100 mrmustard/ tests/ --check
