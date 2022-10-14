@@ -1,0 +1,56 @@
+name: builds
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HYPOTHESIS_PROFILE: ci
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build and install Mr Mustard
+        run: |
+          python -m pip install --upgrade pip wheel
+          python setup.py bdist_wheel
+          pip install dist/mrmustard*.whl
+
+      - name: Install test dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install wheel pytest pytest-cov pytest-mock hypothesis --upgrade
+
+      - name: Run tests
+        run: |
+          if [ ${{ matrix.python-version }} == "3.8" ]; then COVERAGE="--cov=mrmustard --cov-report=term-missing --cov-report=xml"; else COVERAGE=""; fi
+          python -m pytest tests -p no:warnings --tb=native ${{COVERAGE}}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: ${{ matrix.python-version }} == '3.8'
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: true
