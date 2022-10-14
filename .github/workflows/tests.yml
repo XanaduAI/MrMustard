@@ -12,6 +12,11 @@ jobs:
       HYPOTHESIS_PROFILE: ci
 
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action
+        with:
+          access_token: ${{ github.token }}
+
       - uses: actions/checkout@v3
 
       - name: Setup python ${{ matrix.python-version }}
