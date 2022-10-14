@@ -67,7 +67,7 @@ def physicist_hermite_polys(x: Tensor, cutoff: int):
     R = math.astensor(2 * np.ones([1, 1]))  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        return math.hermite_renormalized(R, math.astensor([xi]), 1, cutoff)
+        return math.hermite_renormalized(R, math.astensor([xi]), 1, cutoff, modified=False)
 
     return math.map_fn(f_hermite_polys, x)
 
