@@ -339,7 +339,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], modified: bool = False
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -360,7 +360,7 @@ class TFMath(MathInterface):
             shape = shape[0]
 
         poly = hermite_multidimensional(
-            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, modified
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
         )
 
         def grad(dLdpoly):
