@@ -49,7 +49,7 @@ class Settings:
 
     @backend.setter
     def backend(self, backend_name: str):
-        if backend_name not in ["tensorflow", "torch"]:
+        if backend_name not in ["tensorflow", "torch"]:  # pragma: no cover
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = backend_name
 
