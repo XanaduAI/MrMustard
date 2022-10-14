@@ -15,7 +15,7 @@
 """This module contains the implementation of the class :class:`FockMeasurement`."""
 
 from __future__ import annotations
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from mrmustard.math import Math
 
 from mrmustard.types import Tensor, Callable, Sequence, Iterable, Union
@@ -35,7 +35,7 @@ class Measurement(ABC):
 
         # used to evaluate if the measurement outcome should be
         # sampled or is already defined by the user (postselection)
-        self._postselect = bool(None)
+        self._postselect = bool(outcome)
 
     @property
     def modes(self):
