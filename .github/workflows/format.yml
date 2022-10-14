@@ -21,4 +21,4 @@ jobs:
 
     - name: Check formatting
       run: |
-        "python -m black -l 100 mrmustard/ tests/ --check"
+        python -m black -l 100 mrmustard/ tests/ --check
