@@ -171,7 +171,7 @@ class Sgate(Parametrized, Transformation):
         phi: Union[Optional[float], Optional[List[float]]] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
-        r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        r_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
     ):
