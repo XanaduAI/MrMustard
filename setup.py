@@ -22,6 +22,7 @@ requirements = [
     "numba",
     "thewalrus>=0.17.0",
     "tensorflow>=2.4.0",
+    "tensorflow-probability",
     "rich",
     "tqdm",
     "matplotlib",

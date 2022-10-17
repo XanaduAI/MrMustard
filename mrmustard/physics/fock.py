@@ -380,7 +380,7 @@ def contract_states(
         normalize: whether to normalize the result
 
     Returns:
-        State: the contracted state (subsystem of ``A``)
+        Tensor: the contracted state tensor (subsystem of ``A``). Either ket or dm.
     """
     indices = list(range(len(modes)))
     if not a_is_mixed and not b_is_mixed:

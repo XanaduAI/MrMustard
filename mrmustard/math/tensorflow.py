@@ -16,6 +16,7 @@
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from mrmustard.math.autocast import Autocast
@@ -294,6 +295,21 @@ class TFMath(MathInterface):
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
 
+    def map_fn(self, func, elements):
+        return tf.map_fn(func, elements)
+
+    def squeeze(self, tensor, axis=None):
+        return tf.squeeze(tensor, axis=axis or [])
+
+    def cholesky(self, input: Tensor):
+        return tf.linalg.cholesky(input)
+
+    def Categorical(self, probs: Tensor, name: str):
+        return tfp.distributions.Categorical(probs=probs, name=name)
+
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
+
     # ~~~~~~~~~~~~~~~~~
     # Special functions
     # ~~~~~~~~~~~~~~~~~
@@ -323,7 +339,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], modified: bool = True
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -334,12 +350,17 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
+            modified (bool): whether to return the modified multidimensional
+                Hermite polynomials or the standard ones
 
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(
-            hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype
+        if isinstance(shape, List) and len(shape) == 1:
+            shape = shape[0]
+
+        poly = hermite_multidimensional(
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, modified
         )
 
         def grad(dLdpoly):
