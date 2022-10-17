@@ -26,6 +26,14 @@ math = Math()
 
 
 class Measurement(ABC):
+    """This is an abstract class holding the common methods and properties that any measurement should
+    implement.
+
+    Args:
+        outcome (optional, List[float] or Array): the result of the measurement
+        modes (List[int]): the modes on which the measurement is acting on
+    """
+
     def __init__(self, outcome: Tensor, modes: Iterable[int]) -> None:
         super().__init__()
 
@@ -33,34 +41,30 @@ class Measurement(ABC):
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._modes = modes
 
-        # used to evaluate if the measurement outcome should be
-        # sampled or is already defined by the user (postselection)
         self._is_postselected = False if outcome is None else True
+        """used to evaluate if the measurement outcome should be
+        sampled or is already defined by the user (postselection)"""
 
     @property
     def modes(self):
-        r"""Returns the modes being measured."""
+        r"""returns the modes being measured"""
         return self._modes
 
     @property
     def num_modes(self):
-        r"""Returns the modes being measured."""
+        r"""returns the number of modes being measured"""
         return len(self.modes)
 
     @property
     def postselected(self):
+        r"""returns whether the measurement is postselected, i.e, a outcome has been provided"""
         return self._is_postselected
 
     @property
+    @abstractmethod
     def outcome(self):
+        """Returns outcome of the measurement. If no measurement has been carried out returns `None`."""
         ...
-
-    def primal(self, other: State) -> Union[State, float]:
-        """performs the measurement according to the representation of the incoming state"""
-        if other.is_gaussian:
-            return self._measure_gaussian(other)
-
-        return self._measure_fock(other)
 
     @abstractmethod
     def _measure_fock(self, other: State) -> Union[State, float]:
@@ -69,6 +73,13 @@ class Measurement(ABC):
     @abstractmethod
     def _measure_gaussian(self, other: State) -> Union[State, float]:
         ...
+
+    def primal(self, other: State) -> Union[State, float]:
+        """performs the measurement procedure according to the representation of the incoming state"""
+        if other.is_gaussian:
+            return self._measure_gaussian(other)
+
+        return self._measure_fock(other)
 
     def __lshift__(self, other) -> Union[State, float]:
         if isinstance(other, State):
@@ -79,8 +90,8 @@ class Measurement(ABC):
         )
 
     def __getitem__(self, items) -> Callable:
-        """Allows measurements to be used as ``output = meas[0,1](input)``,
-        e.g. measuring modes 0 and 1.
+        """Assign modes via the getitem syntax: allows measurements to be used as
+        ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
         """
         if isinstance(items, int):
             modes = [items]
