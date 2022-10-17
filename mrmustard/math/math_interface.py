@@ -252,6 +252,18 @@ class MathInterface(ABC):
             array: hyperbolic cosine of array
         """
 
+    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
+        """Given two real tensors representing the real and imaginary part of a complex number,
+        this operation returns a complex tensor. The input tensors must have the same shape.
+
+        Args:
+            real (array): real part of the complex number
+            imag (array): imaginary part of the complex number
+
+        Returns:
+            array: complex array ``real + 1j * imag``
+        """
+
     @abstractmethod
     def atan2(self, y: Tensor, x: Tensor) -> Tensor:
         r"""Computes the trignometric inverse tangent of y/x element-wise.
@@ -389,7 +401,9 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
+    def hermite_renormalized(
+        self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int], modified: bool
+    ) -> Tensor:
         r"""Returns the array of hermite renormalized polynomials of the given coefficients.
 
         Args:
@@ -397,6 +411,8 @@ class MathInterface(ABC):
             B (array): Vector coefficient of the hermite polynomial
             C (array): Scalar coefficient of the hermite polynomial
             shape (tuple): shape of the hermite polynomial
+            modified (bool): whether to return the modified multidimensional
+                Hermite polynomials or the standard ones
 
         Returns:
             array: renormalized hermite polynomials
@@ -826,6 +842,72 @@ class MathInterface(ABC):
 
         Returns:
             array: array of zeros
+        """
+
+    @abstractmethod
+    def map_fn(self, func, elements: Tensor) -> Tensor:
+        """Transforms elems by applying fn to each element unstacked on axis 0.
+
+        Args:
+            func (func): The callable to be performed. It accepts one argument,
+                which will have the same (possibly nested) structure as elems.
+            elements (Tensor): A tensor or (possibly nested) sequence of tensors,
+                each of which will be unstacked along their first dimension.
+                ``func`` will be applied to the nested sequence of the resulting slices.
+
+        Returns:
+            Tensor: applied ``func`` on ``elements``
+        """
+
+    @abstractmethod
+    def squeeze(self, tensor: Tensor, axis: Optional[List[int]]) -> Tensor:
+        """Removes dimensions of size 1 from the shape of a tensor.
+
+        Args:
+            tensor (Tensor): the tensor to squeeze
+            axis (Optional[List[int]]): if specified, only squeezes the
+                dimensions listed, defaults to []
+
+        Returns:
+            Tensor: tensor with one or more dimensions of size 1 removed
+        """
+
+    @abstractmethod
+    def cholesky(self, input: Tensor) -> Tensor:
+        """Computes the Cholesky decomposition of square matrices.
+
+        Args:
+            input (Tensor)
+
+        Returns:
+            Tensor: tensor with the same type as input
+        """
+
+    @abstractmethod
+    def Categorical(self, probs: Tensor, name: str):
+        """Categorical distribution over integers.
+
+        Args:
+            probs (Tensor): tensor representing the probabilities of a set of Categorical
+                distributions.
+            name (str): name prefixed to operations created by this class
+
+        Returns:
+            tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
+        """
+
+    @abstractmethod
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
+        vector (aka "mu") and a (batch of) k x k scale matrix; covariance = scale @ scale.T
+        where @ denotes matrix-multiplication.
+
+        Args:
+            loc (Tensor): if this is set to None, loc is implicitly 0
+            scale_tril: lower-triangular Tensor with non-zero diagonal elements
+
+        Returns:
+            tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
         """
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

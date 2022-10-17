@@ -303,7 +303,7 @@ class TorchMath(MathInterface):
         return hash(tensor)
 
     def hermite_renormalized(
-        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
+        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int], modified: bool
     ) -> torch.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial.
 

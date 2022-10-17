@@ -26,6 +26,7 @@ from tests import random
 from mrmustard.physics import fock
 from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
+from mrmustard.physics import fock
 from mrmustard.lab.gates import (
     Dgate,
     Sgate,
@@ -152,6 +153,35 @@ def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
     assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
+
+
+@pytest.mark.parametrize(
+    "cutoffs,angles,modes",
+    [
+        [[5, 4, 3], [np.pi, np.pi / 2, np.pi / 4], None],
+        [[3, 4], [np.pi / 3, np.pi / 2], [0, 1]],
+        [[3], np.pi / 6, [0]],
+    ],
+)
+def test_fock_representation_rgate(cutoffs, angles, modes):
+    """Tests that DGate returns the correct unitary."""
+
+    # apply gate
+    rgate = Rgate(angles, modes=modes)
+    R = rgate.U(cutoffs)
+
+    # compare with the standard way of calculating
+    # transformation unitaries using the Choi isomorphism
+    choi_state = rgate.bell >> rgate
+    expected_R = fock.fock_representation(
+        choi_state.cov,
+        choi_state.means,
+        shape=cutoffs * 2,
+        return_unitary=True,
+        choi_r=settings.CHOI_R,
+    )
+
+    assert np.allclose(R, expected_R, atol=1e-5)
 
 
 def test_raise_interferometer_error():

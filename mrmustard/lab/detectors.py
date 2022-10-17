@@ -16,17 +16,20 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional
-from mrmustard.types import Matrix
+from typing import List, Tuple, Union, Optional, Iterable
+from mrmustard.types import Matrix, Tensor
 from mrmustard.training import Parametrized
-from mrmustard.lab.abstract import FockMeasurement
-from mrmustard.lab.states import DisplacedSqueezed, Coherent
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics import gaussian, fock
+from mrmustard.utils import homodyne as utils_homodyne
+from .abstract import FockMeasurement, Measurement, State
+from .states import DisplacedSqueezed, Coherent
+from .gates import Rgate
 
 math = Math()
 
-__all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
+__all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heterodyne"]
 
 # pylint: disable=no-member
 class PNRDetector(Parametrized, FockMeasurement):
@@ -67,13 +70,6 @@ class PNRDetector(Parametrized, FockMeasurement):
         modes: List[int] = None,
         cutoffs: Union[int, List[int]] = None,
     ):
-        if modes is not None:
-            num_modes = len(modes)
-        elif cutoffs is not None:
-            num_modes = len(cutoffs)
-        else:
-            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
-
         Parametrized.__init__(
             self,
             efficiency=math.atleast_1d(efficiency),
@@ -83,12 +79,20 @@ class PNRDetector(Parametrized, FockMeasurement):
             efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
         )
-        FockMeasurement.__init__(self)
 
         self._stochastic_channel = stochastic_channel
-        self._modes = modes or list(range(num_modes))
-        self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * num_modes
         self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
+
+        if modes is not None:
+            num_modes = len(modes)
+        elif cutoffs is not None:
+            num_modes = len(cutoffs)
+        else:
+            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+
+        modes = modes or list(range(num_modes))
+        outcome = None
+        FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
@@ -164,10 +168,14 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             num_modes = len(modes)
         else:
             num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_count_prob)))
+
         if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
             efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
         if len(math.atleast_1d(dark_count_prob)) == 1 and num_modes > 1:
             dark_count_prob = math.tile(math.atleast_1d(dark_count_prob), [num_modes])
+
+        modes = modes or list(range(num_modes))
+
         Parametrized.__init__(
             self,
             efficiency=efficiency,
@@ -177,14 +185,16 @@ class ThresholdDetector(Parametrized, FockMeasurement):
             efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
         )
-        FockMeasurement.__init__(self)
 
         self._stochastic_channel = stochastic_channel
-        self._modes = modes or list(range(num_modes))
-        self._cutoffs = [2] * num_modes
+
+        cutoffs = [2] * num_modes
         self._should_recompute_stochastic_channel = (
             efficiency_trainable or dark_count_prob_trainable
         )
+
+        outcome = None
+        FockMeasurement.__init__(outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
@@ -213,14 +223,75 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 self._internal_stochastic_channel.append(condprob)
 
 
-class Heterodyne(Coherent):
+class Generaldyne(Measurement):
+    r"""Generaldyne measurement on given modes.
+
+    Args:
+        state (State): the Gaussian state of the measurment device
+        outcome (optional or List[float]): the means of the measurement state, defaults to ``None``
+        modes (List[int]): the modes on which the measurement is acting on
+    """
+
+    def __init__(
+        self, state: State, outcome: Optional[Tensor] = None, modes: Optional[Iterable[int]] = None
+    ) -> None:
+
+        if not state.is_gaussian:
+            raise TypeError("Generaldyne measurement state must be Gaussian.")
+        if outcome is not None and not outcome.shape == state.means.shape:
+            raise TypeError(
+                f"Expected `outcome` of size {state.means.shape} but got {outcome.shape}."
+            )
+
+        self.state = state
+
+        if modes is None:
+            modes = self.state.modes
+        else:
+            # ensure measurement and state act on the same modes
+            self.state = state[modes]
+
+        super().__init__(outcome, modes)
+
+    @property
+    def outcome(self) -> Tensor:
+        return self.state.means
+
+    def primal(self, other: State) -> Union[State, float]:
+        if self.postselected:
+            # return the projection of self.state onto other
+            return self.state.primal(other)
+
+        return super().primal(other)
+
+    def _measure_gaussian(self, other) -> Union[State, float]:
+
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        outcome, prob, new_cov, new_means = gaussian.general_dyne(
+            other.cov, other.means, self.state.cov, None, modes=self.modes
+        )
+        self.state = State(cov=self.state.cov, means=outcome)
+
+        return (
+            prob
+            if len(remaining_modes) == 0
+            else State(cov=new_cov, means=new_means, modes=remaining_modes, _norm=prob)
+        )
+
+    def _measure_fock(self, other) -> Union[State, float]:
+        raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
+
+
+class Heterodyne(Generaldyne):
     r"""Heterodyne measurement on given modes.
 
     This class is just a thin wrapper around the :class:`Coherent`.
+    If neither ``x`` or ``y`` is provided then values will be sampled.
 
     Args:
-        x (float or List[float]): the x-displacement of the coherent state
-        y (float or List[float]): the y-displacement of the coherent state
+        x (optional float or List[float]): the x-displacement of the coherent state, defaults to ``None``
+        y (optional or List[float]): the y-displacement of the coherent state, defaults to ``None``
         modes (List[int]): the modes of the coherent state
     """
 
@@ -230,11 +301,30 @@ class Heterodyne(Coherent):
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
-        super().__init__(x, y, modes=modes)
+
+        if (x is None) ^ (y is None):  # XOR
+            raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
+
+        # if no x and y provided, sample the outcome
+        if x is None and y is None:
+            num_modes = len(modes) if modes is not None else 1
+            x, y = math.zeros([num_modes]), math.zeros([num_modes])
+            outcome = None
+        else:
+            x = math.atleast_1d(x, dtype="float64")
+            y = math.atleast_1d(y, dtype="float64")
+            outcome = math.concat([x, y], axis=0)  # XXPP ordering
+
+        modes = modes or list(range(x.shape[0]))
+
+        units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        state = Coherent(x / units_factor, y / units_factor)
+        super().__init__(state=state, outcome=outcome, modes=modes)
 
 
-class Homodyne(DisplacedSqueezed):
-    r"""Homodyne measurement on given modes.
+class Homodyne(Generaldyne):
+    """Homodyne measurement on given modes. If ``result`` is not provided then the value
+    is sampled.
 
     Args:
         quadrature_angle (float or List[float]): measurement quadrature angle
@@ -246,19 +336,105 @@ class Homodyne(DisplacedSqueezed):
     def __init__(
         self,
         quadrature_angle: Union[float, List[float]],
-        result: Union[float, List[float]] = 0.0,
-        modes: List[int] = None,
+        result: Optional[Union[float, List[float]]] = None,
+        modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
-        quadrature_angle = math.astensor(quadrature_angle, dtype="float64")
-        result = math.astensor(result, dtype="float64")
-        x = result * math.cos(quadrature_angle)
-        y = result * math.sin(quadrature_angle)
-        r = math.astensor(r, dtype="float64")
-        super().__init__(
-            r=r,
-            phi=2 * quadrature_angle,
-            x=x,
-            y=y,
-            modes=modes,
+
+        self.r = r
+        self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
+
+        # if no ``result`` provided, sample the outcome
+        if result is None:
+            x = math.zeros_like(self.quadrature_angle)
+            y = math.zeros_like(self.quadrature_angle)
+            outcome = None
+        else:
+            result = math.atleast_1d(result, dtype="float64")
+            if result.shape[-1] == 1:
+                result = math.tile(result, self.quadrature_angle.shape)
+
+            x = result * math.cos(self.quadrature_angle)
+            y = result * math.sin(self.quadrature_angle)
+            outcome = math.concat([x, y], axis=0)  # XXPP ordering
+
+        modes = modes or list(range(self.quadrature_angle.shape[0]))
+
+        units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        state = DisplacedSqueezed(
+            r=r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+        )
+        super().__init__(state=state, outcome=outcome, modes=modes)
+
+    def _measure_gaussian(self, other) -> Union[State, float]:
+
+        # rotate modes to be measured to the Homodyne basis
+        other >>= Rgate(-self.quadrature_angle, modes=self.modes)
+        self.state >>= Rgate(-self.quadrature_angle, modes=self.modes)
+
+        # perform homodyne measurement as a generaldyne one
+        out = super()._measure_gaussian(other)
+
+        # set p-outcomes to 0 and rotate the measurement device state back to the original basis,
+        # this is in turn rotating the outcomes to the original basis
+        self_state_means = math.concat(
+            [self.state.means[: self.num_modes], math.zeros((self.num_modes,))], axis=0
+        )
+        self.state = State(cov=self.state.cov, means=self_state_means, modes=self.modes) >> Rgate(
+            self.quadrature_angle, modes=self.modes
+        )
+
+        return out
+
+    def _measure_fock(self, other) -> Union[State, float]:
+
+        if len(self.modes) > 1:
+            raise NotImplementedError(
+                "Multimode Homodyne sampling for Fock representation is not yet implemented."
+            )
+
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        # create reduced state of modes to be measured on the homodyne basis
+        reduced_state = other.get_modes(self.modes) >> Rgate(
+            -self.quadrature_angle, modes=self.modes
+        )
+
+        # build pdf and sample homodyne outcome
+        x_outcome, probability = utils_homodyne.sample_homodyne_fock(
+            state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
+            hbar=settings.HBAR,
+        )
+
+        # Define conditional state of the homodyne measurement device and rotate back to the original basis.
+        # Note: x_outcome already has units of sqrt(hbar). Here is divided by sqrt(2*hbar) to cancel the multiplication
+        # factor of the displacement symplectic inside the DisplacedSqueezed state.
+        x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        self.state = DisplacedSqueezed(
+            r=self.r, phi=self.quadrature_angle, x=x_arg, y=0.0, modes=self.modes
+        ) >> Rgate(self.quadrature_angle, modes=self.modes)
+
+        if remaining_modes == 0:
+            return probability
+
+        self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        out_fock = fock.contract_states(
+            stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+            stateB=self.state.ket(self_cutoffs),
+            a_is_mixed=other.is_mixed,
+            b_is_mixed=False,
+            modes=other.indices(self.modes),
+            normalize=False,
+        )
+
+        return (
+            State(dm=out_fock, modes=remaining_modes, _norm=probability)
+            if other.is_mixed
+            else State(ket=out_fock, modes=remaining_modes, _norm=probability)
         )
