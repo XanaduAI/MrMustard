@@ -116,6 +116,9 @@ class TFMath(MathInterface):
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
 
+    def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
+        return tf.complex(real, imag)
+
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
 
