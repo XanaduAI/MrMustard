@@ -16,5 +16,5 @@
 """
 
 from .state import State
-from .measurement import FockMeasurement
+from .measurement import FockMeasurement, Measurement
 from .transformation import Transformation

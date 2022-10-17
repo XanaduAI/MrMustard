@@ -2,6 +2,22 @@
 
 ### New features
 
+* Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
+specified by the user, a value is sampled from the reduced state probability distribution and the
+conditional state on the remaining modes is generated.
+[(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+
+    ```python
+    import numpy as np
+    from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+
+    # conditional state from measurement
+    conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+
+    # measurement outcome
+    measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+    ```
+
 ### Breaking changes
 
 ### Improvements
@@ -78,6 +94,7 @@ This release contains contributions from (in alphabetical order):
     print(mode.purity)
   ```
   [(#140)](https://github.com/XanaduAI/MrMustard/pull/140)
+
 
 ### Breaking changes
 

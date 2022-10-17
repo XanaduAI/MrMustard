@@ -167,6 +167,19 @@ def test_get_modes():
     assert b == (a & b).get_modes([2, 3])
 
 
+def test_get_single_mode():
+    """Test get_modes leaves a single-mode state untouched."""
+    a = Gaussian(1)[1]
+    assert a == a.get_modes([1])
+
+
+def test_get_single_mode_fail():
+    """Test get_modes leaves a single-mode state untouched."""
+    a = Gaussian(1)[1]
+    with pytest.raises(ValueError):
+        a.get_modes([0])
+
+
 def test_iter():
     """Test we can iterate individual modes in states."""
     a = Gaussian(1)

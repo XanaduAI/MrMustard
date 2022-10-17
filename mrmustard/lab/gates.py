@@ -22,11 +22,10 @@ from typing import Union, Optional, List, Tuple, Sequence
 import numpy as np
 from mrmustard.types import Tensor
 from mrmustard import settings
-from mrmustard.lab.abstract import Transformation
 from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
-
 from mrmustard.math import Math
+from .abstract import Transformation
 
 math = Math()
 
