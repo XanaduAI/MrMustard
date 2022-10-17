@@ -26,8 +26,8 @@ math = Math()
 
 
 class Measurement(ABC):
-    """This is an abstract class holding the common methods and properties that any measurement should
-    implement.
+    """this is an abstract class holding the common methods and properties that any measurement should
+    implement
 
     Args:
         outcome (optional, List[float] or Array): the result of the measurement
