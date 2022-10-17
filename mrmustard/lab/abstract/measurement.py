@@ -35,7 +35,7 @@ class Measurement(ABC):
 
         # used to evaluate if the measurement outcome should be
         # sampled or is already defined by the user (postselection)
-        self._postselect = bool(outcome)
+        self._is_postselected = False if outcome is None else True
 
     @property
     def modes(self):
@@ -49,7 +49,7 @@ class Measurement(ABC):
 
     @property
     def postselected(self):
-        return self._postselect
+        return self._is_postselected
 
     @property
     def outcome(self):
