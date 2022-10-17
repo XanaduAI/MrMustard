@@ -265,6 +265,18 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def atan2(self, y: Tensor, x: Tensor) -> Tensor:
+        r"""Computes the trignometric inverse tangent of y/x element-wise.
+
+        Args:
+            y (array): numerator array
+            x (array): denominator array
+
+        Returns:
+            array: arctan of y/x
+        """
+
+    @abstractmethod
     def det(self, matrix: Tensor) -> Tensor:
         r"""Returns the determinant of matrix.
 
@@ -404,6 +416,19 @@ class MathInterface(ABC):
 
         Returns:
             array: renormalized hermite polynomials
+        """
+
+    @abstractmethod
+    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, dtype):
+        r"""Calculates the matrix elements of the displacement gate and its derivatives.
+
+        Args:
+            r (float): displacement magnitude
+            phi (float): displacement angle
+            cutoff (int): Fock ladder cutoff
+            dtype (data type): Specifies the data type used for the calculation
+        Returns:
+            Tuple(array[complex], function): matrix representing the displacement operation and its gradient
         """
 
     @abstractmethod

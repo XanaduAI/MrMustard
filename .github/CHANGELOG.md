@@ -22,6 +22,9 @@ conditional state on the remaining modes is generated.
 
 ### Improvements
 
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
+  providing better numerical stability for larger cutoff and displacement values. [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+
 ### Bug fixes
 
 ### Documentation
@@ -149,6 +152,7 @@ This release contains contributions from (in alphabetical order):
 * Add the argument 'modes' to the `Interferometer` operation to indicate which modes the Interferometer is
   applied to.
   [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
+
 
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.

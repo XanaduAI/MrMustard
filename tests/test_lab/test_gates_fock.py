@@ -13,6 +13,17 @@
 # limitations under the License.
 
 import pytest
+from hypothesis import given, strategies as st
+import numpy as np
+from thewalrus.fock_gradients import (
+    squeezing,
+    beamsplitter,
+    two_mode_squeezing,
+    mzgate,
+)
+
+from tests import random
+from mrmustard.physics import fock
 from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.physics import fock
@@ -29,16 +40,6 @@ from mrmustard.lab.gates import (
     Attenuator,
     Interferometer,
 )
-from hypothesis import given, strategies as st
-from thewalrus.fock_gradients import (
-    displacement,
-    squeezing,
-    beamsplitter,
-    two_mode_squeezing,
-    mzgate,
-)
-import numpy as np
-from tests import random
 
 
 @given(state=random.pure_state(num_modes=1), xy=random.vector(2))
@@ -88,11 +89,36 @@ def test_two_mode_fock_equals_gaussian(gate):
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
-@given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
-def test_fock_representation_displacement(x, y):
-    D = Dgate(x=x, y=y)
-    expected = displacement(r=np.sqrt(x**2 + y**2), phi=np.arctan2(y, x), cutoff=20)
-    assert np.allclose(expected, D.U(cutoffs=[20]), atol=1e-5)
+@pytest.mark.parametrize(
+    "cutoffs,x,y",
+    [
+        [[5], 0.3, 0.5],
+        [[5], 0.0, 0.0],
+        [[2, 2], [0.1, 0.1], [0.25, -0.2]],
+        [[3, 3], [0.0, 0.0], [0.0, 0.0]],
+        [[2, 5, 1], [0.1, 5.0, 1.0], [-0.3, 0.1, 0.0]],
+        [[3, 3, 3, 3], [0.1, 0.2, 0.3, 0.4], [-0.5, -4, 3.1, 4.2]],
+    ],
+)
+def test_fock_representation_displacement(cutoffs, x, y):
+    """Tests that DGate returns the correct unitary."""
+
+    # apply gate
+    dgate = Dgate(x, y)
+    Ud = dgate.U(cutoffs)
+
+    # compare with the standard way of calculating
+    # transformation unitaries using the Choi isomorphism
+    choi_state = dgate.bell >> dgate
+    expected_Ud = fock.fock_representation(
+        choi_state.cov,
+        choi_state.means,
+        shape=cutoffs * 2,
+        return_unitary=True,
+        choi_r=settings.CHOI_R,
+    )
+
+    assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
 
 @given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))

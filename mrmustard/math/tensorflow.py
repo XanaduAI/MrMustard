@@ -18,6 +18,10 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
+from thewalrus.fock_gradients import (
+    displacement as displacement_tw,
+    grad_displacement as grad_displacement_tw,
+)
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -115,6 +119,9 @@ class TFMath(MathInterface):
 
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
+
+    def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
+        return tf.math.atan2(y, x)
 
     def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
         return tf.complex(real, imag)
@@ -377,6 +384,21 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly, grad
+
+    @tf.custom_gradient
+    def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype, tol=1e-15):
+        """creates a single mode displacement matrix"""
+        r = r.numpy()
+        phi = phi.numpy()
+        gate = displacement_tw(r, phi, cutoff, dtype) if r > tol else self.eye(cutoff)
+
+        def grad(dy):  # pragma: no cover
+            Dr, Dphi = grad_displacement_tw(gate, r, phi)
+            grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
+            grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
+            return grad_r, grad_phi, None
+
+        return gate, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:

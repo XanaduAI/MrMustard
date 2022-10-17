@@ -93,6 +93,57 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
+    def U(self, cutoffs: List[int]):
+        """Returns the unitary representation of the Displacement gate using the Laguerre
+        polynomials."""
+
+        N = len(cutoffs)
+        x, y = self._parse_modes_and_args(cutoffs)
+
+        r = math.sqrt(x**2 + y**2)
+        phi = math.atan2(y, x)
+
+        # calculate displacement unitary for each mode and concatenate with outer product
+        Ud = None
+        for idx, cutoff in enumerate(cutoffs):
+            if Ud is None:
+                Ud = math.displacement(r[idx], phi[idx], cutoff)
+            else:
+                U_next = math.displacement(r[idx], phi[idx], cutoff)
+                Ud = math.outer(Ud, U_next)
+
+        return math.transpose(
+            Ud,
+            list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        )
+
+    def _parse_modes_and_args(self, cutoffs):
+        num_modes = len(cutoffs)
+        modes = self.modes  # modes in which the gate is acting on
+        xargs = self.x.value
+        yargs = self.y.value
+        num_args_x = (
+            xargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
+        )  # number or arguments given to the gate
+        num_args_y = (
+            yargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
+        )  # number or arguments given to the gate
+        x = np.zeros((num_modes,))
+        y = np.zeros((num_modes,))
+
+        if num_args_x != num_args_y:
+            raise ValueError("Number of parameters for `x` and `y` is different.")
+
+        if num_args_x == 1 or num_args_x == len(modes):
+            # one arg for all modes
+            x[modes] = xargs
+            y[modes] = yargs
+        elif num_args_x == len(modes):
+            # number of args and number of modes don't match
+            raise ValueError("Number of args and modes don't match")
+
+        return x, y
+
 
 class Sgate(Parametrized, Transformation):
     r"""Squeezing gate.
