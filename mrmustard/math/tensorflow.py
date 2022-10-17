@@ -122,7 +122,7 @@ class TFMath(MathInterface):
 
     def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
         return tf.math.atan2(y, x)
-        
+
     def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
         return tf.complex(real, imag)
 
