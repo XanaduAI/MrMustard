@@ -321,6 +321,52 @@ class Heterodyne(Generaldyne):
         state = Coherent(x / units_factor, y / units_factor)
         super().__init__(state=state, outcome=outcome, modes=modes)
 
+    def _measure_fock(self, other) -> Union[State, float]:
+
+        if len(self.modes) > 1:
+            raise NotImplementedError(
+                "Multimode Heterodyne sampling for Fock representation is not yet implemented."
+            )
+
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        # create reduced state of mode to be measured
+        reduced_state = other.get_modes(self.modes)
+
+        x_outcome, p_outcome, probability = utils_homodyne.sample_heterodyne_fock(
+            state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
+            hbar=settings.HBAR,
+        )
+
+        # Define conditional state of the heterodyne measurement device and rotate back to the original basis.
+        # Note: x_outcome and p_outcome already have units of sqrt(hbar), here is divided by sqrt(2*hbar)
+        # to cancel the multiplication factor of the displacement symplectic inside the Coherent state.
+        x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        p_arg = p_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
+        self.state = Coherent(x=x_arg, y=p_arg, modes=self.modes)
+
+        if remaining_modes == 0:
+            return probability
+
+        out_fock = fock.contract_states(
+            stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+            stateB=self.state.ket(self_cutoffs),
+            a_is_mixed=other.is_mixed,
+            b_is_mixed=False,
+            modes=other.indices(self.modes),
+            normalize=False,
+        )
+
+        return (
+            State(dm=out_fock, modes=remaining_modes, _norm=probability)
+            if other.is_mixed
+            else State(ket=out_fock, modes=remaining_modes, _norm=probability)
+        )
+
 
 class Homodyne(Generaldyne):
     """Homodyne measurement on given modes. If ``result`` is not provided then the value
@@ -396,6 +442,7 @@ class Homodyne(Generaldyne):
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
         ]
+        self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
         remaining_modes = list(set(other.modes) - set(self.modes))
 
         # create reduced state of modes to be measured on the homodyne basis
@@ -420,10 +467,6 @@ class Homodyne(Generaldyne):
         if remaining_modes == 0:
             return probability
 
-        self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-        other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
-        ]
         out_fock = fock.contract_states(
             stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
             stateB=self.state.ket(self_cutoffs),
