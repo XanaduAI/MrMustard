@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from functools import lru_cache, wraps
 
+from numba import njit
 import numpy as np
 
 from mrmustard.types import Tuple, Tensor
@@ -147,7 +148,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 def sample_homodyne_fock(state: State, hbar: float) -> Tuple[float, float, State]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x><x| ]`
-    where `\rho` is the reduced density matrix of the ``other`` state on the
+    where `\rho` is the reduced density matrix of the state on the
     measured mode.
 
     Here the following quadrature wavefunction for the Fock states are used:
@@ -165,22 +166,20 @@ def sample_homodyne_fock(state: State, hbar: float) -> Tuple[float, float, State
         p(\rho|x) = \tr [ \rho |x><x| ] = \sum_{n,m} \rho_{n,m} \psi_n(x) \psi_m(x)
 
     Args:
-        state (State): state being measured
+        state (array): ket or dm of the state being measured
         hbar: value of hbar
 
     Returns:
         tuple(float, float): outcome and probability of the outcome
     """
     if len(state.shape) == 1:
-        is_pure = True
+        x, probs = _probs_homodyne_pure(state, hbar)
     elif len(state.shape) == 2:
-        is_pure = False
+        x, probs = _probs_homodyne_mixed(state, hbar)
     else:
         raise ValueError(
             "Input state has dimension {state.shape}. Make sure is either a single mode ket or dm."
         )
-
-    x, probs = _probs_homodyne_pure(state, hbar) if is_pure else _probs_homodyne_mixed(state, hbar)
 
     # draw a sample from the distribution
     pdf = math.Categorical(probs=probs, name="homodyne_dist")
@@ -241,3 +240,138 @@ def _probs_homodyne_mixed(state_dm, hbar):
     probs = out_factor * math.real(math.sum(sum_terms, axes=[1, 2]))
 
     return x, probs
+
+
+def sample_heterodyne_fock(state: State, hbar: float) -> Tuple[float, float, State]:
+    r"""Given a single-mode state, it samples the Husimi function :math:`\pi^{-1} \tr [ \rho |\alpha><\alpha| ]`,
+    where `\rho` is the reduced density matrix of the state on the measured mode and `|\alpha>` is a coherent state.
+
+    Args:
+        state (array): ket or dm of the state being measured
+        hbar: value of hbar
+
+    Returns:
+        tuple(float, float): outcome and probability of the outcome
+    """
+    if len(state.shape) == 1:
+        Q, P, probs = _probs_heterodyne_pure(state, hbar)
+    elif len(state.shape) == 2:
+        Q, P, probs = _probs_heterodyne_mixed(state, hbar)
+    else:
+        raise ValueError(
+            "Input state has dimension {state.shape}. Make sure is either a single mode ket or dm."
+        )
+
+    # draw a sample from the distribution
+    probs = probs.flatten()
+    Q = Q.flatten()
+    P = P.flatten()
+    pdf = math.Categorical(probs=probs, name="heterodyne_dist")
+    sample_idx = pdf.sample()
+    Q_sample = math.gather(Q, sample_idx)
+    P_sample = math.gather(P, sample_idx)
+    probability_sample = math.gather(probs, sample_idx)
+
+    return Q_sample, P_sample, probability_sample
+
+
+def _probs_heterodyne_pure(state_ket, hbar):
+
+    cutoff = state_ket.shape[0]
+
+    # calculate prefactors of the PDF
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+    x = np.sqrt(hbar) * q_tensor
+    p = hbar * q_tensor
+
+    Q, P, probs = husimi_pure(state_ket.numpy(), x.numpy(), p.numpy(), hbar)
+
+    return Q, P, probs
+
+
+def _probs_heterodyne_mixed(state_dm, hbar):
+
+    cutoff = state_dm.shape[0]
+
+    # calculate prefactors of the PDF
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+    x = np.sqrt(hbar) * q_tensor
+    p = hbar * q_tensor
+
+    Q, P, probs = husimi_mixed(state_dm.numpy(), x.numpy(), p.numpy(), hbar)
+
+    return Q, P, probs
+
+
+@njit
+def husimi_pure(ket, xvec, pvec, hbar=1.0):
+    r"""Calculates the discretized Wigner marginal on the X axis
+
+    Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
+
+    Args:
+        rho (complex array): the state in Fock representation (can be pure or mixed)
+        xvec (array): array of discretized :math:`x` quadrature values
+        pvec (array): array of discretized :math:`p` quadrature values
+        hbar (float): the value of ``\hbar``
+    """
+
+    Q = np.outer(pvec, np.ones_like(xvec))
+    P = np.outer(np.ones_like(pvec), xvec)
+    cutoff = ket.shape[-1]
+    A2 = (Q**2 + P**2) / (2 * hbar)
+
+    Hvec = np.zeros((1, cutoff) + A2.shape, dtype=np.complex128)
+
+    # Husimi function for |0>
+    Hvec[0] = np.exp(-A2) / np.pi
+    H = np.real(ket[0]) * np.real(Hvec[0])
+
+    # Husimi function for |n>
+    for n in range(1, cutoff):
+        Hvec[n] = (A2 * Hvec[n - 1]) / n
+        H += np.real(ket[n] * Hvec[n])
+
+    return Q, P, H / hbar
+
+
+@njit
+def husimi_mixed(rho, xvec, pvec, hbar=1.0):
+    r"""Calculates the discretized Wigner marginal on the X axis
+
+    Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
+
+    Args:
+        rho (complex array): the state in Fock representation (can be pure or mixed)
+        xvec (array): array of discretized :math:`x` quadrature values
+        pvec (array): array of discretized :math:`p` quadrature values
+        hbar (float): the value of ``\hbar``
+    """
+
+    Q = np.outer(pvec, np.ones_like(xvec))
+    P = np.outer(np.ones_like(pvec), xvec)
+    cutoff = rho.shape[-1]
+    A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
+
+    Hmat = np.zeros((2, cutoff) + A.shape, dtype=np.complex128)
+
+    # Husimi function for |0><0|
+    Hmat[0, 0] = np.exp(-np.abs(A) ** 2) / np.pi
+    H = np.real(rho[0, 0]) * np.real(Hmat[0, 0])
+
+    for n in range(1, cutoff):
+        Hmat[0, n] = (A * Hmat[0, n - 1]) / np.sqrt(n)
+        H += np.real(rho[0, n] * Hmat[0, n])
+
+    for m in range(1, cutoff):
+        # Husimi function for |m><m|
+        Hmat[1, m] = (np.conj(A) * Hmat[0, m] - np.sqrt(m) * Hmat[0, m - 1]) / np.sqrt(m)
+        H += np.real(rho[m, m] * Hmat[1, m])
+
+        for n in range(m + 1, cutoff):
+            # Husimi function for |m><n|
+            Hmat[1, n] = (2 * A * Hmat[1, n - 1] - np.sqrt(m) * Hmat[0, n - 1]) / np.sqrt(n)
+            H += 2 * np.real(rho[m, n] * Hmat[1, n])
+        Hmat[0] = Hmat[1]
+
+    return Q, P, H / hbar
