@@ -1,18 +1,16 @@
 # abstract representation class
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Tuple, Union
+from typing import Tuple, Union, Protocol
 from mrmustard.types import Array, Matrix, Vector, Number
 
 
 @dataclass
-class Data(Protocol):
-    pure_cov: Optional[Matrix] = None
-    mixed_cov: Optional[Matrix] = None
-    mean: Optional[Vector] = None
-    ket: Optional[Array] = None
-    dm: Optional[Array] = None
-    mesh: Optional[(Matrix, Vector)] = None
+class Data:
+    symbolic: Optional[str] = None
+    gaussian: Optional[Tuple[Array]] = None # cov, mean, coeff
+    array: Optional[Array] = None # ket or dm
+    mesh: Optional[(Matrix, Vector)] = None # {x, f(x)}
     is_hilbert_vector: bool = False
 
 
@@ -26,11 +24,12 @@ class Representation:
         if isinstance(data, Representation):
             return self.from_representation(data) # this calls the generic repA->repB transformation
         else:
+            self.symbolic = data.symbolic
             self.pure_gaussian = Gaussian(data.pure_cov, data.mean, data.coeff)
             self.mixed_gaussian = Gaussian(data.mixed_cov, data.mean, data.coeff)
             self.ket = data.ket
             self.dm = data.dm
-            self.pointcloud = data.pointcloud
+            self.mesh = data.mesh
             self.is_hilbert_vector = data.is_hilbert_vector
 
     @property
@@ -43,37 +42,24 @@ class Representation:
     
     @property
     def preferred_data(self):
-        return self.gaussian or self.array or self.pointcloud
+        return self.symbolic or self.gaussian or self.array or self.mesh
 
     @property
-    def cov(self): # raises AttributeError if no gaussian data
-        return self.preferred_data.cov
+    def cov(self):
+        return self.gaussian.cov
 
     @property
-    def mean(self): # raises AttributeError if no gaussian data
-        return self.preferred_data.mean
+    def mean(self):
+        return self.gaussian.mean
 
     @property
-    def coeff(self): # raises AttributeError if no gaussian data
-        return self.preferred_data.coeff
+    def coeff(self):
+        return self.gaussian.coeff
 
-    def from_representation(self, representation): # to avoid having to implement all the combinations
+    def from_representation(self, representation): # avoids having to implement all the combinations
         if isinstance(representation, self.__class__):
             return self
-        return getattr(self, f'from_{representation.__class__.__name__.lower()}')(representation)
-
-    # From branches = from trunk
-    def from_stellar(self, stellar):
-        return self.from_husimi(Husimi(stellar))
-
-    def from_wavefunctionx(self, wavefunctionX):
-        return self.from_husimi(Husimi(wavefunctionX))
-
-    def from_wigner(self, wigner):
-        return self.from_husimi(Husimi(wigner))
-
-    def from_glauber(self, glauber):
-        return self.from_husimi(Husimi(glauber))
+        return getattr(self, f'from_{representation.__class__.__qualname__.lower()}')(representation)
 
     # From leaves = from branch
     def from_charp(self, charP):
@@ -88,16 +74,29 @@ class Representation:
     def from_wavefunctionp(self, wavefunctionP):
         return self.from_husimi(Husimi(wavefunctionP))
 
+    # From branches = from trunk
+    def from_stellar(self, stellar):
+        return self.from_husimi(Husimi(stellar))
+
+    def from_wavefunctionx(self, wavefunctionX):
+        return self.from_husimi(Husimi(wavefunctionX))
+
+    def from_wigner(self, wigner):
+        return self.from_husimi(Husimi(wigner))
+
+    def from_glauber(self, glauber):
+        return self.from_husimi(Husimi(glauber))
+
     def _typecheck(self, other, operation: str):
         if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot {operation} representations of different types: {self.__class__} and {other.__class__}")
+            raise TypeError(f"Cannot perform {operation} on representations of different types ({self.__class__} and {other.__class__})")
 
     def __add__(self, other):
-        self._typecheck(other, 'add')
+        self._typecheck(other, 'addition')
         return self.__class__(self.preferred_data + other.preferred_data)
     
     def __sub__(self, other):
-        self._typecheck(other, 'subtract')
+        self._typecheck(other, 'subtraction')
         return self.__class__(self.preferred_data - other.preferred_data)
 
     def __rmul__(self, other):
@@ -111,35 +110,20 @@ class Representation:
         if isinstance(other, Number):
             return self.__class__(self.preferred_data / other)
 
-from matplotlib import pyplot as plt
-from matplotlib import cm
-
-# plot x = [1,2,3,...,10] and y = [1,4,9,...,100] in a plot with figsize = (10,10)
-x = range(1, 11)
-y = [i**2 for i in x]
-plt.figure(figsize=(10,10))
-plt.plot(x, y)
-
-
-
-plt.contourf(X, P, W, 60, cmap=cm.RdBu, vmin=-abs(W).max(), vmax=abs(W).max())
-
 # TRUNK
 
 class Husimi(Representation):
     def from_charq(self, charQ):
         try:
-            return Husimi(Gaussian(math.inv(charQ.cov), charQ.mean, charQ.coeff))
+            return Husimi(Gaussian(math.inv(charQ.cov), charQ.mean, charQ.coeff)) # TODO mean is probably wrong
         except AttributeError:
-            print('Fourier transform of of charQ.ket')
-        except AttributeError:
-            print("Fourier transform of of charQ.dm")
+            print('Fourier transform of charQ.ket/dm/mesh')
 
     def from_wigner(self, wigner):
         try:
-            return Husimi(Gaussian(wigner.cov + math.eye_like(wigner.cov)/2, wigner.mean, wigner.coeff))
+            return Husimi(Gaussian(math.qp_to_aadag(wigner.cov + math.eye_like(wigner.cov)/2, axes=(-2,-1)), math.qp_to_aadag(wigner.mean, axes=(-1,)), wigner.coeff))
         except AttributeError:
-            print(f'wigner.dm * exp(|alpha|^2/2)')
+            print(f'conv(wigner.dm, exp(|alpha|^2/2))')
 
     def from_glauber(self, glauber):
         try:
