@@ -310,7 +310,7 @@ def husimi_pure(ket, xvec, pvec, hbar=1.0):
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
 
     Args:
-        rho (complex array): the state in Fock representation (can be pure or mixed)
+        ket (complex array): the state ket
         xvec (array): array of discretized :math:`x` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
         hbar (float): the value of ``\hbar``
@@ -342,7 +342,7 @@ def husimi_mixed(rho, xvec, pvec, hbar=1.0):
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
 
     Args:
-        rho (complex array): the state in Fock representation (can be pure or mixed)
+        rho (complex array): the state density matrix
         xvec (array): array of discretized :math:`x` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
         hbar (float): the value of ``\hbar``
