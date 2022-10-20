@@ -349,7 +349,7 @@ class Heterodyne(Generaldyne):
         p_arg = p_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
         self.state = Coherent(x=x_arg, y=p_arg, modes=self.modes)
 
-        if remaining_modes == 0:
+        if len(remaining_modes) == 0:
             return probability
 
         out_fock = fock.contract_states(
