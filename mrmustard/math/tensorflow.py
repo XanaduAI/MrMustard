@@ -150,6 +150,9 @@ class TFMath(MathInterface):
     def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
         return tf.eye(size, dtype=dtype)
 
+    def eye_like(self, array: tf.Tensor) -> Tensor:
+        return tf.eye(array.shape[-1], dtype=array.dtype)
+
     def from_backend(self, value) -> bool:
         return isinstance(value, (tf.Tensor, tf.Variable))
 

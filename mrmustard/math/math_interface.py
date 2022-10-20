@@ -373,6 +373,17 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def eye_like(self, array: Tensor) -> Tensor:
+        r"""Returns the identity matrix of the same shape and dtype as array.
+
+        Args:
+            array (array): array to create the identity matrix of
+
+        Returns:
+            matrix: identity matrix
+        """
+
+    @abstractmethod
     def from_backend(self, value: Any) -> bool:
         r"""Returns whether the given tensor is a tensor of the concrete backend."""
 
