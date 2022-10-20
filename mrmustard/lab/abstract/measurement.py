@@ -132,7 +132,8 @@ class FockMeasurement(Measurement):
         r"""
         Returns a tensor representing the post-measurement state in the unmeasured modes in the Fock basis.
         The first `N` indices of the returned tensor correspond to the Fock measurements of the `N` modes that
-        the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
+        the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes,
+        conditioned on the measurement outcome.
 
         Args
             state (State): the quatum state
@@ -140,36 +141,34 @@ class FockMeasurement(Measurement):
             Tensor: a tensor representing the post-measurement state
         """
         cutoffs = []
-        used = 0
         for mode in other.modes:
             if mode in self._modes:
                 cutoffs.append(
                     max(settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)])
                 )
-                used += 1
             else:
                 cutoffs.append(other.cutoffs[other.indices(mode)])
-        if self.should_recompute_stochastic_channel() or math.any(
-            [c > settings.PNR_INTERNAL_CUTOFF for c in other.cutoffs]
+        if self.should_recompute_stochastic_channel() or any(
+            c > settings.PNR_INTERNAL_CUTOFF for c in [other.cutoffs[i] for i in self._modes]
         ):
             self.recompute_stochastic_channel(cutoffs)
         dm = other.dm(cutoffs)
         for k, (mode, stoch) in enumerate(zip(self._modes, self._internal_stochastic_channel)):
             # move the mode indices to the end
-            last = [mode - k, mode + other.num_modes - 2 * k]
+            last = [mode - k, mode + other.num_modes - 2 * k] # NOTE: what if self._modes is not sorted?
             perm = [m for m in range(dm.ndim) if m not in last] + last
             dm = math.transpose(dm, perm)
             # compute sum_m P(meas|m)rho_mm
             dm = math.diag_part(dm)
-            dm = math.tensordot(dm, stoch[: self._cutoffs[k], : dm.shape[-1]], [[-1], [1]])
+            dm = math.tensordot(dm, stoch[: self._cutoffs[k], : dm.shape[-1]], [[-1], [1]]) # after tensordot, the remaining axis of stoch is placed at the end
         # put back the last len(self.modes) modes at the beginning
         output = math.transpose(
             dm,
             list(range(dm.ndim - len(self._modes), dm.ndim))
             + list(range(dm.ndim - len(self._modes))),
         )
-        if len(output.shape) == len(self._modes):  # all modes are measured
-            output = math.real(output)  # return probabilities
+        if len(output.shape) == len(self._modes):  # if all modes are measured
+            output = math.real(output)  # return just probabilities
         return output
 
     #  pylint: disable=no-self-use
