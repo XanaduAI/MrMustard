@@ -20,8 +20,8 @@ from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
-from .wigner import wigner_discretized
 from mrmustard import settings
+from .wigner import wigner_discretized
 
 # pylint: disable=disallowed-name
 class Progressbar:
