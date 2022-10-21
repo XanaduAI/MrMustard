@@ -337,7 +337,7 @@ def husimi_pure(ket, xvec, pvec, hbar=1.0):
 
 @njit
 def husimi_mixed(rho, xvec, pvec, hbar=1.0):
-    r"""Calculates the discretized Wigner marginal on the X axis
+    r"""Calculates the discretized Husimi representation of a Fock state
 
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
 
@@ -346,6 +346,10 @@ def husimi_mixed(rho, xvec, pvec, hbar=1.0):
         xvec (array): array of discretized :math:`x` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
         hbar (float): the value of ``\hbar``
+
+    Retunrs:
+        tuple(array, array, array): grid of values of the q-quadrature, p-quadrature values and the
+            array containing the discretized Husimi function.
     """
 
     Q = np.outer(pvec, np.ones_like(xvec))
