@@ -20,6 +20,7 @@ from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
+from .wigner import wigner_discretized
 from mrmustard import settings
 
 # pylint: disable=disallowed-name
@@ -120,9 +121,10 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
         xbounds (Tuple[int]): range of the x axis
         ybounds (Tuple[int]): range of the y axis
     """
+
     X = np.linspace(xbounds[0], xbounds[1], 200)
     P = np.linspace(ybounds[0], ybounds[1], 200)
-    W = plot_wigner(rho, X, P, settings.HBAR)
+    W, _, _ = wigner_discretized(rho, X, P, settings.HBAR)
     ProbX = np.sum(W, axis=0)
     ProbP = np.sum(W, axis=1)
 
