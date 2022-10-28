@@ -17,8 +17,8 @@
 import numpy as np
 import tensorflow as tf
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
-from mrmustard.math.compactFock_TheWalrus import hermite_multidimensional_1leftoverMode, grad_hermite_multidimensional_1leftoverMode
+from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
+from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_1leftoverMode, grad_hermite_multidimensional_1leftoverMode
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -371,10 +371,10 @@ class TFMath(MathInterface):
             A: The A matrix.
             B: The B vector.
             C: The C scalar.
-            cutoff: cutoff that is equal on each mode
+            cutoffs: upper boundary of photon numbers in each mode
 
         Returns:
-            The renormalized Hermite polynomial of given shape.
+            The renormalized Hermite polynomial.
         """
         poly0,poly2,poly1010,poly1001,poly1 = tf.numpy_function(
             hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype]*5
@@ -400,16 +400,18 @@ class TFMath(MathInterface):
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
         denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
 
-        Calculates the diagonal of the Fock representation by applying the recursion relation in a selective manner.
+        Calculates all possible Fock representations of the mode that is left in the upper mode
+        if all other modes are directed to PNR detectors.
+        This is done by applying the recursion relation in a selective manner.
 
         Args:
             A: The A matrix.
             B: The B vector.
             C: The C scalar.
-            cutoff: cutoff that is equal on each mode
+            cutoffs: upper boundary of photon numbers in each mode
 
         Returns:
-            The renormalized Hermite polynomial of given shape.
+            The renormalized Hermite polynomial.
         """
         poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
             hermite_multidimensional_1leftoverMode, [A, B, C, cutoffs], [A.dtype] * 5

@@ -2,38 +2,33 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-
 from mrmustard.math.compactFock_helperFunctions import *
 
 @njit
 def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode):
-    # m,n = 0,0
     m, n = 0, 0
     A_adapted = A[i, 2:]
     G_in_adapted = G_in[0, 0]
     arr_write[(0, 0) + write] = (GB[0, 0, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
-    # m=0
+
     m = 0
     A_adapted = A[i, 1:]
     for n in range(1, cutoff_leftoverMode):
         G_in_adapted = np.hstack((np.array([arr_read_pivot[(0, n - 1) + read_GB] * np.sqrt(n)]), G_in[0, n]))
         arr_write[(0, n) + write] = (GB[0, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
-    # n=0
+
     n = 0
     A_adapted = np.hstack((np.array([A[i, 0]]), A[i, 2:]))
     for m in range(1, cutoff_leftoverMode):
         G_in_adapted = np.hstack((np.array([arr_read_pivot[(m - 1, 0) + read_GB] * np.sqrt(m)]), G_in[m, 0]))
         arr_write[(m, 0) + write] = (GB[m, 0, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
 
-    # m>0,n>0
     A_adapted = A[i]
     for m in range(1, cutoff_leftoverMode):
         for n in range(1, cutoff_leftoverMode):
             G_in_adapted = np.hstack((np.array(
-                [arr_read_pivot[(m - 1, n) + read_GB] * np.sqrt(m), arr_read_pivot[(m, n - 1) + read_GB] * np.sqrt(n)]),
-                                      G_in[m, n]))
+                [arr_read_pivot[(m - 1, n) + read_GB] * np.sqrt(m), arr_read_pivot[(m, n - 1) + read_GB] * np.sqrt(n)]), G_in[m, n]))
             arr_write[(m, n) + write] = (GB[m, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
-
     return arr_write
 
 
@@ -44,14 +39,13 @@ def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr
     Args:
         A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
-        cutoffs (1D array): upper bounds for the number of photons in each mode
-        params (1D array): [a,b,c,...]
-        params_tuple (tuple): (a,b,c,...)
+        cutoffs (tuple): upper bounds for the number of photons in each mode
+        params (tuple): [a,b,c,...]
         d (int): mode index in which the considered Fock amplitude is off diagonal
             e.g. [a,a,b+1,b,c,c,...] --> b is off diagonal --> d=1
-        arr0, arr2, arr1010, arr1001, arr1 (array, list, list, list, list): submatrices of the fock representation
+        arr0, arr2, arr1010, arr1001, arr1 (array, array, array, array, array): submatrices of the fock representation
     Returns:
-        (array, list, list, list, list): updated versions of arr0, arr2, arr1010, arr1001, arr1
+        (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     '''
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
@@ -118,11 +112,11 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     Args:
         A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
-        cutoffs (1D array): upper bounds for the number of photons in each mode
+        cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
-        arr0, arr1 (array, list): submatrices of the fock representation
+        arr0, arr1 (array, array): submatrices of the fock representation
     Returns:
-        (array, list): updated versions of arr0, arr1
+        (array, array): updated versions of arr0, arr1
     '''
     pivot = repeat_twice(params)
     K_l = SQRT[pivot]
@@ -154,8 +148,7 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     # Array1
     for i in range(2 * M):
         if params[i // 2] + 1 < cutoffs_tail[i // 2]:
-            if i != 1 or params[0] + 2 < cutoffs_tail[
-                0]:  # this prevents a few elements from being written that will never be read (maybe writing them is quicker than always checking this condition?)
+            if i != 1 or params[0] + 2 < cutoffs_tail[0]:  # this prevents a few elements from being written that will never be read (maybe writing them is quicker than always checking this condition?)
                 write = (i,) + params
                 arr1 = write_block(i + 2, arr1, write, arr0, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode)
 
@@ -168,16 +161,16 @@ def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, c
     '''
     Returns the PNR probabilities of a state or Choi state (by using the recurrence relation to calculate a limited number of Fock amplitudes)
     Args:
-        A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         arr0 (array): submatrix of the fock representation that contains Fock amplitudes of the type [a,a,b,b,c,c...]
             (!) should already contain G0 at position (0,)*M
-        arr2 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
-        arr1010 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
-        arr1001 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
-        arr1 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
-        tuple_type, list_type (numba types): numba types that need to be defined outside of numba compiled functions
+        arr2 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
+        arr1010 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
+        arr1001 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
+        arr1 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
+        tuple_type, list_type (Numba types): numba types that need to be defined outside of numba compiled functions
     Returns:
         Tensor: the fock representation
     '''
@@ -197,11 +190,9 @@ def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, c
             # diagonal pivots: aa,bb,cc,dd,...
             if params[0] < cutoffs_tail[0] - 1:
                 arr1 = use_diag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1)
-
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
-            for d in range(M - 1):  # for over pivot off-diagonals
-                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[
-                    d] - 1):  # better to construct these params separately instead of checking first if statement??
+            for d in range(M - 1):
+                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):  # better to construct these params separately instead of checking first if statement?
                     arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail,
                                                                      params, d, arr0, arr2, arr1010, arr1001, arr1)
     return arr0, arr2, arr1010, arr1001, arr1
@@ -222,22 +213,17 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
 
     # This code could be nicer if I put (cutoff_leftoverMode,cutoff_leftoverMode) as the last dimensions
     # --> some for loops over the indices of the first mode could then be removed
-    # --> however, arr0 should then be transosed before the final return
+    # --> however, arr0 should then be transposed before the final return
     arr0 = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail,
                     dtype=np.complex128)  # doesn't work with np.empty?
     arr0[(0,) * (M + 1)] = G0
     arr2 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail, dtype=np.complex128)
+    arr1 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (2 * (M - 1),) + cutoffs_tail, dtype=np.complex128)
     if M == 2:
         arr1010 = np.empty((1, 1, 1, 1, 1), dtype=np.complex128)
-    else:
-        arr1010 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail,
-                           dtype=np.complex128)
-    if M == 2:
         arr1001 = np.empty((1, 1, 1, 1, 1), dtype=np.complex128)
     else:
-        arr1001 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail,
-                           dtype=np.complex128)
-    arr1 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (2 * (M - 1),) + cutoffs_tail, dtype=np.complex128)
-
+        arr1010 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail, dtype=np.complex128)
+        arr1001 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail, dtype=np.complex128)
     return fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, cutoffs_tail, arr0, arr2, arr1010,
                                                         arr1001, arr1, tuple_type, list_type, zero_tuple)

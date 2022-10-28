@@ -2,7 +2,6 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-
 from mrmustard.math.compactFock_helperFunctions import *
 
 @njit
@@ -99,14 +98,13 @@ def use_offDiag_pivot_grad(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d
     Args:
         A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
-        cutoffs (1D array): upper bounds for the number of photons in each mode
-        params (1D array): [a,b,c,...]
-        params_tuple (tuple): (a,b,c,...)
+        cutoffs (tuple): upper bounds for the number of photons in each mode
+        params (tuple): (a,b,c,...)
         d (int): mode index in which the considered Fock amplitude is off diagonal
             e.g. [a,a,b+1,b,c,c,...] --> b is off diagonal --> d=1
-        arr0, arr2, arr1010, arr1001, arr1 (array, list, list, list, list): submatrices of the fock representation
+        arr0, arr2, arr1010, arr1001, arr1 (array, array, array, array, array): submatrices of the fock representation
     Returns:
-        (array, list, list, list, list): updated versions of arr0, arr2, arr1010, arr1001, arr1
+        (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     '''
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
@@ -194,11 +192,11 @@ def use_diag_pivot_grad(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0
     Args:
         A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
-        cutoffs (1D array): upper bounds for the number of photons in each mode
+        cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
-        arr0, arr1 (array, list): submatrices of the fock representation
+        arr0, arr1 (array, array): submatrices of the fock representation
     Returns:
-        (array, list): updated versions of arr0, arr1
+        (array, array): updated versions of arr0, arr1
     '''
     pivot = repeat_twice(params)
     K_l = SQRT[pivot]
@@ -255,10 +253,10 @@ def fock_representation_1leftoverMode_grad_NUMBA(A, B, M, cutoff_leftoverMode, c
         cutoffs (tuple): upper bounds for the number of photons in each mode
         arr0 (array): submatrix of the fock representation that contains Fock amplitudes of the type [a,a,b,b,c,c...]
             (!) should already contain G0 at position (0,)*M
-        arr2 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
-        arr1010 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
-        arr1001 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
-        arr1 (list): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
+        arr2 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
+        arr1010 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
+        arr1001 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
+        arr1 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
         tuple_type, list_type (numba types): numba types that need to be defined outside of numba compiled functions
     Returns:
         Tensor: the fock representation
@@ -300,15 +298,12 @@ def fock_representation_1leftoverMode_grad_NUMBA(A, B, M, cutoff_leftoverMode, c
             if params[0] < cutoffs_tail[0] - 1:
                 arr1_dA, arr1_dB = use_diag_pivot_grad(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0,
                                                        arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB)
-
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
-            for d in range(M - 1):  # for over pivot off-diagonals
-                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[
-                    d] - 1):  # better to construct these params separately instead of checking first if statement??
+            for d in range(M - 1):
+                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):  # better to construct these params separately instead of checking first if statement??
                     arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB = use_offDiag_pivot_grad(
                         A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1,
-                        arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB,
-                        arr1_dB)
+                        arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB)
     return arr0_dA, arr0_dB
 
 
