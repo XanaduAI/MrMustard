@@ -2,7 +2,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.compactFock_helperFunctions import *
+from mrmustard.math.numba.compactFock_helperFunctions import *
 
 @njit
 def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode):
@@ -31,7 +31,6 @@ def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, 
             arr_write[(m, n) + write] = (GB[m, n, i] + A_adapted @ G_in_adapted) / K_i[i - 2]
     return arr_write
 
-
 @njit
 def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1):
     '''
@@ -40,7 +39,7 @@ def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr
         A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
-        params (tuple): [a,b,c,...]
+        params (tuple): (a,b,c,...)
         d (int): mode index in which the considered Fock amplitude is off diagonal
             e.g. [a,a,b+1,b,c,c,...] --> b is off diagonal --> d=1
         arr0, arr2, arr1010, arr1001, arr1 (array, array, array, array, array): submatrices of the fock representation
@@ -104,7 +103,6 @@ def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr
 
     return arr0, arr2, arr1010, arr1001
 
-
 @njit
 def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1):
     '''
@@ -148,12 +146,13 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     # Array1
     for i in range(2 * M):
         if params[i // 2] + 1 < cutoffs_tail[i // 2]:
-            if i != 1 or params[0] + 2 < cutoffs_tail[0]:  # this prevents a few elements from being written that will never be read (maybe writing them is quicker than always checking this condition?)
+            # this if statement prevents a few elements from being written that will never be read
+            # (maybe writing them is quicker than always checking this condition?)
+            if i != 1 or params[0] + 2 < cutoffs_tail[0]:
                 write = (i,) + params
                 arr1 = write_block(i + 2, arr1, write, arr0, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode)
 
     return arr1
-
 
 @njit
 def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, cutoffs_tail, arr0, arr2, arr1010,
@@ -192,11 +191,11 @@ def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, c
                 arr1 = use_diag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1)
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M - 1):
-                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):  # better to construct these params separately instead of checking first if statement?
+                # better to construct these params separately instead of checking first if statement?
+                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):
                     arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail,
                                                                      params, d, arr0, arr2, arr1010, arr1001, arr1)
     return arr0, arr2, arr1010, arr1001, arr1
-
 
 def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
     '''

@@ -3,7 +3,7 @@ import matplotlib.pyplot as pt
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.compactFock_helperFunctions import *
+from mrmustard.math.numba.compactFock_helperFunctions import *
 
 @njit
 def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1):
@@ -13,12 +13,12 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
         A, B (array, vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
-        params (tuple): [a,b,c,...]
+        params (tuple): (a,b,c,...)
         d (int): mode index in which the considered Fock amplitude is off diagonal
             e.g. [a,a,b+1,b,c,c,...] --> b is off diagonal --> d=1
         arr0, arr2, arr1010, arr1001, arr1 (array, array, array, array, array): submatrices of the fock representation
     Returns:
-        (array, list, list, list, list): updated versions of arr0, arr2, arr1010, arr1001, arr1
+        (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     '''
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
@@ -63,7 +63,6 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
 
     return arr0, arr2, arr1010, arr1001
 
-
 @njit
 def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
     '''
@@ -97,16 +96,15 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
     # Array1
     for i in range(2 * M):
         if params[i // 2] + 1 < cutoffs[i // 2]:
-            if i != 1 or params[0] + 2 < cutoffs[
-                0]:  # this prevents a few elements from being written that will never be read (maybe writing them is quicker than always checking this condition?)
+            # this prevents a few elements from being written that will never be read
+            # (maybe writing them is quicker than always checking this condition?)
+            if i != 1 or params[0] + 2 < cutoffs[0]:
                 arr1[(i,) + params] = (GB[i] + A[i] @ G_in) / K_i[i]
 
     return arr1
 
-
 @njit
-def fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type,
-                                            list_type):
+def fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type):
     '''
     Returns the PNR probabilities of a state or Choi state (by using the recurrence relation to calculate a limited number of Fock amplitudes)
     Args:
@@ -131,11 +129,10 @@ def fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr101
                 arr1 = use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1)
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M):
-                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs[d] - 1):  # better to construct these params separately instead of checking first if statement?
-                    arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010,
-                                                                     arr1001, arr1)
+                # better to construct these params separately instead of checking first if statement?
+                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs[d] - 1):
+                    arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1)
     return arr0, arr2, arr1010, arr1001, arr1
-
 
 def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     '''
@@ -158,5 +155,4 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     else:
         arr1010 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
         arr1001 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
-    return fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type,
-                                                   list_type)
+    return fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type)
