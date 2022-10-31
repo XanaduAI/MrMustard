@@ -29,20 +29,20 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
         rho (complex array): the density matrix of the state in Fock representation
         xvec (array): array of discretized :math:`x` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
-        hbar (float): the value of ``\hbar``
+        hbar (optional float): the value of `\hbar`, defaults to ``settings.HBAR``.
 
     Retunrs:
-        tuple(array, array, array): array containing the discretized Wigner function, and the P and
-            Q coordinates in meshgrid form
+        tuple(array, array, array): array containing the discretized Wigner function, and the Q and
+            P coordinates (in meshgrid form) in which the function is calculated
     """
 
-    Q = np.outer(pvec, np.ones_like(qvec))
-    P = np.outer(np.ones_like(pvec), qvec)
+    Q = np.outer(qvec, np.ones_like(pvec))
+    P = np.outer(np.ones_like(qvec), pvec)
 
     cutoff = rho.shape[-1]
     A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
 
-    Wmat = np.zeros((2, cutoff) + A.shape, dtype=np.complex128)
+    Wmat = np.zeros((2, cutoff) + A.shape, dtype=rho.dtype)
 
     # Wigner function for |0><0|
     Wmat[0, 0] = np.exp(-2.0 * np.abs(A) ** 2) / np.pi
@@ -63,4 +63,4 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
             W += 2 * np.real(rho[m, n] * Wmat[1, n])
         Wmat[0] = Wmat[1]
 
-    return W.transpose() / hbar, P, Q
+    return W / hbar, Q, P
