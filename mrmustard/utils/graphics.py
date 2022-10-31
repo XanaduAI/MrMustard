@@ -65,54 +65,6 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def plot_wigner(rho, xvec, pvec, hbar):
-    r"""Calculates the discretized Wigner function of the specified mode.
-
-    Lifted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`_
-
-    Args:
-        rho (complex array): the state in Fock representation (can be pure or mixed)
-        xvec (array): array of discretized :math:`x` quadrature values
-        pvec (array): array of discretized :math:`p` quadrature values
-        hbar (float): the value of ``\hbar``
-    """
-
-    Q, P = np.meshgrid(xvec, pvec)
-    cutoff = rho.shape[-1]
-    A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
-
-    Wlist = np.array([np.zeros(np.shape(A), dtype=complex) for k in range(cutoff)])
-
-    # Wigner function for |0><0|
-    Wlist[0] = np.exp(-2.0 * np.abs(A) ** 2) / np.pi
-
-    # W = rho(0,0)W(|0><0|)
-    W = np.real(rho[0, 0]) * np.real(Wlist[0])
-
-    for n in range(1, cutoff):
-        Wlist[n] = (2.0 * A * Wlist[n - 1]) / np.sqrt(n)
-        W += 2 * np.real(rho[0, n] * Wlist[n])
-
-    for m in range(1, cutoff):
-        temp = copy(Wlist[m])
-        # Wlist[m] = Wigner function for |m><m|
-        Wlist[m] = (2 * np.conj(A) * temp - np.sqrt(m) * Wlist[m - 1]) / np.sqrt(m)
-
-        # W += rho(m,m)W(|m><m|)
-        W += np.real(rho[m, m] * Wlist[m])
-
-        for n in range(m + 1, cutoff):
-            temp2 = (2 * A * Wlist[n - 1] - np.sqrt(m) * temp) / np.sqrt(n)
-            temp = copy(Wlist[n])
-            # Wlist[n] = Wigner function for |m><n|
-            Wlist[n] = temp2
-
-            # W += rho(m,n)W(|m><n|) + rho(n,m)W(|n><m|)
-            W += 2 * np.real(rho[m, n] * Wlist[n])
-
-    return W / hbar
-
-
 def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[int] = (-6, 6)):
     """Plots the Wigner function of a state given its density matrix.
 
