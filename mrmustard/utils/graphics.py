@@ -14,7 +14,6 @@
 
 """A module containing utility classes and functions for graphical display."""
 
-from copy import copy
 from typing import Tuple
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
 import matplotlib.pyplot as plt
