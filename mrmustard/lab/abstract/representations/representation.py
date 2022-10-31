@@ -1,60 +1,153 @@
 # abstract representation class
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Tuple, Union, Protocol
 from mrmustard.types import Array, Matrix, Vector, Number
+import functools
+from mrmustard.math import Math; math = Math()
+
+class Data(ABC): 
+    r"""Supports algebraic operations for all kinds of data (cov, mean, coeff), ket, dm, mesh, symbolic.
+    Algebra operations are intended between the hilbert space vectors or between convex combinations of hilbert vectors.
+    the exact computation depends on both the representation and the data. E.g. adding two gaussians in Wigner
+    representation encoded Gaussian data (e.g. meaning rho1+rho2 using cov1,mean1 and cov2,mean2) is computed
+    by stacking the two gaussian datas in the batching dimension. It is not the same as adding the same two gaussians
+    in Fock representation e.g. with dm data (it still means rho1+rho2, but in Fock we add the density matrices as arrays).
+
+    For these operations (as either hilbert vectors or convex combinations of hilbert vectors):
+    - Gaussian stacks the 'data' (cov, mean, coeff).
+    - Array (ket/dm) operates with the data values themselves.
+    - Mesh (mesh) operates on the (x,f(x)) pairs with interpolation.
+    - Symbolic (symbolic) operates on the symbolic expression itself.
+
+    This class is abstract and Gaussian, Mesh, Symbolic inherit from it.
+    There is no Ket/Dm class because they are just arrays.
+    """
+
+    @property
+    def preferred(self):
+        return getattr(self, settings.REPRESENTATION_ORDER[0])
+
+    @abstractmethod
+    def __add__(self, other):
+        pass
+
+    @abstractmethod
+    def __mul__(self, other):
+        pass
+
+    @abstractmethod
+    def __and__(self, other):  # tensor product
+        pass
+
+    def __sub__(self, other):
+        return self.__add__(-1*other)
+
+    def __neg__(self):
+        return -1*self
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        return self.__mul__(1/other) # is this naughty?
+
+    
+
+class Gaussian(Data):
+    def __init__(self, cov=None, mean=None, coeff=None):
+        r"""
+        Gaussian data: covariances, means, coefficients.
+        Each of these has a batch dimension, and the batch dimension is the same for all of them.
+        They are the parameters of a linear combination of Gaussians, which is Gaussian if there is only one contribution.
+        Each contribution parametrizes a Gaussian function: coeff * exp((x-mean)^T cov^-1 (x-mean))
+        NOTE: and what about Bargmann, which has a different function: coeff * exp(x.TAx + x.Tb)? In that case there is a correspondence:
+        A = cov^-1, b = cov^-1 mean, c = coeff * exp(-mean^T cov^-1 mean)
+        Args:
+            cov (batch, dim, dim): covariance matrices
+            mean  (batch, dim): means
+            coeff (batch): coefficients
+        """
+        self.cov = cov
+        self.mean = mean
+        self.coeff = coeff
+
+    def __add__(self, other: Gaussian):
+        if np.allclose(self.cov, other.cov) and np.allclose(self.mean, other.mean):
+            return Gaussian(self.cov, self.mean, self.coeff + other.coeff)
+        return Gaussian(math.concat([self.cov, other.cov], axis=0),
+                        math.concat([self.mean, other.mean], axis=0),
+                        math.concat([self.coeff, other.coeff], axis=0))
+
+    def __mul__(self, other):
+        if isinstance(other, Number): # TODO: this seems to deal only with the case of self and other being a single gaussian
+            return Gaussian(self.cov, self.mean, self.coeff * other)
+        elif isinstance(other, Gaussian):
+            return Gaussian(math.inv(self.cov) + math.inv(other.cov), self.mean + other.mean, self.coeff*other.coeff) # TODO: invert decomposed covs instead
+        else:
+            raise TypeError(f"Cannot multiply Gaussian with {other.__class__.__qualname__}")
+
+    def __and__(self, other: Gaussian): # tensor product
+        return Gaussian([math.block_diag(self.cov, other.cov)],
+                        [math.concat([self.mean, other.mean], axis=0)],
+                        [self.coeff * other.coeff])
+
+    def __eq__(self, other):
+        return np.allclose(self.cov, other.cov) and np.allclose(self.mean, other.mean) and np.allclose(self.coeff, other.coeff)
 
 
-@dataclass
-class Data:
-    symbolic: Optional[str] = None
-    gaussian: Optional[Tuple[Array]] = None # cov, mean, coeff
-    array: Optional[Array] = None # ket or dm
-    mesh: Optional[(Matrix, Vector)] = None # {x, f(x)}
-    is_hilbert_vector: bool = False
+# array types are just arrays
+
+class Mesh(Data):
+    def __init__(self, mesh):
+        self.mesh = mesh # mesh is a dictionary of x:f(x) pairs
+
+    def __add__(self, other):
+        if isinstance(other, Mesh):
+            # given x:f(x), if x:g(x) exists then x:f(x)+g(x)
+            # given x:f(x), if y:g(y) with y=x does not exist then x:f(x)+gstar(x) where gstar(x) is the 
+            # interpolation of g(y) at x, performed using the following interpolation method:
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
+            # for scatteted data that does not follow a regular grid, we can use the following interpolation method:
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
+            # or the nearest neighbour interpolation method:
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.NearestNDInterpolator.html
+
+            pass
+
+    def __mul__(self, other):
+        pass
+
+    def __and__(self, other):
+        pass
+
+
+
+
 
 
 class Representation:
-    """Abstract representation class, no implementations in here, just
+    r"""Abstract representation class, no implementations in here, just
     the right calls to the appropriate repA -> repB methods with default
     routing via Q function.
     """
 
-    def __init__(self, data: Union[Data, Representation]):
-        if isinstance(data, Representation):
-            return self.from_representation(data) # this calls the generic repA->repB transformation
-        else:
-            self.symbolic = data.symbolic
-            self.pure_gaussian = Gaussian(data.pure_cov, data.mean, data.coeff)
-            self.mixed_gaussian = Gaussian(data.mixed_cov, data.mean, data.coeff)
-            self.ket = data.ket
-            self.dm = data.dm
-            self.mesh = data.mesh
-            self.is_hilbert_vector = data.is_hilbert_vector
+    def __init__(self, init: Union[Data, Representation] = None, **kwargs):
+        r"""
+        
+        """
+        try:
+            return self.from_representation(init) # default sequence of transformations via Q
+        except AttributeError:
+            self.data = Data(data, **kwargs)
 
-    @property
-    def gaussian(self):
-        return self.pure_gaussian or self.mixed_gaussian
-
-    @property
-    def array(self):
-        return self.ket or self.dm
-    
-    @property
-    def preferred_data(self):
-        return self.symbolic or self.gaussian or self.array or self.mesh
-
-    @property
-    def cov(self):
-        return self.gaussian.cov
-
-    @property
-    def mean(self):
-        return self.gaussian.mean
-
-    @property
-    def coeff(self):
-        return self.gaussian.coeff
+    # intercept access to non-existent attribute like 'ket', 'cov', etc and route it to data
+    def __getattr__(self, name):
+        try:
+            return getattr(self.data, name)
+        except AttributeError:
+            return super().__getattr__(name)
 
     def from_representation(self, representation): # avoids having to implement all the combinations
         if isinstance(representation, self.__class__):
@@ -91,31 +184,40 @@ class Representation:
         if self.__class__ != other.__class__:
             raise TypeError(f"Cannot perform {operation} on representations of different types ({self.__class__} and {other.__class__})")
 
+    # Operations between representations
     def __add__(self, other):
         self._typecheck(other, 'addition')
-        return self.__class__(self.preferred_data + other.preferred_data)
+        return self.__class__(self.data.preferred + other.data.preferred)
     
     def __sub__(self, other):
         self._typecheck(other, 'subtraction')
-        return self.__class__(self.preferred_data - other.preferred_data)
+        return self.__class__(self.data.preferred - other.preferred_data)
 
     def __rmul__(self, other):
         return self * other
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return self.__class__(self.preferred_data * other)
+            return self.__class__(self.data.preferred * other)
+        elif isinstance(other, Representation):
+            self._typecheck(other, 'multiplication')
+            return self.__class__(self.data.preferred * other.data.preferred)
 
     def __truediv__(self, other):
         if isinstance(other, Number):
-            return self.__class__(self.preferred_data / other)
+            return self.__class__(self.data.preferred / other)
 
 # TRUNK
 
+# Now we implement the data-dependent methods.
+# An advantage of collecting the code in this way is that instead of
+# typechecking we try for the best case and catch the exception.
+# It's also nice to keep the different versions of the transformation
+# in different representations "side by side" (e.g. for learning).
 class Husimi(Representation):
     def from_charq(self, charQ):
         try:
-            return Husimi(Gaussian(math.inv(charQ.cov), charQ.mean, charQ.coeff)) # TODO mean is probably wrong
+            return Husimi(Gaussian(math.inv(charQ.cov), charQ.mean, charQ.coeff)) # TODO the mean is probably wrong
         except AttributeError:
             print('Fourier transform of charQ.ket/dm/mesh')
 
@@ -195,17 +297,29 @@ class WavefunctionX(Representation):
             print(f'Fourier transform of wavefunctionP.ket')
 
 class Stellar(Representation):
-    # TODO: implement polynomial part
+    # TODO: implement polynomial part (stellar rank > 0)
     def from_husimi(self, husimi):
         try:
             X = math.Xmat(husimi.cov.shape[-1])
             Qinv = math.inv(husimi.cov)
             A = X @ (math.eye_like(husimi.cov) - Qinv)
-            return Stellar(Gaussian(A, X @ Qinv @ husimi.mean))
+            return Stellar(Gaussian(A, X @ Qinv @ husimi.mean)) # TODO: cov must be the inverse of A though
         except AttributeError:
             print(f'husimi.ket to stellar...')
         except AttributeError:
             print(f'husimi.dm to sellar...')
+
+    @property
+    def A(self):
+        return math.inv(self.cov)
+
+    @property
+    def B(self):
+        return math.inv(self.cov) @ self.mean
+
+    @property
+    def C(self):
+        return self.coeff * math.exp(-self.mean.T @ math.inv(self.cov) @ self.mean)
 
 # LEAVES
 
@@ -260,104 +374,6 @@ class Fock(Representation):
 
 # Data types
 
-class Gaussian:
-    def __init__(cov, mean, coeff):
-        self.cov = math.atleast_3d(cov)
-        self.mean = math.atleast_2d(mean)
-        self.coeff = coeff or math.ones(1, dtype=mean.dtype)
-        assert len(self.cov) == len(self.mean) == len(self.coeff)
-        
-    def __add__(self, other): # W1(x) + W2(x)
-        if type(self) != type(other):
-            return TypeError(f'Cannot add {self.__class__.__qualname__} and {other.__class__.__qualname__}')
-        cov = math.concat(self.cov, other.cov, axis=0)
-        means = math.concat(self.means, other.means, axis=0)
-        coeffs = math.concat(self.coeffs, other.coeffs, axis=0)
-        return Gaussian(cov=cov, means=means, coeff=coeffs)
-
-    def __sub__(self, other):
-        if type(self) != type(other):
-            return TypeError(f'Cannot subtract {self.__class__.__qualname__} and {other.__class__.__qualname__}')
-        return self + (-other)
-
-    def __rmul__(self, other: Number):
-        return self * other
-
-    def __mul__(self, other: Number):
-        return Gaussian(cov=self.cov, means=self.means, coeff=self.coeffs * other)
-
-    def __neg__(self):
-        return self * -1
-
-    def outer(self, other: Gaussian):
-        covs = math.astensor([math.block_diag([math.conj(cov_other),cov_self]) for cov_other in other.cov for cov_self in self.cov])
-        means = math.astensor([math.concat([math.conj(mean_other), mean_self], axis=0) for mean_other in other.mean for mean_self in self.mean])
-        coeffs = math.astensor([coeff_other * coeff_self for coeff_other in other.coeff for coeff_self in self.coeff])
-        return Gaussian(cov=covs, mean=means, coeff=coeffs)
-        
 
 
-
-
-class Linear:
-    # hilbert space algebra
-    pass
-
-class Convex(Linear):
-    # convex algebra
-    pass
-
-
-
-class Ket:
-    def __init__(self, array):
-        self.array = array
-    
-    def __add__(self, other):
-        return Ket(self.array + other.array)
-
-    def __sub__(self, other):
-        return Ket(self.array - other.array)
-
-    def __mul__(self, other):
-        return Ket(self.array * other.array)
-
-    def __matmul__(self, other):
-        return Ket(self.array @ other.array)
-    
-    def __truediv__(self, other):
-        return Ket(self.array / other.array)
-
-
-
-class DensityMatrix:
-    def __init__(self, array):
-        self.array = array
-
-    def __add__(self, other):
-        try:
-            DensityMatrix(self.array + other.array)
-        except AttributeError:
-            try:
-               return DensityMatrix(other + self.array)
-            except (TypeError, ValueError):
-                return DensityMatrix(self.array + other)
-
-    def __sub__(self, other):
-        try:
-            DensityMatrix(self.array + other)
-        except (TypeError, ValueError):
-            return DensityMatrix(self.array - other.array)
-
-    def __mul__(self, other):
-        try:
-            DensityMatrix(self.array * other)
-        except (TypeError, ValueError):
-            return DensityMatrix(self.array * other.array)
-
-    def __matmul__(self, other):
-        try:
-            DensityMatrix(self.array @ other)
-        except (TypeError, ValueError):
-            return DensityMatrix(self.array @ other.array)
     

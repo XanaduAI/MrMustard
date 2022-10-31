@@ -17,6 +17,7 @@
 # pylint: disable=unused-wildcard-import,wildcard-import
 
 from typing import *
+from numbers import Number
 
 # NOTE: when type-annotating with typevars, objects with the same typevars must have the same type
 # E.g. in `def f(x: Vector, y: Vector) -> Tensor: ...`
