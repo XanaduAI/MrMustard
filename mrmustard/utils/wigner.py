@@ -32,13 +32,12 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
         hbar (float): the value of ``\hbar``
 
     Retunrs:
-        array: array containing the discretized Wigner function
+        tuple(array, array, array): array containing the discretized Wigner function, and the P and
+            Q coordinates in meshgrid form
     """
 
     Q = np.outer(pvec, np.ones_like(qvec))
     P = np.outer(np.ones_like(pvec), qvec)
-    cutoff = rho.shape[-1]
-    A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
 
     cutoff = rho.shape[-1]
     A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
