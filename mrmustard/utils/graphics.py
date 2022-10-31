@@ -73,11 +73,11 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
         ybounds (Tuple[int]): range of the y axis
     """
 
-    X = np.linspace(xbounds[0], xbounds[1], 200)
-    P = np.linspace(ybounds[0], ybounds[1], 200)
-    W, _, _ = wigner_discretized(rho, X, P, settings.HBAR)
-    ProbX = np.sum(W, axis=0)
-    ProbP = np.sum(W, axis=1)
+    xvec = np.linspace(*xbounds, 200)
+    pvec = np.linspace(*ybounds, 200)
+    W, X, P = wigner_discretized(rho, xvec, pvec, settings.HBAR)
+    ProbX = np.sum(W, axis=1)
+    ProbP = np.sum(W, axis=0)
 
     ### PLOTTING ###
 
@@ -85,8 +85,6 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
         2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
     )
     ticks = [-5, 0, 5]
-    xlim = [X[0], X[-1]]
-    plim = [P[0], P[-1]]
     grid = False
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
@@ -97,32 +95,32 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
     ax[1][0].get_xaxis().set_ticks(ticks)
     ax[1][0].get_yaxis().set_ticks(ticks)
     ax[1][0].tick_params(direction="in")
-    ax[1][0].set_xlim(xlim)
-    ax[1][0].set_ylim(plim)
+    ax[1][0].set_xlim(xbounds)
+    ax[1][0].set_ylim(ybounds)
     ax[1][0].grid(grid)
 
     # X quadrature probability distribution
-    ax[0][0].fill(X, ProbX, color=cm.RdBu(0.5))
-    ax[0][0].plot(X, ProbX)
+    ax[0][0].fill(xvec, ProbX, color=cm.RdBu(0.5))
+    ax[0][0].plot(xvec, ProbX)
     ax[0][0].get_xaxis().set_ticks(ticks)
     ax[0][0].xaxis.set_ticklabels([])
     ax[0][0].get_yaxis().set_ticks([])
     ax[0][0].tick_params(direction="in")
     ax[0][0].set_ylabel("Prob($x$)", fontsize=12)
-    ax[0][0].set_xlim(xlim)
+    ax[0][0].set_xlim(xbounds)
     ax[0][0].set_ylim([0, 1.1 * max(ProbX)])
     ax[0][0].grid(grid)
 
     # P quadrature probability distribution
-    ax[1][1].fill(ProbP, P, color=cm.RdBu(0.5))
-    ax[1][1].plot(ProbP, P)
+    ax[1][1].fill(ProbP, pvec, color=cm.RdBu(0.5))
+    ax[1][1].plot(ProbP, pvec)
     ax[1][1].get_xaxis().set_ticks([])
     ax[1][1].get_yaxis().set_ticks(ticks)
     ax[1][1].yaxis.set_ticklabels([])
     ax[1][1].tick_params(direction="in")
     ax[1][1].set_xlabel("Prob($p$)", fontsize=12)
     ax[1][1].set_xlim([0, 1.1 * max(ProbP)])
-    ax[1][1].set_ylim(plim)
+    ax[1][1].set_ylim(ybounds)
     ax[1][1].grid(grid)
 
     # Density matrix
@@ -131,6 +129,6 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
     ax[0][1].tick_params(direction="in")
     ax[0][1].get_xaxis().set_ticks([])
     ax[0][1].get_yaxis().set_ticks([])
-    ax[0][1].set_aspect("auto")  # if not set to auto, pytho
+    ax[0][1].set_aspect("auto")
     ax[0][1].set_ylabel(f"cutoff = {len(rho)}", fontsize=12)
     ax[0][1].yaxis.set_label_position("right")
