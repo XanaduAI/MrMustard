@@ -3,9 +3,9 @@
 ### New features
 
 * Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
-specified by the user, a value is sampled from the reduced state probability distribution and the
-conditional state on the remaining modes is generated.
-[(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+  specified by the user, a value is sampled from the reduced state probability distribution and the
+  conditional state on the remaining modes is generated.
+  [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
 
     ```python
     import numpy as np
@@ -23,7 +23,16 @@ conditional state on the remaining modes is generated.
 ### Improvements
 
 * The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values. [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+  providing better numerical stability for larger cutoff and displacement values.
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+
+* Now the Wigner function is implemented in its own module and uses numba for speed.
+  [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
+
+    ```python
+      from mrmustard.utils.wigner import wigner_discretized
+      W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
+    ```
 
 ### Bug fixes
 
