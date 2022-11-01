@@ -14,7 +14,6 @@
 
 """This module contains test for the calculation of the discretized Wigner function."""
 
-from hypothesis import given
 import pytest
 import numpy as np
 from scipy.stats import multivariate_normal
@@ -29,7 +28,6 @@ from mrmustard.lab import (
     Fock,
 )
 from mrmustard import settings
-from tests import random
 
 
 def multivariate_normal_pdf(qvec, pvec, means, cov):
