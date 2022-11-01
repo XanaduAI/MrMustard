@@ -21,7 +21,7 @@ from mrmustard import settings
 
 @njit
 def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
-    r"""Calculates the discretized Wigner function
+    r"""Calculates the discretized Wigner function for a single mode.
 
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
 
