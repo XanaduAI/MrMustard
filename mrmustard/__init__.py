@@ -20,12 +20,18 @@ from ._version import __version__
 class Settings:
     """Settings class."""
 
+    def __new__(cls): # singleton
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Settings, cls).__new__(cls)
+        return cls.instance
+
     def __init__(self):
         self._backend = "tensorflow"
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
         # clip(mean + 5*std, min, max) when auto-detecting the Fock cutoff
+        # TODO: make fock cutoff adaptive
         self.AUTOCUTOFF_STDEV_FACTOR = 5
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
@@ -40,18 +46,34 @@ class Settings:
         self.PROGRESSBAR = True
 
     @property
-    def backend(self):
+    def BACKEND(self):
         """The backend which is used.
 
         Can be either ``'tensorflow'`` or ``'torch'``.
         """
         return self._backend
 
-    @backend.setter
-    def backend(self, backend_name: str):
+    @BACKEND.setter
+    def BACKEND(self, backend_name: str):
         if backend_name not in ["tensorflow", "torch"]:  # pragma: no cover
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = backend_name
+
+    # use rich.table to print the settings
+    def __repr__(self):
+        """Returns a string representation of the settings."""
+        import rich.table
+        from rich import print
+
+        table = rich.table.Table(title="MrMustard Settings")
+        table.add_column("Setting")
+        table.add_column("Value")
+        table.add_row('BACKEND', self.BACKEND)
+        for key, value in self.__dict__.items():
+            if key == key.upper():
+                table.add_row(key, str(value))
+        print(table)
+        return ""
 
 
 settings = Settings()
