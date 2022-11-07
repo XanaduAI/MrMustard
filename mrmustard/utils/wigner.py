@@ -42,7 +42,7 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
     cutoff = rho.shape[-1]
     A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
 
-    Wmat = np.zeros((2, cutoff) + A.shape, dtype=rho.dtype)
+    Wmat = np.zeros((2, cutoff) + A.shape, dtype=np.complex128)
 
     # Wigner function for |0><0|
     Wmat[0, 0] = np.exp(-2.0 * np.abs(A) ** 2) / np.pi
