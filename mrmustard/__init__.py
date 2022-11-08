@@ -34,8 +34,7 @@ class Settings:
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
         # clip(mean + 5*std, min, max) when auto-detecting the Fock cutoff
-        # TODO: make fock cutoff adaptive
-        self.AUTOCUTOFF_STDEV_FACTOR = 5
+        self.AUTOCUTOFF_STDEV_FACTOR = 5 # TODO: make fock cutoff adaptive
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
