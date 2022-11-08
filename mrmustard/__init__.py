@@ -14,6 +14,9 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+import rich.table
+from rich import print
+
 from ._version import __version__
 
 # pylint: disable=too-many-instance-attributes
@@ -62,9 +65,6 @@ class Settings:
     # use rich.table to print the settings
     def __repr__(self):
         """Returns a string representation of the settings."""
-        import rich.table
-        from rich import print
-
         table = rich.table.Table(title="MrMustard Settings")
         table.add_column("Setting")
         table.add_column("Value")
@@ -78,8 +78,6 @@ class Settings:
 
 settings = Settings()
 """Settings object."""
-
-settings.backend = "tensorflow"
 
 
 def version():
