@@ -20,8 +20,8 @@ from ._version import __version__
 class Settings:
     """Settings class."""
 
-    def __new__(cls): # singleton
-        if not hasattr(cls, 'instance'):
+    def __new__(cls):  # singleton
+        if not hasattr(cls, "instance"):
             cls.instance = super(Settings, cls).__new__(cls)
         return cls.instance
 
@@ -68,7 +68,7 @@ class Settings:
         table = rich.table.Table(title="MrMustard Settings")
         table.add_column("Setting")
         table.add_column("Value")
-        table.add_row('BACKEND', self.BACKEND)
+        table.add_row("BACKEND", self.BACKEND)
         for key, value in self.__dict__.items():
             if key == key.upper():
                 table.add_row(key, str(value))
