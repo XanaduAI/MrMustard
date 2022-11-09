@@ -49,10 +49,12 @@ class Optimizer:
             "orthogonal": orthogonal_lr,
         }
         self.opt_history: List[float] = [0]
+        self.callback_history: List = []
         self.log = create_logger(__name__)
 
     def minimize(
-        self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000
+        self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000,
+        callback: Callable = None
     ):
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 
@@ -63,14 +65,16 @@ class Optimizer:
                 contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
+            callback (Callable): a function that will be executed at each step of the optimization, which
+                takes as arguments the trainable parameters. The return value is stored in self.callback_history.
         """
         try:
-            self._minimize(cost_fn, by_optimizing, max_steps)
+            self._minimize(cost_fn, by_optimizing, max_steps, callback)
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
 
-    def _minimize(self, cost_fn, by_optimizing, max_steps):
+    def _minimize(self, cost_fn, by_optimizing, max_steps, callback):
         # finding out which parameters are trainable from the ops
         trainable_params = self._get_trainable_params(by_optimizing)
 
@@ -82,6 +86,8 @@ class Optimizer:
 
                 self.opt_history.append(cost)
                 bar.step(math.asnumpy(cost))
+                if callback is not None:
+                    self.callback_history.append(callback(trainable_params))
 
     def apply_gradients(self, trainable_params, grads):
         """Apply gradients to variables.
