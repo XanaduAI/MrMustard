@@ -118,7 +118,6 @@ class Dgate(Parametrized, Transformation):
 
     def _parse_modes_and_args(self, cutoffs):
         num_modes_state = len(cutoffs)
-        num_modes_gate = len(self.modes)
         xargs = math.atleast_1d(self.x.value)
         yargs = math.atleast_1d(self.y.value)
         num_args_x = max(1, xargs.shape[-1])
