@@ -99,7 +99,7 @@ class Dgate(Parametrized, Transformation):
 
         N = len(cutoffs)
         x, y = self._parse_modes_and_args(cutoffs)
-        r = math.sqrt(x*x + y*y)
+        r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
         # calculate displacement unitary for each mode and concatenate with outer product

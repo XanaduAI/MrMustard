@@ -394,7 +394,7 @@ class TFMath(MathInterface):
         if r > tol:
             gate = displacement_tw(self.asnumpy(r), self.asnumpy(phi), cutoff)
         else:
-            gate = self.eye(cutoff, dtype='complex128')
+            gate = self.eye(cutoff, dtype="complex128")
 
         def grad(dy):  # pragma: no cover
             Dr, Dphi = tf.numpy_function(grad_displacement_tw, (gate, r, phi), (gate.dtype,) * 2)
