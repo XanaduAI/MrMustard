@@ -399,7 +399,7 @@ class TFMath(MathInterface):
         def grad(dy):  # pragma: no cover
             Dr, Dphi = tf.numpy_function(grad_displacement_tw, (gate, r, phi), (gate.dtype,) * 2)
             grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
-            grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
+            grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)));
             return grad_r, grad_phi, None
 
         return gate, grad
