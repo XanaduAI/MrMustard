@@ -124,9 +124,7 @@ class Dgate(Parametrized, Transformation):
         num_args_y = max(1, yargs.shape[-1])
         if num_args_x != num_args_y:
             raise ValueError("Number of parameters for `x` and `y` should be the same.")
-        num_args = num_args_x
-
-        if num_args == 1:
+        if num_args_x == 1:
             # same arg for all modes
             x = math.tile(xargs, [num_modes_state])
             y = math.tile(yargs, [num_modes_state])
