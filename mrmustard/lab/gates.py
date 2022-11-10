@@ -99,8 +99,7 @@ class Dgate(Parametrized, Transformation):
 
         N = len(cutoffs)
         x, y = self._parse_modes_and_args(cutoffs)
-
-        r = math.sqrt(x**2 + y**2)
+        r = math.sqrt(x*x + y*y)
         phi = math.atan2(y, x)
 
         # calculate displacement unitary for each mode and concatenate with outer product
@@ -119,29 +118,26 @@ class Dgate(Parametrized, Transformation):
 
     def _parse_modes_and_args(self, cutoffs):
         num_modes = len(cutoffs)
-        modes = self.modes  # modes in which the gate is acting on
-        xargs = self.x.value
-        yargs = self.y.value
-        num_args_x = (
-            xargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        num_args_y = (
-            yargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        x = np.zeros((num_modes,))
-        y = np.zeros((num_modes,))
-
+        xargs = math.atleast_1d(self.x.value)
+        yargs = math.atleast_1d(self.y.value)
+        num_args_x = max(1, xargs.shape[-1])
+        num_args_y = max(1, yargs.shape[-1])
         if num_args_x != num_args_y:
-            raise ValueError("Number of parameters for `x` and `y` is different.")
+            raise ValueError("Number of parameters for `x` and `y` should be the same.")
+        else:
+            num_args = num_args_x
 
-        if num_args_x == 1 or num_args_x == len(modes):
-            # one arg for all modes
-            x[modes] = xargs
-            y[modes] = yargs
-        elif num_args_x == len(modes):
+        if num_args == 1:
+            # same arg for all modes
+            x = math.tile(xargs, [num_modes])
+            y = math.tile(yargs, [num_modes])
+        elif num_args == num_modes:
+            # mode-specific args
+            x = xargs
+            y = yargs
+        elif num_args != len(modes):
             # number of args and number of modes don't match
             raise ValueError("Number of args and modes don't match")
-
         return x, y
 
 
