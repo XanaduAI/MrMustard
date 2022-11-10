@@ -69,7 +69,8 @@ class Optimizer:
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
             callback (Callable): a function that will be executed at each step of the optimization, which
-                takes as arguments the training step (int) and the trainable parameters. The return value is stored in self.callback_history.
+                takes as arguments the training step (int), the cost and the trainable parameters.
+                The return value is stored in self.callback_history.
         """
         try:
             self._minimize(cost_fn, by_optimizing, max_steps, callback)
@@ -91,7 +92,7 @@ class Optimizer:
                 bar.step(math.asnumpy(cost))
                 if callback is not None:
                     self.callback_history.append(
-                        callback(len(self.opt_history) - 1, trainable_params)
+                        callback(len(self.opt_history) - 1, cost, trainable_params)
                     )
 
     def apply_gradients(self, trainable_params, grads):
