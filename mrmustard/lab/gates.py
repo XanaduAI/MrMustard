@@ -98,7 +98,7 @@ class Dgate(Parametrized, Transformation):
         polynomials."""
 
         N = len(cutoffs)
-        x, y = self._parse_modes_and_args(cutoffs)
+        x, y = math.atleast_1d(self.x.value), math.atleast_1d(self.y.value) #self._parse_modes_and_args(cutoffs)
         r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
@@ -116,29 +116,29 @@ class Dgate(Parametrized, Transformation):
             list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
         )
 
-    def _parse_modes_and_args(self, cutoffs):
-        num_modes = len(cutoffs)
-        xargs = math.atleast_1d(self.x.value)
-        yargs = math.atleast_1d(self.y.value)
-        num_args_x = max(1, xargs.shape[-1])
-        num_args_y = max(1, yargs.shape[-1])
-        if num_args_x != num_args_y:
-            raise ValueError("Number of parameters for `x` and `y` should be the same.")
-        else:
-            num_args = num_args_x
+    # def _parse_modes_and_args(self, cutoffs):
+    #     num_modes = len(cutoffs)
+    #     xargs = math.atleast_1d(self.x.value)
+    #     yargs = math.atleast_1d(self.y.value)
+    #     num_args_x = max(1, xargs.shape[-1])
+    #     num_args_y = max(1, yargs.shape[-1])
+    #     if num_args_x != num_args_y:
+    #         raise ValueError("Number of parameters for `x` and `y` should be the same.")
+    #     else:
+    #         num_args = num_args_x
 
-        if num_args == 1:
-            # same arg for all modes
-            x = math.tile(xargs, [num_modes])
-            y = math.tile(yargs, [num_modes])
-        elif num_args == num_modes:
-            # mode-specific args
-            x = xargs
-            y = yargs
-        elif num_args != len(modes):
-            # number of args and number of modes don't match
-            raise ValueError("Number of args and modes don't match")
-        return x, y
+    #     if num_args == 1:
+    #         # same arg for all modes
+    #         x = math.tile(xargs, [num_modes])
+    #         y = math.tile(yargs, [num_modes])
+    #     elif num_args == num_modes:
+    #         # mode-specific args
+    #         x = xargs
+    #         y = yargs
+    #     elif num_args != len(self.modes):
+    #         # number of args and number of modes don't match
+    #         raise ValueError("Number of args and modes don't match")
+    #     return x, y
 
 
 class Sgate(Parametrized, Transformation):
