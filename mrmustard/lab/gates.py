@@ -98,7 +98,9 @@ class Dgate(Parametrized, Transformation):
         polynomials."""
 
         N = len(cutoffs)
-        x, y = math.atleast_1d(self.x.value), math.atleast_1d(self.y.value) #self._parse_modes_and_args(cutoffs)
+        x, y = math.atleast_1d(self.x.value), math.atleast_1d(
+            self.y.value
+        )  # self._parse_modes_and_args(cutoffs)
         r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
