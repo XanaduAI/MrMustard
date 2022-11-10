@@ -117,7 +117,8 @@ class Dgate(Parametrized, Transformation):
         )
 
     def _parse_modes_and_args(self, cutoffs):
-        num_modes = len(cutoffs)
+        num_modes_state = len(cutoffs)
+        num_modes_gate = len(self.modes)
         xargs = math.atleast_1d(self.x.value)
         yargs = math.atleast_1d(self.y.value)
         num_args_x = max(1, xargs.shape[-1])
@@ -129,15 +130,13 @@ class Dgate(Parametrized, Transformation):
 
         if num_args == 1:
             # same arg for all modes
-            x = math.tile(xargs, [num_modes])
-            y = math.tile(yargs, [num_modes])
-        elif num_args == num_modes:
-            # mode-specific args
-            x = xargs
-            y = yargs
-        elif num_args != len(self.modes):
-            # number of args and number of modes don't match
-            raise ValueError("Number of args and modes don't match")
+            x = math.tile(xargs, [num_modes_state])
+            y = math.tile(yargs, [num_modes_state])
+        else:
+            x = math.zeros([num_modes_state])
+            y = math.zeros([num_modes_state])
+            x = math.update_tensor(x, [[m] for m in self.modes], xargs)
+            y = math.update_tensor(y, [[m] for m in self.modes], yargs)
         return x, y
 
 
