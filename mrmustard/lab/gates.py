@@ -93,7 +93,7 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
-    def U(self, cutoffs: List[int]):
+    def U(self, cutoffs: Sequence[int]):
         """Returns the unitary representation of the Displacement gate using the Laguerre
         polynomials."""
 
