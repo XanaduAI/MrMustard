@@ -137,7 +137,7 @@ class TestPNRDetector:
         L = Attenuator(transmissivity=eta)
         dms_lossy = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> lossy_detector[0]
         dms_ideal = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> L[0] >> ideal_detector[0]
-        assert np.allclose(dms_lossy, dms_ideal)
+        assert np.allclose(dms_lossy, dms_ideal, atol=1e-6)
 
 
 class TestHomodyneDetector:
