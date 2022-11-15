@@ -18,6 +18,7 @@
 This module contains functions for performing calculations on Fock states.
 """
 
+from functools import lru_cache
 import numpy as np
 
 from mrmustard.math.caching import tensor_int_cache
@@ -475,7 +476,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
 
     Args:
-        q (Vector): a vetor containing the q points at which the function is evaluated (units of \sqrt{\hbar})
+        q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
         cutoff (int): maximum number of photons
         hbar (optional): value of `\hbar`, defaults to Mr Mustard's internal value
 
@@ -514,3 +515,126 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     # wavefunction
     psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
     return psi
+
+
+@lru_cache
+def estimate_dx(cutoff, period_resolution=20):
+    r"""Estimates a suitable quadrature discretization interval `dx`. Uses the fact
+    that Fock state `n` oscillates with angular frequency :math:`\sqrt{2(n + 1)}`,
+    which follows from the relation
+
+    .. math::
+
+            \psi^{[n]}'(q) = q - sqrt(2*(n + 1))*\psi^{[n+1]}(q)
+
+    by setting q = 0, and approximating the oscillation amplitude by `\psi^{[n+1]}(0)
+
+    Ref: https://en.wikipedia.org/wiki/Hermite_polynomials#Hermite_functions
+
+    Args
+        cutoff (int): Fock cutoff
+        period_resolution (int): Number of points used to sample one Fock
+            wavefunction oscillation. Larger values yields better approximations
+            and thus smaller `dx`.
+
+    Returns
+        (float): discretization value of quadrature
+    """
+    fock_cutoff_frequency = np.sqrt(2 * (cutoff + 1))
+    fock_cutoff_period = 2 * np.pi / fock_cutoff_frequency
+    dx_estimate = fock_cutoff_period / period_resolution
+    return dx_estimate
+
+
+@lru_cache
+def estimate_xmax(cutoff, minimum=5):
+    r"""Estimates a suitable quadrature axis length
+
+    Args
+        cutoff (int): Fock cutoff
+        minimum (float): Minimum value of the returned xmax
+
+    Returns
+        (float): maximum quadrature value
+    """
+    if cutoff == 0:
+        xmax_estimate = 3
+    else:
+        # maximum q for a classical particle with energy n=cutoff
+        classical_endpoint = np.sqrt(2 * cutoff)
+        # approximate probability of finding particle outside classical region
+        excess_probability = 1 / (7.464 * cutoff ** (1 / 3))
+        # Emperical factor that yields reasonable results
+        A = 5
+        xmax_estimate = classical_endpoint * (1 + A * excess_probability)
+    return max(minimum, xmax_estimate)
+
+
+@lru_cache
+def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
+    """Generates a suitable quadrature axis.
+
+    Args
+        cutoff (int): Fock cutoff
+        minimum (float): Minimum value of the returned xmax
+        period_resolution (int): Number of points used to sample one Fock
+            wavefunction oscillation. Larger values yields better approximations
+            and thus smaller dx.
+
+    Returns
+        (array): quadrature axis
+    """
+    xmax = estimate_xmax(cutoff, minimum=minimum)
+    dx = estimate_dx(cutoff, period_resolution=period_resolution)
+    xaxis = np.arange(-xmax, xmax, dx)
+    xaxis = np.append(xaxis, xaxis[-1] + dx)
+    xaxis = xaxis - np.mean(xaxis)  # center around 0
+    return xaxis
+
+
+def quadrature_distribution(
+    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: float = settings.HBAR
+):
+    r"""Given the ket or density matrix of a single-mode state, it generates the probability
+    density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
+    density matrix of the state and |x_\phi> the quadrature eigenvector with angle `\phi`
+    equal to ``quadrature_angle``.
+
+    Args:
+        state (Tensor): single mode state ket or density matrix
+        quadrature_angle (float): angle of the quadrature basis vector
+        x (Vector): points at which the quadrature distribution is evaluated
+
+    Returns:
+        tuple(Vector, Vector): coordinates at which the pdf is evaluated and the probability distribution
+    """
+    dims = len(state.shape)
+    if dims > 2:
+        raise ValueError(
+            "Input state has dimension {state.shape}. Make sure is either a single mode ket or dm."
+        )
+
+    is_dm = dims == 2
+    cutoff = state.shape[0]
+
+    if not np.isclose(quadrature_angle, 0.0):
+        # rotate mode to the homodyne basis
+        theta = -math.arange(cutoff) * quadrature_angle
+        Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+        state = (
+            math.einsum("ij,jk,kl->il", Ur, state, math.dagger(Ur))
+            if is_dm
+            else math.matvec(Ur, state)
+        )
+
+    if x is None:
+        x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+
+    psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
+    pdf = (
+        math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
+        if is_dm
+        else math.matvec(psi_x, state, transpose_a=True)
+    )
+
+    return x, math.cast(pdf, "float64")
