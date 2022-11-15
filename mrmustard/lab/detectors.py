@@ -412,7 +412,7 @@ class Homodyne(Generaldyne):
         # factor of the displacement symplectic inside the DisplacedSqueezed state.
         x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
         self.state = DisplacedSqueezed(
-            r=self.r, phi=self.quadrature_angle, x=x_arg, y=0.0, modes=self.modes
+            r=self.r, phi=0.0, x=x_arg, y=0.0, modes=self.modes
         ) >> Rgate(self.quadrature_angle, modes=self.modes)
 
         if remaining_modes == 0:
