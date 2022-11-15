@@ -32,7 +32,7 @@ def test_backend_redirection_tf():
     """Test Math class is redirecting calls to the backend set on MM settings"""
     math = Math()
 
-    settings.backend = "tensorflow"
+    settings.BACKEND = "tensorflow"
     assert math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow"
 
 
@@ -41,16 +41,16 @@ def test_backend_redirection_torch():
     """Test Math class is redirecting calls to the backend set on MM settings"""
     math = Math()
 
-    settings.backend = "torch"
+    settings.BACKEND = "torch"
     assert math._MathInterface__instance.__module__ == "mrmustard.math.torch"
 
 
 def test_error_for_wrong_backend():
     """Test error is raise when using a backend that is not allowed"""
-    backend = settings.backend
+    backend = settings.BACKEND
     with pytest.raises(ValueError) as exception_info:
-        settings.backend = "unexisting_backend"
+        settings.BACKEND = "unexisting_backend"
         assert exception_info.value.args[0] == f"Backend must be either 'tensorflow' or 'torch'"
 
-    # set back to initial value to avoir side effects
-    settings.backend = backend
+    # set back to initial value to avoid side effects
+    settings.BACKEND = backend

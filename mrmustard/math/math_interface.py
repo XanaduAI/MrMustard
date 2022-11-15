@@ -426,14 +426,14 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, dtype):
+    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, tol):
         r"""Calculates the matrix elements of the displacement gate and its derivatives.
 
         Args:
             r (float): displacement magnitude
             phi (float): displacement angle
             cutoff (int): Fock ladder cutoff
-            dtype (data type): Specifies the data type used for the calculation
+            tol (float): r tolerance for returning identity instead of displacement
         Returns:
             Tuple(array[complex], function): matrix representing the displacement operation and its gradient
         """
