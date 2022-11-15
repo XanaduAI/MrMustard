@@ -611,7 +611,7 @@ def quadrature_distribution(
     dims = len(state.shape)
     if dims > 2:
         raise ValueError(
-            "Input state has dimension {state.shape}. Make sure is either a single mode ket or dm."
+            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
     is_dm = dims == 2
@@ -634,7 +634,39 @@ def quadrature_distribution(
     pdf = (
         math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
         if is_dm
-        else math.matvec(psi_x, state, transpose_a=True)
+        else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
     )
 
     return x, math.cast(pdf, "float64")
+
+
+def sample_homodyne(
+    state: Tensor, quadrature_angle: float = 0.0, hbar: float = settings.HBAR
+) -> Tuple[float, float]:
+    r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
+    where `\rho` is the reduced density matrix of the state.
+
+    Args:
+        state (Tensor): ket or density matrix of the state being measured
+        quadrature_angle (float): angle of the quadrature distribution
+        hbar: value of hbar
+
+    Returns:
+        tuple(float, float): outcome and probability of the outcome
+    """
+    dims = len(state.shape)
+    if dims > 2:
+        raise ValueError(
+            "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
+        )
+
+    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar)
+    probs = pdf * (x[1] - x[0])
+
+    # draw a sample from the distribution
+    pdf = math.Categorical(probs=probs, name="homodyne_dist")
+    sample_idx = pdf.sample()
+    homodyne_sample = math.gather(x, sample_idx)
+    probability_sample = math.gather(probs, sample_idx)
+
+    return homodyne_sample, probability_sample
