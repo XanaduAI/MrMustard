@@ -579,7 +579,7 @@ class Cat(Parametrized, State):
         if cutoffs is None:
             cutoffs = fock.autocutoffs(a**2, a**2)
 
-        ket = fock.cat_state(a, phi, p, cutoffs[0])
+        ket = fock.cat_state_ket(a, phi, p, cutoffs[0])
         State.__init__(self, ket=ket, cutoffs=cutoffs, modes=modes)
 
         self._normalize = normalize
