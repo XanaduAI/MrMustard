@@ -48,48 +48,6 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def displaced_squeezed_state(r_d, phi_d, r_s, phi_s, trunc):
-    r"""
-    The displaced squeezed state :math:`\ket{\alpha,\zeta} = D(\alpha)S(r\exp{(i\phi)})\ket{0}`  where `alpha = r_d * np.exp(1j * phi_d)` and `zeta = r_s * np.exp(1j * phi_s)`.
-    """
-    if np.allclose(r_s, 0.0):
-        return coherentState(r_d, phi_d, trunc)
-
-    if np.allclose(r_d, 0.0):
-        return squeezedState(r_s, phi_s, trunc)
-
-    ph = np.exp(1j * phi_s)
-    ch = cosh(r_s)
-    sh = sinh(r_s)
-    th = tanh(r_s)
-    alpha = r_d * np.exp(1j * phi_d)
-
-    gamma = alpha * ch + np.conj(alpha) * ph * sh
-    hermite_arg = gamma / np.sqrt(ph * np.sinh(2 * r_s) + 1e-10)
-
-    # normalization constant
-    N = np.exp(-0.5 * np.abs(alpha) ** 2 - 0.5 * np.conj(alpha) ** 2 * ph * th)
-
-    coeff = np.array([(0.5 * ph * th) ** (n / 2) / np.sqrt(fac(n) * ch) for n in range(trunc)])
-    vec = np.array([H(hermite_arg, row) for row in np.diag(coeff)])
-    state = N * vec
-
-    return state
-
-
-def coherent_state(r, phi, trunc):
-    r"""
-    The coherent state :math:`D(\alpha)\ket{0}` where `alpha = r * np.exp(1j * phi)`.
-    """
-    alpha = math.make_complex(r * math.cos(phi), r * math.sin(phi))
-
-    def entry(n):
-        """coherent summation term"""
-        return alpha**n / sqrt(fac(n))
-
-    return exp(-abssqr(alpha) / 2) * array([entry(n) for n in range(trunc)])
-
-
 def autocutoffs(
     number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
 ) -> Tuple[int, ...]:
@@ -513,94 +471,44 @@ def trace(dm, keep: List[int]):
     return math.trace(dm)
 
 
-def gkp_displacements(t, k, epsilon):
-    """
-    Helper function to generate the displacements parameters associated with the teeth of
-    GKP computational basis state k.
+def cat_state_ket(a: float, phi: float, p: float, cutoff: int) -> Matrix:
+    r"""Returns a cat state ket
+
+    .. math::
+
+        |cat\rangle = \frac{1}{\sqrt{2(1+e^{-2|\alpha|^2}\cos(\theta))}}
+        \left(|\alpha\rangle +e^{i\theta}|-\alpha\rangle\right)
+
+    with the even cat state given for :math:`\theta=0`, and the odd
+    cat state given for :math:`\theta=\pi`.
 
     Args:
-        t (array): the teeth of GKP computational basis
-        k (int): a computational basis state label, can be either 0 or 1
-        epsilon (float): finite energy parameter of the state
-
+        a (float): displacement magnitude :math:`|\alpha|`
+        phi (float): displacement angle :math:`\phi`
+        p (float): parity, where :math:`\theta=p\pi`. ``p=0`` corresponds to an even
+            cat state, and ``p=1`` an odd cat state
+        cutoff (int): the size of the Fock basis
     Returns:
-        array: the displacements
+        array: the cat state ket
     """
-    return np.sqrt(0.5 * np.pi) * (2 * t + k) / np.cosh(epsilon)
 
+    a, phi, p = math.cast(a, "complex128"), math.cast(phi, "complex128"), math.cast(p, "complex128")
+    phase = p * np.pi
+    alpha = a * math.exp(1j * phi)
 
-def gkp_coeffs(t: Tensor, k: Tensor, epsilon: Tensor):
-    """
-    Helper function to generate the coefficient parameters associated with the teeth of
-    GKP computational basis state k.
+    # normalization constant
+    N = math.sqrt(2 * (1 + math.cos(phase) * math.exp(-2 * a**2)))
 
-    Args:
-        t (array): the teeth of GKP computational basis
-        k (int): a computational basis state label, can be either 0 or 1
-        epsilon (float): finite energy parameter of the state
+    # <n|alpha> = alpha**n/sqrt(n!) = alpha/sqrt(n) * <n-1|alpha>
+    ones = math.ones([cutoff], dtype="complex128")
+    alpha_vec = math.ones([cutoff], dtype="complex128") * alpha
+    factorial_vec = math.new_constant([1] + list(range(1, cutoff)), name="", dtype="complex128")
 
-    Returns:
-        array: the coefficients
-    """
-    return math.exp(-0.5 * np.pi * math.tanh(epsilon) * (k + 2 * t) ** 2)
+    cp = math.cumprod(alpha_vec / math.sqrt(factorial_vec), exclusive=True)
+    cm = cp * math.cumprod(-ones, exclusive=True)
+    cat = cp + math.exp(1j * phase) * cm
 
-
-def square_gkp_basis_state(i, epsilon, ampl_cutoff, cutoffs):
-    """
-    Generate the Fock expansion of a (subnormalized) computational GKP basis state. Normalization occurs in the ``square_gkp_state`` method.
-
-    Args:
-        i (int): a computational basis state label, can be either 0 or 1
-        epsilon (float): finite energy parameter of the state
-        ampl_cutoff (float): this determines how many terms to keep in the Hilbert space expansion
-        cutoff (int): Fock space truncation
-
-    Returns
-        (array): the expansion of the ith computational basis state in the Fock basis
-
-    """
-    z_max = math.ceil(math.sqrt(-0.25 / np.pi * math.log(ampl_cutoff) / np.tanh(epsilon)))
-    params = math.concat([z_max, i, epsilon], axis=1)
-    coeffs = [gkp_coeffs(math.arange(-zm, zm + 1), ii, eps) for zm, ii, eps in params]
-    r = -0.5 * math.log(math.tanh(epsilon))
-    alphas = [gkp_displacements(math.arange(-zm, zm + 1), ii, eps) for zm, ii, eps in params]
-    num_kets = len(alphas)
-
-    alphas_coeffs_cutoffs = math.concat([alphas, coeffs, cutoffs], axis=1)
-    ket = [
-        math.sum(coeff * displacedSqueezed(alpha, 0, r, 0, cutoff), axes=1)
-        for alpha, coeff, cutoff in alphas_coeffs_cutoffs
-    ]
-    return ket
-
-
-def square_gkp_state(theta, phi, epsilon, ampl_cutoff, cutoff):
-    r"""
-    Generate the Fock expansion of an abitrary GKP state parametrized as
-    :math:`|\psi\rangle = \cos{\tfrac{\theta}{2}} \vert 0 \rangle_{\rm gkp} + e^{-i \phi} \sin{\tfrac{\theta}{2}} \vert 1 \rangle_{\rm gkp}`.
-
-    Args:
-        theta (float): the colatitude with respect to the z-axis in the Bloch sphere
-        phi (float): the longitude with respect to the x-axis in the Bloch sphere
-        epsilon (float): finite energy parameter of the state
-        ampl_cutoff (float): this determines how many terms to keep
-        cutoff (int): Fock space truncation
-
-    Returns:
-        tuple: arrays of the weights, means and covariances for the state
-    """
-    qubit_coeff0 = math.cos(theta / 2)
-    state_label0 = math.zeros_like(epsilon)
-    ket0 = square_gkp_basis_state(state_label0, epsilon, ampl_cutoff, cutoff)
-
-    phi_arg = math.make_complex(math.zeros_like(phi), phi)
-    qubit_coeff1 = math.sin(theta / 2) * math.exp(-phi_arg)
-    state_label1 = math.ones_like(epsilon)
-    ket1 = square_gkp_basis_state(state_label1, epsilon, ampl_cutoff, cutoff)
-
-    ket = qubit_coeff0 * ket0 + qubit_coeff1 * ket1
-    ket /= math.norm(ket, axis=1)
-    return ket
+    return cat
 
 
 @tensor_int_cache
