@@ -123,6 +123,12 @@ class TFMath(MathInterface):
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
 
+    def cumprod(self, x: tf.Tensor, axis=0, exclusive=False, reverse=False) -> tf.Tensor:
+        return tf.math.cumprod(x, axis, exclusive, reverse)
+
+    def cumsum(self, x: tf.Tensor, axis=0, exclusive=False, reverse=False) -> tf.Tensor:
+        return tf.math.cumsum(x, axis, exclusive, reverse)
+
     def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
         return tf.math.atan2(y, x)
 

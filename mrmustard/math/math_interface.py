@@ -34,6 +34,7 @@ from mrmustard.types import (
     Trainable,
     Callable,
     Any,
+    Union,
 )
 
 # pylint: disable=too-many-public-methods
@@ -272,6 +273,46 @@ class MathInterface(ABC):
 
         Returns:
             array: hyperbolic cosine of array
+        """
+
+    @abstractmethod
+    def cumprod(
+        self,
+        x: Tensor,
+        axis: Optional[Union[int, Sequence]],
+        exclusive: Optional[bool],
+        reverse: Optional[bool],
+    ) -> Tensor:
+        """Compute the cumulative product of the tensor x along axis.
+
+        Args:
+            x (array): a Tensor
+            axis (Optional int or Sequence): a Sequence or integer value; defaults to 0. Must be in the range [-rank(x), rank(x)).
+            exclusive (bool): if ``True``, perform exclusive cumprod
+            reverse (bool):	performe the computation in the opposite direction; defaults to ``False``
+
+        Returns:
+            array: cumulative product of the tensor along axis
+        """
+
+    @abstractmethod
+    def cumsum(
+        self,
+        array: Tensor,
+        axis: Optional[Union[int, Sequence]],
+        exclusive: Optional[bool],
+        reverse: Optional[bool],
+    ) -> Tensor:
+        """Compute the cumulative sum of the tensor x along axis.
+
+        Args:
+            x (array): a Tensor
+            axis (Optional int or Sequence): a Sequence or integer value; defaults to 0. Must be in the range [-rank(x), rank(x)).
+            exclusive (bool): if ``True``, perform exclusive cumsum
+            reverse (bool):	performe the computation in the opposite direction; defaults to ``False``
+
+        Returns:
+            array: cumulative sum of the tensor along axis
         """
 
     def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
