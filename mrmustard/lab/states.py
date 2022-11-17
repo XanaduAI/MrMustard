@@ -20,10 +20,10 @@ from typing import Union, Optional, List, Tuple, Sequence
 from numpy import pi
 from mrmustard.types import Scalar, Vector, Matrix, Tensor
 from mrmustard import settings
-from mrmustard.lab.abstract import State
 from mrmustard.physics import gaussian, fock
 from mrmustard.training import Parametrized
 from mrmustard.math import Math
+from .abstract import State
 
 math = Math()
 

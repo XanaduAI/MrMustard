@@ -2,9 +2,37 @@
 
 ### New features
 
+* Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
+  specified by the user, a value is sampled from the reduced state probability distribution and the
+  conditional state on the remaining modes is generated.
+  [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+
+    ```python
+    import numpy as np
+    from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+
+    # conditional state from measurement
+    conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+
+    # measurement outcome
+    measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+    ```
+
 ### Breaking changes
 
 ### Improvements
+
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
+  providing better numerical stability for larger cutoff and displacement values.
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+
+* Now the Wigner function is implemented in its own module and uses numba for speed.
+  [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
+
+    ```python
+      from mrmustard.utils.wigner import wigner_discretized
+      W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
+    ```
 
 ### Bug fixes
 
@@ -79,6 +107,7 @@ This release contains contributions from (in alphabetical order):
   ```
   [(#140)](https://github.com/XanaduAI/MrMustard/pull/140)
 
+
 ### Breaking changes
 
 * The Parametrized and Training classes have been refactored: now trainable tensors are wrapped in an instance of the `Parameter` class. To define a set of parameters do
@@ -132,6 +161,7 @@ This release contains contributions from (in alphabetical order):
 * Add the argument 'modes' to the `Interferometer` operation to indicate which modes the Interferometer is
   applied to.
   [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
+
 
 ### Bug fixes
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.

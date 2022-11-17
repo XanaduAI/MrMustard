@@ -274,6 +274,30 @@ class MathInterface(ABC):
             array: hyperbolic cosine of array
         """
 
+    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
+        """Given two real tensors representing the real and imaginary part of a complex number,
+        this operation returns a complex tensor. The input tensors must have the same shape.
+
+        Args:
+            real (array): real part of the complex number
+            imag (array): imaginary part of the complex number
+
+        Returns:
+            array: complex array ``real + 1j * imag``
+        """
+
+    @abstractmethod
+    def atan2(self, y: Tensor, x: Tensor) -> Tensor:
+        r"""Computes the trignometric inverse tangent of y/x element-wise.
+
+        Args:
+            y (array): numerator array
+            x (array): denominator array
+
+        Returns:
+            array: arctan of y/x
+        """
+
     @abstractmethod
     def det(self, matrix: Tensor) -> Tensor:
         r"""Returns the determinant of matrix.
@@ -371,6 +395,17 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def eye_like(self, array: Tensor) -> Tensor:
+        r"""Returns the identity matrix of the same shape and dtype as array.
+
+        Args:
+            array (array): array to create the identity matrix of
+
+        Returns:
+            matrix: identity matrix
+        """
+
+    @abstractmethod
     def from_backend(self, value: Any) -> bool:
         r"""Returns whether the given tensor is a tensor of the concrete backend."""
 
@@ -410,6 +445,19 @@ class MathInterface(ABC):
 
         Returns:
             array: renormalized hermite polynomials
+        """
+
+    @abstractmethod
+    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, tol):
+        r"""Calculates the matrix elements of the displacement gate and its derivatives.
+
+        Args:
+            r (float): displacement magnitude
+            phi (float): displacement angle
+            cutoff (int): Fock ladder cutoff
+            tol (float): r tolerance for returning identity instead of displacement
+        Returns:
+            Tuple(array[complex], function): matrix representing the displacement operation and its gradient
         """
 
     @abstractmethod
@@ -823,6 +871,72 @@ class MathInterface(ABC):
 
         Returns:
             array: array of zeros
+        """
+
+    @abstractmethod
+    def map_fn(self, func, elements: Tensor) -> Tensor:
+        """Transforms elems by applying fn to each element unstacked on axis 0.
+
+        Args:
+            func (func): The callable to be performed. It accepts one argument,
+                which will have the same (possibly nested) structure as elems.
+            elements (Tensor): A tensor or (possibly nested) sequence of tensors,
+                each of which will be unstacked along their first dimension.
+                ``func`` will be applied to the nested sequence of the resulting slices.
+
+        Returns:
+            Tensor: applied ``func`` on ``elements``
+        """
+
+    @abstractmethod
+    def squeeze(self, tensor: Tensor, axis: Optional[List[int]]) -> Tensor:
+        """Removes dimensions of size 1 from the shape of a tensor.
+
+        Args:
+            tensor (Tensor): the tensor to squeeze
+            axis (Optional[List[int]]): if specified, only squeezes the
+                dimensions listed, defaults to []
+
+        Returns:
+            Tensor: tensor with one or more dimensions of size 1 removed
+        """
+
+    @abstractmethod
+    def cholesky(self, input: Tensor) -> Tensor:
+        """Computes the Cholesky decomposition of square matrices.
+
+        Args:
+            input (Tensor)
+
+        Returns:
+            Tensor: tensor with the same type as input
+        """
+
+    @abstractmethod
+    def Categorical(self, probs: Tensor, name: str):
+        """Categorical distribution over integers.
+
+        Args:
+            probs (Tensor): tensor representing the probabilities of a set of Categorical
+                distributions.
+            name (str): name prefixed to operations created by this class
+
+        Returns:
+            tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
+        """
+
+    @abstractmethod
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
+        vector (aka "mu") and a (batch of) k x k scale matrix; covariance = scale @ scale.T
+        where @ denotes matrix-multiplication.
+
+        Args:
+            loc (Tensor): if this is set to None, loc is implicitly 0
+            scale_tril: lower-triangular Tensor with non-zero diagonal elements
+
+        Returns:
+            tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
         """
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

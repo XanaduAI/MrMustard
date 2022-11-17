@@ -18,14 +18,14 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Sequence
+import numpy as np
 from mrmustard.types import Tensor
 from mrmustard import settings
-from mrmustard.lab.abstract import Transformation
 from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
-
 from mrmustard.math import Math
+from .abstract import Transformation
 
 math = Math()
 
@@ -92,6 +92,48 @@ class Dgate(Parametrized, Transformation):
     @property
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+
+    def U(self, cutoffs: Sequence[int]):
+        """Returns the unitary representation of the Displacement gate using the Laguerre
+        polynomials."""
+
+        N = len(cutoffs)
+        x, y = self._parse_modes_and_args(cutoffs)
+        r = math.sqrt(x * x + y * y)
+        phi = math.atan2(y, x)
+
+        # calculate displacement unitary for each mode and concatenate with outer product
+        Ud = None
+        for idx, cutoff in enumerate(cutoffs):
+            if Ud is None:
+                Ud = math.displacement(r[idx], phi[idx], cutoff)
+            else:
+                U_next = math.displacement(r[idx], phi[idx], cutoff)
+                Ud = math.outer(Ud, U_next)
+
+        return math.transpose(
+            Ud,
+            list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        )
+
+    def _parse_modes_and_args(self, cutoffs):
+        num_modes_state = len(cutoffs)
+        xargs = math.atleast_1d(self.x.value)
+        yargs = math.atleast_1d(self.y.value)
+        num_args_x = max(1, xargs.shape[-1])
+        num_args_y = max(1, yargs.shape[-1])
+        if num_args_x != num_args_y:
+            raise ValueError("Number of parameters for `x` and `y` should be the same.")
+        if num_args_x == 1:
+            # same arg for all modes
+            x = math.tile(xargs, [num_modes_state])
+            y = math.tile(yargs, [num_modes_state])
+        else:
+            x = math.zeros([num_modes_state])
+            y = math.zeros([num_modes_state])
+            x = math.update_tensor(x, [[m] for m in self.modes], xargs)
+            y = math.update_tensor(y, [[m] for m in self.modes], yargs)
+        return x, y
 
 
 class Sgate(Parametrized, Transformation):
@@ -176,6 +218,44 @@ class Rgate(Parametrized, Transformation):
     @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle.value)
+
+    def U(self, cutoffs: Sequence[int]):
+
+        angles = self._parse_modes_and_args(cutoffs)
+        num_modes = len(cutoffs)
+
+        # calculate rotation unitary for each mode and concatenate with outer product
+        Ur = None
+        for idx, cutoff in enumerate(cutoffs):
+            theta = math.arange(cutoff) * angles[idx]
+            if Ur is None:
+                Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+            else:
+                U_next = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+                Ur = math.outer(Ur, U_next)
+
+        # return total unitary with indexes reordered according to MM convetion
+        return math.transpose(
+            Ur,
+            list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
+        )
+
+    def _parse_modes_and_args(self, cutoffs):
+        num_modes = len(cutoffs)
+        modes = self.modes  # modes in which the gate is acting on
+        args = self.angle.value
+        num_args = (
+            args.shape[0] if len(args.shape.as_list()) > 0 else 1
+        )  # number or arguments given to the gate
+        angles = np.zeros((num_modes,))
+        if num_args == 1:
+            # one arg for all modes
+            angles[modes] = args
+        else:
+            # an arg for each mode
+            angles = args
+
+        return math.new_variable(angles, bounds=None, name="Rgate_angles")
 
 
 class Pgate(Parametrized, Transformation):

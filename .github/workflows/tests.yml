@@ -2,27 +2,27 @@ name: Tests
 on:
   push:
     branches:
-      - main
+      - develop
   pull_request:
 
 jobs:
-  build:
+  pytest:
     runs-on: ubuntu-latest
     env:
       HYPOTHESIS_PROFILE: ci
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.8', '3.9', '3.10']
-
     steps:
-      - uses: actions/checkout@v2
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
+      - uses: actions/checkout@v3
 
       - name: Setup python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.8'
 
       - name: Install dependencies
         run: |
@@ -32,7 +32,6 @@ jobs:
           pip install wheel pytest pytest-cov --upgrade
           python setup.py bdist_wheel
           pip install dist/*.whl
-          export HYPOTHESIS_PROFILE=ci
 
       - name: Run tests
         run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
