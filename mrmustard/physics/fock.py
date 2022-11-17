@@ -601,6 +601,8 @@ def square_gkp_state(theta, phi, epsilon, ampl_cutoff, cutoff):
     ket = qubit_coeff0 * ket0 + qubit_coeff1 * ket1
     ket /= math.norm(ket, axis=1)
     return ket
+
+
 @tensor_int_cache
 def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
