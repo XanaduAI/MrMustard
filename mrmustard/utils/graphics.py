@@ -65,7 +65,14 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[int] = (-6, 6), ticks = [-5, 0, 5], tick_labels = None, grid = False):
+def mikkel_plot(
+    rho: np.ndarray,
+    xbounds: Tuple[int] = (-6, 6),
+    ybounds: Tuple[int] = (-6, 6),
+    ticks=[-5, 0, 5],
+    tick_labels=None,
+    grid=False,
+):
     """Plots the Wigner function of a state given its density matrix.
 
     Args:
@@ -75,7 +82,7 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
     """
 
     q, ProbX = quadrature_distribution(rho)
-    p, ProbP = quadrature_distribution(rho, np.pi/2)
+    p, ProbP = quadrature_distribution(rho, np.pi / 2)
 
     xvec = np.linspace(*xbounds, 200)
     pvec = np.linspace(*ybounds, 200)
