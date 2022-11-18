@@ -32,7 +32,7 @@ from mrmustard.lab.gates import (
 )
 from mrmustard.lab.circuit import Circuit
 from mrmustard.training import Optimizer, Parametrized
-from mrmustard.lab.states import Vacuum, SqueezedVacuum
+from mrmustard.lab.states import Vacuum, SqueezedVacuum, Fock, Cat
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
@@ -330,6 +330,26 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
 
+def test_small_cats_are_squeezed_photon():
+    """In the case where cats have small amplitude they can be approximated by the squeezed
+    photon state: test that a cat can find the correct amplitude to maximize the fidelity with respect
+    to a squeezed single photon state (and that a cat can be optimized).
+    """
+
+    # target state
+    squeezed_photon = Fock([2]) >> Sgate(-0.5)
+    # trainable cat
+    cat = Cat(
+        1.3, 0.0, 0.2, alpha_trainable=True, phi_trainable=True, p_trainable=True, cutoffs=[50]
+    )
+
+    def cost_fn():
+        return 1 - fidelity(cat, squeezed_photon)
+
+    opt = Optimizer(euclidean_lr=0.1)
+    opt.minimize(cost_fn, by_optimizing=[cat])
+
+
 def test_opt_backend_param():
     """Test the optimization of a backend parameter defined outside a gate."""
     # rotated displaced squeezed state
@@ -348,4 +368,4 @@ def test_opt_backend_param():
     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.1)
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    print(np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2))
+    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2)
