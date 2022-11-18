@@ -577,7 +577,7 @@ class Cat(Parametrized, State):
         a, phi, p = self._parse_args(self.alpha, self.phi, self.p)
 
         if cutoffs is None:
-            cutoffs = fock.autocutoffs(a**2, a**2)
+            cutoffs = fock.autocutoffs(a**2, [a**2])
 
         ket = fock.cat_state_ket(a, phi, p, cutoffs[0])
         State.__init__(self, ket=ket, cutoffs=cutoffs, modes=modes)
