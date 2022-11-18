@@ -17,7 +17,6 @@ This module implements the quantum states upon which a quantum circuits acts on.
 """
 
 from typing import Union, Optional, List, Tuple, Sequence
-from numpy import pi
 from mrmustard.types import Scalar, Vector, Matrix, Tensor
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
@@ -561,6 +560,8 @@ class Cat(Parametrized, State):
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
+        self._check_single_mode(alpha, phi, p)
+
         Parametrized.__init__(
             self,
             alpha=alpha,
@@ -574,7 +575,8 @@ class Cat(Parametrized, State):
             p_bounds=p_bounds,
         )
         # TODO: support multimode cat states with multiple cutoffs
-        a, phi, p = self._parse_args(self.alpha, self.phi, self.p)
+
+        a, phi, p = self.alpha.value, self.phi.value, self.p.value
 
         if cutoffs is None:
             cutoffs = fock.autocutoffs(a**2, [a**2])
@@ -584,15 +586,13 @@ class Cat(Parametrized, State):
 
         self._normalize = normalize
 
-    def _parse_args(self, *args) -> Union[Tensor, int]:
+    def _check_single_mode(self, *args) -> Union[Tensor, int]:
         """Check that args have the correct shape and dimension. Will raise an error if arguments for
         a multimode state are provided"""
         for arg in args:
-            if len(arg.value.shape) > 0:
+            if len(math.atleast_1d(arg).shape) > 1:
                 raise NotImplementedError(
                     f"""
                     Argument {arg.name}={arg} has dimension > 1. Multimode cats not yet implemented.
-                """
+                    """
                 )
-
-        return (arg.value for arg in args)
