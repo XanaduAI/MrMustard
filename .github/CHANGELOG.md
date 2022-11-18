@@ -34,6 +34,11 @@
       W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
     ```
 
+* Calculate marginals independently from the Wigner thus ensuring that the marginals are
+physical even though the Wigner function might not contain all the features of the state
+within the defined window. Also, expose some plot parameters and return the figure and axes.
+  [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
+
 ### Bug fixes
 
 ### Documentation
