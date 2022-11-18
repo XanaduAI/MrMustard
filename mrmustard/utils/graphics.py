@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 from mrmustard import settings
+from mrmustard.physics.fock import quadrature_distribution
 from .wigner import wigner_discretized
 
 # pylint: disable=disallowed-name
@@ -64,7 +65,7 @@ class Progressbar:
         return self.bar.__exit__(exc_type, exc_val, exc_tb)
 
 
-def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[int] = (-6, 6)):
+def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[int] = (-6, 6), ticks = [-5, 0, 5], tick_labels = None, grid = False):
     """Plots the Wigner function of a state given its density matrix.
 
     Args:
@@ -73,37 +74,38 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
         ybounds (Tuple[int]): range of the y axis
     """
 
+    q, ProbX = quadrature_distribution(rho)
+    p, ProbP = quadrature_distribution(rho, np.pi/2)
+
     xvec = np.linspace(*xbounds, 200)
     pvec = np.linspace(*ybounds, 200)
     W, X, P = wigner_discretized(rho, xvec, pvec, settings.HBAR)
-    ProbX = np.sum(W, axis=1)
-    ProbP = np.sum(W, axis=0)
 
     ### PLOTTING ###
 
     _, ax = plt.subplots(
         2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
     )
-    ticks = [-5, 0, 5]
-    grid = False
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
     # Wigner function
-    ax[1][0].contourf(X, P, W, 60, cmap=cm.RdBu, vmin=-abs(W).max(), vmax=abs(W).max())
+    ax[1][0].contourf(X, P, W, 120, cmap=cm.RdBu, vmin=-abs(W).max(), vmax=abs(W).max())
     ax[1][0].set_xlabel("$x$", fontsize=12)
     ax[1][0].set_ylabel("$p$", fontsize=12)
     ax[1][0].get_xaxis().set_ticks(ticks)
+    ax[1][0].xaxis.set_ticklabels(tick_labels or ticks)
     ax[1][0].get_yaxis().set_ticks(ticks)
+    ax[1][0].yaxis.set_ticklabels(tick_labels or ticks)
     ax[1][0].tick_params(direction="in")
     ax[1][0].set_xlim(xbounds)
     ax[1][0].set_ylim(ybounds)
     ax[1][0].grid(grid)
 
     # X quadrature probability distribution
-    ax[0][0].fill(xvec, ProbX, color=cm.RdBu(0.5))
-    ax[0][0].plot(xvec, ProbX)
+    ax[0][0].fill(q, ProbX, color=cm.RdBu(0.5))
+    ax[0][0].plot(q, ProbX)
     ax[0][0].get_xaxis().set_ticks(ticks)
-    ax[0][0].xaxis.set_ticklabels([])
+    ax[0][0].xaxis.set_ticklabels(tick_labels or [])
     ax[0][0].get_yaxis().set_ticks([])
     ax[0][0].tick_params(direction="in")
     ax[0][0].set_ylabel("Prob($x$)", fontsize=12)
@@ -112,11 +114,11 @@ def mikkel_plot(rho: np.ndarray, xbounds: Tuple[int] = (-6, 6), ybounds: Tuple[i
     ax[0][0].grid(grid)
 
     # P quadrature probability distribution
-    ax[1][1].fill(ProbP, pvec, color=cm.RdBu(0.5))
-    ax[1][1].plot(ProbP, pvec)
+    ax[1][1].fill(ProbP, p, color=cm.RdBu(0.5))
+    ax[1][1].plot(ProbP, p)
     ax[1][1].get_xaxis().set_ticks([])
     ax[1][1].get_yaxis().set_ticks(ticks)
-    ax[1][1].yaxis.set_ticklabels([])
+    ax[1][1].yaxis.set_ticklabels(tick_labels or [])
     ax[1][1].tick_params(direction="in")
     ax[1][1].set_xlabel("Prob($p$)", fontsize=12)
     ax[1][1].set_xlim([0, 1.1 * max(ProbP)])
