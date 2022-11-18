@@ -69,7 +69,7 @@ def mikkel_plot(
     rho: np.ndarray,
     xbounds: Tuple[int] = (-6, 6),
     ybounds: Tuple[int] = (-6, 6),
-    ticks=[-5, 0, 5],
+    ticks=(-5, 0, 5),
     tick_labels=None,
     grid=False,
 ):
