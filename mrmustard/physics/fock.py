@@ -493,20 +493,22 @@ def cat_state_ket(a: float, phi: float, p: float, cutoff: int) -> Matrix:
     """
 
     a, phi, p = math.cast(a, "complex128"), math.cast(phi, "complex128"), math.cast(p, "complex128")
-    phase = p * np.pi
     alpha = a * math.exp(1j * phi)
+    # p=0 if even, p=pi if odd
+    theta = p * np.pi
 
     # normalization constant
-    N = math.sqrt(2 * (1 + math.cos(phase) * math.exp(-2 * a**2)))
+    temp = math.exp(-0.5 * a**2)
+    N = temp / math.sqrt(2 * (1 + math.cos(theta) * temp**4))
 
     # <n|alpha> = alpha**n/sqrt(n!) = alpha/sqrt(n) * <n-1|alpha>
     ones = math.ones([cutoff], dtype="complex128")
-    alpha_vec = math.ones([cutoff], dtype="complex128") * alpha
-    factorial_vec = math.new_constant([1] + list(range(1, cutoff)), name="", dtype="complex128")
+    alpha_vec = math.ones(cutoff, dtype="complex128") * alpha
+    factorial_vec = math.cast(math.arange(1, cutoff + 1), dtype="complex128")
 
     cp = math.cumprod(alpha_vec / math.sqrt(factorial_vec), exclusive=True)
-    cm = cp * math.cumprod(-ones, exclusive=True)
-    cat = cp + math.exp(1j * phase) * cm
+    cm = -cp * math.cumprod(-ones)
+    cat = (cp + math.exp(1j * theta) * cm) * N
 
     return cat
 
