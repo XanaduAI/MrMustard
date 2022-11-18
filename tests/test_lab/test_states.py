@@ -317,7 +317,7 @@ class TestCat:
         # cat directly from Fock representation
         focks_cat = Cat(a, phi, parity, cutoffs=[cutoff]).ket().numpy()
 
-        assert np.allclose(chois_cat, focks_cat, rtol=1e-8)
+        assert np.allclose(chois_cat, focks_cat, rtol=1e-4)
 
     @pytest.mark.parametrize("phi", np.linspace(0.0, np.pi, 4))
     @pytest.mark.parametrize("a", [0.1, 1.0, 3.0])
