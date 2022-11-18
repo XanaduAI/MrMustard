@@ -254,17 +254,6 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
-        """Given two real tensors representing the real and imaginary part of a complex number,
-        this operation returns a complex tensor. The input tensors must have the same shape.
-        Args:
-            real (array): real part of the complex number
-            imag (array): imaginary part of the complex number
-        Returns:
-            array: complex array ``real + 1j * imag``
-        """
-
-    @abstractmethod
     def cosh(self, array: Tensor) -> Tensor:
         r"""Returns the hyperbolic cosine of array.
 
