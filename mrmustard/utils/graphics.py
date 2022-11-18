@@ -79,6 +79,9 @@ def mikkel_plot(
         rho (np.ndarray): density matrix of the state
         xbounds (Tuple[int]): range of the x axis
         ybounds (Tuple[int]): range of the y axis
+
+    Returns:
+        tuple: figure and axes
     """
 
     q, ProbX = quadrature_distribution(rho)
@@ -90,7 +93,7 @@ def mikkel_plot(
 
     ### PLOTTING ###
 
-    _, ax = plt.subplots(
+    fig, ax = plt.subplots(
         2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
     )
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
@@ -112,7 +115,7 @@ def mikkel_plot(
     ax[0][0].fill(q, ProbX, color=cm.RdBu(0.5))
     ax[0][0].plot(q, ProbX)
     ax[0][0].get_xaxis().set_ticks(ticks)
-    ax[0][0].xaxis.set_ticklabels(tick_labels or [])
+    ax[0][0].xaxis.set_ticklabels([])
     ax[0][0].get_yaxis().set_ticks([])
     ax[0][0].tick_params(direction="in")
     ax[0][0].set_ylabel("Prob($x$)", fontsize=12)
@@ -125,7 +128,7 @@ def mikkel_plot(
     ax[1][1].plot(ProbP, p)
     ax[1][1].get_xaxis().set_ticks([])
     ax[1][1].get_yaxis().set_ticks(ticks)
-    ax[1][1].yaxis.set_ticklabels(tick_labels or [])
+    ax[1][1].yaxis.set_ticklabels([])
     ax[1][1].tick_params(direction="in")
     ax[1][1].set_xlabel("Prob($p$)", fontsize=12)
     ax[1][1].set_xlim([0, 1.1 * max(ProbP)])
@@ -141,3 +144,5 @@ def mikkel_plot(
     ax[0][1].set_aspect("auto")
     ax[0][1].set_ylabel(f"cutoff = {len(rho)}", fontsize=12)
     ax[0][1].yaxis.set_label_position("right")
+
+    return fig, ax
