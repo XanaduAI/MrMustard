@@ -503,7 +503,7 @@ def cat_state_ket(a: float, phi: float, p: float, cutoff: int) -> Matrix:
 
     # <n|alpha> = alpha**n/sqrt(n!) = alpha/sqrt(n) * <n-1|alpha>
     ones = math.ones([cutoff], dtype="complex128")
-    alpha_vec = math.ones(cutoff, dtype="complex128") * alpha
+    alpha_vec = ones * alpha
     factorial_vec = math.cast(math.arange(1, cutoff + 1), dtype="complex128")
 
     cp = math.cumprod(alpha_vec / math.sqrt(factorial_vec), exclusive=True)
