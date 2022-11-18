@@ -15,9 +15,16 @@
 from threading import currentThread
 import numpy as np
 import pytest
+
 from hypothesis import given, strategies as st, assume
 from hypothesis.extra.numpy import arrays
+
 from mrmustard.physics import gaussian as gp
+from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
+from mrmustard.lab.abstract import State
+from mrmustard.utils.wigner import wigner_discretized as wigner
+from mrmustard import settings
+
 from mrmustard.lab.states import (
     Fock,
     Coherent,
@@ -26,11 +33,8 @@ from mrmustard.lab.states import (
     SqueezedVacuum,
     DisplacedSqueezed,
     Thermal,
+    Cat,
 )
-from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
-from mrmustard.lab.abstract import State
-from mrmustard import settings
-from tests.random import pure_state
 
 from mrmustard.math import Math
 
@@ -268,3 +272,58 @@ def test_ket_from_pure_dm(n, cutoffs):
 
     # check test state calculated the same ket as the original state
     assert np.allclose(test_ket, fock_state.ket())
+
+
+class TestCat:
+    @pytest.mark.parametrize("parity", ["even", "odd"])
+    @pytest.mark.parametrize("amplitude", [1.0, 2.0, 3.0])
+    @pytest.mark.parametrize("phi", np.linspace(0.0, np.pi, 4))
+    def test_cat_state_parity(self, amplitude, phi, parity):
+        """Test that Wigner function of even and odd Cat states yield the correct parity."""
+
+        p = 0.0 if parity == "even" else 1.0
+        cat = Cat(amplitude, phi, p)
+
+        qp_vec = np.array([0.0])
+        # Wigner's cat 🐈
+        jeno, _, _ = wigner(cat.dm().numpy(), qp_vec, qp_vec)
+
+        if parity == "even":
+            # such a cute cat
+            assert jeno > 0.0
+        else:
+            # that cat is a bit odd 🐈‍⬛
+            assert jeno < 0.0
+
+    @pytest.mark.parametrize("a", [0.1, 0.4, 0.6])
+    @pytest.mark.parametrize("phi", np.linspace(0.0, np.pi, 4))
+    @pytest.mark.parametrize("parity", np.linspace(0.0, 1.0, 4))
+    def test_catfock_equals_catchoi(self, a, phi, parity):
+        """Test that a Cat generated in Fock representation equals cat from superposition of
+        coherent states.
+
+        Note the Fock representation of the coherent states is calculated using Choi's trick
+        hence a different pathway to calculate the amplitudes of the cat.
+        """
+
+        cutoff = 100
+        # cat from coherent states using Choi trick to get the Fock representation
+        x, y = a * np.array([np.cos(phi), np.sin(phi)])
+        c1k = Coherent(x, y).ket([cutoff])
+        c2k = Coherent(-x, -y).ket([cutoff])
+        cat_amps = c1k + np.exp(1j * parity * np.pi) * c2k
+        chois_cat = cat_amps.numpy() / np.linalg.norm(cat_amps.numpy())
+
+        # cat directly from Fock representation
+        focks_cat = Cat(a, phi, parity, cutoffs=[cutoff]).ket().numpy()
+
+        assert np.allclose(chois_cat, focks_cat, rtol=1e-8)
+
+    @pytest.mark.parametrize("phi", np.linspace(0.0, np.pi, 4))
+    @pytest.mark.parametrize("a", [0.1, 1.0, 3.0])
+    @pytest.mark.parametrize("parity", np.linspace(0.0, 1.0, 4))
+    def test_cat_norm(self, a, phi, parity):
+        """Test that cats are normalized."""
+        cutoff = 100
+        cat_norm = Cat(a, phi, parity, cutoffs=[cutoff]).norm.numpy()
+        assert np.allclose(cat_norm, 1.0, atol=1e-4)
