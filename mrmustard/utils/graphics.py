@@ -72,6 +72,7 @@ def mikkel_plot(
     ticks=(-5, 0, 5),
     tick_labels=None,
     grid=False,
+    resolution: int = 200,
 ):
     """Plots the Wigner function of a state given its density matrix.
 
@@ -79,6 +80,10 @@ def mikkel_plot(
         rho (np.ndarray): density matrix of the state
         xbounds (Tuple[int]): range of the x axis
         ybounds (Tuple[int]): range of the y axis
+        ticks (Tuple[int]): ticks of the x and y axis
+        tick_labels (Tuple[str]): labels of the x and y axis
+        grid (bool): whether to display the grid
+        resolution (int): resolution of the plot
 
     Returns:
         tuple: figure and axes
@@ -87,8 +92,8 @@ def mikkel_plot(
     q, ProbX = quadrature_distribution(rho)
     p, ProbP = quadrature_distribution(rho, np.pi / 2)
 
-    xvec = np.linspace(*xbounds, 200)
-    pvec = np.linspace(*ybounds, 200)
+    xvec = np.linspace(*xbounds, resolution)
+    pvec = np.linspace(*ybounds, resolution)
     W, X, P = wigner_discretized(rho, xvec, pvec, settings.HBAR)
 
     ### PLOTTING ###
