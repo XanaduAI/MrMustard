@@ -75,7 +75,7 @@ def mikkel_plot(
     ytick_labels=None,
     grid=False,
     resolution: int = 200,
-):
+):  # pylint: disable=too-many-statements
     """Plots the Wigner function of a state given its density matrix.
 
     Args:
