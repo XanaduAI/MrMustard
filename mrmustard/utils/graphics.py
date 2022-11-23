@@ -69,8 +69,10 @@ def mikkel_plot(
     rho: np.ndarray,
     xbounds: Tuple[int] = (-6, 6),
     ybounds: Tuple[int] = (-6, 6),
-    ticks=(-5, 0, 5),
-    tick_labels=None,
+    xticks=(-5, 0, 5),
+    xtick_labels=None,
+    yticks=(-5, 0, 5),
+    ytick_labels=None,
     grid=False,
     resolution: int = 200,
 ):
@@ -80,8 +82,10 @@ def mikkel_plot(
         rho (np.ndarray): density matrix of the state
         xbounds (Tuple[int]): range of the x axis
         ybounds (Tuple[int]): range of the y axis
-        ticks (Tuple[int]): ticks of the x and y axis
-        tick_labels (Tuple[str]): labels of the x and y axis
+        xticks (Tuple[int]): ticks of the x axis
+        xtick_labels (Optional[Tuple[str]]): labels of the x axis; if None uses default formatter
+        yticks (Tuple[int]): ticks of the y axis
+        ytick_labels (Optional[Tuple[str]]): labels of the y axis; if None uses default formatter
         grid (bool): whether to display the grid
         resolution (int): resolution of the plot
 
@@ -103,14 +107,19 @@ def mikkel_plot(
     )
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
+    if xtick_labels is None:
+        xtick_labels = xticks
+    if ytick_labels is None:
+        ytick_labels = yticks
+
     # Wigner function
     ax[1][0].contourf(X, P, W, 120, cmap=cm.RdBu, vmin=-abs(W).max(), vmax=abs(W).max())
     ax[1][0].set_xlabel("$x$", fontsize=12)
     ax[1][0].set_ylabel("$p$", fontsize=12)
-    ax[1][0].get_xaxis().set_ticks(ticks)
-    ax[1][0].xaxis.set_ticklabels(tick_labels or ticks)
-    ax[1][0].get_yaxis().set_ticks(ticks)
-    ax[1][0].yaxis.set_ticklabels(tick_labels or ticks)
+    ax[1][0].get_xaxis().set_ticks(xticks)
+    ax[1][0].xaxis.set_ticklabels(xtick_labels or xticks)
+    ax[1][0].get_yaxis().set_ticks(yticks)
+    ax[1][0].yaxis.set_ticklabels(ytick_labels or yticks)
     ax[1][0].tick_params(direction="in")
     ax[1][0].set_xlim(xbounds)
     ax[1][0].set_ylim(ybounds)
@@ -119,7 +128,7 @@ def mikkel_plot(
     # X quadrature probability distribution
     ax[0][0].fill(q, ProbX, color=cm.RdBu(0.5))
     ax[0][0].plot(q, ProbX)
-    ax[0][0].get_xaxis().set_ticks(ticks)
+    ax[0][0].get_xaxis().set_ticks(xticks)
     ax[0][0].xaxis.set_ticklabels([])
     ax[0][0].get_yaxis().set_ticks([])
     ax[0][0].tick_params(direction="in")
@@ -132,7 +141,7 @@ def mikkel_plot(
     ax[1][1].fill(ProbP, p, color=cm.RdBu(0.5))
     ax[1][1].plot(ProbP, p)
     ax[1][1].get_xaxis().set_ticks([])
-    ax[1][1].get_yaxis().set_ticks(ticks)
+    ax[1][1].get_yaxis().set_ticks(yticks)
     ax[1][1].yaxis.set_ticklabels([])
     ax[1][1].tick_params(direction="in")
     ax[1][1].set_xlabel("Prob($p$)", fontsize=12)
