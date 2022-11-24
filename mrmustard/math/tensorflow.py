@@ -352,7 +352,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], modified: bool = True
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -363,8 +363,6 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
-            modified (bool): whether to return the modified multidimensional
-                Hermite polynomials or the standard ones
 
         Returns:
             The renormalized Hermite polynomial of given shape.
@@ -373,7 +371,7 @@ class TFMath(MathInterface):
             shape = shape[0]
 
         poly = hermite_multidimensional(
-            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, modified
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
         )
 
         def grad(dLdpoly):
@@ -389,14 +387,15 @@ class TFMath(MathInterface):
         return poly, grad
 
     @tf.custom_gradient
-    def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype, tol=1e-15):
+    def displacement(self, r, phi, cutoff, tol=1e-15):
         """creates a single mode displacement matrix"""
-        r = r.numpy()
-        phi = phi.numpy()
-        gate = displacement_tw(r, phi, cutoff, dtype) if r > tol else self.eye(cutoff)
+        if r > tol:
+            gate = displacement_tw(self.asnumpy(r), self.asnumpy(phi), cutoff)
+        else:
+            gate = self.eye(cutoff, dtype="complex128")
 
         def grad(dy):  # pragma: no cover
-            Dr, Dphi = grad_displacement_tw(gate, r, phi)
+            Dr, Dphi = tf.numpy_function(grad_displacement_tw, (gate, r, phi), (gate.dtype,) * 2)
             grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
             grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
             return grad_r, grad_phi, None

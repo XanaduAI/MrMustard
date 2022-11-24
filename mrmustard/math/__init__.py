@@ -51,11 +51,11 @@ class Math:
     """
     # pylint: disable=no-else-return
     def __getattribute__(self, name):
-        if settings.backend == "tensorflow":
+        if settings.BACKEND == "tensorflow":
             return object.__getattribute__(TFMath(), name)
-        elif settings.backend == "torch":
+        elif settings.BACKEND == "torch":
             return object.__getattribute__(TorchMath(), name)
 
         raise ValueError(
-            f"No `{settings.backend}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
+            f"No `{settings.BACKEND}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
         )

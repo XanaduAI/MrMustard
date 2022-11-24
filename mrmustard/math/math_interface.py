@@ -412,9 +412,7 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def hermite_renormalized(
-        self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int], modified: bool
-    ) -> Tensor:
+    def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
         r"""Returns the array of hermite renormalized polynomials of the given coefficients.
 
         Args:
@@ -422,22 +420,20 @@ class MathInterface(ABC):
             B (array): Vector coefficient of the hermite polynomial
             C (array): Scalar coefficient of the hermite polynomial
             shape (tuple): shape of the hermite polynomial
-            modified (bool): whether to return the modified multidimensional
-                Hermite polynomials or the standard ones
 
         Returns:
             array: renormalized hermite polynomials
         """
 
     @abstractmethod
-    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, dtype):
+    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, tol):
         r"""Calculates the matrix elements of the displacement gate and its derivatives.
 
         Args:
             r (float): displacement magnitude
             phi (float): displacement angle
             cutoff (int): Fock ladder cutoff
-            dtype (data type): Specifies the data type used for the calculation
+            tol (float): r tolerance for returning identity instead of displacement
         Returns:
             Tuple(array[complex], function): matrix representing the displacement operation and its gradient
         """

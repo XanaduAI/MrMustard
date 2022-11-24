@@ -14,11 +14,19 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+import rich.table
+from rich import print
+
 from ._version import __version__
 
 # pylint: disable=too-many-instance-attributes
 class Settings:
     """Settings class."""
+
+    def __new__(cls):  # singleton
+        if not hasattr(cls, "instance"):
+            cls.instance = super(Settings, cls).__new__(cls)
+        return cls.instance
 
     def __init__(self):
         self._backend = "tensorflow"
@@ -40,24 +48,35 @@ class Settings:
         self.PROGRESSBAR = True
 
     @property
-    def backend(self):
+    def BACKEND(self):
         """The backend which is used.
 
         Can be either ``'tensorflow'`` or ``'torch'``.
         """
         return self._backend
 
-    @backend.setter
-    def backend(self, backend_name: str):
+    @BACKEND.setter
+    def BACKEND(self, backend_name: str):
         if backend_name not in ["tensorflow", "torch"]:  # pragma: no cover
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = backend_name
 
+    # use rich.table to print the settings
+    def __repr__(self):
+        """Returns a string representation of the settings."""
+        table = rich.table.Table(title="MrMustard Settings")
+        table.add_column("Setting")
+        table.add_column("Value")
+        table.add_row("BACKEND", self.BACKEND)
+        for key, value in self.__dict__.items():
+            if key == key.upper():
+                table.add_row(key, str(value))
+        print(table)
+        return ""
+
 
 settings = Settings()
 """Settings object."""
-
-settings.backend = "tensorflow"
 
 
 def version():

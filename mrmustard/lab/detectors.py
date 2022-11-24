@@ -22,7 +22,6 @@ from mrmustard.training import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import gaussian, fock
-from mrmustard.utils import homodyne as utils_homodyne
 from .abstract import FockMeasurement, Measurement, State
 from .states import DisplacedSqueezed, Coherent
 from .gates import Rgate
@@ -399,13 +398,12 @@ class Homodyne(Generaldyne):
         remaining_modes = list(set(other.modes) - set(self.modes))
 
         # create reduced state of modes to be measured on the homodyne basis
-        reduced_state = other.get_modes(self.modes) >> Rgate(
-            -self.quadrature_angle, modes=self.modes
-        )
+        reduced_state = other.get_modes(self.modes)
 
         # build pdf and sample homodyne outcome
-        x_outcome, probability = utils_homodyne.sample_homodyne_fock(
+        x_outcome, probability = fock.sample_homodyne(
             state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
+            quadrature_angle=self.quadrature_angle,
             hbar=settings.HBAR,
         )
 
@@ -414,7 +412,7 @@ class Homodyne(Generaldyne):
         # factor of the displacement symplectic inside the DisplacedSqueezed state.
         x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
         self.state = DisplacedSqueezed(
-            r=self.r, phi=self.quadrature_angle, x=x_arg, y=0.0, modes=self.modes
+            r=self.r, phi=0.0, x=x_arg, y=0.0, modes=self.modes
         ) >> Rgate(self.quadrature_angle, modes=self.modes)
 
         if remaining_modes == 0:

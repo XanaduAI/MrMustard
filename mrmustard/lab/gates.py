@@ -93,14 +93,13 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
-    def U(self, cutoffs: List[int]):
+    def U(self, cutoffs: Sequence[int]):
         """Returns the unitary representation of the Displacement gate using the Laguerre
         polynomials."""
 
         N = len(cutoffs)
         x, y = self._parse_modes_and_args(cutoffs)
-
-        r = math.sqrt(x**2 + y**2)
+        r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
         # calculate displacement unitary for each mode and concatenate with outer product
@@ -118,30 +117,22 @@ class Dgate(Parametrized, Transformation):
         )
 
     def _parse_modes_and_args(self, cutoffs):
-        num_modes = len(cutoffs)
-        modes = self.modes  # modes in which the gate is acting on
-        xargs = self.x.value
-        yargs = self.y.value
-        num_args_x = (
-            xargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        num_args_y = (
-            yargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        x = np.zeros((num_modes,))
-        y = np.zeros((num_modes,))
-
+        num_modes_state = len(cutoffs)
+        xargs = math.atleast_1d(self.x.value)
+        yargs = math.atleast_1d(self.y.value)
+        num_args_x = max(1, xargs.shape[-1])
+        num_args_y = max(1, yargs.shape[-1])
         if num_args_x != num_args_y:
-            raise ValueError("Number of parameters for `x` and `y` is different.")
-
-        if num_args_x == 1 or num_args_x == len(modes):
-            # one arg for all modes
-            x[modes] = xargs
-            y[modes] = yargs
-        elif num_args_x == len(modes):
-            # number of args and number of modes don't match
-            raise ValueError("Number of args and modes don't match")
-
+            raise ValueError("Number of parameters for `x` and `y` should be the same.")
+        if num_args_x == 1:
+            # same arg for all modes
+            x = math.tile(xargs, [num_modes_state])
+            y = math.tile(yargs, [num_modes_state])
+        else:
+            x = math.zeros([num_modes_state])
+            y = math.zeros([num_modes_state])
+            x = math.update_tensor(x, [[m] for m in self.modes], xargs)
+            y = math.update_tensor(y, [[m] for m in self.modes], yargs)
         return x, y
 
 
