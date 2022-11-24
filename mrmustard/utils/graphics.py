@@ -113,7 +113,7 @@ def mikkel_plot(
         ytick_labels = yticks
 
     # Wigner function
-    ax[1][0].contourf(X, P, W, 120, cmap=cm.RdBu, vmin=-abs(W).max(), vmax=abs(W).max())
+    ax[1][0].contourf(X, P, W, 120, cmap=cm.magma, vmin=-abs(W).max(), vmax=abs(W).max())
     ax[1][0].set_xlabel("$x$", fontsize=12)
     ax[1][0].set_ylabel("$p$", fontsize=12)
     ax[1][0].get_xaxis().set_ticks(xticks)
@@ -126,7 +126,7 @@ def mikkel_plot(
     ax[1][0].grid(grid)
 
     # X quadrature probability distribution
-    ax[0][0].fill(q, ProbX, color=cm.RdBu(0.5))
+    ax[0][0].fill(q, ProbX, color=cm.magma(0.5))
     ax[0][0].plot(q, ProbX)
     ax[0][0].get_xaxis().set_ticks(xticks)
     ax[0][0].xaxis.set_ticklabels([])
@@ -138,7 +138,7 @@ def mikkel_plot(
     ax[0][0].grid(grid)
 
     # P quadrature probability distribution
-    ax[1][1].fill(ProbP, p, color=cm.RdBu(0.5))
+    ax[1][1].fill(ProbP, p, color=cm.magma(0.5))
     ax[1][1].plot(ProbP, p)
     ax[1][1].get_xaxis().set_ticks([])
     ax[1][1].get_yaxis().set_ticks(yticks)
