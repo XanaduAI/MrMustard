@@ -69,12 +69,13 @@ def mikkel_plot(
     rho: np.ndarray,
     xbounds: Tuple[int] = (-6, 6),
     ybounds: Tuple[int] = (-6, 6),
+    resolution: int = 200,
     xticks=(-5, 0, 5),
     xtick_labels=None,
     yticks=(-5, 0, 5),
     ytick_labels=None,
     grid=False,
-    resolution: int = 200,
+    cmap=cm.RdBu,
 ):  # pylint: disable=too-many-statements
     """Plots the Wigner function of a state given its density matrix.
 
@@ -82,12 +83,12 @@ def mikkel_plot(
         rho (np.ndarray): density matrix of the state
         xbounds (Tuple[int]): range of the x axis
         ybounds (Tuple[int]): range of the y axis
+        resolution (int): number of points used to calculate the wigner function
         xticks (Tuple[int]): ticks of the x axis
         xtick_labels (Optional[Tuple[str]]): labels of the x axis; if None uses default formatter
         yticks (Tuple[int]): ticks of the y axis
         ytick_labels (Optional[Tuple[str]]): labels of the y axis; if None uses default formatter
         grid (bool): whether to display the grid
-        resolution (int): resolution of the plot
 
     Returns:
         tuple: figure and axes
@@ -113,7 +114,7 @@ def mikkel_plot(
         ytick_labels = yticks
 
     # Wigner function
-    ax[1][0].contourf(X, P, W, 120, cmap=cm.magma, vmin=-abs(W).max(), vmax=abs(W).max())
+    ax[1][0].contourf(X, P, W, 120, cmap=cmap, vmin=-abs(W).max(), vmax=abs(W).max())
     ax[1][0].set_xlabel("$x$", fontsize=12)
     ax[1][0].set_ylabel("$p$", fontsize=12)
     ax[1][0].get_xaxis().set_ticks(xticks)
@@ -126,8 +127,8 @@ def mikkel_plot(
     ax[1][0].grid(grid)
 
     # X quadrature probability distribution
-    ax[0][0].fill(q, ProbX, color=cm.magma(0.5))
-    ax[0][0].plot(q, ProbX)
+    ax[0][0].fill(q, ProbX, color=cmap(0.5))
+    ax[0][0].plot(q, ProbX, color=cmap(0.8))
     ax[0][0].get_xaxis().set_ticks(xticks)
     ax[0][0].xaxis.set_ticklabels([])
     ax[0][0].get_yaxis().set_ticks([])
@@ -138,8 +139,8 @@ def mikkel_plot(
     ax[0][0].grid(grid)
 
     # P quadrature probability distribution
-    ax[1][1].fill(ProbP, p, color=cm.magma(0.5))
-    ax[1][1].plot(ProbP, p)
+    ax[1][1].fill(ProbP, p, color=cmap(0.5))
+    ax[1][1].plot(ProbP, p, color=cmap(0.8))
     ax[1][1].get_xaxis().set_ticks([])
     ax[1][1].get_yaxis().set_ticks(yticks)
     ax[1][1].yaxis.set_ticklabels([])
@@ -150,7 +151,7 @@ def mikkel_plot(
     ax[1][1].grid(grid)
 
     # Density matrix
-    ax[0][1].matshow(abs(rho), cmap=cm.RdBu, vmin=-abs(rho).max(), vmax=abs(rho).max())
+    ax[0][1].matshow(abs(rho), cmap=cmap, vmin=-abs(rho).max(), vmax=abs(rho).max())
     ax[0][1].set_title(r"abs($\rho$)", fontsize=12)
     ax[0][1].tick_params(direction="in")
     ax[0][1].get_xaxis().set_ticks([])
