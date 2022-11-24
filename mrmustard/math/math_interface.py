@@ -347,7 +347,7 @@ class MathInterface(ABC):
         Returns:
             matrix: identity matrix
         """
-    
+
     @abstractmethod
     def eye_like(self, array: Tensor) -> Tensor:
         r"""Returns the identity matrix of the same size and dtype as array.
