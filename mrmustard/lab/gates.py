@@ -99,6 +99,7 @@ class Dgate(Parametrized, Transformation):
 
         N = len(cutoffs)
         x, y = self._parse_modes_and_args(cutoffs)
+        print(x,y)
         r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
@@ -124,15 +125,14 @@ class Dgate(Parametrized, Transformation):
         num_args_y = max(1, yargs.shape[-1])
         if num_args_x != num_args_y:
             raise ValueError("Number of parameters for `x` and `y` should be the same.")
-        if num_args_x == 1:
+        if num_args_x == num_args_y == 1 and len(self.modes) > 1:
             # same arg for all modes
-            x = math.tile(xargs, [num_modes_state])
-            y = math.tile(yargs, [num_modes_state])
-        else:
-            x = math.zeros([num_modes_state])
-            y = math.zeros([num_modes_state])
-            x = math.update_tensor(x, [[m] for m in self.modes], xargs)
-            y = math.update_tensor(y, [[m] for m in self.modes], yargs)
+            xargs = math.tile(xargs, [len(self.modes)])
+            yargs = math.tile(yargs, [len(self.modes)])
+        x = math.zeros([num_modes_state])
+        y = math.zeros([num_modes_state])
+        x = math.update_tensor(x, [[m] for m in self.modes], xargs)
+        y = math.update_tensor(y, [[m] for m in self.modes], yargs)
         return x, y
 
 
@@ -241,21 +241,16 @@ class Rgate(Parametrized, Transformation):
         )
 
     def _parse_modes_and_args(self, cutoffs):
-        num_modes = len(cutoffs)
-        modes = self.modes  # modes in which the gate is acting on
-        args = self.angle.value
-        num_args = (
-            args.shape[0] if len(args.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        angles = np.zeros((num_modes,))
-        if num_args == 1:
-            # one arg for all modes
-            angles[modes] = args
-        else:
-            # an arg for each mode
-            angles = args
-
-        return math.new_variable(angles, bounds=None, name="Rgate_angles")
+        num_modes_state = len(cutoffs)
+        args = math.atleast_1d(self.angle.value)
+        num_args = max(1, args.shape[-1])
+        if num_args == 1 and len(self.modes) > 1: # phi=0.1, modes = [1,2] -> copy phi for both modes; phi=[0.1, 0.2], modes = [1,2] -> use different phi for each mode
+            # same angle for all modes
+            args = math.tile(args, [len(self.modes)])
+        angles = math.zeros([num_modes_state])
+        angles = math.update_tensor(angles, [[m] for m in self.modes], args)
+        print(angles)
+        return angles
 
 
 class Pgate(Parametrized, Transformation):
