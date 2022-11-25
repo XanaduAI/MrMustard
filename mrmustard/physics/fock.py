@@ -502,15 +502,16 @@ def cat_state_ket(a: float, phi: float, p: float, cutoff: int) -> Matrix:
     N = temp / math.sqrt(2 * (1 + math.cos(theta) * temp**4))
 
     # <n|alpha> = alpha**n/sqrt(n!) = alpha/sqrt(n) * <n-1|alpha>
-    ones = math.ones([cutoff], dtype="complex128")
-    alpha_vec = ones * alpha
-    factorial_vec = math.cast(math.arange(1, cutoff + 1), dtype="complex128")
+    n = math.arange(cutoff)
+    a_log = math.log(a)
+    factorial_log = math.cast(math.lgamma(n + 1), dtype="complex128")
 
-    cp = math.cumprod(alpha_vec / math.sqrt(factorial_vec), exclusive=True)
-    cm = -cp * math.cumprod(-ones)
-    cat = (cp + math.exp(1j * theta) * cm) * N
+    n = math.cast(n, dtype="complex128")
+    cp_log = n * a_log - 0.5 * factorial_log + 1j * phi
+    cm_log = cp_log + 1j * np.pi * n
+    cat_amps = math.exp(cp_log) + math.exp(1j * theta + cm_log)
 
-    return cat
+    return cat_amps * N
 
 
 @tensor_int_cache
