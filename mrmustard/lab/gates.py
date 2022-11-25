@@ -133,6 +133,9 @@ class Dgate(Parametrized, Transformation):
         y = math.zeros([num_modes_state])
         x = math.update_tensor(x, [[m] for m in self.modes], xargs)
         y = math.update_tensor(y, [[m] for m in self.modes], yargs)
+        print('-'*80)
+        print(x,y)
+        print('-'*80)
         return x, y
 
 
