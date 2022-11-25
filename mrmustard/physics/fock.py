@@ -507,7 +507,7 @@ def cat_state_ket(a: float, phi: float, p: float, cutoff: int) -> Matrix:
     factorial_log = math.cast(math.lgamma(n + 1), dtype="complex128")
 
     n = math.cast(n, dtype="complex128")
-    cp_log = n * a_log - 0.5 * factorial_log + 1j * phi
+    cp_log = n * a_log - 0.5 * factorial_log + 1j * phi * n
     cm_log = cp_log + 1j * np.pi * n
     cat_amps = math.exp(cp_log) + math.exp(1j * theta + cm_log)
 
