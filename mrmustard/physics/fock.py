@@ -330,6 +330,52 @@ def purity(dm: Tensor) -> Scalar:
     dm = normalize(dm, is_dm=True)
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
+def apply_op_to_ket(op, ket, op_indices):
+    r"""Applies an operator to a ket in the sense
+        ket_abcde = sum_{ijk}U_abc,ijk ket_ijkde
+
+    Args:
+        op (array): the operator to be applied
+        ket (array): the ket to which the operator is applied
+        op_indices (list): the indices the operator acts on
+    Returns:
+        array: the resulting ket
+    """
+    K = ket.ndim
+    N = op.ndim // 2
+    op_ket = math.tensordot(ket, op, axes=[op_indices, list(range(N,2*N))])
+    perm  = list(range(K-N))
+    for i,o in enumerate(op_indices):
+        perm.insert(o, K-N+i)
+    return math.transpose(op_ket, perm)
+
+def apply_op_to_dm(op, dm, op_modes):
+    r"""Applies an operator to a density matrix in the sense
+        dm_abcd = sum_{ij}op_ai dm_ibkd dagger(op)_kc
+
+    Args:
+        op (array): the operator to be applied
+        dm (array): the density matrix to which the operator is applied
+        op_modes (list): the modes the operator acts on (counting from 0)
+
+    Returns:
+        array: the resulting density matrix
+    """ 
+    D = dm.ndim
+    N = len(op_modes)
+    op_dm = math.tensordot(dm, op, axes=[op_modes, np.arange(N, 2*N)])
+    # the N output indices of op are now at the end. We need to move them at op_modes
+    perm = list(range(D-N))
+    for i,o in enumerate(op_modes):
+        perm.insert(o, D-N+i)
+    op_dm = math.transpose(op_dm, perm)
+    op_dm_op = math.tensordot(op_dm, math.conj(op), axes=[[o+D//2 for o in op_modes], np.arange(N)])
+    # the N output indices of op are now at the end. We need to move them at op_modes + D//2
+    perm = list(range(D-N))
+    for i,o in enumerate(op_modes):
+        perm.insert(o+D//2, D-N+i)
+    return math.transpose(op_dm_op, perm)
+
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
     r"""Computes the CPTP (note: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
@@ -454,7 +500,7 @@ def trace(dm, keep: List[int]):
 
     Args:
         dm: the density matrix
-        keep: the modes to keep
+        keep: the modes to keep (0-based)
     """
     N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]

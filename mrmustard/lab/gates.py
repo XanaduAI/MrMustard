@@ -97,9 +97,9 @@ class Dgate(Parametrized, Transformation):
         """Returns the unitary representation of the Displacement gate using the Laguerre
         polynomials."""
 
-        N = len(cutoffs)
-        x, y = self._parse_modes_and_args(cutoffs)
-        print(x,y)
+        N = self.num_modes
+        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
         r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
@@ -116,27 +116,6 @@ class Dgate(Parametrized, Transformation):
             Ud,
             list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
         )
-
-    def _parse_modes_and_args(self, cutoffs):
-        num_modes_state = len(cutoffs)
-        xargs = math.atleast_1d(self.x.value)
-        yargs = math.atleast_1d(self.y.value)
-        num_args_x = max(1, xargs.shape[-1])
-        num_args_y = max(1, yargs.shape[-1])
-        if num_args_x != num_args_y:
-            raise ValueError("Number of parameters for `x` and `y` should be the same.")
-        if num_args_x == num_args_y == 1 and len(self.modes) > 1:
-            # same arg for all modes
-            xargs = math.tile(xargs, [len(self.modes)])
-            yargs = math.tile(yargs, [len(self.modes)])
-        x = math.zeros([num_modes_state])
-        y = math.zeros([num_modes_state])
-        x = math.update_tensor(x, [[m] for m in self.modes], xargs)
-        y = math.update_tensor(y, [[m] for m in self.modes], yargs)
-        print('-'*80)
-        print(x,y)
-        print('-'*80)
-        return x, y
 
 
 class Sgate(Parametrized, Transformation):
@@ -224,7 +203,7 @@ class Rgate(Parametrized, Transformation):
 
     def U(self, cutoffs: Sequence[int]):
 
-        angles = self._parse_modes_and_args(cutoffs)
+        angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
         num_modes = len(cutoffs)
 
         # calculate rotation unitary for each mode and concatenate with outer product
@@ -242,18 +221,6 @@ class Rgate(Parametrized, Transformation):
             Ur,
             list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
         )
-
-    def _parse_modes_and_args(self, cutoffs):
-        num_modes_state = len(cutoffs)
-        args = math.atleast_1d(self.angle.value)
-        num_args = max(1, args.shape[-1])
-        if num_args == 1 and len(self.modes) > 1: # phi=0.1, modes = [1,2] -> copy phi for both modes; phi=[0.1, 0.2], modes = [1,2] -> use different phi for each mode
-            # same angle for all modes
-            args = math.tile(args, [len(self.modes)])
-        angles = math.zeros([num_modes_state])
-        angles = math.update_tensor(angles, [[m] for m in self.modes], args)
-        print(angles)
-        return angles
 
 
 class Pgate(Parametrized, Transformation):
