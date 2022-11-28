@@ -123,7 +123,7 @@ class Transformation:
             if state.is_pure:
                 return State(ket = fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
             else:
-                return State(ket = fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
+                return State(dm = fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
             transformation = self.choi(cutoffs=state.cutoffs)
             if dual:
