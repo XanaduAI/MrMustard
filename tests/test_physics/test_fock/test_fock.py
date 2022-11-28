@@ -111,7 +111,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
         [cutoff]
     )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
-    assert np.allclose(ps, expected, atol=1e-6)
+    assert np.allclose(ps, expected, atol=1e-5)
 
 
 @given(n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1))
@@ -173,3 +173,14 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
+
+
+def test_fock_trace():
+    state = Vacuum(2) >> Ggate(2)
+    from_gaussian = state.get_modes(0).dm([3])
+    from_fock = State(dm=state.dm([40])).get_modes(0).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+    from_gaussian = state.get_modes(1).dm([3])
+    from_fock = State(dm=state.dm([40])).get_modes(1).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
