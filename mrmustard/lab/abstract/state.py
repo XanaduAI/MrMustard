@@ -508,14 +508,14 @@ class State:
             raise ValueError(
                 f"Failed to request modes {item} for state {self} on modes {self.modes}."
             )
-
+        item_idx = [self.modes.index(m) for m in item]
         if self.is_gaussian:
-            cov, _, _ = gaussian.partition_cov(self.cov, item)
-            means, _ = gaussian.partition_means(self.means, item)
+            cov, _, _ = gaussian.partition_cov(self.cov, item_idx)
+            means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
         fock_partitioned = fock.trace(
-            self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
+            self.dm(self.cutoffs), keep=item_idx
         )
         return State(dm=fock_partitioned, modes=item)
 
