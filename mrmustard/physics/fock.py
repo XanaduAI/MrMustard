@@ -369,7 +369,7 @@ def apply_op_to_dm(op, dm, op_modes):
     for i,o in enumerate(op_modes):
         perm.insert(o, D-N+i)
     op_dm = math.transpose(op_dm, perm)
-    op_dm_op = math.tensordot(op_dm, math.conj(op), axes=[[o+D//2 for o in op_modes], np.arange(N)])
+    op_dm_op = math.tensordot(op_dm, math.conj(op), axes=[[o+D//2 for o in op_modes], np.arange(N, 2*N)])
     # the N output indices of op are now at the end. We need to move them at op_modes + D//2
     perm = list(range(D-N))
     for i,o in enumerate(op_modes):
@@ -497,6 +497,9 @@ def is_mixed_dm(dm):
 
 def trace(dm, keep: List[int]):
     r"""Computes the partial trace of a density matrix.
+    The indices of the density matrix are in the order (out0, ..., outN-1, in0, ..., inN-1).
+    The indices to keep are a subset of the first N indices (they are doubled automatically
+    and applied to the second N indices as the trace is computed).
 
     Args:
         dm: the density matrix
@@ -505,14 +508,10 @@ def trace(dm, keep: List[int]):
     N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]
     # put at the end all of the indices to trace over
-    keep_idx = [i for pair in [(k, k + N) for k in keep] for i in pair]
-    keep_idx = keep_idx[::2] + keep_idx[1::2]
-    trace_idx = [i for pair in [(t, t + N) for t in trace] for i in pair]
-    trace_idx = trace_idx[::2] + trace_idx[1::2]  # stagger the indices
+    keep_idx = keep + [i + N for i in keep]
+    trace_idx = trace + [i + N for i in trace]
     dm = math.transpose(dm, keep_idx + trace_idx)
-
-    d = int(np.prod(dm.shape[-len(trace) :]))
-    # make it square on those indices
+    d = int(np.prod([dm.shape[t] for t in trace]))
     dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
     return math.trace(dm)
 
