@@ -20,3 +20,9 @@ from mrmustard.physics import gaussian
 from mrmustard.lab import *
 from mrmustard import settings
 from tests import random
+
+
+def test_circuit_placement():
+    assert Sgate(1.0)[1] >> Dgate(1.0)[0] == Dgate(1.0)[0] >> Sgate(1.0)[1]
+    assert Sgate(1.0)[1] >> Rgate(1.0)[0] == Rgate(1.0)[0] >> Sgate(1.0)[1]
+    assert Rgate(1.0)[1] >> Dgate(1.0)[0] == Dgate(1.0)[0] >> Rgate(1.0)[1]
