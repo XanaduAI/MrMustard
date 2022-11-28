@@ -514,9 +514,7 @@ class State:
             means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
-        fock_partitioned = fock.trace(
-            self.dm(self.cutoffs), keep=item_idx
-        )
+        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor

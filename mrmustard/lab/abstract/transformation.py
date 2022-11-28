@@ -121,9 +121,9 @@ class Transformation:
             U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
             transformation = fock.math.dagger(U) if dual else U
             if state.is_pure:
-                return State(ket = fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
+                return State(ket=fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
             else:
-                return State(dm = fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
+                return State(dm=fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
             transformation = self.choi(cutoffs=state.cutoffs)
             if dual:
