@@ -18,12 +18,15 @@
     measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
     ```
 
+  * The optimizer `minimize` method now accepts an optional callback function, which will be called at each step of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
+  The result is added to the `callback_history` attribute of the optimizer.
+  [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
+
 ### Breaking changes
 
 ### Improvements
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values.
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation, providing better numerical stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
@@ -46,6 +49,7 @@ within the defined window. Also, expose some plot parameters and return the figu
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
+[Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 ---
 
@@ -57,7 +61,7 @@ This release contains contributions from (in alphabetical order):
 
 * States in Gaussian and Fock representation now can be concatenated.
   ```python
-  from mrmustard.lab.states import Gaussian, Fock'
+  from mrmustard.lab.states import Gaussian, Fock
   from mrmustard.lab.gates import Attenuator
 
   # concatenate pure states
