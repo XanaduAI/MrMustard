@@ -146,6 +146,7 @@ class Transformation:
     def modes(self) -> Sequence[int]:
         """Returns the list of modes on which the transformation acts on."""
         if self._modes in (None, []):
+            # TODO: transfomations should set `_modes` instead of leaving the property as `None`
             for elem in self.XYd:
                 if elem is not None:
                     self._modes = list(range(elem.shape[-1] // 2))
