@@ -234,7 +234,7 @@ class Transformation:
         return fock.fock_representation(
             choi_state.cov,
             choi_state.means,
-            shape=cutoffs * 2,
+            shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
             return_unitary=True,
             choi_r=settings.CHOI_R,
         )
@@ -249,7 +249,7 @@ class Transformation:
         choi_op = fock.fock_representation(
             choi_state.cov,
             choi_state.means,
-            shape=cutoffs * 4,
+            shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
             return_unitary=False,
             choi_r=settings.CHOI_R,
         )
