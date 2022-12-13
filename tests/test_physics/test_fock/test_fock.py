@@ -18,7 +18,21 @@ import pytest
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-from mrmustard.lab import *
+from mrmustard.lab import (
+    Vacuum,
+    Circuit,
+    S2gate,
+    BSgate,
+    Coherent,
+    SqueezedVacuum,
+    Attenuator,
+    Ggate,
+    Fock,
+    Gaussian,
+    Dgate,
+    Rgate,
+    State,
+)
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm
 
 
