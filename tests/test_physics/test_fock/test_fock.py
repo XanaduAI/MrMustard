@@ -170,7 +170,6 @@ def test_density_matrix(num_modes):
 def test_dm_to_ket(state):
     """Tests pure state density matrix conversion to ket"""
     dm = state.dm()
-
     ket = dm_to_ket(dm)
     # check if ket is normalized
     assert np.allclose(np.linalg.norm(ket), 1)
