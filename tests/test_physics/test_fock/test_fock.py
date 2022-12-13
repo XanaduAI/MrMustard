@@ -205,6 +205,7 @@ def test_fock_trace_mode0():
     from_fock = State(dm=state.dm([40])).get_modes(1).dm([3])
     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
 
+
 def test_fock_trace_function():
     """tests that the Fock state is correctly traced"""
     state = Vacuum(2) >> Ggate(2)
