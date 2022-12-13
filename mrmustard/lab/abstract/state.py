@@ -227,8 +227,14 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-
         return fock.norm(self.fock, self.is_mixed)
+
+    @property
+    def probability(self) -> float:
+        r"""Returns the probability of the state."""
+        if self.is_pure:
+            return self.norm**2
+        return self.norm
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
@@ -592,12 +598,21 @@ class State:
             return State(ket=self.ket() / other, modes=self.modes)
         raise ValueError("No fock representation available")
 
+    @staticmethod
+    def _format_probability(prob: float) -> str:
+        if prob < 0.001:
+            return f"{100*prob:.3e} %"
+        else:
+            return f"{prob:.3%}"
+
     def _repr_markdown_(self):
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
-            + "| Purity | Norm | Num modes | Bosonic size | Gaussian | Fock |\n"
+            + "| Purity | Probability | Num modes | Bosonic size | Gaussian | Fock |\n"
             + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.2e} | {self.norm :.2e} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            + f"| {self.purity :.2e} | "
+            + self._format_probability(self.probability)
+            + f" | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
         if self.num_modes == 1:

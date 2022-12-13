@@ -48,6 +48,9 @@ within the defined window. Also, expose some plot parameters and return the figu
 * Added two functions in the `fock` module to apply operators to ket and dm. When used by the circuit it avoids having to fall back to unitaries as large as the whole circuit.
   [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
+* Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
+  [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
+
 
 ### Bug fixes
 
