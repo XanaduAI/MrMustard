@@ -42,7 +42,23 @@ physical even though the Wigner function might not contain all the features of t
 within the defined window. Also, expose some plot parameters and return the figure and axes.
   [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
 
+* Added two functions in the `fock` module to apply operators to ket and dm. When used by the circuit it avoid having to fall back to unitaries as large as the whole circuit.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
 ### Bug fixes
+
+* The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The trace function in the fock module was giving incorrect results when called with certain choices of modes. This is now fixed.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The purity function for fock states no longer normalizes the density matrix before computing the purity.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
 
 ### Documentation
 
