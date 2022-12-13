@@ -25,15 +25,18 @@ from tests import random
 def test_circuit_placement_SD():
     assert Sgate(1.0)[1] >> Dgate(1.0)[0] == Dgate(1.0)[0] >> Sgate(1.0)[1]
 
+
 def test_circuit_placement_SR():
     assert Sgate(1.0)[1] >> Rgate(1.0)[0] == Rgate(1.0)[0] >> Sgate(1.0)[1]
+
 
 def test_circuit_placement_RD():
     assert Rgate(1.0)[1] >> Dgate(1.0)[0] == Dgate(1.0)[0] >> Rgate(1.0)[1]
 
+
 def test_circuit_placement_BS():
     assert BSgate(1.0)[1, 2] >> Sgate(1.0)[0] == Sgate(1.0)[0] >> BSgate(1.0)[1, 2]
 
+
 def test_circuit_placement_BSBS():
     assert BSgate(1.0)[1, 2] >> BSgate(1.0)[0, 3] == BSgate(1.0)[0, 3] >> BSgate(1.0)[1, 2]
-
