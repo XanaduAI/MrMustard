@@ -148,7 +148,6 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))
     dm = math.reshape(dm, (d, d))
-    dm = normalize(dm, is_dm=True)
 
     _, eigvecs = math.eigh(dm)
     # eigenvalues and related eigenvectors are sorted in non-decreasing order,
@@ -327,7 +326,6 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
-    dm = normalize(dm, is_dm=True)
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
