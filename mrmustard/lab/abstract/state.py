@@ -233,7 +233,7 @@ class State:
     def probability(self) -> float:
         r"""Returns the probability of the state."""
         if self.is_pure:
-            return self.norm ** 2
+            return self.norm**2
         return self.norm
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
