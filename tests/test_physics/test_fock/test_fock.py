@@ -175,12 +175,17 @@ def test_dm_to_ket_error():
         dm_to_ket(state)
 
 
-def test_fock_trace():
+def test_fock_trace_mode0():
+    """tests that the Fock state is correctly traced out from mode 1"""
     state = Vacuum(2) >> Ggate(2)
     from_gaussian = state.get_modes(0).dm([3])
     from_fock = State(dm=state.dm([40])).get_modes(0).dm([3])
     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
 
+
+def test_fock_trace_mode1():
+    """tests that the Fock state is correctly traced out from mode 0"""
+    state = Vacuum(2) >> Ggate(2)
     from_gaussian = state.get_modes(1).dm([3])
     from_fock = State(dm=state.dm([40])).get_modes(1).dm([3])
     assert np.allclose(from_gaussian, from_fock, atol=1e-5)
