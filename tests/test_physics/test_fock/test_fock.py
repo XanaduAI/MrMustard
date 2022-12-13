@@ -32,6 +32,7 @@ from mrmustard.lab import (
     Dgate,
     Rgate,
     State,
+    TMSV,
 )
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm
 
