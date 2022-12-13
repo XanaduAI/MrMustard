@@ -42,6 +42,9 @@ physical even though the Wigner function might not contain all the features of t
 within the defined window. Also, expose some plot parameters and return the figure and axes.
   [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
 
+* Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`. This allows for a more compact Fock representation where needed.
+  [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
+
 ### Bug fixes
 
 ### Documentation
