@@ -20,7 +20,7 @@ from itertools import product
 import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
-
+from mrmustard import settings
 from mrmustard.types import (
     List,
     Tensor,
@@ -977,6 +977,7 @@ class MathInterface(ABC):
 
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
+        np.random.seed(settings.SEED)
         if num_modes == 1:
             W = np.exp(1j * np.random.uniform(size=(1, 1)))
             V = np.exp(1j * np.random.uniform(size=(1, 1)))
@@ -992,12 +993,14 @@ class MathInterface(ABC):
     @staticmethod
     def random_orthogonal(N: int) -> Tensor:
         """A random orthogonal matrix in :math:`O(N)`."""
+        np.random.seed(settings.SEED)
         if N == 1:
             return np.array([[1.0]])
         return ortho_group.rvs(dim=N)
 
     def random_unitary(self, N: int) -> Tensor:
         """a random unitary matrix in :math:`U(N)`"""
+        np.random.seed(settings.SEED)
         if N == 1:
             return self.exp(1j * np.random.uniform(size=(1, 1)))
         return unitary_group.rvs(dim=N)
