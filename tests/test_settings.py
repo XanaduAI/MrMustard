@@ -14,6 +14,7 @@
 
 from mrmustard import Settings
 
+
 def test_settings_seed_randomness_at_init():
     """Test that the random seed is set randomly as MM is initialized."""
     settings = Settings()
@@ -23,13 +24,12 @@ def test_settings_seed_randomness_at_init():
     seed1 = settings._seed
     assert seed0 != seed1
 
+
 def test_reproducibility():
     """Test that the random state is reproducible."""
     settings = Settings()
     settings.SEED = 42
-    seq0 = [settings._random_state.randint(0, 2 ** 32) for _ in range(10)]
+    seq0 = [settings._random_state.randint(0, 2**32) for _ in range(10)]
     settings.SEED = 42
-    seq1 = [settings._random_state.randint(0, 2 ** 32) for _ in range(10)]
+    seq1 = [settings._random_state.randint(0, 2**32) for _ in range(10)]
     assert seq0 == seq1
-
-

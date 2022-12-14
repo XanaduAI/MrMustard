@@ -38,6 +38,7 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
 
 from mrmustard.math import Math
+
 settings.SEED = 42
 math = Math()
 
@@ -259,7 +260,9 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
     S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
     S_23 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]
-    S_12 = S2gate(r=1.0, phi=settings._random_state.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+    S_12 = S2gate(r=1.0, phi=settings._random_state.normal(), r_trainable=True, phi_trainable=True)[
+        1, 2
+    ]
 
     circ = Circuit([S_01, S_23, S_12])
 
