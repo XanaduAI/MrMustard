@@ -201,7 +201,7 @@ def test_modes_after_projection(m):
 def test_modes_after_double_projection(n, m):
     """Test number of modes is correct after double projection."""
     assume(n != m)
-    a = Gaussian(4) >> Dgate(x=1.0) << Fock([1, 2])[n, m]
+    a = Gaussian(4) >> Dgate(x=1.0)[0,1,2,3] << Fock([1, 2])[n, m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m and k != n])
     assert len(a.modes) == 2
 

@@ -47,8 +47,8 @@ math = Math()
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     S = S2gate(
-        r=abs(settings._random_state.normal()),
-        phi=settings._random_state.normal(),
+        r=abs(settings.random_state.normal()),
+        phi=settings.random_state.normal(),
         r_trainable=True,
         phi_trainable=True,
     )
@@ -75,8 +75,8 @@ def test_hong_ou_mandel_optimizer(i, k):
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
-            theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings._random_state.normal(),
-            phi=settings._random_state.normal(),
+            theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.random_state.normal(),
+            phi=settings.random_state.normal(),
             theta_trainable=True,
             phi_trainable=True,
         )[1, 2],
@@ -97,14 +97,14 @@ def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
     ops = [
         Sgate(
-            r=abs(settings._random_state.normal(size=(2))),
-            phi=settings._random_state.normal(size=(2)),
+            r=abs(settings.random_state.normal(size=(2))),
+            phi=settings.random_state.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
         ),
         BSgate(
-            theta=settings._random_state.normal(),
-            phi=settings._random_state.normal(),
+            theta=settings.random_state.normal(),
+            phi=settings.random_state.normal(),
             theta_trainable=True,
             phi_trainable=True,
         ),
@@ -141,8 +141,8 @@ def test_learning_two_mode_Interferometer():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=settings._random_state.normal(size=(2)) ** 2,
-            phi=settings._random_state.normal(size=(2)),
+            r=settings.random_state.normal(size=(2)) ** 2,
+            phi=settings.random_state.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -166,8 +166,8 @@ def test_learning_two_mode_RealInterferometer():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=settings._random_state.normal(size=(2)) ** 2,
-            phi=settings._random_state.normal(size=(2)),
+            r=settings.random_state.normal(size=(2)) ** 2,
+            phi=settings.random_state.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -191,8 +191,8 @@ def test_learning_four_mode_Interferometer():
     settings.SEED = 35
     ops = [
         Sgate(
-            r=settings._random_state.uniform(size=4),
-            phi=settings._random_state.normal(size=4),
+            r=settings.random_state.uniform(size=4),
+            phi=settings.random_state.normal(size=4),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -224,8 +224,8 @@ def test_learning_four_mode_RealInterferometer():
     settings.SEED = 1
     ops = [
         Sgate(
-            r=settings._random_state.uniform(size=4),
-            phi=settings._random_state.normal(size=4),
+            r=settings.random_state.uniform(size=4),
+            phi=settings.random_state.normal(size=4),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -260,7 +260,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
     S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
     S_23 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]
-    S_12 = S2gate(r=1.0, phi=settings._random_state.normal(), r_trainable=True, phi_trainable=True)[
+    S_12 = S2gate(r=1.0, phi=settings.random_state.normal(), r_trainable=True, phi_trainable=True)[
         1, 2
     ]
 
@@ -279,7 +279,7 @@ def test_parameter_passthrough():
     r = np.arcsinh(1.0)
     par = Parametrized(
         r=math.new_variable(r, (0.0, None), "r"),
-        phi=math.new_variable(settings._random_state.normal(), (None, None), "phi"),
+        phi=math.new_variable(settings.random_state.normal(), (None, None), "phi"),
     )
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
