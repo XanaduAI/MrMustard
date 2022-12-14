@@ -187,7 +187,7 @@ def test_learning_two_mode_RealInterferometer():
 
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    settings.SEED = 42
+    settings.SEED = 35
     ops = [
         Sgate(
             r=settings._random_state.uniform(size=4),
