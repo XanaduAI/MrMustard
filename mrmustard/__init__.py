@@ -46,6 +46,20 @@ class Settings:
         self.HOMODYNE_SQUEEZING = 10.0
         # misc
         self.PROGRESSBAR = True
+        self._seed = None
+
+    @property
+    def SEED(self):
+        """Returns the seed value if set, otherwise returns a random seed."""
+        if self._seed is None:
+            import random
+            return random.randint(0, 2 ** 32 - 1)
+        return self._seed
+
+    @SEED.setter
+    def SEED(self, value):
+        """Sets the seed value."""
+        self._seed = value
 
     @property
     def BACKEND(self):
@@ -68,6 +82,7 @@ class Settings:
         table.add_column("Setting")
         table.add_column("Value")
         table.add_row("BACKEND", self.BACKEND)
+        table.add_row("SEED", str(self.SEED))
         for key, value in self.__dict__.items():
             if key == key.upper():
                 table.add_row(key, str(value))
