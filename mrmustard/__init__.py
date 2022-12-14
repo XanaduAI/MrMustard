@@ -14,6 +14,10 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+import numpy as np
+from numpy.random import MT19937
+from numpy.random import RandomState, SeedSequence
+
 import rich.table
 from rich import print
 
@@ -46,20 +50,22 @@ class Settings:
         self.HOMODYNE_SQUEEZING = 10.0
         # misc
         self.PROGRESSBAR = True
-        self._seed = None
+        self._seed = np.random.randint(0, 2 ** 32)
+        self._random_state = RandomState(MT19937(SeedSequence(self._seed)))
 
     @property
     def SEED(self):
         """Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
-            import random
-            return random.randint(0, 2 ** 32 - 1)
+            self._seed = np.random.randint(0, 2 ** 32)
+            self._random_state = RandomState(MT19937(SeedSequence(self._seed)))
         return self._seed
 
     @SEED.setter
     def SEED(self, value):
         """Sets the seed value."""
         self._seed = value
+        self._random_state = RandomState(MT19937(SeedSequence(self._seed)))
 
     @property
     def BACKEND(self):
