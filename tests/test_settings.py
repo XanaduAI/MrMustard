@@ -18,10 +18,10 @@ from mrmustard import Settings
 def test_settings_seed_randomness_at_init():
     """Test that the random seed is set randomly as MM is initialized."""
     settings = Settings()
-    seed0 = settings._seed
+    seed0 = settings.SEED
     del Settings.instance
     settings = Settings()
-    seed1 = settings._seed
+    seed1 = settings.SEED
     assert seed0 != seed1
 
 
