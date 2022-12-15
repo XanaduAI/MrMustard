@@ -277,8 +277,8 @@ def wigner_to_bargmann_rho(cov, means):
 def wigner_to_bargmann_U(X, d):
     r"""Returns the Bargmann A,B,C triple for a unitary transformation."""
     N = X.shape[-1] // 2
-    A, B, C = ABC_Choi(X, math.zeros_like(X), d)
-    return A[N:,N:], B[N:], math.sqrt(C)
+    A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
+    return A[2*N:,2*N:], B[2*N:], math.sqrt(C)
 
 def wigner_to_bargmann_Choi(X, Y, d):
     r"""Returns the Bargmann A,B,C triple for a channel."""
@@ -291,12 +291,12 @@ def wigner_to_bargmann_Choi(X, Y, d):
                     [math.matmul(XT, xi_inv), I2 - math.matmul(math.matmul(XT, xi_inv), X)]])
     I = math.eye(N, dtype='complex128')
     o = math.zeros_like(I)
-    R = math.block([[I, 1j*I, o, o], [o, o, I, -1j*I], [I, -1j*I, o, o], [o, o, I, 1j*I]])
+    R = math.block([[I, 1j*I, o, o], [o, o, I, -1j*I], [I, -1j*I, o, o], [o, o, I, 1j*I]])/np.sqrt(2)
     A = math.matmul(math.matmul(R, A), math.dagger(R))
-    A = math.matmul(math.Xmat(N), A)
+    A = math.matmul(math.Xmat(2*N), A)
     b = math.matvec(xi_inv, d)
-    B = math.matmul(math.conj(R), math.block([[b], [-math.matmul(XT, b)]])) / math.sqrt(settings.HBAR)
-    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi))
+    B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(settings.HBAR, dtype=R.dtype)
+    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
     return A, B, C
 
 
