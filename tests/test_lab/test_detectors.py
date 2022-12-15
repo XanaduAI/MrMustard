@@ -50,7 +50,7 @@ class TestPNRDetector:
     @given(
         alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1),
         eta=st.floats(0, 1),
-        dc=st.floats(0, 0.2), 
+        dc=st.floats(0, 0.2),
     )
     def test_detector_coherent_state(self, alpha, eta, dc):
         """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
