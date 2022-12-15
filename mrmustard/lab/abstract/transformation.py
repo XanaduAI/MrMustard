@@ -117,8 +117,12 @@ class Transformation:
             State: the transformed state
         """
         if self.is_unitary:
-            U = self.U(cutoffs=state.cutoffs)
+            op_idx = [state.modes.index(m) for m in self.modes]
+            U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
             transformation = fock.math.dagger(U) if dual else U
+            if state.is_pure:
+                return State(ket=fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
+            return State(dm=fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
             transformation = self.choi(cutoffs=state.cutoffs)
             if dual:
@@ -142,13 +146,10 @@ class Transformation:
     def modes(self) -> Sequence[int]:
         """Returns the list of modes on which the transformation acts on."""
         if self._modes in (None, []):
-            X, Y, d = self.XYd
-            if d is not None:
-                self._modes = list(range(d.shape[-1] // 2))
-            elif X is not None:
-                self._modes = list(range(X.shape[-1] // 2))
-            elif Y is not None:
-                self._modes = list(range(Y.shape[-1] // 2))
+            for elem in self.XYd:
+                if elem is not None:
+                    self._modes = list(range(elem.shape[-1] // 2))
+                    break
         return self._modes
 
     @modes.setter
@@ -249,7 +250,7 @@ class Transformation:
         choi_op = fock.fock_representation(
             choi_state.cov,
             choi_state.means,
-            shape=cutoffs * 4,
+            shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
             return_unitary=False,
             choi_r=settings.CHOI_R,
         )

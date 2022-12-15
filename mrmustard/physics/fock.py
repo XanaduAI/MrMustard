@@ -167,7 +167,6 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))
     dm = math.reshape(dm, (d, d))
-    dm = normalize(dm, is_dm=True)
 
     _, eigvecs = math.eigh(dm)
     # eigenvalues and related eigenvectors are sorted in non-decreasing order,
@@ -423,8 +422,57 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
-    dm = normalize(dm, is_dm=True)
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
+
+
+def apply_op_to_ket(op, ket, op_indices):
+    r"""Applies an operator to a ket in the sense
+        ket_abcde = sum_{ijk}U_abc,ijk ket_ijkde
+
+    Args:
+        op (array): the operator to be applied
+        ket (array): the ket to which the operator is applied
+        op_indices (list): the indices the operator acts on
+    Returns:
+        array: the resulting ket
+    """
+    K = ket.ndim
+    N = op.ndim // 2
+    op_ket = math.tensordot(ket, op, axes=[op_indices, list(range(N, 2 * N))])
+    perm = list(range(K - N))
+    for i, o in enumerate(op_indices):
+        perm.insert(o, K - N + i)
+    return math.transpose(op_ket, perm)
+
+
+def apply_op_to_dm(op, dm, op_modes):
+    r"""Applies an operator to a density matrix in the sense
+        dm_abcd = sum_{ij}op_ai dm_ibkd dagger(op)_kc
+
+    Args:
+        op (array): the operator to be applied
+        dm (array): the density matrix to which the operator is applied
+        op_modes (list): the modes the operator acts on (counting from 0)
+
+    Returns:
+        array: the resulting density matrix
+    """
+    D = dm.ndim
+    N = len(op_modes)
+    op_dm = math.tensordot(dm, op, axes=[op_modes, np.arange(N, 2 * N)])
+    # the N output indices of op are now at the end. We need to move them at op_modes
+    perm = list(range(D - N))
+    for i, o in enumerate(op_modes):
+        perm.insert(o, D - N + i)
+    op_dm = math.transpose(op_dm, perm)
+    op_dm_op = math.tensordot(
+        op_dm, math.conj(op), axes=[[o + D // 2 for o in op_modes], np.arange(N, 2 * N)]
+    )
+    # the N output indices of op are now at the end. We need to move them at op_modes + D//2
+    perm = list(range(D - N))
+    for i, o in enumerate(op_modes):
+        perm.insert(o + D // 2, D - N + i)
+    return math.transpose(op_dm_op, perm)
 
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
@@ -547,22 +595,21 @@ def is_mixed_dm(dm):
 
 def trace(dm, keep: List[int]):
     r"""Computes the partial trace of a density matrix.
+    The indices of the density matrix are in the order (out0, ..., outN-1, in0, ..., inN-1).
+    The indices to keep are a subset of the first N indices (they are doubled automatically
+    and applied to the second N indices as the trace is computed).
 
     Args:
         dm: the density matrix
-        keep: the modes to keep
+        keep: the modes to keep (0-based)
     """
     N = len(dm.shape) // 2
     trace = [m for m in range(N) if m not in keep]
     # put at the end all of the indices to trace over
-    keep_idx = [i for pair in [(k, k + N) for k in keep] for i in pair]
-    keep_idx = keep_idx[::2] + keep_idx[1::2]
-    trace_idx = [i for pair in [(t, t + N) for t in trace] for i in pair]
-    trace_idx = trace_idx[::2] + trace_idx[1::2]  # stagger the indices
+    keep_idx = keep + [i + N for i in keep]
+    trace_idx = trace + [i + N for i in trace]
     dm = math.transpose(dm, keep_idx + trace_idx)
-
-    d = int(np.prod(dm.shape[-len(trace) :]))
-    # make it square on those indices
+    d = int(np.prod([dm.shape[t] for t in trace]))
     dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
     return math.trace(dm)
 
