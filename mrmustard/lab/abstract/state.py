@@ -195,7 +195,7 @@ class State:
     def fock(self) -> Array:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
-            _fock = fock.fock_representation(
+            _fock = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
             )
             if self.is_mixed:
@@ -256,7 +256,7 @@ class State:
         )
 
         if self.is_gaussian:
-            self._ket = fock.fock_representation(
+            self._ket = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=cutoffs, return_dm=False
             )
         else:  # only fock representation is available
@@ -296,7 +296,7 @@ class State:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.fock_representation(
+                self._dm = fock.wigner_to_fock_state(
                     self.cov, self.means, shape=cutoffs * 2, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):

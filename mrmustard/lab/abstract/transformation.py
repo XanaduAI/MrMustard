@@ -231,13 +231,11 @@ class Transformation:
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
-        choi_state = self.bell >> self
-        return fock.fock_representation(
-            choi_state.cov,
-            choi_state.means,
+        X,Y,d = self.XYd
+        return fock.wigner_to_fock_transformation(
+            X, Y, d,
             shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
-            return_unitary=True,
-            choi_r=settings.CHOI_R,
+            return_choi=False,
         )
 
     def choi(self, cutoffs: Sequence[int]):
@@ -245,16 +243,12 @@ class Transformation:
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
-
-        choi_state = self.bell >> self
-        choi_op = fock.fock_representation(
-            choi_state.cov,
-            choi_state.means,
-            shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
-            return_unitary=False,
-            choi_r=settings.CHOI_R,
+        X,Y,d = self.XYd
+        return fock.wigner_to_fock_transformation(
+            X, Y, d,
+            shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
+            return_choi=True,
         )
-        return choi_op
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.

@@ -72,13 +72,13 @@ def autocutoffs(
     return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
 
 
-def fock_state(
+def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
     shape: Sequence[int],
     return_dm: bool = True,
 ) -> Tensor:
-    r"""Returns the Fock representation of a state.
+    r"""Returns the Fock representation of a Gaussian state.
     Use with caution: if the cov matrix is that of a mixed state,
     setting return_dm to False will produce nonsense.
 
@@ -102,14 +102,14 @@ def fock_state(
         math.conj(-A), math.conj(B), math.conj(C), shape=shape
     )  # NOTE: remove conj when TW is updated
 
-def fock_transformation(
+def wigner_to_fock_transformation(
     X: Matrix,
     Y: Matrix,
     d: Vector,
     shape: Sequence[int],
     return_choi: bool = False,
 ) -> Tensor:
-    r"""Returns the Fock representation of a transformation.
+    r"""Returns the Fock representation of a Gaussian transformation.
     Use with caution: if the cov matrix is that of a channel,
     setting return_dm to False will produce nonsense.
 
@@ -243,20 +243,24 @@ def cayley(X, c):
     """
     I = math.eye(X.shape[0], dtype=X.dtype)
     # solve(1+x, 1-x)?
-    return math.matmul(I - X, math.inv(I + X))
+    return math.matmul(c*I - X, math.inv(c*I + X))
 
 def pq_to_aadag(X):
     r"""maps the matrix or vector X from the q/p basis to the a/adagger basis"""
-    R = math.Rmat(X.shape[0]//2)
+    R = math.rotmat(X.shape[0]//2)
     if X.ndim == 2:
-        return math.matmul(math.matmul(R, X / settings.HBAR, dtype=X.dtype), math.dagger(R))
+        return math.matmul(math.matmul(R, X / settings.HBAR), math.dagger(R))
     elif X.ndim == 1:
         return math.matvec(R, X / math.sqrt(settings.HBAR, dtype=X.dtype))
 
 def wigner_to_bargmann_psi(cov, means):
     r"""Returns the Bargmann A,B,C triple for a ket."""
-    N = X.shape[-1] // 2
-    A,B,C = ABC_rho(cov, means)
+    N = cov.shape[-1] // 2
+    A,B,C = wigner_to_bargmann_rho(cov, means)
+    print('-' * 30 + 'pure' + '-' * 30)
+    print('B', B[N:].numpy())
+    print('C', math.sqrt(C).numpy())
+    print('-' * 30 + 'pure' + '-' * 30)
     return A[N:,N:], B[N:], math.sqrt(C)
 
 def wigner_to_bargmann_rho(cov, means):
@@ -264,13 +268,17 @@ def wigner_to_bargmann_rho(cov, means):
     N = cov.shape[-1] // 2
     sigma = pq_to_aadag(cov)
     beta = pq_to_aadag(means)
-    I = math.eye(2*N)
-    sigma_inv = math.inv(sigma + 0.5*I)
+    I = math.eye(2*N, dtype=sigma.dtype)
+    Q_inv = math.inv(sigma + 0.5*I)
     A = math.matmul(math.Xmat(N), -cayley(sigma, c=0.5))
-    B = math.matvec(math.matmul(math.Xmat(N), sigma_inv), beta)
-    numerator = math.exp(-0.5 * math.matmul(math.dagger(beta), math.matmul(sigma_inv, beta)))
+    B = math.matvec(math.matmul(math.Xmat(N), Q_inv), beta)
+    numerator = math.exp(-0.5 * math.sum(math.conj(beta) * math.matvec(Q_inv, beta)))
     denominator = math.sqrt(math.det(sigma + 0.5*I))
     C = numerator / denominator
+    print('-' * 30 + 'mixed' + '-' * 30)
+    print('B', B.numpy())
+    print('C', C.numpy())
+    print('-' * 30 + 'mixed' + '-' * 30)
     return A, B, C
 
 def wigner_to_bargmann_U(X, d):
@@ -299,51 +307,60 @@ def wigner_to_bargmann_Choi(X, Y, d):
     return A, B, C
 
 
-# def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
-#     r"""Returns the full-size ``A`` matrix, ``B`` vector and ``C`` scalar.
+def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
+    r"""Returns the full-size ``A`` matrix, ``B`` vector and ``C`` scalar.
 
-#     Args:
-#         cov: the Wigner covariance matrix
-#         means: the Wigner means vector
-#         full: whether to return the full-size ``A``, ``B`` and ``C`` or the half-size ``A``, ``B``
-#             and ``C``
-#         choi_r: the TMSV squeezing magnitude if not None we consider ABC of a Choi state
+    Args:
+        cov: the Wigner covariance matrix
+        means: the Wigner means vector
+        full: whether to return the full-size ``A``, ``B`` and ``C`` or the half-size ``A``, ``B``
+            and ``C``
+        choi_r: the TMSV squeezing magnitude if not None we consider ABC of a Choi state
 
-#     Returns:
-#         Tuple[Matrix, Vector, Scalar]: full-size ``A`` matrix, ``B`` vector and ``C`` scalar
-#     """
-#     is_state = choi_r is None
-#     N = cov.shape[-1] // 2
-#     R = math.rotmat(N)
-#     sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
-#     beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
-#     Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)  # Husimi covariance matrix
-#     Qinv = math.inv(Q)
-#     A = math.matmul(math.Xmat(N), math.eye(2 * N, dtype=Qinv.dtype) - Qinv)
-#     denom = math.sqrt(math.det(Q)) if is_state else math.sqrt(math.det(Q / np.cosh(choi_r)))
-#     if full:
-#         B = math.matvec(math.transpose(Qinv), math.conj(beta))
-#         exponent = -0.5 * math.sum(math.conj(beta)[:, None] * Qinv * beta[None, :])
-#         C = math.exp(exponent) / denom
-#     else:
-#         A = A[
-#             :N, :N
-#         ]  # TODO: find a way to compute the half-size A without computing the full-size A first
-#         B = beta[N:] - math.matvec(A, beta[:N])
-#         exponent = -0.5 * math.sum(beta[:N] * B)
-#         C = math.exp(exponent) / math.sqrt(denom)
-#     if choi_r is not None:
-#         ones = math.ones(
-#             N // 2, dtype=A.dtype
-#         )  # N//2 is the actual number of modes because of the choi trick
-#         factor = 1.0 / np.tanh(choi_r)
-#         if full:
-#             rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
-#         else:
-#             rescaling = math.concat([ones, factor * ones], axis=0)
-#         A = rescaling[:, None] * rescaling[None, :] * A
-#         B = rescaling * B
-#     return A, B, C
+    Returns:
+        Tuple[Matrix, Vector, Scalar]: full-size ``A`` matrix, ``B`` vector and ``C`` scalar
+    """
+    is_state = choi_r is None
+    N = cov.shape[-1] // 2
+    R = math.rotmat(N)
+    sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
+    beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
+    Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)  # Husimi covariance matrix
+    Qinv = math.inv(Q)
+
+    A = math.matmul(math.Xmat(N), math.eye(2 * N, dtype=Qinv.dtype) - Qinv)
+    denom = math.sqrt(math.det(Q)) if is_state else math.sqrt(math.det(Q / np.cosh(choi_r)))
+    if full:
+        B = math.matvec(math.transpose(Qinv), math.conj(beta))
+        exponent = -0.5 * math.sum(math.conj(beta)[:, None] * Qinv * beta[None, :])
+        C = math.exp(exponent) / denom
+        print('>'*30 + ' Mixed ' + '<'*30)
+        print('B', B.numpy())
+        print('C', C.numpy())
+        print('>'*30 + ' Mixed ' + '<'*30)
+    else:
+        A = A[
+            :N, :N
+        ]  # TODO: find a way to compute the half-size A without computing the full-size A first
+        B = beta[N:] - math.matvec(A, beta[:N])
+        exponent = -0.5 * math.sum(beta[:N] * B)
+        C = math.exp(exponent) / math.sqrt(denom)
+        print('>'*30 + ' Pure ' + '<'*30)
+        print('B', B.numpy())
+        print('C', C.numpy())
+        print('>'*30 + ' Pure ' + '<'*30)
+    if choi_r is not None:
+        ones = math.ones(
+            N // 2, dtype=A.dtype
+        )  # N//2 is the actual number of modes because of the choi trick
+        factor = 1.0 / np.tanh(choi_r)
+        if full:
+            rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
+        else:
+            rescaling = math.concat([ones, factor * ones], axis=0)
+        A = rescaling[:, None] * rescaling[None, :] * A
+        B = rescaling * B
+    return A, B, C
 
 
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
