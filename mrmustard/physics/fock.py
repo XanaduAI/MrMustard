@@ -109,8 +109,8 @@ def fock_representation(
     elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
         A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
     return math.hermite_renormalized(
-        math.conj(-A), math.conj(B), math.conj(C), shape=shape
-    )  # NOTE: remove conj when TW is updated
+        -A, B, C, shape=shape
+    )
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -231,10 +231,10 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
         C = math.exp(exponent) / denom
     else:
         A = A[
-            :N, :N
+            N:, N:
         ]  # TODO: find a way to compute the half-size A without computing the full-size A first
-        B = beta[N:] - math.matvec(A, beta[:N])
-        exponent = -0.5 * math.sum(beta[:N] * B)
+        B = beta[:N] - math.matvec(A, beta[N:])
+        exponent = -0.5 * math.sum(beta[N:] * B)
         C = math.exp(exponent) / math.sqrt(denom)
     if choi_r is not None:
         ones = math.ones(
