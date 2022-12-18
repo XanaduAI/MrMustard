@@ -340,10 +340,10 @@ def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, S
         print('>'*30 + ' Mixed ' + '<'*30)
     else:
         A = A[
-            :N, :N
+            N:, N:
         ]  # TODO: find a way to compute the half-size A without computing the full-size A first
-        B = beta[N:] - math.matvec(A, beta[:N])
-        exponent = -0.5 * math.sum(beta[:N] * B)
+        B = beta[:N] - math.matvec(A, beta[N:])
+        exponent = -0.5 * math.sum(beta[N:] * B)
         C = math.exp(exponent) / math.sqrt(denom)
         print('>'*30 + ' Pure ' + '<'*30)
         print('B', B.numpy())
