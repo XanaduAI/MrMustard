@@ -57,7 +57,8 @@ def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthog
 
 def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_lr: float):
     r"""Updates the unitary parameters using the given unitary gradients.
-    Implemented from arXiv.
+    Implemented from:
+        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
     """
     for dU_euclidean, U in grads_and_vars:
         Y = math.euclidean_to_unitary(U, dU_euclidean)

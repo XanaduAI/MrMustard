@@ -1094,7 +1094,8 @@ class MathInterface(ABC):
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the unitary manifold.
 
-        Implemented from arXiv.
+        Implemented from:
+            Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
 
         Args:
             U (Matrix): unitary matrix
