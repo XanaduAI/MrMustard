@@ -254,7 +254,7 @@ class State:
             if cutoffs is None
             else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         )
-
+        
         if self.is_gaussian:
             self._ket = fock.fock_representation(
                 self.cov, self.means, shape=cutoffs, return_dm=False
@@ -264,7 +264,7 @@ class State:
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
                     self._ket = fock.dm_to_ket(self._dm)
-                    return self._ket
+                    return self._ket[tuple(slice(s) for s in cutoffs)]
                 return None
             current_cutoffs = list(self._ket.shape[: self.num_modes])
             if cutoffs != current_cutoffs:
@@ -274,7 +274,7 @@ class State:
                 else:
                     padded = self._ket
                 return padded[tuple(slice(s) for s in cutoffs)]
-        return self._ket
+        return self._ket[tuple(slice(s) for s in cutoffs)]
 
     def dm(self, cutoffs: List[int] = None) -> Tensor:
         r"""Returns the density matrix of the state in Fock representation.
@@ -306,7 +306,7 @@ class State:
                 else:
                     padded = self._dm
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
-        return self._dm
+        return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""Returns the probabilities in Fock representation.
