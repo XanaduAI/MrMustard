@@ -109,8 +109,8 @@ def fock_representation(
     elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
         A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
     return math.hermite_renormalized(
-        -math.conj(A), math.conj(B), math.conj(C), shape=shape
-    )
+        math.conj(-A), math.conj(B), math.conj(C), shape=shape
+    ) # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
