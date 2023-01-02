@@ -108,6 +108,7 @@ def fock_representation(
         A, B, C = ABC(cov, means, full=return_dm)
     elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
         A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
+    # print(f'calling hermite_renormalized with \nA={-A}, \nB={B}, \nC={C}')
     return math.hermite_renormalized(
         -A, B, C, shape=shape
     )
@@ -500,8 +501,8 @@ def is_mixed_dm(dm):
 def trace(dm, keep: List[int]):
     r"""Computes the partial trace of a density matrix.
     The indices of the density matrix are in the order (out0, ..., outN-1, in0, ..., inN-1).
-    The indices to keep are a subset of the first N indices (they are doubled automatically
-    and applied to the second N indices as the trace is computed).
+    The indices to keep are a subset of the N 'out' indices
+    (they count for the 'in' indices as well).
 
     Args:
         dm: the density matrix
