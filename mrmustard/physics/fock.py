@@ -110,7 +110,7 @@ def fock_representation(
         A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
     return math.hermite_renormalized(
         math.conj(-A), math.conj(B), math.conj(C), shape=shape
-    ) # NOTE: remove conj when TW is updated
+    )  # NOTE: remove conj when TW is updated
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
