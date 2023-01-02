@@ -254,7 +254,7 @@ class State:
             if cutoffs is None
             else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         )
-        
+
         if self.is_gaussian:
             self._ket = fock.fock_representation(
                 self.cov, self.means, shape=cutoffs, return_dm=False
