@@ -215,7 +215,7 @@ class Rgate(Parametrized, Transformation):
                 U_next = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
                 Ur = math.outer(Ur, U_next)
 
-        # return total unitary with indexes reordered according to MM convetion
+        # return total unitary with indexes reordered according to MM convention
         return math.transpose(
             Ur,
             list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
