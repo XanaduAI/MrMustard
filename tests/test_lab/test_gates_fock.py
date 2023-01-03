@@ -111,7 +111,7 @@ def test_fock_representation_displacement(cutoffs, x, y):
     # transformation unitaries using the Choi isomorphism
     X = np.eye(2 * len(cutoffs))
     Y = np.zeros((2 * len(cutoffs), 2 * len(cutoffs)))
-    expected_Ud = fock.wigner_to_fock_transformation(X, Y, dgate.XYd[-1], cutoffs*2)
+    expected_Ud = fock.wigner_to_fock_transformation(X, Y, dgate.XYd[-1], cutoffs * 2)
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -169,7 +169,7 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
     # transformation unitaries using the Choi isomorphism
     Y = np.zeros((2 * len(cutoffs), 2 * len(cutoffs)))
     d = np.zeros(2 * len(cutoffs))
-    expected_R = fock.wigner_to_fock_transformation(rgate.XYd[0], Y, d, cutoffs*2, False)
+    expected_R = fock.wigner_to_fock_transformation(rgate.XYd[0], Y, d, cutoffs * 2, False)
 
     assert np.allclose(R, expected_R, atol=1e-5)
 

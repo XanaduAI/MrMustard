@@ -138,7 +138,7 @@ def test_S2gate(r, phi):
     r_choi = settings.CHOI_R
     S2 = S2gate(r=r, phi=phi)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
-    bell._modes = [0,1,2,3]
+    bell._modes = [0, 1, 2, 3]
     cov = (bell >> S2[0, 1]).cov
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
@@ -153,7 +153,7 @@ def test_MZgate_external_tms(phi_ex, phi_in):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = settings.CHOI_R
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
-    bell._modes = [0,1,2,3]
+    bell._modes = [0, 1, 2, 3]
     MZ = MZgate(phi_a=phi_ex, phi_b=phi_in, internal=False)
     cov = (bell >> MZ[0, 1]).cov
 
@@ -177,7 +177,7 @@ def test_MZgate_internal_tms(phi_a, phi_b):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
     r_choi = settings.CHOI_R
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
-    bell._modes = [0,1,2,3]
+    bell._modes = [0, 1, 2, 3]
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=True)
     cov = (bell >> MZ[0, 1]).cov
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
