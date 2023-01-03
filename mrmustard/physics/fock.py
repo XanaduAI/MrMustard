@@ -21,7 +21,7 @@ This module contains functions for performing calculations on Fock states.
 from functools import lru_cache
 import numpy as np
 
-from .bargmann import (
+from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_Choi,

@@ -18,7 +18,7 @@
 This module contains functions for transforming to the Bargmann representation.
 """
 import numpy as np
-from .husimi import pq_to_aadag
+from mrmustard.physics.husimi import pq_to_aadag
 from mrmustard import settings
 from mrmustard.math import Math
 math = Math()
