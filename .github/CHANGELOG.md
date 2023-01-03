@@ -5,6 +5,7 @@
 ### Breaking changes
 
 ### Improvements
+* The unitary optimization to update the Interferometer have been added. [(#173)](https://github.com/XanaduAI/MrMustard/pull/173)
 
 ### Bug fixes
 
@@ -13,6 +14,8 @@
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
+
+[Yuan Yao](https://github.com/sylviemonet)
 
 ---
 
