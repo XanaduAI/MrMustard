@@ -18,12 +18,15 @@
     measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
     ```
 
+  * The optimizer `minimize` method now accepts an optional callback function, which will be called at each step of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
+  The result is added to the `callback_history` attribute of the optimizer.
+  [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
+
 ### Breaking changes
 
 ### Improvements
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values.
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation, providing better numerical stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
@@ -39,13 +42,37 @@ physical even though the Wigner function might not contain all the features of t
 within the defined window. Also, expose some plot parameters and return the figure and axes.
   [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
 
+* Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`. This allows for a more compact Fock representation where needed.
+  [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
+
+* Added two functions in the `fock` module to apply operators to ket and dm. When used by the circuit it avoids having to fall back to unitaries as large as the whole circuit.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
+  [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
+
+
 ### Bug fixes
+
+* The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The trace function in the fock module was giving incorrect results when called with certain choices of modes. This is now fixed.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The purity function for fock states no longer normalizes the density matrix before computing the purity.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
 
 ### Documentation
 
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
+[Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 ---
 
@@ -57,7 +84,7 @@ This release contains contributions from (in alphabetical order):
 
 * States in Gaussian and Fock representation now can be concatenated.
   ```python
-  from mrmustard.lab.states import Gaussian, Fock'
+  from mrmustard.lab.states import Gaussian, Fock
   from mrmustard.lab.gates import Attenuator
 
   # concatenate pure states

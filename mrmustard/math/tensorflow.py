@@ -145,7 +145,9 @@ class TFMath(MathInterface):
         return tf.linalg.diag_part(array)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
-        return tf.einsum(string, *tensors)
+        if type(string) is str:
+            return tf.einsum(string, *tensors)
+        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
