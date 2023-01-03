@@ -21,6 +21,7 @@ import numpy as np
 from .husimi import wigner_to_husimi, pq_to_aadag
 from mrmustard import settings
 from mrmustard.math import Math
+
 math = Math()
 
 
