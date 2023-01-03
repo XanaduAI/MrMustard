@@ -73,22 +73,6 @@ class Transformation:
             new_state = self.transform_fock(state, dual=True)
         return new_state
 
-    @property
-    def bell(self):
-        r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism."""
-        if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(
-                r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
-            )
-            means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
-            bell = bell_single = State(cov=cov, means=means)
-            for _ in range(self.num_modes - 1):
-                bell = bell & bell_single
-            tot = 2 * self.num_modes
-            order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
-            self._bell = bell.get_modes(order)
-        return self._bell[self.modes + [m + self.num_modes for m in self.modes]]
-
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.
 
@@ -231,9 +215,11 @@ class Transformation:
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
-        X,Y,d = self.XYd
+        X, Y, d = self.XYd
         return fock.wigner_to_fock_transformation(
-            X, Y, d,
+            X if X is not None else math.eye(2 * self.num_modes),
+            Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
+            d if d is not None else math.zeros((2 * self.num_modes,)),
             shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
             return_choi=False,
         )
@@ -243,10 +229,12 @@ class Transformation:
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
-        X,Y,d = self.XYd
+        X, Y, d = self.XYd
         return fock.wigner_to_fock_transformation(
-            X, Y, d,
-            shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
+            X if X is not None else math.eye(2 * self.num_modes),
+            Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
+            d if d is not None else math.zeros((2 * self.num_modes,)),
+            shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
             return_choi=True,
         )
 
