@@ -17,13 +17,11 @@
 """
 This module contains functions for transforming to the Bargmann representation.
 """
-
-from mrmustard.math import Math
-
-math = Math()
-from mrmustard import settings
-from .husimi import wigner_to_husimi, pq_to_aadag
 import numpy as np
+from .husimi import wigner_to_husimi, pq_to_aadag
+from mrmustard import settings
+from mrmustard.math import Math
+math = Math()
 
 
 def cayley(X, c):

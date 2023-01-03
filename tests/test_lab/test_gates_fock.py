@@ -24,7 +24,6 @@ from thewalrus.fock_gradients import (
 
 from tests import random
 from mrmustard.physics import fock
-from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.physics import fock
 from mrmustard.lab.gates import (

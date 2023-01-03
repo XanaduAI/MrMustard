@@ -18,7 +18,6 @@
 This module contains functions for transforming to the Husimi representation.
 """
 from mrmustard.math import Math
-
 math = Math()
 from mrmustard import settings
 
@@ -38,7 +37,6 @@ def pq_to_aadag(X):
 def wigner_to_husimi(cov, means):
     r"Returns the husimi complex covariance matrix and means vector."
     N = cov.shape[-1] // 2
-    R = math.rotmat(N)
     sigma = pq_to_aadag(cov)
     beta = pq_to_aadag(means)
     Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)
