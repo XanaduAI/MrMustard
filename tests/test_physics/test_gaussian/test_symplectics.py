@@ -15,10 +15,10 @@
 import pytest
 from hypothesis import given, strategies as st
 
-from mrmustard import settings
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
 
+from mrmustard import settings
 from mrmustard.lab.gates import (
     Sgate,
     BSgate,

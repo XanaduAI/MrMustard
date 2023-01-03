@@ -21,6 +21,7 @@ import numpy as np
 from mrmustard.physics.husimi import pq_to_aadag
 from mrmustard import settings
 from mrmustard.math import Math
+
 math = Math()
 
 
