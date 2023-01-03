@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import pytest
-from hypothesis import settings, given, strategies as st
+from hypothesis import given, strategies as st
 
+from mrmustard import settings
 from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
 
@@ -134,10 +135,11 @@ def test_BSgate(theta, phi):
 @given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi))
 def test_S2gate(r, phi):
     """Tests the S2gate is implemented correctly by applying it on one half of a maximally entangled state"""
-    r_choi = np.arcsinh(1.0)
+    r_choi = settings.CHOI_R
     S2 = S2gate(r=r, phi=phi)
-    # bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
-    cov = (S2.bell >> S2[0, 1]).cov
+    bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
+    bell._modes = [0,1,2,3]
+    cov = (bell >> S2[0, 1]).cov
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
@@ -149,10 +151,11 @@ def test_S2gate(r, phi):
 @given(phi_ex=st.floats(0, 2 * np.pi), phi_in=st.floats(0, 2 * np.pi))
 def test_MZgate_external_tms(phi_ex, phi_in):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
-    r_choi = np.arcsinh(1.0)
-    # bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
+    r_choi = settings.CHOI_R
+    bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
+    bell._modes = [0,1,2,3]
     MZ = MZgate(phi_a=phi_ex, phi_b=phi_in, internal=False)
-    cov = (MZ.bell >> MZ[0, 1]).cov
+    cov = (bell >> MZ[0, 1]).cov
 
     bell = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
@@ -172,10 +175,11 @@ def test_MZgate_external_tms(phi_ex, phi_in):
 @given(phi_a=st.floats(0, 2 * np.pi), phi_b=st.floats(0, 2 * np.pi))
 def test_MZgate_internal_tms(phi_a, phi_b):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
-    r_choi = np.arcsinh(1.0)
-    # bell = (TMSV(r_choi) & TMSV(r_choi))[0, 2, 1, 3]
+    r_choi = settings.CHOI_R
+    bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
+    bell._modes = [0,1,2,3]
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=True)
-    cov = (MZ.bell >> MZ[0, 1]).cov
+    cov = (bell >> MZ[0, 1]).cov
     expected = expand(two_mode_squeezing(2 * r_choi, 0.0), [0, 2], 4) @ expand(
         two_mode_squeezing(2 * r_choi, 0.0), [1, 3], 4
     )
