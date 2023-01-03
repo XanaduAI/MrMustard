@@ -17,8 +17,11 @@
 """
 This module contains functions for transforming to the Husimi representation.
 """
-from mrmustard.math import Math; math = Math()
+from mrmustard.math import Math
+
+math = Math()
 from mrmustard import settings
+
 
 def pq_to_aadag(X):
     r"""maps a matrix or vector from the q/p basis to the a/adagger basis"""

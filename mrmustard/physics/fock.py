@@ -103,7 +103,9 @@ def wigner_to_fock_state(
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
         N = len(shape) // 2
-        return math.transpose(math.hermite_renormalized(-A, B, C, shape=shape), list(range(N, 2 * N)) + list(range(N)))
+        return math.transpose(
+            math.hermite_renormalized(-A, B, C, shape=shape), list(range(N, 2 * N)) + list(range(N))
+        )
     else:
         A, B, C = wigner_to_bargmann_psi(cov, means)
         return math.hermite_renormalized(-A, B, C, shape=shape)
@@ -441,7 +443,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
     if state_is_dm:
         return math.transpose(math.tensordot(C, fock_state, axes=(N1 + N3, N1 + N0)), N1 + N0)
 
-    Cs = math.tensordot(C, fock_state, axes=(N1, N0)) # N2 is the last set of indices now
+    Cs = math.tensordot(C, fock_state, axes=(N1, N0))  # N2 is the last set of indices now
     return math.transpose(math.tensordot(Cs, math.conj(fock_state), axes=(N2, N0)), N1 + N0)
 
 
