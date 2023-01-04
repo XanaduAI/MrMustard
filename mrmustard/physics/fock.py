@@ -358,7 +358,7 @@ def apply_op_to_dm(op, dm, op_modes):
 
     if op.ndim == 2 * len(op_modes):
         op = MMTensor(op, axis_labels=["left_" + str(m) + "_op" for m in op_modes] + ["left_" + str(m) for m in op_modes])
-        op_conj = MMTensor(math.conj(op), axis_labels=["right_" + str(m) + "_op" for m in op_modes] + ["right_" + str(m) for m in op_modes])
+        op_conj = MMTensor(math.conj(op.array), axis_labels=["right_" + str(m) + "_op" for m in op_modes] + ["right_" + str(m) for m in op_modes])
         return (op @ dm @ op_conj).array
     
     if op.ndim == 4 * len(op_modes):
