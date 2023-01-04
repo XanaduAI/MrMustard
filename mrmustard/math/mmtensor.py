@@ -126,12 +126,6 @@ class MMTensor:
         """
         return MMTensor(math.reshape(self.array, shape), axis_labels or self.axis_labels)
 
-    def __array__(self):
-        """
-        Implement the NumPy array interface.
-        """
-        return self.array
-
     def __getitem__(self, indices):
         """
         Implement indexing into the tensor.
