@@ -218,7 +218,7 @@ def test_learning_four_mode_Interferometer():
             ** 2
         )
 
-    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
@@ -251,7 +251,7 @@ def test_learning_four_mode_RealInterferometer():
             ** 2
         )
 
-    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
