@@ -5,9 +5,9 @@
 ### Breaking changes
 
 ### Improvements
-* The unitary optimization to update the Interferometer have been added. [(#173)](https://github.com/XanaduAI/MrMustard/pull/173)
 
 ### Bug fixes
+* The unitary group optimization of the interferometer have been added. The symplectic matrix that describes an interferometer belongs to the intersection of the orthogonal group and the symplectic group, which is a unitary group. [(#173)](https://github.com/XanaduAI/MrMustard/pull/173)
 
 ### Documentation
 
