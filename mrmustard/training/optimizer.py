@@ -46,7 +46,7 @@ class Optimizer:
         self.learning_rate = {
             "euclidean": euclidean_lr,
             "symplectic": symplectic_lr,
-            "unitary_": unitary_lr,
+            "unitary": unitary_lr,
         }
         self.opt_history: List[float] = [0]
         self.log = create_logger(__name__)
