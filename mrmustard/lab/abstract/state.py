@@ -132,9 +132,8 @@ class State:
         if self._purity is None:
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
-                # TODO: add symplectic representation
             else:
-                self._purity = fock.purity(self.fock)  # has to be dm
+                self._purity = fock.purity(self._dm)
         return self._purity
 
     @property
