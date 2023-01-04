@@ -17,9 +17,12 @@ Unit tests for the :class:`MMTensor`.
 """
 
 from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math import Math; math = Math()
+from mrmustard.math import Math
+
+math = Math()
 import numpy as np
 import pytest
+
 
 def test_mmtensor_creation():
     """Test creation of MMTensor"""
@@ -29,6 +32,7 @@ def test_mmtensor_creation():
     assert isinstance(mmtensor.tensor, np.ndarray)
     assert mmtensor.axis_labels == ["0", "1"]
 
+
 def test_mmtensor_creation_with_axis_labels():
     """Test creation of MMTensor with axis labels"""
     array = np.array([[[1, 2, 3]]])
@@ -37,11 +41,13 @@ def test_mmtensor_creation_with_axis_labels():
     assert isinstance(mmtensor.tensor, np.ndarray)
     assert mmtensor.axis_labels == ["a", "b", "c"]
 
+
 def test_mmtensor_creation_with_axis_labels_wrong_length():
     """Test creation of MMTensor with axis labels of wrong length"""
     array = np.array([1, 2, 3])
     with pytest.raises(ValueError):
         MMTensor(array, axis_labels=["a", "b"])
+
 
 def test_mmtensor_transposes_labels_too():
     """Test that MMTensor transposes axis labels"""
@@ -50,11 +56,9 @@ def test_mmtensor_transposes_labels_too():
     mmtensor = mmtensor.transpose([1, 0])
     assert mmtensor.axis_labels == ["b", "a"]
 
+
 def test_mmtensor_contract():
     """Test that MMTensor contracts correctly"""
     array = np.array([[1, 2], [3, 4]])
     trace = MMTensor(array, axis_labels=["a", "a"]).contract().tensor
     assert trace == 5
-
-
-
