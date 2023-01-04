@@ -18,7 +18,7 @@
 This module contains the implementation of a tensor wrapper class.
 """
 
-from typing import List
+from typing import List, Optional
 import string
 from mrmustard.math import Math
 
@@ -85,34 +85,35 @@ class MMTensor:
             new_axis_labels,
         )
 
-    def contract(self, relabeling: List[str]):
+    def contract(self, relabeling: Optional[List[str]] = None):
         """
         Contract the tensor along the specified indices using einsum.
 
         Args:
-            relabeling (list[str]): A list of axis labels. The tensor is contracted along all
-                groups of axes with matching labels.
+            relabeling (list[str]): An optional list of new axis labels.
+            The tensor is contracted along all groups of axes with matching labels.
         """
         # check that labels are valid
-        if not len(relabeling) == len(self.axis_labels):
+        if relabeling is None:
+            relabeling = self.axis_labels
+        elif len(relabeling) != len(self.axis_labels):
             raise ValueError("The number of labels must be equal to the number of axes.")
+        
+        self.axis_labels = relabeling
 
         # Find all unique labels
-        unique_labels = set(relabeling)
+        unique_labels = set(self.axis_labels)
+        repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
 
-        # Find the indices of the axes to contract
-        indices_to_contract = {}
-        for label in unique_labels:
-            indices_to_contract[label] = [i for i, l in enumerate(relabeling) if l == label]
+        # Turn labels into consecutive ascii lower-case letters, with same letters corresponding to the same label
+        label_map = {label: string.ascii_lowercase[i] for i, label in enumerate(unique_labels)}
+        labels = [label_map[label] for label in self.axis_labels]
+        
+        # create einsum string from labels
+        einsum_str = "".join(labels)
 
-        # Create the new axis labels
-        new_axis_labels = [label for label in self.axis_labels if label not in unique_labels]
-
-        # create einsum string from indices_to_contract using letters a-z
-        einsum_string = "".join([string.ascii_lowercase[i] for i in indices_to_contract])
-
-        # Contract the tensor
-        return MMTensor(math.einsum(einsum_string, self.tensor), new_axis_labels)
+        # Contract the tensor and assign new axis labels (unique labels except for the contracted ones)
+        return MMTensor(math.einsum(einsum_str, self.tensor), list(unique_labels - set(repeated)))
 
     def transpose(self, perm):
         """
