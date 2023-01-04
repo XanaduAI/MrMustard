@@ -327,6 +327,7 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
+    dm = dm / math.trace(dm)
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
