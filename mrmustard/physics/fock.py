@@ -381,7 +381,9 @@ def apply_op_to_dm(op, dm, op_modes):
         )
         return (op @ dm).array
 
-    raise ValueError("Operator should either have 2 or 4 times as many indices as the number of modes it acts on.")
+    raise ValueError(
+        "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
+    )
 
 
 def apply_op_to_ket(op, ket, op_indices):
@@ -410,7 +412,9 @@ def apply_op_to_ket(op, ket, op_indices):
         )
         return (op @ ket).array
 
-    raise ValueError("Operator should either have 2 times as many indices as the number of modes it acts on.")
+    raise ValueError(
+        "Operator should either have 2 times as many indices as the number of modes it acts on."
+    )
 
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
