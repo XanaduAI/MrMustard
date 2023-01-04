@@ -21,6 +21,7 @@ This module contains functions for performing calculations on Fock states.
 from functools import lru_cache
 import numpy as np
 
+from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
@@ -351,8 +352,6 @@ def apply_op_to_dm(op, dm, op_modes):
     Returns:
         array: the resulting density matrix
     """
-    from mrmustard.math.mmtensor import MMTensor
-
     dm = MMTensor(
         dm,
         axis_labels=["left_" + str(i) for i in range(dm.ndim // 2)]
@@ -399,8 +398,6 @@ def apply_op_to_ket(op, ket, op_indices):
     Returns:
         array: the resulting ket
     """
-    from mrmustard.math.mmtensor import MMTensor
-
     ket = MMTensor(ket, axis_labels=["left_" + str(i) for i in range(ket.ndim)])
 
     if op.ndim == 2 * len(op_indices):
