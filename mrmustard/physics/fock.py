@@ -546,7 +546,13 @@ def trace(dm, keep: List[int]):
         dm: the density matrix
         keep: the modes to keep (0-based)
     """
-    dm = MMTensor(dm, axis_labels=[f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape)//2)] + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape)//2)])
+    dm = MMTensor(
+        dm,
+        axis_labels=[
+            f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)
+        ]
+        + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)],
+    )
     return dm.contract().tensor
 
 

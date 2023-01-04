@@ -98,7 +98,7 @@ class MMTensor:
             relabeling = self.axis_labels
         elif len(relabeling) != len(self.axis_labels):
             raise ValueError("The number of labels must be equal to the number of axes.")
-        
+
         self.axis_labels = relabeling
 
         # Find all unique labels
@@ -108,7 +108,7 @@ class MMTensor:
         # Turn labels into consecutive ascii lower-case letters, with same letters corresponding to the same label
         label_map = {label: string.ascii_lowercase[i] for i, label in enumerate(unique_labels)}
         labels = [label_map[label] for label in self.axis_labels]
-        
+
         # create einsum string from labels
         einsum_str = "".join(labels)
 
