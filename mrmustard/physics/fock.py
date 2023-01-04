@@ -150,10 +150,10 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     d = int(np.prod(cutoffs))
     dm = math.reshape(dm, (d, d))
 
-    _, eigvecs = math.eigh(dm)
+    eigvals, eigvecs = math.eigh(dm)
     # eigenvalues and related eigenvectors are sorted in non-decreasing order,
-    # meaning the associated eigvec to eigval 1 is stored last.
-    ket = eigvecs[:, -1]
+    # meaning the associated eigvec to largest eigval is stored last.
+    ket = eigvecs[:, -1] * math.sqrt(eigvals[-1])
     ket = math.reshape(ket, cutoffs)
 
     return ket
@@ -327,7 +327,7 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
-    dm = dm / math.trace(dm)
+    dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
@@ -546,15 +546,17 @@ def trace(dm, keep: List[int]):
         dm: the density matrix
         keep: the modes to keep (0-based)
     """
-    N = len(dm.shape) // 2
-    trace = [m for m in range(N) if m not in keep]
-    # put at the end all of the indices to trace over
-    keep_idx = keep + [i + N for i in keep]
-    trace_idx = trace + [i + N for i in trace]
-    dm = math.transpose(dm, keep_idx + trace_idx)
-    d = int(np.prod([dm.shape[t] for t in trace]))
-    dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
-    return math.trace(dm)
+    dm = MMTensor(dm, axis_labels=[f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape)//2)] + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape)//2)])
+    return dm.contract().tensor
+    # N = len(dm.shape) // 2
+    # trace = [m for m in range(N) if m not in keep]
+    # # put at the end all of the indices to trace over
+    # keep_idx = keep + [i + N for i in keep]
+    # trace_idx = trace + [i + N for i in trace]
+    # dm = math.transpose(dm, keep_idx + trace_idx)
+    # d = int(np.prod([dm.shape[t] for t in trace]))
+    # dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
+    # return math.trace(dm)
 
 
 @tensor_int_cache
