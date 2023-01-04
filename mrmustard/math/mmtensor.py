@@ -35,7 +35,9 @@ class MMTensor:
         else:
             if axis_labels is not None:
                 if len(axis_labels) != len(array.shape):
-                    raise ValueError("The number of axis labels must be equal to the number of axes.")
+                    raise ValueError(
+                        "The number of axis labels must be equal to the number of axes."
+                    )
             if axis_labels is None:
                 axis_labels = [str(n) for n in range(len(array.shape))]
                 self.array = array
