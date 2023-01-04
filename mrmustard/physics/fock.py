@@ -355,36 +355,37 @@ def apply_op_to_dm(op, dm, op_modes):
     """
     dm = MMTensor(
         dm,
-        axis_labels=["left_" + str(i) for i in range(dm.ndim // 2)]
-        + ["right_" + str(i) for i in range(dm.ndim // 2)],
+        axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
+        + [f"right_{i}" for i in range(dm.ndim // 2)],
     )
 
     if op.ndim == 2 * len(op_modes):
         op = MMTensor(
             op,
-            axis_labels=["left_" + str(m) + "_op" for m in op_modes]
-            + ["left_" + str(m) for m in op_modes],
+            axis_labels=[f"left_{m}_op" for m in op_modes]
+            + [f"left_{m}" for m in op_modes],
         )
         op_conj = MMTensor(
             math.conj(op.tensor),
-            axis_labels=["right_" + str(m) + "_op" for m in op_modes]
-            + ["right_" + str(m) for m in op_modes],
+            axis_labels=[f"right_{m}_op" for m in op_modes]
+            + [f"right_{m}" for m in op_modes],
         )
         return (op @ dm @ op_conj).tensor
 
-    if op.ndim == 4 * len(op_modes):
+    elif op.ndim == 4 * len(op_modes):
         op = MMTensor(
             op,
-            axis_labels=["left_" + str(m) + "_op" for m in op_modes]
-            + ["left_" + str(m) for m in op_modes]
-            + ["right_" + str(m) + "_op" for m in op_modes]
-            + ["right_" + str(m) for m in op_modes],
+            axis_labels=[f"left_{m}_op" for m in op_modes]
+            + [f"left_{m}" for m in op_modes]
+            + [f"right_{m}" for m in op_modes]
+            + [f"right_{m}_op" for m in op_modes],
         )
         return (op @ dm).tensor
 
-    raise ValueError(
-        "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
-    )
+    else:
+        raise ValueError(
+            "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
+        )
 
 
 def apply_op_to_ket(op, ket, op_indices):
@@ -395,6 +396,11 @@ def apply_op_to_ket(op, ket, op_indices):
     so it's indexed as out_1, ..., out_n, in_1, ..., in_n.
     It will contract its `in` indices once with the `out` indices of `ket`.
 
+    if op.ndim == 4 * len(op_indices), it is assumed that the operator acts like a channel,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n, out_1_dual, ..., out_n_dual, in_1_dual, ..., in_n_dual.
+    so it will contract a copy of the ket on the left with its `in` indices and a copy of the ket on the right
+    with its `out_dual` indices and replace them with its own `out` and `in_dual` indices.
+
     Args:
         op (array): the operator to be applied, either a unitary, a kraus operator, or a channel
         ket (array): the ket to which the operator is applied
@@ -403,19 +409,31 @@ def apply_op_to_ket(op, ket, op_indices):
     Returns:
         array: the resulting ket
     """
-    ket = MMTensor(ket, axis_labels=["left_" + str(i) for i in range(ket.ndim)])
+    ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
 
     if op.ndim == 2 * len(op_indices):
         op = MMTensor(
             op,
-            axis_labels=["left_" + str(m) + "_op" for m in op_indices]
-            + ["left_" + str(m) for m in op_indices],
+            axis_labels=[f"left_{m}_op"for m in op_indices]
+            + [f"left_{m}" for m in op_indices],
         )
         return (op @ ket).tensor
 
-    raise ValueError(
-        "Operator should either have 2 times as many indices as the number of modes it acts on."
-    )
+    elif op.ndim == 4 * len(op_indices):
+        ket_dual = MMTensor(math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)])
+        op = MMTensor(
+            op,
+            axis_labels=[f"left_{m}_op" for m in op_indices]
+            + [f"left_{m}" for m in op_indices]
+            + [f"right_{m}" for m in op_indices]
+            + [f"right_{m}_op" for m in op_indices],
+        )
+        return (op @ ket @ ket_dual).tensor
+    
+    else:
+        raise ValueError(
+            "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
+        )
 
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:

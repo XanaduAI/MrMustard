@@ -116,31 +116,25 @@ class Transformation:
         Returns:
             State: the transformed state
         """
+        op_idx = [state.modes.index(m) for m in self.modes]
         if self.is_unitary:
-            op_idx = [state.modes.index(m) for m in self.modes]
             U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
-            transformation = fock.math.dagger(U) if dual else U
+            U = math.dagger(U) if dual else U
             if state.is_pure:
                 return State(ket=fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
             return State(dm=fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            transformation = self.choi(cutoffs=state.cutoffs)
+            choi = self.choi(cutoffs=state.cutoffs)
             if dual:
-                n = len(state.cutoffs)
+                n = state.num_modes
                 N0 = list(range(0, n))
                 N1 = list(range(n, 2 * n))
                 N2 = list(range(2 * n, 3 * n))
                 N3 = list(range(3 * n, 4 * n))
-                transformation = fock.math.transpose(transformation, N3 + N0 + N1 + N2)
-        new_fock = fock.CPTP(
-            transformation=transformation,
-            fock_state=state.ket(state.cutoffs) if state.is_pure else state.dm(state.cutoffs),
-            transformation_is_unitary=self.is_unitary,
-            state_is_dm=state.is_mixed,
-        )
-        if state.is_mixed or not self.is_unitary:
-            return State(dm=new_fock, modes=state.modes)
-        return State(ket=new_fock, modes=state.modes)
+                choi = fock.math.transpose(choi, N3 + N2 + N1 + N0)
+            if state.is_pure:
+                return State(dm=fock.apply_op_to_ket(choi, state.ket(), op_idx), modes=state.modes)
+            return State(dm=fock.apply_op_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
     @property
     def modes(self) -> Sequence[int]:
