@@ -49,7 +49,7 @@ There are three basic types of parameters:
     The dynamically assigned property is an instance of :class:`Parameter` and contains the
     ``value`` property which is a tensor of the autograd backend.
 
-    There are three types of trainable parameters: symplectic, euclidean and orthogonal.
+    There are three types of trainable parameters: symplectic, euclidean and unitary.
     Each type defines a different optimization procedure on the :py:training: module.
 
     .. code-block::
@@ -62,9 +62,9 @@ There are three basic types of parameters:
             def __init__(self, euclidean: Array):
                 super.__init__(euclidean=euclidean, euclidean_trainable=True)
 
-        class OrthogonalGate(Parametrized):
-            def __init__(self, orthogonal: Array):
-                super.__init__(orthogonal=orthogonal, orthogonal_trainable=True)
+        class UnitaryGate(Parametrized):
+            def __init__(self, unitary: Array):
+                super.__init__(unitary=unitary, unitary_trainable=True)
 
     The optimization procedure updates the value of the trainables *in-place*.
 
@@ -94,7 +94,7 @@ __all__ = [
     "Trainable",
     "Symplectic",
     "Euclidean",
-    "Orthogonal",
+    "Unitary",
     "Constant",
     "create_parameter",
 ]
@@ -165,8 +165,8 @@ class Euclidean(Trainable):
         self.bounds = bounds
 
 
-class Orthogonal(Trainable):
-    """Orthogonal trainable. Uses :meth:`training.parameter_update.update_orthogonal`."""
+class Unitary(Trainable):
+    """Unitary trainable. Uses :meth:`training.parameter_update.update_unitary`."""
 
     def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         self._value = value_to_trainable(value, None, name)
