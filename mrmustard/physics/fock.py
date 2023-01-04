@@ -548,15 +548,6 @@ def trace(dm, keep: List[int]):
     """
     dm = MMTensor(dm, axis_labels=[f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape)//2)] + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape)//2)])
     return dm.contract().tensor
-    # N = len(dm.shape) // 2
-    # trace = [m for m in range(N) if m not in keep]
-    # # put at the end all of the indices to trace over
-    # keep_idx = keep + [i + N for i in keep]
-    # trace_idx = trace + [i + N for i in trace]
-    # dm = math.transpose(dm, keep_idx + trace_idx)
-    # d = int(np.prod([dm.shape[t] for t in trace]))
-    # dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
-    # return math.trace(dm)
 
 
 @tensor_int_cache
