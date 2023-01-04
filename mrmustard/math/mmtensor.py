@@ -29,15 +29,17 @@ class MMTensor:
     r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API)."""
 
     def __init__(self, array, axis_labels=None):
-        if axis_labels is not None:
-            if len(axis_labels) != len(array.shape):
-                raise ValueError("The number of axis labels must be equal to the number of axes.")
         if isinstance(array, MMTensor):
             self.array = array.array
-            self.axis_labels = array.axis_labels
+            self.axis_labels = axis_labels or array.axis_labels
         else:
-            self.array = array
-            self.axis_labels = axis_labels
+            if axis_labels is not None:
+                if len(axis_labels) != len(array.shape):
+                    raise ValueError("The number of axis labels must be equal to the number of axes.")
+            if axis_labels is None:
+                axis_labels = [str(n) for n in range(len(array.shape))]
+                self.array = array
+                self.axis_labels = axis_labels
 
     def __array__(self):
         """
