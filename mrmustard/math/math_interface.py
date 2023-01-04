@@ -1104,5 +1104,5 @@ class MathInterface(ABC):
         Returns:
             Matrix: unitary gradient tensor
         """
-        Z = self.conjugate(self.transpose(U)) * dU_euclidean
-        return 0.5 * U * (Z - self.conjugate(self.transpose(Z)))
+        Z = self.conj(self.transpose(U)) * dU_euclidean
+        return 0.5 * U * (Z - self.conj(self.transpose(Z)))
