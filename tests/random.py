@@ -146,7 +146,7 @@ def random_MZgate(draw, trainable=False):
 
 @st.composite
 def random_Interferometer(draw, num_modes, trainable=False):
-    return Interferometer(num_modes=num_modes, orthogonal_trainable=trainable)
+    return Interferometer(num_modes=num_modes, unitary_trainable=trainable)
 
 
 @st.composite
