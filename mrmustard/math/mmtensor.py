@@ -36,11 +36,11 @@ class MMTensor:
         else:
             self.tensor = array
             self.axis_labels = axis_labels
-        
+
         # If axis labels are not provided, generate default labels
         if self.axis_labels is None:
             self.axis_labels = [str(n) for n in range(len(self.tensor.shape))]
-        
+
         # Validate the number of axis labels
         if len(self.axis_labels) != len(self.tensor.shape):
             raise ValueError("The number of axis labels must be equal to the number of axes.")
@@ -118,7 +118,10 @@ class MMTensor:
         einsum_str = "".join(labels)
 
         # Contract the tensor and assign new axis labels (unique labels except for the contracted ones)
-        return MMTensor(math.einsum(einsum_str, self.tensor), [label for label in unique_labels if label not in repeated])
+        return MMTensor(
+            math.einsum(einsum_str, self.tensor),
+            [label for label in unique_labels if label not in repeated],
+        )
 
     def transpose(self, perm):
         """
