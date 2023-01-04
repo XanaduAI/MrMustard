@@ -32,6 +32,16 @@ def test_mmtensor_creation():
     assert mmtensor.axis_labels == ["0", "1"]
 
 
+def test_mmtensor_creation_using_mmtensor():
+    """Test creation of MMTensor using MMTensor"""
+    array = np.array([[1, 2, 3]])
+    mmtensor = MMTensor(array)
+    mmtensor2 = MMTensor(mmtensor)
+    assert isinstance(mmtensor2, MMTensor)
+    assert mmtensor2.tensor is mmtensor.tensor
+    assert mmtensor2.axis_labels == ["0", "1"]
+
+
 def test_mmtensor_creation_with_axis_labels():
     """Test creation of MMTensor with axis labels"""
     array = np.array([[[1, 2, 3]]])
