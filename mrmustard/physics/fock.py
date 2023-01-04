@@ -329,54 +329,66 @@ def purity(dm: Tensor) -> Scalar:
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-def apply_op_to_ket(op, ket, op_indices):
-    r"""Applies an operator to a ket in the sense
-        ket_abcde = sum_{ijk}U_abc,ijk ket_ijkde
-
-    Args:
-        op (array): the operator to be applied
-        ket (array): the ket to which the operator is applied
-        op_indices (list): the indices the operator acts on
-    Returns:
-        array: the resulting ket
-    """
-    K = ket.ndim
-    N = op.ndim // 2
-    op_ket = math.tensordot(ket, op, axes=[op_indices, list(range(N, 2 * N))])
-    perm = list(range(K - N))
-    for i, o in enumerate(op_indices):
-        perm.insert(o, K - N + i)
-    return math.transpose(op_ket, perm)
-
 
 def apply_op_to_dm(op, dm, op_modes):
-    r"""Applies an operator to a density matrix in the sense
-        dm_abcd = sum_{ij}op_ai dm_ibkd dagger(op)_kc
+    r"""Applies an operator to a density matrix.
+    It assumes that the density matrix is indexed as out_1, ..., out_n, in_1, ..., in_n.
+
+    if op.ndim == 2 * len(op_modes), it is assumed that the operator acts like a unitary or a kraus operator,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n.
+    It will contract its `in` indices once with the `out` indices of `dm` and once on the `in` indices of `dm`
+    and replace them with its own `out` indices.
+
+    if op.ndim == 4 * len(op_modes), it is assumed that the operator acts like a channel,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n, out_1_dual, ..., out_n_dual, in_1_dual, ..., in_n_dual.
+    so it will contract the dm on the left and on the right with its `in` and `out_dual` indices
+    and replace them with its own `out` and `in_dual` indices.
 
     Args:
-        op (array): the operator to be applied
+        op (array): the operator to be applied, either a unitary, a kraus operator, or a channel
         dm (array): the density matrix to which the operator is applied
         op_modes (list): the modes the operator acts on (counting from 0)
 
     Returns:
         array: the resulting density matrix
     """
-    D = dm.ndim
-    N = len(op_modes)
-    op_dm = math.tensordot(dm, op, axes=[op_modes, np.arange(N, 2 * N)])
-    # the N output indices of op are now at the end. We need to move them at op_modes
-    perm = list(range(D - N))
-    for i, o in enumerate(op_modes):
-        perm.insert(o, D - N + i)
-    op_dm = math.transpose(op_dm, perm)
-    op_dm_op = math.tensordot(
-        op_dm, math.conj(op), axes=[[o + D // 2 for o in op_modes], np.arange(N, 2 * N)]
-    )
-    # the N output indices of op are now at the end. We need to move them at op_modes + D//2
-    perm = list(range(D - N))
-    for i, o in enumerate(op_modes):
-        perm.insert(o + D // 2, D - N + i)
-    return math.transpose(op_dm_op, perm)
+    from mrmustard.math.mmtensor import MMTensor
+
+    dm = MMTensor(dm, axis_labels=["left_" + str(i) for i in range(dm.ndim // 2)] + ["right_" + str(i) for i in range(dm.ndim // 2)])
+
+    if op.ndim == 2 * len(op_modes):
+        op = MMTensor(op, axis_labels=["left_" + str(m) + "_op" for m in op_modes] + ["left_" + str(m) for m in op_modes])
+        op_conj = MMTensor(math.conj(op), axis_labels=["right_" + str(m) + "_op" for m in op_modes] + ["right_" + str(m) for m in op_modes])
+        return (op @ dm @ op_conj).array
+    
+    if op.ndim == 4 * len(op_modes):
+        op = MMTensor(op, axis_labels =[ "left_" + str(m) + "_op" for m in op_modes] + ["left_" + str(m) for m in op_modes] + ["right_" + str(m) + "_op" for m in op_modes] + ["right_" + str(m) for m in op_modes])
+        return (op @ dm).array
+
+
+def apply_op_to_ket(op, ket, op_indices):
+    r"""Applies an operator to a ket.
+    It assumes that the ket is indexed as out_1, ..., out_n.
+
+    if op.ndim == 2 * len(op_indices), it is assumed that the operator acts like a unitary or a kraus operator,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n.
+    It will contract its `in` indices once with the `out` indices of `ket`.
+
+    Args:
+        op (array): the operator to be applied, either a unitary, a kraus operator, or a channel
+        ket (array): the ket to which the operator is applied
+        op_modes (list): the modes the operator acts on (counting from 0)
+    
+    Returns:
+        array: the resulting ket
+    """
+    from mrmustard.math.mmtensor import MMTensor
+
+    ket = MMTensor(ket, axis_labels=["left_" + str(i) for i in range(ket.ndim)])
+
+    if op.ndim == 2 * len(op_indices):
+        op = MMTensor(op, axis_labels=["left_" + str(m) + "_op" for m in op_indices] + ["left_" + str(m) for m in op_indices])
+        return (op @ ket).array
 
 
 def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
