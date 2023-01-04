@@ -30,7 +30,7 @@ class MMTensor:
 
     def __init__(self, array, axis_labels=None):
         if isinstance(array, MMTensor):
-            self.array = array.array
+            self.tensor = array.tensor
             self.axis_labels = axis_labels or array.axis_labels
         else:
             if axis_labels is not None:
@@ -40,14 +40,14 @@ class MMTensor:
                     )
             if axis_labels is None:
                 axis_labels = [str(n) for n in range(len(array.shape))]
-                self.array = array
-                self.axis_labels = axis_labels
+            self.tensor = array
+            self.axis_labels = axis_labels
 
     def __array__(self):
         """
         Implement the NumPy array interface.
         """
-        return self.array
+        return self.tensor
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         """
@@ -62,8 +62,8 @@ class MMTensor:
         """
         Overload the @ operator to perform tensor contractions.
         """
-        if not isinstance(other, MMTensor):
-            raise TypeError(f"Cannot contract with object of type {type(other)}")
+        # if not isinstance(other, MMTensor):
+        #     raise TypeError(f"Cannot contract with object of type {type(other)}")
 
         # Find common axis labels
         common_labels = set(self.axis_labels) & set(other.axis_labels)
@@ -81,7 +81,7 @@ class MMTensor:
         ]
 
         return MMTensor(
-            math.tensordot(self.array, other.array, axes=(left_indices, right_indices)),
+            math.tensordot(self.tensor, other.tensor, axes=(left_indices, right_indices)),
             new_axis_labels,
         )
 
@@ -112,19 +112,19 @@ class MMTensor:
         einsum_string = "".join([string.ascii_lowercase[i] for i in indices_to_contract])
 
         # Contract the tensor
-        return MMTensor(math.einsum(einsum_string, self.array), new_axis_labels)
+        return MMTensor(math.einsum(einsum_string, self.tensor), new_axis_labels)
 
     def transpose(self, perm):
         """
         Transpose the tensor. Permutes also the axis labels accordingly.
         """
-        return MMTensor(math.transpose(self.array, perm), [self.axis_labels[i] for i in perm])
+        return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
 
     def reshape(self, shape, axis_labels=None):
         """
         Reshape the tensor. Allows to change the axis labels.
         """
-        return MMTensor(math.reshape(self.array, shape), axis_labels or self.axis_labels)
+        return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
 
     def __getitem__(self, indices):
         """
@@ -140,21 +140,22 @@ class MMTensor:
                 elif ind is Ellipsis and i > 0:
                     axis_labels += self.axis_labels[i:]
                     break
-            return MMTensor(self.array[indices], axis_labels)
+            return MMTensor(self.tensor[indices], axis_labels)
         else:
             # Index along a single axis and take care of the axis labels
             return MMTensor(
-                self.array[indices], self.axis_labels[:indices] + self.axis_labels[indices + 1 :]
+                self.tensor[indices], self.axis_labels[:indices] + self.axis_labels[indices + 1 :]
             )
 
     def __repr__(self):
-        return f"MMTensor({self.array}, {self.axis_labels})"
+        return f"MMTensor({self.tensor}, {self.axis_labels})"
 
     def __getattribute__(self, name):
         """
         Implement the underlying array's methods.
         """
         try:
-            return object.__getattribute__(self, name)
+            return super().__getattribute__(name)
         except AttributeError:
-            return getattr(self.array, name)
+            return getattr(self.tensor, name)
+

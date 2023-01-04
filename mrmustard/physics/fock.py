@@ -365,11 +365,11 @@ def apply_op_to_dm(op, dm, op_modes):
             + ["left_" + str(m) for m in op_modes],
         )
         op_conj = MMTensor(
-            math.conj(op.array),
+            math.conj(op.tensor),
             axis_labels=["right_" + str(m) + "_op" for m in op_modes]
             + ["right_" + str(m) for m in op_modes],
         )
-        return (op @ dm @ op_conj).array
+        return (op @ dm @ op_conj).tensor
 
     if op.ndim == 4 * len(op_modes):
         op = MMTensor(
@@ -379,7 +379,7 @@ def apply_op_to_dm(op, dm, op_modes):
             + ["right_" + str(m) + "_op" for m in op_modes]
             + ["right_" + str(m) for m in op_modes],
         )
-        return (op @ dm).array
+        return (op @ dm).tensor
 
     raise ValueError(
         "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
@@ -410,7 +410,7 @@ def apply_op_to_ket(op, ket, op_indices):
             axis_labels=["left_" + str(m) + "_op" for m in op_indices]
             + ["left_" + str(m) for m in op_indices],
         )
-        return (op @ ket).array
+        return (op @ ket).tensor
 
     raise ValueError(
         "Operator should either have 2 times as many indices as the number of modes it acts on."
