@@ -29,19 +29,21 @@ class MMTensor:
     r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API)."""
 
     def __init__(self, array, axis_labels=None):
+        # If the input array is an MMTensor, use its tensor and axis labels (or the provided ones if specified)
         if isinstance(array, MMTensor):
             self.tensor = array.tensor
             self.axis_labels = axis_labels or array.axis_labels
         else:
-            if axis_labels is not None:
-                if len(axis_labels) != len(array.shape):
-                    raise ValueError(
-                        "The number of axis labels must be equal to the number of axes."
-                    )
-            if axis_labels is None:
-                axis_labels = [str(n) for n in range(len(array.shape))]
             self.tensor = array
             self.axis_labels = axis_labels
+        
+        # If axis labels are not provided, generate default labels
+        if self.axis_labels is None:
+            self.axis_labels = [str(n) for n in range(len(self.tensor.shape))]
+        
+        # Validate the number of axis labels
+        if len(self.axis_labels) != len(self.tensor.shape):
+            raise ValueError("The number of axis labels must be equal to the number of axes.")
 
     def __array__(self):
         """
@@ -101,8 +103,11 @@ class MMTensor:
 
         self.axis_labels = relabeling
 
-        # Find all unique labels
-        unique_labels = set(self.axis_labels)
+        # Find all unique labels but keep the order
+        unique_labels = []
+        for label in relabeling:
+            if label not in unique_labels:
+                unique_labels.append(label)
         repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
 
         # Turn labels into consecutive ascii lower-case letters, with same letters corresponding to the same label
@@ -113,7 +118,7 @@ class MMTensor:
         einsum_str = "".join(labels)
 
         # Contract the tensor and assign new axis labels (unique labels except for the contracted ones)
-        return MMTensor(math.einsum(einsum_str, self.tensor), list(unique_labels - set(repeated)))
+        return MMTensor(math.einsum(einsum_str, self.tensor), [label for label in unique_labels if label not in repeated])
 
     def transpose(self, perm):
         """
