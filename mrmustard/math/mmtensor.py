@@ -21,7 +21,6 @@ This module contains the implementation of a tensor wrapper class.
 from typing import List, Optional
 import string
 from mrmustard.math import Math
-
 math = Math()
 
 
