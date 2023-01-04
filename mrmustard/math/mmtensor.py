@@ -20,7 +20,10 @@ This module contains the implementation of a tensor wrapper class.
 
 from typing import List
 import string
-from mrmustard.math import Math; math = Math()
+from mrmustard.math import Math
+
+math = Math()
+
 
 class MMTensor:
     r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API)."""
@@ -43,33 +46,37 @@ class MMTensor:
         """
         Implement the NumPy ufunc interface.
         """
-        if method == '__call__':
+        if method == "__call__":
             return MMTensor(ufunc(*inputs, **kwargs), self.axis_labels)
         else:
             return NotImplemented
-    
+
     def __matmul__(self, other):
         """
         Overload the @ operator to perform tensor contractions.
         """
         if not isinstance(other, MMTensor):
             raise TypeError(f"Cannot contract with object of type {type(other)}")
-        
+
         # Find common axis labels
         common_labels = set(self.axis_labels) & set(other.axis_labels)
-        
+
         if not common_labels:
             raise ValueError("No common axis labels found")
-        
+
         # Determine the indices to contract along
         left_indices = [self.axis_labels.index(label) for label in common_labels]
         right_indices = [other.axis_labels.index(label) for label in common_labels]
-        
+
         # Create a list of the new axis labels
-        new_axis_labels = [label for label in self.axis_labels if label not in common_labels] + \
-                          [label for label in other.axis_labels if label not in common_labels]
-        
-        return MMTensor(math.tensordot(self.array, other.array, axes=(left_indices, right_indices)), new_axis_labels)
+        new_axis_labels = [label for label in self.axis_labels if label not in common_labels] + [
+            label for label in other.axis_labels if label not in common_labels
+        ]
+
+        return MMTensor(
+            math.tensordot(self.array, other.array, axes=(left_indices, right_indices)),
+            new_axis_labels,
+        )
 
     def contract(self, relabeling: List[str]):
         """
@@ -99,7 +106,6 @@ class MMTensor:
 
         # Contract the tensor
         return MMTensor(math.einsum(einsum_string, self.array), new_axis_labels)
-       
 
     def transpose(self, perm):
         """
@@ -112,13 +118,13 @@ class MMTensor:
         Reshape the tensor. Allows to change the axis labels.
         """
         return MMTensor(math.reshape(self.array, shape), axis_labels or self.axis_labels)
-    
+
     def __array__(self):
         """
         Implement the NumPy array interface.
         """
         return self.array
-    
+
     def __getitem__(self, indices):
         """
         Implement indexing into the tensor.
@@ -136,11 +142,13 @@ class MMTensor:
             return MMTensor(self.array[indices], axis_labels)
         else:
             # Index along a single axis and take care of the axis labels
-            return MMTensor(self.array[indices], self.axis_labels[:indices] + self.axis_labels[indices+1:])
+            return MMTensor(
+                self.array[indices], self.axis_labels[:indices] + self.axis_labels[indices + 1 :]
+            )
 
     def __repr__(self):
         return f"MMTensor({self.array}, {self.axis_labels})"
-        
+
     def __getattribute__(self, name):
         """
         Implement the underlying array's methods.

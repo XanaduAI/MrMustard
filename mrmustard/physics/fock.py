@@ -329,7 +329,6 @@ def purity(dm: Tensor) -> Scalar:
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-
 def apply_op_to_dm(op, dm, op_modes):
     r"""Applies an operator to a density matrix.
     It assumes that the density matrix is indexed as out_1, ..., out_n, in_1, ..., in_n.
@@ -354,15 +353,33 @@ def apply_op_to_dm(op, dm, op_modes):
     """
     from mrmustard.math.mmtensor import MMTensor
 
-    dm = MMTensor(dm, axis_labels=["left_" + str(i) for i in range(dm.ndim // 2)] + ["right_" + str(i) for i in range(dm.ndim // 2)])
+    dm = MMTensor(
+        dm,
+        axis_labels=["left_" + str(i) for i in range(dm.ndim // 2)]
+        + ["right_" + str(i) for i in range(dm.ndim // 2)],
+    )
 
     if op.ndim == 2 * len(op_modes):
-        op = MMTensor(op, axis_labels=["left_" + str(m) + "_op" for m in op_modes] + ["left_" + str(m) for m in op_modes])
-        op_conj = MMTensor(math.conj(op.array), axis_labels=["right_" + str(m) + "_op" for m in op_modes] + ["right_" + str(m) for m in op_modes])
+        op = MMTensor(
+            op,
+            axis_labels=["left_" + str(m) + "_op" for m in op_modes]
+            + ["left_" + str(m) for m in op_modes],
+        )
+        op_conj = MMTensor(
+            math.conj(op.array),
+            axis_labels=["right_" + str(m) + "_op" for m in op_modes]
+            + ["right_" + str(m) for m in op_modes],
+        )
         return (op @ dm @ op_conj).array
-    
+
     if op.ndim == 4 * len(op_modes):
-        op = MMTensor(op, axis_labels =[ "left_" + str(m) + "_op" for m in op_modes] + ["left_" + str(m) for m in op_modes] + ["right_" + str(m) + "_op" for m in op_modes] + ["right_" + str(m) for m in op_modes])
+        op = MMTensor(
+            op,
+            axis_labels=["left_" + str(m) + "_op" for m in op_modes]
+            + ["left_" + str(m) for m in op_modes]
+            + ["right_" + str(m) + "_op" for m in op_modes]
+            + ["right_" + str(m) for m in op_modes],
+        )
         return (op @ dm).array
 
 
@@ -378,7 +395,7 @@ def apply_op_to_ket(op, ket, op_indices):
         op (array): the operator to be applied, either a unitary, a kraus operator, or a channel
         ket (array): the ket to which the operator is applied
         op_modes (list): the modes the operator acts on (counting from 0)
-    
+
     Returns:
         array: the resulting ket
     """
@@ -387,7 +404,11 @@ def apply_op_to_ket(op, ket, op_indices):
     ket = MMTensor(ket, axis_labels=["left_" + str(i) for i in range(ket.ndim)])
 
     if op.ndim == 2 * len(op_indices):
-        op = MMTensor(op, axis_labels=["left_" + str(m) + "_op" for m in op_indices] + ["left_" + str(m) for m in op_indices])
+        op = MMTensor(
+            op,
+            axis_labels=["left_" + str(m) + "_op" for m in op_indices]
+            + ["left_" + str(m) for m in op_indices],
+        )
         return (op @ ket).array
 
 

@@ -49,6 +49,7 @@ class Math:
     r"""
     This class is a switcher for performing math operations on the currently active backend.
     """
+
     def __getattribute__(self, name):
         if settings.BACKEND == "tensorflow":
             return object.__getattribute__(TFMath(), name)
@@ -58,4 +59,3 @@ class Math:
             raise ValueError(
                 f"No `{settings.BACKEND}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
             )
-
