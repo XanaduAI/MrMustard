@@ -205,7 +205,7 @@ def create_parameter(
             for Euclidean parameters
 
     Returns:
-        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Orthogonal`
+        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Unitary`
             or :class:`Euclidean` trainable.
     """
 
@@ -215,8 +215,8 @@ def create_parameter(
     if name.startswith("symplectic"):
         return Symplectic(value, name, owner)
 
-    if name.startswith("orthogonal"):
-        return Orthogonal(value, name, owner)
+    if name.startswith("unitary"):
+        return Unitary(value, name, owner)
 
     return Euclidean(value, bounds, name, owner)
 
