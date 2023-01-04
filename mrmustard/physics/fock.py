@@ -212,74 +212,19 @@ def U_to_choi(U: Tensor) -> Tensor:
         U: the unitary transformation
 
     Returns:
-        Tensor: the Choi tensor
+        Tensor: the Choi tensor. Index order is [output_left, input_left, input_right, output_right]
+        in this way, the two groups of indices in the middle are those that contract with the input dm.
     """
     cutoffs = U.shape[: len(U.shape) // 2]
     N = len(cutoffs)
-    outer = math.outer(U, math.conj(U))
-    return math.transpose(
-        outer,
-        list(range(0, N))
-        + list(range(2 * N, 3 * N))
-        + list(range(N, 2 * N))
-        + list(range(3 * N, 4 * N)),
-    )  # NOTE: mode blocks 1 and 3 are at the end so we can tensordot dm with them
-
-
-# def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
-#     r"""Returns the full-size ``A`` matrix, ``B`` vector and ``C`` scalar.
-
-#     Args:
-#         cov: the Wigner covariance matrix
-#         means: the Wigner means vector
-#         full: whether to return the full-size ``A``, ``B`` and ``C`` or the half-size ``A``, ``B``
-#             and ``C``
-#         choi_r: the TMSV squeezing magnitude if not None we consider ABC of a Choi state
-
-#     Returns:
-#         Tuple[Matrix, Vector, Scalar]: full-size ``A`` matrix, ``B`` vector and ``C`` scalar
-#     """
-#     is_state = choi_r is None
-#     N = cov.shape[-1] // 2
-#     R = math.rotmat(N)
-#     sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
-#     beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
-#     Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)  # Husimi covariance matrix
-#     Qinv = math.inv(Q)
-
-#     A = math.matmul(math.Xmat(N), math.eye(2 * N, dtype=Qinv.dtype) - Qinv)
-#     denom = math.sqrt(math.det(Q)) if is_state else math.sqrt(math.det(Q / np.cosh(choi_r)))
-#     if full:
-#         B = math.matvec(math.transpose(Qinv), math.conj(beta))
-#         exponent = -0.5 * math.sum(math.conj(beta)[:, None] * Qinv * beta[None, :])
-#         C = math.exp(exponent) / denom
-#         print('>'*30 + ' Mixed ' + '<'*30)
-#         print('B', B.numpy())
-#         print('C', C.numpy())
-#         print('>'*30 + ' Mixed ' + '<'*30)
-#     else:
-#         A = A[
-#             N:, N:
-#         ]  # TODO: find a way to compute the half-size A without computing the full-size A first
-#         B = beta[:N] - math.matvec(A, beta[N:])
-#         exponent = -0.5 * math.sum(beta[N:] * B)
-#         C = math.exp(exponent) / math.sqrt(denom)
-#         print('>'*30 + ' Pure ' + '<'*30)
-#         print('B', B.numpy())
-#         print('C', C.numpy())
-#         print('>'*30 + ' Pure ' + '<'*30)
-#     if choi_r is not None:
-#         ones = math.ones(
-#             N // 2, dtype=A.dtype
-#         )  # N//2 is the actual number of modes because of the choi trick
-#         factor = 1.0 / np.tanh(choi_r)
-#         if full:
-#             rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
-#         else:
-#             rescaling = math.concat([ones, factor * ones], axis=0)
-#         A = rescaling[:, None] * rescaling[None, :] * A
-#         B = rescaling * B
-#     return A, B, C
+    return math.outer(U, math.conj(U))
+    # return math.transpose(
+    #     outer,
+    #     list(range(0, N))
+    #     + list(range(2 * N, 3 * N))
+    #     + list(range(N, 2 * N))
+    #     + list(range(3 * N, 4 * N)),
+    # )  # NOTE: mode blocks 1 and 3 are at the end so we can tensordot dm with them
 
 
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
