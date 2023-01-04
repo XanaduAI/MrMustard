@@ -39,7 +39,7 @@ def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symple
         math.assign(S, new_value)
 
 
-#def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float):
+# def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float):
 #    r"""Updates the orthogonal parameters using the given orthogonal gradients.
 #    Implemented from:
 #        Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
@@ -55,6 +55,7 @@ def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symple
 #        )
 #        math.assign(O, new_value)
 
+
 def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_lr: float):
     r"""Updates the unitary parameters using the given unitary gradients.
     Implemented from:
@@ -62,10 +63,9 @@ def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_l
     """
     for dU_euclidean, U in grads_and_vars:
         Y = math.euclidean_to_unitary(U, dU_euclidean)
-        new_value = math.matmul(
-            U, math.expm(-unitary_lr * Y)
-        )
+        new_value = math.matmul(U, math.expm(-unitary_lr * Y))
         math.assign(U, new_value)
+
 
 def update_euclidean(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclidean_lr: float):
     """Updates the parameters using the euclidian gradients."""
