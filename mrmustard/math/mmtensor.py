@@ -158,4 +158,3 @@ class MMTensor:
             return super().__getattribute__(name)
         except AttributeError:
             return getattr(self.tensor, name)
-
