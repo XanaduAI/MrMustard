@@ -451,7 +451,8 @@ class Interferometer(Parametrized, Transformation):
         ):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
-            unitary = math.random_unitary(2 * num_modes)
+            U = math.random_unitary(num_modes)
+            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
         super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
