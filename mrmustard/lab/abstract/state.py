@@ -132,9 +132,8 @@ class State:
         if self._purity is None:
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
-                # TODO: add symplectic representation
             else:
-                self._purity = fock.purity(self.fock)  # has to be dm
+                self._purity = fock.purity(self._dm)
         return self._purity
 
     @property
@@ -227,14 +226,16 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        return fock.norm(self.fock, self.is_mixed)
+        array = self.fock
+        return fock.norm(array, self._dm is not None)
 
     @property
     def probability(self) -> float:
         r"""Returns the probability of the state."""
-        if self.is_pure:
-            return self.norm**2
-        return self.norm
+        norm = self.norm
+        if self.is_pure and self._ket is not None:
+            return norm**2
+        return norm
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.

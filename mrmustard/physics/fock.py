@@ -21,12 +21,15 @@ This module contains functions for performing calculations on Fock states.
 from functools import lru_cache
 import numpy as np
 
+
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_U,
 )
+
+from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
@@ -172,10 +175,10 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     d = int(np.prod(cutoffs))
     dm = math.reshape(dm, (d, d))
 
-    _, eigvecs = math.eigh(dm)
+    eigvals, eigvecs = math.eigh(dm)
     # eigenvalues and related eigenvectors are sorted in non-decreasing order,
-    # meaning the associated eigvec to eigval 1 is stored last.
-    ket = eigvecs[:, -1]
+    # meaning the associated eigvec to largest eigval is stored last.
+    ket = eigvecs[:, -1] * math.sqrt(eigvals[-1])
     ket = math.reshape(ket, cutoffs)
 
     return ket
@@ -303,92 +306,113 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
+    dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-def apply_op_to_ket(op, ket, op_indices):
-    r"""Applies an operator to a ket in the sense
-        ket_abcde = sum_{ijk}U_abc,ijk ket_ijkde
-
-    Args:
-        op (array): the operator to be applied
-        ket (array): the ket to which the operator is applied
-        op_indices (list): the indices the operator acts on
-    Returns:
-        array: the resulting ket
-    """
-    K = ket.ndim
-    N = op.ndim // 2
-    op_ket = math.tensordot(ket, op, axes=[op_indices, list(range(N, 2 * N))])
-    perm = list(range(K - N))
-    for i, o in enumerate(op_indices):
-        perm.insert(o, K - N + i)
-    return math.transpose(op_ket, perm)
-
-
 def apply_op_to_dm(op, dm, op_modes):
-    r"""Applies an operator to a density matrix in the sense
-        dm_abcd = sum_{ij}op_ai dm_ibkd dagger(op)_kc
+    r"""Applies an operator to a density matrix.
+    It assumes that the density matrix is indexed as out_1, ..., out_n, in_1, ..., in_n.
+
+    if op.ndim == 2 * len(op_modes), it is assumed that the operator acts like a unitary or a kraus operator,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n.
+    It will contract its `in` indices once with the `out` indices of `dm` and once on the `in` indices of `dm`
+    and replace them with its own `out` indices.
+
+    if op.ndim == 4 * len(op_modes), it is assumed that the operator acts like a channel,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n, out_1_dual, ..., out_n_dual, in_1_dual, ..., in_n_dual.
+    so it will contract the dm on the left and on the right with its `in` and `out_dual` indices
+    and replace them with its own `out` and `in_dual` indices.
 
     Args:
-        op (array): the operator to be applied
+        op (array): the operator to be applied, either a unitary, a kraus operator, or a channel
         dm (array): the density matrix to which the operator is applied
         op_modes (list): the modes the operator acts on (counting from 0)
 
     Returns:
         array: the resulting density matrix
     """
-    D = dm.ndim
-    N = len(op_modes)
-    op_dm = math.tensordot(dm, op, axes=[op_modes, np.arange(N, 2 * N)])
-    # the N output indices of op are now at the end. We need to move them back at op_modes
-    perm = list(range(D - N))
-    for i, o in enumerate(op_modes):
-        perm.insert(o, D - N + i)
-    op_dm = math.transpose(op_dm, perm)
-    op_dm_op = math.tensordot(
-        op_dm, math.conj(op), axes=[[o + D // 2 for o in op_modes], np.arange(N, 2 * N)]
+    dm = MMTensor(
+        dm,
+        axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
+        + [f"right_{i}" for i in range(dm.ndim // 2)],
     )
-    # the N output indices of op are now at the end. We need to move them at op_modes + D//2
-    perm = list(range(D - N))
-    for i, o in enumerate(op_modes):
-        perm.insert(o + D // 2, D - N + i)
-    return math.transpose(op_dm_op, perm)
+
+    if op.ndim == 2 * len(op_modes):
+        op = MMTensor(
+            op,
+            axis_labels=[f"left_{m}_op" for m in op_modes]
+            + [f"left_{m}" for m in op_modes],
+        )
+        op_conj = MMTensor(
+            math.conj(op.tensor),
+            axis_labels=[f"right_{m}_op" for m in op_modes]
+            + [f"right_{m}" for m in op_modes],
+        )
+        return (op @ dm @ op_conj).tensor
+
+    elif op.ndim == 4 * len(op_modes):
+        op = MMTensor(
+            op,
+            axis_labels=[f"left_{m}_op" for m in op_modes]
+            + [f"left_{m}" for m in op_modes]
+            + [f"right_{m}" for m in op_modes]
+            + [f"right_{m}_op" for m in op_modes],
+        )
+        return (op @ dm).tensor
+
+    else:
+        raise ValueError(
+            "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
+        )
 
 
-# def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
-#     r"""Computes the CPTP (note: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
+def apply_op_to_ket(op, ket, op_indices):
+    r"""Applies an operator to a ket.
+    It assumes that the ket is indexed as out_1, ..., out_n.
 
-#     It assumes that the cutoffs of the transformation matches the cutoffs of the relevant axes of the state.
+    if op.ndim == 2 * len(op_indices), it is assumed that the operator acts like a unitary or a kraus operator,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n.
+    It will contract its `in` indices once with the `out` indices of `ket`.
 
-#     Args:
-#         transformation: the transformation tensor
-#         fock_state: the state to transform
-#         transformation_is_unitary: whether the transformation is a unitary matrix or a Choi operator
-#         state_is_dm: whether the state is a density matrix or a ket
+    if op.ndim == 4 * len(op_indices), it is assumed that the operator acts like a channel,
+    so it's indexed as out_1, ..., out_n, in_1, ..., in_n, out_1_dual, ..., out_n_dual, in_1_dual, ..., in_n_dual.
+    so it will contract a copy of the ket on the left with its `in` indices and a copy of the ket on the right
+    with its `out_dual` indices and replace them with its own `out` and `in_dual` indices.
 
-#     Returns:
-#         Tensor: the transformed state
-#     """
-#     num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
-#     N0 = list(range(0, num_modes))
-#     N1 = list(range(num_modes, 2 * num_modes))
-#     N2 = list(range(2 * num_modes, 3 * num_modes))
-#     N3 = list(range(3 * num_modes, 4 * num_modes))
-#     if transformation_is_unitary:
-#         U = transformation
-#         Us = math.tensordot(U, fock_state, axes=(N1, N0))
-#         if not state_is_dm:
-#             return Us
-#         # is state is dm, the input indices of dm are still at the end of Us
-#         return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
+    Args:
+        op (array): the operator to be applied, either a unitary, a kraus operator, or a channel
+        ket (array): the ket to which the operator is applied
+        op_modes (list): the modes the operator acts on (counting from 0)
 
-#     C = transformation  # choi operator
-#     if state_is_dm:
-#         return math.transpose(math.tensordot(C, fock_state, axes=(N1 + N3, N1 + N0)), N1 + N0)
+    Returns:
+        array: the resulting ket
+    """
+    ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
 
-#     Cs = math.tensordot(C, fock_state, axes=(N1, N0))  # N2 is the last set of indices now
-#     return math.transpose(math.tensordot(Cs, math.conj(fock_state), axes=(N2, N0)), N1 + N0)
+    if op.ndim == 2 * len(op_indices):
+        op = MMTensor(
+            op,
+            axis_labels=[f"left_{m}_op"for m in op_indices]
+            + [f"left_{m}" for m in op_indices],
+        )
+        return (op @ ket).tensor
+
+    elif op.ndim == 4 * len(op_indices):
+        ket_dual = MMTensor(math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)])
+        op = MMTensor(
+            op,
+            axis_labels=[f"left_{m}_op" for m in op_indices]
+            + [f"left_{m}" for m in op_indices]
+            + [f"right_{m}" for m in op_indices]
+            + [f"right_{m}_op" for m in op_indices],
+        )
+        return (op @ ket @ ket_dual).tensor
+    
+    else:
+        raise ValueError(
+            "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
+        )
 
 
 def contract_states(
@@ -482,15 +506,14 @@ def trace(dm, keep: List[int]):
         dm: the density matrix
         keep: the modes to keep (0-based)
     """
-    N = len(dm.shape) // 2
-    trace = [m for m in range(N) if m not in keep]
-    # put at the end all of the indices to trace over
-    keep_idx = keep + [i + N for i in keep]
-    trace_idx = trace + [i + N for i in trace]
-    dm = math.transpose(dm, keep_idx + trace_idx)
-    d = int(np.prod([dm.shape[t] for t in trace]))
-    dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
-    return math.trace(dm)
+    dm = MMTensor(
+        dm,
+        axis_labels=[
+            f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)
+        ]
+        + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)],
+    )
+    return dm.contract().tensor
 
 
 @tensor_int_cache
