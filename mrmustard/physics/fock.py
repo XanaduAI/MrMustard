@@ -341,13 +341,11 @@ def apply_op_to_dm(op, dm, op_modes):
     if op.ndim == 2 * len(op_modes):
         op = MMTensor(
             op,
-            axis_labels=[f"left_{m}_op" for m in op_modes]
-            + [f"left_{m}" for m in op_modes],
+            axis_labels=[f"left_{m}_op" for m in op_modes] + [f"left_{m}" for m in op_modes],
         )
         op_conj = MMTensor(
             math.conj(op.tensor),
-            axis_labels=[f"right_{m}_op" for m in op_modes]
-            + [f"right_{m}" for m in op_modes],
+            axis_labels=[f"right_{m}_op" for m in op_modes] + [f"right_{m}" for m in op_modes],
         )
         return (op @ dm @ op_conj).tensor
 
@@ -393,13 +391,14 @@ def apply_op_to_ket(op, ket, op_indices):
     if op.ndim == 2 * len(op_indices):
         op = MMTensor(
             op,
-            axis_labels=[f"left_{m}_op"for m in op_indices]
-            + [f"left_{m}" for m in op_indices],
+            axis_labels=[f"left_{m}_op" for m in op_indices] + [f"left_{m}" for m in op_indices],
         )
         return (op @ ket).tensor
 
     elif op.ndim == 4 * len(op_indices):
-        ket_dual = MMTensor(math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)])
+        ket_dual = MMTensor(
+            math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)]
+        )
         op = MMTensor(
             op,
             axis_labels=[f"left_{m}_op" for m in op_indices]
@@ -408,7 +407,7 @@ def apply_op_to_ket(op, ket, op_indices):
             + [f"right_{m}_op" for m in op_indices],
         )
         return (op @ ket @ ket_dual).tensor
-    
+
     else:
         raise ValueError(
             "Operator should either have 2 or 4 times as many indices as the number of modes it acts on."
