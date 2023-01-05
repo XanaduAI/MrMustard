@@ -11,14 +11,14 @@ It is built on top of an agnostic autodiff interface, to allow for plug-and-play
 Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 - Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
-- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the orthogonal group (for interferometers)
+- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the unitary group (for interferometers)
 - Adam optimizer for euclidean parameters.
 - single-mode gates (parallelizable):
     - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
 - two-mode gates:
     - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
 - N-mode gates (with dedicated Riemannian optimization):
-    - interferometer (orthogonal), Gaussian transformation (symplectic)
+    - interferometer (unitary), Gaussian transformation (symplectic)
 - single-mode states (parallelizable):
     - vacuum, coherent, squeezed, displaced-squeezed, thermal
 - two-mode states:
@@ -229,7 +229,7 @@ math.cos(0.1)  # pytorch (upcoming)
 ```
 
 ### Optimization
-The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
+The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an unitary optimizer  for interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
 displaced squeezed state.

@@ -227,7 +227,7 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
         phi: phase parameter
 
     Returns:
-        Matrix: symplectic (orthogonal) matrix of a beam-splitter gate
+        Matrix: symplectic (unitary) matrix of a beam-splitter gate
     """
     ct = math.cos(theta)
     st = math.sin(theta)
@@ -260,7 +260,7 @@ def mz_symplectic(phi_a: Scalar, phi_b: Scalar, internal: bool = False) -> Matri
         internal (bool): whether phases are in the internal arms (default is False)
 
     Returns:
-        Matrix: symplectic (orthogonal) matrix of a Mach-Zehnder interferometer
+        Matrix: symplectic (unitary) matrix of a Mach-Zehnder interferometer
     """
     ca = math.cos(phi_a)
     sa = math.sin(phi_a)
