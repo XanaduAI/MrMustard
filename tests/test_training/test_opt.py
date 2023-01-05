@@ -160,7 +160,7 @@ def test_learning_two_mode_Interferometer():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
-    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
@@ -185,7 +185,7 @@ def test_learning_two_mode_RealInterferometer():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
-    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
@@ -218,7 +218,7 @@ def test_learning_four_mode_Interferometer():
             ** 2
         )
 
-    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
@@ -251,7 +251,7 @@ def test_learning_four_mode_RealInterferometer():
             ** 2
         )
 
-    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
