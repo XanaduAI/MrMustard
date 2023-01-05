@@ -356,39 +356,39 @@ def apply_op_to_dm(op, dm, op_modes):
     return math.transpose(op_dm_op, perm)
 
 
-def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
-    r"""Computes the CPTP (note: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
+# def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
+#     r"""Computes the CPTP (note: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
 
-    It assumes that the cutoffs of the transformation matches the cutoffs of the relevant axes of the state.
+#     It assumes that the cutoffs of the transformation matches the cutoffs of the relevant axes of the state.
 
-    Args:
-        transformation: the transformation tensor
-        fock_state: the state to transform
-        transformation_is_unitary: whether the transformation is a unitary matrix or a Choi operator
-        state_is_dm: whether the state is a density matrix or a ket
+#     Args:
+#         transformation: the transformation tensor
+#         fock_state: the state to transform
+#         transformation_is_unitary: whether the transformation is a unitary matrix or a Choi operator
+#         state_is_dm: whether the state is a density matrix or a ket
 
-    Returns:
-        Tensor: the transformed state
-    """
-    num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
-    N0 = list(range(0, num_modes))
-    N1 = list(range(num_modes, 2 * num_modes))
-    N2 = list(range(2 * num_modes, 3 * num_modes))
-    N3 = list(range(3 * num_modes, 4 * num_modes))
-    if transformation_is_unitary:
-        U = transformation
-        Us = math.tensordot(U, fock_state, axes=(N1, N0))
-        if not state_is_dm:
-            return Us
-        # is state is dm, the input indices of dm are still at the end of Us
-        return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
+#     Returns:
+#         Tensor: the transformed state
+#     """
+#     num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
+#     N0 = list(range(0, num_modes))
+#     N1 = list(range(num_modes, 2 * num_modes))
+#     N2 = list(range(2 * num_modes, 3 * num_modes))
+#     N3 = list(range(3 * num_modes, 4 * num_modes))
+#     if transformation_is_unitary:
+#         U = transformation
+#         Us = math.tensordot(U, fock_state, axes=(N1, N0))
+#         if not state_is_dm:
+#             return Us
+#         # is state is dm, the input indices of dm are still at the end of Us
+#         return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
 
-    C = transformation  # choi operator
-    if state_is_dm:
-        return math.transpose(math.tensordot(C, fock_state, axes=(N1 + N3, N1 + N0)), N1 + N0)
+#     C = transformation  # choi operator
+#     if state_is_dm:
+#         return math.transpose(math.tensordot(C, fock_state, axes=(N1 + N3, N1 + N0)), N1 + N0)
 
-    Cs = math.tensordot(C, fock_state, axes=(N1, N0))  # N2 is the last set of indices now
-    return math.transpose(math.tensordot(Cs, math.conj(fock_state), axes=(N2, N0)), N1 + N0)
+#     Cs = math.tensordot(C, fock_state, axes=(N1, N0))  # N2 is the last set of indices now
+#     return math.transpose(math.tensordot(Cs, math.conj(fock_state), axes=(N2, N0)), N1 + N0)
 
 
 def contract_states(
