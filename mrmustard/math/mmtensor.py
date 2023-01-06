@@ -18,7 +18,7 @@
 This module contains the implementation of a tensor wrapper class.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 import string
 from mrmustard.math import Math
 
@@ -123,10 +123,12 @@ class MMTensor:
             [label for label in unique_labels if label not in repeated],
         )
 
-    def transpose(self, perm):
+    def transpose(self, perm: Union[List[int], List[str]]):
         """
-        Transpose the tensor. Permutes also the axis labels accordingly.
+        Transpose the tensor using a list of axis labels or indices.
         """
+        if set(perm) == set(self.axis_labels):
+            perm = [self.axis_labels.index(label) for label in perm]
         return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
 
     def reshape(self, shape, axis_labels=None):
