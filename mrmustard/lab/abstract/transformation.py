@@ -115,7 +115,7 @@ class Transformation:
             N2 = list(range(2 * n, 3 * n))
             N3 = list(range(3 * n, 4 * n))
             if dual:
-                choi = math.transpose(choi, N3 + N2 + N1 + N0)  # we flip left-right
+                choi = math.transpose(choi, N1 + N3 + N0 + N2)  # we flip out-in
 
             if state.is_pure:
                 # applies choi to ket by applying a "kraus op" with no outgoing indices (ket) to a "dm" (choi)
@@ -123,7 +123,7 @@ class Transformation:
                 choi = (
                     math.transpose(choi, N0 + N2 + N1 + N3)
                     if not dual
-                    else math.transpose(choi, N3 + N1 + N2 + N0)
+                    else math.transpose(choi, N1 + N3 + N0 + N2)
                 )
                 # now choi looks like a proper dm with index order [out_l, out_r, in_l, in_r] # or l <-> r if dual
                 return State(
