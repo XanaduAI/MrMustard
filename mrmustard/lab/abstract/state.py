@@ -403,9 +403,9 @@ class State:
             out_fock = fock.contract_states(
                 stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
                 stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                a_is_mixed=other.is_mixed,
-                b_is_mixed=self.is_mixed,
-                modes=other.indices(self.modes),  # TODO: change arg name to indices
+                a_is_dm=other.is_mixed,
+                b_is_dm=self.is_mixed,
+                modes=other.indices(self.modes),
                 normalize=self._normalize if hasattr(self, "_normalize") else False,
             )
 
