@@ -41,16 +41,26 @@ def cayley(X, c):
 
 
 def wigner_to_bargmann_rho(cov, means):
-    r"""Returns the Bargmann A,B,C triple for a density matrix (full-size).
-    The order of the indices is as follows: rho_mn
+    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann A,B,C triple
+    for a density matrix (i.e. for M modes, A has shape 2M x 2M and B has shape 2M).
+    The order of the rows/columns of A and B corresponds to a density matrix with the usual ordering of the indices.
+
+    Note that here A and B are defined with inverted blocks with respect to the literature,
+    otherwise the density matrix would have the left and the right indices swapped once we convert to Fock.
+    By inverted blocks we mean that if A is normally defined as A = [[A_00, A_01], [A_10, A_11]],
+    here we define it as A = [[A_11, A_10], [A_01, A_00]]. For B we have B = [B_0, B_1] -> B = [B_1, B_0].
     """
     N = cov.shape[-1] // 2
     sigma = pq_to_aadag(cov)
     beta = pq_to_aadag(means)
     I = math.eye(2 * N, dtype=sigma.dtype)
     Q_inv = math.inv(sigma + 0.5 * I)
-    A = math.matmul(math.Xmat(N), cayley(sigma, c=0.5))
-    B = math.conj(math.matvec(Q_inv, beta))
+    A = math.matmul(
+        cayley(sigma, c=0.5), math.Xmat(N)
+    )  # yes: X on the right, so that the index order will be rho_left,right
+    B = math.matvec(
+        Q_inv, beta
+    )  # yes: no conjugate, so that the index order will be rho_left,right
     numerator = math.exp(-0.5 * math.sum(math.conj(beta) * math.matvec(Q_inv, beta)))
     denominator = math.sqrt(math.det(sigma + 0.5 * I))
     C = numerator / denominator
@@ -58,14 +68,21 @@ def wigner_to_bargmann_rho(cov, means):
 
 
 def wigner_to_bargmann_psi(cov, means):
-    r"""Returns the Bargmann A,B,C triple for a pure state (half-size)."""
+    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann A,B,C triple
+    for a Hilbert vector (i.e. for M modes, A has shape M x M and B has shape M).
+    """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    return A[N:, N:], B[N:], math.sqrt(C)
+    # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half rather than the second
+    return A[:N, :N], B[:N], math.sqrt(C)
 
 
 def wigner_to_bargmann_Choi(X, Y, d):
-    r"""Returns the Bargmann A,B,C triple for a channel."""
+    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann A,B,C triple
+    for a channel (i.e. for M modes, A has shape 4M x 4M and B has shape 4M).
+    We have freedom to choose the order of the indices of the Choi matrix by rearranging the MxM blocks of A and the M-subvectors of B.
+    Here we choose the order [out_l, in_l out_r, in_r] (in_l and in_r to be contracted with the left and right indices of the density matrix)
+    so that after the contraction the result has the right order (out_l, out_r)."""
     N = X.shape[-1] // 2
     I2 = math.eye(2 * N, dtype=X.dtype)
     XT = math.transpose(X)
@@ -83,17 +100,22 @@ def wigner_to_bargmann_Choi(X, Y, d):
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
     ) / np.sqrt(2)
     A = math.matmul(math.matmul(R, A), math.dagger(R))
-    A = math.matmul(math.Xmat(2 * N), A)
+    A = math.matmul(A, math.Xmat(2 * N))  # yes: X on the right
     b = math.matvec(xi_inv, d)
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
+    B = math.concat([B[2 * N :], B[: 2 * N]], axis=-1)  # yes: opposite order
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
+    # now A and B have order [out_l, in_l out_r, in_r].
     return A, B, C
 
 
 def wigner_to_bargmann_U(X, d):
-    r"""Returns the Bargmann A,B,C triple for a unitary transformation."""
+    r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann A,B,C triple
+    for a unitary (i.e. for M modes, A has shape 2M x 2M and B has shape 2M).
+    """
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-    return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
+    # NOTE: with A_Choi and B_Choi defined with inverted blocks, we now keep the first half rather than the second
+    return A[: 2 * N, : 2 * N], B[: 2 * N], math.sqrt(C)
