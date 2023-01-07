@@ -51,21 +51,21 @@ class Settings:
         # misc
         self.PROGRESSBAR = True
         self._seed = np.random.randint(0, 2**32)
-        self.random_state = RandomState(MT19937(SeedSequence(self._seed)))
+        self.rng = np.random.default_rng(self._seed)
 
     @property
     def SEED(self):
         """Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
             self._seed = np.random.randint(0, 2**32)
-            self.random_state = RandomState(MT19937(SeedSequence(self._seed)))
+            self.rng = np.random.default_rng(self._seed)
         return self._seed
 
     @SEED.setter
     def SEED(self, value):
         """Sets the seed value."""
         self._seed = value
-        self.random_state = RandomState(MT19937(SeedSequence(self._seed)))
+        self.rng = np.random.default_rng(self._seed)
 
     @property
     def BACKEND(self):
