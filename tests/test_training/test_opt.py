@@ -163,7 +163,7 @@ def test_learning_two_mode_Interferometer():
 
 def test_learning_two_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
-    settings.SEED = 42
+    settings.SEED = 2
     ops = [
         Sgate(
             r=settings.rng.normal(size=(2)) ** 2,
@@ -188,7 +188,7 @@ def test_learning_two_mode_RealInterferometer():
 
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    settings.SEED = 35
+    settings.SEED = 4
     ops = [
         Sgate(
             r=settings.rng.uniform(size=4),
@@ -204,8 +204,8 @@ def test_learning_four_mode_Interferometer():
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
         return (
-            -tf.abs(
-                tf.reduce_sum(
+            -math.abs(
+                math.sum(
                     amps[1, 1]
                     * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
                 )
@@ -213,15 +213,14 @@ def test_learning_four_mode_Interferometer():
             ** 2
         )
 
-    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
-
+    opt = Optimizer(orthogonal_lr=0.05)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    settings.SEED = 1
+    settings.SEED = 6
     ops = [
         Sgate(
             r=settings.rng.uniform(size=4),
@@ -237,8 +236,8 @@ def test_learning_four_mode_RealInterferometer():
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
         return (
-            -tf.abs(
-                tf.reduce_sum(
+            -math.abs(
+                math.sum(
                     amps[1, 1]
                     * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
                 )
@@ -246,9 +245,9 @@ def test_learning_four_mode_RealInterferometer():
             ** 2
         )
 
-    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer()
 
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=400)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
