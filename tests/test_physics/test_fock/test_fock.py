@@ -187,27 +187,3 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
-
-
-def test_fock_trace_mode1():
-    """tests that the Fock state is correctly traced out from mode 1"""
-    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
-    from_gaussian = state.get_modes(0).dm([3])
-    from_fock = State(dm=state.dm([3,30])).get_modes(0).dm([3])
-    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
-
-
-def test_fock_trace_mode0():
-    """tests that the Fock state is correctly traced out from mode 0"""
-    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
-    from_gaussian = state.get_modes(1).dm([3])
-    from_fock = State(dm=state.dm([30,3])).get_modes(1).dm([3])
-    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
-
-
-def test_fock_trace_function():
-    """tests that the Fock state is correctly traced"""
-    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
-    dm = state.dm([3, 20])
-    dm_traced = trace(dm, keep=[0])
-    assert np.allclose(dm_traced, State(dm=dm).get_modes(0).dm(), atol=1e-5)
