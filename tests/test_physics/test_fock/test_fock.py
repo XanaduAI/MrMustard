@@ -213,7 +213,7 @@ def test_fock_trace_function():
     assert np.allclose(dm_traced, State(dm=dm).get_modes(0).dm(), atol=1e-5)
 
 
-def test_choi_application():
+def test_single_mode_choi_application_order():
     s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi/2).dm([40]))
     assert np.allclose(s.dm([10])[:10,:10], SqueezedVacuum(1.0, np.pi/2).dm([10]))
     # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
