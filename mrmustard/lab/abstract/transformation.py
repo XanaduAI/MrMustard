@@ -124,14 +124,14 @@ class Transformation:
                 return State(ket=fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
             return State(dm=fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            transformation = self.choi(cutoffs=state.cutoffs)
+            transformation = self.choi(cutoffs=state.cutoffs) #[out_r, in_r, out_l, in_l]
             if dual:
                 n = len(state.cutoffs)
                 N0 = list(range(0, n))
                 N1 = list(range(n, 2 * n))
                 N2 = list(range(2 * n, 3 * n))
                 N3 = list(range(3 * n, 4 * n))
-                transformation = fock.math.transpose(transformation, N3 + N0 + N1 + N2)
+                transformation = fock.math.transpose(transformation, N1 + N0 + N3 + N2)  # swap input and output indices [in_r, out_r, in_l, out_l]
         new_fock = fock.CPTP(
             transformation=transformation,
             fock_state=state.ket(state.cutoffs) if state.is_pure else state.dm(state.cutoffs),
