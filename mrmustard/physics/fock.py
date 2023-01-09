@@ -396,7 +396,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
     num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
     N0 = list(range(0, num_modes))
     N1 = list(range(num_modes, 2 * num_modes))
-    N2 = list(range(2 * num_modes, 3 * num_modes))
+    N2 = list(range(2 * num_modes, 3 * num_modes))  # pylint: disable=unused-variable
     N3 = list(range(3 * num_modes, 4 * num_modes))
     if transformation_is_unitary:
         U = transformation
@@ -406,14 +406,18 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
         # is state is dm, the input indices of dm are still at the end of Us
         return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
 
-    C = transformation  # choi operator
+    # choi operator with indices in the order [out_r, in_r, out_l, in_l]
+    # note that the left and right indices of a dm have to contract with in_l and in_r
+    C = transformation
     if state_is_dm:
-        return math.tensordot(C, fock_state, axes=(N1 + N3, N0 + N1))
+        output = math.tensordot(C, fock_state, axes=(N3 + N1, N0 + N1))
+        # transpose because otherwise the output would be [out_r, out_l]:
+        return math.transpose(output, N1 + N0)
 
-    Cs = math.tensordot(C, fock_state, axes=(N1, N0))
-    return math.tensordot(
-        Cs, math.conj(fock_state), axes=(N2, N0)
-    )  # N2 is the last set of indices now
+    # the order of the indices of a ket is just [out_l], which need to contract with in_l of the choi operator (N3)
+    Cs = math.tensordot(C, fock_state, axes=(N3, N0))  # now order is [out_r, in_r, out_l]
+    output = math.tensordot(Cs, math.conj(fock_state), axes=(N1, N0))
+    return math.transpose(output, N1 + N0)  # N2 is the last set of indices now
 
 
 def contract_states(
