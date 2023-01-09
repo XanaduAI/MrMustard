@@ -271,34 +271,40 @@ def test_ket_from_pure_dm(n, cutoffs):
 
 
 def test_ket_probability():
+    "Test that the probability of a ket is calculated correctly."
     state = State(ket=np.array([0.5, 0.5]))
     assert np.isclose(state.probability, 2 * 0.5**2)
 
 
 def test_dm_probability():
+    "Test that the probability of a density matrix is calculated correctly."
     state = State(dm=np.array([[0.4, 0.1], [0.1, 0.4]]))
     assert np.isclose(state.probability, 0.8)
 
 
 def test_padding_ket():
+    "Test that padding a ket works correctly."
     state = State(ket=SqueezedVacuum(r=1.0).ket(cutoffs=[20]))
     assert len(state.ket(cutoffs=[10])) == 10
     assert len(state._ket) == 20
 
 
 def test_padding_dm():
+    "Test that padding a density matrix works correctly."
     state = State(dm=(SqueezedVacuum(r=1.0) >> Attenuator(0.6)).dm(cutoffs=[20]))
     assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
     assert tuple(int(c) for c in state._dm.shape) == (20, 20)
 
 
 def test_state_repr_small_prob():
+    "test that small probabilities are displayed correctly"
     state = State(ket=np.array([0.0001, 0.0001]))
     table = state._repr_markdown_()
     assert "2.000e-06 %" in table
 
 
 def test_state_repr_big_prob():
+    "test that big probabilities are displayed correctly"
     state = State(ket=np.array([0.5, 0.5]))
     table = state._repr_markdown_()
     assert "50.000%" in table
