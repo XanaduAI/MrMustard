@@ -218,3 +218,10 @@ def test_dm_choi():
     circ = Ggate(1) >> Attenuator([0.1])
     dm_out = apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
     dm_expected = (Vacuum(1) >> circ).dm([10])
+    
+
+def test_single_mode_choi_application_order():
+    """Test dual operations output the correct mode ordering"""
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
+    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
+    # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
