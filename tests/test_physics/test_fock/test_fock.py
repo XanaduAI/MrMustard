@@ -218,7 +218,7 @@ def test_dm_choi():
     circ = Ggate(1) >> Attenuator([0.1])
     dm_out = apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
     dm_expected = (Vacuum(1) >> circ).dm([10])
-    
+
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
