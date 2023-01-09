@@ -396,7 +396,7 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
     num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
     N0 = list(range(0, num_modes))
     N1 = list(range(num_modes, 2 * num_modes))
-    N2 = list(range(2 * num_modes, 3 * num_modes))
+    N2 = list(range(2 * num_modes, 3 * num_modes))  # pytest: disable=unused-variable
     N3 = list(range(3 * num_modes, 4 * num_modes))
     if transformation_is_unitary:
         U = transformation
