@@ -415,9 +415,9 @@ def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_d
         return math.transpose(output, N1 + N0)
 
     # the order of the indices of a ket is just [out_l], which need to contract with in_l of the choi operator (N3)
-    Cs = math.tensordot(C, fock_state, axes=(N3, N0)) # now order is [out_r, in_r, out_l]
-    output = math.tensordot(Cs, math.conj(fock_state), axes=(N1, N0)) 
-    return  math.transpose(output, N1 + N0) # N2 is the last set of indices now
+    Cs = math.tensordot(C, fock_state, axes=(N3, N0))  # now order is [out_r, in_r, out_l]
+    output = math.tensordot(Cs, math.conj(fock_state), axes=(N1, N0))
+    return math.transpose(output, N1 + N0)  # N2 is the last set of indices now
 
 
 def contract_states(
