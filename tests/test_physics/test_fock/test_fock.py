@@ -32,6 +32,7 @@ from mrmustard.lab import (
     Dgate,
     Rgate,
     TMSV,
+    State
 )
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm
 
@@ -186,3 +187,9 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
+
+def test_single_mode_choi_application_order():
+    """Test dual operations output the correct mode ordering"""
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
+    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
+    # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
