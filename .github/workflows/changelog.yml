@@ -1,0 +1,17 @@
+name: Changelog entry
+on:
+  pull_request:
+
+jobs:
+  cahngelog:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+
+    - name: check changelog entry
+      run: |
+        has_changelog=$(git diff --name-only -r HEAD^1 HEAD | grep .github/CHANGELOG.md)
+        [  -z "$has_changelog" ] && exit 0 || exit 1
