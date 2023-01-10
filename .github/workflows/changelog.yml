@@ -15,6 +15,6 @@ jobs:
 
     - name: check changelog entry
       run: |
-        has_changelog=$(git diff --name-only -r HEAD^1 HEAD | grep .github/CHANGELOG.md)
-        [  -z "$has_changelog" ] && echo "No CHANGELOG entry detected 🛑" || echo "There's a CHANGELOG entry! 🎉"
-        [  -z "$has_changelog" ] && exit 1 || exit 0
+        has_changelog=$(git diff --name-only -r HEAD^1 HEAD | grep -q .github/CHANGELOG.md)
+        [  -z "$has_changelog" ] && echo "There's a CHANGELOG entry! 🎉" || echo "No CHANGELOG entry detected 🛑"
+        [  -z "$has_changelog" ] && exit 0 || exit 1
