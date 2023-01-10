@@ -32,7 +32,7 @@ from mrmustard.lab import (
     Dgate,
     Rgate,
     TMSV,
-    State
+    State,
 )
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm
 
@@ -187,6 +187,7 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
+
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
