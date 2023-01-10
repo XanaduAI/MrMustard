@@ -1,4 +1,4 @@
-name: changelog entry
+name: Changelog entry
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
