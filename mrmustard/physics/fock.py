@@ -375,7 +375,7 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     if not set(kraus_in_idx).issubset(range(dm.ndim // 2)):
         raise ValueError("kraus_in_idx should be a subset of the density matrix indices.")
 
-    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (sepately)
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
     validate_contraction_indices(kraus_in_idx, kraus_out_idx, dm.ndim // 2, "kraus")
 
     dm = MMTensor(
