@@ -265,6 +265,12 @@ class TFMath(MathInterface):
     def sinh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sinh(array)
 
+    def solve(self, matrix: tf.Tensor, rhs: tf.Tensor) -> tf.Tensor:
+        if len(rhs.shape) == len(matrix.shape) - 1:
+            rhs = tf.expand_dims(rhs, -1)
+            return tf.linalg.solve(matrix, rhs)[..., 0]
+        return tf.linalg.solve(matrix, rhs)
+
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 

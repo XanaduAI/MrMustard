@@ -707,6 +707,19 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def solve(self, matrix: Tensor, rhs: Tensor) -> Tensor:
+        r"""Returns the solution of the linear system :math:`Ax = b`.
+
+        Args:
+            matrix (array): matrix :math:`A`
+            rhs (array): vector :math:`b`
+
+        Returns:
+            array: solution :math:`x`
+        """
+
+
+    @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""Returns the square root of ``x``.
 
