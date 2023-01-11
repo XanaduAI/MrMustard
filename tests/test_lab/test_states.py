@@ -270,6 +270,13 @@ def test_ket_from_pure_dm(n, cutoffs):
     assert np.allclose(test_ket, fock_state.ket())
 
 
+def test_ket_from_pure_dm_new_cutoffs():
+    "tests that the shape of the internal fock representation reflects the new cutoffs"
+    state = Vacuum(1) >> Sgate(0.1) >> Dgate(0.1, 0.1)  # weak gaussian state
+    state = State(dm=state.dm(cutoffs=[20]))  # assign pure dm directly
+    assert state.ket(cutoffs=[5]).shape.as_list() == [5]  # shape should be [5]
+
+
 def test_ket_probability():
     "Test that the probability of a ket is calculated correctly."
     state = State(ket=np.array([0.5, 0.5]))
