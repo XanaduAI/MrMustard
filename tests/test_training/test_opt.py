@@ -38,14 +38,13 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
 
 from mrmustard.math import Math
-
-settings.SEED = 42
 math = Math()
 
 
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
+    settings.SEED = 42
     S = S2gate(
         r=abs(settings.rng.normal()),
         phi=settings.rng.normal(),
@@ -70,6 +69,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
     which lacks a square root in the right hand side.
     """
+    settings.SEED = 42
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
@@ -95,6 +95,7 @@ def test_hong_ou_mandel_optimizer(i, k):
 
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
+    settings.SEED = 42
     ops = [
         Sgate(
             r=abs(settings.rng.normal(size=(2))),
@@ -124,6 +125,7 @@ def test_learning_two_mode_squeezing():
 
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
+    settings.SEED = 42
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
@@ -255,6 +257,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
     see https://www.pnas.org/content/117/52/33107/tab-article-info
     """
+    settings.SEED = 42
     r = np.arcsinh(1.0)
 
     S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
@@ -273,6 +276,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
 def test_parameter_passthrough():
     """Same as the test above, but with param passthrough"""
+    settings.SEED = 42
     r = np.arcsinh(1.0)
     par = Parametrized(
         r=math.new_variable(r, (0.0, None), "r"),
@@ -296,7 +300,7 @@ def test_parameter_passthrough():
 def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
     and mean photon number as a thermal state"""
-
+    settings.SEED = 42
     S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
 
     nbar = 1.4
@@ -325,6 +329,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 def test_opt_backend_param():
     """Test the optimization of a backend parameter defined outside a gate."""
     # rotated displaced squeezed state
+    settings.SEED = 42
     rotation_angle = np.pi / 2
     target_state = SqueezedVacuum(r=1.0, phi=rotation_angle)
 
