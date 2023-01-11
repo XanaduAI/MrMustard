@@ -18,7 +18,7 @@
 This module contains functions for transforming to the Bargmann representation.
 """
 import numpy as np
-from mrmustard.physics.husimi import pq_to_aadag
+from mrmustard.physics.husimi import wigner_to_husimi, pq_to_aadag
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -37,7 +37,7 @@ def cayley(X, c):
         Tensor: the Cayley transform of X
     """
     I = math.eye(X.shape[0], dtype=X.dtype)
-    return math.matmul(X - c * I, math.inv(X + c * I))  # or solve(c+x, c-x)?
+    return math.solve(X + c * I, X - c * I)
 
 
 def wigner_to_bargmann_rho(cov, means):
@@ -51,19 +51,12 @@ def wigner_to_bargmann_rho(cov, means):
     here we define it as A = [[A_11, A_10], [A_01, A_00]]. For B we have B = [B_0, B_1] -> B = [B_1, B_0].
     """
     N = cov.shape[-1] // 2
-    sigma = pq_to_aadag(cov)
-    beta = pq_to_aadag(means)
-    I = math.eye(2 * N, dtype=sigma.dtype)
-    Q_inv = math.inv(sigma + 0.5 * I)
-    A = math.matmul(
-        cayley(sigma, c=0.5), math.Xmat(N)
-    )  # yes: X on the right, so that the index order will be rho_left,right
-    B = math.matvec(
-        Q_inv, beta
-    )  # yes: no conjugate, so that the index order will be rho_left,right
-    numerator = math.exp(-0.5 * math.sum(math.conj(beta) * math.matvec(Q_inv, beta)))
-    denominator = math.sqrt(math.det(sigma + 0.5 * I))
-    C = numerator / denominator
+    Q, beta = wigner_to_husimi(cov, means)
+    I = math.eye(2 * N, dtype=Q.dtype)
+    # yes: X on the right, so that the index order will be rho_{left,right}
+    A = math.matmul(cayley(pq_to_aadag(cov), c=0.5), math.Xmat(N))
+    B = math.solve(Q, beta)  # yes: no conjugate, so that the index order will be rho_left,right
+    C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
     return A, B, C
 
 
