@@ -224,12 +224,10 @@ class Transformation:
         if not self.is_unitary:
             return None
         X, Y, d = self.XYd
-        return fock.wigner_to_fock_transformation(
+        return fock.wigner_to_fock_U(
             X if X is not None else math.eye(2 * self.num_modes),
-            Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
             d if d is not None else math.zeros((2 * self.num_modes,)),
             shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
-            return_choi=False,
         )
 
     def choi(self, cutoffs: Sequence[int]):
@@ -238,12 +236,11 @@ class Transformation:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
         X, Y, d = self.XYd
-        return fock.wigner_to_fock_transformation(
+        return fock.wigner_to_fock_Choi(
             X if X is not None else math.eye(2 * self.num_modes),
             Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
             d if d is not None else math.zeros((2 * self.num_modes,)),
             shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
-            return_choi=True,
         )
 
     def __getitem__(self, items) -> Callable:

@@ -111,33 +111,38 @@ def wigner_to_fock_state(
         A, B, C = wigner_to_bargmann_psi(cov, means)
         return math.hermite_renormalized(-A, B, C, shape=shape)
 
+def wigner_to_fock_U(X, d, shape):
+    r"""Returns the Fock representation of a Gaussian unitary transformation.
+    The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
+    or with the left indices of a density matrix.
 
-def wigner_to_fock_transformation(
-    X: Matrix,
-    Y: Matrix,
-    d: Vector,
-    shape: Sequence[int],
-    return_choi: bool = False,
-) -> Tensor:
-    r"""Returns the Fock representation of a Gaussian transformation.
+    Arguments:
+        X: the X matrix
+        d: the d vector
+        shape: the shape of the tensor
 
-    * If the transformation is unitary it returns the unitary transformation matrix.
-        The index order is out_l, in_l, where in_l is to be contracted with the indices of the ket.
-    * If the transformation is not unitary it returns the Choi matrix.
-        The index order of choi is [out_l, in_l, out_r, in_r]
-        where in_l and in_r are to be contracted with the left and right indices of the density matrix.
+    Returns:
+        Tensor: the fock representation of the unitary transformation
+    """
+    A, B, C = wigner_to_bargmann_U(X, d)
+    return math.hermite_renormalized(-A, B, C, shape=shape)
 
-    Args:
+
+def wigner_to_fock_Choi(X, Y, d, shape):
+    r"""Returns the Fock representation of a Gaussian Choi matrix.
+    The order of choi indices is :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
+    where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of a density matrix.
+
+    Arguments:
         X: the X matrix
         Y: the Y matrix
         d: the d vector
         shape: the shape of the tensor
-        return_choi: whether to return the Choi matrix (otherwise it returns the unitary)
+
+    Returns:
+        Tensor: the fock representation of the Choi matrix
     """
-    if return_choi:
-        A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    else:
-        A, B, C = wigner_to_bargmann_U(X, d)
+    A, B, C = wigner_to_bargmann_Choi(X, Y, d)
     return math.hermite_renormalized(-A, B, C, shape=shape)
 
 
