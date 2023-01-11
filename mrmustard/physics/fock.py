@@ -310,6 +310,7 @@ def purity(dm: Tensor) -> Scalar:
 
 
 def validate_contraction_indices(in_idx, out_idx, M, name):
+    r"""Validates the indices used for the contraction of a tensor."""
     if len(set(in_idx)) != len(in_idx):
         raise ValueError(f"{name}_in_idx should not contain repeated indices.")
     if len(set(out_idx)) != len(out_idx):
