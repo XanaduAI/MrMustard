@@ -223,7 +223,7 @@ class Transformation:
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
-        X, Y, d = self.XYd
+        X, _, d = self.XYd
         return fock.wigner_to_fock_U(
             X if X is not None else math.eye(2 * self.num_modes),
             d if d is not None else math.zeros((2 * self.num_modes,)),
