@@ -38,6 +38,7 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard import settings
 
 from mrmustard.math import Math
+
 math = Math()
 
 
