@@ -346,4 +346,4 @@ def test_opt_backend_param():
     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.1)
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    print(np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2))
+    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2)
