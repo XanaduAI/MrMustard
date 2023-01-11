@@ -69,6 +69,8 @@ within the defined window. Also, expose some plot parameters and return the figu
 * The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
+* The internal fock representation of states returns the correct cutoffs in all cases (solves an issue when a pure dm was converted to ket).
+[(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
 
 ### Documentation
 
