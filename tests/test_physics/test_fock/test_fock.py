@@ -32,6 +32,9 @@ from mrmustard.lab import (
     TMSV,
     State,
     Attenuator,
+    Fock,
+    Coherent,
+    Gaussian
 )
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm, trace, apply_choi_to_dm
 
