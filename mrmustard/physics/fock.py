@@ -334,7 +334,7 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
     if not set(kraus_in_idx).issubset(range(ket.ndim)):
         raise ValueError("kraus_in_idx should be a subset of the ket indices.")
 
-    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (sepately)
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
     validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
 
     ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
