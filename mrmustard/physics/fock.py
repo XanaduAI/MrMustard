@@ -111,6 +111,7 @@ def wigner_to_fock_state(
         A, B, C = wigner_to_bargmann_psi(cov, means)
         return math.hermite_renormalized(-A, B, C, shape=shape)
 
+
 def wigner_to_fock_U(X, d, shape):
     r"""Returns the Fock representation of a Gaussian unitary transformation.
     The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
