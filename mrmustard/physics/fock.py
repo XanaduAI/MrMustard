@@ -425,7 +425,7 @@ def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
     if not set(choi_in_idx).issubset(range(dm.ndim // 2)):
         raise ValueError("choi_in_idx should be a subset of the density matrix indices.")
 
-    # check that there are no repeated indices in choi_in_idx and choi_out_idx (sepately)
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
     validate_contraction_indices(choi_in_idx, choi_out_idx, dm.ndim // 2, "choi")
 
     dm = MMTensor(
