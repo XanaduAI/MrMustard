@@ -201,7 +201,7 @@ def test_modes_after_projection(m):
 def test_modes_after_double_projection(n, m):
     """Test number of modes is correct after double projection."""
     assume(n != m)
-    a = Gaussian(4) << Fock([1, 2])[n, m]
+    a = Gaussian(4) >> Dgate(x=1.0)[0, 1, 2, 3] << Fock([1, 2])[n, m]
     assert np.allclose(a.modes, [k for k in range(4) if k != m and k != n])
     assert len(a.modes) == 2
 
@@ -275,3 +275,43 @@ def test_ket_from_pure_dm_new_cutoffs():
     state = Vacuum(1) >> Sgate(0.1) >> Dgate(0.1, 0.1)  # weak gaussian state
     state = State(dm=state.dm(cutoffs=[20]))  # assign pure dm directly
     assert state.ket(cutoffs=[5]).shape.as_list() == [5]  # shape should be [5]
+
+
+def test_ket_probability():
+    "Test that the probability of a ket is calculated correctly."
+    state = State(ket=np.array([0.5, 0.5]))
+    assert np.isclose(state.probability, 2 * 0.5**2)
+
+
+def test_dm_probability():
+    "Test that the probability of a density matrix is calculated correctly."
+    state = State(dm=np.array([[0.4, 0.1], [0.1, 0.4]]))
+    assert np.isclose(state.probability, 0.8)
+
+
+def test_padding_ket():
+    "Test that padding a ket works correctly."
+    state = State(ket=SqueezedVacuum(r=1.0).ket(cutoffs=[20]))
+    assert len(state.ket(cutoffs=[10])) == 10
+    assert len(state._ket) == 20  # pylint: disable=protected-access
+
+
+def test_padding_dm():
+    "Test that padding a density matrix works correctly."
+    state = State(dm=(SqueezedVacuum(r=1.0) >> Attenuator(0.6)).dm(cutoffs=[20]))
+    assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
+    assert tuple(int(c) for c in state._dm.shape) == (20, 20)  # pylint: disable=protected-access
+
+
+def test_state_repr_small_prob():
+    "test that small probabilities are displayed correctly"
+    state = State(ket=np.array([0.0001, 0.0001]))
+    table = state._repr_markdown_()  # pylint: disable=protected-access
+    assert "2.000e-06 %" in table
+
+
+def test_state_repr_big_prob():
+    "test that big probabilities are displayed correctly"
+    state = State(ket=np.array([0.5, 0.5]))
+    table = state._repr_markdown_()  # pylint: disable=protected-access
+    assert "50.000%" in table

@@ -20,7 +20,7 @@ from itertools import product
 import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
-
+from mrmustard import settings
 from mrmustard.types import (
     List,
     Tensor,
@@ -978,12 +978,12 @@ class MathInterface(ABC):
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * np.random.uniform(size=(1, 1)))
-            V = np.exp(1j * np.random.uniform(size=(1, 1)))
+            W = np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            V = np.exp(1j * settings.rng.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=num_modes)
-            V = unitary_group.rvs(dim=num_modes)
-        r = np.random.uniform(low=0.0, high=max_r, size=num_modes)
+            W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
+            V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
+        r = settings.rng.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
@@ -994,13 +994,13 @@ class MathInterface(ABC):
         """A random orthogonal matrix in :math:`O(N)`."""
         if N == 1:
             return np.array([[1.0]])
-        return ortho_group.rvs(dim=N)
+        return ortho_group.rvs(dim=N, random_state=settings.rng)
 
     def random_unitary(self, N: int) -> Tensor:
         """a random unitary matrix in :math:`U(N)`"""
         if N == 1:
-            return self.exp(1j * np.random.uniform(size=(1, 1)))
-        return unitary_group.rvs(dim=N)
+            return self.exp(1j * settings.rng.uniform(size=(1, 1)))
+        return unitary_group.rvs(dim=N, random_state=settings.rng)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
         r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""
