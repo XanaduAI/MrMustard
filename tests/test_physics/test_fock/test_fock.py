@@ -18,7 +18,21 @@ import pytest
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-from mrmustard.lab import *
+from mrmustard.lab import (
+    Circuit,
+    Vacuum,
+    S2gate,
+    BSgate,
+    Sgate,
+    Rgate,
+    Dgate,
+    Ggate,
+    Interferometer,
+    SqueezedVacuum,
+    TMSV,
+    State,
+    Attenuator,
+)
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm, trace, apply_choi_to_dm
 
 
@@ -219,6 +233,7 @@ def test_dm_choi():
     circ = Ggate(1) >> Attenuator([0.1])
     dm_out = apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
     dm_expected = (Vacuum(1) >> circ).dm([10])
+    assert np.allclose(dm_out, dm_expected, atol=1e-5)
 
 
 def test_single_mode_choi_application_order():
