@@ -207,6 +207,10 @@ transposing the indices of the input tensor. Now `math.dagger` appropriately cal
 Hermitian conjugate of an operator.
   [(#156)](https://github.com/XanaduAI/MrMustard/pull/156)
 
+* The application of a Choi operator to a density matrix was resulting in a transposed dm. Now
+the order of the indices in the application of a choi operator to dm and ket is correct.
+  [(#188)](https://github.com/XanaduAI/MrMustard/pull/188)
+
 ### Documentation
 
 * The centralized [Xanadu Sphinx Theme](https://github.com/XanaduAI/xanadu-sphinx-theme)

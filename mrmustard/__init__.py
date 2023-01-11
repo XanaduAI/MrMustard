@@ -15,8 +15,6 @@
 """This is the top-most `__init__.py` file of MrMustard package."""
 
 import numpy as np
-from numpy.random import MT19937
-from numpy.random import RandomState, SeedSequence
 
 import rich.table
 from rich import print
