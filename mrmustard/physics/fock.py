@@ -217,8 +217,8 @@ def U_to_choi(U: Tensor) -> Tensor:
         U: the unitary transformation
 
     Returns:
-        Tensor: the Choi tensor. The index order is going to be [out_l, in_l, out_r, in_r]
-        where in_l and in_r are to be contracted with the left and right indices of the density matrix.
+        Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
+        where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
     """
     return math.outer(U, math.conj(U))
 
