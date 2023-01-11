@@ -41,7 +41,6 @@ from mrmustard import physics, settings
 from tests.random import none_or_
 
 math = Math()
-np.random.seed(137)
 hbar = settings.HBAR
 
 
