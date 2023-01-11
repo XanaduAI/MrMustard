@@ -45,3 +45,11 @@ def test_circuit_placement_BS():
 def test_circuit_placement_BSBS():
     "tests that BSgates can be placed in any order"
     assert BSgate(1.0)[1, 2] >> BSgate(1.0)[0, 3] == BSgate(1.0)[0, 3] >> BSgate(1.0)[1, 2]
+
+
+def test_is_unitary():
+    "test that the is_unitary property is correct"
+    assert not (Ggate(1) >> Attenuator(0.1)).is_unitary
+    assert Ggate(1).is_unitary
+    assert (Ggate(1) >> Ggate(1)).is_unitary
+    assert not (Ggate(2) >> Attenuator([0.1,0.2])).is_unitary
