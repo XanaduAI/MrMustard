@@ -718,7 +718,6 @@ class MathInterface(ABC):
             array: solution :math:`x`
         """
 
-
     @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""Returns the square root of ``x``.
