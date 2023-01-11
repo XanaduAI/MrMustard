@@ -40,7 +40,6 @@ math = Math()
 
 class Transformation:
     r"""Base class for all Transformations."""
-    _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def primal(self, state: State) -> State:
