@@ -249,23 +249,18 @@ class State:
         if self.is_mixed:
             return None
 
-        cutoffs = (
-            self.cutoffs
-            if cutoffs is None
-            else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-        )
+        if cutoffs is None:
+            cutoffs = self.cutoffs
+        else:
+            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
         if self.is_gaussian:
-            self._ket = fock.fock_representation(
-                self.cov, self.means, shape=cutoffs, return_dm=False
-            )
+            self._ket = fock.fock_representation(self.cov, self.means, cutoffs, False)
         else:  # only fock representation is available
             if self._ket is None:
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
                     self._ket = fock.dm_to_ket(self._dm)
-                    return self._ket[tuple(slice(s) for s in cutoffs)]
-                return None
             current_cutoffs = list(self._ket.shape[: self.num_modes])
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
