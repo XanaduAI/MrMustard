@@ -226,8 +226,7 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        array = self.fock
-        return fock.norm(array, self._dm is not None)
+fock.norm(self.fock, self._dm is not None)
 
     @property
     def probability(self) -> float:
