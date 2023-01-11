@@ -22,6 +22,22 @@
   The result is added to the `callback_history` attribute of the optimizer.
   [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
 
+  * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
+  ```python
+  from mrmustard.math.mmtensor import MMTensor
+
+  # define two tensors
+  A = MMTensor(np.random.rand(2, 3, 4), axis_labels=["foo", "bar", "contract"])
+  B = MMTensor(np.random.rand(4, 5, 6), axis_labels=["contract", "baz", "qux"])
+
+  # perform a tensor contraction
+  C = A @ B
+  C.axis_labels  # ["foo", "bar", "baz", "qux"]
+  C.shape # (2, 3, 5, 6)
+  C.tensor # extract actual result
+  ```
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
 ### Breaking changes
 
 ### Improvements
@@ -51,7 +67,8 @@ within the defined window. Also, expose some plot parameters and return the figu
 * Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
   [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
 
-
+* Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation, which have been refactored and moved out of `physics.fock`.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
