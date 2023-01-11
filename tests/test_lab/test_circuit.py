@@ -52,4 +52,4 @@ def test_is_unitary():
     assert not (Ggate(1) >> Attenuator(0.1)).is_unitary
     assert Ggate(1).is_unitary
     assert (Ggate(1) >> Ggate(1)).is_unitary
-    assert not (Ggate(2) >> Attenuator([0.1,0.2])).is_unitary
+    assert not (Ggate(2) >> Attenuator([0.1, 0.2])).is_unitary
