@@ -31,8 +31,8 @@ from mrmustard.lab import (
     Gaussian,
     Dgate,
     Rgate,
-    State,
     TMSV,
+    State,
 )
 from mrmustard.physics.fock import dm_to_ket, ket_to_dm, trace
 

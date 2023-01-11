@@ -22,12 +22,15 @@
   The result is added to the `callback_history` attribute of the optimizer.
   [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
 
+  * MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int). This will give reproducible results whenever randomness is involved. The seed is unset by default, and it can be unset again with `settings.SEED = None`. If one desires, the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
+  [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
+
 ### Breaking changes
 
 ### Improvements
 
 * The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation, providing better numerical stability for larger cutoff and displacement values.
-  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147) 
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
   [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
