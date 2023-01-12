@@ -48,14 +48,14 @@ class Settings:
         self.HOMODYNE_SQUEEZING = 10.0
         # misc
         self.PROGRESSBAR = True
-        self._seed = np.random.randint(0, 2**32)
+        self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
 
     @property
     def SEED(self):
         """Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
-            self._seed = np.random.randint(0, 2**32)
+            self._seed = np.random.randint(0, 2**31 - 1)
             self.rng = np.random.default_rng(self._seed)
         return self._seed
 
