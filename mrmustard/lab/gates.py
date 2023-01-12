@@ -18,14 +18,13 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple
+from typing import Union, Optional, List, Tuple, Sequence
 from mrmustard.types import Tensor
 from mrmustard import settings
-from mrmustard.lab.abstract import Transformation
 from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
-
 from mrmustard.math import Math
+from .abstract import Transformation
 
 math = Math()
 
@@ -92,6 +91,30 @@ class Dgate(Parametrized, Transformation):
     @property
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+
+    def U(self, cutoffs: Sequence[int]):
+        """Returns the unitary representation of the Displacement gate using the Laguerre
+        polynomials."""
+
+        N = self.num_modes
+        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
+        r = math.sqrt(x * x + y * y)
+        phi = math.atan2(y, x)
+
+        # calculate displacement unitary for each mode and concatenate with outer product
+        Ud = None
+        for idx, cutoff in enumerate(cutoffs):
+            if Ud is None:
+                Ud = math.displacement(r[idx], phi[idx], cutoff)
+            else:
+                U_next = math.displacement(r[idx], phi[idx], cutoff)
+                Ud = math.outer(Ud, U_next)
+
+        return math.transpose(
+            Ud,
+            list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        )
 
 
 class Sgate(Parametrized, Transformation):
@@ -176,6 +199,27 @@ class Rgate(Parametrized, Transformation):
     @property
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle.value)
+
+    def U(self, cutoffs: Sequence[int]):
+
+        angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
+        num_modes = len(cutoffs)
+
+        # calculate rotation unitary for each mode and concatenate with outer product
+        Ur = None
+        for idx, cutoff in enumerate(cutoffs):
+            theta = math.arange(cutoff) * angles[idx]
+            if Ur is None:
+                Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+            else:
+                U_next = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
+                Ur = math.outer(Ur, U_next)
+
+        # return total unitary with indexes reordered according to MM convention
+        return math.transpose(
+            Ur,
+            list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
+        )
 
 
 class Pgate(Parametrized, Transformation):
@@ -433,9 +477,10 @@ class Interferometer(Parametrized, Transformation):
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
 
     Args:
-        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`.
-            If set to `None` a random orthogonal matrix is used.
+        num_modes (int): the num_modes-mode interferometer
+        orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
+        modes (optional, List[int]): the list of modes this gate is applied to
     """
 
     def __init__(
@@ -443,7 +488,12 @@ class Interferometer(Parametrized, Transformation):
         num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
+        if modes is not None and (
+            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
+        ):
+            raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             U = math.random_unitary(num_modes)
             orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
@@ -451,7 +501,7 @@ class Interferometer(Parametrized, Transformation):
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
         )
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
 
     @property
@@ -609,7 +659,7 @@ class Attenuator(Parametrized, Transformation):
             nbar_bounds=nbar_bounds,
         )
         self._modes = modes
-        self._is_unitary = False
+        self.is_unitary = False
         self.is_gaussian = True
 
     @property
@@ -665,7 +715,7 @@ class Amplifier(Parametrized, Transformation):
             nbar_bounds=nbar_bounds,
         )
         self._modes = modes
-        self._is_unitary = False
+        self.is_unitary = False
         self.is_gaussian = True
 
     @property
@@ -711,9 +761,14 @@ class AdditiveNoise(Parametrized, Transformation):
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        super().__init__(noise=noise, noise_trainable=noise_trainable, noise_bounds=noise_bounds)
+        super().__init__(
+            noise=noise,
+            noise_trainable=noise_trainable,
+            noise_bounds=noise_bounds,
+            modes=modes,
+        )
         self._modes = modes
-        self._is_unitary = False
+        self.is_unitary = False
         self.is_gaussian = True
 
     @property

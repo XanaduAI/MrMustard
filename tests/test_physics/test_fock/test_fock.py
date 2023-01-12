@@ -18,8 +18,25 @@ import pytest
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-from mrmustard.lab import *
-from mrmustard.physics.fock import dm_to_ket, ket_to_dm
+from mrmustard.lab import (
+    Circuit,
+    Vacuum,
+    S2gate,
+    BSgate,
+    Sgate,
+    Rgate,
+    Dgate,
+    Ggate,
+    Interferometer,
+    SqueezedVacuum,
+    TMSV,
+    State,
+    Attenuator,
+    Fock,
+    Coherent,
+    Gaussian,
+)
+from mrmustard.physics.fock import dm_to_ket, ket_to_dm, trace, apply_choi_to_dm
 
 
 # helper strategies
@@ -111,7 +128,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
         [cutoff]
     )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
-    assert np.allclose(ps, expected, atol=1e-6)
+    assert np.allclose(ps, expected, atol=1e-5)
 
 
 @given(n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1))
@@ -155,7 +172,6 @@ def test_density_matrix(num_modes):
 def test_dm_to_ket(state):
     """Tests pure state density matrix conversion to ket"""
     dm = state.dm()
-
     ket = dm_to_ket(dm)
     # check if ket is normalized
     assert np.allclose(np.linalg.norm(ket), 1)
@@ -173,3 +189,58 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
+
+
+def test_fock_trace_mode1_dm():
+    """tests that the Fock state is correctly traced out from mode 1 for mixed states"""
+    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+    from_gaussian = state.get_modes(0).dm([3])
+    from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_mode0_dm():
+    """tests that the Fock state is correctly traced out from mode 0 for mixed states"""
+    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+    from_gaussian = state.get_modes(1).dm([3])
+    from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_mode1_ket():
+    """tests that the Fock state is correctly traced out from mode 1 for pure states"""
+    state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
+    from_gaussian = state.get_modes(0).dm([3])
+    from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_mode0_ket():
+    """tests that the Fock state is correctly traced out from mode 0 for pure states"""
+    state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
+    from_gaussian = state.get_modes(1).dm([3])
+    from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_function():
+    """tests that the Fock state is correctly traced"""
+    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+    dm = state.dm([3, 20])
+    dm_traced = trace(dm, keep=[0])
+    assert np.allclose(dm_traced, State(dm=dm).get_modes(0).dm(), atol=1e-5)
+
+
+def test_dm_choi():
+    """tests that choi op is correctly applied to a dm"""
+    circ = Ggate(1) >> Attenuator([0.1])
+    dm_out = apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
+    dm_expected = (Vacuum(1) >> circ).dm([10])
+    assert np.allclose(dm_out, dm_expected, atol=1e-5)
+
+
+def test_single_mode_choi_application_order():
+    """Test dual operations output the correct mode ordering"""
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
+    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
+    # NOTE: the [:10,:10] part is not necessary once PR #184 is merged

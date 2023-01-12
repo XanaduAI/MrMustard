@@ -132,9 +132,8 @@ class State:
         if self._purity is None:
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
-                # TODO: add symplectic representation
             else:
-                self._purity = fock.purity(self.fock)  # has to be dm
+                self._purity = fock.purity(self._dm)
         return self._purity
 
     @property
@@ -145,7 +144,7 @@ class State:
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return np.isclose(self.purity, 1.0, atol=1e-6)
+        return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[Vector]:
@@ -195,7 +194,7 @@ class State:
     def fock(self) -> Array:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
-            _fock = fock.fock_representation(
+            _fock = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
             )
             if self.is_mixed:
@@ -227,8 +226,15 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
+        return fock.norm(self.fock, self._dm is not None)
 
-        return fock.norm(self.fock, self.is_mixed)
+    @property
+    def probability(self) -> float:
+        r"""Returns the probability of the state."""
+        norm = self.norm
+        if self.is_pure and self._ket is not None:
+            return norm**2
+        return norm
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
@@ -250,7 +256,7 @@ class State:
         )
 
         if self.is_gaussian:
-            self._ket = fock.fock_representation(
+            self._ket = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=cutoffs, return_dm=False
             )
         else:  # only fock representation is available
@@ -290,7 +296,7 @@ class State:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.fock_representation(
+                self._dm = fock.wigner_to_fock_state(
                     self.cov, self.means, shape=cutoffs * 2, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
@@ -334,58 +340,8 @@ class State:
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        if issubclass(other.__class__, State):
-            remaining_modes = [m for m in other.modes if m not in self.modes]
-
-            if self.is_gaussian and other.is_gaussian:
-                prob, cov, means = gaussian.general_dyne(
-                    other.cov,
-                    other.means,
-                    self.cov,
-                    self.means,
-                    other.indices(self.modes),
-                    settings.HBAR,
-                )
-                if len(remaining_modes) > 0:
-                    return State(
-                        means=means,
-                        cov=cov,
-                        modes=remaining_modes,
-                        _norm=prob if not getattr(self, "_normalize", False) else 1.0,
-                    )
-                return prob
-
-            # either self or other is not gaussian
-            other_cutoffs = [
-                None if m not in self.modes else other.cutoffs[other.indices(m)]
-                for m in other.modes
-            ]
-            try:
-                out_fock = self._preferred_projection(other, other.indices(self.modes))
-            except AttributeError:
-                # matching other's cutoffs
-                self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-                out_fock = fock.contract_states(
-                    stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                    stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                    a_is_mixed=other.is_mixed,
-                    b_is_mixed=self.is_mixed,
-                    modes=other.indices(self.modes),  # TODO: change arg name to indices
-                    normalize=self._normalize if hasattr(self, "_normalize") else False,
-                )
-
-            if len(remaining_modes) > 0:
-                return (
-                    State(dm=out_fock, modes=remaining_modes)
-                    if other.is_mixed or self.is_mixed
-                    else State(ket=out_fock, modes=remaining_modes)
-                )
-
-            return (
-                fock.math.abs(out_fock) ** 2
-                if other.is_pure and self.is_pure
-                else fock.math.abs(out_fock)
-            )
+        if isinstance(other, State):
+            return self._project_onto_state(other)
 
         try:
             return other.dual(self)
@@ -393,6 +349,103 @@ class State:
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
+
+    def _project_onto_state(self, other: State) -> Union[State, float]:
+        """If states are gaussian use generaldyne measurement, else use
+        the states' Fock representation."""
+
+        # if both states are gaussian
+        if self.is_gaussian and other.is_gaussian:
+            return self._project_onto_gaussian(other)
+
+        # either self or other is not gaussian
+        return self._project_onto_fock(other)
+
+    def _project_onto_fock(self, other: State) -> Union[State, float]:
+        """Returns the post-measurement state of the projection between two non-Gaussian
+        states on the remaining modes or the probability of the result. When doing homodyne sampling,
+        returns the post-measurement state or the measument outcome if no modes remain.
+
+        Args:
+            other (State): state being projected onto self
+
+        Returns:
+            State or float: returns the conditional state on the remaining modes
+                or the probability.
+        """
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        out_fock = self._contract_with_other(other)
+        if len(remaining_modes) > 0:
+            return (
+                State(dm=out_fock, modes=remaining_modes)
+                if other.is_mixed or self.is_mixed
+                else State(ket=out_fock, modes=remaining_modes)
+            )
+
+        # return the probability (norm) of the state when there are no modes left
+        return (
+            fock.math.abs(out_fock) ** 2
+            if other.is_pure and self.is_pure
+            else fock.math.abs(out_fock)
+        )
+
+    def _contract_with_other(self, other):
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        if hasattr(self, "_preferred_projection"):
+            out_fock = self._preferred_projection(other, other.indices(self.modes))
+        else:
+            # matching other's cutoffs
+            self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+            out_fock = fock.contract_states(
+                stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                a_is_dm=other.is_mixed,
+                b_is_dm=self.is_mixed,
+                modes=other.indices(self.modes),
+                normalize=self._normalize if hasattr(self, "_normalize") else False,
+            )
+
+        return out_fock
+
+    def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+        """Returns the result of a generaldyne measurement given that states ``self`` and
+        ``other`` are gaussian.
+
+        Args:
+            other (State): gaussian state being projected onto self
+
+        Returns:
+            State or float: returns the output conditional state on the remaining modes
+                or the probability.
+        """
+        # here `self` is the measurement device state and `other` is the incoming state
+        # being projected onto the measurement state
+        remaining_modes = list(set(other.modes) - set(self.modes))
+
+        _, probability, new_cov, new_means = gaussian.general_dyne(
+            other.cov,
+            other.means,
+            self.cov,
+            self.means,
+            self.modes,
+        )
+
+        if len(remaining_modes) > 0:
+            return State(
+                means=new_means,
+                cov=new_cov,
+                modes=remaining_modes,
+                _norm=probability if not getattr(self, "_normalize", False) else 1.0,
+            )
+
+        return probability
+
+    def __iter__(self) -> Iterable[State]:
+        """Iterates over the modes and their corresponding tensors."""
+        return (self.get_modes(i) for i in range(self.num_modes))
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
@@ -454,15 +507,20 @@ class State:
         else:
             raise TypeError("item must be int or iterable")
 
+        if item == self.modes:
+            return self
+
+        if not set(item) & set(self.modes):
+            raise ValueError(
+                f"Failed to request modes {item} for state {self} on modes {self.modes}."
+            )
+        item_idx = [self.modes.index(m) for m in item]
         if self.is_gaussian:
-            cov, _, _ = gaussian.partition_cov(self.cov, item)
-            means, _ = gaussian.partition_means(self.means, item)
+            cov, _, _ = gaussian.partition_cov(self.cov, item_idx)
+            means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
-        # if not gaussian
-        fock_partitioned = fock.trace(
-            self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
-        )
+        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
@@ -540,12 +598,21 @@ class State:
             return State(ket=self.ket() / other, modes=self.modes)
         raise ValueError("No fock representation available")
 
+    @staticmethod
+    def _format_probability(prob: float) -> str:
+        if prob < 0.001:
+            return f"{100*prob:.3e} %"
+        else:
+            return f"{prob:.3%}"
+
     def _repr_markdown_(self):
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
-            + "| Purity | Norm | Num modes | Bosonic size | Gaussian | Fock |\n"
+            + "| Purity | Probability | Num modes | Bosonic size | Gaussian | Fock |\n"
             + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.2e} | {self.norm :.2e} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            + f"| {self.purity :.2e} | "
+            + self._format_probability(self.probability)
+            + f" | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
         if self.num_modes == 1:

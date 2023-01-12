@@ -21,7 +21,7 @@ from typing import List, Callable, Sequence
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
-from .parameter import Parameter, Trainable
+from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
 
@@ -49,10 +49,15 @@ class Optimizer:
             "orthogonal": orthogonal_lr,
         }
         self.opt_history: List[float] = [0]
+        self.callback_history: List = []
         self.log = create_logger(__name__)
 
     def minimize(
-        self, cost_fn: Callable, by_optimizing: Sequence[Trainable], max_steps: int = 1000
+        self,
+        cost_fn: Callable,
+        by_optimizing: Sequence[Trainable],
+        max_steps: int = 1000,
+        callback: Callable = None,
     ):
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 
@@ -63,24 +68,19 @@ class Optimizer:
                 contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
+            callback (Callable): a function that will be executed at each step of the optimization, which
+                takes as arguments the training step (int), the cost and the trainable parameters.
+                The return value is stored in self.callback_history.
         """
         try:
-            self._minimize(cost_fn, by_optimizing, max_steps)
+            self._minimize(cost_fn, by_optimizing, max_steps, callback)
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
 
-    def _minimize(self, cost_fn, by_optimizing, max_steps):
+    def _minimize(self, cost_fn, by_optimizing, max_steps, callback):
         # finding out which parameters are trainable from the ops
-        trainable_params = list(
-            chain(
-                *[
-                    item.trainable_parameters
-                    for item in by_optimizing
-                    if isinstance(item, Parametrized)
-                ]
-            )
-        )
+        trainable_params = self._get_trainable_params(by_optimizing)
 
         bar = graphics.Progressbar(max_steps)
         with bar:
@@ -90,6 +90,10 @@ class Optimizer:
 
                 self.opt_history.append(cost)
                 bar.step(math.asnumpy(cost))
+                if callback is not None:
+                    self.callback_history.append(
+                        callback(len(self.opt_history) - 1, cost, trainable_params)
+                    )
 
     def apply_gradients(self, trainable_params, grads):
         """Apply gradients to variables.
@@ -110,7 +114,25 @@ class Optimizer:
             update_method(grads_and_vars, param_lr)
 
     @staticmethod
+    def _get_trainable_params(trainable_items):
+        """Returns a list of trainable parameters from instances of Parametrized or
+        items that belong to the backend and are trainable
+        """
+        trainables = []
+        for item in trainable_items:
+            if isinstance(item, Parametrized):
+                trainables.append(item.trainable_parameters)
+            elif math.from_backend(item) and math.is_trainable(item):
+                # the created parameter is wrapped into a list because the case above
+                # returns a list, hence ensuring we have a list of lists
+                trainables.append([create_parameter(item, name="from_backend", is_trainable=True)])
+
+        return list(chain(*trainables))
+
+    @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
+        """Groups `trainable_params` and `grads` by type into a dict of the form
+        `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}`."""
         sorted_grads_and_vars = sorted(
             zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
         )
@@ -145,7 +167,8 @@ class Optimizer:
         return loss, grads
 
     def should_stop(self, max_steps: int) -> bool:
-        r"""Returns ``True`` if the optimization should stop (either because the loss is stable or because the maximum number of steps is reached)."""
+        r"""Returns ``True`` if the optimization should stop (either because
+        the loss is stable or because the maximum number of steps is reached)."""
         if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps

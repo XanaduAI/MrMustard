@@ -25,8 +25,7 @@ from typing import List, Tuple, Optional
 from mrmustard.types import Matrix, Vector
 from mrmustard.training import Parametrized
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from mrmustard.lab.abstract import Transformation
-from mrmustard.lab.abstract import State
+from .abstract import Transformation, State
 
 
 class Circuit(Transformation, Parametrized):
@@ -88,6 +87,11 @@ class Circuit(Transformation, Parametrized):
     def is_gaussian(self):
         """Returns `true` if all operations in the circuit are Gaussian."""
         return all(op.is_gaussian for op in self._ops)
+
+    @property
+    def is_unitary(self):
+        """Returns `true` if all operations in the circuit are unitary."""
+        return all(op.is_unitary for op in self._ops)
 
     def __len__(self):
         return len(self._ops)
