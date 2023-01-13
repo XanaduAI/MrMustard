@@ -10,6 +10,7 @@ from mrmustard.math import Math
 math = Math()
 import numpy as np
 
+
 class Data(ABC):
     r"""Supports algebraic operations for all kinds of data (gaussian, array, mesh, symbolic, etc).
     Algebraic operations are intended between the Hilbert space vectors or between ensembles of Hilbert vectors,
@@ -72,15 +73,15 @@ class GaussianData(Data):
             mean  (batch, dim): means
             coeff (batch): coefficients
         """
-        #TODO handle missing data
-        #TODO switch to data/kwargs?
+        # TODO handle missing data
+        # TODO switch to data/kwargs?
         if isinstance(cov, QuadraticPolyData):  # this captures the GaussianData(quaddata) syntax
             poly = cov  # for readability
             inv_A = math.inv(poly.A)
             self.cov = 2 * inv_A
             self.mean = 2 * math.solve(A, poly.b)
             self.coeff = poly.c * math.exp(0.5 * (self.mean.T @ self.cov @ self.mean))
-        else: 
+        else:
             self.cov = math.atleast_1d(cov)
             self.mean = math.atleast_1d(mean)
             self.coeff = math.atleast_1d(coeff)
@@ -102,18 +103,31 @@ class GaussianData(Data):
             covs = []
             for c1 in self.cov:
                 for c2 in other.cov:
-                    covs.append(math.matmul(c1, math.solve(c1+c2, c2)))
+                    covs.append(math.matmul(c1, math.solve(c1 + c2, c2)))
             # means: S1 (S1 + S2)^-1 m2 + S2 (S1 + S2)^-1 m1 for each pair of cov matrices in the batch
             means = []
-            for c1,m1 in zip(self.cov, self.mean):
-                for c2,m2 in zip(other.cov, other.mean):
-                    means.append(math.matvec(c1, math.solve(c1+c2, m2)) + math.matvec(c2, math.solve(c1+c2, m1)))
+            for c1, m1 in zip(self.cov, self.mean):
+                for c2, m2 in zip(other.cov, other.mean):
+                    means.append(
+                        math.matvec(c1, math.solve(c1 + c2, m2))
+                        + math.matvec(c2, math.solve(c1 + c2, m1))
+                    )
             cov = math.astensor(covs)
             mean = math.astensor(means)
             coeffs = []
-            for c1,m1,c2,m2,c3,m3,co1,co2 in zip(self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeff, other.coeff):
-                coeffs.append(co1 * co2 * math.exp(0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1) + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1) - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)))
-            
+            for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
+                self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeff, other.coeff
+            ):
+                coeffs.append(
+                    co1
+                    * co2
+                    * math.exp(
+                        0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
+                        + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
+                        - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
+                    )
+                )
+
             coeff = math.astensor(coeffs)
             return GaussianData(cov, mean, coeff)
         else:
@@ -186,7 +200,9 @@ class QuadraticPolyData(Data):
                 self.A + other.A, self.b + other.b, self.c * other.c
             )  # TODO: invert decomposed covs instead
         else:
-            raise TypeError(f"Cannot multiply QuadraticPolyData with {other.__class__.__qualname__}")
+            raise TypeError(
+                f"Cannot multiply QuadraticPolyData with {other.__class__.__qualname__}"
+            )
 
     def __and__(self, other: GaussianData):  # tensor product
         return GaussianData(
@@ -257,11 +273,15 @@ class Representation:
         if representation is not None and len(kwargs) > 0:
             raise TypeError("Either pass a single representation or keyword arguments, not both")
         if isinstance(representation, Representation):
-            self = self.from_representation(representation)  # default sequence of transformations via Q
+            self = self.from_representation(
+                representation
+            )  # default sequence of transformations via Q
         elif representation is None:
             self.data = AutoData(**kwargs)
         else:
-            raise TypeError(f"Cannot initialize representation from {representation.__class__.__qualname__}")
+            raise TypeError(
+                f"Cannot initialize representation from {representation.__class__.__qualname__}"
+            )
 
     def __getattr__(self, name):
         # Intercept access to non-existent attributes of Representation like 'ket', 'cov' and route it to data.

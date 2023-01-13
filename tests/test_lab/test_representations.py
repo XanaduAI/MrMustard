@@ -13,24 +13,24 @@
 # limitations under the License.
 
 from mrmustard.math import Math
+
 math = Math()
 
 from mrmustard.lab.abstract.representations import Wigner, Characteristic, Ket, DensityMatrix
 
-W = Wigner(cov, mean) # gaussian in Wigner representation
-W = Wigner(array=array) # Wigner function
-W = Wigner.from_repr(Characteristic(cov, mean)) # convert from characteristic representation
+W = Wigner(cov, mean)  # gaussian in Wigner representation
+W = Wigner(array=array)  # Wigner function
+W = Wigner.from_repr(Characteristic(cov, mean))  # convert from characteristic representation
 
 Wigner(cov, mean) + Wigner(cov, mean) == Wigner(math.concat(cov, cov), math.concat(mean, mean))
 
-C = Characteristic(cov, mean) # gaussian in characteristic representation
+C = Characteristic(cov, mean)  # gaussian in characteristic representation
 C = Characteristic(array=array)
-C = Characteristic.from_repr(Wigner(cov, mean)) # convert from Wigner representation
+C = Characteristic.from_repr(Wigner(cov, mean))  # convert from Wigner representation
 
-F = Ket(array) # Fock ket representation (in Hilbert space)
-F = DensityMatrix(array) # Fock density matrix representation (in convex space)
+F = Ket(array)  # Fock ket representation (in Hilbert space)
+F = DensityMatrix(array)  # Fock density matrix representation (in convex space)
 
-WFq = WavefunctionQ(array=array) # wave function in position (technically a ket)
-WFp = WavefunctionP(array=array) # wave function in momentum (technically a ket)
-WFq = WavefunctionQ(cov, mean) # wave function in position (technically a ket)
-
+WFq = WavefunctionQ(array=array)  # wave function in position (technically a ket)
+WFp = WavefunctionP(array=array)  # wave function in momentum (technically a ket)
+WFq = WavefunctionQ(cov, mean)  # wave function in position (technically a ket)

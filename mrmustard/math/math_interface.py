@@ -966,9 +966,11 @@ class MathInterface(ABC):
         Returns:
             array: block diagonal matrix made from the given matrices
         """
-        blocks = [[matrices[i] if i == j else self.zeros_like(matrices[i]) for j in range(len(matrices))] for i in range(len(matrices))]
+        blocks = [
+            [matrices[i] if i == j else self.zeros_like(matrices[i]) for j in range(len(matrices))]
+            for i in range(len(matrices))
+        ]
         return self.block(blocks)
-        
 
     def dagger(self, array: Tensor) -> Tensor:
         """Returns the adjoint of ``array``. This operation swaps the first
