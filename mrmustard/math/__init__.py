@@ -49,13 +49,13 @@ class Math:
     r"""
     This class is a switcher for performing math operations on the currently active backend.
     """
-    # pylint: disable=no-else-return
+
     def __getattribute__(self, name):
         if settings.BACKEND == "tensorflow":
             return object.__getattribute__(TFMath(), name)
         elif settings.BACKEND == "torch":
             return object.__getattribute__(TorchMath(), name)
-
-        raise ValueError(
-            f"No `{settings.BACKEND}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
-        )
+        else:
+            raise ValueError(
+                f"No `{settings.BACKEND}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
+            )

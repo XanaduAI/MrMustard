@@ -21,13 +21,21 @@ This module contains functions for performing calculations on Fock states.
 from functools import lru_cache
 import numpy as np
 
+
+from mrmustard.physics.bargmann import (
+    wigner_to_bargmann_psi,
+    wigner_to_bargmann_rho,
+    wigner_to_bargmann_Choi,
+    wigner_to_bargmann_U,
+)
+
+from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
 from mrmustard.math import Math
 
 math = Math()
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
@@ -72,45 +80,71 @@ def autocutoffs(
     return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
 
 
-def fock_representation(
+def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
     shape: Sequence[int],
-    return_dm: bool = None,
-    return_unitary: bool = None,
-    choi_r: float = None,
+    return_dm: bool = True,
 ) -> Tensor:
-    r"""Returns the Fock representation of a state or Choi state.
+    r"""Returns the Fock representation of a Gaussian state.
+    Use with caution: if the cov matrix is that of a mixed state,
+    setting return_dm to False will produce nonsense.
 
-    * If the state is pure it returns the state vector (ket).
-    * If the state is mixed it returns the density matrix.
-    * If the transformation is unitary it returns the unitary transformation matrix.
-    * If the transformation is not unitary it returns the Choi matrix.
+    * If the state is pure it can return the state vector (ket) or the density matrix.
+        The index order is going to be ket_i where i is the only multimode index.
+    * If the state is mixed it can return the density matrix.
+        The index order is going to be dm_ij where j is the right multimode index and i is the left one.
 
     Args:
         cov: the Wigner covariance matrix
         means: the Wigner means vector
         shape: the shape of the tensor
-        return_dm: whether the state vector is mixed or not
-        return_unitary: whether the transformation is unitary or not
-        choi_r: the TMSV squeezing magnitude
+        return_dm: whether to return the density matrix (otherwise it returns the ket)
 
     Returns:
         Tensor: the fock representation
     """
-    if return_dm is not None and return_unitary is not None:
-        raise ValueError("Cannot specify both mixed and unitary.")
-    if return_dm is None and return_unitary is None:
-        raise ValueError("Must specify either mixed or unitary.")
-    if return_unitary is not None and choi_r is None:
-        raise ValueError("Must specify the choi_r value.")
-    if return_dm is not None:  # i.e. it's a state
-        A, B, C = ABC(cov, means, full=return_dm)
-    elif return_unitary is not None and choi_r is not None:  # i.e. it's a transformation
-        A, B, C = ABC(cov, means, full=not return_unitary, choi_r=choi_r)
-    return math.hermite_renormalized(
-        math.conj(-A), math.conj(B), math.conj(C), shape=shape
-    )  # NOTE: remove conj when TW is updated
+    if return_dm:
+        A, B, C = wigner_to_bargmann_rho(cov, means)
+        return math.hermite_renormalized(-A, B, C, shape=shape)
+    else:
+        A, B, C = wigner_to_bargmann_psi(cov, means)
+        return math.hermite_renormalized(-A, B, C, shape=shape)
+
+
+def wigner_to_fock_U(X, d, shape):
+    r"""Returns the Fock representation of a Gaussian unitary transformation.
+    The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
+    or with the left indices of a density matrix.
+
+    Arguments:
+        X: the X matrix
+        d: the d vector
+        shape: the shape of the tensor
+
+    Returns:
+        Tensor: the fock representation of the unitary transformation
+    """
+    A, B, C = wigner_to_bargmann_U(X, d)
+    return math.hermite_renormalized(-A, B, C, shape=shape)
+
+
+def wigner_to_fock_Choi(X, Y, d, shape):
+    r"""Returns the Fock representation of a Gaussian Choi matrix.
+    The order of choi indices is :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
+    where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of a density matrix.
+
+    Arguments:
+        X: the X matrix
+        Y: the Y matrix
+        d: the d vector
+        shape: the shape of the tensor
+
+    Returns:
+        Tensor: the fock representation of the Choi matrix
+    """
+    A, B, C = wigner_to_bargmann_Choi(X, Y, d)
+    return math.hermite_renormalized(-A, B, C, shape=shape)
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -149,10 +183,10 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     d = int(np.prod(cutoffs))
     dm = math.reshape(dm, (d, d))
 
-    _, eigvecs = math.eigh(dm)
+    eigvals, eigvecs = math.eigh(dm)
     # eigenvalues and related eigenvectors are sorted in non-decreasing order,
-    # meaning the associated eigvec to eigval 1 is stored last.
-    ket = eigvecs[:, -1]
+    # meaning the associated eigvec to largest eigval is stored last.
+    ket = eigvecs[:, -1] * math.sqrt(eigvals[-1])
     ket = math.reshape(ket, cutoffs)
 
     return ket
@@ -189,65 +223,10 @@ def U_to_choi(U: Tensor) -> Tensor:
         U: the unitary transformation
 
     Returns:
-        Tensor: the Choi tensor
+        Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
+        where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
     """
-    cutoffs = U.shape[: len(U.shape) // 2]
-    N = len(cutoffs)
-    outer = math.outer(U, math.conj(U))
-    return math.transpose(
-        outer,
-        list(range(0, N))
-        + list(range(2 * N, 3 * N))
-        + list(range(N, 2 * N))
-        + list(range(3 * N, 4 * N)),
-    )  # NOTE: mode blocks 1 and 3 are at the end so we can tensordot dm with them
-
-
-def ABC(cov, means, full: bool, choi_r: float = None) -> Tuple[Matrix, Vector, Scalar]:
-    r"""Returns the full-size ``A`` matrix, ``B`` vector and ``C`` scalar.
-
-    Args:
-        cov: the Wigner covariance matrix
-        means: the Wigner means vector
-        full: whether to return the full-size ``A``, ``B`` and ``C`` or the half-size ``A``, ``B``
-            and ``C``
-        choi_r: the TMSV squeezing magnitude if not None we consider ABC of a Choi state
-
-    Returns:
-        Tuple[Matrix, Vector, Scalar]: full-size ``A`` matrix, ``B`` vector and ``C`` scalar
-    """
-    is_state = choi_r is None
-    N = cov.shape[-1] // 2
-    R = math.rotmat(N)
-    sigma = math.matmul(math.matmul(R, cov / settings.HBAR), math.dagger(R))
-    beta = math.matvec(R, means / math.sqrt(settings.HBAR, dtype=means.dtype))
-    Q = sigma + 0.5 * math.eye(2 * N, dtype=sigma.dtype)  # Husimi covariance matrix
-    Qinv = math.inv(Q)
-    A = math.matmul(math.Xmat(N), math.eye(2 * N, dtype=Qinv.dtype) - Qinv)
-    denom = math.sqrt(math.det(Q)) if is_state else math.sqrt(math.det(Q / np.cosh(choi_r)))
-    if full:
-        B = math.matvec(math.transpose(Qinv), math.conj(beta))
-        exponent = -0.5 * math.sum(math.conj(beta)[:, None] * Qinv * beta[None, :])
-        C = math.exp(exponent) / denom
-    else:
-        A = A[
-            :N, :N
-        ]  # TODO: find a way to compute the half-size A without computing the full-size A first
-        B = beta[N:] - math.matvec(A, beta[:N])
-        exponent = -0.5 * math.sum(beta[:N] * B)
-        C = math.exp(exponent) / math.sqrt(denom)
-    if choi_r is not None:
-        ones = math.ones(
-            N // 2, dtype=A.dtype
-        )  # N//2 is the actual number of modes because of the choi trick
-        factor = 1.0 / np.tanh(choi_r)
-        if full:
-            rescaling = math.concat([ones, factor * ones, ones, factor * ones], axis=0)
-        else:
-            rescaling = math.concat([ones, factor * ones], axis=0)
-        A = rescaling[:, None] * rescaling[None, :] * A
-        B = rescaling * B
-    return A, B, C
+    return math.outer(U, math.conj(U))
 
 
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
@@ -326,143 +305,200 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
+    dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-def apply_op_to_ket(op, ket, op_indices):
-    r"""Applies an operator to a ket in the sense
-        ket_abcde = sum_{ijk}U_abc,ijk ket_ijkde
+def validate_contraction_indices(in_idx, out_idx, M, name):
+    r"""Validates the indices used for the contraction of a tensor."""
+    if len(set(in_idx)) != len(in_idx):
+        raise ValueError(f"{name}_in_idx should not contain repeated indices.")
+    if len(set(out_idx)) != len(out_idx):
+        raise ValueError(f"{name}_out_idx should not contain repeated indices.")
+    if not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
+        wrong_indices = set(range(M)).intersection(out_idx) - set(in_idx)
+        raise ValueError(
+            f"Indices {wrong_indices} in {name}_out_idx are trying to replace uncontracted indices."
+        )
+
+
+def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
+    r"""Applies a kraus operator to a ket.
+    It assumes that the ket is indexed as left_1, ..., left_n.
+
+    The kraus op has indices that contract with the ket (kraus_in_idx) and indices that are left over (kraus_out_idx).
+    The final index order will be sorted (note that an index appearing in both kraus_in_idx and kraus_out_idx will replace the original index).
 
     Args:
-        op (array): the operator to be applied
+        kraus (array): the kraus operator to be applied
         ket (array): the ket to which the operator is applied
-        op_indices (list): the indices the operator acts on
+        kraus_in_idx (list of ints): the indices (counting from 0) of the kraus operator that contract with the ket
+        kraus_out_idx (list of ints): the indices (counting from 0) of the kraus operator that are leftover
+
     Returns:
-        array: the resulting ket
+        array: the resulting ket with indices as kraus_out_idx + uncontracted ket indices
     """
-    K = ket.ndim
-    N = op.ndim // 2
-    op_ket = math.tensordot(ket, op, axes=[op_indices, list(range(N, 2 * N))])
-    perm = list(range(K - N))
-    for i, o in enumerate(op_indices):
-        perm.insert(o, K - N + i)
-    return math.transpose(op_ket, perm)
+    if not set(kraus_in_idx).issubset(range(ket.ndim)):
+        raise ValueError("kraus_in_idx should be a subset of the ket indices.")
+
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+    validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
+
+    ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
+    kraus = MMTensor(
+        kraus,
+        axis_labels=[f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx],
+    )
+
+    # contract the operator with the ket.
+    # now the leftover indices are in the order kraus_out_idx + uncontracted ket indices
+    kraus_ket = kraus @ ket
+
+    # sort kraus_ket.axis_labels by the int at the end of each label
+    new_axis_labels = sorted(kraus_ket.axis_labels, key=lambda x: int(x.split("_")[-1]))
+
+    return kraus_ket.transpose(new_axis_labels).tensor
 
 
-def apply_op_to_dm(op, dm, op_modes):
-    r"""Applies an operator to a density matrix in the sense
-        dm_abcd = sum_{ij}op_ai dm_ibkd dagger(op)_kc
+def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
+    r"""Applies a kraus operator to a density matrix.
+    It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
+
+    The kraus operator has indices that contract with the density matrix (kraus_in_idx) and indices that are leftover (kraus_out_idx).
+    `kraus` will contract from the left and from the right with the density matrix. For right contraction the kraus op is conjugated.
 
     Args:
-        op (array): the operator to be applied
+        kraus (array): the operator to be applied
         dm (array): the density matrix to which the operator is applied
-        op_modes (list): the modes the operator acts on (counting from 0)
+        kraus_in_idx (list of ints): the indices (counting from 0) of the kraus operator that contract with the density matrix
+        kraus_out_idx (list of ints): the indices (counting from 0) of the kraus operator that are leftover (default None, in which case kraus_out_idx = kraus_in_idx)
 
     Returns:
         array: the resulting density matrix
     """
-    D = dm.ndim
-    N = len(op_modes)
-    op_dm = math.tensordot(dm, op, axes=[op_modes, np.arange(N, 2 * N)])
-    # the N output indices of op are now at the end. We need to move them at op_modes
-    perm = list(range(D - N))
-    for i, o in enumerate(op_modes):
-        perm.insert(o, D - N + i)
-    op_dm = math.transpose(op_dm, perm)
-    op_dm_op = math.tensordot(
-        op_dm, math.conj(op), axes=[[o + D // 2 for o in op_modes], np.arange(N, 2 * N)]
+    if kraus_out_idx is None:
+        kraus_out_idx = kraus_in_idx
+
+    if not set(kraus_in_idx).issubset(range(dm.ndim // 2)):
+        raise ValueError("kraus_in_idx should be a subset of the density matrix indices.")
+
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+    validate_contraction_indices(kraus_in_idx, kraus_out_idx, dm.ndim // 2, "kraus")
+
+    dm = MMTensor(
+        dm,
+        axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
+        + [f"right_{i}" for i in range(dm.ndim // 2)],
     )
-    # the N output indices of op are now at the end. We need to move them at op_modes + D//2
-    perm = list(range(D - N))
-    for i, o in enumerate(op_modes):
-        perm.insert(o + D // 2, D - N + i)
-    return math.transpose(op_dm_op, perm)
+    kraus = MMTensor(
+        kraus,
+        axis_labels=[f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx],
+    )
+    kraus_conj = MMTensor(
+        math.conj(kraus.tensor),
+        axis_labels=[f"out_right_{i}" for i in kraus_out_idx]
+        + [f"right_{i}" for i in kraus_in_idx],
+    )
+
+    # contract the kraus operator with the density matrix from the left and from the right.
+    k_dm_k = kraus @ dm @ kraus_conj
+    # now the leftover indices are in the order:
+    # out_left_idx + uncontracted left indices + uncontracted right indices + out_right_idx
+
+    # sort k_dm_k.axis_labels by the int at the end of each label, first left, then right
+    N = k_dm_k.tensor.ndim // 2
+    left = sorted(k_dm_k.axis_labels[:N], key=lambda x: int(x.split("_")[-1]))
+    right = sorted(k_dm_k.axis_labels[N:], key=lambda x: int(x.split("_")[-1]))
+
+    return k_dm_k.transpose(left + right).tensor
 
 
-def CPTP(transformation, fock_state, transformation_is_unitary: bool, state_is_dm: bool) -> Tensor:
-    r"""Computes the CPTP (note: CP, really) channel given by a transformation (unitary matrix or choi operator) on a state.
+def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
+    r"""Applies a choi operator to a density matrix.
+    It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
-    It assumes that the cutoffs of the transformation matches the cutoffs of the relevant axes of the state.
+    The choi operator has indices that contract with the density matrix (choi_in_idx) and indices that are left over (choi_out_idx).
+    `choi` will contract choi_in_idx from the left and from the right with the density matrix.
 
     Args:
-        transformation: the transformation tensor
-        fock_state: the state to transform
-        transformation_is_unitary: whether the transformation is a unitary matrix or a Choi operator
-        state_is_dm: whether the state is a density matrix or a ket
+        choi (array): the choi operator to be applied
+        dm (array): the density matrix to which the choi operator is applied
+        choi_in_idx (list of ints): the indices of the choi operator that contract with the density matrix
+        choi_out_idx (list of ints): the indices of the choi operator that re leftover
 
     Returns:
-        Tensor: the transformed state
+        array: the resulting density matrix
     """
-    num_modes = len(fock_state.shape) // 2 if state_is_dm else len(fock_state.shape)
-    N0 = list(range(0, num_modes))
-    N1 = list(range(num_modes, 2 * num_modes))
-    N2 = list(range(2 * num_modes, 3 * num_modes))  # pylint: disable=unused-variable
-    N3 = list(range(3 * num_modes, 4 * num_modes))
-    if transformation_is_unitary:
-        U = transformation
-        Us = math.tensordot(U, fock_state, axes=(N1, N0))
-        if not state_is_dm:
-            return Us
-        # is state is dm, the input indices of dm are still at the end of Us
-        return math.tensordot(Us, math.dagger(U), axes=(N1, N0))
+    if not set(choi_in_idx).issubset(range(dm.ndim // 2)):
+        raise ValueError("choi_in_idx should be a subset of the density matrix indices.")
 
-    # choi operator with indices in the order [out_r, in_r, out_l, in_l]
-    # note that the left and right indices of a dm have to contract with in_l and in_r
-    C = transformation
-    if state_is_dm:
-        output = math.tensordot(C, fock_state, axes=(N3 + N1, N0 + N1))
-        # transpose because otherwise the output would be [out_r, out_l]:
-        return math.transpose(output, N1 + N0)
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+    validate_contraction_indices(choi_in_idx, choi_out_idx, dm.ndim // 2, "choi")
 
-    # the order of the indices of a ket is just [out_l], which need to contract with in_l of the choi operator (N3)
-    Cs = math.tensordot(C, fock_state, axes=(N3, N0))  # now order is [out_r, in_r, out_l]
-    output = math.tensordot(Cs, math.conj(fock_state), axes=(N1, N0))
-    return math.transpose(output, N1 + N0)  # N2 is the last set of indices now
+    dm = MMTensor(
+        dm,
+        axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
+        + [f"right_{i}" for i in range(dm.ndim // 2)],
+    )
+    choi = MMTensor(
+        choi,
+        axis_labels=[f"out_left_{i}" for i in choi_out_idx]
+        + [f"left_{i}" for i in choi_in_idx]
+        + [f"out_right_{i}" for i in choi_out_idx]
+        + [f"right_{i}" for i in choi_in_idx],
+    )
+
+    # contract the choi matrix with the density matrix.
+    # now the leftover indices are in the order out_left_idx + out_right_idx + uncontracted left indices + uncontracted right indices
+    choi_dm = choi @ dm
+
+    # sort choi_dm.axis_labels by the int at the end of each label, first left, then right
+    N = choi_dm.tensor.ndim // 2
+    left = sorted(choi_dm.axis_labels[:N], key=lambda x: int(x.split("_")[-1]))
+    right = sorted(choi_dm.axis_labels[N:], key=lambda x: int(x.split("_")[-1]))
+
+    return choi_dm.transpose(left + right).tensor
 
 
 def contract_states(
-    stateA, stateB, a_is_mixed: bool, b_is_mixed: bool, modes: List[int], normalize: bool
+    stateA, stateB, a_is_dm: bool, b_is_dm: bool, modes: List[int], normalize: bool
 ):
-    r"""Contracts two states in the specified modes, it assumes that the modes spanned by ``B`` are a subset of the modes spanned by ``A``.
+    r"""Contracts two states in the specified modes.
+    Assumes that the modes of B are a subset of the modes of A.
 
     Args:
         stateA: the first state
-        stateB: the second state (assumed to be on a subset of the modes of stateA)
-        a_is_mixed: whether the first state is mixed or not.
-        b_is_mixed: whether the second state is mixed or not.
+        stateB: the second state
+        a_is_dm: whether the first state is a density matrix.
+        b_is_dm: whether the second state is a density matrix.
         modes: the modes on which to contract the states.
         normalize: whether to normalize the result
 
     Returns:
         Tensor: the contracted state tensor (subsystem of ``A``). Either ket or dm.
     """
-    indices = list(range(len(modes)))
-    if not a_is_mixed and not b_is_mixed:
-        out = math.tensordot(math.conj(stateB), stateA, axes=(indices, modes))
-        if normalize:
-            out = out / math.norm(out)
-        return out
 
-    if a_is_mixed and not b_is_mixed:
-        Ab = math.tensordot(
-            stateA, stateB, axes=([m + len(stateA.shape) // 2 for m in modes], indices)
-        )
-        out = math.tensordot(math.conj(stateB), Ab, axes=(indices, modes))
-    elif not a_is_mixed and b_is_mixed:
-        Ba = math.tensordot(stateB, stateA, axes=(indices, modes))  # now B indices are all first
-        out = math.tensordot(math.conj(stateA), Ba, axes=(modes, indices))
-    elif a_is_mixed and b_is_mixed:
-        out = math.tensordot(
-            stateA,
-            math.conj(stateB),
-            axes=(
-                list(modes) + [m + len(stateA.shape) // 2 for m in modes],
-                list(indices) + [i + len(stateB.shape) // 2 for i in indices],
-            ),
-        )
-    if normalize:
-        out = out / math.sum(math.all_diagonals(out, real=False))
-    return out
+    if a_is_dm:
+        if b_is_dm:  # a DM, b DM
+            dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_idx=modes, choi_out_idx=[])
+        else:  # a DM, b ket
+            dm = apply_kraus_to_dm(
+                kraus=math.conj(stateB), dm=stateA, kraus_in_idx=modes, kraus_out_idx=[]
+            )
+    else:
+        if b_is_dm:  # a ket, b DM
+            dm = apply_kraus_to_dm(
+                kraus=math.conj(stateA), dm=stateB, kraus_in_idx=modes, kraus_out_idx=[]
+            )
+        else:  # a ket, b ket
+            ket = apply_kraus_to_ket(
+                kraus=math.conj(stateB), ket=stateA, kraus_in_idx=modes, kraus_out_idx=[]
+            )
+
+    try:
+        return dm / math.sum(math.all_diagonals(dm, real=False)) if normalize else dm
+    except NameError:
+        return ket / math.norm(ket) if normalize else ket
 
 
 def normalize(fock: Tensor, is_dm: bool):
@@ -511,15 +547,14 @@ def trace(dm, keep: List[int]):
         dm: the density matrix
         keep: the modes to keep (0-based)
     """
-    N = len(dm.shape) // 2
-    trace = [m for m in range(N) if m not in keep]
-    # put at the end all of the indices to trace over
-    keep_idx = keep + [i + N for i in keep]
-    trace_idx = trace + [i + N for i in trace]
-    dm = math.transpose(dm, keep_idx + trace_idx)
-    d = int(np.prod([dm.shape[t] for t in trace]))
-    dm = math.reshape(dm, dm.shape[: 2 * len(keep)] + (d, d))
-    return math.trace(dm)
+    dm = MMTensor(
+        dm,
+        axis_labels=[
+            f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)
+        ]
+        + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)],
+    )
+    return dm.contract().tensor
 
 
 @tensor_int_cache

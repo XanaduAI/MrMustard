@@ -40,7 +40,6 @@ math = Math()
 
 class Transformation:
     r"""Base class for all Transformations."""
-    _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def primal(self, state: State) -> State:
@@ -73,22 +72,6 @@ class Transformation:
             new_state = self.transform_fock(state, dual=True)
         return new_state
 
-    @property
-    def bell(self):
-        r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism."""
-        if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(
-                r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
-            )
-            means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
-            bell = bell_single = State(cov=cov, means=means)
-            for _ in range(self.num_modes - 1):
-                bell = bell & bell_single
-            tot = 2 * self.num_modes
-            order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
-            self._bell = bell.get_modes(order)
-        return self._bell[self.modes + [m + self.num_modes for m in self.modes]]
-
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.
 
@@ -116,33 +99,39 @@ class Transformation:
         Returns:
             State: the transformed state
         """
+        op_idx = [state.modes.index(m) for m in self.modes]
         if self.is_unitary:
-            op_idx = [state.modes.index(m) for m in self.modes]
             U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
-            transformation = fock.math.dagger(U) if dual else U
+            U = math.dagger(U) if dual else U
             if state.is_pure:
-                return State(ket=fock.apply_op_to_ket(U, state.ket(), op_idx), modes=state.modes)
-            return State(dm=fock.apply_op_to_dm(U, state.dm(), op_idx), modes=state.modes)
+                return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
+            return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            transformation = self.choi(cutoffs=state.cutoffs)  # [out_r, in_r, out_l, in_l]
+            choi = self.choi(cutoffs=state.cutoffs)
+            n = state.num_modes
+            N0 = list(range(0, n))
+            N1 = list(range(n, 2 * n))
+            N2 = list(range(2 * n, 3 * n))
+            N3 = list(range(3 * n, 4 * n))
             if dual:
-                n = len(state.cutoffs)
-                N0 = list(range(0, n))
-                N1 = list(range(n, 2 * n))
-                N2 = list(range(2 * n, 3 * n))
-                N3 = list(range(3 * n, 4 * n))
-                transformation = fock.math.transpose(
-                    transformation, N1 + N0 + N3 + N2
-                )  # swap input and output indices [in_r, out_r, in_l, out_l]
-        new_fock = fock.CPTP(
-            transformation=transformation,
-            fock_state=state.ket(state.cutoffs) if state.is_pure else state.dm(state.cutoffs),
-            transformation_is_unitary=self.is_unitary,
-            state_is_dm=state.is_mixed,
-        )
-        if state.is_mixed or not self.is_unitary:
-            return State(dm=new_fock, modes=state.modes)
-        return State(ket=new_fock, modes=state.modes)
+                choi = math.transpose(choi, N1 + N3 + N0 + N2)  # we flip out-in
+
+            if state.is_pure:
+                # applies choi to ket by applying a "kraus op" with no outgoing indices (ket) to a "dm" (choi)
+                # choi though has index order [out_l, in_l, out_r, in_r]
+                choi = (
+                    math.transpose(choi, N0 + N2 + N1 + N3)
+                    if not dual
+                    else math.transpose(choi, N1 + N3 + N0 + N2)
+                )
+                # now choi looks like a proper dm with index order [out_l, out_r, in_l, in_r] # or l <-> r if dual
+                return State(
+                    dm=fock.apply_kraus_to_dm(
+                        kraus=state.ket(), dm=choi, kraus_in_idx=op_idx, kraus_out_idx=[]
+                    ),
+                    modes=state.modes,
+                )
+            return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
     @property
     def modes(self) -> Sequence[int]:
@@ -233,13 +222,11 @@ class Transformation:
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
-        choi_state = self.bell >> self
-        return fock.fock_representation(
-            choi_state.cov,
-            choi_state.means,
+        X, _, d = self.XYd
+        return fock.wigner_to_fock_U(
+            X if X is not None else math.eye(2 * self.num_modes),
+            d if d is not None else math.zeros((2 * self.num_modes,)),
             shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
-            return_unitary=True,
-            choi_r=settings.CHOI_R,
         )
 
     def choi(self, cutoffs: Sequence[int]):
@@ -247,16 +234,13 @@ class Transformation:
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
-
-        choi_state = self.bell >> self
-        choi_op = fock.fock_representation(
-            choi_state.cov,
-            choi_state.means,
+        X, Y, d = self.XYd
+        return fock.wigner_to_fock_Choi(
+            X if X is not None else math.eye(2 * self.num_modes),
+            Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
+            d if d is not None else math.zeros((2 * self.num_modes,)),
             shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
-            return_unitary=False,
-            choi_r=settings.CHOI_R,
         )
-        return choi_op
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.

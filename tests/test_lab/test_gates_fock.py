@@ -24,7 +24,6 @@ from thewalrus.fock_gradients import (
 
 from tests import random
 from mrmustard.physics import fock
-from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.physics import fock
 from mrmustard.lab.gates import (
@@ -109,14 +108,8 @@ def test_fock_representation_displacement(cutoffs, x, y):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    choi_state = dgate.bell >> dgate
-    expected_Ud = fock.fock_representation(
-        choi_state.cov,
-        choi_state.means,
-        shape=cutoffs * 2,
-        return_unitary=True,
-        choi_r=settings.CHOI_R,
-    )
+    X = np.eye(2 * len(cutoffs))
+    expected_Ud = fock.wigner_to_fock_U(X, dgate.XYd[-1], cutoffs * 2)
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -172,15 +165,8 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    choi_state = rgate.bell >> rgate
-    expected_R = fock.fock_representation(
-        choi_state.cov,
-        choi_state.means,
-        shape=cutoffs * 2,
-        return_unitary=True,
-        choi_r=settings.CHOI_R,
-    )
-
+    d = np.zeros(2 * len(cutoffs))
+    expected_R = fock.wigner_to_fock_U(rgate.XYd[0], d, cutoffs * 2)
     assert np.allclose(R, expected_R, atol=1e-5)
 
 

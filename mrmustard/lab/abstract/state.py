@@ -132,9 +132,8 @@ class State:
         if self._purity is None:
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
-                # TODO: add symplectic representation
             else:
-                self._purity = fock.purity(self.fock)  # has to be dm
+                self._purity = fock.purity(self._dm)
         return self._purity
 
     @property
@@ -195,7 +194,7 @@ class State:
     def fock(self) -> Array:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
-            _fock = fock.fock_representation(
+            _fock = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
             )
             if self.is_mixed:
@@ -227,14 +226,15 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        return fock.norm(self.fock, self.is_mixed)
+        return fock.norm(self.fock, self._dm is not None)
 
     @property
     def probability(self) -> float:
         r"""Returns the probability of the state."""
-        if self.is_pure:
-            return self.norm**2
-        return self.norm
+        norm = self.norm
+        if self.is_pure and self._ket is not None:
+            return norm**2
+        return norm
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
@@ -255,7 +255,9 @@ class State:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
         if self.is_gaussian:
-            self._ket = fock.fock_representation(self.cov, self.means, cutoffs, False)
+            self._ket = fock.wigner_to_fock_state(
+                self.cov, self.means, shape=cutoffs, return_dm=False
+            )
         else:  # only fock representation is available
             if self._ket is None:
                 # if state is pure and has a density matrix, calculate the ket
@@ -291,7 +293,7 @@ class State:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.fock_representation(
+                self._dm = fock.wigner_to_fock_state(
                     self.cov, self.means, shape=cutoffs * 2, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
@@ -397,9 +399,9 @@ class State:
             out_fock = fock.contract_states(
                 stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
                 stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                a_is_mixed=other.is_mixed,
-                b_is_mixed=self.is_mixed,
-                modes=other.indices(self.modes),  # TODO: change arg name to indices
+                a_is_dm=other.is_mixed,
+                b_is_dm=self.is_mixed,
+                modes=other.indices(self.modes),
                 normalize=self._normalize if hasattr(self, "_normalize") else False,
             )
 

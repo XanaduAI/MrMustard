@@ -88,6 +88,11 @@ class Circuit(Transformation, Parametrized):
         """Returns `true` if all operations in the circuit are Gaussian."""
         return all(op.is_gaussian for op in self._ops)
 
+    @property
+    def is_unitary(self):
+        """Returns `true` if all operations in the circuit are unitary."""
+        return all(op.is_unitary for op in self._ops)
+
     def __len__(self):
         return len(self._ops)
 

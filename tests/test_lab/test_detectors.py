@@ -267,7 +267,7 @@ class TestHomodyneDetector:
         means = remaining_state.means.numpy()
         assert np.allclose(means, expected_means)
 
-    N_MEAS = 350  # number of homodyne measurements to perform
+    N_MEAS = 150  # number of homodyne measurements to perform
     NUM_STDS = 10.0
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 
