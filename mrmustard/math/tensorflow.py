@@ -72,7 +72,9 @@ class TFMath(MathInterface):
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return self.cast(tf.reshape(array, [-1]), dtype)
+        if array.ndim < 1:
+            return tf.expand_dims(array, 0)
+        return array
 
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
