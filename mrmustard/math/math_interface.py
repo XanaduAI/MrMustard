@@ -957,6 +957,19 @@ class MathInterface(ABC):
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
         return self.concat(rows, axis=axes[0])
 
+    def block_diag(self, matrices: List[Tensor]) -> Tensor:
+        r"""Returns a block diagonal matrix made from the given matrices.
+
+        Args:
+            matrices (list): list of compatible matrices
+
+        Returns:
+            array: block diagonal matrix made from the given matrices
+        """
+        blocks = [[matrices[i] if i == j else self.zeros_like(matrices[i]) for j in range(len(matrices))] for i in range(len(matrices))]
+        return self.block(blocks)
+        
+
     def dagger(self, array: Tensor) -> Tensor:
         """Returns the adjoint of ``array``. This operation swaps the first
         and second half of the indexes and then conjugates the matrix.
