@@ -8,24 +8,25 @@ import functools
 from mrmustard.math import Math
 
 math = Math()
-
+import numpy as np
 
 class Data(ABC):
     r"""Supports algebraic operations for all kinds of data (gaussian, array, mesh, symbolic, etc).
-    Algebra operations are intended between the Hilbert space vectors or between ensembles of Hilbert vectors.
+    Algebraic operations are intended between the Hilbert space vectors or between ensembles of Hilbert vectors,
+    which form a convex structure.
     The implementation depends on both the representation and the kind of data. E.g. adding two gaussians in Wigner
-    representation encoded as Gaussian data is implemented as stacking the two gaussian datas in the batch dimension.
+    representation encoded as Gaussian data is implemented as stacking the two gaussians in the batch dimension.
     Adding the same two gaussians in Fock representation (e.g. with dm data) still means rho1+rho2,
     but in Fock representation we add the density matrices as arrays.
 
     For these operations (as either Hilbert vectors or convex combinations of Hilbert vectors):
     - Gaussian generally stacks cov, mean, coeff along a batch dimension.
+    - QuadraticPoly is a representation of the Gaussian as a quadratic polynomial.
     - Array (ket/dm) operates with the data arrays themselves.
-    - Mesh (mesh) operates on the (x,f(x)) pairs with interpolation.
-    - Symbolic (symbolic) operates on the symbolic expression.
+    - Samples (samples) operates on the (x,f(x)) pairs with interpolation.
+    - Symbolic (symbolic) operates on the symbolic expression via sympy.
 
-    This class is abstract and Gaussian, Mesh, Symbolic inherit from it.
-    There is no Ket/Dm class because they are just arrays.
+    This class is abstract and Gaussian, Array, Samples, Symbolic inherit from it.
     """
 
     @property
@@ -56,7 +57,7 @@ class Data(ABC):
         return self.__mul__(other)
 
     def __truediv__(self, other):
-        return self.__mul__(1 / other)  # is this numerically naughty?
+        return self.__mul__(1 / other)  # this numerically naughty
 
 
 class GaussianData(Data):
@@ -71,21 +72,22 @@ class GaussianData(Data):
             mean  (batch, dim): means
             coeff (batch): coefficients
         """
-        if isinstance(cov, QuadraticData):  # this captures the GaussianData(quaddata) syntax
-            inv_A = math.inv(cov.A)
-            self.cov = -2 * inv_A
-            self.mean = inv_A @ cov.b
-            self.coeff = cov.c * math.exp(0.5 * (self.mean.T @ cov.A @ self.mean))
-        else:
+        #TODO handle missing data
+        #TODO switch to data/kwargs?
+        if isinstance(cov, QuadraticPolyData):  # this captures the GaussianData(quaddata) syntax
+            poly = cov  # for readability
+            inv_A = math.inv(poly.A)
+            self.cov = 2 * inv_A
+            self.mean = 2 * math.solve(A, poly.b)
+            self.coeff = poly.c * math.exp(0.5 * (self.mean.T @ self.cov @ self.mean))
+        else: 
             self.cov = math.atleast_1d(cov)
             self.mean = math.atleast_1d(mean)
             self.coeff = math.atleast_1d(coeff)
 
     def __add__(self, other: GaussianData):
         if np.allclose(self.cov, other.cov) and np.allclose(self.mean, other.mean):
-            return GaussianData(
-                self.cov, self.mean, self.coeff + other.coeff
-            )  # TODO: what if coeff have a different batch dimension?
+            return GaussianData(self.cov, self.mean, self.coeff + other.coeff)
         return GaussianData(
             math.concat([self.cov, other.cov], axis=0),
             math.concat([self.mean, other.mean], axis=0),
@@ -93,25 +95,49 @@ class GaussianData(Data):
         )
 
     def __mul__(self, other):
-        if isinstance(
-            other, Number
-        ):  # TODO: this seems to deal only with the case of self and other being a single gaussian
+        if isinstance(other, Number):
             return GaussianData(self.cov, self.mean, self.coeff * other)
         elif isinstance(other, GaussianData):
-            return GaussianData(
-                math.inv(self.cov) + math.inv(other.cov),
-                self.mean + other.mean,
-                self.coeff * other.coeff,
-            )  # TODO: invert decomposed covs instead
+            # cov matrices: S1 (S1 + S2)^-1 S2 for each pair of cov matrices in the batch
+            covs = []
+            for c1 in self.cov:
+                for c2 in other.cov:
+                    covs.append(math.matmul(c1, math.solve(c1+c2, c2)))
+            # means: S1 (S1 + S2)^-1 m2 + S2 (S1 + S2)^-1 m1 for each pair of cov matrices in the batch
+            means = []
+            for c1,m1 in zip(self.cov, self.mean):
+                for c2,m2 in zip(other.cov, other.mean):
+                    means.append(math.matvec(c1, math.solve(c1+c2, m2)) + math.matvec(c2, math.solve(c1+c2, m1)))
+            cov = math.astensor(covs)
+            mean = math.astensor(means)
+            coeffs = []
+            for c1,m1,c2,m2,c3,m3,co1,co2 in zip(self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeff, other.coeff):
+                coeffs.append(co1 * co2 * math.exp(0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1) + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1) - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)))
+            
+            coeff = math.astensor(coeffs)
+            return GaussianData(cov, mean, coeff)
         else:
             raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
 
     def __and__(self, other: GaussianData):  # tensor product
-        return GaussianData(
-            [math.block_diag(self.cov, other.cov)],
-            [math.concat([self.mean, other.mean], axis=0)],
-            [self.coeff * other.coeff],
-        )
+        # cov matrices: S1 \block_diag S2 for each pair of cov matrices in the batch
+        # means: m1 \concat m2 along data (not batch) for each pair of cov matrices in the batch
+        cov = []
+        mean = []
+        coeff = []
+        for c1 in self.cov:
+            for c2 in other.cov:
+                cov.append(math.block_diag([c1, c2]))
+        for m1 in self.mean:
+            for m2 in other.mean:
+                mean.append(math.concat([m1, m2], axis=-1))
+        for c1 in self.coeff:
+            for c2 in other.coeff:
+                coeff.append(c1 * c2)
+        cov = math.astensor(cov)
+        mean = math.astensor(mean)
+        coeff = math.astensor(coeff)
+        return GaussianData(cov, mean, coeff)
 
     def __eq__(self, other):
         return (
@@ -121,12 +147,12 @@ class GaussianData(Data):
         )
 
 
-class QuadraticData(Data):
+class QuadraticPolyData(Data):
     def __init__(self, A=None, b=None, c=None):
         r"""
         Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
         Each of these has a batch dimension, and the batch dimension is the same for all of them.
-        They are the parameters of a Gaussian expressed as `c * exp(x^T A x + x^T b)`.
+        They are the parameters of a Gaussian expressed as `c * exp(-x^T A x + x^T b)`.
         Args:
             A (batch, dim, dim): quadratic coefficients
             b (batch, dim): linear coefficients
@@ -141,10 +167,10 @@ class QuadraticData(Data):
             self.b = math.atleast_1d(b)
             self.c = math.atleast_1d(c)
 
-    def __add__(self, other: QuadraticData):
+    def __add__(self, other: QuadraticPolyData):
         if np.allclose(self.A, other.A) and np.allclose(self.b, other.b):
-            return QuadraticData(self.A, self.b, self.c + other.c)
-        return QuadraticData(
+            return QuadraticPolyData(self.A, self.b, self.c + other.c)
+        return QuadraticPolyData(
             math.concat([self.A, other.A], axis=0),
             math.concat([self.b, other.b], axis=0),
             math.concat([self.c, other.c], axis=0),
@@ -154,13 +180,13 @@ class QuadraticData(Data):
         if isinstance(
             other, Number
         ):  # TODO: this seems to deal only with the case of self and other being a single gaussian
-            return QuadraticData(self.A, self.b, self.c * other)
-        elif isinstance(other, QuadraticData):
-            return QuadraticData(
+            return QuadraticPolyData(self.A, self.b, self.c * other)
+        elif isinstance(other, QuadraticPolyData):
+            return QuadraticPolyData(
                 self.A + other.A, self.b + other.b, self.c * other.c
             )  # TODO: invert decomposed covs instead
         else:
-            raise TypeError(f"Cannot multiply QuadraticData with {other.__class__.__qualname__}")
+            raise TypeError(f"Cannot multiply QuadraticPolyData with {other.__class__.__qualname__}")
 
     def __and__(self, other: GaussianData):  # tensor product
         return GaussianData(
@@ -207,14 +233,14 @@ class MeshData(Data):
 def AutoData(**kwargs):
     r"""Automatically choose the data type based on the arguments.
     If the arguments contain any combination of 'cov', 'mean', 'coeff' then it is GaussianData.
-    If the arguments contain any combination of 'A', 'b', 'c' then it is QuadraticData.
+    If the arguments contain any combination of 'A', 'b', 'c' then it is QuadraticPolyData.
     If the arguments contain 'mesh' then it is MeshData.
 
     """
     if "cov" in kwargs or "mean" in kwargs or "coeff" in kwargs:
         return GaussianData(**kwargs)
     elif "A" in kwargs or "b" in kwargs or "c" in kwargs:
-        return QuadraticData(**kwargs)
+        return QuadraticPolyData(**kwargs)
     elif "mesh" in kwargs:
         return Mesh(**kwargs)
     else:
@@ -224,21 +250,21 @@ def AutoData(**kwargs):
 class Representation:
     r"""Abstract representation class, no implementations in here, just
     the right calls to the appropriate repA -> repB methods with default
-    routing via Q function.
+    routing via Q representation.
     """
 
-    def __init__(self, init: Union[Data, Representation] = None, **kwargs):
-        if isinstance(init, Representation):
-            self = self.from_representation(init)  # default sequence of transformations via Q
-        elif isinstance(init, Data):
-            self.data = init
-        elif init is None:
+    def __init__(self, representation: Representation = None, **kwargs):
+        if representation is not None and len(kwargs) > 0:
+            raise TypeError("Either pass a single representation or keyword arguments, not both")
+        if isinstance(representation, Representation):
+            self = self.from_representation(representation)  # default sequence of transformations via Q
+        elif representation is None:
             self.data = AutoData(**kwargs)
         else:
-            raise TypeError(f"Cannot initialize representation with the given data")
+            raise TypeError(f"Cannot initialize representation from {representation.__class__.__qualname__}")
 
     def __getattr__(self, name):
-        # Intercept access to non-existent attribute like 'ket', 'cov', etc and route it to data.
+        # Intercept access to non-existent attributes of Representation like 'ket', 'cov' and route it to data.
         # This way we can access the data directly from the representation
         try:
             return getattr(self.data, name)
