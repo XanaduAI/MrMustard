@@ -17,40 +17,36 @@ from hypothesis import given, strategies as st
 from hypothesis.extra.numpy import arrays
 from mrmustard.lab import *
 
-
-angle = st.floats(min_value=0, max_value=2 * np.pi)
-positive = st.floats(min_value=0, allow_infinity=False, allow_nan=False)
+# numbers
 real = st.floats(allow_infinity=False, allow_nan=False)
-r = st.floats(
-    min_value=0, max_value=0.5, allow_infinity=False, allow_nan=False
-)  # reasonable squeezing magnitude
-real_not_zero = st.one_of(st.floats(max_value=-0.00001), st.floats(min_value=0.00001))
-integer = st.integers(min_value=0, max_value=2**32 - 1)
+positive = st.floats(min_value=0, exclude_min=True, allow_infinity=False, allow_nan=False)
+negative = st.floats(max_value=0, exclude_max=True, allow_infinity=False, allow_nan=False)
+real_not_zero = st.one_of(negative, positive)
 small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
 medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
-large_float = st.floats(min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False)
+
+# physical parameters
 num_modes = st.integers(min_value=0, max_value=10)
+angle = st.floats(min_value=0, max_value=2 * np.pi)
+r = st.floats(
+    min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False
+)  # reasonable squeezing magnitude
 
 
 @st.composite
 def vector(draw, length):
-    return draw(
-        st.lists(st.floats(min_value=-1.0, max_value=1.0), min_size=length, max_size=length)
-    )
+    r"""Return a vector of length `length`."""
+    return draw(arrays(np.float, (length,), elements=st.floats(min_value=-1.0, max_value=1.0)))
 
 
-# a strategy to produce a list of integers of length num_modes. the integers are all different and between 0 and num_modes
 @st.composite
-def modes(draw, num_modes):
-    return draw(
-        st.lists(
-            st.integers(min_value=0, max_value=num_modes), min_size=num_modes, max_size=num_modes
-        ).filter(lambda x: len(set(x)) == len(x))
-    )
+def list_of_ints(draw, N):
+    r"""Return a list of N unique integers between 0 and N-1."""
+    return draw(st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True))
 
 
 def array_of_(strategy, minlen=0, maxlen=None):
-    return arrays(dtype=np.float64, shape=(st.integers(minlen, maxlen),), elements=strategy)
+    return arrays(shape=(st.integers(minlen, maxlen),), elements=strategy)
 
 
 def none_or_(strategy):
