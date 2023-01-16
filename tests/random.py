@@ -16,8 +16,10 @@ import numpy as np
 from hypothesis import given, strategies as st
 from hypothesis.extra.numpy import arrays
 from mrmustard.lab import *
+from mrmustard import settings
 
 # numbers
+integer32bits = st.integers(min_value=0, max_value=2 ** 31 - 1)
 real = st.floats(allow_infinity=False, allow_nan=False)
 positive = st.floats(min_value=0, exclude_min=True, allow_infinity=False, allow_nan=False)
 negative = st.floats(max_value=0, exclude_max=True, allow_infinity=False, allow_nan=False)
@@ -45,14 +47,16 @@ def list_of_ints(draw, N):
     return draw(st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True))
 
 
-def array_of_(strategy, minlen=0, maxlen=None):
+def array_of_(strategy, minlen=0, maxlen=100):
+    r"""Return a strategy that returns an array of values from `strategy`."""
     return arrays(shape=(st.integers(minlen, maxlen),), elements=strategy)
 
 
 def none_or_(strategy):
+    r"""Return a strategy that returns either None or a value from `strategy`."""
     return st.one_of(st.just(None), strategy)
 
-
+# bounds
 angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
@@ -63,7 +67,7 @@ real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
 
-
+# gates
 @st.composite
 def random_Rgate(draw, num_modes=None, trainable=False):
     return Rgate(
@@ -74,9 +78,9 @@ def random_Rgate(draw, num_modes=None, trainable=False):
 
 
 @st.composite
-def random_Sgate(draw, num_modes=None, trainable=False, small=False):
+def random_Sgate(draw, num_modes=None, trainable=False):
     return Sgate(
-        r=np.abs(draw(small_float)) if small else draw(r),
+        r=draw(r),
         phi=draw(angle),
         r_bounds=draw(positive_bounds),
         phi_bounds=draw(angle_bounds),
@@ -86,13 +90,9 @@ def random_Sgate(draw, num_modes=None, trainable=False, small=False):
 
 
 @st.composite
-def random_Dgate(draw, num_modes=None, trainable=False, small=False):
-    if small:
-        x = draw(small_float)
-        y = draw(small_float)
-    else:
-        x = draw(medium_float)
-        y = draw(medium_float)
+def random_Dgate(draw, num_modes=None, trainable=False):
+    x = draw(small_float)
+    y = draw(small_float)
     return Dgate(
         x=x,
         y=y,
@@ -142,28 +142,23 @@ def random_MZgate(draw, trainable=False):
 
 @st.composite
 def random_Interferometer(draw, num_modes, trainable=False):
-    return Interferometer(num_modes=num_modes, orthogonal_trainable=trainable)
+    settings.SEED = draw(integer32bits)
+    return Interferometer(num_modes=num_modes, unitary_trainable=trainable)
 
 
 @st.composite
 def random_Ggate(draw, num_modes, trainable=False):
-    displacement = vector(2 * num_modes)
-    return Ggate(
-        num_modes=num_modes,
-        displacement=draw(displacement),
-        displacement_trainable=trainable,
-    )
+    settings.SEED = draw(integer32bits)
+    return Ggate(num_modes=num_modes, symplectic_trainable=trainable)
 
 
 @st.composite
-def single_mode_unitary(draw, small=False):
-    return draw(
-        st.one_of(random_Rgate(1), random_Sgate(1, small=small), random_Dgate(1, small=small))
-    )
+def single_mode_unitary_gate(draw):
+    return draw(st.one_of(random_Rgate(1), random_Sgate(1), random_Dgate(1)))
 
 
 @st.composite
-def two_mode_gate(draw):
+def two_mode_unitary_gate(draw):
     return draw(
         st.one_of(
             random_S2gate(),
@@ -190,8 +185,8 @@ def squeezed_vacuum(draw, num_modes):
 
 @st.composite
 def displacedsqueezed(draw, num_modes):
-    r = array_of_(small_float.filter(lambda r: r > 0.0), num_modes, num_modes)
-    phi_ = array_of_(angle, num_modes, num_modes)
+    r = array_of_(r, num_modes, num_modes)
+    phi = array_of_(angle, num_modes, num_modes)
     x = array_of_(medium_float, num_modes, num_modes)
     y = array_of_(medium_float, num_modes, num_modes)
     return DisplacedSqueezed(r=draw(r), phi=draw(phi), x=draw(x), y=draw(x))
@@ -206,45 +201,42 @@ def coherent(draw, num_modes):
 
 @st.composite
 def tmsv(draw):
-    r = array_of_(medium_float.filter(lambda r: r > 0.0), 2, 2)
-    phi = array_of_(angle, 2, 2)
     return TMSV(r=draw(r), phi=draw(phi))
 
 
 @st.composite
 def thermal(draw, num_modes):
-    n_mean = array_of_(medium_float.filter(lambda r: r > 0.0), num_modes, num_modes)
+    n_mean = array_of_(r, num_modes, num_modes) # using r here
     return Thermal(n_mean=draw(n_mean))
 
 
+# generic states
 @st.composite
-def default_state(draw, num_modes):
+def n_mode_separable_pure_state(draw, num_modes):
     return draw(
         st.one_of(
             squeezed_vacuum(num_modes),
             displacedsqueezed(num_modes),
             coherent(num_modes),
-            tmsv(num_modes),
+        )
+    )
+
+
+@st.composite
+def n_mode_separable_mixed_state(draw, num_modes):
+    return draw(
+        st.one_of(
+            squeezed_vacuum(num_modes) ,
+            displacedsqueezed(num_modes),
+            coherent(num_modes),
             thermal(num_modes),
         )
-    )
+    ) >> Attenuator(0.9)
 
 
 @st.composite
-def default_pure_state(draw, num_modes):
-    return draw(
-        st.one_of(
-            squeezed_vacuum(num_modes),
-            displacedsqueezed(num_modes),
-            coherent(num_modes),
-            tmsv(num_modes),
-        )
-    )
-
-
-@st.composite
-def pure_state(draw, num_modes=1, small=False):
-    S = draw(random_Sgate(num_modes, small=small))
+def n_mode_pure_state(draw, num_modes=1):
+    S = draw(random_Sgate(num_modes))
     I = draw(random_Interferometer(num_modes))
-    D = draw(random_Dgate(num_modes, small=small))
+    D = draw(random_Dgate(num_modes))
     return Vacuum(num_modes) >> S >> I >> D
