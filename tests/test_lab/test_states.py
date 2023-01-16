@@ -30,7 +30,7 @@ from mrmustard.lab.states import (
 from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
-from tests.random import pure_state
+from tests.random import n_mode_pure_state, num_modes
 
 from mrmustard.math import Math
 
@@ -51,7 +51,7 @@ def rphi_arrays(draw):
     return r, phi
 
 
-@given(st.integers(0, 10), st.floats(0.1, 5.0))
+@given(num_modes, st.floats(0.1, 5.0))
 def test_vacuum_state(num_modes, hbar):
     cov, disp = gp.vacuum_cov(num_modes, hbar), gp.vacuum_means(num_modes, hbar)
     assert np.allclose(cov, np.eye(2 * num_modes) * hbar / 2)
