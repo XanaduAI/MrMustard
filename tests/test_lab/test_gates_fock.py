@@ -38,6 +38,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Attenuator,
     Interferometer,
+    Vacuum
 )
 
 
