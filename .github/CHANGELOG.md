@@ -77,6 +77,9 @@ within the defined window. Also, expose some plot parameters and return the figu
 
 * Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation, which have been refactored and moved out of `physics.fock`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+* Added several tests and improved the use of Hypothesis.
+  [(#191)](https://github.com/XanaduAI/MrMustard/pull/191)
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
