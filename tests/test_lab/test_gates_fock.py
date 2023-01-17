@@ -22,7 +22,7 @@ from thewalrus.fock_gradients import (
     mzgate,
 )
 
-from tests import random
+from tests.random import *
 from mrmustard.physics import fock
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.physics import fock
@@ -41,9 +41,8 @@ from mrmustard.lab.gates import (
 )
 
 
-@given(state=random.n_mode_pure_state(num_modes=1), xy=random.vector(2))
-def test_Dgate_1mode(state, xy):
-    x, y = xy
+@given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)
+def test_Dgate_1mode(state, x, y):
     state_out = state >> Dgate(x, y) >> Dgate(-x, -y)
     assert state_out == state
 
@@ -53,7 +52,7 @@ def test_attenuator_on_fock():
     assert (Fock(10) >> Attenuator(0.5)).is_pure == False
 
 
-@given(state=random.n_mode_pure_state(num_modes=2), xxyy=random.vector(4))
+@given(state=n_mode_pure_state(num_modes=2), xxyy=array_of_(medium_float, minlen=4, maxlen=4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
     state_out = state >> Dgate([x1, x2], [y1, y2]) >> Dgate([-x1, -x2], [-y1, -y2])
@@ -114,34 +113,28 @@ def test_fock_representation_displacement(cutoffs, x, y):
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
 
-@given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
+@given(r=r, phi=angle)
 def test_fock_representation_squeezing(r, phi):
     S = Sgate(r=r, phi=phi)
     expected = squeezing(r=r, theta=phi, cutoff=20)
     assert np.allclose(expected, S.U(cutoffs=[20]), atol=1e-5)
 
 
-@given(
-    theta=st.floats(min_value=0, max_value=2 * np.pi),
-    phi=st.floats(min_value=0, max_value=2 * np.pi),
-)
+@given(theta=angle, phi=angle)
 def test_fock_representation_beamsplitter(theta, phi):
     BS = BSgate(theta=theta, phi=phi)
     expected = beamsplitter(theta=theta, phi=phi, cutoff=20)
     assert np.allclose(expected, BS.U(cutoffs=[20, 20]), atol=1e-5)
 
 
-@given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
+@given(r=r, phi=angle)
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
     expected = two_mode_squeezing(r=r, theta=phi, cutoff=20)
     assert np.allclose(expected, S2.U(cutoffs=[20, 20]), atol=1e-5)
 
 
-@given(
-    phi_a=st.floats(min_value=0, max_value=2 * np.pi, allow_infinity=False, allow_nan=False),
-    phi_b=st.floats(min_value=0, max_value=2 * np.pi, allow_infinity=False, allow_nan=False),
-)
+@given(phi_a=angle, phi_b=angle)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
