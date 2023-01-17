@@ -131,8 +131,8 @@ def random_Dgate(draw, trainable=False):
 def random_Pgate(draw, trainable=False):
     r"""Return a random Pgate."""
     return Pgate(
-        shearing=draw(angle),
-        shearing_bounds=draw(angle_bounds),
+        shearing=draw(prob),
+        shearing_bounds=draw(prob_bounds),
         shearing_trainable=trainable,
     )
 
