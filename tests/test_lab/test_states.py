@@ -30,7 +30,7 @@ from mrmustard.lab.states import (
 from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
-from tests.random import n_mode_pure_state, nmodes
+from tests.random import n_mode_pure_state, nmodes, r, angle
 
 from mrmustard.math import Math
 
@@ -41,14 +41,6 @@ math = Math()
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
     return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
-
-
-@st.composite
-def rphi_arrays(draw):
-    length = draw(st.integers(2, 10))
-    r = arrays(dtype=np.float, shape=(2, length), elements=st.floats(0.0, 1.0))
-    phi = arrays(dtype=np.float, shape=(2, length), elements=st.floats(0.0, 2 * np.pi))
-    return r, phi
 
 
 @given(nmodes, st.floats(0.1, 5.0))
@@ -87,10 +79,8 @@ def test_coherent_state_multiple(xy):
     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
 
-@given(xy=xy_arrays())
-def test_the_purity_of_a_pure_state(xy):
-    x, y = xy
-    state = Coherent(x, y)
+@given(state=n_mode_pure_state(num_modes=1))
+def test_the_purity_of_a_pure_state(state):
     purity = gp.purity(state.cov, settings.HBAR)
     expected = 1.0
     assert np.isclose(purity, expected)
@@ -104,12 +94,7 @@ def test_the_purity_of_a_mixed_state(nbar):
     assert np.isclose(purity, expected)
 
 
-@given(
-    r1=st.floats(0.0, 1.0),
-    phi1=st.floats(0.0, 2 * np.pi),
-    r2=st.floats(0.0, 1.0),
-    phi2=st.floats(0.0, 2 * np.pi),
-)
+@given(r1=r, phi1=angle, r2=r, phi2=angle)
 def test_join_two_states(r1, phi1, r2, phi2):
     """Test Sgate acts the same in parallel or individually for two states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
@@ -118,14 +103,7 @@ def test_join_two_states(r1, phi1, r2, phi2):
     assert S1 & S2 == S12
 
 
-@given(
-    r1=st.floats(0.0, 1.0),
-    phi1=st.floats(0.0, 2 * np.pi),
-    r2=st.floats(0.0, 1.0),
-    phi2=st.floats(0.0, 2 * np.pi),
-    r3=st.floats(0.0, 1.0),
-    phi3=st.floats(0.0, 2 * np.pi),
-)
+@given(r1=r, phi1=angle, r2=r, phi2=angle, r3=r, phi3=angle)
 def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     """Test Sgate acts the same in parallel or individually for three states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
