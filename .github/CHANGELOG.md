@@ -69,8 +69,16 @@ within the defined window. Also, expose some plot parameters and return the figu
 * Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`. This allows for a more compact Fock representation where needed.
   [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
 
-* Added two functions in the `fock` module to apply operators to ket and dm. When used by the circuit it avoids having to fall back to unitaries as large as the whole circuit.
+* The `mrmustard.physics.fock` module now provides convenience functions for applying kraus operators and choi operators to kets and density matrices.
   [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+  ```python
+  from mrmustard.physics.fock import apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm
+  ket_out = apply_kraus_to_ket(kraus, ket_in, indices)
+  dm_out = apply_choi_to_dm(choi, dm_in, indices)
+  dm_out = apply_kraus_to_dm(kraus, dm_in, indices)
+  dm_out = apply_choi_to_ket(choi, ket_in, indices)
+  ```
 
 * Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
   [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
