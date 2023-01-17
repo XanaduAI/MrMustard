@@ -30,7 +30,7 @@ from mrmustard.lab.states import (
 from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
 from mrmustard.lab.abstract import State
 from mrmustard import settings
-from tests.random import n_mode_pure_state, nmodes, r, angle
+from tests.random import *
 
 from mrmustard.math import Math
 
@@ -50,19 +50,19 @@ def test_vacuum_state(nmodes, hbar):
     assert np.allclose(disp, np.zeros_like(disp))
 
 
-@given(x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(x=medium_float, y=medium_float)
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
-@given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_list(hbar, x, y):
     assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
-@given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_array(hbar, x, y):
     assert np.allclose(
         gp.displacement(np.array([x]), np.array([y]), hbar),
@@ -120,17 +120,17 @@ def test_coh_state(xy):
     assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
 
 
-@given(r=st.floats(0.0, 1.0), phi=st.floats(0.0, 2 * np.pi))
+@given(r=r, phi=angle)
 def test_sq_state(r, phi):
     """Test squeezed vacuum preparation."""
     assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
 
 
 @given(
-    x=st.floats(-1.0, 1.0),
-    y=st.floats(-1.0, 1.0),
-    r=st.floats(0.0, 1.0),
-    phi=st.floats(0.0, 2 * np.pi),
+    x=medium_float,
+    y=medium_float,
+    r=r,
+    phi=angle,
 )
 def test_dispsq_state(x, y, r, phi):
     """Test displaced squeezed state."""
