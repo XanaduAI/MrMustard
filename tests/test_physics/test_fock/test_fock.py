@@ -256,70 +256,79 @@ def test_single_mode_choi_application_order():
 
 def test_apply_kraus_to_ket_1mode():
     """Test that Kraus operators are applied to a ket on the correct indices"""
-    ket = np.random.normal(size=(2,3,4))
-    kraus = np.random.normal(size=(5,3))
+    ket = np.random.normal(size=(2, 3, 4))
+    kraus = np.random.normal(size=(5, 3))
     ket_out = apply_kraus_to_ket(kraus, ket, [1], [1])
-    assert ket_out.shape == (2,5,4)
+    assert ket_out.shape == (2, 5, 4)
+
 
 def test_apply_kraus_to_ket_2mode():
     """Test that Kraus operators are applied to a ket on the correct indices"""
-    ket = np.random.normal(size=(2,3,4))
-    kraus = np.random.normal(size=(5,3,4))
-    ket_out = apply_kraus_to_ket(kraus, ket, [1,2], [1])
-    assert ket_out.shape == (2,5)
+    ket = np.random.normal(size=(2, 3, 4))
+    kraus = np.random.normal(size=(5, 3, 4))
+    ket_out = apply_kraus_to_ket(kraus, ket, [1, 2], [1])
+    assert ket_out.shape == (2, 5)
+
 
 def test_apply_kraus_to_ket_2mode_2():
     """Test that Kraus operators are applied to a ket on the correct indices"""
-    ket = np.random.normal(size=(2,3))
-    kraus = np.random.normal(size=(5,4,3))
-    ket_out = apply_kraus_to_ket(kraus, ket, [1], [1,2])
-    assert ket_out.shape == (2,5,4)
+    ket = np.random.normal(size=(2, 3))
+    kraus = np.random.normal(size=(5, 4, 3))
+    ket_out = apply_kraus_to_ket(kraus, ket, [1], [1, 2])
+    assert ket_out.shape == (2, 5, 4)
+
 
 def test_apply_kraus_to_dm_1mode():
     """Test that Kraus operators are applied to a dm on the correct indices"""
-    dm = np.random.normal(size=(2,3,2,3))
-    kraus = np.random.normal(size=(5,3))
+    dm = np.random.normal(size=(2, 3, 2, 3))
+    kraus = np.random.normal(size=(5, 3))
     dm_out = apply_kraus_to_dm(kraus, dm, [1], [1])
-    assert dm_out.shape == (2,5,2,5)
+    assert dm_out.shape == (2, 5, 2, 5)
+
 
 def test_apply_kraus_to_dm_2mode():
     """Test that Kraus operators are applied to a dm on the correct indices"""
-    dm = np.random.normal(size=(2,3,4,2,3,4))
-    kraus = np.random.normal(size=(5,3,4))
-    dm_out = apply_kraus_to_dm(kraus, dm, [1,2], [1])
-    assert dm_out.shape == (2,5,2,5)
+    dm = np.random.normal(size=(2, 3, 4, 2, 3, 4))
+    kraus = np.random.normal(size=(5, 3, 4))
+    dm_out = apply_kraus_to_dm(kraus, dm, [1, 2], [1])
+    assert dm_out.shape == (2, 5, 2, 5)
+
 
 def test_apply_kraus_to_dm_2mode_2():
     """Test that Kraus operators are applied to a dm on the correct indices"""
-    dm = np.random.normal(size=(2,3,4,2,3,4))
-    kraus = np.random.normal(size=(5,6,3))
-    dm_out = apply_kraus_to_dm(kraus, dm, [1], [3,1])
-    assert dm_out.shape == (2,6,4,5,2,6,4,5)
+    dm = np.random.normal(size=(2, 3, 4, 2, 3, 4))
+    kraus = np.random.normal(size=(5, 6, 3))
+    dm_out = apply_kraus_to_dm(kraus, dm, [1], [3, 1])
+    assert dm_out.shape == (2, 6, 4, 5, 2, 6, 4, 5)
+
 
 def test_apply_choi_to_ket_1mode():
     """Test that choi operators are applied to a ket on the correct indices"""
-    ket = np.random.normal(size=(3,5))
-    choi = np.random.normal(size=(4,3,4,3))  # [out_l, in_l, out_r, in_r]
+    ket = np.random.normal(size=(3, 5))
+    choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
     ket_out = apply_choi_to_ket(choi, ket, [0], [0])
-    assert ket_out.shape == (4,5,4,5)
+    assert ket_out.shape == (4, 5, 4, 5)
+
 
 def test_apply_choi_to_ket_2mode():
     """Test that choi operators are applied to a ket on the correct indices"""
-    ket = np.random.normal(size=(3,5))
-    choi = np.random.normal(size=(2,3,5,2,3,5))  # [out_l, in_l, out_r, in_r]
-    ket_out = apply_choi_to_ket(choi, ket, [0,1], [0])
-    assert ket_out.shape == (2,2)
+    ket = np.random.normal(size=(3, 5))
+    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l, in_l, out_r, in_r]
+    ket_out = apply_choi_to_ket(choi, ket, [0, 1], [0])
+    assert ket_out.shape == (2, 2)
+
 
 def test_apply_choi_to_dm_1mode():
     """Test that choi operators are applied to a dm on the correct indices"""
-    dm = np.random.normal(size=(3,5,3,5))
-    choi = np.random.normal(size=(4,3,4,3))  # [out_l, in_l, out_r, in_r]
+    dm = np.random.normal(size=(3, 5, 3, 5))
+    choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
     dm_out = apply_choi_to_dm(choi, dm, [0], [0])
-    assert dm_out.shape == (4,5,4,5)
+    assert dm_out.shape == (4, 5, 4, 5)
+
 
 def test_apply_choi_to_dm_2mode():
     """Test that choi operators are applied to a dm on the correct indices"""
-    dm = np.random.normal(size=(4,5,4,5))
-    choi = np.random.normal(size=(2,3,5,2,3,5))  # [out_l, in_l, out_r, in_r]
-    dm_out = apply_choi_to_dm(choi, dm, [1], [1,2])
-    assert dm_out.shape == (4,2,3,4,2,3)
+    dm = np.random.normal(size=(4, 5, 4, 5))
+    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l, in_l, out_r, in_r]
+    dm_out = apply_choi_to_dm(choi, dm, [1], [1, 2])
+    assert dm_out.shape == (4, 2, 3, 4, 2, 3)

@@ -117,7 +117,9 @@ class Transformation:
                 choi = math.transpose(choi, N1 + N0 + N3 + N2)  # we flip out-in
 
             if state.is_pure:
-                return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
+                return State(
+                    dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
+                )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
     @property

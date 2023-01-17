@@ -340,7 +340,7 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     """
     if kraus_out_idx is None:
         kraus_out_idx = kraus_in_idx
-    
+
     if not set(kraus_in_idx).issubset(range(ket.ndim)):
         raise ValueError("kraus_in_idx should be a subset of the ket indices.")
 
@@ -486,7 +486,7 @@ def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx=None):
     """
     if choi_out_idx is None:
         choi_out_idx = choi_in_idx
-    
+
     if not set(choi_in_idx).issubset(range(ket.ndim)):
         raise ValueError("choi_in_idx should be a subset of the ket indices.")
 
