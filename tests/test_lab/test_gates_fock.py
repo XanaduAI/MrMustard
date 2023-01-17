@@ -26,7 +26,7 @@ from tests.random import *
 from mrmustard.physics import fock
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.physics import fock
-from mrmustard.lab.gates import (
+from mrmustard.lab import (
     Dgate,
     Sgate,
     Pgate,
