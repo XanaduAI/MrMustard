@@ -28,7 +28,7 @@ small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, all
 medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
 
 # physical parameters
-num_modes = st.integers(min_value=0, max_value=10)
+num_modes = st.integers(min_value=1, max_value=10)
 angle = st.floats(min_value=0, max_value=2 * np.pi)
 r = st.floats(
     min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False
@@ -76,7 +76,7 @@ real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
 
 # gates
 @st.composite
-def random_Rgate(draw, num_modes=None, trainable=False):
+def random_Rgate(draw, trainable=False):
     return Rgate(
         angle=draw(angle),
         angle_bounds=draw(angle_bounds),
@@ -85,7 +85,7 @@ def random_Rgate(draw, num_modes=None, trainable=False):
 
 
 @st.composite
-def random_Sgate(draw, num_modes=None, trainable=False):
+def random_Sgate(draw, trainable=False):
     return Sgate(
         r=draw(r),
         phi=draw(angle),
@@ -97,7 +97,7 @@ def random_Sgate(draw, num_modes=None, trainable=False):
 
 
 @st.composite
-def random_Dgate(draw, num_modes=None, trainable=False):
+def random_Dgate(draw, trainable=False):
     x = draw(small_float)
     y = draw(small_float)
     return Dgate(
