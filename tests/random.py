@@ -28,6 +28,7 @@ from mrmustard.lab import (
     Attenuator,
     Interferometer,
     Ggate,
+    Vacuum
 )
 from mrmustard import settings
 
