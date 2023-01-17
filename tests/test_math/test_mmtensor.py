@@ -78,7 +78,7 @@ def test_mmtensor_contract_multiple_indices():
     array = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
     mmtensor = MMTensor(array, axis_labels=["a", "a", "b"])
     trace = mmtensor.contract()
-    assert np.allclose(trace.tensor, np.einsum('aab',array))
+    assert np.allclose(trace.tensor, np.einsum("aab", array))
 
 
 def test_mmtensor_matmul():

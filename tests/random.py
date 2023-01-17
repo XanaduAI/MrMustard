@@ -19,7 +19,7 @@ from mrmustard.lab import *
 from mrmustard import settings
 
 # numbers
-integer32bits = st.integers(min_value=0, max_value=2 ** 31 - 1)
+integer32bits = st.integers(min_value=0, max_value=2**31 - 1)
 real = st.floats(allow_infinity=False, allow_nan=False)
 positive = st.floats(min_value=0, exclude_min=True, allow_infinity=False, allow_nan=False)
 negative = st.floats(max_value=0, exclude_max=True, allow_infinity=False, allow_nan=False)
@@ -44,17 +44,24 @@ def vector(draw, length):
 @st.composite
 def list_of_ints(draw, N):
     r"""Return a list of N unique integers between 0 and N-1."""
-    return draw(st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True))
+    return draw(
+        st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True)
+    )
 
 
 def array_of_(strategy, minlen=0, maxlen=100):
     r"""Return a strategy that returns an array of values from `strategy`."""
-    return arrays(shape=(st.integers(minlen, maxlen).example(),), elements=strategy, dtype=type(strategy.example()))
+    return arrays(
+        shape=(st.integers(minlen, maxlen).example(),),
+        elements=strategy,
+        dtype=type(strategy.example()),
+    )
 
 
 def none_or_(strategy):
     r"""Return a strategy that returns either None or a value from `strategy`."""
     return st.one_of(st.just(None), strategy)
+
 
 # bounds
 angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
@@ -206,7 +213,7 @@ def tmsv(draw):
 
 @st.composite
 def thermal(draw, num_modes):
-    n_mean = array_of_(r, num_modes, num_modes) # using r here
+    n_mean = array_of_(r, num_modes, num_modes)  # using r here
     return Thermal(n_mean=draw(n_mean))
 
 
@@ -226,7 +233,7 @@ def n_mode_separable_pure_state(draw, num_modes):
 def n_mode_separable_mixed_state(draw, num_modes):
     return draw(
         st.one_of(
-            squeezed_vacuum(num_modes) ,
+            squeezed_vacuum(num_modes),
             displacedsqueezed(num_modes),
             coherent(num_modes),
             thermal(num_modes),
