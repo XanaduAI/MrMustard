@@ -60,7 +60,9 @@ def test_Dgate_2mode(state, xxyy):
     assert state_out == state
 
 
-@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2), Attenuator(0.5)])
+@pytest.mark.parametrize(
+    "gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2), Attenuator(0.5)]
+)
 def test_single_mode_fock_equals_gaussian(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
