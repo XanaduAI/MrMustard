@@ -60,16 +60,53 @@ def test_Dgate_2mode(state, xxyy):
     assert state_out == state
 
 
-@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2)])
-def test_single_mode_fock_equals_gaussian(gate):
+@pytest.mark.parametrize(
+    "gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2), Attenuator(0.5)]
+)
+def test_single_mode_fock_equals_gaussian_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
     cutoffs = [30]
     gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
+
+
+@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(0.3, 0.3), Pgate(10), Rgate(np.pi / 2)])
+def test_single_mode_fock_equals_gaussian_ket(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [60]
+    gaussian_state = SqueezedVacuum(0.5)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_ket = (fock_state >> gate).ket([10])
+    via_phase_space_ket = (gaussian_state >> gate).ket([10])
+    phase = np.exp(1j * np.angle(via_fock_space_ket[0]))
+    assert np.allclose(via_fock_space_ket, phase * via_phase_space_ket)
+
+
+@pytest.mark.parametrize(
+    "gate",
+    [
+        Sgate(r=0.5, phi=0.2) >> Attenuator(0.4),
+        Dgate(0.4, 0.4) >> Attenuator(0.4),
+        Pgate(1) >> Attenuator(0.4),
+        Rgate(np.pi / 2) >> Attenuator(0.4),
+    ],
+)
+def test_single_mode_fock_equals_gaussian_ket_dm(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [60]
+    gaussian_state = SqueezedVacuum(0.5)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_dm = (fock_state >> gate).dm([10])
+    via_phase_space_dm = (gaussian_state >> gate).dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
@@ -83,8 +120,8 @@ def test_two_mode_fock_equals_gaussian(gate):
     gaussian_state = TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
