@@ -94,6 +94,9 @@ real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
 gain_bounds = st.tuples(none_or_(gain), none_or_(gain)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
+prob_bounds = st.tuples(none_or_(prob), none_or_(prob)).filter(
+    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+)
 
 # gates
 @st.composite
@@ -257,7 +260,6 @@ def single_mode_unitary_gate(draw):
             random_Sgate(),
             random_Dgate(),
             random_Pgate(),
-            random_Ggate(num_modes=1),
             random_Interferometer(num_modes=1),  # like Rgate
         )
     )

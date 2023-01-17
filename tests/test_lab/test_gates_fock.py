@@ -38,7 +38,7 @@ from mrmustard.lab import (
     S2gate,
     Attenuator,
     Interferometer,
-    Vacuum
+    Vacuum,
 )
 
 
@@ -60,13 +60,14 @@ def test_Dgate_2mode(state, xxyy):
     assert state_out == state
 
 
-@pytest.mark.parametrize(
-    "gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2), Attenuator(0.5)]
-)
+# @pytest.mark.parametrize(
+#     "gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2), Attenuator(0.5)]
+# )
+@given(gate=single_mode_cv_channel())
 def test_single_mode_fock_equals_gaussian_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [30]
+    cutoffs = [60]
     gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
@@ -75,7 +76,7 @@ def test_single_mode_fock_equals_gaussian_dm(gate):
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
-@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(0.3, 0.3), Pgate(10), Rgate(np.pi / 2)])
+@given(gate=single_mode_unitary_gate())
 def test_single_mode_fock_equals_gaussian_ket(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
@@ -89,30 +90,20 @@ def test_single_mode_fock_equals_gaussian_ket(gate):
     assert np.allclose(via_fock_space_ket, phase * via_phase_space_ket)
 
 
-@pytest.mark.parametrize(
-    "gate",
-    [
-        Sgate(r=0.5, phi=0.2) >> Attenuator(0.4),
-        Dgate(0.4, 0.4) >> Attenuator(0.4),
-        Pgate(1) >> Attenuator(0.4),
-        Rgate(np.pi / 2) >> Attenuator(0.4),
-    ],
-)
+@given(gate=single_mode_unitary_gate())
 def test_single_mode_fock_equals_gaussian_ket_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [60]
-    gaussian_state = SqueezedVacuum(0.5)
+    cutoffs = [40]
+    gaussian_state = SqueezedVacuum(0.3)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm([10])
-    via_phase_space_dm = (gaussian_state >> gate).dm([10])
+    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.2)).dm([10])
+    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.2)).dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
-@pytest.mark.parametrize(
-    "gate", [BSgate(np.pi / 2), MZgate(np.pi / 2), CZgate(0.1), CXgate(0.1), S2gate(0.1)]
-)
+@given(gate=two_mode_unitary_gate())
 def test_two_mode_fock_equals_gaussian(gate):
     """Test same state is obtained via fock representation or phase space
     for two modes circuits."""
