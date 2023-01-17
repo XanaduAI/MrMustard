@@ -26,9 +26,11 @@ from mrmustard.lab import (
     MZgate,
     S2gate,
     Attenuator,
+    Amplifier,
+    AdditiveNoise,
     Interferometer,
     Ggate,
-    Vacuum
+    Vacuum,
 )
 from mrmustard import settings
 
@@ -47,6 +49,8 @@ angle = st.floats(min_value=0, max_value=2 * np.pi)
 r = st.floats(
     min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False
 )  # reasonable squeezing magnitude
+prob = st.floats(min_value=0, max_value=1, allow_infinity=False, allow_nan=False)
+gain = st.floats(min_value=1, max_value=2, allow_infinity=False, allow_nan=False)
 
 
 @st.composite
@@ -85,6 +89,9 @@ positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
 real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
+    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+)
+gain_bounds = st.tuples(none_or_(gain), none_or_(gain)).filter(
     lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
 )
 
@@ -134,6 +141,36 @@ def random_Pgate(draw, trainable=False):
         shearing=draw(angle),
         shearing_bounds=draw(angle_bounds),
         shearing_trainable=trainable,
+    )
+
+
+@st.composite
+def random_Attenuator(draw, trainable=False):
+    r"""Return a random Attenuator."""
+    return Attenuator(
+        transmissivity=draw(prob),
+        transmissivity_bounds=draw(prob_bounds),
+        transmissivity_trainable=trainable,
+    )
+
+
+@st.composite
+def random_Amplifier(draw, trainable=False):
+    r"""Return a random Amplifier."""
+    return Amplifier(
+        gain=draw(gain),
+        gain_bounds=draw(gain_bounds),
+        gain_trainable=trainable,
+    )
+
+
+@st.composite
+def random_AdditiveNoise(draw, trainable=False):
+    r"""Return a random AdditiveNoise."""
+    return AdditiveNoise(
+        noise=draw(prob),
+        noise_bounds=draw(prob_bounds),
+        noise_trainable=trainable,
     )
 
 
@@ -214,7 +251,28 @@ def random_Ggate(draw, num_modes, trainable=False):
 @st.composite
 def single_mode_unitary_gate(draw):
     r"""Return a random single mode unitary gate."""
-    return draw(st.one_of(random_Rgate(), random_Sgate(), random_Dgate(), random_Pgate()))
+    return draw(
+        st.one_of(
+            random_Rgate(),
+            random_Sgate(),
+            random_Dgate(),
+            random_Pgate(),
+            random_Ggate(num_modes=1),
+            random_Interferometer(num_modes=1),  # like Rgate
+        )
+    )
+
+
+@st.composite
+def single_mode_cv_channel(draw):
+    r"""Return a random single mode unitary gate."""
+    return draw(
+        st.one_of(
+            random_Attenuator(),
+            random_Amplifier(),
+            random_AdditiveNoise(),
+        )
+    )
 
 
 @st.composite
@@ -234,7 +292,7 @@ def two_mode_unitary_gate(draw):
 
 
 @st.composite
-def n_mode_gate(draw, num_modes=None):
+def n_mode_unitary_gate(draw, num_modes=None):
     r"""Return a random n mode unitary gate."""
     return draw(st.one_of(random_Interferometer(num_modes), random_Ggate(num_modes)))
 
