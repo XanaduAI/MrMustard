@@ -49,7 +49,7 @@ def list_of_ints(draw, N):
 
 def array_of_(strategy, minlen=0, maxlen=100):
     r"""Return a strategy that returns an array of values from `strategy`."""
-    return arrays(shape=(st.integers(minlen, maxlen),), elements=strategy)
+    return arrays(shape=(st.integers(minlen, maxlen).example(),), elements=strategy, dtype=type(strategy.example()))
 
 
 def none_or_(strategy):
