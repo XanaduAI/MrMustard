@@ -346,14 +346,17 @@ def n_mode_separable_pure_state(draw, num_modes):
 def n_mode_separable_mixed_state(draw, num_modes):
     r"""Return a random n mode separable mixed state."""
     attenuator = Attenuator(draw(st.floats(min_value=0.2, max_value=0.9)))
-    return draw(
-        st.one_of(
-            squeezed_vacuum(num_modes),
-            displacedsqueezed(num_modes),
-            coherent(num_modes),
-            thermal(num_modes),
+    return (
+        draw(
+            st.one_of(
+                squeezed_vacuum(num_modes),
+                displacedsqueezed(num_modes),
+                coherent(num_modes),
+                thermal(num_modes),
+            )
         )
-    ) >> attenuator
+        >> attenuator
+    )
 
 
 @st.composite
