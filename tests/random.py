@@ -46,9 +46,7 @@ medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, al
 # physical parameters
 nmodes = st.integers(min_value=1, max_value=10)
 angle = st.floats(min_value=0, max_value=2 * np.pi)
-r = st.floats(
-    min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False
-)  # reasonable squeezing magnitude
+r = st.floats(min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False)
 prob = st.floats(min_value=0, max_value=1, allow_infinity=False, allow_nan=False)
 gain = st.floats(min_value=1, max_value=2, allow_infinity=False, allow_nan=False)
 
@@ -82,21 +80,13 @@ def none_or_(strategy):
 
 
 # bounds
-angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
-positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
-real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
-gain_bounds = st.tuples(none_or_(gain), none_or_(gain)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
-prob_bounds = st.tuples(none_or_(prob), none_or_(prob)).filter(
-    lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
-)
+bounds_check = lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+
+angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(bounds_check)
+positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(bounds_check)
+real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(bounds_check)
+gain_bounds = st.tuples(none_or_(gain), none_or_(gain)).filter(bounds_check)
+prob_bounds = st.tuples(none_or_(prob), none_or_(prob)).filter(bounds_check)
 
 # gates
 @st.composite
@@ -355,6 +345,7 @@ def n_mode_separable_pure_state(draw, num_modes):
 @st.composite
 def n_mode_separable_mixed_state(draw, num_modes):
     r"""Return a random n mode separable mixed state."""
+    attenuator = Attenuator(draw(st.floats(min_value=0.2, max_value=0.9)))
     return draw(
         st.one_of(
             squeezed_vacuum(num_modes),
@@ -362,7 +353,7 @@ def n_mode_separable_mixed_state(draw, num_modes):
             coherent(num_modes),
             thermal(num_modes),
         )
-    ) >> Attenuator(0.9)
+    ) >> attenuator
 
 
 @st.composite
@@ -372,3 +363,11 @@ def n_mode_pure_state(draw, num_modes=1):
     I = draw(random_Interferometer(num_modes))
     D = draw(random_Dgate(num_modes))
     return Vacuum(num_modes) >> S >> I >> D
+
+
+@st.composite
+def n_mode_mixed_state(draw, num_modes=1):
+    r"""Return a random n mode mixed state."""
+    state = draw(n_mode_pure_state(num_modes))
+    attenuator = Attenuator(draw(st.floats(min_value=0.5, max_value=0.9)))
+    return state >> attenuator
