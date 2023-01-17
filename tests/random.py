@@ -125,6 +125,7 @@ def random_Dgate(draw, trainable=False):
         y_trainable=trainable,
     )
 
+
 @st.composite
 def random_Pgate(draw, trainable=False):
     r"""Return a random Pgate."""
@@ -133,6 +134,7 @@ def random_Pgate(draw, trainable=False):
         shearing_bounds=draw(angle_bounds),
         shearing_trainable=trainable,
     )
+
 
 @st.composite
 def random_S2gate(draw, trainable=False):
@@ -146,6 +148,7 @@ def random_S2gate(draw, trainable=False):
         phi_trainable=trainable,
     )
 
+
 @st.composite
 def random_CXgate(draw, trainable=False):
     r"""Return a random CXgate."""
@@ -155,6 +158,7 @@ def random_CXgate(draw, trainable=False):
         s_trainable=trainable,
     )
 
+
 @st.composite
 def random_CZgate(draw, trainable=False):
     r"""Return a random CZgate."""
@@ -163,6 +167,7 @@ def random_CZgate(draw, trainable=False):
         s_bounds=draw(real_bounds),
         s_trainable=trainable,
     )
+
 
 @st.composite
 def random_BSgate(draw, trainable=False):
