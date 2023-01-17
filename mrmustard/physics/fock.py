@@ -322,7 +322,7 @@ def validate_contraction_indices(in_idx, out_idx, M, name):
         )
 
 
-def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
+def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     r"""Applies a kraus operator to a ket.
     It assumes that the ket is indexed as left_1, ..., left_n.
 
@@ -338,6 +338,9 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
     Returns:
         array: the resulting ket with indices as kraus_out_idx + uncontracted ket indices
     """
+    if kraus_out_idx is None:
+        kraus_out_idx = kraus_in_idx
+    
     if not set(kraus_in_idx).issubset(range(ket.ndim)):
         raise ValueError("kraus_in_idx should be a subset of the ket indices.")
 
@@ -414,7 +417,7 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     return k_dm_k.transpose(left + right).tensor
 
 
-def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
+def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx=None):
     r"""Applies a choi operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
@@ -465,7 +468,7 @@ def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
     return choi_dm.transpose(left + right).tensor
 
 
-def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx):
+def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx=None):
     r"""Applies a choi operator to a ket.
     It assumes that the ket is indexed as left_1, ..., left_n.
 
@@ -481,6 +484,9 @@ def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx):
     Returns:
         array: the resulting ket
     """
+    if choi_out_idx is None:
+        choi_out_idx = choi_in_idx
+    
     if not set(choi_in_idx).issubset(range(ket.ndim)):
         raise ValueError("choi_in_idx should be a subset of the ket indices.")
 
