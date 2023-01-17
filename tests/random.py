@@ -109,6 +109,14 @@ def random_Dgate(draw, trainable=False):
         y_trainable=trainable,
     )
 
+@st.composite
+def random_Pgate(draw, trainable=False):
+    return Pgate(
+        shearing=draw(angle),
+        shearing_bounds=draw(angle_bounds),
+        shearing_trainable=trainable,
+    )
+
 
 @st.composite
 def random_S2gate(draw, trainable=False):
@@ -161,7 +169,7 @@ def random_Ggate(draw, num_modes, trainable=False):
 
 @st.composite
 def single_mode_unitary_gate(draw):
-    return draw(st.one_of(random_Rgate(1), random_Sgate(1), random_Dgate(1)))
+    return draw(st.one_of(random_Rgate(), random_Sgate(), random_Dgate(), random_Pgate()))
 
 
 @st.composite
