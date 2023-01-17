@@ -322,7 +322,7 @@ def validate_contraction_indices(in_idx, out_idx, M, name):
         )
 
 
-def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
+def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     r"""Applies a kraus operator to a ket.
     It assumes that the ket is indexed as left_1, ..., left_n.
 
@@ -338,6 +338,9 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
     Returns:
         array: the resulting ket with indices as kraus_out_idx + uncontracted ket indices
     """
+    if kraus_out_idx is None:
+        kraus_out_idx = kraus_in_idx
+
     if not set(kraus_in_idx).issubset(range(ket.ndim)):
         raise ValueError("kraus_in_idx should be a subset of the ket indices.")
 
@@ -354,7 +357,8 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx):
     # now the leftover indices are in the order kraus_out_idx + uncontracted ket indices
     kraus_ket = kraus @ ket
 
-    # sort kraus_ket.axis_labels by the int at the end of each label
+    # sort kraus_ket.axis_labels by the int at the end of each label.
+    # Each label is guaranteed to have a unique int at the end.
     new_axis_labels = sorted(kraus_ket.axis_labels, key=lambda x: int(x.split("_")[-1]))
 
     return kraus_ket.transpose(new_axis_labels).tensor
@@ -413,7 +417,7 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     return k_dm_k.transpose(left + right).tensor
 
 
-def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
+def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx=None):
     r"""Applies a choi operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
@@ -429,6 +433,9 @@ def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
     Returns:
         array: the resulting density matrix
     """
+    if choi_out_idx is None:
+        choi_out_idx = choi_in_idx
+
     if not set(choi_in_idx).issubset(range(dm.ndim // 2)):
         raise ValueError("choi_in_idx should be a subset of the density matrix indices.")
 
@@ -453,11 +460,60 @@ def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx):
     choi_dm = choi @ dm
 
     # sort choi_dm.axis_labels by the int at the end of each label, first left, then right
-    N = choi_dm.tensor.ndim // 2
-    left = sorted(choi_dm.axis_labels[:N], key=lambda x: int(x.split("_")[-1]))
-    right = sorted(choi_dm.axis_labels[N:], key=lambda x: int(x.split("_")[-1]))
+    left_labels = [label for label in choi_dm.axis_labels if "left" in label]
+    left = sorted(left_labels, key=lambda x: int(x.split("_")[-1]))
+    right_labels = [label for label in choi_dm.axis_labels if "right" in label]
+    right = sorted(right_labels, key=lambda x: int(x.split("_")[-1]))
 
     return choi_dm.transpose(left + right).tensor
+
+
+def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx=None):
+    r"""Applies a choi operator to a ket.
+    It assumes that the ket is indexed as left_1, ..., left_n.
+
+    The choi operator has indices that contract with the ket (choi_in_idx) and indices that are left over (choi_out_idx).
+    `choi` will contract choi_in_idx from the left and from the right with the ket.
+
+    Args:
+        choi (array): the choi operator to be applied
+        ket (array): the ket to which the choi operator is applied
+        choi_in_idx (list of ints): the indices of the choi operator that contract with the ket
+        choi_out_idx (list of ints): the indices of the choi operator that re leftover
+
+    Returns:
+        array: the resulting ket
+    """
+    if choi_out_idx is None:
+        choi_out_idx = choi_in_idx
+
+    if not set(choi_in_idx).issubset(range(ket.ndim)):
+        raise ValueError("choi_in_idx should be a subset of the ket indices.")
+
+    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+    validate_contraction_indices(choi_in_idx, choi_out_idx, ket.ndim, "choi")
+
+    ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
+    ket_dual = MMTensor(math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)])
+    choi = MMTensor(
+        choi,
+        axis_labels=[f"out_left_{i}" for i in choi_out_idx]
+        + [f"left_{i}" for i in choi_in_idx]
+        + [f"out_right_{i}" for i in choi_out_idx]
+        + [f"right_{i}" for i in choi_in_idx],
+    )
+
+    # contract the choi matrix with the ket and its dual, like choi @ |ket><ket|
+    # now the leftover indices are in the order out_left_idx + out_right_idx + uncontracted left indices + uncontracted right indices
+    choi_ket = choi @ ket @ ket_dual
+
+    # sort choi_ket.axis_labels by the int at the end of each label, first left, then right
+    left_labels = [label for label in choi_ket.axis_labels if "left" in label]
+    left = sorted(left_labels, key=lambda x: int(x.split("_")[-1]))
+    right_labels = [label for label in choi_ket.axis_labels if "right" in label]
+    right = sorted(right_labels, key=lambda x: int(x.split("_")[-1]))
+
+    return choi_ket.transpose(left + right).tensor
 
 
 def contract_states(
