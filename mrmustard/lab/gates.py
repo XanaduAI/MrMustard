@@ -493,8 +493,8 @@ class RealInterferometer(Parametrized, Transformation):
         unitary_trainable: bool = False,
     ):
         if unitary is None:
-            U = math.real(math.random_unitary(num_modes))
-        super().__init__(unitary=U, unitary_trainable=unitary_trainable)
+            unitary = math.real(math.random_unitary(num_modes))
+        super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
         self._modes = list(range(num_modes))
         self._is_gaussian = True
 
