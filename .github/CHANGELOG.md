@@ -104,7 +104,7 @@ within the defined window. Also, expose some plot parameters and return the figu
 
 ### Documentation
 
-### Contributors
+### Contributors 
 
 This release contains contributions from (in alphabetical order):
 [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
