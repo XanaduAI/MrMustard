@@ -654,7 +654,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
             R, 2 * math.astensor([xi], "complex128"), math.make_complex(1.0, 0.0), cutoff
         )
 
-    hermite_polys = math.cast(math.map_fn(f_hermite_polys, x_tensor), "float64")
+    hermite_polys = math.cast(math.map_fn(f_hermite_polys, math.cast(x_tensor, 'complex128')), "float64")
 
     # (real) wavefunction
     psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
