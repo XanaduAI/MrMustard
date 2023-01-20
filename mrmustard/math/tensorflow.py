@@ -79,6 +79,12 @@ class TFMath(MathInterface):
             return array
         return tf.cast(array, dtype)
 
+    def Categorical(self, probs: Tensor, name: str):
+        return tfp.distributions.Categorical(probs=probs, name=name)
+
+    def cholesky(self, input: Tensor):
+        return tf.linalg.cholesky(input)
+
     def clip(self, array, a_min, a_max) -> tf.Tensor:
         return tf.clip_by_value(array, a_min, a_max)
 
@@ -135,6 +141,7 @@ class TFMath(MathInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
+    @Autocast()
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if type(string) is str:
             return tf.einsum(string, *tensors)
@@ -183,6 +190,9 @@ class TFMath(MathInterface):
     def log(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.log(x)
 
+    def map_fn(self, func, elements):
+        return tf.map_fn(func, elements)
+
     @Autocast()
     def matmul(
         self,
@@ -206,6 +216,9 @@ class TFMath(MathInterface):
     @Autocast()
     def minimum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.minimum(a, b)
+
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
     def new_variable(
         self,
@@ -274,6 +287,9 @@ class TFMath(MathInterface):
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
+    def squeeze(self, tensor, axis=None):
+        return tf.squeeze(tensor, axis=axis or [])
+
     def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)
 
@@ -315,21 +331,6 @@ class TFMath(MathInterface):
 
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
-
-    def map_fn(self, func, elements):
-        return tf.map_fn(func, elements)
-
-    def squeeze(self, tensor, axis=None):
-        return tf.squeeze(tensor, axis=axis or [])
-
-    def cholesky(self, input: Tensor):
-        return tf.linalg.cholesky(input)
-
-    def Categorical(self, probs: Tensor, name: str):
-        return tfp.distributions.Categorical(probs=probs, name=name)
-
-    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
-        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions
