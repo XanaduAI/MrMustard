@@ -16,6 +16,9 @@
 
 from functools import lru_cache, wraps
 import numpy as np
+from mrmustard.math import Math
+
+math = Math()
 
 
 def tensor_int_cache(fn):
@@ -33,7 +36,7 @@ def tensor_int_cache(fn):
 
     @wraps(fn)
     def wrapper(tensor, cutoff):
-        return cached_wrapper(tuple(tensor.numpy()), cutoff)
+        return cached_wrapper(tuple(math.asnumpy(tensor)), cutoff)
 
     # copy lru_cache attributes over too
     wrapper.cache_info = cached_wrapper.cache_info
