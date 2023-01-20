@@ -36,6 +36,7 @@ from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
+from mrmustard.physics.fock import oscillator_eigenstate
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -304,6 +305,54 @@ class State:
                     padded = self._dm
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
         return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
+
+    def wavefunctionQ(self, q: Sequence[float]):
+        r"""Returns the position wavefunction of the state at a vector of positions.
+
+        Args:
+            q (Sequence[float]): the position vector
+
+        Returns:
+            Tensor: the wavefunction
+        """
+        if self.num_modes > 1:
+            raise NotImplementedError("wavefunction only implemented for single mode states")
+
+        h_n = oscillator_eigenstate(q, self.cutoffs[0])
+
+        if self.is_mixed:
+            dm = self.dm()
+            wavefunction = math.einsum(
+                "ar,ab,bs->rs", h_n, dm, h_n
+            )  # NOTE: the first h_n should be conjugated but it's real
+        else:
+            ket = self.ket()
+            wavefunction = math.tensordot(ket, h_n, axes=[[0], [0]])
+        return wavefunction
+
+    def wavefunctionP(self, p: Sequence[float]):
+        r"""Returns the momentum wavefunction of the state at a vector of momenta.
+
+        Args:
+            p (Sequence[float]): the momentum vector
+
+        Returns:
+            Tensor: the wavefunction
+        """
+        if self.num_modes > 1:
+            raise NotImplementedError("wavefunction only implemented for single mode states")
+
+        h_n_fourier = math.pow(math.astensor(1j), math.arange(self.cutoffs[0]))[
+            :, None
+        ] * math.cast(oscillator_eigenstate(p, self.cutoffs[0]), "complex128")
+
+        if self.is_mixed:
+            dm = self.dm()
+            wavefunction = math.einsum("ar,ab,bs->rs", h_n_fourier, dm, h_n_fourier)
+        else:
+            ket = self.ket()
+            wavefunction = math.tensordot(ket, h_n_fourier, axes=[[0], [0]])
+        return wavefunction
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""Returns the probabilities in Fock representation.
