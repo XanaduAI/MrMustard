@@ -434,9 +434,10 @@ class Interferometer(Parametrized, Transformation):
 
     Args:
         num_modes (int): the num_modes-mode interferometer
-        unitary (2d array): a valid unitary matrix. For N modes it must have shape `(2N,2N)`
+        unitary (2d array): a valid unitary matrix U. For N modes it must have shape `(N,N)`
         unitary_trainable (bool): whether unitary is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
+        ortho_symplectic (2d array): a valid orthogonal symplectic matrix that comes from its unitary matrix U=X+iY, and [[X, Y],[-Y, X]]. For N modes it must have shape `(2N,2N)`
     """
 
     def __init__(
@@ -445,14 +446,15 @@ class Interferometer(Parametrized, Transformation):
         unitary: Optional[Tensor] = None,
         unitary_trainable: bool = False,
         modes: Optional[List[int]] = None,
+        ortho_symplectic: Optional[Tensor] = None
     ):
         if modes is not None and (
             num_modes != len(modes) or any(mode >= num_modes for mode in modes)
         ):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
-            U = math.random_unitary(num_modes)
-            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
+            unitary = math.random_unitary(num_modes)
+        ortho_symplectic = math.block([[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]])
         super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
@@ -462,17 +464,17 @@ class Interferometer(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return self.unitary.value
+        return self.ortho_symplectic.value
 
     def _validate_modes(self, modes):
-        if len(modes) != self.unitary.value.shape[-1] // 2:
+        if len(modes) != self.ortho_symplectic.value.shape[-1] // 2:
             raise ValueError(
                 f"Invalid number of modes: {len(modes)} (should be {self.unitary.shape[-1] // 2})"
             )
 
     def __repr__(self):
         modes = self.modes
-        unitary = repr(math.asnumpy(self.unitary.value)).replace("\n", "")
+        unitary = repr(math.asnumpy(self.ortho_symplectic.value)).replace("\n", "")
         return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
