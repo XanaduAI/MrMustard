@@ -650,13 +650,10 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     R = np.array([[2 + 0j]])  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        return math.hermite_renormalized(
-            R, 2 * math.astensor([xi], "complex128"), math.make_complex(1.0, 0.0), cutoff
-        )
+        poly = math.hermite_renormalized(R, 2 * math.astensor([xi], "complex128"), 1+0j, cutoff)
+        return math.cast(poly, "float64")
 
-    hermite_polys = math.cast(
-        math.map_fn(f_hermite_polys, math.cast(x_tensor, "complex128")), "float64"
-    )
+    hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
 
     # (real) wavefunction
     psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
