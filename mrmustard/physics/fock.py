@@ -28,9 +28,9 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_U,
 )
+from mrmustard.physics.wavefunction import oscillator_eigenstates
 
 from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.caching import tensor_int_cache
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
 from mrmustard.math import Math
@@ -613,53 +613,6 @@ def trace(dm, keep: List[int]):
     return dm.contract().tensor
 
 
-@tensor_int_cache
-def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
-    r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
-
-    Args:
-        q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
-        cutoff (int): maximum number of photons
-        hbar (optional): value of `\hbar`, defaults to Mr Mustard's internal value
-
-    Returns:
-        Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
-            with number of photons ``i`` evaluated at position ``q[j]``, i.e., `\psi_i(q_j)`.
-
-    .. details::
-
-        .. admonition:: Definition
-            :class: defn
-
-        The q-quadrature eigenstates are defined as
-
-        .. math::
-
-            \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
-                \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
-
-        where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
-    """
-    omega_over_hbar = math.cast(1 / settings.HBAR, "float64")
-    x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
-
-    # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
-
-    # Renormalized physicist hermite polys: Hn / sqrt(n!)
-    R = np.array([[2 + 0j]])  # to get the physicist polys
-
-    def f_hermite_polys(xi):
-        poly = math.hermite_renormalized(R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff)
-        return math.cast(poly, "float64")
-
-    hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
-
-    # (real) wavefunction
-    psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
-    return psi
-
-
 @lru_cache
 def estimate_dx(cutoff, period_resolution=20):
     r"""Estimates a suitable quadrature discretization interval `dx`. Uses the fact
@@ -773,7 +726,7 @@ def quadrature_distribution(
     if x is None:
         x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
-    psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
+    psi_x = math.cast(oscillator_eigenstates(x, cutoff), "complex128")
     pdf = (
         math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
         if is_dm
