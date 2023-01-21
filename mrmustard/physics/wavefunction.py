@@ -23,6 +23,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 import numpy as np
 from mrmustard.types import Tensor, Vector
+
 math = Math()
 
 
