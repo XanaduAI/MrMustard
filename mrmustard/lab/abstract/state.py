@@ -36,7 +36,7 @@ from mrmustard.utils import graphics
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.math import Math
-from mrmustard.physics.fock import oscillator_eigenstate
+from mrmustard.physics.wavefunction import oscillator_eigenstates
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -318,7 +318,7 @@ class State:
         if self.num_modes > 1:
             raise NotImplementedError("wavefunction only implemented for single mode states")
 
-        h_n = oscillator_eigenstate(q, self.cutoffs[0])
+        h_n = oscillator_eigenstates(q, self.cutoffs[0])
 
         if self.is_mixed:
             dm = self.dm()
@@ -344,7 +344,7 @@ class State:
 
         h_n_fourier = math.pow(math.astensor(1j), math.arange(self.cutoffs[0]))[
             :, None
-        ] * math.cast(oscillator_eigenstate(p, self.cutoffs[0]), "complex128")
+        ] * math.cast(oscillator_eigenstates(p, self.cutoffs[0]), "complex128")
 
         if self.is_mixed:
             dm = self.dm()
