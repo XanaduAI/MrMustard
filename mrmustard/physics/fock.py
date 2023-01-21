@@ -29,7 +29,6 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
 )
 from mrmustard.physics.wavefunction import oscillator_eigenstates
-
 from mrmustard.math.mmtensor import MMTensor
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
