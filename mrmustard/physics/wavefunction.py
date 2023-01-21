@@ -18,12 +18,11 @@
 This module contains functions for transforming to the wavefunction representation.
 """
 
+import numpy as np
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard import settings
 from mrmustard.math import Math
-import numpy as np
 from mrmustard.types import Tensor, Vector
-
 math = Math()
 
 
