@@ -67,7 +67,6 @@ def train_device(cost_maker, device_maker=None, metric_fns=None, return_kwargs=T
         device = [device]
 
     if isinstance(device, Sequence):
-        print(device)
         cost_fn, kwargs = curry_pop(cost_maker, *device, **kwargs)
         optimized = device
     elif isinstance(device, Mapping):
@@ -75,6 +74,7 @@ def train_device(cost_maker, device_maker=None, metric_fns=None, return_kwargs=T
         optimized = list(device.values())
 
     opt, kwargs = curry_pop(Optimizer, **kwargs)
+    # optimized += kwargs.pop('by_optimizing', [])
 
     _, kwargs = curry_pop(opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs)
 
@@ -115,22 +115,28 @@ def _iter_futures(futures):
         yield ray.get(done[0])
 
 
-def map_train(cost_maker, device_maker=None, tasks=1, pbar=True, unblock=False, num_cpus=None, **kwargs):
+def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpus=None, **kwargs):
     """Maps multiple training tasks across multiple workers using `ray`.
 
     Args:
-        cost_maker (callable): Function that takes the output of `device_maker` and returns a cost function which is
-            callable by the optimizer.
-        device_maker (callable): Function that (partially) takes `kwargs` and returns a device, or list/dict of devices.
-            If None, `cost_maker` will be assumed to take no argument (for example, when device-making is contained in
-            `cost_maker`). Defaults to None.
-        tasks (Union[int, Sequence, Mapping]): Number of repeats or collection of task-specific training configs
-            feeding into `train_device`. Refer to `kwargs` below for the available options.
+        trainer (callable): The function containing the training loop to be distributed, whose
+            fixed arguments are to be passed by `**kwargs` and task-specific arguments iterated through `tasks`.
+            Defaults to the `train_device` function.
+        tasks (Union[int, Sequence, Mapping]): Number of repeats or collection of task-specific training
+            config arguments feeding into `train_device`.
+            Refer to `kwargs` below for the available options.
+            Defaults to 1 which runs `trainer` exactly once.
         pbar (bool): Whether to show a progress bar, available only in blocking mode (i.e. `unblock==False`). Defaults to True.
         unblock (bool): Whether to unblock the process and returns a getter function returning the available results.
             Defaults to False.
         num_cpus (int): Number of cpu workers to initialize ray. Defaults to the number of virtual cores.
-        kwargs: Dict containing fixed training config kwargs feeding into `train_device`.
+        kwargs: Additional arguments containing fixed training config kwargs feeding into `trainer`.
+        For the default `trainer` `train_device`, available options are:
+            - cost_maker (callable): Function that takes the output of `device_maker` and returns a cost function which is
+                callable by the optimizer.
+            - device_maker (callable): Function that (partially) takes `kwargs` and returns a device, or list/dict of devices.
+                If None, `cost_maker` will be assumed to take no argument (for example, when device-making is contained in
+                `cost_maker`). Defaults to None.
             - metric_fns (Union[Sequence[callable], Mapping[callable], callable]): Optional collection of functions that takes the
                 output of `device_maker` after optimization and returns arbitrary evaluation/information.
             - return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
@@ -155,16 +161,17 @@ def map_train(cost_maker, device_maker=None, tasks=1, pbar=True, unblock=False, 
         return_dict = True
         tasks = [{"tag": tag, **task} for tag, task in tasks.items()]
 
-    remote_train = ray.remote(train_device)
+    remote_trainer, kwargs = partial_pop(
+        ray.remote(trainer).remote,
+        **kwargs,
+    )
 
     if isinstance(tasks, Sequence):
         promises = [
-            remote_train.remote(
-                cost_maker=cost_maker,
-                device_maker=device_maker,
+            curry_pop(
+                remote_trainer,
                 **task_kwargs,
-                **kwargs,
-            )
+            )[0]
             for task_kwargs in tasks
             if isinstance(task_kwargs, Mapping)
         ]
