@@ -48,13 +48,13 @@ class MMTensor:
             raise ValueError("The number of axis labels must be equal to the number of axes.")
 
     def __array__(self):
-        """
+        r"""
         Implement the NumPy array interface.
         """
         return self.tensor
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        """
+        r"""
         Implement the NumPy ufunc interface.
         """
         if method == "__call__":
@@ -114,7 +114,7 @@ class MMTensor:
         return self.__add__(other)
 
     def __matmul__(self, other):
-        """
+        r"""
         Overload the @ operator to perform tensor contractions.
         """
         # if not isinstance(other, MMTensor):
