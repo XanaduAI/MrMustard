@@ -15,8 +15,8 @@
 """
 Unit tests for the :class:`MMTensor`.
 """
-import pytest
 import numpy as np
+import pytest
 
 from mrmustard.math import Math
 from mrmustard.math.mmtensor import MMTensor
@@ -102,6 +102,7 @@ def test_mmtensor_getitem_ellipsis_beginning():
 
 
 def test_ufunc():
+    """Test that MMTensor ufuncs work"""
     array = np.random.normal(size=(2, 3, 4))
     mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
     assert np.allclose(np.sin(mmtensor), np.sin(array))
