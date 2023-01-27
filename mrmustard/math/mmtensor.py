@@ -106,7 +106,9 @@ class MMTensor:
         Check that the axis labels of *this* tensor match those of another tensor.
         """
         if self.axis_labels != other.axis_labels:
-            raise ValueError(f"Axis labels must match (got {self.axis_labels} and {other.axis_labels})")
+            raise ValueError(
+                f"Axis labels must match (got {self.axis_labels} and {other.axis_labels})"
+            )
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -198,13 +200,13 @@ class MMTensor:
         offset = 0
         for i, ind in enumerate(indices):
             if isinstance(ind, int):
-                axis_labels.pop(i+offset)
+                axis_labels.pop(i + offset)
                 offset -= 1
             elif ind is Ellipsis and i == 0:
                 offset = len(self.tensor.shape) - len(indices)
             elif ind is Ellipsis and i > 0:
                 break
-                
+
         return MMTensor(self.tensor[indices], axis_labels)
 
     def __repr__(self):
