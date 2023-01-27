@@ -19,6 +19,7 @@ This module contains the implementation of a tensor wrapper class.
 """
 
 from typing import List, Optional, Union
+from numbers import Number
 import string
 from mrmustard.math import Math
 
@@ -29,7 +30,8 @@ class MMTensor:
     r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API)."""
 
     def __init__(self, array, axis_labels=None):
-        # If the input array is an MMTensor, use its tensor and axis labels (or the provided ones if specified)
+        # If the input array is an MMTensor,
+        # use its tensor and axis labels (or the provided ones if specified)
         if isinstance(array, MMTensor):
             self.tensor = array.tensor
             self.axis_labels = axis_labels or array.axis_labels
@@ -59,7 +61,55 @@ class MMTensor:
             inputs = [i.tensor if isinstance(i, MMTensor) else i for i in inputs]
             return MMTensor(ufunc(*inputs, **kwargs), self.axis_labels)
         else:
-            return NotImplemented
+            return NotImplemented(f"Cannot call {method} on {ufunc}.")
+
+    def __mul__(self, other):
+        r"""implement the * operator"""
+        if isinstance(other, Number):
+            return MMTensor(self.tensor * other, self.axis_labels)
+        if isinstance(other, MMTensor):
+            self.check_axis_labels_match(other)
+            return MMTensor(self.tensor * other.tensor, self.axis_labels)
+        return NotImplemented(f"Cannot multiply {type(self)} and {type(other)}")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        r"""implement the / operator"""
+        if isinstance(other, MMTensor):
+            self.check_axis_labels_match(other)
+            return MMTensor(self.tensor / other.tensor, self.axis_labels)
+        try:
+            return MMTensor(self.tensor / other, self.axis_labels)
+        except TypeError:
+            return NotImplemented(f"Cannot divide {type(self)} by {type(other)}")
+
+    def __add__(self, other):
+        r"""implement the + operator"""
+        if isinstance(other, MMTensor):
+            self.check_axis_labels_match(other)
+            return MMTensor(self.tensor + other.tensor, self.axis_labels)
+        try:
+            return MMTensor(self.tensor + other, self.axis_labels)
+        except TypeError:
+            return NotImplemented(f"Cannot add {type(self)} and {type(other)}")
+
+    def __sub__(self, other):
+        return self.__add__(-other)
+
+    def __neg__(self):
+        return MMTensor(-self.tensor, self.axis_labels)
+
+    def check_axis_labels_match(self, other):
+        r"""
+        Check that the axis labels of *this* tensor match those of another tensor.
+        """
+        if self.axis_labels != other.axis_labels:
+            raise ValueError(f"Axis labels must match (got {self.axis_labels} and {other.axis_labels})")
+
+    def __radd__(self, other):
+        return self.__add__(other)
 
     def __matmul__(self, other):
         """
@@ -111,14 +161,15 @@ class MMTensor:
                 unique_labels.append(label)
         repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
 
-        # Turn labels into consecutive ascii lower-case letters, with same letters corresponding to the same label
+        # Turn labels into consecutive ascii lower-case letters,
+        # with same letters corresponding to the same label
         label_map = {label: string.ascii_lowercase[i] for i, label in enumerate(unique_labels)}
         labels = [label_map[label] for label in self.axis_labels]
 
         # create einsum string from labels
         einsum_str = "".join(labels)
 
-        # Contract the tensor and assign new axis labels (unique labels except for the contracted ones)
+        # Contract the tensor and assign new axis labels (unique except for the contracted ones)
         return MMTensor(
             math.einsum(einsum_str, self.tensor),
             [label for label in unique_labels if label not in repeated],
