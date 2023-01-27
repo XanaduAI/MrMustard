@@ -56,6 +56,7 @@ class MMTensor:
         Implement the NumPy ufunc interface.
         """
         if method == "__call__":
+            inputs = [i.tensor if isinstance(i, MMTensor) else i for i in inputs]
             return MMTensor(ufunc(*inputs, **kwargs), self.axis_labels)
         else:
             return NotImplemented
@@ -88,8 +89,8 @@ class MMTensor:
         )
 
     def contract(self, relabeling: Optional[List[str]] = None):
-        """
-        Contract the tensor along the specified indices using einsum.
+        r"""
+        Contract *this* tensor along the specified indices using einsum.
 
         Args:
             relabeling (list[str]): An optional list of new axis labels.
@@ -124,7 +125,7 @@ class MMTensor:
         )
 
     def transpose(self, perm: Union[List[int], List[str]]):
-        """
+        r"""
         Transpose the tensor using a list of axis labels or indices.
         """
         if set(perm) == set(self.axis_labels):
@@ -132,31 +133,28 @@ class MMTensor:
         return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
 
     def reshape(self, shape, axis_labels=None):
-        """
+        r"""
         Reshape the tensor. Allows to change the axis labels.
         """
         return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
 
     def __getitem__(self, indices):
-        """
+        r"""
         Implement indexing into the tensor.
         """
-        if isinstance(indices, tuple):
-            axis_labels = []
-            for i, ind in enumerate(indices):
-                if ind is Ellipsis and i == 0:
-                    axis_labels += self.axis_labels[:i]
-                elif isinstance(ind, slice):
-                    axis_labels += self.axis_labels[i]
-                elif ind is Ellipsis and i > 0:
-                    axis_labels += self.axis_labels[i:]
-                    break
-            return MMTensor(self.tensor[indices], axis_labels)
-        else:
-            # Index along a single axis and take care of the axis labels
-            return MMTensor(
-                self.tensor[indices], self.axis_labels[:indices] + self.axis_labels[indices + 1 :]
-            )
+        indices = indices if isinstance(indices, tuple) else (indices,)
+        axis_labels = self.axis_labels.copy()
+        offset = 0
+        for i, ind in enumerate(indices):
+            if isinstance(ind, int):
+                axis_labels.pop(i+offset)
+                offset -= 1
+            elif ind is Ellipsis and i == 0:
+                offset = len(self.tensor.shape) - len(indices)
+            elif ind is Ellipsis and i > 0:
+                break
+                
+        return MMTensor(self.tensor[indices], axis_labels)
 
     def __repr__(self):
         return f"MMTensor({self.tensor}, {self.axis_labels})"
