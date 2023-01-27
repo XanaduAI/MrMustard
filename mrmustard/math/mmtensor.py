@@ -17,10 +17,10 @@
 """
 This module contains the implementation of a tensor wrapper class.
 """
-
-from typing import List, Optional, Union
-from numbers import Number
 import string
+from numbers import Number
+from typing import List, Optional, Union
+
 from mrmustard.math import Math
 
 math = Math()
@@ -222,8 +222,7 @@ class MMTensor:
         name (str): attribute name
 
         Returns:
-        attribute value or raises AttributeError
-"""
+        attribute value or raises AttributeError"""
         try:
             return super().__getattribute__(name)
         except AttributeError:
