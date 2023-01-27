@@ -22,8 +22,9 @@
   The result is added to the `callback_history` attribute of the optimizer.
   [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
 
-  * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
-  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+  * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted). `MMTensor` supports also basic algebraic operations.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)<br>
+  [(#195)](https://github.com/XanaduAI/MrMustard/pull/195)
 
   * the Math interface now supports linear system solving via `math.solve`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
