@@ -101,3 +101,59 @@ def test_ufunc():
     array = np.random.normal(size=(2, 3, 4))
     mmtensor = MMTensor(array, axis_labels=['0','1','2'])
     assert np.allclose(np.sin(mmtensor), np.sin(array))
+
+def test_mmtensor_algebra_add():
+    """Test that MMTensor addition works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    assert np.allclose(mmtensor + mmtensor, array + array)
+
+def test_mmtensor_algebra_add_different_labels():
+    """Test that MMTensor addition with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=['0','1','2'])
+    mmtensor2 = MMTensor(array, axis_labels=['0','1','3'])
+    with pytest.raises(ValueError):
+        mmtensor1 + mmtensor2
+
+def test_mmtensor_algebra_subtract():
+    """Test that MMTensor subtraction works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    assert np.allclose(mmtensor - mmtensor, array - array)
+
+def test_mmtensor_algebra_subtract_different_labels():
+    """Test that MMTensor subtraction with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=['0','1','2'])
+    mmtensor2 = MMTensor(array, axis_labels=['0','1','3'])
+    with pytest.raises(ValueError):
+        mmtensor1 - mmtensor2
+
+def test_mmtensor_algebra_multiply():
+    """Test that MMTensor multiplication works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    assert np.allclose(mmtensor * mmtensor, array * array)
+
+def test_mmtensor_algebra_multiply_different_labels():
+    """Test that MMTensor multiplication with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=['0','1','2'])
+    mmtensor2 = MMTensor(array, axis_labels=['0','1','3'])
+    with pytest.raises(ValueError):
+        mmtensor1 * mmtensor2
+
+def test_mmtensor_algebra_divide():
+    """Test that MMTensor division works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    assert np.allclose(mmtensor / mmtensor, array / array)
+
+def test_mmtensor_algebra_divide_different_labels():
+    """Test that MMTensor division with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=['0','1','2'])
+    mmtensor2 = MMTensor(array, axis_labels=['0','1','3'])
+    with pytest.raises(ValueError):
+        mmtensor1 / mmtensor2
