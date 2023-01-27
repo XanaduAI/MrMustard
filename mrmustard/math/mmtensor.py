@@ -213,9 +213,17 @@ class MMTensor:
         return f"MMTensor({self.tensor}, {self.axis_labels})"
 
     def __getattribute__(self, name):
-        """
-        Implement the underlying array's methods.
-        """
+        r"""
+        Overrides built-in getattribute method for fallback attribute lookup.
+        Tries to get attribute from self, then from self.tensor
+
+        Args:
+        self (object): instance
+        name (str): attribute name
+
+        Returns:
+        attribute value or raises AttributeError
+"""
         try:
             return super().__getattribute__(name)
         except AttributeError:
