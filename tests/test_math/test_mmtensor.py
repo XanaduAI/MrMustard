@@ -16,12 +16,12 @@
 Unit tests for the :class:`MMTensor`.
 """
 import pytest
-from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math import Math
-
-math = Math()
 import numpy as np
 
+from mrmustard.math import Math
+from mrmustard.math.mmtensor import MMTensor
+
+math = Math()
 
 def test_mmtensor_creation():
     """Test creation of MMTensor"""
@@ -71,3 +71,33 @@ def test_mmtensor_contract():
     array = np.array([[1, 2], [3, 4]])
     trace = MMTensor(array, axis_labels=["a", "a"]).contract().tensor
     assert trace == 5
+
+
+def test_mmtensor_getitem_slice():
+    """Test that MMTensor slices correctly"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    sliced = mmtensor[0,:,0]
+    assert sliced.axis_labels == ['1']
+    assert np.allclose(sliced, array[0,:,0])
+
+def test_mmtensor_getitem_int():
+    """Test that MMTensor slices correctly"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    sliced = mmtensor[0,0,0]
+    assert sliced.axis_labels == []
+    assert np.allclose(sliced, array[0,0,0])
+
+def test_mmtensor_getitem_ellipsis_beginning():
+    """Test that MMTensor slices correctly"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    sliced = mmtensor[...,2]
+    assert mmtensor[...,2].axis_labels == ['0','1']
+    assert np.allclose(sliced, array[...,2])
+
+def test_ufunc():
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=['0','1','2'])
+    assert np.allclose(np.sin(mmtensor), np.sin(array))
