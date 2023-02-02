@@ -31,6 +31,7 @@ from mrmustard.types import (
 from mrmustard.math.autocast import Autocast
 from .math_interface import MathInterface
 
+
 # pylint: disable=too-many-public-methods,no-self-use
 class TorchMath(MathInterface):
     r"""Torch implemantion of the :class:`Math` interface."""

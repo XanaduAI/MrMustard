@@ -30,6 +30,7 @@ math = Math()
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heterodyne"]
 
+
 # pylint: disable=no-member
 class PNRDetector(Parametrized, FockMeasurement):
     r"""Photon Number Resolving detector.
@@ -234,7 +235,6 @@ class Generaldyne(Measurement):
     def __init__(
         self, state: State, outcome: Optional[Tensor] = None, modes: Optional[Iterable[int]] = None
     ) -> None:
-
         if not state.is_gaussian:
             raise TypeError("Generaldyne measurement state must be Gaussian.")
         if outcome is not None and not outcome.shape == state.means.shape:
@@ -264,7 +264,6 @@ class Generaldyne(Measurement):
         return super().primal(other)
 
     def _measure_gaussian(self, other) -> Union[State, float]:
-
         remaining_modes = list(set(other.modes) - set(self.modes))
 
         outcome, prob, new_cov, new_means = gaussian.general_dyne(
@@ -300,7 +299,6 @@ class Heterodyne(Generaldyne):
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
     ):
-
         if (x is None) ^ (y is None):  # XOR
             raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
 
@@ -339,7 +337,6 @@ class Homodyne(Generaldyne):
         modes: Optional[List[int]] = None,
         r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
     ):
-
         self.r = r
         self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
 
@@ -366,7 +363,6 @@ class Homodyne(Generaldyne):
         super().__init__(state=state, outcome=outcome, modes=modes)
 
     def _measure_gaussian(self, other) -> Union[State, float]:
-
         # rotate modes to be measured to the Homodyne basis
         other >>= Rgate(-self.quadrature_angle, modes=self.modes)
         self.state >>= Rgate(-self.quadrature_angle, modes=self.modes)
@@ -386,7 +382,6 @@ class Homodyne(Generaldyne):
         return out
 
     def _measure_fock(self, other) -> Union[State, float]:
-
         if len(self.modes) > 1:
             raise NotImplementedError(
                 "Multimode Homodyne sampling for Fock representation is not yet implemented."
