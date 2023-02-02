@@ -15,11 +15,11 @@
 """This is the top-most `__init__.py` file of MrMustard package."""
 
 import numpy as np
-
 import rich.table
 from rich import print
 
 from ._version import __version__
+
 
 # pylint: disable=too-many-instance-attributes
 class Settings:
@@ -40,6 +40,7 @@ class Settings:
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
+        self.CIRCUIT_DECIMALS = 3
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
@@ -133,14 +134,15 @@ def about():
         Torch version:             1.10.0+cu102
     """
     # pylint: disable=import-outside-toplevel
-    import sys
-    import platform
     import os
-    import numpy
+    import platform
+    import sys
+
     import numba
+    import numpy
     import scipy
-    import thewalrus
     import tensorflow
+    import thewalrus
 
     # a QuTiP-style infobox
     print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
