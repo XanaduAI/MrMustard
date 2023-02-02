@@ -23,6 +23,7 @@ from mrmustard import settings
 from mrmustard.physics.fock import quadrature_distribution
 from .wigner import wigner_discretized
 
+
 # pylint: disable=disallowed-name
 class Progressbar:
     "A spiffy loading bar to display the progress during an optimization."

@@ -88,6 +88,7 @@ real_bounds = st.tuples(none_or_(real), none_or_(real)).filter(bounds_check)
 gain_bounds = st.tuples(none_or_(gain), none_or_(gain)).filter(bounds_check)
 prob_bounds = st.tuples(none_or_(prob), none_or_(prob)).filter(bounds_check)
 
+
 # gates
 @st.composite
 def random_Rgate(draw, trainable=False):
