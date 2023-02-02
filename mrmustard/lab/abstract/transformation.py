@@ -140,7 +140,7 @@ class Transformation:
         if decimals is None:
             return self.short_name
         label = self.short_name + "("
-        for name in self.param_names:
+        for name in self.param_names.values():
             par = getattr(self, name).value
             show = False
             if math.asnumpy(par).ndim == 0:
