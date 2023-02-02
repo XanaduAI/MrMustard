@@ -18,12 +18,14 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.types import Tensor
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
-from mrmustard.training import Parametrized
-from mrmustard.physics import gaussian
 from mrmustard.math import Math
+from mrmustard.physics import gaussian
+from mrmustard.training import Parametrized
+from mrmustard.types import Tensor
+
 from .abstract import Transformation
 
 math = Math()
@@ -87,6 +89,7 @@ class Dgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "D"
 
     @property
     def d_vector(self):
@@ -157,6 +160,7 @@ class Sgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "S"
 
     @property
     def X_matrix(self):
@@ -195,6 +199,7 @@ class Rgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "R"
 
     @property
     def X_matrix(self):
@@ -252,6 +257,7 @@ class Pgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "P"
 
     @property
     def X_matrix(self):
@@ -285,6 +291,7 @@ class CXgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "CX"
 
     @property
     def X_matrix(self):
@@ -318,6 +325,7 @@ class CZgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "CZ"
 
     @property
     def X_matrix(self):
@@ -360,6 +368,7 @@ class BSgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "BS"
 
     @property
     def X_matrix(self):
@@ -414,6 +423,7 @@ class MZgate(Parametrized, Transformation):
         self._internal = internal
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "MZ"
 
     @property
     def X_matrix(self):
@@ -461,6 +471,7 @@ class S2gate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "S2"
 
     @property
     def X_matrix(self):
@@ -503,6 +514,7 @@ class Interferometer(Parametrized, Transformation):
         )
         self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
+        self.short_name = "I"
 
     @property
     def X_matrix(self):
@@ -541,6 +553,7 @@ class RealInterferometer(Parametrized, Transformation):
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
         self._modes = list(range(num_modes))
         self._is_gaussian = True
+        self.short_name = "RI"
 
     @property
     def X_matrix(self):
@@ -588,6 +601,7 @@ class Ggate(Parametrized, Transformation):
         )
         self._modes = list(range(num_modes))
         self.is_gaussian = True
+        self.short_name = "G"
 
     @property
     def X_matrix(self):
@@ -661,6 +675,7 @@ class Attenuator(Parametrized, Transformation):
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True
+        self.short_name = "Att"
 
     @property
     def X_matrix(self):
@@ -717,6 +732,7 @@ class Amplifier(Parametrized, Transformation):
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True
+        self.short_name = "Amp"
 
     @property
     def X_matrix(self):
@@ -770,6 +786,7 @@ class AdditiveNoise(Parametrized, Transformation):
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True
+        self.short_name = "Add"
 
     @property
     def Y_matrix(self):
