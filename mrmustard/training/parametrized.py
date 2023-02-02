@@ -42,8 +42,8 @@ class Parametrized:
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
         owner = f"{self.__class__.__qualname__}"
-        self.param_names = []
-        for name, value in kwargs.items():
+        self.param_names = {}
+        for k, (name, value) in enumerate(kwargs.items()):
             # filter out `{name}_trainable` or `{name}_bounds`` to become fields
             # of the class as those kwargs are used to define the variables
             if "_trainable" in name or "_bounds" in name:
@@ -56,7 +56,7 @@ class Parametrized:
 
             # dynamically assign variable as attribute of the class
             self.__dict__[name] = param
-            self.param_names.append(name)
+            self.param_names[k] = name
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
@@ -80,7 +80,7 @@ def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
     """
 
     for obj in object_:
-        if isinstance(obj, Sequence):  # pylint: disable=isinstance-second-argument-not-valid-type
+        if isinstance(obj, List):  # pylint: disable=isinstance-second-argument-not-valid-type
             yield from _traverse_parametrized(obj, extract_type)
         elif isinstance(obj, Parametrized):
             yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
