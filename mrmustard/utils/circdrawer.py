@@ -14,16 +14,12 @@
 """
 This module contains logic for the text-based circuit drawer for MrMustard
 """
+from collections import defaultdict
 
 
 def mode_set(op):
     "includes modes in between min and max of op.modes"
     return set(range(min(op.modes), max(op.modes) + 1))
-
-
-def all_modes(ops):
-    "returns a set of all modes used by the operations"
-    return sorted(list(set().union(*[op.modes for op in ops])))
 
 
 def drawable_layers(ops):
@@ -32,15 +28,14 @@ def drawable_layers(ops):
         ops Iterable[op]: a list of operations
 
     Returns:
-        list[list[op]] : At index k is a list of operations for the k-th layer
+        dict[int:list[op]] : At index k is a list of operations for the k-th layer
     """
-    layers = [[]]
+    layers = defaultdict(list)
     k = 0
     for new_op in ops:
         # if there's any overlap, add to next layer
         if any(mode_set(new_op) & mode_set(op) for op in layers[k]):
             k += 1
-            layers.append([])
         layers[k].append(new_op)
     return layers
 
@@ -57,7 +52,7 @@ def _add_grouping_symbols(op, layer_str):
 
 
 def _add_op(op, layer_str, decimals):
-    """Updates ``layer_str`` with ``op`` operation."""
+    r"""Updates `layer_str` with `op` operation."""
     layer_str = _add_grouping_symbols(op, layer_str)
     control = []
     if op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
@@ -73,7 +68,6 @@ def _add_op(op, layer_str, decimals):
     return layer_str
 
 
-# pylint: disable=too-many-arguments
 def circuit_text(
     ops,
     decimals=None,
@@ -86,16 +80,16 @@ def circuit_text(
     Returns:
         str : String based graphic of the circuit.
     """
-    M = all_modes(ops)
-    n_modes = len(M)
+    all_modes = sorted(list(set().union(*[op.modes for op in ops])))
+    n_modes = len(all_modes)
 
-    totals = [f"{mode}: " for mode in M]
+    totals = [f"{mode}: " for mode in all_modes]
     line_length = max(len(s) for s in totals)
     totals = [s.rjust(line_length, " ") for s in totals]
 
     filler = "─"
 
-    for layer in drawable_layers(ops):
+    for layer in drawable_layers(ops).values():
         layer_str = [filler] * n_modes
 
         for op in layer:
