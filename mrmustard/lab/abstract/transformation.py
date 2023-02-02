@@ -18,21 +18,22 @@ from __future__ import annotations
 
 import numpy as np
 
-from mrmustard.physics import gaussian, fock
-from mrmustard.types import (
-    Sequence,
-    List,
-    Tuple,
-    Optional,
-    Matrix,
-    Vector,
-    Callable,
-    Iterable,
-    Union,
-)
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
+from mrmustard.types import (
+    Callable,
+    Iterable,
+    List,
+    Matrix,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    Vector,
+)
+
 from .state import State
 
 math = Math()
@@ -121,6 +122,31 @@ class Transformation:
                     dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
                 )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+
+    def label(self, decimals: int = 2) -> str:
+        r"""Returns a string representation of the transformation for use in
+        a circuit diagram.
+
+        Args:
+            decimals (int): the number of decimals to use for the parameters
+
+        Returns:
+            str: the string representation of the transformation
+
+        Example:
+            BSgate(0.54, 0.12) -> "BS(0.54, 0.12)"
+            Ggate(2) -> "G(2)"
+        """
+        label = self.short_name + "("
+        for name in self.param_names:
+            par = getattr(self, name)._value
+            show = False
+            if math.asnumpy(par).ndim == 0:
+                label += f"{math.asnumpy(par):.{decimals}g}, "
+                show = True
+            if not show:
+                label += f"{len(self.modes)}, "
+        return label[:-2] + ")"
 
     @property
     def modes(self) -> Sequence[int]:
@@ -267,7 +293,7 @@ class Transformation:
         """
         from ..circuit import (
             Circuit,
-        )  # WARNING - circular import: this is called at runtime so it's ok
+        )
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
