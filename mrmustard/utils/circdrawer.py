@@ -81,7 +81,6 @@ def circuit_text(
         str : String based graphic of the circuit.
     """
     all_modes = sorted(list(set().union(*[op.modes for op in ops])))
-    n_modes = len(all_modes)
 
     totals = [f"{mode}: " for mode in all_modes]
     line_length = max(len(s) for s in totals)
@@ -90,7 +89,7 @@ def circuit_text(
     filler = "─"
 
     for layer in drawable_layers(ops).values():
-        layer_str = [filler] * n_modes
+        layer_str = [filler] * len(all_modes)
 
         for op in layer:
             layer_str = _add_op(op, layer_str, decimals)
