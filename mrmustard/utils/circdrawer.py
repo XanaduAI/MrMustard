@@ -85,7 +85,6 @@ def circuit_text(
     totals = [f"{mode}: " for mode in all_modes]
     line_length = max(len(s) for s in totals)
     totals = [s.rjust(line_length, " ") for s in totals]
-
     filler = "─"
 
     for layer in drawable_layers(ops).values():
@@ -99,7 +98,6 @@ def circuit_text(
 
         line_length += max_label_len + 1  # one for the filler character
 
-        totals = [filler.join([t, s]) for t, s in zip(totals, layer_str)]
-        totals = [s + filler for s in totals]
+        totals = [filler.join([t, s]) + filler for t, s in zip(totals, layer_str)]
 
     return "\n".join(totals)
