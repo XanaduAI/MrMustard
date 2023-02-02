@@ -36,6 +36,7 @@ from mrmustard.types import (
 )
 from .math_interface import MathInterface
 
+
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
     r"""Tensorflow implemantion of the :class:`Math` interface."""
