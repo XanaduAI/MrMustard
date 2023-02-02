@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains tests for the circuitdrawer.py module."""
+
 from mrmustard.lab import BSgate, Ggate
 from mrmustard.utils.circdrawer import (
     _add_grouping_symbols,
