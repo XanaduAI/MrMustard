@@ -121,7 +121,7 @@ def test_mmtensor_algebra_add_different_labels():
     mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
     mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
     with pytest.raises(ValueError):
-        mmtensor1 + mmtensor2
+        mmtensor1 + mmtensor2  # pylint: disable=pointless-statement
 
 
 def test_mmtensor_algebra_subtract():
@@ -137,7 +137,7 @@ def test_mmtensor_algebra_subtract_different_labels():
     mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
     mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
     with pytest.raises(ValueError):
-        mmtensor1 - mmtensor2
+        mmtensor1 - mmtensor2  # pylint: disable=pointless-statement
 
 
 def test_mmtensor_algebra_multiply():
@@ -153,7 +153,7 @@ def test_mmtensor_algebra_multiply_different_labels():
     mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
     mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
     with pytest.raises(ValueError):
-        mmtensor1 * mmtensor2
+        mmtensor1 * mmtensor2  # pylint: disable=pointless-statement
 
 
 def test_mmtensor_algebra_divide():
@@ -169,4 +169,4 @@ def test_mmtensor_algebra_divide_different_labels():
     mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
     mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
     with pytest.raises(ValueError):
-        mmtensor1 / mmtensor2
+        mmtensor1 / mmtensor2  # pylint: disable=pointless-statement
