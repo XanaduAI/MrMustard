@@ -388,7 +388,6 @@ class Transformation:
         return True
 
     def __repr__(self):
-
         class_name = self.__class__.__name__
         modes = self.modes
 
@@ -402,7 +401,6 @@ class Transformation:
         return f"{class_name}({params_str}, modes = {modes})".replace("\n", "")
 
     def __str__(self):
-
         class_name = self.__class__.__name__
         modes = self.modes
         return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"

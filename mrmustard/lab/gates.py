@@ -206,7 +206,6 @@ class Rgate(Parametrized, Transformation):
         return gaussian.rotation_symplectic(self.angle.value)
 
     def U(self, cutoffs: Sequence[int]):
-
         angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
         num_modes = len(cutoffs)
 
@@ -622,6 +621,7 @@ class Ggate(Parametrized, Transformation):
 # ~~~~~~~~~~~~~
 # NON-UNITARY
 # ~~~~~~~~~~~~~
+
 
 # pylint: disable=no-member
 class Attenuator(Parametrized, Transformation):

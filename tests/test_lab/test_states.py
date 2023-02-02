@@ -256,7 +256,6 @@ def test_concat_pure_states(pure):
 @pytest.mark.parametrize("n", ([1, 0, 0], [1, 1, 0], [0, 0, 1]))
 @pytest.mark.parametrize("cutoffs", ([2, 2, 2], [2, 3, 3], [3, 3, 2]))
 def test_ket_from_pure_dm(n, cutoffs):
-
     # prepare a fock (pure) state
     fock_state = Fock(n=n, cutoffs=cutoffs)
     dm_fock = fock_state.dm()
