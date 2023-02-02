@@ -123,7 +123,7 @@ class Transformation:
                 )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    def label(self, decimals: int = 2) -> str:
+    def label(self, decimals: Optional[int]) -> str:
         r"""Returns a string representation of the transformation for use in
         a circuit diagram.
 
@@ -137,6 +137,8 @@ class Transformation:
             BSgate(0.54, 0.12) -> "BS(0.54, 0.12)"
             Ggate(2) -> "G(2)"
         """
+        if decimals is None:
+            return self.short_name
         label = self.short_name + "("
         for name in self.param_names:
             par = getattr(self, name)._value
