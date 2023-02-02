@@ -141,7 +141,7 @@ class Transformation:
             return self.short_name
         label = self.short_name + "("
         for name in self.param_names:
-            par = getattr(self, name)._value
+            par = getattr(self, name).value
             show = False
             if math.asnumpy(par).ndim == 0:
                 label += f"{math.asnumpy(par):.{decimals}g}, "

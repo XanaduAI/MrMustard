@@ -77,15 +77,12 @@ def _add_op(op, layer_str, decimals):
 def circuit_text(
     ops,
     decimals=None,
-    max_length=100,
 ):
     r"""Text based diagram for a Quantum circuit.
     Arguments:
         ops: the operations and measurements to draw as a list of MrMustard operations
         decimals (int): How many decimal points to include when formatting operation parameters.
             Default ``None`` will omit parameters from operation labels.
-        max_length (Int) : Maximum length of a individual line. After this length, the diagram will
-            begin anew beneath the previous lines.
     Returns:
         str : String based graphic of the circuit.
     """
