@@ -23,26 +23,31 @@ from mrmustard.utils.circdrawer import (
 
 
 def test_mode_set():
+    r"""Tests that mode_set returns the correct set of modes"""
     op = BSgate(0.5)[3, 11]
     assert mode_set(op) == set(range(3, 12))
 
 
 def test_drawable_layers_overlap():
+    r"""Tests that drawable_layers returns the correct layers"""
     ops = [BSgate(0.5)[3, 11], BSgate(0.5)[3, 11], BSgate(0.5)[3, 11]]
     assert drawable_layers(ops) == {0: [ops[0]], 1: [ops[1]], 2: [ops[2]]}
 
 
 def test_drawable_layers_no_overlap():
+    r"""Tests that drawable_layers returns the correct layers"""
     ops = [BSgate(0.5)[3, 11], BSgate(0.5)[12, 13], BSgate(0.5)[14, 15]]
     assert drawable_layers(ops) == {0: [ops[0], ops[1], ops[2]]}
 
 
 def test_drawable_layers_mix_overlap():
+    r"""Tests that drawable_layers returns the correct layers"""
     ops = [BSgate(0.5)[3, 11], BSgate(0.5)[3, 11], BSgate(0.5)[12, 13], BSgate(0.5)[14, 15]]
     assert drawable_layers(ops) == {0: [ops[0]], 1: [ops[1], ops[2], ops[3]]}
 
 
 def test_add_grouping_symbols_BS():
+    r"""Tests that _add_grouping_symbols returns the correct symbols"""
     op = BSgate(0.5)[3, 11]
     assert _add_grouping_symbols(op, ["-"] * 12) == [
         "-",
@@ -61,6 +66,7 @@ def test_add_grouping_symbols_BS():
 
 
 def test_add_grouping_symbols_G():
+    r"""Tests that _add_grouping_symbols returns the correct symbols"""
     op = Ggate(5)[1, 2, 3, 4, 5]
     assert _add_grouping_symbols(op, ["-"] * 6) == [
         "-",
@@ -73,6 +79,7 @@ def test_add_grouping_symbols_G():
 
 
 def test_add_op():
+    r"""Tests that _add_op returns the correct symbols"""
     op = Ggate(5)[1, 2, 3, 4, 5]
     layer_str = _add_grouping_symbols(op, ["-"] * 6)
     decimals = None
@@ -87,6 +94,7 @@ def test_add_op():
 
 
 def test_circuit_text():
+    r"""Tests that circuit_text returns the correct circuit"""
     from mrmustard import settings
 
     settings.CIRCUIT_DECIMALS = None
