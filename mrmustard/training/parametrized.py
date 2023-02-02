@@ -18,9 +18,11 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from typing import Sequence, List, Generator, Any
+from typing import Any, Generator, List, Sequence
+
 from mrmustard.math import Math
-from .parameter import create_parameter, Trainable, Constant, Parameter
+
+from .parameter import Constant, Parameter, Trainable, create_parameter
 
 math = Math()
 
@@ -41,7 +43,7 @@ class Parametrized:
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
 
         owner = f"{self.__class__.__qualname__}"
-
+        self.param_names = []
         for name, value in kwargs.items():
 
             # filter out `{name}_trainable` or `{name}_bounds`` to become fields
@@ -56,6 +58,7 @@ class Parametrized:
 
             # dynamically assign variable as attribute of the class
             self.__dict__[name] = param
+            self.param_names.append(name)
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
