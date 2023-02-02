@@ -14,6 +14,7 @@
 
 """This module contains tests for the circuitdrawer.py module."""
 
+from mrmustard import settings
 from mrmustard.lab import BSgate, Ggate
 from mrmustard.utils.circdrawer import (
     _add_grouping_symbols,
@@ -97,8 +98,6 @@ def test_add_op():
 
 def test_circuit_text():
     r"""Tests that circuit_text returns the correct circuit"""
-    from mrmustard import settings
-
     settings.CIRCUIT_DECIMALS = None
     ops = [BSgate(0.5)[0, 1], Ggate(4)[2, 3, 4, 5], BSgate(0.5)[7, 6]]
     decimals = None
