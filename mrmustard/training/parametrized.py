@@ -39,11 +39,9 @@ class Parametrized:
     """
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
-
         owner = f"{self.__class__.__qualname__}"
 
         for name, value in kwargs.items():
-
             # filter out `{name}_trainable` or `{name}_bounds`` to become fields
             # of the class as those kwargs are used to define the variables
             if "_trainable" in name or "_bounds" in name:
