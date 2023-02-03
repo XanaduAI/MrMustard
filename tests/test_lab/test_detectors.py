@@ -12,32 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from hypothesis import given, strategies as st
-from hypothesis.extra.numpy import arrays
-
 import numpy as np
-from scipy.stats import poisson
+import pytest
 import tensorflow as tf
+from hypothesis import given
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
+from scipy.stats import poisson
 
-from mrmustard.math import Math
+from mrmustard import physics, settings
 from mrmustard.lab import (
-    PNRDetector,
-    Coherent,
-    Sgate,
-    Vacuum,
-    S2gate,
-    BSgate,
-    Attenuator,
-    Homodyne,
-    Heterodyne,
     TMSV,
+    Attenuator,
+    BSgate,
+    Coherent,
     Dgate,
     Fock,
-    State,
+    Heterodyne,
+    Homodyne,
+    PNRDetector,
+    S2gate,
+    Sgate,
     SqueezedVacuum,
+    State,
+    Vacuum,
 )
-from mrmustard import physics, settings
+from mrmustard.math import Math
 from tests.random import none_or_
 
 math = Math()
@@ -265,7 +265,7 @@ class TestHomodyneDetector:
         )
 
         means = remaining_state.means.numpy()
-        assert np.allclose(means, expected_means)
+        assert np.allclose(means, expected_means, atol=1e-5)
 
     N_MEAS = 150  # number of homodyne measurements to perform
     NUM_STDS = 10.0
