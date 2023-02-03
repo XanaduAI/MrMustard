@@ -161,3 +161,14 @@ def test_cos_plus_sin(x, y):
     f2 = np.cos(f) + np.sin(f)
     for x in f.interp_real.x:
         assert f2(x) == np.cos(f(x)) + np.sin(f(x))
+
+
+def test_resampling():
+    """Test that the resampling works."""
+    x1 = np.linspace(0, 1, 1000)
+    y1 = np.exp(1j * 2 * np.pi * x1)
+    f1 = ComplexFunction1D(x1, y1)
+    x2 = np.linspace(0.1, 1.1, 1000)
+    y2 = np.exp(1j * 2 * np.pi * x2)
+    f2 = ComplexFunction1D(x2, y2)
+    assert len((f1 + f2).interp_real.x) < len(ComplexFunction1D.intersect_ranges(f1, f2))
