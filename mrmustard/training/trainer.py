@@ -18,6 +18,7 @@ MrMustard circuits/devices.
 
 import warnings
 import numpy as np
+import mrmustard as mm
 from inspect import signature, Parameter
 from functools import partial
 from typing import Sequence, Mapping
@@ -32,22 +33,25 @@ except ImportError as e:
     )
 
 
-def train_device(cost_maker, device_maker=None, metric_fns=None, return_kwargs=True, tag=None, **kwargs):
+def train_device(cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs):
     """A general and flexible training loop for circuit optimizations with configurations adjustable through kwargs.
 
     Args:
-        cost_maker (callable): Function that takes the output of `device_maker` and returns a cost function which is
-            callable by the optimizer.
-        device_maker (callable): Function that (partially) takes `kwargs` and returns a device, or list/dict of devices.
-            If None, `cost_maker` will be assumed to take no argument (for example, when device-making is contained in
-            `cost_maker`). Defaults to None.
+        cost_fn (callable): The optimized cost function to be distributed. It's expected to accept the
+            output of `device_factory` as *args as well as user-defined **kwargs, and returns a scalar cost.
+            Its user-defined **kwargs will be passed from this function's **kwargs which must include all its
+            required arguments.
+        device_factory (callable): Function that (partially) takes `kwargs` and returns a device, or
+            list/dict of devices. If None, `cost_fn` will be assumed to take no positional argument (for
+            example, when device-making is contained in `cost_fn`). Defaults to None.
         metric_fns (Union[Sequence[callable], Mapping[callable], callable]): Optional collection of functions that takes the
-            output of `device_maker` after optimization and returns arbitrary evaluation/information.
+            output of `device_factory` after optimization and returns arbitrary evaluation/information.
         return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
+        skip_opt (bool): Whether to skip the optimization and directly calculate cost.
         tag (str): Optional label of the training task associated with the `kwargs` to be included in the output dict.
         kwargs: Dict containing all arguments to any of the functions below:
-            - `cost_maker`: exluding the output of `device_maker`.
-            - `device_maker`: e.g. `x`, `r`, `theta`, etc.
+            - `cost_fn`: exluding the output of `device_factory`.
+            - `device_factory`: e.g. `x`, `r`, `theta`, etc.
             - `Optimizer`: e.g. `euclidean_lr`.
             - `Optimizer.minimize`: excluding `cost_fn` and `by_optimizing`, e.g. `max_steps`.
 
@@ -56,27 +60,30 @@ def train_device(cost_maker, device_maker=None, metric_fns=None, return_kwargs=T
 
     """
 
+    setting_updates, kwargs = update_pop(mm.settings, **kwargs)
+
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
-    if callable(device_maker):
-        device, kwargs = curry_pop(device_maker, **kwargs)
+    if callable(device_factory):
+        device, kwargs = curry_pop(device_factory, **kwargs)
     else:
         device = []
+        skip_opt = True
 
     if not isinstance(device, (Sequence, Mapping)):
         device = [device]
 
     if isinstance(device, Sequence):
-        cost_fn, kwargs = curry_pop(cost_maker, *device, **kwargs)
+        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
         optimized = device
     elif isinstance(device, Mapping):
-        cost_fn, kwargs = curry_pop(cost_maker, **device, **kwargs)
+        cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
         optimized = list(device.values())
 
-    opt, kwargs = curry_pop(Optimizer, **kwargs)
-    # optimized += kwargs.pop('by_optimizing', [])
-
-    _, kwargs = curry_pop(opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs)
+    opt = None
+    if not skip_opt:
+        opt, kwargs = curry_pop(Optimizer, **kwargs)
+        _, kwargs = curry_pop(opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs)
 
     if kwargs:
         warnings.warn(f"Unused kwargs: {kwargs}")
@@ -103,6 +110,7 @@ def train_device(cost_maker, device_maker=None, metric_fns=None, return_kwargs=T
         **({"tag": tag} if tag is not None else {}),
         **results,
         **input_kwargs,
+        **setting_updates,
     }
 
 
@@ -132,19 +140,23 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
         num_cpus (int): Number of cpu workers to initialize ray. Defaults to the number of virtual cores.
         kwargs: Additional arguments containing fixed training config kwargs feeding into `trainer`.
         For the default `trainer` `train_device`, available options are:
-            - cost_maker (callable): Function that takes the output of `device_maker` and returns a cost function which is
-                callable by the optimizer.
-            - device_maker (callable): Function that (partially) takes `kwargs` and returns a device, or list/dict of devices.
-                If None, `cost_maker` will be assumed to take no argument (for example, when device-making is contained in
-                `cost_maker`). Defaults to None.
+            - cost_fn (callable): The optimized cost function to be distributed. It's expected to accept the
+                output of `device_factory` as *args as well as user-defined **kwargs, and returns a scalar cost.
+                Its user-defined **kwargs will be passed from this function's **kwargs which must include all its
+                required arguments.
+            - device_factory (callable): Function that (partially) takes `kwargs` and returns a device, or
+                list/dict of devices. If None, `cost_fn` will be assumed to take no positional argument (for
+                example, when device-making is contained in `cost_fn`). Defaults to None.
             - metric_fns (Union[Sequence[callable], Mapping[callable], callable]): Optional collection of functions that takes the
-                output of `device_maker` after optimization and returns arbitrary evaluation/information.
+                output of `device_factory` after optimization and returns arbitrary evaluation/information.
             - return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
+            - skip_opt (bool): Whether to skip the optimization and directly calculate cost.
             - tag (str): Optional label of the training task associated with the `kwargs` to be included in the output dict.
-            - any kwargs to `cost_maker`: exluding the output of `device_maker`.
-            - any kwargs to `device_maker`: e.g. `x`, `r`, `theta`, etc.
+            - any kwargs to `cost_fn`: exluding the output of `device_factory`.
+            - any kwargs to `device_factory`: e.g. `x`, `r`, `theta`, etc.
             - any kwargs to `Optimizer`: e.g. `euclidean_lr`.
             - any kwargs to `Optimizer.minimize`: excluding `cost_fn` and `by_optimizing`, e.g. `max_steps`.
+
     Returns
         Union[List, Dict]: The collection of results from each training task. Returns
             - a list if `tasks` is provided as an int or a list; or
@@ -210,6 +222,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
 
 
 def kwargs_of(fn):
+    """Gets the kwarg signature of a callable."""
     params = signature(fn).parameters
     kwarg_kinds = [Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY]
 
@@ -230,3 +243,17 @@ def curry_pop(fn, *args, **kwargs):
     """A poor man's reader monad bind function."""
     partial_fn, kwargs = partial_pop(fn, *args, **kwargs)
     return partial_fn(), kwargs
+
+
+def update_pop(obj, **kwargs):
+    """Updates an object/dict while popping keys out and returns the updated dict and remaining kwargs."""
+    updated = {}
+    if isinstance(obj, Mapping):
+        for k in set(kwargs).intersection(obj):
+            obj[k] = kwargs.pop(k)
+            updated[k] = obj[k]
+    else:
+        for k in set(kwargs).intersection(dir(obj)):
+            setattr(obj, k, kwargs.pop(k))
+            updated[k] = getattr(obj, k)
+    return updated, kwargs
