@@ -2,9 +2,8 @@ import hypothesis.strategies as st
 import numpy as np
 from hypothesis import given
 from hypothesis.extra.numpy import arrays
-from scipy.interpolate import interp1d
-
 from mrmustard.math.interpolation import ComplexFunction1D
+from scipy.interpolate import interp1d
 
 float_ = st.floats(min_value=-10.0, max_value=10.0, allow_infinity=False, allow_nan=False)
 complex_ = st.complex_numbers(
@@ -97,7 +96,7 @@ def test_interpolation(x, y1, y2):
     """Test that the interpolation is correct."""
     f1 = ComplexFunction1D(x, y1)
     f2 = ComplexFunction1D(x, y2)
-    domain = ComplexFunction1D.intersect_ranges(f1, f2)
+    domain = ComplexFunction1D.intersect_domains(f1, f2)
     f3 = f1 + f2
     x = np.linspace(domain[0], domain[-1], 100)
     for x in domain:
@@ -113,7 +112,7 @@ def test_subtraction(x, y1, y2):
     f1 = ComplexFunction1D(x, y1)
     f2 = ComplexFunction1D(x, y2)
     f3 = f1 - f2
-    for x in f1.interp_real.x:
+    for x in f1.domain:
         assert f3(x) == f1(x) - f2(x)
 
 
@@ -123,7 +122,7 @@ def test_division(x, y1, y2):
     f1 = ComplexFunction1D(x, y1)
     f2 = ComplexFunction1D(x, y2)
     f3 = f1 / f2
-    for x in f1.interp_real.x:
+    for x in f1.domain:
         assert f3(x) == f1(x) / f2(x)
 
 
@@ -132,7 +131,7 @@ def test_negation(x, y):
     """Test that a function can be negated."""
     f = ComplexFunction1D(x, y)
     f2 = -f
-    for x in f.interp_real.x:
+    for x in f.domain:
         assert f2(x) == -f(x)
 
 
@@ -141,7 +140,7 @@ def test_abs(x, y):
     """Test that the absolute value of a function can be computed."""
     f = ComplexFunction1D(x, y)
     f2 = np.abs(f)
-    for x in f.interp_real.x:
+    for x in f.domain:
         assert f2(x) == np.abs(f(x))
 
 
@@ -150,7 +149,7 @@ def test_cos(x, y):
     """Test that the cosine of a function can be computed."""
     f = ComplexFunction1D(x, y)
     f2 = np.cos(f)
-    for x in f.interp_real.x:
+    for x in f.domain:
         assert f2(x) == np.cos(f(x))
 
 
@@ -159,7 +158,7 @@ def test_cos_plus_sin(x, y):
     """Test that the cosine and sine of a function can be added."""
     f = ComplexFunction1D(x, y)
     f2 = np.cos(f) + np.sin(f)
-    for x in f.interp_real.x:
+    for x in f.domain:
         assert f2(x) == np.cos(f(x)) + np.sin(f(x))
 
 
@@ -171,4 +170,4 @@ def test_resampling():
     x2 = np.linspace(0.1, 1.1, 1000)
     y2 = np.exp(1j * 2 * np.pi * x2)
     f2 = ComplexFunction1D(x2, y2)
-    assert len((f1 + f2).interp_real.x) < len(ComplexFunction1D.intersect_ranges(f1, f2))
+    assert len((f1 + f2).domain) < len(ComplexFunction1D.intersect_domains(f1, f2))
