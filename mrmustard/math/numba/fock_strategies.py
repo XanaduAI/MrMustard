@@ -52,6 +52,7 @@ def upper_neighbours(index, shape):
             index[i] -= 1
 
 
+@njit
 def vanilla_pivot(index):
     for i, v in enumerate(index):
         if v > 0:
@@ -87,7 +88,7 @@ def strategy_equal_weight(shape, max_sum=None) -> Tuple[np.array, Generator]:
             index[k] = weight if weight < shape[k] else shape[k] - 1
             weight -= index[k]
             k += 1
-        # now we move units from the first index to the next index until we run out of units
+        # now we move units from the first index to the next until we run out
         while True:
             yield index
             for i in range(len(index) - 1):
