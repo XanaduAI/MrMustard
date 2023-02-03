@@ -65,7 +65,6 @@ class XPTensor(ABC):
         isVector: bool,
         modes: Union[Tuple[List[int], List[int]], None],
     ):
-
         self.like_0 = like_0
         self.shape = (
             None if tensor is None else tensor.shape[: len(tensor.shape) // 2]
