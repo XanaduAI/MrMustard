@@ -445,8 +445,7 @@ class Interferometer(Parametrized, Transformation):
         num_modes: int,
         unitary: Optional[Tensor] = None,
         unitary_trainable: bool = False,
-        modes: Optional[List[int]] = None,
-        ortho_symplectic: Optional[Tensor] = None
+        modes: Optional[List[int]] = None
     ):
         if modes is not None and (
             num_modes != len(modes) or any(mode >= num_modes for mode in modes)
@@ -454,7 +453,6 @@ class Interferometer(Parametrized, Transformation):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
-        ortho_symplectic = math.block([[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]])
         super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
@@ -464,17 +462,17 @@ class Interferometer(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return self.ortho_symplectic.value
+        return math.block([[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]])
 
     def _validate_modes(self, modes):
-        if len(modes) != self.ortho_symplectic.value.shape[-1] // 2:
+        if len(modes) != self.unitary.value.shape[-1] // 2:
             raise ValueError(
                 f"Invalid number of modes: {len(modes)} (should be {self.unitary.shape[-1] // 2})"
             )
 
     def __repr__(self):
         modes = self.modes
-        unitary = repr(math.asnumpy(self.ortho_symplectic.value)).replace("\n", "")
+        unitary = repr(math.asnumpy(self.unitary.value)).replace("\n", "")
         return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
