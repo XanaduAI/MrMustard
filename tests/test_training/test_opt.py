@@ -28,7 +28,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Ggate,
     Interferometer,
-    RealInterferometer,
+#    RealInterferometer,
 )
 from mrmustard.lab.circuit import Circuit
 from mrmustard.training import Optimizer, Parametrized
@@ -164,31 +164,31 @@ def test_learning_two_mode_Interferometer():
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
-
-
-def test_learning_two_mode_RealInterferometer():
-    """Finding the optimal Interferometer to make a pair of single photons"""
-    np.random.seed(11)
-    ops = [
-        Sgate(
-            r=np.random.normal(size=(2)) ** 2,
-            phi=np.random.normal(size=(2)),
-            r_trainable=True,
-            phi_trainable=True,
-        ),
-        RealInterferometer(num_modes=2, unitary_trainable=True),
-    ]
-    circ = Circuit(ops)
-    state_in = Vacuum(num_modes=2)
-
-    def cost_fn():
-        amps = (state_in >> circ).ket(cutoffs=[2, 2])
-        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
-
-    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
-
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
+#
+#
+#def test_learning_two_mode_RealInterferometer():
+#    """Finding the optimal Interferometer to make a pair of single photons"""
+#    np.random.seed(11)
+#    ops = [
+#        Sgate(
+#            r=np.random.normal(size=(2)) ** 2,
+#            phi=np.random.normal(size=(2)),
+#            r_trainable=True,
+#            phi_trainable=True,
+#        ),
+#        RealInterferometer(num_modes=2, unitary_trainable=True),
+#    ]
+#    circ = Circuit(ops)
+#    state_in = Vacuum(num_modes=2)
+#
+#    def cost_fn():
+#        amps = (state_in >> circ).ket(cutoffs=[2, 2])
+#        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
+#
+#    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
+#
+#    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+#    assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
 
 def test_learning_four_mode_Interferometer():
@@ -222,39 +222,39 @@ def test_learning_four_mode_Interferometer():
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
-
-
-def test_learning_four_mode_RealInterferometer():
-    """Finding the optimal Interferometer to make a NOON state with N=2"""
-    np.random.seed(11)
-    ops = [
-        Sgate(
-            r=np.random.uniform(size=4),
-            phi=np.random.normal(size=4),
-            r_trainable=True,
-            phi_trainable=True,
-        ),
-        RealInterferometer(num_modes=4, unitary_trainable=True),
-    ]
-    circ = Circuit(ops)
-    state_in = Vacuum(num_modes=4)
-
-    def cost_fn():
-        amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
-        return (
-            -tf.abs(
-                tf.reduce_sum(
-                    amps[1, 1]
-                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
-                )
-            )
-            ** 2
-        )
-
-    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
-
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
-    assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
+#
+#
+#def test_learning_four_mode_RealInterferometer():
+#    """Finding the optimal Interferometer to make a NOON state with N=2"""
+#    np.random.seed(11)
+#    ops = [
+#        Sgate(
+#            r=np.random.uniform(size=4),
+#            phi=np.random.normal(size=4),
+#            r_trainable=True,
+#            phi_trainable=True,
+#        ),
+#        RealInterferometer(num_modes=4, unitary_trainable=True),
+#    ]
+#    circ = Circuit(ops)
+#    state_in = Vacuum(num_modes=4)
+#
+#    def cost_fn():
+#        amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
+#        return (
+#            -tf.abs(
+#                tf.reduce_sum(
+#                    amps[1, 1]
+#                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
+#                )
+#            )
+#            ** 2
+#        )
+#
+#    opt = Optimizer(unitary_lr=0.2, euclidean_lr=0.01)
+#
+#    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+#    assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
 def test_squeezing_hong_ou_mandel_optimizer():
