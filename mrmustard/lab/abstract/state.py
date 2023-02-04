@@ -15,27 +15,29 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import warnings
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
+
 import numpy as np
 
+from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
 from mrmustard.types import (
     Matrix,
-    Vector,
-    Array,
     Tensor,
-    Sequence,
-    Union,
-    Tuple,
-    Optional,
-    List,
-    Iterable,
+    Vector,
 )
 from mrmustard.utils import graphics
-from mrmustard import settings
-from mrmustard.physics import gaussian, fock
-from mrmustard.math import Math
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -51,10 +53,10 @@ class State:
         self,
         cov: Matrix = None,
         means: Vector = None,
-        eigenvalues: Array = None,
+        eigenvalues: Vector = None,
         symplectic: Matrix = None,
-        ket: Array = None,
-        dm: Array = None,
+        ket: Tensor = None,
+        dm: Tensor = None,
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         _norm: float = 1.0,
@@ -69,9 +71,9 @@ class State:
         Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
-            eigenvalues (Array): the eigenvalues of the covariance matrix
+            eigenvalues (Tensor): the eigenvalues of the covariance matrix
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
-            fock (Array): the Fock representation
+            fock (Tensor): the Fock representation
             modes (optional, Sequence[int]): the modes in which the state is defined
             cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
@@ -192,7 +194,7 @@ class State:
         return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
 
     @property
-    def fock(self) -> Array:
+    def fock(self) -> Tensor:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
@@ -316,7 +318,7 @@ class State:
             cutoffs List[int]: the cutoff dimensions for each mode
 
         Returns:
-            Array: the probabilities
+            Tensor: the probabilities
         """
         if self._fock_probabilities is None:
             if self.is_mixed:
