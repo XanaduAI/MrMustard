@@ -452,7 +452,8 @@ class Interferometer(Parametrized, Transformation):
         ):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
-            unitary = math.random_unitary(num_modes)
+            U = math.random_unitary(num_modes)
+            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
         super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
@@ -462,7 +463,7 @@ class Interferometer(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return math.block([[math.real(unitary), -math.imag(unitary)], [math.imag(unitary), math.real(unitary)]])
+        return self.unitary.value
 
     def _validate_modes(self, modes):
         if len(modes) != self.unitary.value.shape[-1] // 2:
@@ -476,47 +477,43 @@ class Interferometer(Parametrized, Transformation):
         return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
-class RealInterferometer(Parametrized, Transformation):
-    r"""N-mode interferometer with a real unitary matrix (or block-diagonal unitary matrix).
-    Does not mix q's and p's.
-
-    Args:
-        unitary (2d array, optional): a valid unitary matrix. For N modes it must have shape `(N,N)`.
-            If set to `None` a random unitary matrix is used.
-        unitary_trainable (bool): whether unitary is a trainable variable
-    """
-
-    def __init__(
-        self,
-        num_modes: int,
-        unitary: Optional[Tensor] = None,
-        unitary_trainable: bool = False,
-    ):
-        if unitary is None:
-            unitary = math.real(math.random_unitary(num_modes))
-        super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
-        self._modes = list(range(num_modes))
-        self._is_gaussian = True
-
-    @property
-    def X_matrix(self):
-        return math.block(
-            [
-                [self.unitary.value, math.zeros_like(self.unitary.value)],
-                [math.zeros_like(self.unitary.value), self.unitary.value],
-            ]
-        )
-
-    def _validate_modes(self, modes):
-        if len(modes) != self.unitary.value.shape[-1]:
-            raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.unitary.value.shape[-1]})"
-            )
-
-    def __repr__(self):
-        modes = self.modes
-        unitary = repr(math.asnumpy(self.unitary.value)).replace("\n", "")
-        return f"RealInterferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
+#class RealInterferometer(Parametrized, Transformation):
+#    r"""N-mode interferometer with a real unitary matrix (or block-diagonal unitary matrix).
+#    Does not mix q's and p's.
+#
+#    Args:
+#        unitary (2d array, optional): a valid unitary matrix. For N modes it must have shape `(N,N)`.
+#            If set to `None` a random unitary matrix is used.
+#        unitary_trainable (bool): whether unitary is a trainable variable
+#    """
+#
+#    def __init__(
+#        self,
+#        num_modes: int,
+#        unitary: Optional[Tensor] = None,
+#        unitary_trainable: bool = False,
+#    ):
+#        if unitary is None:
+#            U = math.real(math.random_unitary(num_modes))
+#            unitary = math.block([[U, -math.zeros_like(U)], [math.zeros_like(U), U]])
+#        super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
+#        self._modes = list(range(num_modes))
+#        self._is_gaussian = True
+#
+#    @property
+#    def X_matrix(self):
+#        return self.unitary.value
+#
+#    def _validate_modes(self, modes):
+#        if len(modes) != self.unitary.value.shape[-1]//2:
+#            raise ValueError(
+#                f"Invalid number of modes: {len(modes)} (should be {self.unitary.value.shape[-1]})"
+#            )
+#
+#    def __repr__(self):
+#        modes = self.modes
+#        unitary = repr(math.asnumpy(self.unitary.value)).replace("\n", "")
+#        return f"RealInterferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
 class Ggate(Parametrized, Transformation):
