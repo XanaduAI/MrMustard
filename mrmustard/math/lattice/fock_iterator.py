@@ -15,14 +15,14 @@
 from typing import Callable, Generator, Tuple
 
 import numpy as np
-from numpy.types import Int1D
+from numpy.types import Vector
 
 
 class Fock_iterator:
     def __init__(
         self,
         shape: Tuple[int],
-        strategy: Callable[[Int1D], Generator[Int1D, None, None]],
+        strategy: Callable[[Vector], Generator[Vector, None, None]],
         by_copy: bool = False,
     ):
         self.shape = shape
@@ -33,7 +33,7 @@ class Fock_iterator:
     def __iter__(self):
         return self
 
-    def __next__(self) -> Int1D:
+    def __next__(self) -> Vector:
         if self.done:
             raise StopIteration
         else:

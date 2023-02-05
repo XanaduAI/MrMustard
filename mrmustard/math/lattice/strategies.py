@@ -17,7 +17,7 @@ from typing import Any, Generator, Optional
 import numpy as np
 from numba import njit
 
-from mrmustard.types import Int1D
+from mrmustard.types import Vector
 
 # Strategies are generators of indices that follow paths in an N-dim positive integer lattice.
 # The paths can cover the entire lattice, or just a subset of it.
@@ -29,7 +29,7 @@ from mrmustard.types import Int1D
 
 
 @njit
-def strategy_ndindex_gen(shape: Int1D) -> Generator[Int1D, None, None]:
+def strategy_ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
     while True:
@@ -46,8 +46,8 @@ def strategy_ndindex_gen(shape: Int1D) -> Generator[Int1D, None, None]:
 
 @njit
 def strategy_equal_weight_gen(
-    shape: Int1D, max_sum: Optional[int] = None
-) -> Generator[Int1D, None, None]:
+    shape: Vector, max_sum: Optional[int] = None
+) -> Generator[Vector, None, None]:
     r"yields the indices of a tensor with equal weight"
     max_ = sum(shape) - len(shape) - 1
     max_sum = max_ if max_sum is None else min(max_sum, max_)
@@ -72,10 +72,10 @@ def strategy_equal_weight_gen(
 
 
 @njit
-def strategy_grey_code_order_gen(shape: Int1D) -> Generator[Int1D, None, None]:
+def strategy_grey_code_gen(shape: Vector) -> Generator[Vector, None, None]:
     raise NotImplementedError("Grey code order strategy not implemented yet")
 
 
 @njit
-def wormhole(shape: Int1D) -> Any:
+def wormhole(shape: Vector) -> Any:
     raise NotImplementedError("Wormhole strategy not implemented yet")

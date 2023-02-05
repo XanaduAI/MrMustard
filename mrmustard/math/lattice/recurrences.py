@@ -24,22 +24,21 @@ from typing import Callable, Tuple
 
 import numpy as np
 
-from mrmustard.types import Int1D, Int2D, Matrix, Tensor, Vector
+from mrmustard.types import Matrix, Tensor, Vector
 
-from .neighbours import lower_neighbors
-from .pivots import vanilla_pivot
+from .neighbours import lower_neighbors_fn
+from .pivots import vanilla_pivot_fn
 
 
+# @njit
 def general_step(
     tensor: Tensor,
     A: Matrix,
     b: Vector,
-    index: Int1D,
-    pivot_fn: Callable[[Int1D], Int1D],
-    neighbors_fn: Callable[[Int1D], Int2D],
-    Ab_fn: Callable[
-        [Matrix, Vector, Int1D, Callable[[Int1D], Int2D]], [Matrix, Vector]
-    ] = lambda A, b, pivot, neighbors_fn: (A, b),
+    index: Vector,
+    pivot_fn: Callable[[Vector], Vector],
+    neighbors_fn: Callable[[Vector], Matrix],
+    Ab_fn: Callable = lambda A, b, neighbors_fn, pivot: (A, b),
 ):
     r"""Fock-Bargmann recurrence relation step. General version.
     Args:
@@ -55,8 +54,9 @@ def general_step(
     pivot = pivot_fn(index)
     A = A * np.sqrt(np.asarray(pivot))[None, :] / np.sqrt(np.asarray(pivot) + 1)[:, None]
     b = b / np.sqrt(np.asarray(pivot) + 1)
-    A, b = Ab_fn(A, b, pivot)
-    return b * tensor[pivot] + A @ tensor[neighbors_fn(pivot)]
+    A, b = Ab_fn(A, b, neighbors_fn, pivot)
+    neighbors = neighbors_fn(pivot)  # neighbors is an array of indices len(pivot) x len(pivot)
+    return b * tensor[pivot] + A @ tensor.take(neighbors, axis=0).T
 
 
 def vanilla_step(tensor, A, b, index: Tuple) -> complex:
@@ -71,39 +71,4 @@ def vanilla_step(tensor, A, b, index: Tuple) -> complex:
     Returns:
         complex: the value of the amplitude at the given index
     """
-    return general_step(tensor, A, b, index, vanilla_pivot, lower_neighbors)
-
-
-def vanilla_step(tensor, A, b, index: Tuple) -> complex:
-    """Fock-Bargmann recurrence relation step. Vanilla version.
-    Args:
-        tensor (array): tensor to calculate the amplitudes of
-        A (array): matrix of coefficients
-        b (array): vector of coefficients
-        index (tuple): index of the amplitude to calculate
-        pivot_fn (callable): function that returns the pivot corresponding to the index
-        neighbors_fn (callable): function that returns the neighbors of the pivot
-    Returns:
-        complex: the value of the amplitude at the given index
-    """
-    return general_step(tensor, A, b, index, vanilla_pivot, lower_neighbors)
-
-
-#%%
-import mpmath
-import numpy as np
-
-a = np.array(
-    [
-        [mpmath.mpf(0.2234, prec=100), mpmath.mpf(0.2345, prec=100)],
-        [mpmath.mpf(0.567, prec=100), mpmath.mpf(0.5678, prec=100)],
-    ]
-)
-
-from time import time
-
-t0 = time()
-for i in range(10000):
-    a ** (-1)
-print((time() - t0) / 10000)
-# %%
+    return general_step(tensor, A, b, index, vanilla_pivot_fn, lower_neighbors_fn)

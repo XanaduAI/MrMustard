@@ -15,11 +15,11 @@
 
 from numba import njit
 
-from mrmustard.types import Int1D
+from mrmustard.types import Vector
 
 
 @njit
-def vanilla_pivot_fn(index: Int1D) -> Int1D:
+def vanilla_pivot_fn(index: Vector) -> Vector:
     r"returns the first available pivot index for the given index"
     for i, v in enumerate(index):
         if v > 0:
