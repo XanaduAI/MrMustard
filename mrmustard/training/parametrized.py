@@ -22,7 +22,7 @@ from typing import Any, Generator, List, Sequence
 
 from mrmustard.math import Math
 
-from .parameter import Constant, Parameter, Trainable, create_parameter
+from mrmustard.training.parameter import Constant, Parameter, Trainable, create_parameter
 
 math = Math()
 
