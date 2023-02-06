@@ -66,9 +66,9 @@ def lower_neighbors_fn(pivot: Vector) -> Matrix:
     r"returns the indices of the lower neighbours of the given index as an array"
     Z = np.zeros((len(pivot), len(pivot)), dtype=np.int64)
     for i, p in enumerate(pivot):
-        pivot[i] += 1
-        Z[i] = pivot
         pivot[i] -= 1
+        Z[i] = pivot
+        pivot[i] += 1
     return Z
 
 

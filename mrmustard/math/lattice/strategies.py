@@ -28,8 +28,8 @@ from mrmustard.types import Vector
 # the entries of list(strategy), will be equal to the last index.
 
 
-@njit
-def strategy_ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
+# @njit
+def ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
     while True:
@@ -45,11 +45,9 @@ def strategy_ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
 
 
 @njit
-def strategy_equal_weight_gen(
-    shape: Vector, max_sum: Optional[int] = None
-) -> Generator[Vector, None, None]:
+def equal_weight_gen(shape: Vector, max_sum: Optional[int] = None) -> Generator[Vector, None, None]:
     r"yields the indices of a tensor with equal weight"
-    max_ = sum(shape) - len(shape) - 1
+    max_ = sum(shape) - len(shape) - 1  # allows to fill the entire tensor
     max_sum = max_ if max_sum is None else min(max_sum, max_)
     for weight in range(max_sum + 1):
         index = np.zeros_like(shape)
@@ -72,7 +70,7 @@ def strategy_equal_weight_gen(
 
 
 @njit
-def strategy_grey_code_gen(shape: Vector) -> Generator[Vector, None, None]:
+def grey_code_gen(shape: Vector) -> Generator[Vector, None, None]:
     raise NotImplementedError("Grey code order strategy not implemented yet")
 
 

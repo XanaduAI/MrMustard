@@ -19,10 +19,27 @@ from mrmustard.types import Vector
 
 
 @njit
-def vanilla_pivot_fn(index: Vector) -> Vector:
-    r"returns the first available pivot index for the given index"
+def first_pivot_fn(index: Vector) -> Vector:
+    r"""returns the first available pivot index for the given index
+    Warning: returns by reference, so the index is modified in place"""
     for i, v in enumerate(index):
         if v > 0:
             index[i] -= 1
             return index
     raise ValueError("Index is zero")
+
+
+@njit
+def smallest_pivot_fn(index: Vector) -> Vector:
+    r"""returns the smallest available pivot index for the given index.
+    Warning: returns by reference, so the index is modified in place
+    """
+    min_ = 2**64 - 1
+    for i, v in enumerate(index):
+        if 0 < v < min_:
+            min_ = v
+            min_i = i
+    if min_ == 2**64 - 1:
+        raise ValueError("Index is zero")
+    index[min_i] -= 1
+    return index

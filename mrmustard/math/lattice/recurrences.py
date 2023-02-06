@@ -27,7 +27,9 @@ import numpy as np
 from mrmustard.types import Matrix, Tensor, Vector
 
 from .neighbours import lower_neighbors_fn
-from .pivots import vanilla_pivot_fn
+from .pivots import first_pivot_fn
+
+# TODO: gradients
 
 
 # @njit
@@ -52,11 +54,21 @@ def general_step(
         complex: the value of the amplitude at the given index
     """
     pivot = pivot_fn(index)
+    print("pivot =", pivot)
     A = A * np.sqrt(np.asarray(pivot))[None, :] / np.sqrt(np.asarray(pivot) + 1)[:, None]
     b = b / np.sqrt(np.asarray(pivot) + 1)
     A, b = Ab_fn(A, b, neighbors_fn, pivot)
     neighbors = neighbors_fn(pivot)  # neighbors is an array of indices len(pivot) x len(pivot)
-    return b * tensor[pivot] + A @ tensor.take(neighbors, axis=0).T
+    print("neighbors =", neighbors)
+    print("neighbors value =", tensor.take(neighbors, axis=0).T)
+    print()
+    res = np.zeros(len(neighbors), dtype=np.complex128)
+    for i, neighbor in enumerate(neighbors):
+        res = b[i] * tensor[neighbor]
+        for j in range(len(neighbor)):
+            if neighbor[j] != pivot[j]:
+                res += A[i, j] * neighbor[j] + b[i] * tensor[tuple(neighbor)]
+    return A @ tensor.take(neighbors, axis=0).T  # + b * tensor[tuple(pivot)]
 
 
 def vanilla_step(tensor, A, b, index: Tuple) -> complex:
@@ -71,4 +83,4 @@ def vanilla_step(tensor, A, b, index: Tuple) -> complex:
     Returns:
         complex: the value of the amplitude at the given index
     """
-    return general_step(tensor, A, b, index, vanilla_pivot_fn, lower_neighbors_fn)
+    return general_step(tensor, A, b, index.copy(), first_pivot_fn, lower_neighbors_fn)
