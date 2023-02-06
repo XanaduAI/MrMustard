@@ -142,12 +142,8 @@ class Transformation:
         label = self.short_name + "("
         for name in self.param_names.values():
             par = getattr(self, name).value
-            show = False
-            if math.asnumpy(par).ndim == 0:
-                label += f"{math.asnumpy(par):.{decimals}g}, "
-                show = True
-            if not show:
-                label += f"{len(self.modes)}, "
+            show = (math.asnumpy(par).ndim == 0)
+            label += f"{math.asnumpy(par):.{decimals}g}, " if show else f"{len(self.modes)}, "
         return label[:-2] + ")"
 
     @property
