@@ -53,5 +53,5 @@ def vanilla(shape: Tuple[int], A, b, c) -> Tensor:
     next(path)  # skip the zero index
     for index in path:
         print(index)
-        recurrences.vanilla_step(Z, A, b, index)
+        Z[index] = recurrences.vanilla_step(Z, A, b, index)
     return Z
