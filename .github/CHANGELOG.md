@@ -51,7 +51,7 @@
   the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
   [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
 
-  * The `Circuit` class now has an ascii representation, which can be accessed via the repr method.
+* The `Circuit` class now has an ascii representation, which can be accessed via the repr method.
   It looks great in Jupyter notebooks! There is a new option at `settings.CIRCUIT_DECIMALS` which controls
   the number of decimals shown in the ascii representation. If None only the name of the gate is shown.
   [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
