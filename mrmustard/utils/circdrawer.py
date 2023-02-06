@@ -60,10 +60,7 @@ def _add_op(op, layer_str, decimals):
     label = op.label(decimals)
 
     for w in op.modes:
-        if w in control:
-            layer_str[w] += "•"
-        else:
-            layer_str[w] += label
+        layer_str[w] += "•" if w in control else label
 
     return layer_str
 
