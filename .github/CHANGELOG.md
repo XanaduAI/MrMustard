@@ -18,7 +18,7 @@
     measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
     ```
 
-  * The optimizer `minimize` method now accepts an optional callback function, which will be calledat each step
+* The optimizer `minimize` method now accepts an optional callback function, which will be called at each step
   of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
   The result is added to the `callback_history` attribute of the optimizer.
   [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
