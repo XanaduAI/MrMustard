@@ -64,10 +64,10 @@ def general_step(
     print()
     res = np.zeros(len(neighbors), dtype=np.complex128)
     for i, neighbor in enumerate(neighbors):
-        res = b[i] * tensor[neighbor]
+        res[i] = b[i] * tensor[pivot]
         for j in range(len(neighbor)):
             if neighbor[j] != pivot[j]:
-                res += A[i, j] * neighbor[j] + b[i] * tensor[tuple(neighbor)]
+                res += A[i, j] * neighbor[j]
     return A @ tensor.take(neighbors, axis=0).T  # + b * tensor[tuple(pivot)]
 
 
