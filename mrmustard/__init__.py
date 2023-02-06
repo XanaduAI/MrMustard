@@ -39,8 +39,8 @@ class Settings:
         self.AUTOCUTOFF_STDEV_FACTOR = 5
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
-        # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
         self.CIRCUIT_DECIMALS = 3
+        # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
