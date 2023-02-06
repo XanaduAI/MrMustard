@@ -29,7 +29,7 @@ from mrmustard.types import Matrix, Vector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
-from .abstract import State, Transformation
+from mrmustard.lab.abstract import State, Transformation
 
 
 class Circuit(Transformation, Parametrized):
