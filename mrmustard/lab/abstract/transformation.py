@@ -123,7 +123,7 @@ class Transformation:
                 )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    def label(self, decimals: Optional[int]) -> str:
+    def label(self, decimals: Optional[int] = None) -> str:
         r"""Returns a string representation of the transformation for use in
         a circuit diagram.
 
