@@ -45,7 +45,7 @@
   C.tensor # extract actual result
   ```
 
-  * MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int).
+* MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int).
   This will give reproducible results whenever randomness is involved. The seed is unset by default,
   and it can be unset again with `settings.SEED = None`. If one desires,
   the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
