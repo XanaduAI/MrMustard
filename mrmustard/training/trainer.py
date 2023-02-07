@@ -255,7 +255,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
         Union[List, Dict]: The collection of results from each training task. Returns
             - a list if `tasks` is provided as an int or a list; or
             - a dict with the same keys if `tasks` is provided as a dict.
-    
+
 
     Examples:
     =========
@@ -268,12 +268,12 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
 
         def make_circ(x=0.):
             return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
-        
+
         def cost_fn(circ=make_circ(0.1), y_targ=0.):
             target = Gaussian(1) >> Dgate(-1.5, y_targ)
             s = Vacuum(1) >> circ
             return -fidelity(s, target)
-        
+
         # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
         results_0 = map_trainer(
             cost_fn=cost_fn,
