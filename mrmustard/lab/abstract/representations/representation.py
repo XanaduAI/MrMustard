@@ -1,26 +1,27 @@
 # abstract representation class
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Tuple, Union, Protocol
-from mrmustard.types import Array, Matrix, Vector, Number
-import functools
+
+import numpy as np
+
+from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.types import Number
 
 math = Math()
-import numpy as np
 
 
 class Data(ABC):
-    r"""Supports algebraic operations for all kinds of data (gaussian, array, mesh, symbolic, etc).
-    Algebraic operations are intended between the Hilbert space vectors or between ensembles of Hilbert vectors,
-    which form a convex structure.
-    The implementation depends on both the representation and the kind of data. E.g. adding two gaussians in Wigner
-    representation encoded as Gaussian data is implemented as stacking the two gaussians in the batch dimension.
-    Adding the same two gaussians in Fock representation (e.g. with dm data) still means rho1+rho2,
-    but in Fock representation we add the density matrices as arrays.
+    r"""Data is a class that holds the information that is necessary to define a
+    state/operation/measurement in any representation. It enables algebraic operations
+    for all types of data (gaussian, array, samples, symbolic, etc).
+    Algebraic operations act on the Hilbert space vectors or on ensembles
+    of Hilbert vectors (which form a convex structure via the Giri monad).
+    The sopecific implementation depends on both the representation and the kind of data used by it.
 
-    For these operations (as either Hilbert vectors or convex combinations of Hilbert vectors):
+    These are the supported data types (as either Hilbert vectors or convex
+    combinations of Hilbert vectors):
     - Gaussian generally stacks cov, mean, coeff along a batch dimension.
     - QuadraticPoly is a representation of the Gaussian as a quadratic polynomial.
     - Array (ket/dm) operates with the data arrays themselves.
@@ -61,50 +62,118 @@ class Data(ABC):
         return self.__mul__(1 / other)  # this numerically naughty
 
 
-class GaussianData(Data):
-    def __init__(self, cov=None, mean=None, coeff=None):
-        r"""
-        Gaussian data: covariances, means, coefficients.
-        Each of these has a batch dimension, and the batch dimension is the same for all of them.
-        They are the parameters of a linear combination of Gaussians, which is Gaussian if there is only one contribution.
-        Each contribution parametrizes the Gaussian function: `coeff * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
-        Args:
-            cov (batch, dim, dim): covariance matrices
-            mean  (batch, dim): means
-            coeff (batch): coefficients
-        """
-        # TODO handle missing data
-        # TODO switch to data/kwargs?
-        if isinstance(cov, QuadraticPolyData):  # this captures the GaussianData(quaddata) syntax
-            poly = cov  # for readability
-            inv_A = math.inv(poly.A)
-            self.cov = 2 * inv_A
-            self.mean = 2 * math.solve(A, poly.b)
-            self.coeff = poly.c * math.exp(0.5 * (self.mean.T @ self.cov @ self.mean))
-        else:
-            self.cov = math.atleast_1d(cov)
-            self.mean = math.atleast_1d(mean)
-            self.coeff = math.atleast_1d(coeff)
+class MatVecData(Data):
+    def __init__(self, mat, vec, coeff):
+        self.mat = math.atleast_3d(mat)
+        self.vec = math.atleast_2d(vec)
+        self.coeff = math.atleast_1d(coeff)
 
-    def __add__(self, other: GaussianData):
-        if np.allclose(self.cov, other.cov) and np.allclose(self.mean, other.mean):
-            return GaussianData(self.cov, self.mean, self.coeff + other.coeff)
-        return GaussianData(
-            math.concat([self.cov, other.cov], axis=0),
-            math.concat([self.mean, other.mean], axis=0),
+    def __add__(self, other: MatVecData):
+        if np.allclose(self.mat, other.mat) and np.allclose(self.vec, other.vec):
+            return MatVecData(self.mat, self.vec, self.coeff + other.coeff)
+        return MatVecData(
+            math.concat([self.mat, other.mat], axis=0),
+            math.concat([self.vec, other.vec], axis=0),
             math.concat([self.coeff, other.coeff], axis=0),
         )
 
+    def simplify(self):
+        to_check = set(range(len(self.mat)))
+        removed = set()
+        while to_check:
+            i = to_check.pop()
+            for j in to_check.copy():
+                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
+                    self.coeff[i] += self.coeff[j]
+                    to_check.remove(j)
+                    removed.add(j)
+        to_keep = [i for i in range(len(self.mat)) if i not in removed]
+        self.mat = self.mat[to_keep]
+        self.vec = self.vec[to_keep]
+        self.coeff = self.coeff[to_keep]
+
+    def __eq__(self, other):
+        return (
+            np.allclose(self.mat, other.mat)
+            and np.allclose(self.vec, other.vec)
+            and np.allclose(self.coeff, other.coeff)
+        )
+
+    def __and__(self, other):
+        mat = []
+        vec = []
+        coeff = []
+        for c1 in self.mat:
+            for c2 in other.mat:
+                mat.append(math.block_diag([c1, c2]))
+        for m1 in self.mean:
+            for m2 in other.mean:
+                vec.append(math.concat([m1, m2], axis=-1))
+        for c1 in self.coeff:
+            for c2 in other.coeff:
+                coeff.append(c1 * c2)
+        mat = math.astensor(mat)
+        vec = math.astensor(vec)
+        coeff = math.astensor(coeff)
+        return self.__class__(mat, vec, coeff)
+
+
+class GaussianData(MatVecData):
+    def __init__(self, cov=None, mean=None, coeff=None):
+        r"""
+        Gaussian data: covariance, mean, coefficient.
+        Each of these has a batch dimension, and the length of the
+        batch dimension is the same for all three.
+        These are the parameters of a linear combination of Gaussians,
+        which is Gaussian if there is only one contribution for each.
+        Each contribution parametrizes the Gaussian function:
+        `coeff * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
+        Args:
+            cov (batch, dim, dim): covariance matrices (real symmetric)
+            mean  (batch, dim): means (real)
+            coeff (batch): coefficients (complex)
+        """
+        # TODO handle missing data
+        # TODO switch to data/kwargs?
+        if isinstance(cov, QuadraticPolyData):  # enables GaussianData(quadraticdata)
+            poly = cov  # for readability
+            inv_A = math.inv(poly.A)
+            cov = 2 * inv_A
+            mean = 2 * math.solve(poly.A, poly.b)
+            coeff = poly.c * math.cast(
+                math.exp(0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)), poly.c.dtype
+            )
+        else:
+            super().__init__(cov, mean, coeff)
+
+    @property
+    def cov(self):
+        return self.mat
+
+    @cov.setter
+    def cov(self, value):
+        self.mat = value
+
+    @property
+    def mean(self):
+        return self.vec
+
+    @mean.setter
+    def mean(self, value):
+        self.vec = value
+
     def __mul__(self, other):
         if isinstance(other, Number):
-            return GaussianData(self.cov, self.mean, self.coeff * other)
+            return GaussianData(
+                self.cov, self.mean, self.coeff * math.cast(other, self.coeff.dtype)
+            )
         elif isinstance(other, GaussianData):
-            # cov matrices: S1 (S1 + S2)^-1 S2 for each pair of cov matrices in the batch
+            # cov matrices: c1 (c1 + c2)^-1 c2 for each pair of cov matrices in the batch
             covs = []
             for c1 in self.cov:
                 for c2 in other.cov:
                     covs.append(math.matmul(c1, math.solve(c1 + c2, c2)))
-            # means: S1 (S1 + S2)^-1 m2 + S2 (S1 + S2)^-1 m1 for each pair of cov matrices in the batch
+            # means: c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 for each pair of cov matrices in the batch
             means = []
             for c1, m1 in zip(self.cov, self.mean):
                 for c2, m2 in zip(other.cov, other.mean):
@@ -133,35 +202,8 @@ class GaussianData(Data):
         else:
             raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
 
-    def __and__(self, other: GaussianData):  # tensor product
-        # cov matrices: S1 \block_diag S2 for each pair of cov matrices in the batch
-        # means: m1 \concat m2 along data (not batch) for each pair of cov matrices in the batch
-        cov = []
-        mean = []
-        coeff = []
-        for c1 in self.cov:
-            for c2 in other.cov:
-                cov.append(math.block_diag([c1, c2]))
-        for m1 in self.mean:
-            for m2 in other.mean:
-                mean.append(math.concat([m1, m2], axis=-1))
-        for c1 in self.coeff:
-            for c2 in other.coeff:
-                coeff.append(c1 * c2)
-        cov = math.astensor(cov)
-        mean = math.astensor(mean)
-        coeff = math.astensor(coeff)
-        return GaussianData(cov, mean, coeff)
 
-    def __eq__(self, other):
-        return (
-            np.allclose(self.cov, other.cov)
-            and np.allclose(self.mean, other.mean)
-            and np.allclose(self.coeff, other.coeff)
-        )
-
-
-class QuadraticPolyData(Data):
+class QuadraticPolyData(MatVecData):
     def __init__(self, A=None, b=None, c=None):
         r"""
         Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
@@ -173,22 +215,26 @@ class QuadraticPolyData(Data):
             c (batch): constant
         """
         if isinstance(A, GaussianData):
-            self.A = -math.inv(A.cov)
-            self.b = math.inv(A.cov) @ A.mean
-            self.c = A.coeff * math.exp(-A.mean.T @ math.inv(A.cov) @ A.mean)
-        else:
-            self.A = math.atleast_1d(A)
-            self.b = math.atleast_1d(b)
-            self.c = math.atleast_1d(c)
+            A = -math.inv(A.cov)
+            b = math.inv(A.cov) @ A.mean
+            c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
+        super().__init__(A, b, c)
 
-    def __add__(self, other: QuadraticPolyData):
-        if np.allclose(self.A, other.A) and np.allclose(self.b, other.b):
-            return QuadraticPolyData(self.A, self.b, self.c + other.c)
-        return QuadraticPolyData(
-            math.concat([self.A, other.A], axis=0),
-            math.concat([self.b, other.b], axis=0),
-            math.concat([self.c, other.c], axis=0),
-        )
+    @property
+    def A(self):
+        return self.mat
+
+    @A.setter
+    def A(self, value):
+        self.mat = value
+
+    @property
+    def b(self):
+        return self.vec
+
+    @b.setter
+    def b(self, value):
+        self.vec = value
 
     def __mul__(self, other):
         if isinstance(
@@ -203,47 +249,6 @@ class QuadraticPolyData(Data):
             raise TypeError(
                 f"Cannot multiply QuadraticPolyData with {other.__class__.__qualname__}"
             )
-
-    def __and__(self, other: GaussianData):  # tensor product
-        return GaussianData(
-            [math.block_diag(self.A, other.A)],
-            [math.concat([self.b, other.b], axis=0)],
-            [self.c * other.c],
-        )
-
-    def __eq__(self, other):
-        return (
-            np.allclose(self.A, other.A)
-            and np.allclose(self.b, other.b)
-            and np.allclose(self.c, other.c)
-        )
-
-
-# array types are just arrays
-
-
-class MeshData(Data):
-    def __init__(self, mesh):
-        self.mesh = mesh  # mesh is a dictionary of x:f(x) pairs
-
-    def __add__(self, other):
-        if isinstance(other, MeshData):
-            # given x:f(x), if x:g(x) exists then x:f(x)+g(x)
-            # given x:f(x), if y:g(y) with y=x does not exist then x:f(x)+gstar(x) where gstar(x) is the
-            # interpolation of g(y) at x, performed using the following interpolation method:
-            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
-            # for scatteted data that does not follow a regular grid, we can use the following interpolation method:
-            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.griddata.html
-            # or the nearest neighbour interpolation method:
-            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.NearestNDInterpolator.html
-
-            pass
-
-    def __mul__(self, other):
-        pass
-
-    def __and__(self, other):
-        pass
 
 
 def AutoData(**kwargs):
@@ -260,7 +265,7 @@ def AutoData(**kwargs):
     elif "mesh" in kwargs:
         return Mesh(**kwargs)
     else:
-        raise TypeError(f"Cannot automatically choose data type from the given arguments")
+        raise TypeError("Cannot automatically choose data type from the given arguments")
 
 
 class Representation:
@@ -358,6 +363,7 @@ class Representation:
 
 # TRUNK
 
+
 # Now we implement the data-dependent methods.
 # An advantage of collecting the code in this way is that instead of
 # typechecking we try for the best case and catch the exception.
@@ -382,27 +388,27 @@ class Husimi(Representation):
                 )
             )
         except AttributeError:
-            print(f"conv(wigner.dm, exp(|alpha|^2/2))")
+            print("conv(wigner.dm, exp(|alpha|^2/2))")
 
     def from_glauber(self, glauber):
         try:
             return Husimi(GaussianData(glauber.cov + math.eye_like(glauber.cov), glauber.mean))
         except AttributeError:
-            print(f"glauber.dm * exp(|alpha|^2)")
+            print("glauber.dm * exp(|alpha|^2)")
 
     def from_wavefunctionx(self, wavefunctionX):
         try:
-            print(f"wavefunctionX.gaussian to Husimi...")
+            print("wavefunctionX.gaussian to Husimi...")
         except AttributeError:
-            print(f"wavefunctionX.ket to Husimi...")
+            print("wavefunctionX.ket to Husimi...")
 
     def from_stellar(self, stellar):  # what if hilbert vector?
         try:
-            X = math.Xmat(stellar.cov.shape[-1])
+            math.Xmat(stellar.cov.shape[-1])
             Q = math.inv(math.eye_like(stellar.cov) - math.Xmat @ stellar.cov)
             return Husimi(GaussianData(Q, Q @ math.Xmat @ stellar.mean))
         except AttributeError:
-            print(f"stellar.ket/dm to Husimi...")
+            print("stellar.ket/dm to Husimi...")
 
 
 # BRANCHES
@@ -413,17 +419,17 @@ class Wigner(Representation):
         try:
             return Wigner(GaussianData(husimi.cov - math.eye_like(husimi.cov) / 2, husimi.mean))
         except AttributeError:
-            print(f"husimi.ket * exp(-|alpha|^2/2)")
+            print("husimi.ket * exp(-|alpha|^2/2)")
         except AttributeError:
-            print(f"husimi.dm * exp(-|alpha|^2)")
+            print("husimi.dm * exp(-|alpha|^2)")
 
     def from_charw(self, charw):
         try:
             return Wigner(GaussianData(math.inv(charw.cov), charw.mean))
         except AttributeError:
-            print(f"Fourier transform of charw.ket")
+            print("Fourier transform of charw.ket")
         except AttributeError:
-            print(f"Fourier transform of charw.dm")
+            print("Fourier transform of charw.dm")
 
 
 class Glauber(Representation):
@@ -431,29 +437,29 @@ class Glauber(Representation):
         try:
             return Glauber(GaussianData(husimi.cov - math.eye_like(husimi.cov), husimi.mean))
         except AttributeError:
-            print(f"husimi.dm * exp(-|alpha|^2)")
+            print("husimi.dm * exp(-|alpha|^2)")
 
     def from_charp(self, charp):
         try:
             return Glauber(GaussianData(math.inv(charp.cov), charp.mean))
         except AttributeError:
-            print(f"Fourier transform of charp.ket")
+            print("Fourier transform of charp.ket")
         except AttributeError:
-            print(f"Fourier transform of charp.dm")
+            print("Fourier transform of charp.dm")
 
 
 class WavefunctionX(Representation):
     def from_husimi(self, husimi):
         try:
-            print(f"husimi.gaussian to wavefunctionX.gaussian")
+            print("husimi.gaussian to wavefunctionX.gaussian")
         except AttributeError:
-            print(f"husimi.ket to wavefunctionX.ket...")
+            print("husimi.ket to wavefunctionX.ket...")
 
     def from_wavefunctionp(self, wavefunctionP):
         try:
             return WavefunctionX(GaussianData(math.inv(wavefunctionP.cov), wavefunctionP.mean))
         except AttributeError:
-            print(f"Fourier transform of wavefunctionP.ket")
+            print("Fourier transform of wavefunctionP.ket")
 
 
 class Stellar(Representation):
@@ -467,9 +473,9 @@ class Stellar(Representation):
                 GaussianData(A, X @ Qinv @ husimi.mean)
             )  # TODO: cov must be the inverse of A though
         except AttributeError:
-            print(f"husimi.ket to stellar...")
+            print("husimi.ket to stellar...")
         except AttributeError:
-            print(f"husimi.dm to sellar...")
+            print("husimi.dm to sellar...")
 
     @property
     def A(self):
@@ -492,7 +498,7 @@ class CharP(Representation):
         try:
             return CharP(GaussianData(math.inv(glauber.cov), glauber.mean))
         except AttributeError:
-            print(f"Fourier transform of glauber.dm")
+            print("Fourier transform of glauber.dm")
 
     def from_husimi(self, husimi):
         return self.from_glauber(Glauber(husimi))
@@ -503,9 +509,9 @@ class CharQ(Representation):
         try:
             return CharQ(GaussianData(math.inv(husimi.cov), husimi.mean))
         except AttributeError:
-            print(f"Fourier transform of husimi.ket")
+            print("Fourier transform of husimi.ket")
         except AttributeError:
-            print(f"Fourier transform of husimi.dm")
+            print("Fourier transform of husimi.dm")
 
 
 class CharW(Representation):
@@ -513,7 +519,7 @@ class CharW(Representation):
         try:
             return CharW(GaussianData(math.inv(wigner.cov), wigner.mean))
         except AttributeError:
-            print(f"Fourier transform of wigner.dm")
+            print("Fourier transform of wigner.dm")
 
     def from_husimi(self, husimi):
         return self.from_wigner(Wigner(husimi))
@@ -524,7 +530,7 @@ class WavefunctionP(Representation):
         try:
             return WavefunctionP(GaussianData(math.inv(wavefunctionX.cov), wavefunctionX.mean))
         except AttributeError:
-            print(f"Fourier transform of wavefunctionX.ket")
+            print("Fourier transform of wavefunctionX.ket")
 
     def from_husimi(self, husimi):
         self.from_wavefunctionx(WavefunctionX(husimi))
@@ -533,11 +539,11 @@ class WavefunctionP(Representation):
 class Fock(Representation):
     def from_stellar(self, stellar):
         try:
-            print(f"Recurrence relations")
+            print("Recurrence relations")
         except AttributeError:
-            print(f"stellar.ket to Fock...")
+            print("stellar.ket to Fock...")
         except AttributeError:
-            print(f"stellar.dm to Fock...")
+            print("stellar.dm to Fock...")
 
 
 # Data types
