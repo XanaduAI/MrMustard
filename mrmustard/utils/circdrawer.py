@@ -57,7 +57,9 @@ def _add_op(op, layer_str, decimals):
     control = []
     if op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
         control = [op.modes[0]]
-    label = op.short_name + "(" + op.param_string(decimals) + ")"
+    label = op.short_name
+    if decimals is not None:
+        label += "(" + op.param_string(decimals) + ")"
 
     for w in op.modes:
         layer_str[w] += "•" if w in control else label
