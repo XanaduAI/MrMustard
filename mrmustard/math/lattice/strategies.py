@@ -44,7 +44,7 @@ def ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
                     return
 
 
-@njit
+# @njit
 def equal_weight_gen(shape: Vector, max_sum: Optional[int] = None) -> Generator[Vector, None, None]:
     r"yields the indices of a tensor with equal weight"
     max_ = sum(shape) - len(shape) - 1  # allows to fill the entire tensor

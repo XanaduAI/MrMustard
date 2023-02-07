@@ -53,24 +53,22 @@ def general_step(
     Returns:
         complex: the value of the amplitude at the given index
     """
-    pivot = pivot_fn(index)
-    print("pivot =", pivot)
-    A = A * np.sqrt(np.asarray(pivot))[None, :] / np.sqrt(np.asarray(pivot) + 1)[:, None]
-    b = b / np.sqrt(np.asarray(pivot) + 1)
+    i, pivot = pivot_fn(index)
+    A = A * np.sqrt(pivot)[None, :] / np.sqrt(pivot + 1)[:, None]
+    b = b / np.sqrt(pivot + 1)
     A, b = Ab_fn(A, b, neighbors_fn, pivot)
     neighbors = neighbors_fn(pivot)  # neighbors is an array of indices len(pivot) x len(pivot)
-    print("neighbors =", neighbors)
-    print("neighbors value =", tensor.take(neighbors, axis=0).T)
-    print()
-    res = np.zeros(len(neighbors), dtype=np.complex128)
-    for i, neighbor in enumerate(neighbors):
-        res[i] = b[i] * tensor[pivot]
-        for j in range(len(neighbor)):
-            if neighbor[j] != pivot[j]:
-                res += A[i, j] * neighbor[j]
-    return A @ tensor.take(neighbors, axis=0).T  # + b * tensor[tuple(pivot)]
+    value_at_index = b[i] * tensor_value(tensor, pivot)
+    print("-" * 80)
+    print(f"tensor_value(tensor, index={pivot})={tensor_value(tensor, pivot)}")
+    for j, neighbor in enumerate(neighbors):
+        val = tensor_value(tensor, neighbor)
+        print(f"tensor_value(tensor={tensor}, index={neighbor})={val}")
+        value_at_index += A[i, j] * val
+    return value_at_index
 
 
+# @njit
 def vanilla_step(tensor, A, b, index: Tuple) -> complex:
     """Fock-Bargmann recurrence relation step. Vanilla version.
     Args:
@@ -84,3 +82,19 @@ def vanilla_step(tensor, A, b, index: Tuple) -> complex:
         complex: the value of the amplitude at the given index
     """
     return general_step(tensor, A, b, index.copy(), first_pivot_fn, lower_neighbors_fn)
+
+
+### array to tuple functions ###
+
+
+# @njit
+def ravel_multi_index(index, shape):
+    res = 0
+    for i in range(len(index)):
+        res += index[i] * np.prod(np.asarray(shape)[i + 1 :])
+    return res
+
+
+# @njit
+def tensor_value(tensor, index):
+    return tensor.flat[ravel_multi_index(index, tensor.shape)]

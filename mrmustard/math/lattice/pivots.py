@@ -13,24 +13,24 @@
 # limitations under the License.
 #
 
-from numba import njit
+from typing import Tuple
 
 from mrmustard.types import Vector
 
 
-@njit
-def first_pivot_fn(index: Vector) -> Vector:
+# @njit
+def first_pivot_fn(index: Vector) -> Tuple[int, Vector]:
     r"""returns the first available pivot index for the given index
     Warning: returns by reference, so the index is modified in place"""
     for i, v in enumerate(index):
         if v > 0:
             index[i] -= 1
-            return index
+            return i, index
     raise ValueError("Index is zero")
 
 
-@njit
-def smallest_pivot_fn(index: Vector) -> Vector:
+# @njit
+def smallest_pivot_fn(index: Vector) -> Tuple[int, Vector]:
     r"""returns the smallest available pivot index for the given index.
     Warning: returns by reference, so the index is modified in place
     """
@@ -42,4 +42,4 @@ def smallest_pivot_fn(index: Vector) -> Vector:
     if min_ == 2**64 - 1:
         raise ValueError("Index is zero")
     index[min_i] -= 1
-    return index
+    return min_i, index
