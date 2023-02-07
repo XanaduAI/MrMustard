@@ -17,7 +17,7 @@
 import pytest
 import numpy as np
 from scipy.stats import multivariate_normal
-from mrmustard.utils.wigner import wigner_discretized
+from mrmustard.utils.quasiprobability import wigner_discretized
 from mrmustard.lab import (
     Vacuum,
     Coherent,

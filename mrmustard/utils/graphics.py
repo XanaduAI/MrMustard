@@ -21,7 +21,7 @@ from matplotlib import cm
 import numpy as np
 from mrmustard import settings
 from mrmustard.physics.fock import quadrature_distribution
-from .wigner import wigner_discretized
+from .quasiprobability import wigner_discretized
 
 
 # pylint: disable=disallowed-name
