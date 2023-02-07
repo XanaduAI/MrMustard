@@ -99,9 +99,9 @@ def test_add_op():
 def test_circuit_text():
     r"""Tests that circuit_text returns the correct circuit"""
     settings.CIRCUIT_DECIMALS = None
-    ops = [BSgate(0.5)[0, 1], Ggate(4)[2, 3, 4, 5], BSgate(0.5)[7, 6]]
+    ops = [BSgate(0.5)[0, 1], Ggate(3)[2, 3, 5], BSgate(0.5)[7, 6]]
     decimals = None
     assert (
         circuit_text(ops, decimals)
-        == "0: ─╭•──\n1: ─╰BS─\n2: ─╭G──\n3: ─├G──\n4: ─├G──\n5: ─╰G──\n6: ─╭BS─\n7: ─╰•──"
+        == "0: ─╭•──\n1: ─╰BS─\n2: ─╭G──\n3: ─├G──\n4: ─│───\n5: ─╰G──\n6: ─╭BS─\n7: ─╰•──"
     )
