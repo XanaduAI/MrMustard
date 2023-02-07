@@ -20,12 +20,18 @@ from scipy.interpolate import interp1d
 from mrmustard import settings
 from mrmustard.abstract.data import Data
 from mrmustard.math import Math
+from mrmustard.types import Batched, Matrix, Number, Scalar, Vector
 
 math = Math()
 
 
 class MatVecData(Data):
-    def __init__(self, mat, vec, coeff):
+    r"""Class for storing a batch of matrices and vectors, representing the exponent of
+    a batch of Gaussian functions. The matrix and vector are either as (cov,mean,coeff) triples
+    or the data of quadratic polynomials.
+    """
+
+    def __init__(self, mat: Batched[Matrix], vec: Batched[Vector], coeff: Batched[Scalar]):
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)
         self.coeff = math.atleast_1d(coeff)
