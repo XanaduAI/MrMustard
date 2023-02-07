@@ -1,8 +1,8 @@
-mrmustard.lab.abstract
+mrmustard.abstract
 ======================
 
-.. currentmodule:: mrmustard.lab.abstract
+.. currentmodule:: mrmustard.abstract
 
-.. automodapi:: mrmustard.lab.abstract
+.. automodapi:: mrmustard.abstract
     :no-heading:
     :include-all-objects:
