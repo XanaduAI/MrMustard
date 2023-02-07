@@ -93,7 +93,8 @@ def test_coherent_state(alpha):
 @given(r=st.floats(0, 2), phi=st_angle)
 def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics
-    Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
+    Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state
+    """
     cutoff = 10
     amps = SqueezedVacuum(r=r, phi=phi).ket(cutoffs=[cutoff])
     assert np.allclose(amps[1::2], 0.0)
