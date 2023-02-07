@@ -23,7 +23,6 @@ It contains the items you'd find in a lab:
 """
 
 from .circuit import *
-from .states import *
-from .gates import *
 from .detectors import *
-from .abstract import State
+from .gates import *
+from .states import *

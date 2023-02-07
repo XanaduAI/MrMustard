@@ -16,13 +16,14 @@
 This module implements the quantum states upon which a quantum circuits acts on.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.types import Scalar, Vector, Matrix
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
-from mrmustard.physics import gaussian, fock
-from mrmustard.training import Parametrized
+from mrmustard.abstract import State
 from mrmustard.math import Math
-from .abstract import State
+from mrmustard.physics import fock, gaussian
+from mrmustard.training import Parametrized
+from mrmustard.types import Matrix, Scalar, Vector
 
 math = Math()
 

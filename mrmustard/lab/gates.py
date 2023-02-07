@@ -18,13 +18,14 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.types import Tensor
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
-from mrmustard.training import Parametrized
-from mrmustard.physics import gaussian
+from mrmustard.abstract import Transformation
 from mrmustard.math import Math
-from .abstract import Transformation
+from mrmustard.physics import gaussian
+from mrmustard.training import Parametrized
+from mrmustard.types import Tensor
 
 math = Math()
 
@@ -201,7 +202,6 @@ class Rgate(Parametrized, Transformation):
         return gaussian.rotation_symplectic(self.angle.value)
 
     def U(self, cutoffs: Sequence[int]):
-
         angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
         num_modes = len(cutoffs)
 
@@ -608,6 +608,7 @@ class Ggate(Parametrized, Transformation):
 # ~~~~~~~~~~~~~
 # NON-UNITARY
 # ~~~~~~~~~~~~~
+
 
 # pylint: disable=no-member
 class Attenuator(Parametrized, Transformation):

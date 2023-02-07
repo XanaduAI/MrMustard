@@ -12,27 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from threading import currentThread
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st, assume
+from hypothesis import assume, given
+from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
-from mrmustard.physics import gaussian as gp
+
+from mrmustard import settings
+from mrmustard.abstract import State
+from mrmustard.lab.gates import Attenuator, Dgate, Ggate, Sgate
 from mrmustard.lab.states import (
-    Fock,
     Coherent,
-    Vacuum,
+    DisplacedSqueezed,
+    Fock,
     Gaussian,
     SqueezedVacuum,
-    DisplacedSqueezed,
     Thermal,
+    Vacuum,
 )
-from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
-from mrmustard.lab.abstract import State
-from mrmustard import settings
-from tests.random import pure_state
-
 from mrmustard.math import Math
+from mrmustard.physics import gaussian as gp
 
 math = Math()
 
@@ -256,7 +255,6 @@ def test_concat_pure_states(pure):
 @pytest.mark.parametrize("n", ([1, 0, 0], [1, 1, 0], [0, 0, 1]))
 @pytest.mark.parametrize("cutoffs", ([2, 2, 2], [2, 3, 3], [3, 3, 2]))
 def test_ket_from_pure_dm(n, cutoffs):
-
     # prepare a fock (pure) state
     fock_state = Fock(n=n, cutoffs=cutoffs)
     dm_fock = fock_state.dm()

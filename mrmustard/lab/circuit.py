@@ -21,11 +21,12 @@ from __future__ import annotations
 __all__ = ["Circuit"]
 
 
-from typing import List, Tuple, Optional
-from mrmustard.types import Matrix, Vector
+from typing import List, Optional, Tuple
+
+from mrmustard.abstract import State, Transformation
 from mrmustard.training import Parametrized
+from mrmustard.types import Matrix, Vector
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from .abstract import Transformation, State
 
 
 class Circuit(Transformation, Parametrized):

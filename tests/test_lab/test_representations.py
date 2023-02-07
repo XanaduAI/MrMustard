@@ -16,7 +16,7 @@ from mrmustard.math import Math
 
 math = Math()
 
-from mrmustard.lab.abstract.representations import Wigner, Characteristic, Ket, DensityMatrix
+from mrmustard.abstract.representations import Characteristic, DensityMatrix, Ket, Wigner
 
 W = Wigner(cov, mean)  # gaussian in Wigner representation
 W = Wigner(array=array)  # Wigner function
