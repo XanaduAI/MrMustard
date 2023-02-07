@@ -352,8 +352,8 @@ class Heterodyne(Generaldyne):
         out_fock = fock.contract_states(
             stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
             stateB=self.state.ket(self_cutoffs),
-            a_is_mixed=other.is_mixed,
-            b_is_mixed=False,
+            a_is_dm=other.is_mixed,
+            b_is_dm=False,
             modes=other.indices(self.modes),
             normalize=False,
         )
