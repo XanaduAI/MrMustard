@@ -57,7 +57,7 @@ def _add_op(op, layer_str, decimals):
     control = []
     if op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
         control = [op.modes[0]]
-    label = op.label(decimals)
+    label = op.short_name + "(" + op.param_string(decimals) + ")"
 
     for w in op.modes:
         layer_str[w] += "•" if w in control else label
@@ -77,7 +77,8 @@ def circuit_text(
     Returns:
         str : String based graphic of the circuit.
     """
-    all_modes = sorted(list(set().union(*[op.modes for op in ops])))
+    modes = sorted(list(set().union(*[op.modes for op in ops])))
+    all_modes = range(min(modes), max(modes) + 1)
 
     totals = [f"{mode}: " for mode in all_modes]
     line_length = max(len(s) for s in totals)
@@ -85,8 +86,7 @@ def circuit_text(
     filler = "─"
 
     for layer in drawable_layers(ops).values():
-        layer_str = [filler] * len(all_modes)
-
+        layer_str = [filler] * (max(all_modes) - min(all_modes) + 1)
         for op in layer:
             layer_str = _add_op(op, layer_str, decimals)
 
