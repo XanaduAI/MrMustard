@@ -205,7 +205,7 @@ def _iter_futures(futures):
     """Make ray futures iterable for easy passing to a progress bar.
     Hacky: https://github.com/ray-project/ray/issues/5554
     """
-    import ray
+    import ray  # pylint: disable=import-outside-toplevel
 
     while futures:
         done, futures = ray.wait(futures)
@@ -314,7 +314,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
     )
     """
     try:
-        import ray
+        import ray  # pylint: disable=import-outside-toplevel
     except ImportError as e:
         raise ImportError(
             "Failed to import `ray` which is an extra dependency. Please install with `pip install -e .[ray]`."
