@@ -148,7 +148,7 @@ class FockMeasurement(Measurement):
             else:
                 cutoffs.append(other.cutoffs[other.indices(mode)])
         if self.should_recompute_stochastic_channel() or any(
-            c > settings.PNR_INTERNAL_CUTOFF for c in [other.cutoffs[i] for i in self._modes]
+            c > settings.PNR_INTERNAL_CUTOFF for c in [other.cutoffs[other.modes.index(i)] for i in self.modes]
         ):
             self.recompute_stochastic_channel(cutoffs)
         dm = other.dm(cutoffs)
