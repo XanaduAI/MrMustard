@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from typing import Optional, Union
+
 import numpy as np
 from scipy.interpolate import interp1d
 
@@ -27,8 +29,8 @@ math = Math()
 
 class MatVecData(Data):
     r"""Class for storing a batch of matrices and vectors, representing the exponent of
-    a batch of Gaussian functions. The matrix and vector are either as (cov,mean,coeff) triples
-    or the data of quadratic polynomials.
+    a batch of Gaussian functions. The data for each gaussian is either in the form of
+    a (cov,mean,coeff) triple or in terms of a quadratic polynomial.
     """
 
     def __init__(self, mat: Batched[Matrix], vec: Batched[Vector], coeff: Batched[Scalar]):
@@ -36,7 +38,7 @@ class MatVecData(Data):
         self.vec = math.atleast_2d(vec)
         self.coeff = math.atleast_1d(coeff)
 
-    def __add__(self, other: MatVecData):
+    def __add__(self, other: MatVecData) -> MatVecData:
         if np.allclose(self.mat, other.mat) and np.allclose(self.vec, other.vec):
             return MatVecData(self.mat, self.vec, self.coeff + other.coeff)
         return MatVecData(
@@ -45,7 +47,7 @@ class MatVecData(Data):
             math.concat([self.coeff, other.coeff], axis=0),
         )
 
-    def simplify(self):
+    def simplify(self) -> None:
         to_check = set(range(len(self.mat)))
         removed = set()
         while to_check:
@@ -60,14 +62,14 @@ class MatVecData(Data):
         self.vec = self.vec[to_keep]
         self.coeff = self.coeff[to_keep]
 
-    def __eq__(self, other):
+    def __eq__(self, other: MatVecData) -> bool:
         return (
             np.allclose(self.mat, other.mat)
             and np.allclose(self.vec, other.vec)
             and np.allclose(self.coeff, other.coeff)
         )
 
-    def __and__(self, other):
+    def __and__(self, other: MatVecData) -> MatVecData:
         mat = []
         vec = []
         coeff = []
@@ -87,7 +89,12 @@ class MatVecData(Data):
 
 
 class GaussianData(MatVecData):
-    def __init__(self, cov=None, mean=None, coeff=None):
+    def __init__(
+        self,
+        cov: Optional[Batched[Matrix]] = None,
+        mean: Optional[Batched[Vector]] = None,
+        coeff: Optional[Batched[Scalar]] = None,
+    ):
         r"""
         Gaussian data: covariance, mean, coefficient.
         Each of these has a batch dimension, and the length of the
@@ -101,8 +108,24 @@ class GaussianData(MatVecData):
             mean  (batch, dim): means (real)
             coeff (batch): coefficients (complex)
         """
-        # TODO handle missing data
-        # TODO switch to data/kwargs?
+        if cov is None:  # assuming mean is not None
+            dim = mean.shape[-1]
+            batch_size = mean.shape[-2]
+            cov = math.astensor([math.eye(dim, dtype=mean.dtype) for _ in range(batch_size)])
+        if mean is None:  # assuming cov is not None
+            dim = cov.shape[-1]
+            batch_size = cov.shape[-3]
+            mean = math.zeros(
+                (
+                    batch_size,
+                    dim,
+                ),
+                dtype=cov.dtype,
+            )
+        if coeff is None:
+            batch_size = cov.shape[-3]
+            coeff = math.ones((batch_size,), dtype=mean.dtype)
+
         if isinstance(cov, QuadraticPolyData):  # enables GaussianData(quadraticdata)
             poly = cov  # for readability
             inv_A = math.inv(poly.A)
@@ -115,7 +138,7 @@ class GaussianData(MatVecData):
             super().__init__(cov, mean, coeff)
 
     @property
-    def cov(self):
+    def cov(self) -> Batched[Matrix]:
         return self.mat
 
     @cov.setter
@@ -123,25 +146,25 @@ class GaussianData(MatVecData):
         self.mat = value
 
     @property
-    def mean(self):
+    def mean(self) -> Batched[Vector]:
         return self.vec
 
     @mean.setter
     def mean(self, value):
         self.vec = value
 
-    def __mul__(self, other):
+    def __mul__(self, other: Union[Number, GaussianData]) -> GaussianData:
         if isinstance(other, Number):
             return GaussianData(
                 self.cov, self.mean, self.coeff * math.cast(other, self.coeff.dtype)
             )
         elif isinstance(other, GaussianData):
-            # cov matrices: c1 (c1 + c2)^-1 c2 for each pair of cov matrices in the batch
+            # cov matrices: c1 (c1 + c2)^-1 c2 for each pair of cov mat in the batch
             covs = []
             for c1 in self.cov:
                 for c2 in other.cov:
                     covs.append(math.matmul(c1, math.solve(c1 + c2, c2)))
-            # means: c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 for each pair of cov matrices in the batch
+            # means: c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 for each pair of cov mat in the batch
             means = []
             for c1, m1 in zip(self.cov, self.mean):
                 for c2, m2 in zip(other.cov, other.mean):
@@ -172,7 +195,12 @@ class GaussianData(MatVecData):
 
 
 class QuadraticPolyData(MatVecData):
-    def __init__(self, A=None, b=None, c=None):
+    def __init__(
+        self,
+        A: Batched[Matrix],
+        b: Batched[Vector],
+        c: Batched[Scalar],
+    ):
         r"""
         Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
         Each of these has a batch dimension, and the batch dimension is the same for all of them.
@@ -182,6 +210,9 @@ class QuadraticPolyData(MatVecData):
             b (batch, dim): linear coefficients
             c (batch): constant
         """
+        # NOTE we are not allowing for optional arguments because it is not clear
+        # what the default should be (e.g. for states A should be identity,
+        # but for unitaries it should be like pauli X)
         if isinstance(A, GaussianData):
             A = -math.inv(A.cov)
             b = math.inv(A.cov) @ A.mean
@@ -189,7 +220,7 @@ class QuadraticPolyData(MatVecData):
         super().__init__(A, b, c)
 
     @property
-    def A(self):
+    def A(self) -> Batched[Matrix]:
         return self.mat
 
     @A.setter
@@ -197,14 +228,22 @@ class QuadraticPolyData(MatVecData):
         self.mat = value
 
     @property
-    def b(self):
+    def b(self) -> Batched[Vector]:
         return self.vec
 
     @b.setter
     def b(self, value):
         self.vec = value
 
-    def __mul__(self, other):
+    @property
+    def c(self) -> Batched[Scalar]:
+        return self.coeff
+
+    @c.setter
+    def c(self, value):
+        self.coeff = value
+
+    def __mul__(self, other: Union[Number, QuadraticPolyData]) -> QuadraticPolyData:
         if isinstance(
             other, Number
         ):  # TODO: this seems to deal only with the case of self and other being a single gaussian
@@ -223,11 +262,11 @@ class SamplesData(Data):
     "First version. Not differentiable. Only works for R^1 -> C^1 functions."
     max_dom_points = settings.DATA_MAX_SAMPLES_1D
 
-    def __init__(self, x, y):
+    def __init__(self, x: Vector[float], y: Vector[complex]):
         self.interp_real = interp1d(x, np.real(y))
         self.interp_imag = interp1d(x, np.imag(y))
 
-    def intersect_domains(self, other):
+    def intersect_domains(self, other: SamplesData) -> Vector[float]:
         x = np.union1d(self.domain, other.domain)
         # find intersection of x ranges
         x_min = max(self.domain.min(), other.domain.min())
@@ -237,11 +276,11 @@ class SamplesData(Data):
         return x
 
     @property
-    def domain(self):
+    def domain(self) -> Vector[float]:
         return self.interp_real.x
 
     @property
-    def values(self):
+    def values(self) -> Vector[complex]:
         return self.interp_real.y + 1j * self.interp_imag.y
 
     def plot(self):
@@ -254,7 +293,7 @@ class SamplesData(Data):
         ax.plot(self.domain, magnitude, color="black", linewidth=1)
         return ax
 
-    def resample(self):
+    def resample(self) -> None:
         """Resample the domain to have at most max_dom_points points.
         Sample more points where the derivative is large.
         """
@@ -276,10 +315,10 @@ class SamplesData(Data):
         self.interp_real = interp1d(x, self.interp_real(x))
         self.interp_imag = interp1d(x, self.interp_imag(x))
 
-    def __call__(self, x):
+    def __call__(self, x) -> complex:
         return self.interp_real(x) + 1j * self.interp_imag(x)
 
-    def __add__(self, other):
+    def __add__(self, other: Union[SamplesData, Number]) -> SamplesData:
         if isinstance(other, self.__class__):
             x = self.intersect_domains(other)
             f = SamplesData(x, self(x) + other(x))
@@ -292,10 +331,10 @@ class SamplesData(Data):
             f.resample()
         return f
 
-    def __radd__(self, other):
+    def __radd__(self, other: Union[SamplesData, Number]) -> SamplesData:
         return self + other
 
-    def __mul__(self, other):
+    def __mul__(self, other: Union[SamplesData, Number]) -> SamplesData:
         if isinstance(other, SamplesData):
             x = self.intersect_domains(other)
             f = SamplesData(x, self(x) * other(x))
@@ -308,19 +347,19 @@ class SamplesData(Data):
             f.resample()
         return f
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Union[SamplesData, Number]) -> SamplesData:
         return self * other
 
-    def __neg__(self):
+    def __neg__(self: SamplesData) -> SamplesData:
         return SamplesData(self.domain, -self.interp_real.y - 1j * self.interp_imag.y)
 
-    def __sub__(self, other):
+    def __sub__(self, other: Union[SamplesData, Number]) -> SamplesData:
         return self + (-other)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: Union[SamplesData, Number]) -> SamplesData:
         return other + (-self)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Union[SamplesData, Number]) -> SamplesData:
         if isinstance(other, SamplesData):
             x = self.intersect_domains(other)
             f = SamplesData(x, self(x) / other(x))
@@ -331,12 +370,12 @@ class SamplesData(Data):
             f.resample()
         return f
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: Union[SamplesData, Number]) -> SamplesData:
         if isinstance(other, (int, float, complex)):
             x = self.domain
             return SamplesData(x, other / self(x))
 
-    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+    def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs) -> SamplesData:
         if method == "__call__":
             x = inputs[0].domain
             y = ufunc(*(input(x) for input in inputs), **kwargs)
@@ -359,4 +398,4 @@ def AutoData(**kwargs):
     elif "x" in kwargs and "y" in kwargs:
         return SamplesData(**kwargs)
     else:
-        raise TypeError("Cannot automatically choose data type from the given arguments")
+        raise TypeError("Cannot automagically choose data type from the given arguments")
