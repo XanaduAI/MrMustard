@@ -18,13 +18,40 @@
     measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
     ```
 
+  * The optimizer `minimize` method now accepts an optional callback function, which will be called at each step of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
+  The result is added to the `callback_history` attribute of the optimizer.
+  [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
+
+  * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+  * the Math interface now supports linear system solving via `math.solve`.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+  ```python
+  from mrmustard.math.mmtensor import MMTensor
+
+  # define two tensors
+  A = MMTensor(np.random.rand(2, 3, 4), axis_labels=["foo", "bar", "contract"])
+  B = MMTensor(np.random.rand(4, 5, 6), axis_labels=["contract", "baz", "qux"])
+
+  # perform a tensor contraction
+  C = A @ B
+  C.axis_labels  # ["foo", "bar", "baz", "qux"]
+  C.shape # (2, 3, 5, 6)
+  C.tensor # extract actual result
+  ```
+
+  * MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int). This will give reproducible results whenever randomness is involved. The seed is unset by default, and it can be unset again with `settings.SEED = None`. If one desires, the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
+  [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
+
+
 ### Breaking changes
 
 ### Improvements
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values.
-  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation, providing better numerical stability for larger cutoff and displacement values.
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147) 
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
   [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
@@ -34,13 +61,53 @@
       W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
     ```
 
+* Calculate marginals independently from the Wigner function thus ensuring that the marginals are
+physical even though the Wigner function might not contain all the features of the state
+within the defined window. Also, expose some plot parameters and return the figure and axes.
+  [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
+
+* Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`. This allows for a more compact Fock representation where needed.
+  [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
+
+* The `mrmustard.physics.fock` module now provides convenience functions for applying kraus operators and choi operators to kets and density matrices.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+  ```python
+  from mrmustard.physics.fock import apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm
+  ket_out = apply_kraus_to_ket(kraus, ket_in, indices)
+  dm_out = apply_choi_to_dm(choi, dm_in, indices)
+  dm_out = apply_kraus_to_dm(kraus, dm_in, indices)
+  dm_out = apply_choi_to_ket(choi, ket_in, indices)
+  ```
+
+* Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
+  [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
+
+* Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation, which have been refactored and moved out of `physics.fock`.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 ### Bug fixes
+
+* The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The trace function in the fock module was giving incorrect results when called with certain choices of modes. This is now fixed.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The purity function for fock states no longer normalizes the density matrix before computing the purity.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
+ [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The internal fock representation of states returns the correct cutoffs in all cases (solves an issue when a pure dm was converted to ket).
+[(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
 
 ### Documentation
 
-### Contributors
+### Contributors 
 
 This release contains contributions from (in alphabetical order):
+[Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 ---
 
@@ -52,7 +119,7 @@ This release contains contributions from (in alphabetical order):
 
 * States in Gaussian and Fock representation now can be concatenated.
   ```python
-  from mrmustard.lab.states import Gaussian, Fock'
+  from mrmustard.lab.states import Gaussian, Fock
   from mrmustard.lab.gates import Attenuator
 
   # concatenate pure states
@@ -171,6 +238,10 @@ This release contains contributions from (in alphabetical order):
 transposing the indices of the input tensor. Now `math.dagger` appropriately calculates the
 Hermitian conjugate of an operator.
   [(#156)](https://github.com/XanaduAI/MrMustard/pull/156)
+
+* The application of a Choi operator to a density matrix was resulting in a transposed dm. Now
+the order of the indices in the application of a choi operator to dm and ket is correct.
+  [(#188)](https://github.com/XanaduAI/MrMustard/pull/188)
 
 ### Documentation
 

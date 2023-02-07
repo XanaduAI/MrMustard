@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 
 math = Math()
 
+
 # pylint: disable=too-many-instance-attributes
 class State:
     r"""Base class for quantum states."""
@@ -132,9 +133,8 @@ class State:
         if self._purity is None:
             if self.is_gaussian:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
-                # TODO: add symplectic representation
             else:
-                self._purity = fock.purity(self.fock)  # has to be dm
+                self._purity = fock.purity(self._dm)
         return self._purity
 
     @property
@@ -195,7 +195,7 @@ class State:
     def fock(self) -> Array:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
-            _fock = fock.fock_representation(
+            _fock = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
             )
             if self.is_mixed:
@@ -227,8 +227,15 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
+        return fock.norm(self.fock, self._dm is not None)
 
-        return fock.norm(self.fock, self.is_mixed)
+    @property
+    def probability(self) -> float:
+        r"""Returns the probability of the state."""
+        norm = self.norm
+        if self.is_pure and self._ket is not None:
+            return norm**2
+        return norm
 
     def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
@@ -243,14 +250,13 @@ class State:
         if self.is_mixed:
             return None
 
-        cutoffs = (
-            self.cutoffs
-            if cutoffs is None
-            else [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-        )
+        if cutoffs is None:
+            cutoffs = self.cutoffs
+        else:
+            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
         if self.is_gaussian:
-            self._ket = fock.fock_representation(
+            self._ket = fock.wigner_to_fock_state(
                 self.cov, self.means, shape=cutoffs, return_dm=False
             )
         else:  # only fock representation is available
@@ -258,8 +264,6 @@ class State:
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
                     self._ket = fock.dm_to_ket(self._dm)
-                    return self._ket
-                return None
             current_cutoffs = list(self._ket.shape[: self.num_modes])
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
@@ -268,7 +272,7 @@ class State:
                 else:
                     padded = self._ket
                 return padded[tuple(slice(s) for s in cutoffs)]
-        return self._ket
+        return self._ket[tuple(slice(s) for s in cutoffs)]
 
     def dm(self, cutoffs: List[int] = None) -> Tensor:
         r"""Returns the density matrix of the state in Fock representation.
@@ -290,7 +294,7 @@ class State:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.fock_representation(
+                self._dm = fock.wigner_to_fock_state(
                     self.cov, self.means, shape=cutoffs * 2, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
@@ -300,7 +304,7 @@ class State:
                 else:
                     padded = self._dm
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
-        return self._dm
+        return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
         r"""Returns the probabilities in Fock representation.
@@ -396,9 +400,9 @@ class State:
             out_fock = fock.contract_states(
                 stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
                 stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                a_is_mixed=other.is_mixed,
-                b_is_mixed=self.is_mixed,
-                modes=other.indices(self.modes),  # TODO: change arg name to indices
+                a_is_dm=other.is_mixed,
+                b_is_dm=self.is_mixed,
+                modes=other.indices(self.modes),
                 normalize=self._normalize if hasattr(self, "_normalize") else False,
             )
 
@@ -508,15 +512,13 @@ class State:
             raise ValueError(
                 f"Failed to request modes {item} for state {self} on modes {self.modes}."
             )
-
+        item_idx = [self.modes.index(m) for m in item]
         if self.is_gaussian:
-            cov, _, _ = gaussian.partition_cov(self.cov, item)
-            means, _ = gaussian.partition_means(self.means, item)
+            cov, _, _ = gaussian.partition_cov(self.cov, item_idx)
+            means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
-        fock_partitioned = fock.trace(
-            self.dm(self.cutoffs), keep=[m for m in range(self.num_modes) if m in item]
-        )
+        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
@@ -594,12 +596,21 @@ class State:
             return State(ket=self.ket() / other, modes=self.modes)
         raise ValueError("No fock representation available")
 
+    @staticmethod
+    def _format_probability(prob: float) -> str:
+        if prob < 0.001:
+            return f"{100*prob:.3e} %"
+        else:
+            return f"{prob:.3%}"
+
     def _repr_markdown_(self):
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
-            + "| Purity | Norm | Num modes | Bosonic size | Gaussian | Fock |\n"
+            + "| Purity | Probability | Num modes | Bosonic size | Gaussian | Fock |\n"
             + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.2e} | {self.norm :.2e} | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
+            + f"| {self.purity :.2e} | "
+            + self._format_probability(self.probability)
+            + f" | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
         if self.num_modes == 1:

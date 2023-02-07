@@ -24,7 +24,6 @@ from thewalrus.fock_gradients import (
 
 from tests import random
 from mrmustard.physics import fock
-from mrmustard import settings
 from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
 from mrmustard.physics import fock
 from mrmustard.lab.gates import (
@@ -61,16 +60,53 @@ def test_Dgate_2mode(state, xxyy):
     assert state_out == state
 
 
-@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2)])
-def test_single_mode_fock_equals_gaussian(gate):
+@pytest.mark.parametrize(
+    "gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2), Attenuator(0.5)]
+)
+def test_single_mode_fock_equals_gaussian_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
     cutoffs = [30]
     gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
+
+
+@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(0.3, 0.3), Pgate(10), Rgate(np.pi / 2)])
+def test_single_mode_fock_equals_gaussian_ket(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [60]
+    gaussian_state = SqueezedVacuum(0.5)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_ket = (fock_state >> gate).ket([10])
+    via_phase_space_ket = (gaussian_state >> gate).ket([10])
+    phase = np.exp(1j * np.angle(via_fock_space_ket[0]))
+    assert np.allclose(via_fock_space_ket, phase * via_phase_space_ket)
+
+
+@pytest.mark.parametrize(
+    "gate",
+    [
+        Sgate(r=0.5, phi=0.2) >> Attenuator(0.4),
+        Dgate(0.4, 0.4) >> Attenuator(0.4),
+        Pgate(1) >> Attenuator(0.4),
+        Rgate(np.pi / 2) >> Attenuator(0.4),
+    ],
+)
+def test_single_mode_fock_equals_gaussian_ket_dm(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [60]
+    gaussian_state = SqueezedVacuum(0.5)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_dm = (fock_state >> gate).dm([10])
+    via_phase_space_dm = (gaussian_state >> gate).dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
@@ -84,8 +120,8 @@ def test_two_mode_fock_equals_gaussian(gate):
     gaussian_state = TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
@@ -109,14 +145,8 @@ def test_fock_representation_displacement(cutoffs, x, y):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    choi_state = dgate.bell >> dgate
-    expected_Ud = fock.fock_representation(
-        choi_state.cov,
-        choi_state.means,
-        shape=cutoffs * 2,
-        return_unitary=True,
-        choi_r=settings.CHOI_R,
-    )
+    X = np.eye(2 * len(cutoffs))
+    expected_Ud = fock.wigner_to_fock_U(X, dgate.XYd[-1], cutoffs * 2)
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -172,15 +202,8 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    choi_state = rgate.bell >> rgate
-    expected_R = fock.fock_representation(
-        choi_state.cov,
-        choi_state.means,
-        shape=cutoffs * 2,
-        return_unitary=True,
-        choi_r=settings.CHOI_R,
-    )
-
+    d = np.zeros(2 * len(cutoffs))
+    expected_R = fock.wigner_to_fock_U(rgate.XYd[0], d, cutoffs * 2)
     assert np.allclose(R, expected_R, atol=1e-5)
 
 

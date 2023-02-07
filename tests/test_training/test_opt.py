@@ -45,10 +45,10 @@ math = Math()
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
-    tf.random.set_seed(137)
+    settings.SEED = 42
     S = S2gate(
-        r=abs(np.random.normal()),
-        phi=np.random.normal(),
+        r=abs(settings.rng.normal()),
+        phi=settings.rng.normal(),
         r_trainable=True,
         phi_trainable=True,
     )
@@ -70,14 +70,14 @@ def test_hong_ou_mandel_optimizer(i, k):
     see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
     which lacks a square root in the right hand side.
     """
-    tf.random.set_seed(137)
+    settings.SEED = 42
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
-            theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * np.random.normal(),
-            phi=np.random.normal(),
+            theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
+            phi=settings.rng.normal(),
             theta_trainable=True,
             phi_trainable=True,
         )[1, 2],
@@ -96,23 +96,22 @@ def test_hong_ou_mandel_optimizer(i, k):
 
 def test_learning_two_mode_squeezing():
     """Finding the optimal beamsplitter transmission to make a pair of single photons"""
-    tf.random.set_seed(137)
+    settings.SEED = 42
     ops = [
         Sgate(
-            r=abs(np.random.normal(size=(2))),
-            phi=np.random.normal(size=(2)),
+            r=abs(settings.rng.normal(size=(2))),
+            phi=settings.rng.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
         ),
         BSgate(
-            theta=np.random.normal(),
-            phi=np.random.normal(),
+            theta=settings.rng.normal(),
+            phi=settings.rng.normal(),
             theta_trainable=True,
             phi_trainable=True,
         ),
     ]
     circ = Circuit(ops)
-    tf.random.set_seed(20)
     state_in = Vacuum(num_modes=2)
 
     def cost_fn():
@@ -127,9 +126,8 @@ def test_learning_two_mode_squeezing():
 
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
-    tf.random.set_seed(137)
+    settings.SEED = 42
     G = Ggate(num_modes=2, symplectic_trainable=True)
-    tf.random.set_seed(20)
 
     def cost_fn():
         amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2])
@@ -143,11 +141,11 @@ def test_learning_two_mode_Ggate():
 
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
-    np.random.seed(11)
+    settings.SEED = 42
     ops = [
         Sgate(
-            r=np.random.normal(size=(2)) ** 2,
-            phi=np.random.normal(size=(2)),
+            r=settings.rng.normal(size=(2)) ** 2,
+            phi=settings.rng.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -168,11 +166,11 @@ def test_learning_two_mode_Interferometer():
 
 def test_learning_two_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
-    np.random.seed(11)
+    settings.SEED = 2
     ops = [
         Sgate(
-            r=np.random.normal(size=(2)) ** 2,
-            phi=np.random.normal(size=(2)),
+            r=settings.rng.normal(size=(2)) ** 2,
+            phi=settings.rng.normal(size=(2)),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -193,11 +191,11 @@ def test_learning_two_mode_RealInterferometer():
 
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    np.random.seed(11)
+    settings.SEED = 4
     ops = [
         Sgate(
-            r=np.random.uniform(size=4),
-            phi=np.random.normal(size=4),
+            r=settings.rng.uniform(size=4),
+            phi=settings.rng.normal(size=4),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -209,8 +207,8 @@ def test_learning_four_mode_Interferometer():
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
         return (
-            -tf.abs(
-                tf.reduce_sum(
+            -math.abs(
+                math.sum(
                     amps[1, 1]
                     * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
                 )
@@ -218,19 +216,18 @@ def test_learning_four_mode_Interferometer():
             ** 2
         )
 
-    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
-
+    opt = Optimizer(orthogonal_lr=0.05)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    np.random.seed(11)
+    settings.SEED = 6
     ops = [
         Sgate(
-            r=np.random.uniform(size=4),
-            phi=np.random.normal(size=4),
+            r=settings.rng.uniform(size=4),
+            phi=settings.rng.normal(size=4),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -242,8 +239,8 @@ def test_learning_four_mode_RealInterferometer():
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
         return (
-            -tf.abs(
-                tf.reduce_sum(
+            -math.abs(
+                math.sum(
                     amps[1, 1]
                     * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
                 )
@@ -251,9 +248,9 @@ def test_learning_four_mode_RealInterferometer():
             ** 2
         )
 
-    opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer()
 
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=400)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
@@ -261,12 +258,12 @@ def test_squeezing_hong_ou_mandel_optimizer():
     """Finding the optimal squeezing parameter to get Hong-Ou-Mandel dip in time
     see https://www.pnas.org/content/117/52/33107/tab-article-info
     """
-    tf.random.set_seed(137)
+    settings.SEED = 42
     r = np.arcsinh(1.0)
 
     S_01 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
     S_23 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]
-    S_12 = S2gate(r=1.0, phi=np.random.normal(), r_trainable=True, phi_trainable=True)[1, 2]
+    S_12 = S2gate(r=1.0, phi=settings.rng.normal(), r_trainable=True, phi_trainable=True)[1, 2]
 
     circ = Circuit([S_01, S_23, S_12])
 
@@ -280,11 +277,11 @@ def test_squeezing_hong_ou_mandel_optimizer():
 
 def test_parameter_passthrough():
     """Same as the test above, but with param passthrough"""
-    tf.random.set_seed(137)
+    settings.SEED = 42
     r = np.arcsinh(1.0)
     par = Parametrized(
         r=math.new_variable(r, (0.0, None), "r"),
-        phi=math.new_variable(np.random.normal(), (None, None), "phi"),
+        phi=math.new_variable(settings.rng.normal(), (None, None), "phi"),
     )
     ops = [
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
@@ -304,7 +301,7 @@ def test_parameter_passthrough():
 def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
     """Optimizes a Ggate on two modes so as to prepare a state with the same entropy
     and mean photon number as a thermal state"""
-
+    settings.SEED = 42
     S_init = two_mode_squeezing(np.arcsinh(1.0), 0.0)
 
     nbar = 1.4
@@ -333,6 +330,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 def test_opt_backend_param():
     """Test the optimization of a backend parameter defined outside a gate."""
     # rotated displaced squeezed state
+    settings.SEED = 42
     rotation_angle = np.pi / 2
     target_state = SqueezedVacuum(r=1.0, phi=rotation_angle)
 
@@ -348,4 +346,4 @@ def test_opt_backend_param():
     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.1)
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    print(np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2))
+    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2)

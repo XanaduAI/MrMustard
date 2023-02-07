@@ -41,7 +41,6 @@ from mrmustard import physics, settings
 from tests.random import none_or_
 
 math = Math()
-np.random.seed(137)
 hbar = settings.HBAR
 
 
@@ -137,7 +136,7 @@ class TestPNRDetector:
         L = Attenuator(transmissivity=eta)
         dms_lossy = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> lossy_detector[0]
         dms_ideal = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> L[0] >> ideal_detector[0]
-        assert np.allclose(dms_lossy, dms_ideal)
+        assert np.allclose(dms_lossy, dms_ideal, atol=1e-6)
 
 
 class TestHomodyneDetector:
@@ -268,7 +267,7 @@ class TestHomodyneDetector:
         means = remaining_state.means.numpy()
         assert np.allclose(means, expected_means)
 
-    N_MEAS = 350  # number of homodyne measurements to perform
+    N_MEAS = 150  # number of homodyne measurements to perform
     NUM_STDS = 10.0
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 

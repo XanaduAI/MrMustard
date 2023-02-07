@@ -36,6 +36,7 @@ from mrmustard.types import (
 )
 from .math_interface import MathInterface
 
+
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
     r"""Tensorflow implemantion of the :class:`Math` interface."""
@@ -136,7 +137,9 @@ class TFMath(MathInterface):
         return tf.linalg.diag_part(array)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
-        return tf.einsum(string, *tensors)
+        if type(string) is str:
+            return tf.einsum(string, *tensors)
+        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
@@ -263,6 +266,12 @@ class TFMath(MathInterface):
     def sinh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sinh(array)
 
+    def solve(self, matrix: tf.Tensor, rhs: tf.Tensor) -> tf.Tensor:
+        if len(rhs.shape) == len(matrix.shape) - 1:
+            rhs = tf.expand_dims(rhs, -1)
+            return tf.linalg.solve(matrix, rhs)[..., 0]
+        return tf.linalg.solve(matrix, rhs)
+
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
@@ -352,7 +361,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], modified: bool = True
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -363,8 +372,6 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
-            modified (bool): whether to return the modified multidimensional
-                Hermite polynomials or the standard ones
 
         Returns:
             The renormalized Hermite polynomial of given shape.
@@ -373,7 +380,7 @@ class TFMath(MathInterface):
             shape = shape[0]
 
         poly = hermite_multidimensional(
-            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, modified
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
         )
 
         def grad(dLdpoly):
@@ -389,14 +396,15 @@ class TFMath(MathInterface):
         return poly, grad
 
     @tf.custom_gradient
-    def displacement(self, r, phi, cutoff, dtype=tf.complex64.as_numpy_dtype, tol=1e-15):
+    def displacement(self, r, phi, cutoff, tol=1e-15):
         """creates a single mode displacement matrix"""
-        r = r.numpy()
-        phi = phi.numpy()
-        gate = displacement_tw(r, phi, cutoff, dtype) if r > tol else self.eye(cutoff)
+        if r > tol:
+            gate = displacement_tw(self.asnumpy(r), self.asnumpy(phi), cutoff)
+        else:
+            gate = self.eye(cutoff, dtype="complex128")
 
         def grad(dy):  # pragma: no cover
-            Dr, Dphi = grad_displacement_tw(gate, r, phi)
+            Dr, Dphi = tf.numpy_function(grad_displacement_tw, (gate, r, phi), (gate.dtype,) * 2)
             grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
             grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
             return grad_r, grad_phi, None

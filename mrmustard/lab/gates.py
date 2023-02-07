@@ -19,7 +19,6 @@ This module defines gates and operations that can be applied to quantum modes to
 """
 
 from typing import Union, Optional, List, Tuple, Sequence
-import numpy as np
 from mrmustard.types import Tensor
 from mrmustard import settings
 from mrmustard.training import Parametrized
@@ -93,14 +92,14 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
-    def U(self, cutoffs: List[int]):
+    def U(self, cutoffs: Sequence[int]):
         """Returns the unitary representation of the Displacement gate using the Laguerre
         polynomials."""
 
-        N = len(cutoffs)
-        x, y = self._parse_modes_and_args(cutoffs)
-
-        r = math.sqrt(x**2 + y**2)
+        N = self.num_modes
+        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
+        r = math.sqrt(x * x + y * y)
         phi = math.atan2(y, x)
 
         # calculate displacement unitary for each mode and concatenate with outer product
@@ -116,33 +115,6 @@ class Dgate(Parametrized, Transformation):
             Ud,
             list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
         )
-
-    def _parse_modes_and_args(self, cutoffs):
-        num_modes = len(cutoffs)
-        modes = self.modes  # modes in which the gate is acting on
-        xargs = self.x.value
-        yargs = self.y.value
-        num_args_x = (
-            xargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        num_args_y = (
-            yargs.shape[0] if len(xargs.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        x = np.zeros((num_modes,))
-        y = np.zeros((num_modes,))
-
-        if num_args_x != num_args_y:
-            raise ValueError("Number of parameters for `x` and `y` is different.")
-
-        if num_args_x == 1 or num_args_x == len(modes):
-            # one arg for all modes
-            x[modes] = xargs
-            y[modes] = yargs
-        elif num_args_x == len(modes):
-            # number of args and number of modes don't match
-            raise ValueError("Number of args and modes don't match")
-
-        return x, y
 
 
 class Sgate(Parametrized, Transformation):
@@ -229,8 +201,7 @@ class Rgate(Parametrized, Transformation):
         return gaussian.rotation_symplectic(self.angle.value)
 
     def U(self, cutoffs: Sequence[int]):
-
-        angles = self._parse_modes_and_args(cutoffs)
+        angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
         num_modes = len(cutoffs)
 
         # calculate rotation unitary for each mode and concatenate with outer product
@@ -243,28 +214,11 @@ class Rgate(Parametrized, Transformation):
                 U_next = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
                 Ur = math.outer(Ur, U_next)
 
-        # return total unitary with indexes reordered according to MM convetion
+        # return total unitary with indexes reordered according to MM convention
         return math.transpose(
             Ur,
             list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
         )
-
-    def _parse_modes_and_args(self, cutoffs):
-        num_modes = len(cutoffs)
-        modes = self.modes  # modes in which the gate is acting on
-        args = self.angle.value
-        num_args = (
-            args.shape[0] if len(args.shape.as_list()) > 0 else 1
-        )  # number or arguments given to the gate
-        angles = np.zeros((num_modes,))
-        if num_args == 1:
-            # one arg for all modes
-            angles[modes] = args
-        else:
-            # an arg for each mode
-            angles = args
-
-        return math.new_variable(angles, bounds=None, name="Rgate_angles")
 
 
 class Pgate(Parametrized, Transformation):
@@ -653,6 +607,7 @@ class Ggate(Parametrized, Transformation):
 # ~~~~~~~~~~~~~
 # NON-UNITARY
 # ~~~~~~~~~~~~~
+
 
 # pylint: disable=no-member
 class Attenuator(Parametrized, Transformation):

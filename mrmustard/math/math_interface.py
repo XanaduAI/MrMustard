@@ -20,7 +20,7 @@ from itertools import product
 import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
-
+from mrmustard import settings
 from mrmustard.types import (
     List,
     Tensor,
@@ -35,6 +35,7 @@ from mrmustard.types import (
     Callable,
     Any,
 )
+
 
 # pylint: disable=too-many-public-methods
 class MathInterface(ABC):
@@ -412,9 +413,7 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def hermite_renormalized(
-        self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int], modified: bool
-    ) -> Tensor:
+    def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
         r"""Returns the array of hermite renormalized polynomials of the given coefficients.
 
         Args:
@@ -422,22 +421,20 @@ class MathInterface(ABC):
             B (array): Vector coefficient of the hermite polynomial
             C (array): Scalar coefficient of the hermite polynomial
             shape (tuple): shape of the hermite polynomial
-            modified (bool): whether to return the modified multidimensional
-                Hermite polynomials or the standard ones
 
         Returns:
             array: renormalized hermite polynomials
         """
 
     @abstractmethod
-    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, dtype):
+    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, tol):
         r"""Calculates the matrix elements of the displacement gate and its derivatives.
 
         Args:
             r (float): displacement magnitude
             phi (float): displacement angle
             cutoff (int): Fock ladder cutoff
-            dtype (data type): Specifies the data type used for the calculation
+            tol (float): r tolerance for returning identity instead of displacement
         Returns:
             Tuple(array[complex], function): matrix representing the displacement operation and its gradient
         """
@@ -708,6 +705,18 @@ class MathInterface(ABC):
 
         Returns:
             array: hyperbolic sine of ``array``
+        """
+
+    @abstractmethod
+    def solve(self, matrix: Tensor, rhs: Tensor) -> Tensor:
+        r"""Returns the solution of the linear system :math:`Ax = b`.
+
+        Args:
+            matrix (array): matrix :math:`A`
+            rhs (array): vector :math:`b`
+
+        Returns:
+            array: solution :math:`x`
         """
 
     @abstractmethod
@@ -982,12 +991,12 @@ class MathInterface(ABC):
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * np.random.uniform(size=(1, 1)))
-            V = np.exp(1j * np.random.uniform(size=(1, 1)))
+            W = np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            V = np.exp(1j * settings.rng.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=num_modes)
-            V = unitary_group.rvs(dim=num_modes)
-        r = np.random.uniform(low=0.0, high=max_r, size=num_modes)
+            W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
+            V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
+        r = settings.rng.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
@@ -998,13 +1007,13 @@ class MathInterface(ABC):
         """A random orthogonal matrix in :math:`O(N)`."""
         if N == 1:
             return np.array([[1.0]])
-        return ortho_group.rvs(dim=N)
+        return ortho_group.rvs(dim=N, random_state=settings.rng)
 
     def random_unitary(self, N: int) -> Tensor:
         """a random unitary matrix in :math:`U(N)`"""
         if N == 1:
-            return self.exp(1j * np.random.uniform(size=(1, 1)))
-        return unitary_group.rvs(dim=N)
+            return self.exp(1j * settings.rng.uniform(size=(1, 1)))
+        return unitary_group.rvs(dim=N, random_state=settings.rng)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
         r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""

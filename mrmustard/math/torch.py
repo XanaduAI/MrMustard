@@ -31,6 +31,7 @@ from mrmustard.types import (
 from mrmustard.math.autocast import Autocast
 from .math_interface import MathInterface
 
+
 # pylint: disable=too-many-public-methods,no-self-use
 class TorchMath(MathInterface):
     r"""Torch implemantion of the :class:`Math` interface."""
@@ -303,7 +304,7 @@ class TorchMath(MathInterface):
         return hash(tensor)
 
     def hermite_renormalized(
-        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int], modified: bool
+        self, A: torch.Tensor, B: torch.Tensor, C: torch.Tensor, shape: Tuple[int]
     ) -> torch.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial.
 
