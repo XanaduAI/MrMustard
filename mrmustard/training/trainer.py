@@ -35,7 +35,7 @@ except ImportError as e:
 
 def train_device(
     cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs
-):
+):  # pylint: disable=too-complex
     """A general and flexible training loop for circuit optimizations with configurations adjustable through kwargs.
 
     Args:
