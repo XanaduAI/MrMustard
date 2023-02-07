@@ -107,13 +107,6 @@ from rich.progress import track
 import mrmustard as mm
 from .optimizer import Optimizer
 
-try:
-    import ray
-except ImportError as e:
-    raise ImportError(
-        "Failed to import `ray` which is an extra dependency. Please install with `pip install -e .[ray]`."
-    ) from e
-
 
 def _apply_partial_cost(device, cost_fn, **kwargs):
     """Helper partial cost fn maker."""
@@ -318,6 +311,12 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
         },
     )
     """
+    try:
+        import ray
+    except ImportError as e:
+        raise ImportError(
+            "Failed to import `ray` which is an extra dependency. Please install with `pip install -e .[ray]`."
+        ) from e
 
     if not ray.is_initialized():
         ray.init(num_cpus=num_cpus)
