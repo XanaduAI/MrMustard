@@ -120,7 +120,7 @@ def about():
 
         >>> mm.about()
         Mr Mustard: a differentiable bridge between phase space and Fock space.
-        Copyright 2018-2021 Xanadu Quantum Technologies Inc.
+        Copyright 2021 Xanadu Quantum Technologies Inc.
 
         Python version:            3.6.10
         Platform info:             Linux-5.8.18-1-MANJARO-x86_64-with-arch-Manjaro-Linux
@@ -146,7 +146,7 @@ def about():
 
     # a QuTiP-style infobox
     print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
-    print("Copyright 2018-2021 Xanadu Quantum Technologies Inc.\n")
+    print("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
 
     print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
     print("Platform info:             {}".format(platform.platform()))
