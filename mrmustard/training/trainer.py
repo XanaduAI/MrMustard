@@ -35,7 +35,7 @@ except ImportError as e:
 
 def train_device(
     cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs
-):  # noqa: C901
+):
     """A general and flexible training loop for circuit optimizations with configurations adjustable through kwargs.
 
     Args:
@@ -66,24 +66,22 @@ def train_device(
 
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
+    device = None
     if callable(device_factory):
         device, kwargs = curry_pop(device_factory, **kwargs)
-    else:
-        device = []
-        skip_opt = True
-
-    if not isinstance(device, (Sequence, Mapping)):
-        device = [device]
 
     if isinstance(device, Sequence):
-        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
         optimized = device
+        cost_fn, kwargs = partial_pop(cost_fn, *optimized, **kwargs)
     elif isinstance(device, Mapping):
-        cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
         optimized = list(device.values())
+        cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
+    else:
+        optimized = [device] if device is not None else []
+        cost_fn, kwargs = partial_pop(cost_fn, *optimized, **kwargs)
 
     opt = None
-    if not skip_opt:
+    if optimized and not skip_opt:
         opt, kwargs = curry_pop(Optimizer, **kwargs)
         _, kwargs = curry_pop(opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs)
 
