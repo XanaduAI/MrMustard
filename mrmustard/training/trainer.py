@@ -16,13 +16,13 @@
 MrMustard circuits/devices.
 """
 
-import warnings
-import numpy as np
-import mrmustard as mm
 from inspect import signature, Parameter
 from functools import partial
 from typing import Sequence, Mapping
+import warnings
+import numpy as np
 from rich.progress import track
+import mrmustard as mm
 from .optimizer import Optimizer
 
 try:
@@ -30,10 +30,12 @@ try:
 except ImportError as e:
     raise ImportError(
         "Failed to import `ray` which is an extra dependency. Please install with `pip install -e .[ray]`."
-    )
+    ) from e
 
 
-def train_device(cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs):
+def train_device(
+    cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs
+):
     """A general and flexible training loop for circuit optimizations with configurations adjustable through kwargs.
 
     Args:
@@ -193,14 +195,15 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
     if not unblock:
         # blocks and wait till all tasks complete to return the end results.
         if pbar:
-            results = [
-                result
-                for result in track(
+            # results = [
+            #     result
+            results = list(
+                track(
                     _iter_futures(promises),
                     description=f"{len(promises)} tasks running...",
                     total=len(promises),
                 )
-            ]
+            )
         else:
             results = ray.get(promises)
 
@@ -212,7 +215,9 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
     else:
         # does not block and returns a getter function that returns the available results so far.
         def get_avail_results():
-            results, running_tasks = ray.wait(promises, num_returns=len(promises))
+            results, running_tasks = ray.wait(
+                promises, num_returns=len(promises)
+            )  # pylint: disable=unused-variable
             if return_dict:
                 return {r["tag"]: r for r in ray.get(results)}
             else:
@@ -233,6 +238,7 @@ def kwargs_of(fn):
 
 
 def partial_pop(fn, *args, **kwargs):
+    """Partially applies known kwargs to fn and returns the rest."""
     keywords, has_var_keyword = kwargs_of(fn)
     known_kwargs = {k: kwargs.pop(k) for k in set(kwargs).intersection(keywords)}
     partial_fn = partial(fn, *args, **known_kwargs, **(kwargs if has_var_keyword else {}))
