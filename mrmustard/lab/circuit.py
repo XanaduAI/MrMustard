@@ -24,12 +24,11 @@ __all__ = ["Circuit"]
 from typing import List, Optional, Tuple
 
 from mrmustard import settings
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
 from mrmustard.types import Matrix, Vector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-
-from mrmustard.lab.abstract import State, Transformation
 
 
 class Circuit(Transformation, Parametrized):
@@ -110,4 +109,5 @@ class Circuit(Transformation, Parametrized):
 
     def __str__(self):
         """String representation of the circuit."""
-        return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
+        ops_repr = [repr(op) for op in self._ops]
+        return " >> ".join(ops_repr)
