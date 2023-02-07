@@ -45,7 +45,13 @@ def _apply_partial_cost(device, cost_fn, **kwargs):
 
 
 def train_device(
-    cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs
+    cost_fn,
+    device_factory=None,
+    metric_fns=None,
+    return_kwargs=True,
+    skip_opt=False,
+    tag=None,
+    **kwargs,
 ):
     """A general and flexible training loop for circuit optimizations with configurations adjustable through kwargs.
 
@@ -77,7 +83,9 @@ def train_device(
 
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
-    device, kwargs = curry_pop(device_factory, **kwargs) if callable(device_factory) else ([], kwargs)
+    device, kwargs = (
+        curry_pop(device_factory, **kwargs) if callable(device_factory) else ([], kwargs)
+    )
     device = [device] if not isinstance(device, (Sequence, Mapping)) else device
 
     cost_fn, kwargs, optimized = _apply_partial_cost(device, cost_fn, **kwargs)
@@ -85,7 +93,9 @@ def train_device(
     opt = None
     if optimized and not skip_opt:
         opt, kwargs = curry_pop(Optimizer, **kwargs)
-        _, kwargs = curry_pop(opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs)
+        _, kwargs = curry_pop(
+            opt.minimize, **{"cost_fn": cost_fn, "by_optimizing": optimized}, **kwargs
+        )
 
     if kwargs:
         warnings.warn(f"Unused kwargs: {kwargs}")
@@ -190,7 +200,9 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             if isinstance(task_kwargs, Mapping)
         ]
     else:
-        raise ValueError(f"`tasks` is expected to be of type int, list, or dict. got {type(tasks)}: {tasks}")
+        raise ValueError(
+            f"`tasks` is expected to be of type int, list, or dict. got {type(tasks)}: {tasks}"
+        )
 
     if not unblock:
         # blocks and wait till all tasks complete to return the end results.
