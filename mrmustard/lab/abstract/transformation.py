@@ -123,29 +123,6 @@ class Transformation:
                 )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    def label(self, decimals: Optional[int] = None) -> str:
-        r"""Returns a string representation of the transformation for use in
-        a circuit diagram.
-
-        Args:
-            decimals (int): the number of decimals to use for the parameters
-
-        Returns:
-            str: the string representation of the transformation
-
-        Example:
-            BSgate(0.54, 0.12) -> "BS(0.54, 0.12)"
-            Ggate(2) -> "G(2)"
-        """
-        if decimals is None:
-            return self.short_name
-        label = self.short_name + "("
-        for name in self.param_names.values():
-            par = getattr(self, name).value
-            show = (math.asnumpy(par).ndim == 0)
-            label += f"{math.asnumpy(par):.{decimals}g}, " if show else f"{len(self.modes)}, "
-        return label[:-2] + ")"
-
     @property
     def modes(self) -> Sequence[int]:
         """Returns the list of modes on which the transformation acts on."""
