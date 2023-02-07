@@ -39,7 +39,7 @@ Examples:
 
 .. code-block::
 
-    from mrmustard.lab import Vacuum, Dgate, Ggate
+    from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
     from mrmustard.physics import fidelity
     from mrmustard.training.trainer import map_trainer
 
@@ -257,7 +257,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
 
     .. code-block::
 
-        from mrmustard.lab import Vacuum, Dgate, Ggate
+        from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
         from mrmustard.physics import fidelity
         from mrmustard.training.trainer import map_trainer
 
