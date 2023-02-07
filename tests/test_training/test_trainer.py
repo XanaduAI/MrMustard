@@ -25,6 +25,8 @@ from mrmustard.training.trainer import map_trainer
 
 @pytest.fixture
 def wrappers():
+    """Dummy wrappers tested."""
+
     def make_circ(x=0.0, return_list=False):
         circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
             x=x, x_trainable=True, y_trainable=True
@@ -43,7 +45,7 @@ def wrappers():
     "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
 )
 @pytest.mark.parametrize("seed", [None, 42])
-def test_circ_cost(wrappers, tasks, seed):
+def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
     """Test distributed cost calculations."""
     has_seed = isinstance(seed, int)
     _, cost_fn = wrappers
@@ -54,7 +56,7 @@ def test_circ_cost(wrappers, tasks, seed):
     )
 
     if isinstance(tasks, dict):
-        set(results.keys()) == set(tasks.keys())
+        assert set(results.keys()) == set(tasks.keys())
         results = list(results.values())
     assert all(r["optimizer"] is None for r in results)
     assert all(r["device"] == [] for r in results)
@@ -70,7 +72,7 @@ def test_circ_cost(wrappers, tasks, seed):
 @pytest.mark.parametrize(
     "tasks", [[{"x": 0.1}, {"y_targ": 0.2}], {"c0": {}, "c1": {"euclidean_lr": 0.02, "HBAR": 1.0}}]
 )
-def test_circ_optimize(wrappers, tasks):
+def test_circ_optimize(wrappers, tasks):  # pylint: disable=redefined-outer-name
     """Test distributed optimizations."""
     max_steps = 10
     make_circ, cost_fn = wrappers
@@ -83,7 +85,7 @@ def test_circ_optimize(wrappers, tasks):
     )
 
     if isinstance(tasks, dict):
-        set(results.keys()) == set(tasks.keys())
+        assert set(results.keys()) == set(tasks.keys())
         results = list(results.values())
     assert (
         len(set(r["cost"] for r in results))
@@ -105,12 +107,12 @@ def test_circ_optimize(wrappers, tasks):
         {"is_gaussian": lambda c: c.is_gaussian, "foo": lambda _: 17.0},
         [
             lambda c: c.modes,
-            lambda c: len(c),
+            len,
         ],
         lambda c: (Vacuum(1) >> c >> c >> c).fock_probabilities([5]),
     ],
 )
-def test_circ_optimize_metrics(wrappers, metric_fns):
+def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefined-outer-name
     """Tests custom metric functions on final circuits."""
     make_circ, cost_fn = wrappers
 
@@ -129,7 +131,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):
         return_list=True,
     )
 
-    set(results.keys()) == set(tasks.keys())
+    assert set(results.keys()) == set(tasks.keys())
     results = list(results.values())
     assert all(("metrics" in r or set(metric_fns.keys()).issubset(set(r.keys()))) for r in results)
     assert (
