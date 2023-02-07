@@ -33,6 +33,17 @@ except ImportError as e:
     ) from e
 
 
+def _apply_partial_cost(device, cost_fn, **kwargs):
+    """Helper partial cost fn maker."""
+    if isinstance(device, Sequence):
+        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
+        optimized = device
+    elif isinstance(device, Mapping):
+        cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
+        optimized = list(device.values())
+    return cost_fn, kwargs, optimized
+
+
 def train_device(
     cost_fn, device_factory=None, metric_fns=None, return_kwargs=True, skip_opt=False, tag=None, **kwargs
 ):
@@ -67,17 +78,9 @@ def train_device(
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
     device, kwargs = curry_pop(device_factory, **kwargs) if callable(device_factory) else ([], kwargs)
+    device = [device] if not isinstance(device, (Sequence, Mapping)) else device
 
-    if isinstance(device, Sequence):
-        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
-        optimized = device
-    elif isinstance(device, Mapping):
-        cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
-        optimized = list(device.values())
-    else:
-        device = [device]
-        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
-        optimized = device
+    cost_fn, kwargs, optimized = _apply_partial_cost(device, cost_fn, **kwargs)
 
     opt = None
     if optimized and not skip_opt:
