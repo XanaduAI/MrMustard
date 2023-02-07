@@ -45,12 +45,12 @@ Examples:
 
     def make_circ(x=0.):
         return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
-    
+
     def cost_fn(circ=make_circ(0.1), y_targ=0.):
         target = Gaussian(1) >> Dgate(-1.5, y_targ)
         s = Vacuum(1) >> circ
         return -fidelity(s, target)
-    
+
     # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
     results_0 = map_trainer(
         cost_fn=cost_fn,
@@ -205,6 +205,8 @@ def _iter_futures(futures):
     """Make ray futures iterable for easy passing to a progress bar.
     Hacky: https://github.com/ray-project/ray/issues/5554
     """
+    import ray
+
     while futures:
         done, futures = ray.wait(futures)
         yield ray.get(done[0])
