@@ -26,7 +26,7 @@ from mrmustard.physics import gaussian
 from mrmustard.training import Parametrized
 from mrmustard.types import Tensor
 
-from .abstract import Transformation
+from mrmustard.lab.abstract import Transformation
 
 math = Math()
 
