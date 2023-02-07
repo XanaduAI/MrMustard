@@ -21,7 +21,6 @@ of the class.
 from typing import Any, Generator, List, Sequence
 
 from mrmustard.math import Math
-
 from mrmustard.training.parameter import Constant, Parameter, Trainable, create_parameter
 
 math = Math()
@@ -57,6 +56,24 @@ class Parametrized:
             # dynamically assign variable as attribute of the class
             self.__dict__[name] = param
             self.param_names[k] = name
+
+    def param_string(self, decimals: int) -> str:
+        r"""Returns a string representation of the parameter values, separated by commas and rounded
+        to the specified number of decimals. It includes only the parameters that are not arrays
+        and not the number of modes, or other parameters that are not in principle trainable.
+
+        Args:
+            decimals (int): number of decimals to round to
+
+        Returns:
+            str: string representation of the parameter values
+        """
+        string = ""
+        for name in self.param_names.values():
+            par = getattr(self, name).value
+            show = math.asnumpy(par).ndim == 0  # don't show arrays
+            string += f"{math.asnumpy(par):.{decimals}g}, " if show else f"{len(self.modes)}, "
+        return string.rstrip(", ")
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
