@@ -861,7 +861,7 @@ def _probs_heterodyne_pure(state_ket, hbar):
     # calculate prefactors of the PDF
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
     x = np.sqrt(hbar) * q_tensor
-    p = hbar * q_tensor
+    p = np.sqrt(hbar) * q_tensor
 
     Q, P, probs = quasiprobability.husimi_pure(state_ket.numpy(), x.numpy(), p.numpy(), hbar)
 
@@ -875,7 +875,7 @@ def _probs_heterodyne_mixed(state_dm, hbar):
     # calculate prefactors of the PDF
     q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
     x = np.sqrt(hbar) * q_tensor
-    p = hbar * q_tensor
+    p = np.sqrt(hbar) * q_tensor
 
     Q, P, probs = quasiprobability.husimi_mixed(state_dm.numpy(), x.numpy(), p.numpy(), hbar)
 
