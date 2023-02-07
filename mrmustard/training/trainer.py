@@ -12,8 +12,90 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains the implementation of distributed training utilities for optimizing
-MrMustard circuits/devices.
+"""This module contains the implementation of distributed training utilities for parallelized
+optimization of MrMustard circuits/devices through the function :meth:`map_trainer`.
+
+This module requires extra dependencies, to install:
+
+.. code-block:: bash
+
+    git clone https://github.com/XanaduAI/MrMustard
+    cd MrMustard
+    pip install -e .[ray]
+
+
+User-provided Wrapper Functions
+===============================
+To distribute your optimization workflow, two user-defined functions are needed for wrapping up user logic:
+
+* A `device_factory` that wraps around the logic for making your circuits/states to be optimized; it is expected to return a single, or list of, :class:`Circuit`(s).
+* A `cost_fn` that takes the circuits made and additional keyword arguments and returns a backprop-able scalar cost.
+
+Separating the circuit-making logic from the cost calculation logic has the benefit of returning the optimized circuit in the result dict for further inspection. One can also pass extra `metric_fns` to directly extract info from the circuit.
+
+
+Examples:
+=========
+
+.. code-block::
+
+    from mrmustard.lab import Vacuum, Dgate, Ggate
+    from mrmustard.physics import fidelity
+    from mrmustard.training.trainer import map_trainer
+
+    def make_circ(x=0.):
+        return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
+    
+    def cost_fn(circ=make_circ(0.1), y_targ=0.):
+        target = Gaussian(1) >> Dgate(-1.5, y_targ)
+        s = Vacuum(1) >> circ
+        return -fidelity(s, target)
+    
+    # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
+    results_0 = map_trainer(
+        cost_fn=cost_fn,
+        tasks=5,
+    )
+
+    # Use case 1: Run circuit optimization 5 times on randomly initialized circuits.
+    results_1 = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks=5,
+        max_steps=50,
+        symplectic_lr=0.05,
+    )
+
+    # Use case 2: Run 2 sets of circuit optimization with custom parameters passed as list.
+    results_2 = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks=[
+            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
+            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+        ],
+        y_targ=0.35,
+        symplectic_lr=0.05,
+        AUTOCUTOFF_MAX_CUTOFF=7,
+    )
+
+    # Use case 3: Run 2 sets of circuit optimization with custom parameters passed as dict with extra metric functions for evaluating the final optimized circuit.
+    results_3 = map_trainer(
+    cost_fn=cost_fn,
+    device_factory=make_circ,
+    tasks={
+        'my-job': {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50},
+        'my-other-job': {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2},
+    },
+    y_targ=0.35,
+    symplectic_lr=0.05,
+    metric_fns={
+        'is_gaussian': lambda c: c.is_gaussian,
+        'foo': lambda _: 17.
+    },
+)
+
+
 """
 
 from inspect import signature, Parameter
@@ -151,28 +233,90 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             Defaults to False.
         num_cpus (int): Number of cpu workers to initialize ray. Defaults to the number of virtual cores.
         kwargs: Additional arguments containing fixed training config kwargs feeding into `trainer`.
-        For the default `trainer` `train_device`, available options are:
-            - cost_fn (callable): The optimized cost function to be distributed. It's expected to accept the
-                output of `device_factory` as *args as well as user-defined **kwargs, and returns a scalar cost.
-                Its user-defined **kwargs will be passed from this function's **kwargs which must include all its
-                required arguments.
-            - device_factory (callable): Function that (partially) takes `kwargs` and returns a device, or
-                list/dict of devices. If None, `cost_fn` will be assumed to take no positional argument (for
-                example, when device-making is contained in `cost_fn`). Defaults to None.
-            - metric_fns (Union[Sequence[callable], Mapping[callable], callable]): Optional collection of functions that takes the
-                output of `device_factory` after optimization and returns arbitrary evaluation/information.
-            - return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
-            - skip_opt (bool): Whether to skip the optimization and directly calculate cost.
-            - tag (str): Optional label of the training task associated with the `kwargs` to be included in the output dict.
-            - any kwargs to `cost_fn`: exluding the output of `device_factory`.
-            - any kwargs to `device_factory`: e.g. `x`, `r`, `theta`, etc.
-            - any kwargs to `Optimizer`: e.g. `euclidean_lr`.
-            - any kwargs to `Optimizer.minimize`: excluding `cost_fn` and `by_optimizing`, e.g. `max_steps`.
+            For the default `trainer` `train_device`, available options are:
+                - cost_fn (callable): The optimized cost function to be distributed. It's expected to accept the
+                    output of `device_factory` as *args as well as user-defined **kwargs, and returns a scalar cost.
+                    Its user-defined **kwargs will be passed from this function's **kwargs which must include all its
+                    required arguments.
+                - device_factory (callable): Function that (partially) takes `kwargs` and returns a device, or
+                    list/dict of devices. If None, `cost_fn` will be assumed to take no positional argument (for
+                    example, when device-making is contained in `cost_fn`). Defaults to None.
+                - metric_fns (Union[Sequence[callable], Mapping[callable], callable]): Optional collection of functions that takes the
+                    output of `device_factory` after optimization and returns arbitrary evaluation/information.
+                - return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
+                - skip_opt (bool): Whether to skip the optimization and directly calculate cost.
+                - tag (str): Optional label of the training task associated with the `kwargs` to be included in the output dict.
+                - any kwargs to `cost_fn`: exluding the output of `device_factory`.
+                - any kwargs to `device_factory`: e.g. `x`, `r`, `theta`, etc.
+                - any kwargs to `Optimizer`: e.g. `euclidean_lr`.
+                - any kwargs to `Optimizer.minimize`: excluding `cost_fn` and `by_optimizing`, e.g. `max_steps`.
 
     Returns
         Union[List, Dict]: The collection of results from each training task. Returns
             - a list if `tasks` is provided as an int or a list; or
             - a dict with the same keys if `tasks` is provided as a dict.
+    
+
+    Examples:
+    =========
+
+    .. code-block::
+
+        from mrmustard.lab import Vacuum, Dgate, Ggate
+        from mrmustard.physics import fidelity
+        from mrmustard.training.trainer import map_trainer
+
+        def make_circ(x=0.):
+            return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
+        
+        def cost_fn(circ=make_circ(0.1), y_targ=0.):
+            target = Gaussian(1) >> Dgate(-1.5, y_targ)
+            s = Vacuum(1) >> circ
+            return -fidelity(s, target)
+        
+        # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
+        results_0 = map_trainer(
+            cost_fn=cost_fn,
+            tasks=5,
+        )
+
+        # Use case 1: Run circuit optimization 5 times on randomly initialized circuits.
+        results_1 = map_trainer(
+            cost_fn=cost_fn,
+            device_factory=make_circ,
+            tasks=5,
+            max_steps=50,
+            symplectic_lr=0.05,
+        )
+
+        # Use case 2: Run 2 sets of circuit optimization with custom parameters passed as list.
+        results_2 = map_trainer(
+            cost_fn=cost_fn,
+            device_factory=make_circ,
+            tasks=[
+                {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
+                {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+            ],
+            y_targ=0.35,
+            symplectic_lr=0.05,
+            AUTOCUTOFF_MAX_CUTOFF=7,
+        )
+
+        # Use case 3: Run 2 sets of circuit optimization with custom parameters passed as dict with extra metric functions for evaluating the final optimized circuit.
+        results_3 = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks={
+            'my-job': {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50},
+            'my-other-job': {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2},
+        },
+        y_targ=0.35,
+        symplectic_lr=0.05,
+        metric_fns={
+            'is_gaussian': lambda c: c.is_gaussian,
+            'foo': lambda _: 17.
+        },
+    )
     """
 
     if not ray.is_initialized():
