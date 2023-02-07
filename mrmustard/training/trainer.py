@@ -66,19 +66,18 @@ def train_device(
 
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
-    device = None
-    if callable(device_factory):
-        device, kwargs = curry_pop(device_factory, **kwargs)
+    device, kwargs = curry_pop(device_factory, **kwargs) if callable(device_factory) else ([], kwargs)
 
     if isinstance(device, Sequence):
+        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
         optimized = device
-        cost_fn, kwargs = partial_pop(cost_fn, *optimized, **kwargs)
     elif isinstance(device, Mapping):
-        optimized = list(device.values())
         cost_fn, kwargs = partial_pop(cost_fn, **device, **kwargs)
+        optimized = list(device.values())
     else:
-        optimized = [device] if device is not None else []
-        cost_fn, kwargs = partial_pop(cost_fn, *optimized, **kwargs)
+        device = [device]
+        cost_fn, kwargs = partial_pop(cost_fn, *device, **kwargs)
+        optimized = device
 
     opt = None
     if optimized and not skip_opt:
