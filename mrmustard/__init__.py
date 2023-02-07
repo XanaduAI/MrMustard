@@ -40,7 +40,7 @@ class Settings:
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         self.DATA_MAX_SAMPLES_1D = 1000
-        # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
+        # using cutoff=5 per mode for determining if two transformations in fock repr are equal
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
