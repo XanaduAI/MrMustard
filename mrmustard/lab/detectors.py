@@ -334,14 +334,14 @@ class Heterodyne(Generaldyne):
         # create reduced state of mode to be measured
         reduced_state = other.get_modes(self.modes)
 
-        x_outcome, p_outcome, probability = utils_homodyne.sample_heterodyne_fock(
-            state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
-            hbar=settings.HBAR,
+        outcome, probability = fock.sample_heterodyne_fock(
+            state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm()
         )
 
         # Define conditional state of the heterodyne measurement device and rotate back to the original basis.
         # Note: x_outcome and p_outcome already have units of sqrt(hbar), here is divided by sqrt(2*hbar)
         # to cancel the multiplication factor of the displacement symplectic inside the Coherent state.
+        x_outcome, p_outcome = outcome
         x_arg = x_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
         p_arg = p_outcome / math.sqrt(2.0 * settings.HBAR, dtype="float64")
         self.state = Coherent(x=x_arg, y=p_arg, modes=self.modes)

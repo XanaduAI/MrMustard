@@ -33,6 +33,7 @@ from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
+from mrmustard.utils import quasiprobability
 from mrmustard.math import Math
 
 math = Math()
@@ -813,3 +814,69 @@ def sample_homodyne(
     probability_sample = math.gather(probs, sample_idx)
 
     return homodyne_sample, probability_sample
+
+
+def sample_heterodyne_fock(
+    state: Tensor, hbar: float = settings.HBAR
+) -> Tuple[Tuple[float, float], float]:
+    r"""Given a single-mode state, it samples the Husimi function :math:`\pi^{-1} \tr [ \rho |\alpha><\alpha| ]`,
+    where `\rho` is the reduced density matrix of the state on the measured mode and `|\alpha>` is a coherent state.
+
+    Args:
+        state (array): ket or dm of the state being measured
+        hbar: value of hbar
+
+    Returns:
+        tuple(tuple(float, float), tuple): outcome and probability of the outcome
+    """
+    if len(state.shape) > 2:
+        raise ValueError(
+            "Input state has dimension {state.shape}. Make sure is either a single mode ket or dm."
+        )
+
+    probs, Q, P = (
+        _probs_heterodyne_pure(state, hbar)
+        if len(state.shape) == 1
+        else _probs_heterodyne_mixed(state, hbar)
+    )
+
+    probs = probs.flatten()
+    Q = Q.flatten()
+    P = P.flatten()
+
+    # draw a sample from the distribution
+    pdf = math.Categorical(probs=probs, name="heterodyne_dist")
+    sample_idx = pdf.sample()
+    q_sample = math.gather(Q, sample_idx)
+    p_sample = math.gather(P, sample_idx)
+    prob_sample = math.gather(probs, sample_idx)
+
+    return (q_sample, p_sample), prob_sample
+
+
+def _probs_heterodyne_pure(state_ket, hbar):
+
+    cutoff = state_ket.shape[0]
+
+    # calculate prefactors of the PDF
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+    x = np.sqrt(hbar) * q_tensor
+    p = hbar * q_tensor
+
+    Q, P, probs = quasiprobability.husimi_pure(state_ket.numpy(), x.numpy(), p.numpy(), hbar)
+
+    return Q, P, probs
+
+
+def _probs_heterodyne_mixed(state_dm, hbar):
+
+    cutoff = state_dm.shape[0]
+
+    # calculate prefactors of the PDF
+    q_tensor = math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+    x = np.sqrt(hbar) * q_tensor
+    p = hbar * q_tensor
+
+    Q, P, probs = quasiprobability.husimi_mixed(state_dm.numpy(), x.numpy(), p.numpy(), hbar)
+
+    return Q, P, probs
