@@ -15,11 +15,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from numbers import Number
+from typing import TypeVar, Union
 
 from mrmustard import settings
 from mrmustard.math import Math
 
 math = Math()
+
+DataType = TypeVar("DataType", bound=Data)
 
 
 class Data(ABC):
@@ -48,25 +52,25 @@ class Data(ABC):
                 return getattr(self, data_type)
 
     @abstractmethod
-    def __add__(self, other):
+    def __add__(self, other: DataType) -> DataType:
         pass
 
     @abstractmethod
-    def __mul__(self, other):
+    def __mul__(self, other: Union[DataType, Number]) -> DataType:
         pass
 
     @abstractmethod
-    def __and__(self, other):  # tensor product
+    def __and__(self, other: DataType) -> DataType:  # tensor product
         pass
 
-    def __sub__(self, other):
-        return self.__add__(-1 * other)
+    def __sub__(self, other: DataType) -> DataType:
+        return self.__add__(-other)
 
-    def __neg__(self):
-        return -1 * self
+    def __neg__(self) -> DataType:
+        return self.__mul__(-1)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Union[DataType, Number]) -> DataType:
         return self.__mul__(other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Union[DataType, Number]) -> DataType:
         return self.__mul__(1 / other)  # this numerically naughty

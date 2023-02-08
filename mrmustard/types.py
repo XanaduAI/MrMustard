@@ -14,8 +14,6 @@
 
 """A module containing all base type annotations."""
 
-# pylint: disable=unused-wildcard-import,wildcard-import
-
 from numbers import Number
 from typing import Sequence, Tuple, TypeVar, Union
 
@@ -26,7 +24,7 @@ import numpy.typing as npt
 # the type of `x` and the type of `y` are assumed to be the same,
 # even though "Vector" can mean different things (e.g. different dtypes)
 
-DtypeVar = TypeVar("DtypeVar", bound=npt.DType)
+DtypeVar = TypeVar("DtypeVar", bound=npt.DTypeLike)
 
 Vector = TypeVar("Vector", bound=npt.NDArray[Tuple[int], DtypeVar])
 Matrix = TypeVar("Matrix", bound=npt.NDArray[Tuple[int, int], DtypeVar])
