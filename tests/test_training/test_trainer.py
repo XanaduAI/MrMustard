@@ -183,27 +183,27 @@ def test_invalid_tasks():
         )
 
 
-# def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
-#     """Test warning of unused kwargs"""
-#     _, cost_fn = wrappers
-#     with pytest.warns(UserWarning, match="Unused kwargs:"):
-#         results = train_device(
-#             cost_fn=cost_fn,
-#             foo="bar",
-#         )
-#     assert len(results) >= 4
-#     assert isinstance(results["cost"], float)
+def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
+    """Test warning of unused kwargs"""
+    _, cost_fn = wrappers
+    with pytest.warns(UserWarning, match="Unused kwargs:"):
+        results = train_device(
+            cost_fn=cost_fn,
+            foo="bar",
+        )
+    assert len(results) >= 4
+    assert isinstance(results["cost"], float)
 
 
-# def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
-#     """Test turning off pregress bar"""
-#     _, cost_fn = wrappers
-#     results = map_trainer(
-#         cost_fn=cost_fn,
-#         tasks=2,
-#         pbar=False,
-#     )
-#     assert len(results) == 2
+def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
+    """Test turning off pregress bar"""
+    _, cost_fn = wrappers
+    results = map_trainer(
+        cost_fn=cost_fn,
+        tasks=2,
+        pbar=False,
+    )
+    assert len(results) == 2
 
 
 # @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
