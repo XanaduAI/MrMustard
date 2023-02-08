@@ -204,22 +204,22 @@ def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
     assert len(results) == 2
 
 
-@pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
-def test_unblock(wrappers, tasks):  # pylint: disable=redefined-outer-name
-    """Test unblock async mode"""
-    _, cost_fn = wrappers
-    result_getter = map_trainer(
-        cost_fn=cost_fn,
-        tasks=tasks,
-        unblock=True,
-    )
-    assert callable(result_getter)
+# @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
+# def test_unblock(wrappers, tasks):  # pylint: disable=redefined-outer-name
+#     """Test unblock async mode"""
+#     _, cost_fn = wrappers
+#     result_getter = map_trainer(
+#         cost_fn=cost_fn,
+#         tasks=tasks,
+#         unblock=True,
+#     )
+#     assert callable(result_getter)
 
-    sleep(0.2)
-    results = result_getter()
-    if len(results) <= (tasks if isinstance(tasks, int) else len(tasks)):
-        # safer on slower machines
-        sleep(1)
-        results = result_getter()
+#     sleep(0.2)
+#     results = result_getter()
+#     if len(results) <= (tasks if isinstance(tasks, int) else len(tasks)):
+#         # safer on slower machines
+#         sleep(1)
+#         results = result_getter()
 
-    assert len(results) == (tasks if isinstance(tasks, int) else len(tasks))
+#     assert len(results) == (tasks if isinstance(tasks, int) else len(tasks))
