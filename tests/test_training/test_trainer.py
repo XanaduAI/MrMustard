@@ -39,7 +39,7 @@ def wrappers():
         )
 
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
-        target = Gaussian(1) >> Dgate(-1.5, y_targ)
+        target = Gaussian(1) >> Dgate(-0.5, y_targ)
         s = Vacuum(1) >> circ
         return -fidelity(s, target)
 
@@ -48,7 +48,7 @@ def wrappers():
 
 @pytest.mark.parametrize(
     # "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
-    "tasks", [5]
+    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}]]
 )
 @pytest.mark.parametrize("seed", [None, 42])
 def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
