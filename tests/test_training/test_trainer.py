@@ -75,86 +75,86 @@ def wrappers():
 #         )
 
 
-# @pytest.mark.parametrize(
-#     "tasks", [[{"x": 0.1}, {"y_targ": 0.2}], {"c0": {}, "c1": {"euclidean_lr": 0.02, "HBAR": 1.0}}]
-# )
-# @pytest.mark.parametrize(
-#     "return_type",
-#     [None, "dict"],
-# )
-# def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefined-outer-name
-#     """Test distributed optimizations."""
-#     max_steps = 10
-#     make_circ, cost_fn = wrappers
-#     results = map_trainer(
-#         cost_fn=cost_fn,
-#         device_factory=make_circ,
-#         tasks=tasks,
-#         max_steps=max_steps,
-#         symplectic_lr=0.05,
-#         return_type=return_type,
-#     )
+@pytest.mark.parametrize(
+    "tasks", [[{"x": 0.1}, {"y_targ": 0.2}], {"c0": {}, "c1": {"euclidean_lr": 0.02, "HBAR": 1.0}}]
+)
+@pytest.mark.parametrize(
+    "return_type",
+    [None, "dict"],
+)
+def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefined-outer-name
+    """Test distributed optimizations."""
+    max_steps = 10
+    make_circ, cost_fn = wrappers
+    results = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks=tasks,
+        max_steps=max_steps,
+        symplectic_lr=0.05,
+        return_type=return_type,
+    )
 
-#     if isinstance(tasks, dict):
-#         assert set(results.keys()) == set(tasks.keys())
-#         results = list(results.values())
-#     assert (
-#         len(set(r["cost"] for r in results))
-#         >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
-#     )
-#     assert all(isinstance(r["optimizer"], Optimizer) for r in results)
-#     assert all((r["optimizer"].opt_history) for r in results)
+    if isinstance(tasks, dict):
+        assert set(results.keys()) == set(tasks.keys())
+        results = list(results.values())
+    assert (
+        len(set(r["cost"] for r in results))
+        >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
+    )
+    assert all(isinstance(r["optimizer"], Optimizer) for r in results)
+    assert all((r["optimizer"].opt_history) for r in results)
 
-#     # Check if optimization history is actually decreasing.
-#     opt_history = np.array(results[0]["optimizer"].opt_history)
-#     assert len(opt_history) == max_steps + 1
-#     assert opt_history[0] - opt_history[-1] > 1e-6
-#     assert (np.diff(opt_history) < 0).sum() > max_steps // 3
+    # Check if optimization history is actually decreasing.
+    opt_history = np.array(results[0]["optimizer"].opt_history)
+    assert len(opt_history) == max_steps + 1
+    assert opt_history[0] - opt_history[-1] > 1e-6
+    assert (np.diff(opt_history) < 0).sum() > max_steps // 3
 
 
-# @pytest.mark.parametrize(
-#     "metric_fns",
-#     [
-#         {"is_gaussian": lambda c: c.is_gaussian, "foo": lambda _: 17.0},
-#         [
-#             lambda c: c.modes,
-#             len,
-#         ],
-#         lambda c: (Vacuum(1) >> c >> c >> c).fock_probabilities([5]),
-#     ],
-# )
-# def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefined-outer-name
-#     """Tests custom metric functions on final circuits."""
-#     make_circ, cost_fn = wrappers
+@pytest.mark.parametrize(
+    "metric_fns",
+    [
+        {"is_gaussian": lambda c: c.is_gaussian, "foo": lambda _: 17.0},
+        [
+            lambda c: c.modes,
+            len,
+        ],
+        lambda c: (Vacuum(1) >> c >> c >> c).fock_probabilities([5]),
+    ],
+)
+def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefined-outer-name
+    """Tests custom metric functions on final circuits."""
+    make_circ, cost_fn = wrappers
 
-#     tasks = {
-#         "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 20},
-#         "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 12},
-#     }
+    tasks = {
+        "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 20},
+        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 12},
+    }
 
-#     results = map_trainer(
-#         cost_fn=cost_fn,
-#         device_factory=make_circ,
-#         tasks=tasks,
-#         y_targ=0.35,
-#         symplectic_lr=0.05,
-#         metric_fns=metric_fns,
-#         return_list=True,
-#     )
+    results = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks=tasks,
+        y_targ=0.35,
+        symplectic_lr=0.05,
+        metric_fns=metric_fns,
+        # return_list=True,
+    )
 
-#     assert set(results.keys()) == set(tasks.keys())
-#     results = list(results.values())
-#     assert all(("metrics" in r or set(metric_fns.keys()).issubset(set(r.keys()))) for r in results)
-#     assert (
-#         len(set(r["cost"] for r in results))
-#         >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
-#     )
-#     assert all(isinstance(r["optimizer"], Optimizer) for r in results)
-#     assert all((r["optimizer"].opt_history) for r in results)
+    assert set(results.keys()) == set(tasks.keys())
+    results = list(results.values())
+    assert all(("metrics" in r or set(metric_fns.keys()).issubset(set(r.keys()))) for r in results)
+    assert (
+        len(set(r["cost"] for r in results))
+        >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
+    )
+    assert all(isinstance(r["optimizer"], Optimizer) for r in results)
+    assert all((r["optimizer"].opt_history) for r in results)
 
-#     # Check if optimization history is actually decreasing.
-#     opt_history = np.array(results[0]["optimizer"].opt_history)
-#     assert opt_history[0] - opt_history[-1] > 1e-6
+    # Check if optimization history is actually decreasing.
+    opt_history = np.array(results[0]["optimizer"].opt_history)
+    assert opt_history[0] - opt_history[-1] > 1e-6
 
 
 def test_update_pop():
