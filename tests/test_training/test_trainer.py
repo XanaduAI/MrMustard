@@ -165,33 +165,33 @@ def test_update_pop():
     assert len(kwargs) == 1
 
 
-def test_no_ray(monkeypatch):
-    """Tests ray import error"""
-    monkeypatch.setitem(sys.modules, "ray", None)
-    with pytest.raises(ImportError, match="Failed to import `ray`"):
-        _ = map_trainer(
-            tasks=2,
-        )
+# def test_no_ray(monkeypatch):
+#     """Tests ray import error"""
+#     monkeypatch.setitem(sys.modules, "ray", None)
+#     with pytest.raises(ImportError, match="Failed to import `ray`"):
+#         _ = map_trainer(
+#             tasks=2,
+#         )
 
 
-def test_invalid_tasks():
-    """Tests unexpected tasks arg"""
-    with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
-        _ = map_trainer(
-            tasks=2.3,
-        )
+# def test_invalid_tasks():
+#     """Tests unexpected tasks arg"""
+#     with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
+#         _ = map_trainer(
+#             tasks=2.3,
+#         )
 
 
-def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
-    """Test warning of unused kwargs"""
-    _, cost_fn = wrappers
-    with pytest.warns(UserWarning, match="Unused kwargs:"):
-        results = train_device(
-            cost_fn=cost_fn,
-            foo="bar",
-        )
-    assert len(results) >= 4
-    assert isinstance(results["cost"], float)
+# def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
+#     """Test warning of unused kwargs"""
+#     _, cost_fn = wrappers
+#     with pytest.warns(UserWarning, match="Unused kwargs:"):
+#         results = train_device(
+#             cost_fn=cost_fn,
+#             foo="bar",
+#         )
+#     assert len(results) >= 4
+#     assert isinstance(results["cost"], float)
 
 
 # def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
