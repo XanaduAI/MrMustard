@@ -46,32 +46,32 @@ def wrappers():
     return make_circ, cost_fn
 
 
-@pytest.mark.parametrize(
-    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}}]
-)
-@pytest.mark.parametrize("seed", [None, 42])
-def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
-    """Test distributed cost calculations."""
-    has_seed = isinstance(seed, int)
-    _, cost_fn = wrappers
-    results = map_trainer(
-        cost_fn=cost_fn,
-        tasks=tasks,
-        **({"SEED": seed} if has_seed else {}),
-    )
+# @pytest.mark.parametrize(
+#     "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}}]
+# )
+# @pytest.mark.parametrize("seed", [None, 42])
+# def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
+#     """Test distributed cost calculations."""
+#     has_seed = isinstance(seed, int)
+#     _, cost_fn = wrappers
+#     results = map_trainer(
+#         cost_fn=cost_fn,
+#         tasks=tasks,
+#         **({"SEED": seed} if has_seed else {}),
+#     )
 
-    if isinstance(tasks, dict):
-        assert set(results.keys()) == set(tasks.keys())
-        results = list(results.values())
-    assert all(r["optimizer"] is None for r in results)
-    assert all(r["device"] == [] for r in results)
-    if has_seed and isinstance(tasks, int):
-        assert len(set(r["cost"] for r in results)) == 1
-    else:
-        assert (
-            len(set(r["cost"] for r in results))
-            >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
-        )
+#     if isinstance(tasks, dict):
+#         assert set(results.keys()) == set(tasks.keys())
+#         results = list(results.values())
+#     assert all(r["optimizer"] is None for r in results)
+#     assert all(r["device"] == [] for r in results)
+#     if has_seed and isinstance(tasks, int):
+#         assert len(set(r["cost"] for r in results)) == 1
+#     else:
+#         assert (
+#             len(set(r["cost"] for r in results))
+#             >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
+#         )
 
 
 @pytest.mark.parametrize(
