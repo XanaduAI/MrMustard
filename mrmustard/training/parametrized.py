@@ -75,7 +75,7 @@ class Parametrized:
             str: string representation of the parameter values
         """
         string = ""
-        for name, value in self.kw_parameters:
+        for _, value in self.kw_parameters:
             if math.asnumpy(value).ndim == 0:  # don't show arrays
                 string += f"{math.asnumpy(value):.{decimals}g}, "
         return string.rstrip(", ")
