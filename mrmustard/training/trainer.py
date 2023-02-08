@@ -215,6 +215,18 @@ def _iter_futures(futures):
 def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpus=None, **kwargs):
     """Maps multiple training tasks across multiple workers using `ray`.
 
+    In practice, the most common use case is to ignore the keywords `trainer` (as it defaults to
+    :meth:`train_device`), `pbar`, `unblock`, etc. and just concentrate on `tasks` and `**kwargs`
+    which passes arguments to the wrapper functions that contain the task execution logic, as well
+    as the :class:`Optimizer` and its :meth:`Optimizer.minimize`.
+
+    For example, with the default `trainer` :meth:`train_device`, two user-defined functions are used for wrapping up user logic:
+
+    * A `device_factory` (optional) that wraps around the logic for making circuits/states to be
+    optimized; it is expected to return a single, or list of, :class:`Circuit`(s).
+    * A `cost_fn` (required) that takes the circuits made and additional keyword arguments and
+    returns a backprop-able scalar cost.
+
     Args:
         trainer (callable): The function containing the training loop to be distributed, whose
             fixed arguments are to be passed by `**kwargs` and task-specific arguments iterated through `tasks`.
@@ -352,8 +364,6 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
     if not unblock:
         # blocks and wait till all tasks complete to return the end results.
         if pbar:
-            # results = [
-            #     result
             results = list(
                 track(
                     _iter_futures(promises),

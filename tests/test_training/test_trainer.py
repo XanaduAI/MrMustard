@@ -128,7 +128,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
 
     tasks = {
         "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 20},
-        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 12},
+        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 16},
     }
 
     results = map_trainer(
@@ -153,7 +153,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
 
     # Check if optimization history is actually decreasing.
     opt_history = np.array(results[0]["optimizer"].opt_history)
-    assert opt_history[0] - opt_history[-1] > 1e-6
+    assert opt_history[1] - opt_history[-1] > 1e-6
 
 
 def test_update_pop():

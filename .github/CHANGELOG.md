@@ -33,7 +33,7 @@
         symplectic_lr=0.05,
     )
 
-    # Use case 2: Run circuit optimization 5 times on randomly initialized circuits with custom parameters.
+    # Use case 2: Run circuit optimization 2 times on randomly initialized circuits with custom parameters.
     results_2 = map_trainer(
         cost_fn=cost_fn,
         device_factory=make_circ,
