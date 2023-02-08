@@ -14,21 +14,14 @@
 
 """This module contains the Pytorch implementation of the :class:`Math` interface."""
 
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 import torch
 
-from mrmustard.types import (
-    List,
-    Tensor,
-    Sequence,
-    Tuple,
-    Optional,
-    Dict,
-    Trainable,
-    Callable,
-    Union,
-)
 from mrmustard.math.autocast import Autocast
+from mrmustard.types import Tensor, Trainable
+
 from .math_interface import MathInterface
 
 
@@ -181,12 +174,12 @@ class TorchMath(MathInterface):
         Returns:
         """
 
-        batch_size = array.shape[0]
+        array.shape[0]
         input_channels = array.shape[1]
         output_channels = ...  # TODO: unsure of how to get output channels
 
         if array.dim() == 3:  # 1D case
-            signal_length = array.shape[2]
+            array.shape[2]
 
             m = torch.nn.Conv1d(
                 input_channels,
@@ -200,8 +193,8 @@ class TorchMath(MathInterface):
             return m(array)
 
         if array.dim() == 4:  # 2D case
-            input_height = array.shape[2]
-            input_width = array.shape[3]
+            array.shape[2]
+            array.shape[3]
 
             m = torch.nn.Conv2d(
                 input_channels,
@@ -284,7 +277,10 @@ class TorchMath(MathInterface):
             np.inf if bounds[1] is None else bounds[1],
         )
         if bounds != (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: torch.clamp(x, min=bounds[0], max=bounds[1])
+
+            def constraint(x):
+                return torch.clamp(x, min=bounds[0], max=bounds[1])
+
         else:
             constraint = None
         return constraint

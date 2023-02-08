@@ -15,10 +15,12 @@
 
 from typing import Tuple
 
+from numba import njit
+
 from mrmustard.types import Vector
 
 
-# @njit
+@njit
 def first_pivot_fn(index: Vector) -> Tuple[int, Vector]:
     r"""returns the first available pivot index for the given index
     Warning: returns by reference, so the index is modified in place"""
@@ -29,7 +31,7 @@ def first_pivot_fn(index: Vector) -> Tuple[int, Vector]:
     raise ValueError("Index is zero")
 
 
-# @njit
+@njit
 def smallest_pivot_fn(index: Vector) -> Tuple[int, Vector]:
     r"""returns the smallest available pivot index for the given index.
     Warning: returns by reference, so the index is modified in place

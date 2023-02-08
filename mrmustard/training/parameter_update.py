@@ -14,9 +14,11 @@
 
 """TODO: document this module
 """
+from typing import Sequence, Tuple
 
-from mrmustard.types import Sequence, Tensor, Tuple
 from mrmustard.math import Math
+from mrmustard.types import Tensor
+
 from .parameter import Trainable
 
 math = Math()

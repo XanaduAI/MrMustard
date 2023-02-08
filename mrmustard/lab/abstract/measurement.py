@@ -15,11 +15,14 @@
 """This module contains the implementation of the class :class:`FockMeasurement`."""
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from mrmustard.math import Math
 
-from mrmustard.types import Tensor, Callable, Sequence, Iterable, Union
+from abc import ABC, abstractmethod
+from typing import Callable, Iterable, Sequence, Union
+
 from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.types import Tensor
+
 from .state import State
 
 math = Math()

@@ -14,26 +14,18 @@
 
 """This module contains the Tensorflow implementation of the :class:`Math` interface."""
 
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-from thewalrus.fock_gradients import (
-    displacement as displacement_tw,
-    grad_displacement as grad_displacement_tw,
-)
+from thewalrus import grad_hermite_multidimensional, hermite_multidimensional
+from thewalrus.fock_gradients import displacement as displacement_tw
+from thewalrus.fock_gradients import grad_displacement as grad_displacement_tw
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import (
-    List,
-    Tensor,
-    Sequence,
-    Tuple,
-    Optional,
-    Trainable,
-    Callable,
-    Union,
-)
+from mrmustard.types import Tensor, Trainable
+
 from .math_interface import MathInterface
 
 
@@ -97,7 +89,10 @@ class TFMath(MathInterface):
             np.inf if bounds[1] is None else bounds[1],
         )
         if bounds != (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+
+            def constraint(x):
+                return tf.clip_by_value(x, bounds[0], bounds[1])
+
         else:
             constraint = None
         return constraint

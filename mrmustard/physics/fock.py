@@ -19,21 +19,21 @@ This module contains functions for performing calculations on Fock states.
 """
 
 from functools import lru_cache
+from typing import List, Sequence, Tuple
+
 import numpy as np
 
-
-from mrmustard.physics.bargmann import (
-    wigner_to_bargmann_psi,
-    wigner_to_bargmann_rho,
-    wigner_to_bargmann_Choi,
-    wigner_to_bargmann_U,
-)
-
-from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.caching import tensor_int_cache
-from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.mmtensor import MMTensor
+from mrmustard.physics.bargmann import (
+    wigner_to_bargmann_Choi,
+    wigner_to_bargmann_psi,
+    wigner_to_bargmann_rho,
+    wigner_to_bargmann_U,
+)
+from mrmustard.types import Matrix, Scalar, Tensor, Vector
 
 math = Math()
 

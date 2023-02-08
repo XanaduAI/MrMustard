@@ -16,23 +16,16 @@
 
 from __future__ import annotations
 
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 
-from mrmustard.physics import gaussian, fock
-from mrmustard.types import (
-    Sequence,
-    List,
-    Tuple,
-    Optional,
-    Matrix,
-    Vector,
-    Callable,
-    Iterable,
-    Union,
-)
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
+from mrmustard.types import Matrix, Vector
+
 from .state import State
 
 math = Math()
@@ -267,7 +260,7 @@ class Transformation:
         """
         from ..circuit import (
             Circuit,
-        )  # WARNING - circular import: this is called at runtime so it's ok
+        )
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]

@@ -83,7 +83,7 @@ def vanilla_step(tensor, A, b, index: Vector) -> complex:
 ### array to tuple functions ###
 
 
-# @njit
+@njit
 def ravel_multi_index(index, shape):
     res = 0
     for i in range(len(index)):
@@ -91,6 +91,6 @@ def ravel_multi_index(index, shape):
     return res
 
 
-# @njit
+@njit
 def tensor_value(tensor, index):
     return tensor.flat[ravel_multi_index(index, tensor.shape)]

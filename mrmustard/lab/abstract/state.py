@@ -15,27 +15,22 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import warnings
+from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 
+from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
 from mrmustard.types import (
-    Matrix,
-    Vector,
     Array,
+    Matrix,
     Tensor,
-    Sequence,
-    Union,
-    Tuple,
-    Optional,
-    List,
-    Iterable,
+    Vector,
 )
 from mrmustard.utils import graphics
-from mrmustard import settings
-from mrmustard.physics import gaussian, fock
-from mrmustard.math import Math
 
 if TYPE_CHECKING:
     from .transformation import Transformation
