@@ -143,11 +143,12 @@ def train_device(
         return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
         skip_opt (bool): Whether to skip the optimization and directly calculate cost.
         tag (str): Optional label of the training task associated with the `kwargs` to be included in the output dict.
-        kwargs: Dict containing all arguments to any of the functions below:
-            - `cost_fn`: exluding the output of `device_factory`.
-            - `device_factory`: e.g. `x`, `r`, `theta`, etc.
-            - `Optimizer`: e.g. `euclidean_lr`.
-            - `Optimizer.minimize`: excluding `cost_fn` and `by_optimizing`, e.g. `max_steps`.
+        kwargs:
+            Dict containing all arguments to any of the functions below:
+                - `cost_fn`: exluding the output of `device_factory`.
+                - `device_factory`: e.g. `x`, `r`, `theta`, etc.
+                - `Optimizer`: e.g. `euclidean_lr`.
+                - `Optimizer.minimize`: excluding `cost_fn` and `by_optimizing`, e.g. `max_steps`.
 
     Returns:
         dict: A result dict summarizing the optimized circuit, cost, metrics and/or input configs.
@@ -222,17 +223,19 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
 
     For example, with the default `trainer` :meth:`train_device`, two user-defined functions are used for wrapping up user logic:
 
-    * A `device_factory` (optional) that wraps around the logic for making circuits/states to be
-    optimized; it is expected to return a single, or list of, :class:`Circuit`(s).
-    * A `cost_fn` (required) that takes the circuits made and additional keyword arguments and
-    returns a backprop-able scalar cost.
+    * A `device_factory` (optional) that wraps around the logic for making circuits/states to be optimized; it is expected to return a single, or list of, :class:`Circuit`(s).
+
+    * A `cost_fn` (required) that takes the circuits made and additional keyword arguments and returns a backprop-able scalar cost.
+
+    Refer to the `kwargs` section below for more available options.
 
     Args:
         trainer (callable): The function containing the training loop to be distributed, whose
-            fixed arguments are to be passed by `**kwargs` and task-specific arguments iterated through `tasks`.
-            Defaults to the `train_device` function.
+            fixed arguments are to be passed by `**kwargs` and task-specific arguments iterated
+            through `tasks`. Provide only when custom evaluation/training logic is needed.
+            Defaults to :meth:`train_device`.
         tasks (Union[int, Sequence, Mapping]): Number of repeats or collection of task-specific training
-            config arguments feeding into `train_device`.
+            config arguments feeding into :meth:`train_device`.
             Refer to `kwargs` below for the available options.
             Defaults to 1 which runs `trainer` exactly once.
         pbar (bool): Whether to show a progress bar, available only in blocking mode (i.e. `unblock==False`). Defaults to True.
@@ -240,19 +243,25 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             Defaults to False.
         num_cpus (int): Number of cpu workers to initialize ray. Defaults to the number of virtual cores.
         kwargs: Additional arguments containing fixed training config kwargs feeding into `trainer`.
-            For the default `trainer` `train_device`, available options are:
-                - cost_fn (callable): The optimized cost function to be distributed. It's expected to accept the
+            For the default `trainer` :meth:`train_device`, available options are:
+                - cost_fn (callable):
+                    The optimized cost function to be distributed. It's expected to accept the
                     output of `device_factory` as *args as well as user-defined **kwargs, and returns a scalar cost.
                     Its user-defined **kwargs will be passed from this function's **kwargs which must include all its
                     required arguments.
-                - device_factory (callable): Function that (partially) takes `kwargs` and returns a device, or
+                - device_factory (callable):
+                    Function that (partially) takes `kwargs` and returns a device, or
                     list/dict of devices. If None, `cost_fn` will be assumed to take no positional argument (for
                     example, when device-making is contained in `cost_fn`). Defaults to None.
-                - metric_fns (Union[Sequence[callable], Mapping[callable], callable]): Optional collection of functions that takes the
+                - metric_fns (Union[Sequence[callable], Mapping[callable], callable]):
+                    Optional collection of functions that takes the
                     output of `device_factory` after optimization and returns arbitrary evaluation/information.
-                - return_kwargs (bool): Whether to include input config `kwargs` in the output dict. Defualts to True.
-                - skip_opt (bool): Whether to skip the optimization and directly calculate cost.
-                - tag (str): Optional label of the training task associated with the `kwargs` to be included in the output dict.
+                - return_kwargs (bool):
+                    Whether to include input config `kwargs` in the output dict. Defualts to True.
+                - skip_opt (bool):
+                    Whether to skip the optimization and directly calculate cost.
+                - tag (str):
+                    Optional label of the training task associated with the `kwargs` to be included in the output dict.
                 - any kwargs to `cost_fn`: exluding the output of `device_factory`.
                 - any kwargs to `device_factory`: e.g. `x`, `r`, `theta`, etc.
                 - any kwargs to `Optimizer`: e.g. `euclidean_lr`.
