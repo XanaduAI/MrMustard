@@ -17,61 +17,61 @@
 # import sys
 
 # from time import sleep
-# import pytest
+import pytest
 
-# import numpy as np
-# from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
-# from mrmustard.physics import fidelity
-# from mrmustard.training import Optimizer
-# from mrmustard.training.trainer import map_trainer, train_device, update_pop
-
-
-# @pytest.fixture
-# def wrappers():
-#     """Dummy wrappers tested."""
-
-#     def make_circ(x=0.0, return_type=None):
-#         circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
-#             x=x, x_trainable=True, y_trainable=True
-#         )
-#         return (
-#             [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
-#         )
-
-#     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
-#         target = Gaussian(1) >> Dgate(-1.5, y_targ)
-#         s = Vacuum(1) >> circ
-#         return -fidelity(s, target)
-
-#     return make_circ, cost_fn
+import numpy as np
+from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
+from mrmustard.physics import fidelity
+from mrmustard.training import Optimizer
+from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
 
-# @pytest.mark.parametrize(
-#     "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
-# )
-# @pytest.mark.parametrize("seed", [None, 42])
-# def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
-#     """Test distributed cost calculations."""
-#     has_seed = isinstance(seed, int)
-#     _, cost_fn = wrappers
-#     results = map_trainer(
-#         cost_fn=cost_fn,
-#         tasks=tasks,
-#         **({"SEED": seed} if has_seed else {}),
-#     )
+@pytest.fixture(scope="function")
+def wrappers():
+    """Dummy wrappers tested."""
 
-#     if isinstance(tasks, dict):
-#         assert set(results.keys()) == set(tasks.keys())
-#         results = list(results.values())
-#     assert all(r["optimizer"] is None for r in results)
-#     assert all(r["device"] == [] for r in results)
-#     if has_seed and isinstance(tasks, int):
-#         assert len(set(r["cost"] for r in results)) == 1
-#     else:
-#         assert (
-#             len(set(r["cost"] for r in results))
-#             >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
-#         )
+    def make_circ(x=0.0, return_type=None):
+        circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
+            x=x, x_trainable=True, y_trainable=True
+        )
+        return (
+            [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
+        )
+
+    def cost_fn(circ=make_circ(0.1), y_targ=0.0):
+        target = Gaussian(1) >> Dgate(-1.5, y_targ)
+        s = Vacuum(1) >> circ
+        return -fidelity(s, target)
+
+    return make_circ, cost_fn
+
+
+@pytest.mark.parametrize(
+    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
+)
+@pytest.mark.parametrize("seed", [None, 42])
+def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
+    """Test distributed cost calculations."""
+    has_seed = isinstance(seed, int)
+    _, cost_fn = wrappers
+    results = map_trainer(
+        cost_fn=cost_fn,
+        tasks=tasks,
+        **({"SEED": seed} if has_seed else {}),
+    )
+
+    if isinstance(tasks, dict):
+        assert set(results.keys()) == set(tasks.keys())
+        results = list(results.values())
+    assert all(r["optimizer"] is None for r in results)
+    assert all(r["device"] == [] for r in results)
+    if has_seed and isinstance(tasks, int):
+        assert len(set(r["cost"] for r in results)) == 1
+    else:
+        assert (
+            len(set(r["cost"] for r in results))
+            >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
+        )
 
 
 # @pytest.mark.parametrize(
