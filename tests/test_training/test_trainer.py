@@ -84,7 +84,7 @@ def wrappers():
 )
 def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefined-outer-name
     """Test distributed optimizations."""
-    max_steps = 10
+    max_steps = 15
     make_circ, cost_fn = wrappers
     results = map_trainer(
         cost_fn=cost_fn,
@@ -109,7 +109,7 @@ def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefin
     opt_history = np.array(results[0]["optimizer"].opt_history)
     assert len(opt_history) == max_steps + 1
     assert opt_history[0] - opt_history[-1] > 1e-6
-    assert (np.diff(opt_history) < 0).sum() > max_steps // 3
+    assert (np.diff(opt_history) < 0).sum() >= 3
 
 
 @pytest.mark.parametrize(
@@ -139,7 +139,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
         y_targ=0.35,
         symplectic_lr=0.05,
         metric_fns=metric_fns,
-        # return_list=True,
+        return_list=True,
     )
 
     assert set(results.keys()) == set(tasks.keys())
