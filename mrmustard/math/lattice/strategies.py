@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Generator, Optional
+from typing import Any, Generator, Iterator, Optional
 
 import numpy as np
 from numba import njit
@@ -23,13 +23,12 @@ from mrmustard.types import Vector
 # The paths can cover the entire lattice, or just a subset of it.
 # Strategies have to be generators because they enumerate lots of indices
 # and we don't want to allocate memory for all of them at once.
-# These strategies don't even reallocate memory for each index, they just
-# return the same array over and over again. So anything pointing to it, like
-# the entries of list(strategy), will be equal to the last index.
+# These strategies don't even reallocate memory for each index: they just
+# yield the same array over and over again, modified each time, beware!
 
 
 # @njit
-def ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
+def ndindex_iter(shape: Vector) -> Iterator[Vector]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
     while True:
@@ -45,8 +44,14 @@ def ndindex_gen(shape: Vector) -> Generator[Vector, None, None]:
 
 
 # @njit
-def equal_weight_gen(shape: Vector, max_sum: Optional[int] = None) -> Generator[Vector, None, None]:
-    r"yields the indices of a tensor with equal weight"
+def equal_weight_iter(shape: Vector, max_sum: Optional[int] = None) -> Iterator[Vector]:
+    r"""yields the indices of a tensor with equal weight.
+    Effectively, `shape` contains local cutoffs (the maximum value of each index)
+    and `max_sum` is the global cutoff (the maximum sum of all indices).
+    If `max_sum` is not given, only the local cutoffs are used and the iterator
+    yields  all possible indices within the tensor shape. In this case it becomes
+    like `ndindex_iter` just in a different order.
+    """
     max_ = sum(shape) - len(shape) - 1  # allows to fill the entire tensor
     max_sum = max_ if max_sum is None else min(max_sum, max_)
     for weight in range(max_sum + 1):
@@ -70,10 +75,15 @@ def equal_weight_gen(shape: Vector, max_sum: Optional[int] = None) -> Generator[
 
 
 @njit
-def grey_code_gen(shape: Vector) -> Generator[Vector, None, None]:
+def grey_code_iter(shape: Vector) -> Generator[Vector, None, None]:
     raise NotImplementedError("Grey code order strategy not implemented yet")
 
 
 @njit
 def wormhole(shape: Vector) -> Any:
     raise NotImplementedError("Wormhole strategy not implemented yet")
+
+
+@njit
+def diagonal(shape: Vector) -> Any:
+    raise NotImplementedError("Diagonal strategy not implemented yet")

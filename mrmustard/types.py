@@ -16,16 +16,32 @@
 
 # pylint: disable=unused-wildcard-import,wildcard-import
 
-from typing import *
+from typing import Any, Generic, Iterable, MutableSequence, TypeVar
 
-# NOTE: when type-annotating with typevars, objects with the same typevars must have the same type
-# E.g. in `def f(x: Vector, y: Vector) -> Tensor: ...`
-# the type of `x` and the type of `y` are assumed to be the same, even though "Vector" can mean different things.
-Scalar = TypeVar("Scalar")
-Vector = TypeVar("Vector")
-Matrix = TypeVar("Matrix")
-Tensor = TypeVar("Tensor")
-Array = TypeVar("Array")  # TODO: let mypy know that this is Vector, Matrix, or Tensor
-Trainable = TypeVar("Trainable")
+import numpy as np
 
-Numeric = Union[Scalar, Vector, Matrix, Tensor]
+Scalar = Any
+Shape = TypeVar("Shape")
+DType = TypeVar("DType")
+
+
+class Array(np.ndarray, Generic[Shape, DType]):
+    ...
+
+
+class Vector(MutableSequence, Generic[DType]):
+    ...
+
+
+Vector = MutableSequence
+Matrix = MutableSequence
+Tensor = MutableSequence
+
+Numeric = TypeVar("Numeric", bound=Iterable)
+
+
+class Batch(Generic[Numeric]):
+    ...
+
+
+np.ndarray[Shape, DType]

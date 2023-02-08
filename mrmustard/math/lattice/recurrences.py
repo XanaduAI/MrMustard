@@ -20,14 +20,13 @@
 # a recipe made of two parts. The function to recompute A and b is determined by
 # which neighbours are used.
 
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 
-from mrmustard.types import Matrix, Tensor, Vector
-
-from .neighbours import lower_neighbors_fn
-from .pivots import first_pivot_fn
+from mrmustard.math.lattice.neighbours import lower_neighbors_fn
+from mrmustard.math.lattice.pivots import first_pivot_fn
+from mrmustard.types import Batch, Matrix, Tensor, Vector
 
 # TODO: gradients
 
@@ -39,7 +38,7 @@ def general_step(
     b: Vector,
     index: Vector,
     pivot_fn: Callable[[Vector], Vector],
-    neighbors_fn: Callable[[Vector], Matrix],
+    neighbors_fn: Callable[[Vector], Batch[Vector]],
     Ab_fn: Callable = lambda A, b, neighbors_fn, pivot: (A, b),
 ):
     r"""Fock-Bargmann recurrence relation step. General version.
@@ -59,23 +58,19 @@ def general_step(
     A, b = Ab_fn(A, b, neighbors_fn, pivot)
     neighbors = neighbors_fn(pivot)  # neighbors is an array of indices len(pivot) x len(pivot)
     value_at_index = b[i] * tensor_value(tensor, pivot)
-    print("-" * 80)
-    print(f"tensor_value(tensor, index={pivot})={tensor_value(tensor, pivot)}")
     for j, neighbor in enumerate(neighbors):
-        val = tensor_value(tensor, neighbor)
-        print(f"tensor_value(tensor={tensor}, index={neighbor})={val}")
-        value_at_index += A[i, j] * val
+        value_at_index += A[i, j] * tensor_value(tensor, neighbor)
     return value_at_index
 
 
 # @njit
-def vanilla_step(tensor, A, b, index: Tuple) -> complex:
+def vanilla_step(tensor, A, b, index: Vector) -> complex:
     """Fock-Bargmann recurrence relation step. Vanilla version.
     Args:
         tensor (array): tensor to calculate the amplitudes of
         A (array): matrix of coefficients
         b (array): vector of coefficients
-        index (tuple): index of the amplitude to calculate
+        index (Sequence): index of the amplitude to calculate
         pivot_fn (callable): function that returns the pivot corresponding to the index
         neighbors_fn (callable): function that returns the neighbors of the pivot
     Returns:

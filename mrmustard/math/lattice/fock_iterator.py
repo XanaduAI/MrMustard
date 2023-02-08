@@ -49,12 +49,9 @@ from mrmustard.types import Tensor
 def vanilla(shape: Tuple[int], A, b, c) -> Tensor:
     Z = np.zeros(shape, dtype=np.complex128)
     Z[(0,) * len(shape)] = c
-    path = strategies.ndindex_gen(np.asarray(shape))
+    path = strategies.ndindex_iter(np.asarray(shape))
     next(path)  # skip the zero index
     for index in path:
-        new_val = recurrences.vanilla_step(Z, A, b, index)
-        print("index =", index, "type=", type(index))
-        print(f"Value = {new_val}")
-        print()
-        Z[tuple(index)] = new_val
+        val_at_index = recurrences.vanilla_step(Z, A, b, index)
+        Z[tuple(index)] = val_at_index
     return Z
