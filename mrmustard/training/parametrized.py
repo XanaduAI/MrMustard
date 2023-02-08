@@ -67,6 +67,7 @@ class Parametrized:
         r"""Returns a string representation of the parameter values, separated by commas and rounded
         to the specified number of decimals. It includes only the parameters that are not arrays
         and not the number of modes, or other parameters that are not in principle trainable.
+        Keeps the order of the parameters as they are defined in the class constructor.
 
         Args:
             decimals (int): number of decimals to round to
