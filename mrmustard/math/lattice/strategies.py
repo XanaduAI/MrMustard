@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Generator, Iterator, Optional
+from typing import Iterator, Optional
 
 import numpy as np
 from numba import njit
@@ -27,8 +27,8 @@ from mrmustard.types import Vector
 # yield the same array over and over again, modified each time, beware!
 
 
-# @njit
-def ndindex_iter(shape: Vector) -> Iterator[Vector]:
+@njit
+def ndindex_iter(shape: Vector[int]) -> Iterator[Vector[int]]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
     while True:
@@ -43,8 +43,8 @@ def ndindex_iter(shape: Vector) -> Iterator[Vector]:
                     return
 
 
-# @njit
-def equal_weight_iter(shape: Vector, max_sum: Optional[int] = None) -> Iterator[Vector]:
+@njit
+def equal_weight_iter(shape: Vector[int], max_sum: Optional[int] = None) -> Iterator[Vector[int]]:
     r"""yields the indices of a tensor with equal weight.
     Effectively, `shape` contains local cutoffs (the maximum value of each index)
     and `max_sum` is the global cutoff (the maximum sum of all indices).
@@ -75,15 +75,15 @@ def equal_weight_iter(shape: Vector, max_sum: Optional[int] = None) -> Iterator[
 
 
 @njit
-def grey_code_iter(shape: Vector) -> Generator[Vector, None, None]:
+def grey_code_iter(shape: Vector[int]) -> Iterator[Vector[int]]:
     raise NotImplementedError("Grey code order strategy not implemented yet")
 
 
 @njit
-def wormhole(shape: Vector) -> Any:
+def wormhole(shape: Vector[int]) -> Vector[int]:
     raise NotImplementedError("Wormhole strategy not implemented yet")
 
 
 @njit
-def diagonal(shape: Vector) -> Any:
+def diagonal(shape: Vector[int]) -> Vector[int]:
     raise NotImplementedError("Diagonal strategy not implemented yet")

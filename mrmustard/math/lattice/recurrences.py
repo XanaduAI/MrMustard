@@ -23,6 +23,7 @@
 from typing import Callable
 
 import numpy as np
+from numba import njit
 
 from mrmustard.math.lattice.neighbours import lower_neighbors_fn
 from mrmustard.math.lattice.pivots import first_pivot_fn
@@ -31,7 +32,7 @@ from mrmustard.types import Batch, Matrix, Tensor, Vector
 # TODO: gradients
 
 
-# @njit
+@njit
 def general_step(
     tensor: Tensor,
     A: Matrix,
@@ -39,7 +40,7 @@ def general_step(
     index: Vector,
     pivot_fn: Callable[[Vector], Vector],
     neighbors_fn: Callable[[Vector], Batch[Vector]],
-    Ab_fn: Callable = lambda A, b, neighbors_fn, pivot: (A, b),
+    Ab_fn: Callable = njit(lambda A, b, neighbors_fn, pivot: (A, b)),
 ):
     r"""Fock-Bargmann recurrence relation step. General version.
     Args:
@@ -53,7 +54,7 @@ def general_step(
         complex: the value of the amplitude at the given index
     """
     i, pivot = pivot_fn(index)
-    A = A * np.sqrt(pivot)[None, :] / np.sqrt(pivot + 1)[:, None]
+    A = A * np.outer(np.sqrt(pivot), 1 / np.sqrt(pivot + 1))
     b = b / np.sqrt(pivot + 1)
     A, b = Ab_fn(A, b, neighbors_fn, pivot)
     neighbors = neighbors_fn(pivot)  # neighbors is an array of indices len(pivot) x len(pivot)
@@ -63,7 +64,7 @@ def general_step(
     return value_at_index
 
 
-# @njit
+@njit
 def vanilla_step(tensor, A, b, index: Vector) -> complex:
     """Fock-Bargmann recurrence relation step. Vanilla version.
     Args:
