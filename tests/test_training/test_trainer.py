@@ -14,9 +14,9 @@
 
 """Tests for the ray-based trainer."""
 
-# import sys
+import sys
 
-# from time import sleep
+from time import sleep
 import pytest
 
 import numpy as np
