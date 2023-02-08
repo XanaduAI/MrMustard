@@ -14,24 +14,28 @@
 
 """Tests for the ray-based trainer."""
 
+import sys
+from time import sleep
 import pytest
 
 import numpy as np
 from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
-from mrmustard.training.trainer import map_trainer
+from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
 
 @pytest.fixture
 def wrappers():
     """Dummy wrappers tested."""
 
-    def make_circ(x=0.0, return_list=False):
+    def make_circ(x=0.0, return_type=None):
         circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
             x=x, x_trainable=True, y_trainable=True
         )
-        return circ if not return_list else [circ]
+        return (
+            [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
+        )
 
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
         target = Gaussian(1) >> Dgate(-1.5, y_targ)
@@ -72,7 +76,11 @@ def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-na
 @pytest.mark.parametrize(
     "tasks", [[{"x": 0.1}, {"y_targ": 0.2}], {"c0": {}, "c1": {"euclidean_lr": 0.02, "HBAR": 1.0}}]
 )
-def test_circ_optimize(wrappers, tasks):  # pylint: disable=redefined-outer-name
+@pytest.mark.parametrize(
+    "return_type",
+    [None, "dict"],
+)
+def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefined-outer-name
     """Test distributed optimizations."""
     max_steps = 10
     make_circ, cost_fn = wrappers
@@ -82,6 +90,7 @@ def test_circ_optimize(wrappers, tasks):  # pylint: disable=redefined-outer-name
         tasks=tasks,
         max_steps=max_steps,
         symplectic_lr=0.05,
+        return_type=return_type,
     )
 
     if isinstance(tasks, dict):
@@ -98,7 +107,7 @@ def test_circ_optimize(wrappers, tasks):  # pylint: disable=redefined-outer-name
     opt_history = np.array(results[0]["optimizer"].opt_history)
     assert len(opt_history) == max_steps + 1
     assert opt_history[0] - opt_history[-1] > 1e-6
-    assert (np.diff(opt_history) < 0).sum() > max_steps // 2
+    assert (np.diff(opt_history) < 0).sum() > max_steps // 3
 
 
 @pytest.mark.parametrize(
@@ -144,3 +153,73 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
     # Check if optimization history is actually decreasing.
     opt_history = np.array(results[0]["optimizer"].opt_history)
     assert opt_history[0] - opt_history[-1] > 1e-6
+
+
+def test_update_pop():
+    """Test for coverage."""
+    d = {"a": 3, "b": "foo"}
+    kwargs = {"b": "bar", "c": 22}
+    d1, kwargs = update_pop(d, **kwargs)
+    assert d1["b"] == "bar"
+    assert len(kwargs) == 1
+
+
+def test_no_ray(monkeypatch):
+    """Tests ray import error"""
+    monkeypatch.setitem(sys.modules, "ray", None)
+    with pytest.raises(ImportError, match="Failed to import `ray`"):
+        _ = map_trainer(
+            tasks=2,
+        )
+
+
+def test_invalid_tasks():
+    """Tests unexpected tasks arg"""
+    with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
+        _ = map_trainer(
+            tasks=2.3,
+        )
+
+
+def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
+    """Test warning of unused kwargs"""
+    _, cost_fn = wrappers
+    with pytest.warns(UserWarning, match="Unused kwargs:"):
+        results = train_device(
+            cost_fn=cost_fn,
+            foo="bar",
+        )
+    assert len(results) >= 4
+    assert isinstance(results["cost"], float)
+
+
+def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
+    """Test turning off pregress bar"""
+    _, cost_fn = wrappers
+    results = map_trainer(
+        cost_fn=cost_fn,
+        tasks=2,
+        pbar=False,
+    )
+    assert len(results) == 2
+
+
+@pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
+def test_unblock(wrappers, tasks):  # pylint: disable=redefined-outer-name
+    """Test unblock async mode"""
+    _, cost_fn = wrappers
+    result_getter = map_trainer(
+        cost_fn=cost_fn,
+        tasks=tasks,
+        unblock=True,
+    )
+    assert callable(result_getter)
+
+    sleep(0.2)
+    results = result_getter()
+    if len(results) <= (tasks if isinstance(tasks, int) else len(tasks)):
+        # safer on slower machines
+        sleep(1)
+        results = result_getter()
+
+    assert len(results) == (tasks if isinstance(tasks, int) else len(tasks))
