@@ -32,7 +32,7 @@ jobs:
           pip install wheel pytest pytest-cov --upgrade
           pip install .[ray]
           # python setup.py bdist_wheel
-          # pip install 'dist/*.whl[ray]'
+          # pip install dist/*.whl
 
       - name: Run tests
         run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
