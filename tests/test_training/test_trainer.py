@@ -34,9 +34,10 @@ def wrappers():
         circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
             x=x, x_trainable=True, y_trainable=True
         )
-        return (
-            [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
-        )
+        # return (
+        #     [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
+        # )
+        return circ
 
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
         target = Gaussian(1) >> Dgate(-1.5, y_targ)
