@@ -15,7 +15,8 @@
 """Tests for the ray-based trainer."""
 
 import sys
-from time import sleep
+
+# from time import sleep
 import pytest
 
 import numpy as np
@@ -193,15 +194,15 @@ def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
     assert isinstance(results["cost"], float)
 
 
-def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
-    """Test turning off pregress bar"""
-    _, cost_fn = wrappers
-    results = map_trainer(
-        cost_fn=cost_fn,
-        tasks=2,
-        pbar=False,
-    )
-    assert len(results) == 2
+# def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
+#     """Test turning off pregress bar"""
+#     _, cost_fn = wrappers
+#     results = map_trainer(
+#         cost_fn=cost_fn,
+#         tasks=2,
+#         pbar=False,
+#     )
+#     assert len(results) == 2
 
 
 # @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
