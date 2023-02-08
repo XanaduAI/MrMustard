@@ -16,7 +16,7 @@
 
 # pylint: disable=unused-wildcard-import,wildcard-import
 
-from typing import Any, Generic, Iterable, MutableSequence, TypeVar
+from typing import Any, Generic, TypeVar
 
 import numpy as np
 
@@ -29,19 +29,16 @@ class Array(np.ndarray, Generic[Shape, DType]):
     ...
 
 
-class Vector(MutableSequence, Generic[DType]):
+# class Vector(MutableSequence, Generic[DType]):
+#     ...
+
+
+Vector = np.ndarray
+Matrix = np.ndarray
+Tensor = np.ndarray
+
+Numeric = TypeVar("Numeric", bound=np.ndarray)
+
+
+class Batch(np.ndarray, Generic[Numeric]):
     ...
-
-
-Vector = MutableSequence
-Matrix = MutableSequence
-Tensor = MutableSequence
-
-Numeric = TypeVar("Numeric", bound=Iterable)
-
-
-class Batch(Generic[Numeric]):
-    ...
-
-
-np.ndarray[Shape, DType]
