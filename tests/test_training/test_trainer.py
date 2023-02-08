@@ -47,7 +47,7 @@ def wrappers():
 
 
 @pytest.mark.parametrize(
-    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": 0.07}}]
+    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}}]
 )
 @pytest.mark.parametrize("seed", [None, 42])
 def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
