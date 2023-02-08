@@ -16,10 +16,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from numbers import Number
-from typing import TypeVar, Union
+from typing import Union
+
+from numpy import number
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.types import Scalar
 
 math = Math()
 
@@ -52,6 +55,7 @@ class Data(ABC):
                 return getattr(self, data_type)
 
     @abstractmethod
+<<<<<<< HEAD
     def __add__(self, other: DataType) -> DataType:
         pass
 
@@ -73,4 +77,27 @@ class Data(ABC):
         return self.__mul__(other)
 
     def __truediv__(self, other: Union[DataType, Number]) -> DataType:
+=======
+    def __add__(self, other: Data) -> Data:
+        pass
+
+    @abstractmethod
+    def __mul__(self, other: Union[Data, Scalar]) -> Data:
+        pass
+
+    @abstractmethod
+    def __and__(self, other: Data) -> Data:  # tensor product
+        pass
+
+    def __sub__(self, other: Data) -> Data:
+        return self.__add__(other * -1)
+
+    def __neg__(self) -> Data:
+        return self.__mul__(-1)
+
+    def __rmul__(self, other: Union[Data, Number]) -> Data:
+        return self.__mul__(other)
+
+    def __truediv__(self, other: number) -> Data:
+>>>>>>> acc7be9a7dc3efc335ac6a6cb6b2c76901af44f5
         return self.__mul__(1 / other)  # this numerically naughty

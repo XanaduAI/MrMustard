@@ -14,23 +14,43 @@
 
 """A module containing all base type annotations."""
 
-from numbers import Number
-from typing import Sequence, Tuple, TypeVar, Union
+# from numbers import Number
+from typing import Generic, Sequence, Tuple, TypeVar, Union
 
-import numpy.typing as npt
+import numpy as np
 
-# NOTE: when type-annotating with typevars, objects with the same typevars must have the same type
-# E.g. in `def f(x: Vector, y: Vector) -> Tensor: ...`
-# the type of `x` and the type of `y` are assumed to be the same,
-# even though "Vector" can mean different things (e.g. different dtypes)
+Number = np.number
 
-DtypeVar = TypeVar("DtypeVar", bound=npt.DTypeLike)
+Shape = TypeVar("Shape", bound=Sequence)
+DtypeVar = TypeVar("DtypeVar", bound=np.dtype)
 
-Vector = TypeVar("Vector", bound=npt.NDArray[Tuple[int], DtypeVar])
-Matrix = TypeVar("Matrix", bound=npt.NDArray[Tuple[int, int], DtypeVar])
-Tensor = TypeVar("Tensor", bound=npt.NDArray[Tuple[int, ...], DtypeVar])
-Scalar = Union[Number, npt.NDArray[Tuple[None], DtypeVar]]
+
+class Array(Generic[Shape, DtypeVar]):
+    ...
+
+
+class Vector(Array[Tuple[int], DtypeVar]):
+    ...
+
+
+class Matrix(Array[Tuple[int, int], DtypeVar]):
+    ...
+
+
+class Tensor(Array[Shape, DtypeVar]):
+    ...
+
+
+class ScalarArr(Array[Tuple[None], DtypeVar]):
+    ...
+
+
+Scalar = Union[Number, ScalarArr]
+
+Numeric = TypeVar("Numeric", bound=Tensor)
 
 Trainable = Union[Scalar, Vector, Matrix, Tensor]
 
-Batched = TypeVar("Batched", bound=Sequence)
+
+class Batched(Generic[Numeric]):
+    ...
