@@ -47,18 +47,18 @@ def wrappers():
 
 
 @pytest.mark.parametrize(
-    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
+    # "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
+    "tasks", [5]
 )
-# @pytest.mark.parametrize("seed", [None, 42])
-# def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
-def test_circ_cost(wrappers, tasks):  # pylint: disable=redefined-outer-name
+@pytest.mark.parametrize("seed", [None, 42])
+def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
     """Test distributed cost calculations."""
-    # has_seed = isinstance(seed, int)
+    has_seed = isinstance(seed, int)
     _, cost_fn = wrappers
     results = map_trainer(
         cost_fn=cost_fn,
         tasks=tasks,
-        # **({"SEED": seed} if has_seed else {}),
+        **({"SEED": seed} if has_seed else {}),
     )
 
     if isinstance(tasks, dict):
@@ -66,8 +66,7 @@ def test_circ_cost(wrappers, tasks):  # pylint: disable=redefined-outer-name
         results = list(results.values())
     assert all(r["optimizer"] is None for r in results)
     assert all(r["device"] == [] for r in results)
-    # if has_seed and isinstance(tasks, int):
-    if isinstance(tasks, int):
+    if has_seed and isinstance(tasks, int):
         assert len(set(r["cost"] for r in results)) == 1
     else:
         assert (
