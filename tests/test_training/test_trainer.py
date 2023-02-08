@@ -46,32 +46,32 @@ def wrappers():
     return make_circ, cost_fn
 
 
-# @pytest.mark.parametrize(
-#     "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}}]
-# )
-# @pytest.mark.parametrize("seed", [None, 42])
-# def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
-#     """Test distributed cost calculations."""
-#     has_seed = isinstance(seed, int)
-#     _, cost_fn = wrappers
-#     results = map_trainer(
-#         cost_fn=cost_fn,
-#         tasks=tasks,
-#         **({"SEED": seed} if has_seed else {}),
-#     )
+@pytest.mark.parametrize(
+    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": 0.07}}]
+)
+@pytest.mark.parametrize("seed", [None, 42])
+def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
+    """Test distributed cost calculations."""
+    has_seed = isinstance(seed, int)
+    _, cost_fn = wrappers
+    results = map_trainer(
+        cost_fn=cost_fn,
+        tasks=tasks,
+        **({"SEED": seed} if has_seed else {}),
+    )
 
-#     if isinstance(tasks, dict):
-#         assert set(results.keys()) == set(tasks.keys())
-#         results = list(results.values())
-#     assert all(r["optimizer"] is None for r in results)
-#     assert all(r["device"] == [] for r in results)
-#     if has_seed and isinstance(tasks, int):
-#         assert len(set(r["cost"] for r in results)) == 1
-#     else:
-#         assert (
-#             len(set(r["cost"] for r in results))
-#             >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
-#         )
+    if isinstance(tasks, dict):
+        assert set(results.keys()) == set(tasks.keys())
+        results = list(results.values())
+    assert all(r["optimizer"] is None for r in results)
+    assert all(r["device"] == [] for r in results)
+    if has_seed and isinstance(tasks, int):
+        assert len(set(r["cost"] for r in results)) == 1
+    else:
+        assert (
+            len(set(r["cost"] for r in results))
+            >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
+        )
 
 
 @pytest.mark.parametrize(
@@ -128,7 +128,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
 
     tasks = {
         "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 20},
-        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 16},
+        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 12},
     }
 
     results = map_trainer(
