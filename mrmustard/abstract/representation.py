@@ -14,8 +14,8 @@
 
 from __future__ import annotations
 
-from mrmustard.abstract.data import AutoData
 from mrmustard.math import Math
+from mrmustard.math.datatypes import AutoData
 from mrmustard.types import Number
 
 math = Math()
