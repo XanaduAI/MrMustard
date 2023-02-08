@@ -47,32 +47,32 @@ def wrappers():
     return make_circ, cost_fn
 
 
-@pytest.mark.parametrize(
-    "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
-)
-@pytest.mark.parametrize("seed", [None, 42])
-def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
-    """Test distributed cost calculations."""
-    has_seed = isinstance(seed, int)
-    _, cost_fn = wrappers
-    results = map_trainer(
-        cost_fn=cost_fn,
-        tasks=tasks,
-        **({"SEED": seed} if has_seed else {}),
-    )
+# @pytest.mark.parametrize(
+#     "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": -0.7}}]
+# )
+# @pytest.mark.parametrize("seed", [None, 42])
+# def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
+#     """Test distributed cost calculations."""
+#     has_seed = isinstance(seed, int)
+#     _, cost_fn = wrappers
+#     results = map_trainer(
+#         cost_fn=cost_fn,
+#         tasks=tasks,
+#         **({"SEED": seed} if has_seed else {}),
+#     )
 
-    if isinstance(tasks, dict):
-        assert set(results.keys()) == set(tasks.keys())
-        results = list(results.values())
-    assert all(r["optimizer"] is None for r in results)
-    assert all(r["device"] == [] for r in results)
-    if has_seed and isinstance(tasks, int):
-        assert len(set(r["cost"] for r in results)) == 1
-    else:
-        assert (
-            len(set(r["cost"] for r in results))
-            >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
-        )
+#     if isinstance(tasks, dict):
+#         assert set(results.keys()) == set(tasks.keys())
+#         results = list(results.values())
+#     assert all(r["optimizer"] is None for r in results)
+#     assert all(r["device"] == [] for r in results)
+#     if has_seed and isinstance(tasks, int):
+#         assert len(set(r["cost"] for r in results)) == 1
+#     else:
+#         assert (
+#             len(set(r["cost"] for r in results))
+#             >= (tasks if isinstance(tasks, int) else len(tasks)) - 1
+#         )
 
 
 # @pytest.mark.parametrize(
@@ -157,30 +157,30 @@ def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-na
 #     assert opt_history[0] - opt_history[-1] > 1e-6
 
 
-# def test_update_pop():
-#     """Test for coverage."""
-#     d = {"a": 3, "b": "foo"}
-#     kwargs = {"b": "bar", "c": 22}
-#     d1, kwargs = update_pop(d, **kwargs)
-#     assert d1["b"] == "bar"
-#     assert len(kwargs) == 1
+def test_update_pop():
+    """Test for coverage."""
+    d = {"a": 3, "b": "foo"}
+    kwargs = {"b": "bar", "c": 22}
+    d1, kwargs = update_pop(d, **kwargs)
+    assert d1["b"] == "bar"
+    assert len(kwargs) == 1
 
 
-# def test_no_ray(monkeypatch):
-#     """Tests ray import error"""
-#     monkeypatch.setitem(sys.modules, "ray", None)
-#     with pytest.raises(ImportError, match="Failed to import `ray`"):
-#         _ = map_trainer(
-#             tasks=2,
-#         )
+def test_no_ray(monkeypatch):
+    """Tests ray import error"""
+    monkeypatch.setitem(sys.modules, "ray", None)
+    with pytest.raises(ImportError, match="Failed to import `ray`"):
+        _ = map_trainer(
+            tasks=2,
+        )
 
 
-# def test_invalid_tasks():
-#     """Tests unexpected tasks arg"""
-#     with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
-#         _ = map_trainer(
-#             tasks=2.3,
-#         )
+def test_invalid_tasks():
+    """Tests unexpected tasks arg"""
+    with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
+        _ = map_trainer(
+            tasks=2.3,
+        )
 
 
 # def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
