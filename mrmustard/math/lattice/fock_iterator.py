@@ -19,39 +19,22 @@ import numpy as np
 from mrmustard.math.lattice import recurrences, strategies
 from mrmustard.types import Tensor
 
-# class Fock_iterator:
-#     def __init__(
-#         self,
-#         shape: Tuple[int],
-#         strategy: Callable[[Vector], Generator[Vector, None, None]],
-#         by_copy: bool = False,
-#     ):
-#         self.shape = shape
-#         self.index_generator = strategy(shape)
-#         self.index = np.zeros(len(shape), dtype=int)
-#         self.done = False
-
-#     def __iter__(self):
-#         return self
-
-#     def __next__(self) -> Vector:
-#         if self.done:
-#             raise StopIteration
-#         else:
-#             self.index = next(self.index_generator)
-#             if np.any(self.index >= self.shape):
-#                 self.done = True
-#             if self.by_copy:
-#                 return self.index.copy()
-#             return self.index
-
 
 def vanilla(shape: Tuple[int], A, b, c) -> Tensor:
+    print("[vanilla] vanilla called")
     Z = np.zeros(shape, dtype=np.complex128)
     Z[(0,) * len(shape)] = c
+    print("[vanilla] initializing path...")
     path = strategies.ndindex_iter(np.asarray(shape))
-    next(path)  # skip the zero index
+    print("[vanilla] path initialized.")
+    print("[vanilla] calling next on path...")
+    skip = next(path)  # skip the zero index
+    print("[vanilla] skipped index", skip)
     for index in path:
+        print("[vanilla] got index for vanilla_step:", index)
+        print("[vanilla] calling vanilla_step...")
         val_at_index = recurrences.vanilla_step(Z, A, b, index)
+        print("[vanilla] vanilla_step returned", val_at_index)
+        print(f"[vanilla] setting Z[{tuple(index)}] to", val_at_index)
         Z[tuple(index)] = val_at_index
     return Z

@@ -21,9 +21,8 @@ from mrmustard.types import Vector
 
 
 @njit
-def first_pivot_fn(index: Vector) -> Tuple[int, Vector]:
-    r"""returns the first available pivot index for the given index
-    Warning: returns by reference, so the index is modified in place"""
+def first_pivot_fn(index: Vector[int]) -> Tuple[int, Vector[int]]:
+    r"""returns the first available pivot index for the given index"""
     for i, v in enumerate(index):
         if v > 0:
             index[i] -= 1
@@ -32,10 +31,8 @@ def first_pivot_fn(index: Vector) -> Tuple[int, Vector]:
 
 
 @njit
-def smallest_pivot_fn(index: Vector) -> Tuple[int, Vector]:
-    r"""returns the smallest available pivot index for the given index.
-    Warning: returns by reference, so the index is modified in place
-    """
+def smallest_pivot_fn(index: Vector[int]) -> Tuple[int, Vector[int]]:
+    r"""returns the smallest available pivot index for the given index"""
     min_ = 2**64 - 1
     for i, v in enumerate(index):
         if 0 < v < min_:

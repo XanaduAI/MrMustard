@@ -31,7 +31,9 @@ from mrmustard.types import Vector
 def ndindex_iter(shape: Vector[int]) -> Iterator[Vector[int]]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
+    print(" " * 4 + "[ndindex_iter] index created:", index)
     while True:
+        print(" " * 4 + "[ndindex_iter] about to yield", index)
         yield index
         for i in range(len(shape) - 1, -1, -1):
             if index[i] < shape[i] - 1:

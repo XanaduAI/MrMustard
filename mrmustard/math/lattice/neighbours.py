@@ -17,6 +17,7 @@ from typing import Iterator
 
 import numpy as np
 from numba import njit
+from numpy.typing import NDArray
 
 from mrmustard.types import Batch, Vector
 
@@ -26,7 +27,7 @@ from mrmustard.types import Batch, Vector
 
 
 @njit
-def all_neighbours_iter(pivot: Vector[int]) -> Iterator[Vector[int]]:
+def all_neighbours_iter(pivot: NDArray[int]) -> Iterator[Vector[int]]:
     r"yields the indices of all the nearest neighbours of the given pivot"
     for i in range(len(pivot)):
         pivot[i] += 1

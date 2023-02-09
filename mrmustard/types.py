@@ -16,30 +16,27 @@
 
 # pylint: disable=unused-wildcard-import,wildcard-import
 
-from typing import Any, Generic, MutableSequence, TypeVar
+from typing import Any, Generic, List, Tuple, TypeVar
 
 import numpy as np
 
+# need to import all separately because otherwise
+# aliased generic types assume their parameters are all Any
+# from numpy.typing import NDArray as Batch
+# from numpy.typing import NDArray as Matrix
+from numpy.typing import _DType, _GenericAlias
+
 Scalar = Any
-Shape = TypeVar("Shape")
-DType = TypeVar("DType")
-
-
-class Array(np.ndarray, Generic[Shape, DType]):
-    ...
-
-
-# class Vector(MutableSequence, Generic[DType]):
-#     ...
-
-
-Vector = MutableSequence
-Matrix = MutableSequence
-Tensor = MutableSequence
 Trainable = Any
+
 
 Numeric = TypeVar("Numeric", bound=np.ndarray)
 
+Vector = _GenericAlias(np.ndarray, (Tuple[int], _DType))
+Matrix = _GenericAlias(np.ndarray, (Tuple[int, int], _DType))
+Tensor = _GenericAlias(np.ndarray, (Tuple[int, ...], _DType))
+# Batch = Union[List, np.ndarray]
 
-class Batch(Generic[Numeric]):
+
+class Batch(List, np.ndarray, Generic[Scalar]):
     ...

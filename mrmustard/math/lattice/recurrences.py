@@ -20,13 +20,13 @@
 # a recipe made of two parts. The function to recompute A and b is determined by
 # which neighbours are used.
 
-from typing import Callable
+from typing import Callable, Optional
 
-import numpy as np
 from numba import njit
 
 from mrmustard.math.lattice.neighbours import lower_neighbors_fn
 from mrmustard.math.lattice.pivots import first_pivot_fn
+from mrmustard.math.lattice.utils import tensor_value
 from mrmustard.types import Batch, Matrix, Tensor, Vector
 
 # TODO: gradients
@@ -40,7 +40,7 @@ def general_step(
     index: Vector,
     pivot_fn: Callable[[Vector], Vector],
     neighbors_fn: Callable[[Vector], Batch[Vector]],
-    Ab_fn: Callable = njit(lambda A, b, neighbors_fn, pivot: (A, b)),
+    Ab_fn: Optional[Callable] = None,
 ):
     r"""Fock-Bargmann recurrence relation step. General version.
     Args:
@@ -50,17 +50,28 @@ def general_step(
         index (tuple): index of the amplitude to calculate
         pivot_fn (callable): function that returns the pivot corresponding to the index
         neighbors_fn (callable): function that returns the neighbors of the pivot
+        Ab_fn (callable): function that returns the new values of A and b
     Returns:
         complex: the value of the amplitude at the given index
     """
+    print(" " * 8 + "[general_step] called with index:", index)
     i, pivot = pivot_fn(index)
-    A = A * np.outer(np.sqrt(pivot), 1 / np.sqrt(pivot + 1))
-    b = b / np.sqrt(pivot + 1)
-    A, b = Ab_fn(A, b, neighbors_fn, pivot)
+    print(" " * 8 + "[general_step] i,pivot:", (i, pivot))
+    print("leaving A, b alone for now")
+    A = A  # * np.expand_dims(np.sqrt(pivot), 0)  # / np.expand_dims(np.sqrt(pivot + 1), 1)
+    b = b  # / np.sqrt(pivot + 1)
+    if Ab_fn is not None:
+        A, b = Ab_fn(A, b, pivot, neighbors_fn)
+    print(" " * 8 + "[general_step] about to call neighbors_fn")
     neighbors = neighbors_fn(pivot)  # neighbors is an array of indices len(pivot) x len(pivot)
+    print(" " * 8 + "[general_step] neighbors obtained")
+    print(" " * 8 + "[general_step] computing tensor_value(tensor, pivot)")
     value_at_index = b[i] * tensor_value(tensor, pivot)
+    print(" " * 8 + "[general_step] tensor value:", tensor_value(tensor, pivot))
     for j, neighbor in enumerate(neighbors):
+        print(" " * 8 + "[general_step] neighbor:", neighbor, " <-- pivot:", pivot)
         value_at_index += A[i, j] * tensor_value(tensor, neighbor)
+    index[i] += 1  # restore the index
     return value_at_index
 
 
@@ -77,20 +88,9 @@ def vanilla_step(tensor, A, b, index: Vector) -> complex:
     Returns:
         complex: the value of the amplitude at the given index
     """
-    return general_step(tensor, A, b, index.copy(), first_pivot_fn, lower_neighbors_fn)
+    print(" " * 4, "[vanilla_step] called with index:", index)
+    print(" " * 4, "[vanilla_step] calling general_step")
+    return general_step(tensor, A, b, index, first_pivot_fn, lower_neighbors_fn)
 
 
 ### array to tuple functions ###
-
-
-@njit
-def ravel_multi_index(index, shape):
-    res = 0
-    for i in range(len(index)):
-        res += index[i] * np.prod(np.asarray(shape)[i + 1 :])
-    return res
-
-
-@njit
-def tensor_value(tensor, index):
-    return tensor.flat[ravel_multi_index(index, tensor.shape)]
