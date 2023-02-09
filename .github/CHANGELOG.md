@@ -2,6 +2,51 @@
 
 ### New features
 
+  * Ray-based distributed trainer is now added to `training.trainer`. It acts as a replacement for `for` loops and enables the parallelization of running many circuits as well as their optimizations. To install the extra dependencies: `pip install .[ray]`.
+  [(#194)](https://github.com/XanaduAI/MrMustard/pull/194)
+
+    ```python
+    from mrmustard.lab import Vacuum, Dgate, Ggate
+    from mrmustard.physics import fidelity
+    from mrmustard.training.trainer import map_trainer
+
+    def make_circ(x=0.):
+        return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
+    
+    def cost_fn(circ=make_circ(0.1), y_targ=0.):
+        target = Gaussian(1) >> Dgate(-1.5, y_targ)
+        s = Vacuum(1) >> circ
+        return -fidelity(s, target)
+    
+    # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
+    results_0 = map_trainer(
+        cost_fn=cost_fn,
+        tasks=5,
+    )
+
+    # Use case 1: Run circuit optimization 5 times on randomly initialized circuits.
+    results_1 = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks=5,
+        max_steps=50,
+        symplectic_lr=0.05,
+    )
+
+    # Use case 2: Run circuit optimization 2 times on randomly initialized circuits with custom parameters.
+    results_2 = map_trainer(
+        cost_fn=cost_fn,
+        device_factory=make_circ,
+        tasks=[
+            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
+            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+        ],
+        y_targ=0.35,
+        symplectic_lr=0.05,
+        AUTOCUTOFF_MAX_CUTOFF=7,
+    )
+    ```
+
 * Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
   specified by the user, a value is sampled from the reduced state probability distribution and the
   conditional state on the remaining modes is generated.
