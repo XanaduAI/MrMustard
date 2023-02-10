@@ -18,6 +18,8 @@ This module implements the :class:`.Circuit` class which acts as a representatio
 
 from __future__ import annotations
 
+from collections import namedtuple
+
 __all__ = ["Circuit"]
 
 from typing import Any, List, Optional, Tuple
@@ -60,7 +62,7 @@ class Circuit(Transformation, Parametrized):
         return graph
 
     def _order(self, op1, op2) -> bool:
-        "whether the order op1->op2 is right"
+        "whether op1 comes before op2 in the circuit"
         return self._op_index(op1) < self._op_index(op2)
 
     def _op_connections(self, op):
@@ -77,20 +79,41 @@ class Circuit(Transformation, Parametrized):
         "the index of op in the circuit"
         return self._ops.index(op)
 
-    def get_wire_connections(self):
+    def TN_connectivity(self):
+        "get wire connections at the TN level using circuit language and the Operation methods"
+        wire = namedtuple("wire", ["i1", "i2", "axis1", "axis2"])  # i1.axis1 <-> i2.axis2
+
+        # TODO: redo with LR pairs
         connections = []
         disconnected_wires = []
         for i, op1 in enumerate(self._ops):
-            op1_modes = set(op1.modes)
-            print(op1_modes)
-            for mode in op1.modes:
+            op1 = Operation(op1)
+            op1_out_free = set(op1.ork)
+            print(op1_free_R)
+            for mode in op1.modes_out:
                 for j, op2 in enumerate(self._ops[i + 1 :]):
-                    if mode in op2.modes:
-                        connections.append(((i, mode), (j + i + 1, mode)))
-                        op1_modes.remove(mode)
+                    if mode in op2.modes_in:
+                        connections.append(
+                            wire(i, j + i + 1, op1.olk_axis(mode), op2.ilk_axis(mode))
+                        )
+                        connections.append(
+                            wire(i, j + i + 1, op1.ork_axis(mode), op2.irk_axis(mode))
+                        )
+                        op1_out_free.remove(mode)
                         break
-            for mode in op1_modes:
+            for mode in op1_out_free:
                 disconnected_wires.append((i, mode))
+        for i, op2 in enumerate(reversed(self._ops)):
+            i = len(self._ops) - i - 1
+            op2_free_L = set(op2.L)
+            for mode in op2.L:
+                for j, op1 in enumerate(reversed(self._ops[:i])):
+                    if mode in op1.R:
+                        connections.append((i - j - 1, i, mode))
+                        op2_free_L.remove(mode)
+                        break
+            for mode in op2_free_L:
+                disconnected_wires.append(wire(None, i, mode))
         return connections, disconnected_wires
 
     def reset(self):
