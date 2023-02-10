@@ -20,12 +20,14 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
+from typing import Any, List, Optional, Tuple
 
-from typing import List, Tuple, Optional
-from mrmustard.types import Matrix, Vector
+import numpy as np
+
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
+from mrmustard.types import Matrix, Vector
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from .abstract import Transformation, State
 
 
 class Circuit(Transformation, Parametrized):
@@ -39,6 +41,57 @@ class Circuit(Transformation, Parametrized):
         self._ops = list(ops) if ops is not None else []
         super().__init__()
         self.reset()
+        self.graph = self._graph_from_ops(self._ops)
+
+    def _graph_from_ops(self, ops):
+        graph = np.zeros((len(ops), len(ops), self.num_modes), dtype=int)
+        for i, op in enumerate(ops):
+            for m, mode in enumerate(op.modes):
+                for j, op2 in enumerate(ops[i + 1 :]):
+                    if mode in op2.modes:
+                        graph[i, i + j + 1, mode] = 1
+                        graph[i + j + 1, i, mode] = 1
+                        break
+                for j, op2 in enumerate(reversed(ops[:i])):
+                    if mode in op2.modes:
+                        graph[i, i - j - 1, mode] = 1
+                        graph[i - j - 1, i, mode] = 1
+                        break
+        return graph
+
+    def _order(self, op1, op2) -> bool:
+        "whether the order op1->op2 is right"
+        return self._op_index(op1) < self._op_index(op2)
+
+    def _op_connections(self, op):
+        "the list of operations connected to op in the form List[(Mode, Op)]"
+        connections: List[Tuple[int, Any]] = []
+        local_graph = self._graph[:, self._op_index(op), :]  # axes now are [modes, op2_index]
+        for op2 in self._ops:
+            for i, mode in enumerate(local_graph[:, self._op_index(op2)]):
+                if mode:
+                    connections.append((i, op2))
+        return connections
+
+    def _op_index(self, op):
+        "the index of op in the circuit"
+        return self._ops.index(op)
+
+    def get_wire_connections(self):
+        connections = []
+        disconnected_wires = []
+        for i, op1 in enumerate(self._ops):
+            op1_modes = set(op1.modes)
+            print(op1_modes)
+            for mode in op1.modes:
+                for j, op2 in enumerate(self._ops[i + 1 :]):
+                    if mode in op2.modes:
+                        connections.append(((i, mode), (j + i + 1, mode)))
+                        op1_modes.remove(mode)
+                        break
+            for mode in op1_modes:
+                disconnected_wires.append((i, mode))
+        return connections, disconnected_wires
 
     def reset(self):
         """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
@@ -110,3 +163,56 @@ class Circuit(Transformation, Parametrized):
     def __str__(self):
         """String representation of the circuit."""
         return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
+
+
+class TokenDispenser:
+    r"""A singleton class that generates unique tokens (ints).
+    It can be given back tokens to reuse them.
+
+    Example:
+        >>> dispenser = TokenDispenser()
+        >>> dispenser.get()
+        0
+        >>> dispenser.get()
+        1
+        >>> dispenser.give_back(0)
+        >>> dispenser.get()
+        0
+        >>> dispenser.get()
+        2
+    """
+    _instance = None
+
+    def __new__(cls):
+        if TokenDispenser._instance is None:
+            TokenDispenser._instance = object.__new__(cls)
+        return TokenDispenser._instance
+
+    def __init__(self):
+        self._tokens = []
+
+    def get(self) -> int:
+        """Returns a new token."""
+        if self._tokens:
+            return self._tokens.pop()
+        return len(self._tokens)
+
+    def give_back(self, token: int):
+        """Gives back a token to be reused."""
+        self._tokens.append(token)
+
+    def reset(self):
+        """Resets the dispenser."""
+        self._tokens = []
+
+    def __len__(self):
+        return len(self._tokens)
+
+    def __repr__(self):
+        return f"< TokenDispenser | {len(self._tokens)} tokens >"
+
+    def __str__(self):
+        return repr(self)
+
+    def __bool__(self):
+        return bool(self._tokens)
