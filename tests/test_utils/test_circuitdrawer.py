@@ -105,3 +105,12 @@ def test_circuit_text():
         circuit_text(ops, decimals)
         == "0: ─╭•──\n1: ─╰BS─\n2: ─╭G──\n3: ─├G──\n4: ─│───\n5: ─╰G──\n6: ─╭BS─\n7: ─╰•──"
     )
+
+
+def test_param_order():
+    r"""Tests that Parametrized.param_string returns the parameters in the correct order"""
+    B = BSgate(theta=0.4, phi=0.5)
+    assert B.param_string(decimals=1) == "0.4, 0.5"
+
+    B = BSgate(phi=0.5, theta=0.4)
+    assert B.param_string(decimals=1) == "0.4, 0.5"  # same order as class constructor, not call

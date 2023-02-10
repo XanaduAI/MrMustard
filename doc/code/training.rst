@@ -7,6 +7,7 @@ mrmustard.training
     training/optimizer
     training/parameter
     training/parametrized
+    training/trainer
 
 .. currentmodule:: mrmustard.training
 

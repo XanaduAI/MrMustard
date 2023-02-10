@@ -67,6 +67,7 @@ class Parametrized:
         r"""Returns a string representation of the parameter values, separated by commas and rounded
         to the specified number of decimals. It includes only the parameters that are not arrays
         and not the number of modes, or other parameters that are not in principle trainable.
+        Keeps the order of the parameters as they are defined in the class constructor.
 
         Args:
             decimals (int): number of decimals to round to
@@ -75,7 +76,7 @@ class Parametrized:
             str: string representation of the parameter values
         """
         string = ""
-        for name, value in self.kw_parameters:
+        for _, value in self.kw_parameters:
             if math.asnumpy(value).ndim == 0:  # don't show arrays
                 string += f"{math.asnumpy(value):.{decimals}g}, "
         return string.rstrip(", ")

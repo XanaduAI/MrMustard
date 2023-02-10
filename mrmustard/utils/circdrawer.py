@@ -76,13 +76,15 @@ def circuit_text(
 ):
     r"""Text based diagram for a Quantum circuit.
     Arguments:
-        ops: the operations and measurements to draw as a list of MrMustard operations
-        decimals (int): How many decimal points to include when formatting operation parameters.
+        ops (List[Transformation]): the operations and measurements to draw as a list of MrMustard operations
+        decimals (optional(int)): How many decimal points to include when formatting operation parameters.
             Default ``None`` will omit parameters from operation labels.
     Returns:
         str : String based graphic of the circuit.
     """
+    # get all modes used by the ops and sort them
     modes = sorted(list(set().union(*[op.modes for op in ops])))
+    # include all modes between min and max (need to draw over them)
     all_modes = range(min(modes), max(modes) + 1)
 
     totals = [f"{mode}: " for mode in all_modes]
