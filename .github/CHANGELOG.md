@@ -63,11 +63,14 @@
     measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
     ```
 
-  * The optimizer `minimize` method now accepts an optional callback function, which will be called at each step of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
+* The optimizer `minimize` method now accepts an optional callback function, which will be called at each step
+  of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
   The result is added to the `callback_history` attribute of the optimizer.
   [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
 
-  * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
+* We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions.
+  Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform
+  contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 
   * the Math interface now supports linear system solving via `math.solve`.
@@ -87,15 +90,24 @@
   C.tensor # extract actual result
   ```
 
-  * MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int). This will give reproducible results whenever randomness is involved. The seed is unset by default, and it can be unset again with `settings.SEED = None`. If one desires, the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
+* MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int).
+  This will give reproducible results whenever randomness is involved. The seed is unset by default,
+  and it can be unset again with `settings.SEED = None`. If one desires,
+  the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
   [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
+
+* The `Circuit` class now has an ascii representation, which can be accessed via the repr method.
+  It looks great in Jupyter notebooks! There is a new option at `settings.CIRCUIT_DECIMALS` which controls
+  the number of decimals shown in the ascii representation. If None only the name of the gate is shown.
+  [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
 
 
 ### Breaking changes
 
 ### Improvements
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation, providing better numerical stability for larger cutoff and displacement values.
+* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
+providing better numerical stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147) 
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
@@ -111,10 +123,12 @@ physical even though the Wigner function might not contain all the features of t
 within the defined window. Also, expose some plot parameters and return the figure and axes.
   [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
 
-* Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`. This allows for a more compact Fock representation where needed.
+* Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`.
+This allows for a more compact Fock representation where needed.
   [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
 
-* The `mrmustard.physics.fock` module now provides convenience functions for applying kraus operators and choi operators to kets and density matrices.
+* The `mrmustard.physics.fock` module now provides convenience functions for applying kraus operators and
+choi operators to kets and density matrices.
   [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
   ```python
@@ -125,17 +139,21 @@ within the defined window. Also, expose some plot parameters and return the figu
   dm_out = apply_choi_to_ket(choi, ket_in, indices)
   ```
 
-* Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
+* Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour
+(norm was the sqrt of prob if the state was pure and prob if the state was mixed).
   [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
 
-* Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation, which have been refactored and moved out of `physics.fock`.
+* Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation,
+which have been refactored and moved out of `physics.fock`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 ### Bug fixes
 
-* The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
+* The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter
+of a number of gates in pallel.
  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
-* The trace function in the fock module was giving incorrect results when called with certain choices of modes. This is now fixed.
+* The trace function in the fock module was giving incorrect results when called with certain choices of modes.
+This is now fixed.
  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
 * The purity function for fock states no longer normalizes the density matrix before computing the purity.
@@ -144,7 +162,8 @@ within the defined window. Also, expose some plot parameters and return the figu
 * The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
-* The internal fock representation of states returns the correct cutoffs in all cases (solves an issue when a pure dm was converted to ket).
+* The internal fock representation of states returns the correct cutoffs in all cases (solves an issue when
+a pure dm was converted to ket).
 [(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
 
 ### Documentation
