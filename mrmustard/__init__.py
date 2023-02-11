@@ -39,6 +39,7 @@ class Settings:
         self.AUTOCUTOFF_STDEV_FACTOR = 5
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
+        self.CIRCUIT_DECIMALS = 3
         # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
@@ -121,7 +122,7 @@ def about():
 
         >>> mm.about()
         Mr Mustard: a differentiable bridge between phase space and Fock space.
-        Copyright 2018-2021 Xanadu Quantum Technologies Inc.
+        Copyright 2021 Xanadu Quantum Technologies Inc.
 
         Python version:            3.6.10
         Platform info:             Linux-5.8.18-1-MANJARO-x86_64-with-arch-Manjaro-Linux
@@ -147,7 +148,7 @@ def about():
 
     # a QuTiP-style infobox
     print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
-    print("Copyright 2018-2021 Xanadu Quantum Technologies Inc.\n")
+    print("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
 
     print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
     print("Platform info:             {}".format(platform.platform()))

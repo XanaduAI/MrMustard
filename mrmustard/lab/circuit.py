@@ -31,6 +31,7 @@ from mrmustard.lab.abstract import Measurement, State, Transformation
 from mrmustard.lab.abstract.operation import Operation
 from mrmustard.training import Parametrized
 from mrmustard.types import Matrix, Vector
+from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 
@@ -201,7 +202,7 @@ class Circuit(Transformation, Parametrized):
     @property
     def XYd(
         self,
-    ) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency
+    ) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency.
         X = XPMatrix(like_1=True)
         Y = XPMatrix(like_0=True)
         d = XPVector()
@@ -234,16 +235,11 @@ class Circuit(Transformation, Parametrized):
     def __len__(self):
         return len(self._ops)
 
-    def _repr_markdown_(self) -> str:
-        """Markdown string to display the object on ipython notebooks."""
-        header = f"#### Circuit  -  {len(self._ops)} ops  -  compiled = `{self._compiled}`\n\n"
-        ops_repr = [op._repr_markdown_() for op in self._ops]  # pylint: disable=protected-access
-        return header + "\n".join(ops_repr)
+    _repr_markdown_ = None
 
     def __repr__(self) -> str:
         """String to display the object on the command line."""
-        ops_repr = [repr(op) for op in self._ops]
-        return " >> ".join(ops_repr)
+        return circuit_text(self._ops, decimals=settings.CIRCUIT_DECIMALS)
 
     def __str__(self):
         """String representation of the circuit."""
