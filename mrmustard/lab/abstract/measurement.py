@@ -15,19 +15,21 @@
 """This module contains the implementation of the class :class:`FockMeasurement`."""
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from mrmustard.math import Math
 
-from mrmustard.types import Tensor, Callable, Sequence, Iterable, Union
+from abc import ABC, abstractmethod
+
 from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.types import Iterable, Sequence, Tensor, Union
+
 from .state import State
 
 math = Math()
 
 
 class Measurement(ABC):
-    """this is an abstract class holding the common methods and properties that any measurement should
-    implement
+    """this is an abstract class holding the common methods and properties
+    that any measurement should implement
 
     Args:
         outcome (optional, List[float] or Array): the result of the measurement
@@ -40,6 +42,9 @@ class Measurement(ABC):
         if modes is None:
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._modes = modes
+        self._outcome = outcome
+        self.modes_in = modes
+        self.modes_out: list[int] = []
 
         self._is_postselected = False if outcome is None else True
         """used to evaluate if the measurement outcome should be
@@ -63,7 +68,8 @@ class Measurement(ABC):
     @property
     @abstractmethod
     def outcome(self):
-        """Returns outcome of the measurement. If no measurement has been carried out returns `None`."""
+        r"""Returns outcome of the measurement.
+        If no measurement has been carried out returns `None`."""
         ...
 
     @abstractmethod
@@ -75,7 +81,9 @@ class Measurement(ABC):
         ...
 
     def primal(self, other: State) -> Union[State, float]:
-        """performs the measurement procedure according to the representation of the incoming state"""
+        r"""performs the measurement procedure according to the representation
+        of the incoming state.
+        """
         if other.is_gaussian:
             return self._measure_gaussian(other)
 
@@ -89,7 +97,7 @@ class Measurement(ABC):
             f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
         )
 
-    def __getitem__(self, items) -> Callable:
+    def __getitem__(self, items):
         """Assign modes via the getitem syntax: allows measurements to be used as
         ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
         """
@@ -122,16 +130,17 @@ class FockMeasurement(Measurement):
 
     @property
     def outcome(self):
-        raise NotImplementedError
+        return self._outcome
 
     def _measure_gaussian(self, other: State) -> Union[State, float]:
         return self._measure_fock(other)
 
     def _measure_fock(self, other: State) -> Union[State, float]:
         r"""
-        Returns a tensor representing the post-measurement state in the unmeasured modes in the Fock basis.
-        The first `N` indices of the returned tensor correspond to the Fock measurements of the `N` modes that
-        the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
+        Returns a tensor representing the post-measurement state in the unmeasured modes
+        in the Fock basis. The first `N` indices of the returned tensor correspond to
+        the Fock measurements of the `N` modes that the detector is measuring.
+        The remaining indices correspond to the density matrix of the unmeasured modes.
 
         Args
             state (State): the quatum state

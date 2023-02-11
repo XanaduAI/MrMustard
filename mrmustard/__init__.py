@@ -15,7 +15,6 @@
 """This is the top-most `__init__.py` file of MrMustard package."""
 
 import numpy as np
-
 import rich.table
 from rich import print
 
@@ -44,6 +43,8 @@ class Settings:
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
+
+        self.OPT_EINSUM_OPTIMIZE = "auto-hq"  # can be "auto", "greedy", "optimal", "auto-hq"
         # for the detectors
         self.PNR_INTERNAL_CUTOFF = 50
         self.HOMODYNE_SQUEEZING = 10.0
@@ -134,14 +135,15 @@ def about():
         Torch version:             1.10.0+cu102
     """
     # pylint: disable=import-outside-toplevel
-    import sys
-    import platform
     import os
-    import numpy
+    import platform
+    import sys
+
     import numba
+    import numpy
     import scipy
-    import thewalrus
     import tensorflow
+    import thewalrus
 
     # a QuTiP-style infobox
     print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")

@@ -18,7 +18,7 @@ This module implements the :class:`.Circuit` class which acts as a representatio
 
 from __future__ import annotations
 
-from collections import namedtuple
+import opt_einsum
 
 __all__ = ["Circuit"]
 
@@ -26,7 +26,9 @@ from typing import Any, List, Optional, Tuple
 
 import numpy as np
 
-from mrmustard.lab.abstract import State, Transformation
+from mrmustard import settings
+from mrmustard.lab.abstract import Measurement, State, Transformation
+from mrmustard.lab.abstract.operation import Operation
 from mrmustard.training import Parametrized
 from mrmustard.types import Matrix, Vector
 from mrmustard.utils.xptensor import XPMatrix, XPVector
@@ -79,42 +81,32 @@ class Circuit(Transformation, Parametrized):
         "the index of op in the circuit"
         return self._ops.index(op)
 
-    def TN_connectivity(self):
-        "get wire connections at the TN level using circuit language and the Operation methods"
-        wire = namedtuple("wire", ["i1", "i2", "axis1", "axis2"])  # i1.axis1 <-> i2.axis2
-
-        # TODO: redo with LR pairs
+    def _init_TN_connections(self):
+        "Initialize the TN connections. Everything is disconnected."
+        dispenser = TagDispenser()
         connections = []
-        disconnected_wires = []
-        for i, op1 in enumerate(self._ops):
-            op1 = Operation(op1)
-            op1_out_free = set(op1.ork)
-            print(op1_free_R)
+        for op in self._ops:
+            op = Operation(op)
+            connections.append((op, [dispenser.tag() for _ in range(op.num_axes)]))
+        dispenser.reset()
+        return connections
+
+    def TN_connectivity(self):
+        "get wire connections at the TN level (axis1 <-> axis2 for contraction)"
+        connections = self._init_TN_connections()
+        for i, (op1, tags1) in enumerate(connections):
             for mode in op1.modes_out:
-                for j, op2 in enumerate(self._ops[i + 1 :]):
+                ax1 = op1.axes_for_mode(mode)
+                for j, (op2, tags2) in enumerate(connections[i + 1 :]):
                     if mode in op2.modes_in:
-                        connections.append(
-                            wire(i, j + i + 1, op1.olk_axis(mode), op2.ilk_axis(mode))
-                        )
-                        connections.append(
-                            wire(i, j + i + 1, op1.ork_axis(mode), op2.irk_axis(mode))
-                        )
-                        op1_out_free.remove(mode)
+                        ax2 = op2.axes_for_mode(mode)
+                        if ax1.ol_ is not None and ax2.il_ is not None:
+                            tags2[ax2.il_] = tags1[ax1.ol_]
+                        if ax1.or_ is not None and ax2.ir_ is not None:
+                            tags2[ax2.ir_] = tags1[ax1.or_]
                         break
-            for mode in op1_out_free:
-                disconnected_wires.append((i, mode))
-        for i, op2 in enumerate(reversed(self._ops)):
-            i = len(self._ops) - i - 1
-            op2_free_L = set(op2.L)
-            for mode in op2.L:
-                for j, op1 in enumerate(reversed(self._ops[:i])):
-                    if mode in op1.R:
-                        connections.append((i - j - 1, i, mode))
-                        op2_free_L.remove(mode)
-                        break
-            for mode in op2_free_L:
-                disconnected_wires.append(wire(None, i, mode))
-        return connections, disconnected_wires
+        connections = [(self._ops[i], tags) for i, (_, tags) in enumerate(connections)]
+        return connections
 
     def reset(self):
         """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
@@ -135,6 +127,76 @@ class Circuit(Transformation, Parametrized):
         for op in reversed(self._ops):
             state = op.dual(state)
         return state
+
+    def shape_specs(self) -> tuple[dict[int, int], list[int]]:
+        # Keep track of the shapes for each tag
+        tag_shapes = {}
+        fock_tags = []
+
+        # Loop through the list of operations
+        for op, tag_list in self.TN_connectivity():
+            # Check if this operation is a projection onto Fock
+            if isinstance(op, Measurement) and hasattr(op.outcome, "_n"):
+                # If it is, set the shape for the tags to Fock.
+                for i, tag in enumerate(tag_list):
+                    tag_shapes[tag] = op.outcome._n[i] + 1
+                    fock_tags.append(tag)
+            else:
+                # If not, get the default shape for this operation
+                shape = [50 for _ in range(Operation(op).num_axes)]  # NOTE: just a placeholder
+
+                # Loop through the tags for this operation
+                for i, tag in enumerate(tag_list):
+                    # If the tag has not been seen yet, set its shape
+                    if tag not in tag_shapes:
+                        tag_shapes[tag] = shape[i]
+                    else:
+                        # If the tag has been seen, set its shape to the minimum of the current shape and the previous shape
+                        tag_shapes[tag] = min(tag_shapes[tag], shape[i])
+
+        return tag_shapes, fock_tags
+
+    def TN_tensor_list(self) -> list:
+        tag_shapes, fock_tags = self.shape_specs()
+        # Loop through the list of operations
+        tensors_and_tags = []
+        for i, (op, tag_list) in enumerate(self.TN_connectivity()):
+            # skip Fock measurements
+            if isinstance(op, Measurement) and hasattr(op.outcome, "_n"):
+                continue
+            else:
+                # Convert the operation to a tensor with the correct shape
+                shape = [tag_shapes[tag] for tag in tag_list]
+                if isinstance(op, Measurement):
+                    op = op.outcome.ket(shape)
+                elif isinstance(op, State):
+                    if op.is_pure:
+                        op = op.ket(shape)
+                    else:
+                        op = op.dm(shape)
+                elif isinstance(op, Transformation):
+                    if op.is_unitary:
+                        op = op.U(shape)
+                    else:
+                        op = op.choi(shape)
+                else:
+                    raise ValueError("Unknown operation type")
+
+                fock_tag_positions = [tag_list.index(tag) for tag in fock_tags if tag in tag_list]
+                slice_spec = [slice(None)] * len(tag_list)
+                for tag_pos in fock_tag_positions:
+                    slice_spec[tag_pos] = -1
+                op = op[tuple(slice_spec)]
+                tag_list = [tag for tag in tag_list if tag not in fock_tags]
+
+                # Add the tensor and its tags to the list
+                tensors_and_tags.append((op, tag_list))
+
+        return tensors_and_tags
+
+    def contract(self):
+        opt_einsum_args = [item for pair in self.TN_tensor_list() for item in pair]
+        return opt_einsum.contract(*opt_einsum_args, optimize=settings.OPT_EINSUM_OPTIMIZE)
 
     @property
     def XYd(
@@ -188,12 +250,12 @@ class Circuit(Transformation, Parametrized):
         return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
 
 
-class TokenDispenser:
-    r"""A singleton class that generates unique tokens (ints).
-    It can be given back tokens to reuse them.
+class TagDispenser:
+    r"""A singleton class that generates unique tags (ints).
+    It can be given back tags to reuse them.
 
     Example:
-        >>> dispenser = TokenDispenser()
+        >>> dispenser = TagDispenser()
         >>> dispenser.get()
         0
         >>> dispenser.get()
@@ -207,35 +269,31 @@ class TokenDispenser:
     _instance = None
 
     def __new__(cls):
-        if TokenDispenser._instance is None:
-            TokenDispenser._instance = object.__new__(cls)
-        return TokenDispenser._instance
+        if TagDispenser._instance is None:
+            TagDispenser._instance = object.__new__(cls)
+        return TagDispenser._instance
 
     def __init__(self):
-        self._tokens = []
+        self._tags = []
+        self._counter = 0
 
-    def get(self) -> int:
-        """Returns a new token."""
-        if self._tokens:
-            return self._tokens.pop()
-        return len(self._tokens)
+    def tag(self) -> int:
+        """Returns a new unique tag."""
+        if len(self._tags) > 0:
+            return self._tags.pop(0)
+        else:
+            self._counter += 1
+            return self._counter - 1
 
-    def give_back(self, token: int):
-        """Gives back a token to be reused."""
-        self._tokens.append(token)
+    def give_back(self, tag: int):
+        """Gives back a tag to be reused."""
+        self._tags.append(tag)
 
     def reset(self):
         """Resets the dispenser."""
-        self._tokens = []
-
-    def __len__(self):
-        return len(self._tokens)
+        self._tags = []
+        self._counter = 0
 
     def __repr__(self):
-        return f"< TokenDispenser | {len(self._tokens)} tokens >"
-
-    def __str__(self):
-        return repr(self)
-
-    def __bool__(self):
-        return bool(self._tokens)
+        _next = self._tags[0] if len(self._tags) > 0 else self._counter
+        return f"TagDispenser(returned={self._tags}, next={_next})"
