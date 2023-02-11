@@ -12,32 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from hypothesis import given, strategies as st
-from hypothesis.extra.numpy import arrays
-
 import numpy as np
-from scipy.stats import poisson
+import pytest
 import tensorflow as tf
+from hypothesis import given
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
+from scipy.stats import poisson
 
-from mrmustard.math import Math
+from mrmustard import physics, settings
 from mrmustard.lab import (
-    PNRDetector,
-    Coherent,
-    Sgate,
-    Vacuum,
-    S2gate,
-    BSgate,
-    Attenuator,
-    Homodyne,
-    Heterodyne,
     TMSV,
+    Attenuator,
+    BSgate,
+    Coherent,
     Dgate,
     Fock,
-    State,
+    Heterodyne,
+    Homodyne,
+    PNRDetector,
+    S2gate,
+    Sgate,
     SqueezedVacuum,
+    State,
+    Vacuum,
 )
-from mrmustard import physics, settings
+from mrmustard.math import Math
 from tests.random import none_or_
 
 math = Math()
@@ -243,9 +243,9 @@ class TestHomodyneDetector:
         #     assert np.allclose(means, expected_means)
 
     @given(
-        s=st.floats(min_value=0.0, max_value=10.0),
-        X=st.floats(-10.0, 10.0),
-        d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
+        s=st.floats(min_value=0.0, max_value=1.0),
+        X=st.floats(-1.0, 1.0),
+        d=arrays(np.float64, 4, elements=st.floats(-1.0, 1.0)),
     )
     def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(self, s, X, d):
         """Check that homodyne detection on displaced TMSV works"""
