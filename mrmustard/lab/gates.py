@@ -493,11 +493,15 @@ class RealInterferometer(Parametrized, Transformation):
         unitary: Optional[Tensor] = None,
         unitary_trainable: bool = False,
     ):
+        if modes is not None and (
+            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
+        ):
+            raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             U = math.real(math.random_unitary(num_modes))
             unitary = math.block([[U, -math.zeros_like(U)], [math.zeros_like(U), U]])
         super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
 
     @property
