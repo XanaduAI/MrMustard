@@ -15,27 +15,27 @@
 """This module contains the implementation of the :class:`State` class."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import warnings
+from typing import TYPE_CHECKING
+
 import numpy as np
 
+from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
 from mrmustard.types import (
-    Matrix,
-    Vector,
     Array,
-    Tensor,
-    Sequence,
-    Union,
-    Tuple,
-    Optional,
-    List,
     Iterable,
+    List,
+    Matrix,
+    Optional,
+    Sequence,
+    Tensor,
+    Union,
+    Vector,
 )
 from mrmustard.utils import graphics
-from mrmustard import settings
-from mrmustard.physics import gaussian, fock
-from mrmustard.math import Math
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -55,7 +55,6 @@ class State:
         symplectic: Matrix = None,
         ket: Array = None,
         dm: Array = None,
-        modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         _norm: float = 1.0,
     ):
@@ -72,8 +71,7 @@ class State:
             eigenvalues (Array): the eigenvalues of the covariance matrix
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Array): the Fock representation
-            modes (optional, Sequence[int]): the modes in which the state is defined
-            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+            cutoffs (Sequence[int], default=None): set the cutoff dimensions of the state even if it is not a Fock state
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
@@ -87,6 +85,7 @@ class State:
         self._ket = ket
         self._dm = dm
         self._norm = _norm
+        self._LR = None
         if cov is not None and means is not None:
             self.is_gaussian = True
             self.num_modes = cov.shape[-1] // 2
@@ -101,31 +100,19 @@ class State:
             raise ValueError(
                 "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
             )
-        self._modes = modes
-        if modes is not None:
-            assert (
-                len(modes) == self.num_modes
-            ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
 
-    @property
-    def modes(self):
-        r"""Returns the modes of the state."""
-        if self._modes is None:
-            return list(range(self.num_modes))
-        return self._modes
+    # def indices(self, modes) -> Union[Tuple[int], int]:
+    #     r"""Returns the indices of the given modes.
 
-    def indices(self, modes) -> Union[Tuple[int], int]:
-        r"""Returns the indices of the given modes.
+    #     Args:
+    #         modes (Sequence[int] or int): the modes or mode
 
-        Args:
-            modes (Sequence[int] or int): the modes or mode
-
-        Returns:
-            Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
-        """
-        if isinstance(modes, int):
-            return self.modes.index(modes)
-        return tuple(self.modes.index(m) for m in modes)
+    #     Returns:
+    #         Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
+    #     """
+    #     if isinstance(modes, int):
+    #         return self.modes.index(modes)
+    #     return tuple(self.modes.index(m) for m in modes)
 
     @property
     def purity(self) -> float:
@@ -135,7 +122,21 @@ class State:
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
             else:
                 self._purity = fock.purity(self._dm)
+        if self._purity < 1.0:
+            self._LR = True
         return self._purity
+
+    @property
+    def LR(self) -> bool:
+        """Returns whether the state is left-right symmetric."""
+        if self._LR is None:
+            if self._dm is not None:
+                self._LR = True
+            elif self.purity < 1.0:
+                self._LR = True
+            else:
+                self._LR = False
+        return self._LR
 
     @property
     def is_mixed(self):
@@ -175,7 +176,7 @@ class State:
         if self._ket is None and self._dm is None:
             return fock.autocutoffs(
                 self.number_stdev, self.number_means
-            )  # TODO: move autocutoffs in gaussian.py and pass cov, means
+            )  # TODO: move autocutoffs in gaussian.py and pass cov, means to it
 
         return list(
             self.fock.shape[: self.num_modes]
@@ -482,7 +483,7 @@ class State:
         )
 
     def __getitem__(self, item):
-        "setting the modes of a state (same API of `Transformation`)"
+        "setting the modes of a state (same API as `Transformation`)"
         if isinstance(item, int):
             item = [item]
         elif isinstance(item, Iterable):

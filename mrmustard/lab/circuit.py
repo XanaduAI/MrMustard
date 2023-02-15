@@ -22,9 +22,7 @@ import opt_einsum
 
 __all__ = ["Circuit"]
 
-from typing import Any, List, Optional, Tuple
-
-import numpy as np
+from typing import List, Tuple
 
 from mrmustard import settings
 from mrmustard.lab.abstract import Measurement, State, Transformation
@@ -35,99 +33,107 @@ from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 
-class Circuit(Transformation, Parametrized):
+class Circuit(Parametrized):
     """Represents a quantum circuit: a set of operations to be applied on quantum states.
 
     Args:
-        ops (list or none): A list of operations comprising the circuit.
+        in_modes (list[int]): list of input modes
+        out_modes (list[int]): list of output modes
+        layers (list[list[Operation]]): list of layers, where each layer is a list of operations
+        name (str): name of the circuit
+        double_wires (bool): whether to double the wires in the circuit
     """
 
-    def __init__(self, ops: Optional[List] = None):
-        self._ops = list(ops) if ops is not None else []
-        super().__init__()
-        self.reset()
-        self.graph = self._graph_from_ops(self._ops)
+    def __init__(
+        self,
+        in_modes: List[int] = [],
+        out_modes: List[int] = [],
+        layers: List[List[Operation]] = [[]],
+        name: str = "",
+        double_wires: bool = False,
+    ):
+        OUT = len(out_modes)
+        IN = len(in_modes)
+        self.dispenser = TagDispenser()
 
-    def _graph_from_ops(self, ops):
-        graph = np.zeros((len(ops), len(ops), self.num_modes), dtype=int)
-        for i, op in enumerate(ops):
-            for m, mode in enumerate(op.modes):
-                for j, op2 in enumerate(ops[i + 1 :]):
-                    if mode in op2.modes:
-                        graph[i, i + j + 1, mode] = 1
-                        graph[i + j + 1, i, mode] = 1
-                        break
-                for j, op2 in enumerate(reversed(ops[:i])):
-                    if mode in op2.modes:
-                        graph[i, i - j - 1, mode] = 1
-                        graph[i - j - 1, i, mode] = 1
-                        break
-        return graph
-
-    def _order(self, op1, op2) -> bool:
-        "whether op1 comes before op2 in the circuit"
-        return self._op_index(op1) < self._op_index(op2)
-
-    def _op_connections(self, op):
-        "the list of operations connected to op in the form List[(Mode, Op)]"
-        connections: List[Tuple[int, Any]] = []
-        local_graph = self._graph[:, self._op_index(op), :]  # axes now are [modes, op2_index]
-        for op2 in self._ops:
-            for i, mode in enumerate(local_graph[:, self._op_index(op2)]):
-                if mode:
-                    connections.append((i, op2))
-        return connections
-
-    def _op_index(self, op):
-        "the index of op in the circuit"
-        return self._ops.index(op)
-
-    def _init_TN_connections(self):
-        "Initialize the TN connections. Everything is disconnected."
-        dispenser = TagDispenser()
-        connections = []
-        for op in self._ops:
-            op = Operation(op)
-            connections.append((op, [dispenser.tag() for _ in range(op.num_axes)]))
-        dispenser.reset()
-        return connections
-
-    def TN_connectivity(self):
-        "get wire connections at the TN level (axis1 <-> axis2 for contraction)"
-        connections = self._init_TN_connections()
-        for i, (op1, tags1) in enumerate(connections):
-            for mode in op1.modes_out:
-                ax1 = op1.axes_for_mode(mode)
-                for j, (op2, tags2) in enumerate(connections[i + 1 :]):
-                    if mode in op2.modes_in:
-                        ax2 = op2.axes_for_mode(mode)
-                        if ax1.ol_ is not None and ax2.il_ is not None:
-                            tags2[ax2.il_] = tags1[ax1.ol_]
-                        if ax1.or_ is not None and ax2.ir_ is not None:
-                            tags2[ax2.ir_] = tags1[ax1.or_]
-                        break
-        connections = [(self._ops[i], tags) for i, (_, tags) in enumerate(connections)]
-        return connections
-
-    def reset(self):
-        """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
+        self.tags: Dict[str, List[int]] = {
+            "out_L": [self.dispenser.get_tag() for _ in range(OUT)],
+            "in_L": [self.dispenser.get_tag() for _ in range(IN)],
+            "out_R": [self.dispenser.get_tag() for _ in range(self.LR * OUT)],
+            "in_R": [self.dispenser.get_tag() for _ in range(self.LR * IN)],
+        }
+        self.wires: Dict[str, List[int]] = {
+            "out_L": [i for i in range(OUT)],
+            "in_L": [i + OUT for i in range(IN)],
+            "out_R": [i + OUT + IN for i in range(self.LR * OUT)],
+            "in_R": [i + 2 * OUT + IN for i in range(self.LR * IN)],
+        }
+        self.layers = layers
         self._compiled: bool = False
-        self._modes: List[int] = []
+        if self.set_double_wires():
+            self.double_wires_all_ops()
+            self.double_wires = True
+        else:
+            self.double_wires = double_wires
+        self.connect_layers()
+        super().__init__()
 
-    @property
-    def num_modes(self) -> int:
-        all_modes = {mode for op in self._ops for mode in op.modes}
-        return len(all_modes)
+    def set_double_wires(self) -> bool:
+        double_wires = False
+        for layer in self.layers:
+            for op in layer:
+                if op.double_wires:
+                    double_wires = True
+                    break
+            if double_wires:
+                break
+        return double_wires
 
-    def primal(self, state: State) -> State:
-        for op in self._ops:
-            state = op.primal(state)
-        return state
+    def double_wires_all_ops(self):
+        for layer in self.layers:
+            for op in layer:
+                op.double_wires = True
 
-    def dual(self, state: State) -> State:
-        for op in reversed(self._ops):
-            state = op.dual(state)
-        return state
+    def connect(self, mode: int, other: Circuit):
+        axes1 = self.mode_to_axes(mode)
+        axes2 = other.mode_to_axes(mode)
+        for ax1, ax2 in zip(axes1, axes2):
+            min_tag = min(other.tags[ax2], self.tags[ax1])
+            max_tag = max(other.tags[ax2], self.tags[ax1])
+            self.dispenser.give_back_tag(max_tag)
+            other.tags[ax2] = min_tag
+            self.tags[ax1] = min_tag
+
+    def connect_layers(self):
+        "set wire connections for TN contractions or phase space products"
+        # NOTE: if double_wires is True for one op, then it must be for all ops. Revisit this at some point.
+
+        for i, layeri in enumerate(self.layers):
+            for j, layerj in enumerate(self.layers[i + 1 :]):
+                for op1 in layeri:
+                    for op2 in layerj:
+                        for mode in set(op1.modes_out) & set(op2.modes_in):
+                            axes1 = op1.mode_to_axes(mode)
+                            axes2 = op2.mode_to_axes(mode)
+                            for ax1, ax2 in zip(axes1, axes2):
+                                min_tag = min(op2.tags[ax2], op1.tags[ax1])
+                                op2.tags[ax2] = min_tag
+                                op1.tags[ax1] = min_tag
+
+    # @property
+    # def num_modes(self) -> int:
+    #     all_modes = {mode for op in self._ops for mode in op.modes}
+    #     return len(all_modes)
+
+    # def primal(self, state: State) -> State:
+    #     for op in self._ops:
+    #         state = op.primal(state)
+    #     return state
+
+    # def dual(self, state: State) -> State:
+    #     for op in reversed(self._ops):
+    #         state = op.dual(state)
+    #     return state
 
     def shape_specs(self) -> tuple[dict[int, int], list[int]]:
         # Keep track of the shapes for each tag
@@ -244,52 +250,3 @@ class Circuit(Transformation, Parametrized):
     def __str__(self):
         """String representation of the circuit."""
         return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
-
-
-class TagDispenser:
-    r"""A singleton class that generates unique tags (ints).
-    It can be given back tags to reuse them.
-
-    Example:
-        >>> dispenser = TagDispenser()
-        >>> dispenser.get()
-        0
-        >>> dispenser.get()
-        1
-        >>> dispenser.give_back(0)
-        >>> dispenser.get()
-        0
-        >>> dispenser.get()
-        2
-    """
-    _instance = None
-
-    def __new__(cls):
-        if TagDispenser._instance is None:
-            TagDispenser._instance = object.__new__(cls)
-        return TagDispenser._instance
-
-    def __init__(self):
-        self._tags = []
-        self._counter = 0
-
-    def tag(self) -> int:
-        """Returns a new unique tag."""
-        if len(self._tags) > 0:
-            return self._tags.pop(0)
-        else:
-            self._counter += 1
-            return self._counter - 1
-
-    def give_back(self, tag: int):
-        """Gives back a tag to be reused."""
-        self._tags.append(tag)
-
-    def reset(self):
-        """Resets the dispenser."""
-        self._tags = []
-        self._counter = 0
-
-    def __repr__(self):
-        _next = self._tags[0] if len(self._tags) > 0 else self._counter
-        return f"TagDispenser(returned={self._tags}, next={_next})"

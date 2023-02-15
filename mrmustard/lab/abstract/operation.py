@@ -14,211 +14,379 @@
 
 """This module contains the implementation of the :class:`State` class."""
 
-from collections import namedtuple
-from typing import Any, List
+from typing import Dict, List, Optional, Union
 
 from mrmustard.lab.abstract import Measurement, State, Transformation
+from mrmustard.utils.tagdispenser import TagDispenser
+
+Op = Union[State, Transformation, Measurement]
 
 
-class Operation:
-    r"""Circuit operation. It can wrap a transformation, measurement or state.
-    The purpose it to interface the circuit model with the Tensor Network model.
+class Circuit:
+    r"""Circuit operation. It can wrap a transformation, a measurement or a state.
+    It is an interface between the circuit model and the fock model, useful for
+    example for representing a circuit as a tensor network.
 
-    The circuit model consists in operations having input and output modes.
-    Here modes don't distinguish if the state is pure or mixed or whether a transformation
-    is unitary or non-unitary, as they only describe the circuit, not the underlying tensors.
+    Upon initialization, the Operation is passed a list of input modes and a list of output modes.
+    The input modes are the modes that the operation will act on, and the output modes are the
+    modes that the operation will create. This covers all the kinds of objects that we
+    can use in a circuit, and  can model states (no input modes), transformations
+    (both inputs and outputs) and measurements (no outputs).
 
-    The tensor network (TN) model is the mathematical model of the circuit. It consists in a
-    collection of tensors, one per operation, and a prescription on how to contract them.
-    Diagrammatically, the TN model for a circuit is easier to imagine from top to bottom.
-    Inputs are on top, outputs are on the bottom, and each mode splits
-    into a left and right component to account for density matrices and channels.
+    The main idea is that the Operation wraps a transformation, a measurement or a state,
+    and it allows us to use them within a circuit.
+    Operation[State] is a state at the input to a circuit
+    Operation[Transformation] is a gate in a circuit
+    Operation[Measurement] is a measurement at the end of a circuit
+
+    The circuit model consists in a list of Operations, whose input and output modes
+    inform the circuit on how to connect them up. In the fock model, the operations
+    are unaware of the mode in which they are or act, and they are represented as tensors with
+    a given number of wires. For this reason, the fock model can be represented as a
+    tensor network (TN), which is a Fock representation of the entire circuit, to be
+    contracted in order to obtain the final result.
+
+    Note that in the circuit model, modes don't distinguish if the state is pure or mixed or
+    whether a transformation is unitary or non-unitary, as they only describe the
+    connections of the circuit, not the underlying physical objects. In fact, the correspondence
+    between modes and tensor wires is not always 1:1, as a mode can be associated to two wires
+    (e.g. for density matrices).
+
+    The circuit model is easier to imagine flowing from left to right, while
+    the fock model is easier to imagine flowing from top to bottom (so that the Left and
+    Right indices of a mode of density matrices (first two wires of the dm tensor) are still on the
+    left and on the right). Input states are on top, outputs are on the bottom, and each mode has
+    a left and right component to account for density matrices and channels, e.g.
+
+    Circuit model (left to right):
+
+    rho --U-- povm          ket --U-- proj          rho --choi--
+
+    Fock Tensor Network model (top to bottom):
+
+    L   --rho--  R          L   --ket               L   --rho--  R
+        |     |                 |                       |     |
+        U     U*                U                       -choi--
+        |     |                 |                       |     |
+        -povm--                 -proj
 
     In either model:
-    - If the operation is a transformation, it acts on wires by transforming the L and R
-    indices at the input to new L and R indices at the output.
-    - If the operation is a measurement, it consumes pairs of L and R indices from the input
-    and produces a measurement outcome.
-    - If the operation is a preparation, it creates new output wires with L and R indices.
+    - If the operation is a state (preparation), it creates new output wires
+    with L / R indices.
+    - If the operation is a transformation, it acts on wires by transforming
+    the L and R indices at the input to new L and R indices at the output.
+    - If the operation is a measurement, it consumes pairs of L and R indices
+    from the input and produces a measurement outcome.
 
-    Assumed axis order:
-    - Choi tensor axis order is (ol1, ol2,..., il1, il2, ..., or1, or2, ..., ir1, ir2, ...)
-    - Unitary/kraus axis order is (ol1,ol2,..., il1, il2, ...)
-    - Measurement axis order is (il1, il2, ..., ir1, ir2, ...)
-    - State axis order is (ol1, ol2,..., or1, or2, ...)
+    Assumed wire order (o = out, i = in, l = left, r = right):
+    - Choi tensor wire order is (ol1, ol2,..., il1, il2, ..., or1, or2, ..., ir1, ir2, ...)
+    - Unitary/kraus wire order is (ol1,ol2,..., il1, il2, ...)
+    - POVM wire order is (il1, il2, ..., ir1, ir2, ...)
+    - Density Matrix wire order is (ol1, ol2,..., or1, or2, ...)
 
-    If a state is a Hilbert vector then the axis order is (ol1, ol2,...).
-    If a measurement is rank-1 then the axis order is (il1, il2, ...) like the Hilbert vector
-    that it corresponds to. A unitary is like a rank-1 choi (i.e. with only left indices).
+    If a state is a Hilbert vector then the wire order is (ol1, ol2, ...).
+    If a measurement is projective then the wire order is (il1, il2, ...).
+    Likewise, a unitary is like a rank-1 choi (i.e. with only left indices).
 
     Arguments:
-        op: operation to be wrapped
+        layers: list of layers of operations
+        double_wires: whether to use double wires for density matrices
+        name: name of the operation
+        in_modes: list of input modes
+        out_modes: list of output modes
 
-    Example:
-        >>> op = Operation(Sgate(r=1.0, modes=[0]))
-        >>> op.ol_, op.il_, op.or_, op.ir_
-        [0], [0], [], []
-        >>> op.axes_for_mode(0)
-        axis_spec(ol_=0, il_=1, or_=None, ir_=None)
-
-    Example:
-        >>> op = Operation(Coherent(x=1.0), modes=[0])
-        >>> op.ol_, op.il_, op.or_, op.ir_
-        [0], [], [], []
-        >>> op.axes_for_mode(0)
-        axis_spec(ol_=0, il_=None, or_=None, ir_=None)
-
-    Example:
-        >>> op = Operation(Attenuator(0.5, modes=[0]))
-        >>> op.ol_, op.il_, op.or_, op.ir_
-        [0], [0], [0], [0]
-        >>> op.axes_for_mode(0)
-        axis_spec(ol_=0, il_=1, or_=2, ir_=3)
-
-
+    Returns:
+        Operation: wrapped operation
     """
 
-    def __init__(self, op: Any):
-        self.name = op.__class__.__qualname__
-        if isinstance(op, Transformation):
-            if op.is_unitary:
-                self.from_unitary(op.modes)
-            else:
-                self.from_choi(op.modes, op.modes)  # update when channel distinguishes in/out modes
+    def __init__(
+        self,
+        layers: List[List[Op]] = [[]],
+        double_wires: bool = False,
+        name: str = "?",
+        in_modes: List[int] = [],
+        out_modes: List[int] = [],
+    ):
+        self.layers: List[List[Op]] = layers
+        self.double_wires: bool = double_wires
+        self.name: str = name
+        self.in_modes = in_modes
+        self.out_modes = out_modes
 
-        elif isinstance(op, Measurement):
-            if op.outcome.is_pure:
-                self.from_proj(op.modes)
-            else:
-                self.from_povm(op.modes)
+        OUT: int = len(out_modes)
+        IN: int = len(in_modes)
+        dispenser: TagDispenser = TagDispenser()
 
-        elif isinstance(op, State):
-            if op.is_pure:
-                self.from_ket(op.modes)
-            else:
-                self.from_dm(op.modes)
+        self.tags: Dict[str, List[int]] = {
+            "out_L": [dispenser.get_tag() for _ in range(OUT)],
+            "in_L": [dispenser.get_tag() for _ in range(IN)],
+            "out_R": [dispenser.get_tag() for _ in range(self.LR * OUT)],
+            "in_R": [dispenser.get_tag() for _ in range(self.LR * IN)],
+        }
+        self.wires: Dict[str, List[int]] = {
+            "out_L": [i for i in range(OUT)],
+            "in_L": [i + OUT for i in range(IN)],
+            "out_R": [i + OUT + IN for i in range(self.LR * OUT)],
+            "in_R": [i + 2 * OUT + IN for i in range(self.LR * IN)],
+        }
 
-    def __init_circuit__(self, ol_: List[int], il_: List[int], or_: List[int], ir_: List[int]):
-        r"""Initializes the operation at the circuit level.
+        self.connect_layers()
+
+    def connect_layers(self):
+        "set wire connections for TN contractions or phase space products"
+        # NOTE: if double_wires is True for one op, then it must be for all ops. Revisit this at some point.
+        for i, layer in enumerate(self.layers):
+            for op in layer:
+                if op.double_wires:
+                    self.double_wires = True
+                    break
+            if not self.double_wires:
+                break
+
+        for i, layeri in enumerate(self.layers):
+            for j, layerj in enumerate(self.layers[i + 1 :]):
+                for op1 in layeri:
+                    for op2 in layerj:
+                        for mode in set(op1.modes_out) & set(op2.modes_in):
+                            axes1 = op1.mode_to_axes(mode)
+                            axes2 = op2.mode_to_axes(mode)
+                            for ax1, ax2 in zip(axes1, axes2):
+                                min_tag = min(op2.tags[ax2], op1.tags[ax1])
+                                op2.tags[ax2] = min_tag
+                                op1.tags[ax1] = min_tag
+
+    def __del__(self):
+        # release tags
+        for tag in set(self.tags.values()):
+            TagDispenser().give_back_tag(tag)
+        super().__del__()
+
+    def __gt__(self, other):
+        r"""Overloads the "greater than" operator to allow chaining of operations.
 
         Args:
-            ol_: list of left output wires
-            il_: list of left input wires
-            or_: list of right output wires
-            ir_: list of right input wires
+            other (Operation): operation to chain
+
+        Returns:
+            Circuit: chained operation
         """
-        self.ol_ = ol_
-        self.il_ = il_
-        self.or_ = or_
-        self.ir_ = ir_
+        if not set(self.out_modes) & set(other.in_modes):
+            raise ValueError("No connections between operations. Use & to parallelize.")
+        out_modes_1 = set(self.out_modes) - set(other.in_modes)
+        out_modes_2 = set(other.out_modes)
+        if set(out_modes_1) & set(out_modes_2):
+            raise ValueError("Overlapping output modes.")
+        in_modes_2 = set(other.in_modes) - set(self.out_modes)
+        in_modes_1 = set(self.in_modes)
+        if set(in_modes_1) & set(in_modes_2):
+            raise ValueError("Overlapping input modes.")
+        return Circuit(
+            in_modes=sorted(list(in_modes_1 | in_modes_2)),
+            out_modes=sorted(list(out_modes_1 | out_modes_2)),
+            name=self.name + " >> " + other.name,
+            layers=[[self], [other]],
+        )
 
-    @property
-    def num_axes(self):
-        r"""Returns the number of axes of the underlying tensor."""
-        return len(self.ol_) + len(self.il_) + len(self.or_) + len(self.ir_)
-
-    def axes_for_mode(self, mode: int):
-        r"""Returns the axes of the underlying tensor corresponding to a mode.
+    def __and__(self, other):
+        r"""Overloads the and operator to allow parallelization of operations.
 
         Args:
-            mode: mode of the operation
+            other (Operation): operation to parallelize
+
+        Returns:
+            Circuit: parallelized operation
         """
-        axis_spec = namedtuple("axis_spec", ["ol_", "il_", "or_", "ir_"])
-        return axis_spec(
-            ol_=self.ol_axis(mode),
-            il_=self.il_axis(mode),
-            or_=self.or_axis(mode),
-            ir_=self.ir_axis(mode),
+        if set(self.out_modes) & set(other.in_modes):
+            raise ValueError("Overlapping input/output modes. Use >> to chain.")
+        return Circuit(
+            in_modes=sorted(list(set(self.in_modes) | set(other.in_modes))),
+            out_modes=sorted(list(set(self.out_modes) | set(other.out_modes))),
+            name=self.name + " & " + other.name,
+            layers=[[self, other]],
         )
 
-    def ol_axis(self, ol_: int):
-        r"""Returns the axis of the left output mode in the underlying tensor."""
-        return self.ol_.index(ol_) if ol_ in self.ol_ else None
+    def tag_to_wire(self, tag: int) -> int:
+        r"""Returns the wire corresponding to a given tag.
+        One to one mapping.
 
-    def il_axis(self, il_: int):
-        r"""Returns the axis of the left input mode in the underlying tensor."""
-        return self.il_.index(il_) + len(self.ol_) if il_ in self.il_ else None
+        Args:
+            tag (int): tag
 
-    def or_axis(self, or_: int):
-        r"""Returns the axis of the right output mode in the underlying tensor."""
-        return self.or_.index(or_) + len(self.ol_) + len(self.il_) if or_ in self.or_ else None
+        Returns:
+            int: wire
+        """
+        for kind, tag_list in self.tags.items():
+            if tag in tag_list:
+                return self.wires[kind][tag_list.index(tag)]
+        raise ValueError("Tag not found.")
 
-    def ir_axis(self, ir_: int):
-        r"""Returns the axis of the right input mode in the underlying tensor."""
-        return (
-            self.ir_.index(ir_) + len(self.ol_) + len(self.il_) + len(self.or_)
-            if ir_ in self.ir_
-            else None
-        )
+    def wire_to_tag(self, wire: int) -> int:
+        r"""Returns the tag corresponding to a given wire.
+        One to one mapping.
 
-    def from_ket(self, modes: List[int]):
+        Args:
+            wire (int): wire
+
+        Returns:
+            int: tag
+        """
+        for kind, wire_list in self.wires.items():
+            if wire in wire_list:
+                return self.tags[kind][wire_list.index(wire)]
+        raise ValueError("Wire not found.")
+
+    def mode_to_wires(self, mode: int) -> List[int]:
+        r"""Returns the wires corresponding to a given mode.
+        One to many mapping.
+
+        Args:
+            mode (int): mode
+
+        Returns:
+            List[int]: wires
+        """
+        return [self.tag_to_wire(tag) for tag in self.mode_to_tags(mode)]
+
+    def mode_to_tags(self, mode: int) -> List[int]:
+        r"""Returns the tags corresponding to a given mode.
+        One to many mapping.
+
+        Args:
+            mode (int): mode
+
+        Returns:
+            List[int]: tags
+        """
+        tags = []
+        if mode in self.out_modes:
+            tags += self.tags["out_L"] + self.tags["out_R"]
+        if mode in self.in_modes:
+            tags += self.tags["in_L"] + self.tags["in_R"]
+        else:
+            raise ValueError("Mode not found.")
+        return tags
+
+    ########################################
+    # Convenience initializers
+
+    @classmethod
+    def from_ket(cls, modes: List[int], op: Optional[State] = None):
         r"""Initializes the operation from a ket.
 
         Args:
             modes: modes of the ket
         """
-        self.modes_in = []
-        self.modes_out = modes
-        self.__init_circuit__(ol_=modes, il_=[], or_=[], ir_=[])
+        return cls(in_modes=[], out_modes=modes, LR=True, name="Ket", op=op)
 
-    def from_dm(self, modes: List[int]):
+    @classmethod
+    def from_dm(cls, modes: List[int], op: Optional[State] = None):
         r"""Initializes the operation from a density matrix.
 
         Args:
             modes: modes of the density matrix
         """
-        self.modes_in = []
-        self.modes_out = modes
-        self.__init_circuit__(ol_=modes, il_=[], or_=modes, ir_=[])
+        return cls(in_modes=modes, out_modes=modes, LR=True)
 
-    def from_choi(self, in_modes: List[int], out_modes: List[int]):
+    @classmethod
+    def from_choi(
+        cls, in_modes: List[int], out_modes: List[int], op: Optional[Transformation] = None
+    ):
         r"""Initializes the operation from a choi op.
 
         Args:
             in_modes: modes on which the choi op acts
             out_modes: modes that the choi op outputs
+            op: optional choi op
         """
-        self.modes_in = in_modes
-        self.modes_out = out_modes
-        self.__init_circuit__(ol_=out_modes, il_=in_modes, or_=out_modes, ir_=in_modes)
+        return cls(in_modes=in_modes, out_modes=out_modes, LR=True)
 
-    def from_kraus(self, in_modes: List[int], out_modes: List[int]):
+    @classmethod
+    def from_kraus(
+        cls, in_modes: List[int], out_modes: List[int], op: Optional[Transformation] = None
+    ):
         r"""Initializes the operation from a kraus op.
 
         Args:
             in_modes: modes on which the kraus op acts
             out_modes: modes that the kraus op outputs
+            op: optional kraus op
         """
-        self.modes_in = in_modes
-        self.modes_out = out_modes
-        self.__init_circuit__(ol_=out_modes, il_=in_modes, or_=[], ir_=[])
+        return cls(in_modes=in_modes, out_modes=out_modes)
 
-    def from_unitary(self, modes: List[int]):
+    @classmethod
+    def from_unitary(cls, modes: List[int]):
         r"""Initializes the operation from a unitary transformation.
 
         Args:
             modes: modes on which the transformation acts (which are the same as the output modes)
         """
-        self.modes_in = modes
-        self.modes_out = modes
-        self.__init_circuit__(ol_=modes, il_=modes, or_=[], ir_=[])
+        return cls(in_modes=modes, out_modes=modes)
 
-    def from_povm(self, modes: List[int]):
+    @classmethod
+    def from_povm(cls, modes: List[int]):
         r"""Initializes the measurement operation from a povm.
 
         Args:
             modes: modes of the measurement
         """
-        self.modes_in = modes
-        self.modes_out = []
-        self.__init_circuit__(ol_=[], il_=modes, or_=[], ir_=modes)
+        return cls(in_modes=modes, out_modes=modes, LR=True)
 
-    def from_proj(self, modes: List[int], rank1: bool = False):
+    @classmethod
+    def from_proj(cls, modes: List[int]):
         r"""Initializes the measurement operation from a ket.
 
         Args:
             modes: modes of the measurement
         """
-        self.modes_in = modes
-        self.modes_out = []
-        self.__init_circuit__(ol_=[], il_=modes, or_=[], ir_=[])
+        return cls(in_modes=modes, out_modes=[])
+
+
+class ParallelOperation(Operation):
+    pass
+
+
+class SequentialOperation(Operation):
+    pass
+
+
+# %%
+
+
+class Circuit:
+    name = "Circuit"
+
+    def __init__(self, gate):
+        self.gate = gate
+
+
+def circuit_factory(gate_instance, modes):
+    # make a circuit instance wrapping the gate
+
+    return Circuit(gate_instance)
+
+
+class Sgate:
+    name = "Sgate"
+
+    def __new__(cls, *args, **kwargs):
+        modes = kwargs.get("modes", None)
+        gate_instance = super().__new__(cls)
+
+        # if modes are defined, return an instance of a circuit wrapping the gate
+        if modes is not None:
+            gate_instance.__init__(*args, **kwargs)
+            circ_instance = circuit_factory(gate_instance, modes)
+            return circ_instance
+
+        # if no modes, just return the gate
+        return gate_instance
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+        print(self.name)
+
+
+print(type(Sgate(modes=[1, 2, 3])))x
+# %%
