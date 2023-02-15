@@ -494,10 +494,6 @@ class RealInterferometer(Parametrized, Transformation):
         unitary: Optional[Tensor] = None,
         unitary_trainable: bool = False,
     ):
-        if modes is not None and (
-            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
-        ):
-            raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             unitary = math.random_orthogonal(num_modes)
 #            unitary = math.block([[O, -math.zeros_like(O)], [math.zeros_like(O), O]])
