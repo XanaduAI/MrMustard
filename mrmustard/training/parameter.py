@@ -187,7 +187,7 @@ class Constant(Parameter):
                 else math.new_constant(value, name)
             )
         else:
-             self._value = (
+            self._value = (
                 value
                 if math.from_backend(value) and not math.is_trainable(value)
                 else math.new_constant(value, name, value.dtype)
