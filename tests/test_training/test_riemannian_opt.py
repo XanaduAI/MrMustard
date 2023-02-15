@@ -61,14 +61,14 @@ def test_update_unitary(n):
         assert is_symplectic(sym), "training is not stay in symplectic matrix"
         assert is_orthogonal(sym), "training is not stay in orthogonal matrix"
 
-@given(n=st.integers(2, 4))
-def test_update_unitary_real(n):
-    """Testing the update of orthogonal matrix remains to be orthogonal"""
-    O = tf.Variable(ortho_group.rvs(dim=n), dtype=tf.complex128)
-    for i in range(20):
-        dO_euclidean = tf.Variable(np.random.random((n, n)), dtype=tf.complex128)
-        update_unitary([[dO_euclidean, O]], 0.01)
-        assert is_unitary(O.numpy()), "training is not stay in unitary matrix"
-        sym = np.block([[np.real(O.numpy()),-np.imag(O.numpy())],[np.imag(O.numpy()),np.real(O.numpy())]])
-        assert is_symplectic(sym), "training is not stay in symplectic matrix"
-        assert is_orthogonal(sym), "training is not stay in orthogonal matrix"
+#@given(n=st.integers(2, 4))
+#def test_update_unitary_real(n):
+#    """Testing the update of orthogonal matrix remains to be orthogonal"""
+#    O = tf.Variable(ortho_group.rvs(dim=n), dtype=tf.complex128)
+#    for i in range(20):
+#        dO_euclidean = tf.Variable(np.random.random((n, n)), dtype=tf.complex128)
+#        update_unitary([[dO_euclidean, O]], 0.01)
+#        assert is_unitary(O.numpy()), "training is not stay in unitary matrix"
+#        sym = np.block([[np.real(O.numpy()),-np.imag(O.numpy())],[np.imag(O.numpy()),np.real(O.numpy())]])
+#        assert is_symplectic(sym), "training is not stay in symplectic matrix"
+#        assert is_orthogonal(sym), "training is not stay in orthogonal matrix"

@@ -452,9 +452,9 @@ class Interferometer(Parametrized, Transformation):
         ):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
-#            unitary = math.random_unitary(num_modes)
-            U = math.random_unitary(num_modes)
-            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
+            unitary = math.random_unitary(num_modes)
+#            U = math.random_unitary(num_modes)
+#            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
         super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
@@ -464,8 +464,8 @@ class Interferometer(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return self.unitary.value
-#        return math.block([[math.real(self.unitary.value), -math.imag(self.unitary.value)], [math.imag(self.unitary.value), math.real(self.unitary.value)]])
+#        return self.unitary.value
+        return math.block([[math.real(self.unitary.value), -math.imag(self.unitary.value)], [math.imag(self.unitary.value), math.real(self.unitary.value)]])
 
     def _validate_modes(self, modes):
         if len(modes) != self.unitary.value.shape[-1] // 2:

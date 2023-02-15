@@ -183,7 +183,7 @@ class Constant(Parameter):
         self._value = (
             value
             if math.from_backend(value) and not math.is_trainable(value)
-            else math.new_constant(value, name)
+            else math.new_constant(value, name, value.dtype)
         )
         self._name = name
         self._owner = owner
@@ -233,5 +233,5 @@ def value_to_trainable(value: Any, bounds: Optional[Sequence], name: str) -> Ten
     return (
         value
         if math.from_backend(value) and math.is_trainable(value)
-        else math.new_variable(value, bounds, name)
+        else math.new_variable(value, bounds, name, value.dtype)
     )
