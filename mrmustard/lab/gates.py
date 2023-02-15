@@ -453,7 +453,7 @@ class Interferometer(Parametrized, Transformation):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
-        Parametrized.__init__(
+        super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
         )
@@ -504,7 +504,7 @@ class RealInterferometer(Parametrized, Transformation):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             unitary = math.random_orthogonal(num_modes)
-        Parametrized.__init__(unitary=unitary, unitary_trainable=unitary_trainable)
+        super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
         self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
 
