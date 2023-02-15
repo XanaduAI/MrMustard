@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from scipy.stats import unitary_group
 
-from thewalrus.symplectic import sympmat
+from thewalrus.symplectic import is_symplectic, sympmat
 from thewalrus.random import random_symplectic
 
 from mrmustard.training.parameter_update import update_symplectic, update_unitary
