@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 
 math = Math()
 
+
 # pylint: disable=too-many-instance-attributes
 class State:
     r"""Base class for quantum states."""

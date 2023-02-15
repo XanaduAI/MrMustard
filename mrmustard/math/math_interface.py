@@ -36,6 +36,7 @@ from mrmustard.types import (
     Any,
 )
 
+
 # pylint: disable=too-many-public-methods
 class MathInterface(ABC):
     r"""The interface that all backends must implement."""

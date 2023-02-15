@@ -28,6 +28,7 @@ math = Math()
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Homodyne", "Heterodyne"]
 
+
 # pylint: disable=no-member
 class PNRDetector(Parametrized, FockMeasurement):
     r"""Photon Number Resolving detector.

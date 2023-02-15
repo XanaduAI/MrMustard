@@ -445,7 +445,7 @@ class Interferometer(Parametrized, Transformation):
         num_modes: int,
         unitary: Optional[Tensor] = None,
         unitary_trainable: bool = False,
-        modes: Optional[List[int]] = None
+        modes: Optional[List[int]] = None,
     ):
         if modes is not None and (
             num_modes != len(modes) or any(mode >= num_modes for mode in modes)
@@ -453,8 +453,8 @@ class Interferometer(Parametrized, Transformation):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
-#            U = math.random_unitary(num_modes)
-#            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
+        #            U = math.random_unitary(num_modes)
+        #            unitary = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
         super().__init__(
             unitary=unitary,
             unitary_trainable=unitary_trainable,
@@ -464,8 +464,13 @@ class Interferometer(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-#        return self.unitary.value
-        return math.block([[math.real(self.unitary.value), -math.imag(self.unitary.value)], [math.imag(self.unitary.value), math.real(self.unitary.value)]])
+        #        return self.unitary.value
+        return math.block(
+            [
+                [math.real(self.unitary.value), -math.imag(self.unitary.value)],
+                [math.imag(self.unitary.value), math.real(self.unitary.value)],
+            ]
+        )
 
     def _validate_modes(self, modes):
         if len(modes) != self.unitary.value.shape[-1] // 2:
@@ -497,18 +502,23 @@ class RealInterferometer(Parametrized, Transformation):
     ):
         if unitary is None:
             unitary = math.random_orthogonal(num_modes)
-#            unitary = math.block([[O, -math.zeros_like(O)], [math.zeros_like(O), O]])
+        #            unitary = math.block([[O, -math.zeros_like(O)], [math.zeros_like(O), O]])
         super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
-#        self._modes = modes or list(range(num_modes))
+        #        self._modes = modes or list(range(num_modes))
         self._modes = list(range(num_modes))
         self._is_gaussian = True
 
     @property
     def X_matrix(self):
-        return math.block([[self.unitary.value, -math.zeros_like(self.unitary.value)], [math.zeros_like(self.unitary.value), self.unitary.value]])
+        return math.block(
+            [
+                [self.unitary.value, -math.zeros_like(self.unitary.value)],
+                [math.zeros_like(self.unitary.value), self.unitary.value],
+            ]
+        )
 
     def _validate_modes(self, modes):
-        if len(modes) != self.unitary.value.shape[-1]//2:
+        if len(modes) != self.unitary.value.shape[-1] // 2:
             raise ValueError(
                 f"Invalid number of modes: {len(modes)} (should be {self.unitary.value.shape[-1]})"
             )
@@ -564,6 +574,7 @@ class Ggate(Parametrized, Transformation):
 # ~~~~~~~~~~~~~
 # NON-UNITARY
 # ~~~~~~~~~~~~~
+
 
 # pylint: disable=no-member
 class Attenuator(Parametrized, Transformation):
