@@ -487,7 +487,7 @@ class RealInterferometer(Parametrized, Transformation):
 
     Args:
         unitary (2d array, optional): a real unitary matrix. For N modes it must have shape `(N,N)`.
-            If set to `None` a random unitary matrix is used.
+            If set to `None` a random real unitary matrix is used.
         unitary_trainable (bool): whether unitary is a trainable variable
     """
 
