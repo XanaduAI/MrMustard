@@ -40,7 +40,7 @@ def is_unitary(M, rtol=1e-05, atol=1e-08):
 def is_orthogonal(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is orthogonal"""
     M_T = np.transpose(M)
-    return np.allclose(M @ M_T, np.identity(M.shape[1]), rtol=rtol, atol=atol)
+    return np.allclose(M @ M_T, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
 @given(n=st.integers(2, 4))
