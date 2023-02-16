@@ -67,4 +67,4 @@ def test_update_unitary(n):
             [[np.real(U.numpy()), -np.imag(U.numpy())], [np.imag(U.numpy()), np.real(U.numpy())]]
         )
         assert is_symplectic(sym), "training is not stay in symplectic matrix"
-        assert is_orthogonal(sym), "training is not stay in orthogonal matrix"
+        assert is_orthogonal(sym), "training step does not result in an orthogonal matrix"
