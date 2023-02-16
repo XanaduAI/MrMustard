@@ -52,7 +52,7 @@ def test_update_symplectic(n):
             np.random.random((2 * n, 2 * n)) + 1j * np.random.random((2 * n, 2 * n))
         )
         update_symplectic([[dS_euclidean, S]], 0.01)
-        assert is_symplectic(S.numpy()), "training is not stay in symplectic matrix"
+        assert is_symplectic(S.numpy()), "training step does not result in a symplectic matrix"
 
 
 @given(n=st.integers(2, 4))
