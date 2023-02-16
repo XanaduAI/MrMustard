@@ -486,7 +486,7 @@ class RealInterferometer(Parametrized, Transformation):
     Does not mix q's and p's.
 
     Args:
-        unitary (2d array, optional): a valid unitary matrix. For N modes it must have shape `(N,N)`.
+        unitary (2d array, optional): a real unitary matrix. For N modes it must have shape `(N,N)`.
             If set to `None` a random unitary matrix is used.
         unitary_trainable (bool): whether unitary is a trainable variable
     """
