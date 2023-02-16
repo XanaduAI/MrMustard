@@ -34,7 +34,7 @@ math = Math()
 def is_unitary(M, rtol=1e-05, atol=1e-08):
     """Testing if the matrix M is unitary"""
     M_dagger = np.transpose(M.conj())
-    return np.allclose(M @ M_dagger, np.identity(M.shape[1]), rtol=rtol, atol=atol)
+    return np.allclose(M @ M_dagger, np.identity(M.shape[-1]), rtol=rtol, atol=atol)
 
 
 def is_orthogonal(M, rtol=1e-05, atol=1e-08):
