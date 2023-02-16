@@ -62,7 +62,7 @@ def test_update_unitary(n):
     for i in range(20):
         dU_euclidean = tf.Variable(np.random.random((n, n)) + 1j * np.random.random((n, n)))
         update_unitary([[dU_euclidean, U]], 0.01)
-        assert is_unitary(U.numpy()), "training is not stay in unitary matrix"
+        assert is_unitary(U.numpy()), "training step does not result in a unitary matrix"
         sym = np.block(
             [[np.real(U.numpy()), -np.imag(U.numpy())], [np.imag(U.numpy()), np.real(U.numpy())]]
         )
