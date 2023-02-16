@@ -227,7 +227,7 @@ def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:
         phi: phase parameter
 
     Returns:
-        Matrix: symplectic (unitary) matrix of a beam-splitter gate
+        Matrix: symplectic (and unitary) matrix of a beam-splitter gate
     """
     ct = math.cos(theta)
     st = math.sin(theta)
