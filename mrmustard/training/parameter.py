@@ -193,9 +193,9 @@ class Constant(Parameter):
         if math.from_backend(value) and math.is_trainable(value):
             self._value = value
         elif type(value) in [list, int, float]:
-            self._value = math.new_variable(value, bounds = None, name = name)
+            self._value = math.new_variable(value, bounds=None, name=name)
         else:
-            self._value = math.new_variable(value, bounds = None, name = name, dtype = value.dtype)
+            self._value = math.new_variable(value, bounds=None, name=name, dtype=value.dtype)
         self._name = name
         self._owner = owner
 
