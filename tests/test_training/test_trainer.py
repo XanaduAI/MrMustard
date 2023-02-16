@@ -27,12 +27,13 @@ from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
 NUM_CPUS = 1
-ray.init(num_cpus=NUM_CPUS)
+# ray.init(num_cpus=NUM_CPUS)
 
 
 @pytest.fixture(scope="function")
 def wrappers():
     """Dummy wrappers tested."""
+    ray.init(num_cpus=NUM_CPUS)
 
     def make_circ(x=0.0, return_type=None):
         circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
@@ -56,6 +57,7 @@ def wrappers():
 @pytest.mark.parametrize("seed", [None, 42])
 def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
     """Test distributed cost calculations."""
+    ray.init(num_cpus=NUM_CPUS)
     has_seed = isinstance(seed, int)
     _, cost_fn = wrappers
     results = map_trainer(
@@ -88,6 +90,7 @@ def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-na
 )
 def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefined-outer-name
     """Test distributed optimizations."""
+    ray.init(num_cpus=NUM_CPUS)
     max_steps = 15
     make_circ, cost_fn = wrappers
     results = map_trainer(
@@ -130,6 +133,7 @@ def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefin
 )
 def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefined-outer-name
     """Tests custom metric functions on final circuits."""
+    ray.init(num_cpus=NUM_CPUS)
     make_circ, cost_fn = wrappers
 
     tasks = {
@@ -205,6 +209,7 @@ def test_warn_unused_kwargs(wrappers):  # pylint: disable=redefined-outer-name
 
 def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
     """Test turning off pregress bar"""
+    ray.init(num_cpus=NUM_CPUS)
     _, cost_fn = wrappers
     results = map_trainer(
         cost_fn=cost_fn,
@@ -218,6 +223,7 @@ def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
 @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
 def test_unblock(wrappers, tasks):  # pylint: disable=redefined-outer-name
     """Test unblock async mode"""
+    ray.init(num_cpus=NUM_CPUS)
     _, cost_fn = wrappers
     result_getter = map_trainer(
         cost_fn=cost_fn,
