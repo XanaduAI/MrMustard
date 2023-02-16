@@ -17,23 +17,25 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
+
 import numpy as np
 from scipy.special import binom
-from scipy.stats import unitary_group, ortho_group
+from scipy.stats import ortho_group, unitary_group
+
 from mrmustard import settings
 from mrmustard.types import (
-    List,
-    Tensor,
-    Matrix,
-    Scalar,
-    Vector,
-    Sequence,
-    Tuple,
-    Optional,
-    Dict,
-    Trainable,
-    Callable,
     Any,
+    Callable,
+    Dict,
+    List,
+    Matrix,
+    Optional,
+    Scalar,
+    Sequence,
+    Tensor,
+    Trainable,
+    Tuple,
+    Vector,
 )
 
 
@@ -301,11 +303,12 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
-    def diag_part(self, array: Tensor) -> Tensor:
+    def diag_part(self, array: Tensor, k: int) -> Tensor:
         r"""Returns the array of the main diagonal of array.
 
         Args:
             array (array): array to extract the main diagonal of
+            k (int): kth diagonal to extract
 
         Returns:
             array: array of the main diagonal of array
@@ -683,6 +686,19 @@ class MathInterface(ABC):
 
         Returns:
             array: reshaped array
+        """
+
+    @abstractmethod
+    def set_diag(self, array: Tensor, diag: Tensor, k: int) -> Tensor:
+        r"""Returns the array with the diagonal set to ``diag``.
+
+        Args:
+            array (array): array to set the diagonal of
+            diag (array): diagonal to set
+            k (int): diagonal to set
+
+        Returns:
+            array: array with the diagonal set to ``diag``
         """
 
     @abstractmethod
