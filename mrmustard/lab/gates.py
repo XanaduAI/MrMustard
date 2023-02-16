@@ -482,7 +482,7 @@ class Interferometer(Parametrized, Transformation):
 
 
 class RealInterferometer(Parametrized, Transformation):
-    r"""N-mode interferometer with a real unitary matrix (or block-diagonal unitary matrix).
+    r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix). This interferometer does not mix q and p.
     Does not mix q's and p's.
 
     Args:
