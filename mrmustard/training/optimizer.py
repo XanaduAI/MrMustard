@@ -92,7 +92,7 @@ class Optimizer:
     def apply_gradients(self, trainable_params, grads):
         """Apply gradients to variables.
 
-        This method group parameters by variable type (euclidean, symplectic, unitary) and
+        This method group parameters by variable type (euclidean, symplectic, unitary, orthogonal) and
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
