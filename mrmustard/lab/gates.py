@@ -447,9 +447,7 @@ class Interferometer(Parametrized, Transformation):
         unitary_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes is not None and (
-            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
-        ):
+        if modes is not None and num_modes != len(modes):
             raise ValueError("Invalid number of modes and the mode list here!")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
@@ -498,9 +496,7 @@ class RealInterferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes is not None and (
-            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
-        ):
+        if modes is not None and num_modes != len(modes):
             raise ValueError("Invalid number of modes and the mode list here!")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
