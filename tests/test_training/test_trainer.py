@@ -20,10 +20,13 @@ from time import sleep
 import pytest
 
 import numpy as np
+import ray
 from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
+
+ray.init(num_cpus=1)
 
 
 @pytest.fixture(scope="function")
@@ -57,6 +60,7 @@ def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-na
     results = map_trainer(
         cost_fn=cost_fn,
         tasks=tasks,
+        num_cpus=1,
         **({"SEED": seed} if has_seed else {}),
     )
 
@@ -92,6 +96,7 @@ def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefin
         max_steps=max_steps,
         symplectic_lr=0.05,
         return_type=return_type,
+        num_cpus=1,
     )
 
     if isinstance(tasks, dict):
@@ -139,6 +144,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
         symplectic_lr=0.05,
         metric_fns=metric_fns,
         return_list=True,
+        num_cpus=1,
     )
 
     assert set(results.keys()) == set(tasks.keys())
@@ -171,6 +177,7 @@ def test_no_ray(monkeypatch):
     with pytest.raises(ImportError, match="Failed to import `ray`"):
         _ = map_trainer(
             tasks=2,
+            num_cpus=1,
         )
 
 
@@ -179,6 +186,7 @@ def test_invalid_tasks():
     with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
         _ = map_trainer(
             tasks=2.3,
+            num_cpus=1,
         )
 
 
@@ -201,6 +209,7 @@ def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
         cost_fn=cost_fn,
         tasks=2,
         pbar=False,
+        num_cpus=1,
     )
     assert len(results) == 2
 
@@ -213,6 +222,7 @@ def test_unblock(wrappers, tasks):  # pylint: disable=redefined-outer-name
         cost_fn=cost_fn,
         tasks=tasks,
         unblock=True,
+        num_cpus=1,
     )
     assert callable(result_getter)
 

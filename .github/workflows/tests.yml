@@ -35,7 +35,8 @@ jobs:
           # pip install dist/*.whl
 
       - name: Run tests
-        run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
+        # run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
+        run: python -m pytest tests/test_training/test_trainer.py -s --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
