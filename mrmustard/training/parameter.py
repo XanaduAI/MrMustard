@@ -174,6 +174,15 @@ class Unitary(Trainable):
         self._owner = owner
 
 
+class Orthogonal(Trainable):
+    """Orthogonal trainable. Uses :meth:`training.parameter_update.update_orthogonal`."""
+
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
+        self._value = value_to_trainable(value, None, name)
+        self._name = name
+        self._owner = owner
+
+
 class Constant(Parameter):
     """Constant parameter. It belongs to the autograd backend but remains fixed
     during any optimization procedure
@@ -212,7 +221,7 @@ def create_parameter(
             for Euclidean parameters
 
     Returns:
-        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Unitary`
+        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Unitary`, :class:`Orthogonal`
             or :class:`Euclidean` trainable.
     """
 
@@ -224,6 +233,9 @@ def create_parameter(
 
     if name.startswith("unitary"):
         return Unitary(value, name, owner)
+
+    if name.startswith("orthogonal"):
+        return Orthogonal(value, name, owner)
 
     return Euclidean(value, bounds, name, owner)
 

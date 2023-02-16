@@ -49,6 +49,17 @@ def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_l
         math.assign(U, new_value)
 
 
+def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float):
+    r"""Updates the orthogonal parameters using the given orthogonal gradients.
+    Implemented from:
+        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+    """
+    for dO_euclidean, O in grads_and_vars:
+        Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
+        new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
+        math.assign(O, new_value)
+
+
 def update_euclidean(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclidean_lr: float):
     """Updates the parameters using the euclidian gradients."""
     math.euclidean_opt.lr = euclidean_lr
@@ -60,4 +71,5 @@ param_update_method = {
     "euclidean": update_euclidean,
     "symplectic": update_symplectic,
     "unitary": update_unitary,
+    "orthogonal": update_orthogonal,
 }

@@ -486,25 +486,25 @@ class RealInterferometer(Parametrized, Transformation):
     Does not mix q's and p's.
 
     Args:
-        unitary (2d array, optional): a real unitary matrix. For N modes it must have shape `(N,N)`.
-            If set to `None` a random real unitary matrix is used.
-        unitary_trainable (bool): whether unitary is a trainable variable
+        orthogonal (2d array, optional): a real unitary (orthogonal) matrix. For N modes it must have shape `(N,N)`.
+            If set to `None` a random real unitary (orthogonal) matrix is used.
+        orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
     def __init__(
         self,
         num_modes: int,
-        unitary: Optional[Tensor] = None,
-        unitary_trainable: bool = False,
+        orthogonal: Optional[Tensor] = None,
+        orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and (
             num_modes != len(modes) or any(mode >= num_modes for mode in modes)
         ):
             raise ValueError("Invalid number of modes and the mode list here!")
-        if unitary is None:
-            unitary = math.random_orthogonal(num_modes)
-        super().__init__(unitary=unitary, unitary_trainable=unitary_trainable)
+        if orthogonal is None:
+            orthogonal = math.random_orthogonal(num_modes)
+        super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
         self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
 
@@ -512,21 +512,21 @@ class RealInterferometer(Parametrized, Transformation):
     def X_matrix(self):
         return math.block(
             [
-                [self.unitary.value, -math.zeros_like(self.unitary.value)],
-                [math.zeros_like(self.unitary.value), self.unitary.value],
+                [self.orthogonal.value, -math.zeros_like(self.orthogonal.value)],
+                [math.zeros_like(self.orthogonal.value), self.orthogonal.value],
             ]
         )
 
     def _validate_modes(self, modes):
-        if len(modes) != self.unitary.value.shape[-1]:
+        if len(modes) != self.orthogonal.value.shape[-1]:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.unitary.value.shape[-1]})"
+                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.value.shape[-1]})"
             )
 
     def __repr__(self):
         modes = self.modes
-        unitary = repr(math.asnumpy(self.unitary.value)).replace("\n", "")
-        return f"RealInterferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
+        orthogonal = repr(math.asnumpy(self.orthogonal.value)).replace("\n", "")
+        return f"RealInterferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
 class Ggate(Parametrized, Transformation):
