@@ -26,7 +26,7 @@ from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
-NUM_CPUS = 2
+NUM_CPUS = 1
 ray.init(num_cpus=NUM_CPUS)
 
 
