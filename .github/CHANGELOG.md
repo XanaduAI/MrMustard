@@ -166,6 +166,9 @@ This is now fixed.
 a pure dm was converted to ket).
 [(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
 
+* The ray related tests sometimes hangs in github action. This is an attempt to address it.
+[(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
+
 ### Documentation
 
 ### Contributors 
