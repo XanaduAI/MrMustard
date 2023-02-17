@@ -28,7 +28,6 @@ from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
 NUM_CPUS = 1
 ray.init(num_cpus=NUM_CPUS)
-print(f"RAY INITIATED: {ray.is_initialized()}")
 
 
 @pytest.fixture(scope="function")
