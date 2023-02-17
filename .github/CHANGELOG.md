@@ -170,6 +170,9 @@ This is now fixed.
 a pure dm was converted to ket).
 [(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
 
+* The ray related tests were hanging in github action causing test to halt and fail. Now ray is forced to init with 1 cpu when running tests preventing the issue.
+[(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
+
 ### Documentation
 
 ### Contributors 
