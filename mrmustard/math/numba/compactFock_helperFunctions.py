@@ -27,7 +27,7 @@ def construct_dict_params(cutoffs,tuple_type,list_type):
         cutoffs (tuple): upper bounds for the number of photons in each mode
         tuple_type,list_type (numba types): numba types that need to be defined outside of numba compiled functions
     Returns:
-        (typed Dict): all possible values for (a,b,c,...), grouped in lists according to their sum
+        (typed Dict): all possible values for (a,b,c,...), grouped in lists according to their sum a+b+c+...
     '''
     indices = Dict.empty(key_type=int64, value_type=list_type)
     for sum_params in range(sum(cutoffs)):

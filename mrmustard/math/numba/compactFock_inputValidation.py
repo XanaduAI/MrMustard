@@ -10,7 +10,6 @@ def hermite_multidimensional_diagonal(A,B,G0,cutoffs,rtol=1e-05, atol=1e-08):
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
-    # Should I use np.real_if_close on A and B here?
     if isinstance(cutoffs, Iterable):
         cutoffs = tuple(cutoffs)
     else:
@@ -32,7 +31,6 @@ def hermite_multidimensional_1leftoverMode(A,B,G0,cutoffs,rtol=1e-05, atol=1e-08
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
-    # Should I use np.real_if_close on A and B here?
     if isinstance(cutoffs, Iterable):
         cutoffs = tuple(cutoffs)
     else:

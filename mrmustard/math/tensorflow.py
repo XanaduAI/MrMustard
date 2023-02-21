@@ -365,7 +365,8 @@ class TFMath(MathInterface):
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
         denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
 
-        Calculates the diagonal of the Fock representation by applying the recursion relation in a selective manner.
+        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+        by applying the recursion relation in a selective manner.
 
         Args:
             A: The A matrix.
@@ -400,8 +401,8 @@ class TFMath(MathInterface):
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
         denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
 
-        Calculates all possible Fock representations of the mode that is left in the upper mode
-        if all other modes are directed to PNR detectors.
+        Calculates all possible Fock representations of mode 0,
+        where all other modes are PNR detected.
         This is done by applying the recursion relation in a selective manner.
 
         Args:

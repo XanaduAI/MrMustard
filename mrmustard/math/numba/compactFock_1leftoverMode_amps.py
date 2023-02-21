@@ -6,6 +6,10 @@ from mrmustard.math.numba.compactFock_helperFunctions import *
 
 @njit
 def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode):
+    '''
+    Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    This is the coarse-grained version of applying the recurrence relation of mrmustard.math.numba.compactFock_diagonal_amps once.
+    '''
     m, n = 0, 0
     A_adapted = A[i, 2:]
     G_in_adapted = G_in[0, 0]
@@ -36,8 +40,8 @@ def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr
     '''
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
-        A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
-        M (int): number of modes
+        A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        M (int): number of detected modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
         d (int): mode index in which the considered Fock amplitude is off diagonal
@@ -51,7 +55,7 @@ def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M),
-                    dtype=np.complex128)  # M actually is number of modes - 1 !
+                    dtype=np.complex128)
 
     ########## READ ##########
     read_GB = (2 * d,) + params
@@ -108,8 +112,8 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     '''
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
     Args:
-        A, B (array, Vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
-        M (int): number of modes
+        A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        M (int): number of detected modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         params (tuple): (a,b,c,...)
         arr0, arr1 (array, array): submatrices of the fock representation
@@ -120,7 +124,7 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
     G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M),
-                    dtype=np.complex128)  # M actually is number of modes - 1 !
+                    dtype=np.complex128)
 
     ########## READ ##########
     read_GB = params
@@ -147,7 +151,6 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     for i in range(2 * M):
         if params[i // 2] + 1 < cutoffs_tail[i // 2]:
             # this if statement prevents a few elements from being written that will never be read
-            # (maybe writing them is quicker than always checking this condition?)
             if i != 1 or params[0] + 2 < cutoffs_tail[0]:
                 write = (i,) + params
                 arr1 = write_block(i + 2, arr1, write, arr0, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode)
@@ -160,7 +163,7 @@ def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, c
     '''
     Returns the PNR probabilities of a state or Choi state (by using the recurrence relation to calculate a limited number of Fock amplitudes)
     Args:
-        A, B (array, vector): required input for recurrence realtion (given by mrmustard.physics.fock.ABC)
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
         cutoffs (tuple): upper bounds for the number of photons in each mode
         arr0 (array): submatrix of the fock representation that contains Fock amplitudes of the type [a,a,b,b,c,c...]
@@ -191,7 +194,6 @@ def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, c
                 arr1 = use_diag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1)
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M - 1):
-                # better to construct these params separately instead of checking first if statement?
                 if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):
                     arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail,
                                                                      params, d, arr0, arr2, arr1010, arr1001, arr1)
@@ -210,11 +212,8 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
     list_type = numba.types.ListType(tuple_type)
     zero_tuple = (0,) * (M - 1)
 
-    # This code could be nicer if I put (cutoff_leftoverMode,cutoff_leftoverMode) as the last dimensions
-    # --> some for loops over the indices of the first mode could then be removed
-    # --> however, arr0 should then be transposed before the final return
     arr0 = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail,
-                    dtype=np.complex128)  # doesn't work with np.empty?
+                    dtype=np.complex128)  # doesn't work with np.empty
     arr0[(0,) * (M + 1)] = G0
     arr2 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail, dtype=np.complex128)
     arr1 = np.empty((cutoff_leftoverMode, cutoff_leftoverMode) + (2 * (M - 1),) + cutoffs_tail, dtype=np.complex128)
