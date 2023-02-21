@@ -1,4 +1,6 @@
 # pylint disable=missing-function-docstring, missing-module-docstring/
+from typing import get_origin, get_args
+import numpy as np
 
 from mrmustard.typing import (
     Batch,
@@ -15,8 +17,6 @@ from mrmustard.typing import (
     UIntTensor,
     UIntVector,
 )
-import numpy as np
-from typing import get_origin, get_args
 
 
 def test_complexvector():
