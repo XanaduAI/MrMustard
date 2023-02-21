@@ -18,7 +18,7 @@
 from typing import Tuple
 
 from mrmustard.math import Math
-from mrmustard.types import Sequence, Tensor
+from mrmustard.typing import Sequence, Tensor
 
 from .parameter import Trainable
 

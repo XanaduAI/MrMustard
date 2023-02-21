@@ -32,7 +32,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.types import (
+from mrmustard.typing import (
     Matrix,
     Tensor,
     Vector,

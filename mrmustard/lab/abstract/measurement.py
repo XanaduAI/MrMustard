@@ -21,7 +21,7 @@ from typing import Callable, Iterable, Sequence, Union
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.types import Tensor
+from mrmustard.typing import Tensor
 
 from .state import State
 

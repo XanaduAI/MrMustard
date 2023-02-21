@@ -30,7 +30,7 @@ from thewalrus.fock_gradients import displacement as displacement_tw
 from thewalrus.fock_gradients import grad_displacement as grad_displacement_tw
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import (
+from mrmustard.typing import (
     Optional,
     Tensor,
     Trainable,

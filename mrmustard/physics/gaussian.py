@@ -18,7 +18,7 @@ This module contains functions for performing calculations on Gaussian states.
 
 from typing import Tuple, Union, Sequence, Any, Optional
 from thewalrus.quantum import is_pure_cov
-from mrmustard.types import Matrix, Vector, Scalar
+from mrmustard.typing import Matrix, Vector, Scalar
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from mrmustard import settings
 from mrmustard.math import Math

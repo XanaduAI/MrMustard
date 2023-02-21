@@ -27,7 +27,7 @@ import numpy as np
 import torch
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import (
+from mrmustard.typing import (
     Dict,
     Tensor,
     Trainable,

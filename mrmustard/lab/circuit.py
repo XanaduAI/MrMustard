@@ -22,7 +22,7 @@ __all__ = ["Circuit"]
 
 
 from typing import List, Tuple, Optional
-from mrmustard.types import Matrix, Vector
+from mrmustard.typing import Matrix, Vector
 from mrmustard.training import Parametrized
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from .abstract import Transformation, State
