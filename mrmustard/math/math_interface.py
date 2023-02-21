@@ -15,13 +15,13 @@
 """This module contains the :class:`Math` interface that every backend has to implement."""
 
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from functools import lru_cache
 from itertools import product
 import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
 from mrmustard import settings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from mrmustard.typing import (
     Tensor,
     Matrix,
