@@ -18,13 +18,12 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
-from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_1leftoverMode, grad_hermite_multidimensional_1leftoverMode
 from thewalrus.fock_gradients import (
     displacement as displacement_tw,
     grad_displacement as grad_displacement_tw,
 )
-
+from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
+from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_1leftoverMode, grad_hermite_multidimensional_1leftoverMode
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
     List,
