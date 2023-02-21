@@ -20,12 +20,14 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-
-from typing import List, Tuple, Optional
 from mrmustard.typing import RealMatrix, RealVector
+from typing import List, Optional, Tuple
+
+from mrmustard import settings
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
+from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-from .abstract import Transformation, State
 
 
 class Circuit(Transformation, Parametrized):
@@ -98,17 +100,15 @@ class Circuit(Transformation, Parametrized):
     def __len__(self):
         return len(self._ops)
 
-    def _repr_markdown_(self) -> str:
-        """Markdown string to display the object on ipython notebooks."""
-        header = f"#### Circuit  -  {len(self._ops)} ops  -  compiled = `{self._compiled}`\n\n"
-        ops_repr = [op._repr_markdown_() for op in self._ops]  # pylint: disable=protected-access
-        return header + "\n".join(ops_repr)
+    _repr_markdown_ = None
 
     def __repr__(self) -> str:
         """String to display the object on the command line."""
-        ops_repr = [repr(op) for op in self._ops]
-        return " >> ".join(ops_repr)
+        # ops_repr = [repr(op) for op in self._ops]
+        # return " >> ".join(ops_repr)
+        return circuit_text(self._ops, decimals=settings.CIRCUIT_DECIMALS)
 
     def __str__(self):
         """String representation of the circuit."""
-        return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
+        ops_repr = [repr(op) for op in self._ops]
+        return " >> ".join(ops_repr)
