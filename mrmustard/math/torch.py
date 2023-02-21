@@ -14,24 +14,13 @@
 
 """This module contains the Pytorch implementation of the :class:`Math` interface."""
 
-from typing import (
-    Callable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Callable, List, Optional, Sequence, Tuple, Union, Dict
 
 import numpy as np
 import torch
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.typing import (
-    Dict,
-    Tensor,
-    Trainable,
-)
+from mrmustard.typing import Tensor, Trainable
 
 from .math_interface import MathInterface
 

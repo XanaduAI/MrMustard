@@ -37,7 +37,7 @@ class Measurement(ABC):
         modes (List[int]): the modes on which the measurement is acting on
     """
 
-    def __init__(self, outcome: Tensor, modes: Iterable[int]) -> None:
+    def __init__(self, outcome: Tensor, modes: Sequence[int]) -> None:
         super().__init__()
 
         if modes is None:
@@ -92,7 +92,7 @@ class Measurement(ABC):
             f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
         )
 
-    def __getitem__(self, items) -> Callable:
+    def __getitem__(self, items) -> Measurement:
         """Assign modes via the getitem syntax: allows measurements to be used as
         ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
         """
@@ -119,7 +119,7 @@ class FockMeasurement(Measurement):
     in the Fock basis.
     """
 
-    def __init__(self, outcome: Tensor, modes: Iterable[int], cutoffs: Iterable[int]) -> None:
+    def __init__(self, outcome: Tensor, modes: Sequence[int], cutoffs: Sequence[int]) -> None:
         self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
         super().__init__(outcome, modes)
 
@@ -178,6 +178,13 @@ class FockMeasurement(Measurement):
     def should_recompute_stochastic_channel(self) -> bool:  # override in subclasses
         """Returns `True` if the stochastic channel has to be recomputed.
 
-        This method should be overriden by subclasses accordingly.
+        This method should be overriden by subclasses as needed.
         """
         return False
+
+    def recompute_stochastic_channel(self, cutoffs: Sequence[int]) -> None:
+        """Recomputes the stochastic channel.
+
+        This method should be overriden by subclasses as needed.
+        """
+        raise NotImplementedError

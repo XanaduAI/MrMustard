@@ -21,19 +21,13 @@ import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
 from mrmustard import settings
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from mrmustard.typing import (
-    List,
     Tensor,
     Matrix,
     Scalar,
     Vector,
-    Sequence,
-    Tuple,
-    Optional,
-    Dict,
     Trainable,
-    Callable,
-    Any,
 )
 
 

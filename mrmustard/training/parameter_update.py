@@ -15,10 +15,9 @@
 """TODO: document this module
 """
 
-from typing import Tuple
-
+from typing import Tuple, Sequence
 from mrmustard.math import Math
-from mrmustard.typing import Sequence, Tensor
+from mrmustard.typing import Tensor
 
 from .parameter import Trainable
 

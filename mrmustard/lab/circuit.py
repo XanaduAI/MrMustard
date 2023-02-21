@@ -22,7 +22,7 @@ __all__ = ["Circuit"]
 
 
 from typing import List, Tuple, Optional
-from mrmustard.typing import Matrix, Vector
+from mrmustard.typing import RealMatrix, RealVector
 from mrmustard.training import Parametrized
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 from .abstract import Transformation, State
@@ -63,7 +63,9 @@ class Circuit(Transformation, Parametrized):
     @property
     def XYd(
         self,
-    ) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency
+    ) -> Tuple[
+        RealMatrix, RealMatrix, RealVector
+    ]:  # NOTE: Overriding Transformation.XYd for efficiency
         X = XPMatrix(like_1=True)
         Y = XPMatrix(like_0=True)
         d = XPVector()

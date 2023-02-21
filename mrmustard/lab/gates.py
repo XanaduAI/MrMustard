@@ -19,7 +19,7 @@ This module defines gates and operations that can be applied to quantum modes to
 """
 
 from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.typing import Tensor
+from mrmustard.typing import RealMatrix
 from mrmustard import settings
 from mrmustard.training import Parametrized
 from mrmustard.physics import gaussian
@@ -485,7 +485,7 @@ class Interferometer(Parametrized, Transformation):
     def __init__(
         self,
         num_modes: int,
-        orthogonal: Optional[Tensor] = None,
+        orthogonal: Optional[RealMatrix] = None,
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
@@ -532,7 +532,7 @@ class RealInterferometer(Parametrized, Transformation):
     def __init__(
         self,
         num_modes: int,
-        orthogonal: Optional[Tensor] = None,
+        orthogonal: Optional[RealMatrix] = None,
         orthogonal_trainable: bool = False,
     ):
         if orthogonal is None:
@@ -577,7 +577,7 @@ class Ggate(Parametrized, Transformation):
     def __init__(
         self,
         num_modes: int,
-        symplectic: Optional[Tensor] = None,
+        symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
     ):
         symplectic = symplectic if symplectic is not None else math.random_symplectic(num_modes)
