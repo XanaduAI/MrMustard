@@ -28,7 +28,7 @@ __all__ = [
     "UIntTensor",
     "Batch",
 ]
-from typing import Tuple, TypeVar, Protocol, Iterator
+from typing import Tuple, TypeVar, Protocol, Iterator, runtime_checkable
 
 import numpy as np
 
@@ -55,6 +55,7 @@ UIntTensor = np.ndarray[Tuple[int, ...], N]
 T = TypeVar("T", covariant=True)
 
 
+@runtime_checkable
 class Batch(Protocol[T]):
     def __iter__(self) -> Iterator[T]:
         ...
