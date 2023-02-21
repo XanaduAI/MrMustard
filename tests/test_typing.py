@@ -1,4 +1,5 @@
-# pylint disable=missing-function-docstring, missing-module-docstring/
+# pylint: disable=missing-function-docstring
+
 from typing import get_origin, get_args
 import numpy as np
 
