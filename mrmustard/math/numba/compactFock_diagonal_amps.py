@@ -3,7 +3,7 @@ import matplotlib.pyplot as pt
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import *
+from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params
 
 @njit
 def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1):

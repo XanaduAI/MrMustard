@@ -2,7 +2,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import *
+from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params
 
 @njit
 def calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, arr_read_pivot_dA,
