@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Callable, Iterable, Sequence, Union
+from typing import Iterable, Sequence, Union
 
 from mrmustard import settings
 from mrmustard.math import Math
