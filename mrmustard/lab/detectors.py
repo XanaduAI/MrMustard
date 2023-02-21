@@ -17,7 +17,7 @@ This module implements the set of detector classes that perform measurements on 
 """
 
 from typing import List, Tuple, Union, Optional, Iterable
-from mrmustard.typing import RealMatrix, RealVectord
+from mrmustard.typing import RealMatrix, RealVector
 from mrmustard.training import Parametrized
 from mrmustard import settings
 from mrmustard.math import Math
