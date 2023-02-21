@@ -85,6 +85,11 @@ within the defined window. Also, expose some plot parameters and return the figu
 
 * Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation, which have been refactored and moved out of `physics.fock`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+* The internal type system in MrMustard has been beefed up with much clearer types, like ComplexVector, RealMatrix, etc... as well as a generic type `Batch`, which can be parametrized using
+the other types, like `Batch[ComplexTensor]`. This will allow for better type checking and better error messages.
+  [(#199)](https://github.com/XanaduAI/MrMustard/pull/199)
+
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter of a number of gates in pallel.
