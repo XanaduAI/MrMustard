@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10']
 
     steps:
       - name: Cancel Previous Runs
@@ -50,7 +50,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
-        if: ${{ matrix.python-version }} == '3.8'
+        if: ${{ matrix.python-version }} == '3.9'
         with:
           files: ./coverage.xml
           fail_ci_if_error: true
