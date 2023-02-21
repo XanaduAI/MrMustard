@@ -33,14 +33,9 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.typing import (
-    Matrix,
-    Tensor,
-    Vector,
     RealMatrix,
     RealVector,
     RealTensor,
-    ComplexMatrix,
-    ComplexVector,
     ComplexTensor,
 )
 from mrmustard.utils import graphics
