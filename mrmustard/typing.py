@@ -27,8 +27,12 @@ __all__ = [
     "IntTensor",
     "UIntTensor",
     "Batch",
+    "Scalar",
+    "Vector",
+    "Matrix",
+    "Tensor",
 ]
-from typing import Tuple, TypeVar, Protocol, Iterator, runtime_checkable
+from typing import Tuple, TypeVar, Protocol, Iterator, runtime_checkable, Union
 
 import numpy as np
 
@@ -36,6 +40,11 @@ R = TypeVar("R", np.float16, np.float32, np.float64)
 C = TypeVar("C", np.complex64, np.complex128)
 Z = TypeVar("Z", np.int16, np.int32, np.int64)
 N = TypeVar("N", np.uint16, np.uint32, np.uint64)
+
+Scalar = Union[R, C, Z, N]
+Vector = np.ndarray[Tuple[int], Scalar]
+Matrix = np.ndarray[Tuple[int, int], Scalar]
+Tensor = np.ndarray[Tuple[int, ...], Scalar]
 
 RealVector = np.ndarray[Tuple[int], R]
 ComplexVector = np.ndarray[Tuple[int], C]
@@ -68,6 +77,8 @@ T = TypeVar(
     UIntTensor,
     covariant=True,
 )
+
+Trainable = TypeVar("Trainable")
 
 
 @runtime_checkable
