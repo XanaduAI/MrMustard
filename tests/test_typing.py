@@ -1,3 +1,5 @@
+# pylint disable=missing-function-docstring, missing-module-docstring/
+
 from mrmustard.typing import (
     Batch,
     ComplexMatrix,
