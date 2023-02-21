@@ -104,7 +104,6 @@ class TestGaussianStates:
 
 
 class TestMixedStates:
-
     state1 = 1 / 2 * np.eye(2)
 
     state2 = 1 / 3 * np.ones((2, 2))

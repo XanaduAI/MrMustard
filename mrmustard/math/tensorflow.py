@@ -16,9 +16,14 @@
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
 from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_1leftoverMode, grad_hermite_multidimensional_1leftoverMode
+from thewalrus.fock_gradients import (
+    displacement as displacement_tw,
+    grad_displacement as grad_displacement_tw,
+)
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
@@ -32,6 +37,7 @@ from mrmustard.types import (
     Union,
 )
 from .math_interface import MathInterface
+
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
@@ -117,6 +123,12 @@ class TFMath(MathInterface):
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
 
+    def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
+        return tf.math.atan2(y, x)
+
+    def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
+        return tf.complex(real, imag)
+
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
 
@@ -127,7 +139,9 @@ class TFMath(MathInterface):
         return tf.linalg.diag_part(array)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
-        return tf.einsum(string, *tensors)
+        if type(string) is str:
+            return tf.einsum(string, *tensors)
+        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
@@ -140,6 +154,9 @@ class TFMath(MathInterface):
 
     def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
         return tf.eye(size, dtype=dtype)
+
+    def eye_like(self, array: tf.Tensor) -> Tensor:
+        return tf.eye(array.shape[-1], dtype=array.dtype)
 
     def from_backend(self, value) -> bool:
         return isinstance(value, (tf.Tensor, tf.Variable))
@@ -251,6 +268,12 @@ class TFMath(MathInterface):
     def sinh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sinh(array)
 
+    def solve(self, matrix: tf.Tensor, rhs: tf.Tensor) -> tf.Tensor:
+        if len(rhs.shape) == len(matrix.shape) - 1:
+            rhs = tf.expand_dims(rhs, -1)
+            return tf.linalg.solve(matrix, rhs)[..., 0]
+        return tf.linalg.solve(matrix, rhs)
+
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
@@ -296,6 +319,21 @@ class TFMath(MathInterface):
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
 
+    def map_fn(self, func, elements):
+        return tf.map_fn(func, elements)
+
+    def squeeze(self, tensor, axis=None):
+        return tf.squeeze(tensor, axis=axis or [])
+
+    def cholesky(self, input: Tensor):
+        return tf.linalg.cholesky(input)
+
+    def Categorical(self, probs: Tensor, name: str):
+        return tfp.distributions.Categorical(probs=probs, name=name)
+
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
+
     # ~~~~~~~~~~~~~~~~~
     # Special functions
     # ~~~~~~~~~~~~~~~~~
@@ -340,8 +378,11 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(
-            hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype
+        if isinstance(shape, List) and len(shape) == 1:
+            shape = shape[0]
+
+        poly = hermite_multidimensional(
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
         )
 
         def grad(dLdpoly):
@@ -430,6 +471,21 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly0, grad
+    @tf.custom_gradient
+    def displacement(self, r, phi, cutoff, tol=1e-15):
+        """creates a single mode displacement matrix"""
+        if r > tol:
+            gate = displacement_tw(self.asnumpy(r), self.asnumpy(phi), cutoff)
+        else:
+            gate = self.eye(cutoff, dtype="complex128")
+
+        def grad(dy):  # pragma: no cover
+            Dr, Dphi = tf.numpy_function(grad_displacement_tw, (gate, r, phi), (gate.dtype,) * 2)
+            grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
+            grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
+            return grad_r, grad_phi, None
+
+        return gate, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:

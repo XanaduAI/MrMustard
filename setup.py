@@ -22,10 +22,15 @@ requirements = [
     "numba",
     "thewalrus>=0.17.0",
     "tensorflow>=2.4.0",
+    "tensorflow-probability",
     "rich",
     "tqdm",
     "matplotlib",
 ]
+
+extra_requirements = {
+    "ray": ["ray[tune]", "scikit-optimize"],
+}
 
 info = {
     "name": "mrmustard",
@@ -37,6 +42,7 @@ info = {
     "license": "Apache License 2.0",
     "packages": find_packages(where="."),
     "install_requires": requirements,
+    "extras_require": extra_requirements,
     "long_description": open("README.md", encoding="utf-8").read(),
     "long_description_content_type": "text/markdown",
 }
