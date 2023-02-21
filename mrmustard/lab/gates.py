@@ -24,7 +24,6 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import gaussian
 from mrmustard.training import Parametrized
-from mrmustard.types import Tensor
 
 from mrmustard.lab.abstract import Transformation
 
