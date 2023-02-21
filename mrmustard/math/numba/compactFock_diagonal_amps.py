@@ -1,3 +1,8 @@
+'''
+This module calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+by applying the recursion relation in a selective manner.
+'''
+
 import numpy as np
 import matplotlib.pyplot as pt
 import numba

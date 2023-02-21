@@ -1,3 +1,9 @@
+'''
+This module contains helper functions that are used in
+compactFock_diagonal_amps.py, compactFock_diagonal_grad.py, compactFock_1leftoverMode_amps.py and compactFock_1leftoverMode_grad.py
+to validate the input provided by the user.
+'''
+
 import numpy as np
 from typing import Iterable
 from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps

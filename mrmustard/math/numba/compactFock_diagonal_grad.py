@@ -1,3 +1,8 @@
+'''
+This module calculates the derivatives of the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+by applying the derivated recursion relation in a selective manner.
+'''
+
 import numpy as np
 import numba
 from numba import njit, int64

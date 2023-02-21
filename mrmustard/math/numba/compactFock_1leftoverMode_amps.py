@@ -1,3 +1,8 @@
+'''
+This module calculates all possible Fock representations of mode 0,where all other modes are PNR detected.
+This is done by applying the recursion relation in a selective manner.
+'''
+
 import numpy as np
 import numba
 from numba import njit, int64
