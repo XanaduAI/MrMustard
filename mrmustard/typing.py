@@ -82,6 +82,6 @@ Trainable = TypeVar("Trainable")
 
 
 @runtime_checkable
-class Batch(Protocol[T_co]):
+class Batch(Protocol[T_co]):  # pylint: disable=missing-class-docstring
     def __iter__(self) -> Iterator[T_co]:
         ...
