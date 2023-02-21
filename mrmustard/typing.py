@@ -52,22 +52,25 @@ ComplexTensor = np.ndarray[Tuple[int, ...], C]
 IntTensor = np.ndarray[Tuple[int, ...], Z]
 UIntTensor = np.ndarray[Tuple[int, ...], N]
 
-T = TypeVar("T", covariant=True)
+T = TypeVar(
+    "T",
+    RealVector,
+    ComplexVector,
+    IntVector,
+    UIntVector,
+    RealMatrix,
+    ComplexMatrix,
+    IntMatrix,
+    UIntMatrix,
+    RealTensor,
+    ComplexTensor,
+    IntTensor,
+    UIntTensor,
+    covariant=True,
+)
 
 
 @runtime_checkable
 class Batch(Protocol[T]):
     def __iter__(self) -> Iterator[T]:
         ...
-
-
-# minitest
-x: ComplexVector = np.array([1.0 + 1.0j, 2.0 + 2.0j, 3.0 + 3.0j])
-y: RealMatrix = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-z: IntTensor = np.array([[[1, 2, -3], [4, 5, -6]], [[7, 8, 9], [10, 11, 12]]])
-w: UIntVector = np.array([1, 2, 3])
-
-
-# minitest
-X: Batch[RealVector] = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-Y: Batch[IntVector] = [np.array([1, 2, 3]), np.array([2, -3, -3])]
