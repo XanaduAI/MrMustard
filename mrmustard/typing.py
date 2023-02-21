@@ -13,6 +13,21 @@
 # limitations under the License.
 
 """A module containing all base type annotations."""
+__all__ = [
+    "RealVector",
+    "ComplexVector",
+    "IntVector",
+    "UIntVector",
+    "RealMatrix",
+    "ComplexMatrix",
+    "IntMatrix",
+    "UIntMatrix",
+    "RealTensor",
+    "ComplexTensor",
+    "IntTensor",
+    "UIntTensor",
+    "Batch",
+]
 from typing import Tuple, TypeVar, Protocol, Iterator
 
 import numpy as np
