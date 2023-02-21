@@ -61,8 +61,8 @@ ComplexTensor = np.ndarray[Tuple[int, ...], C]
 IntTensor = np.ndarray[Tuple[int, ...], Z]
 UIntTensor = np.ndarray[Tuple[int, ...], N]
 
-T = TypeVar(
-    "T",
+T_co = TypeVar(
+    "T_co",
     RealVector,
     ComplexVector,
     IntVector,
@@ -82,6 +82,6 @@ Trainable = TypeVar("Trainable")
 
 
 @runtime_checkable
-class Batch(Protocol[T]):
-    def __iter__(self) -> Iterator[T]:
+class Batch(Protocol[T_co]):
+    def __iter__(self) -> Iterator[T_co]:
         ...
