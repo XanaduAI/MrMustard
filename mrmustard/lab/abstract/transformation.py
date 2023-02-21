@@ -27,6 +27,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    Vector,
 )
 
 import numpy as np

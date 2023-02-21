@@ -18,9 +18,16 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from typing import Sequence, List, Generator, Any
+from typing import Any, Generator, List, Sequence, Tuple
+
 from mrmustard.math import Math
-from .parameter import create_parameter, Trainable, Constant, Parameter
+from mrmustard.training.parameter import (
+    Constant,
+    Parameter,
+    Trainable,
+    create_parameter,
+)
+from mrmustard.types import Tensor
 
 math = Math()
 
@@ -40,7 +47,7 @@ class Parametrized:
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
         owner = f"{self.__class__.__qualname__}"
-
+        self.param_names = []  # list of parameter names to preserve order
         for name, value in kwargs.items():
             # filter out `{name}_trainable` or `{name}_bounds`` to become fields
             # of the class as those kwargs are used to define the variables
@@ -52,8 +59,34 @@ class Parametrized:
             bounds = kwargs.get(f"{name}_bounds", None)
             param = create_parameter(value, name, is_trainable, bounds, owner)
 
-            # dynamically assign variable as attribute of the class
+            # dynamically assign parameter as attribute of the class
             self.__dict__[name] = param
+            self.param_names.append(name)
+
+    def param_string(self, decimals: int) -> str:
+        r"""Returns a string representation of the parameter values, separated by commas and rounded
+        to the specified number of decimals. It includes only the parameters that are not arrays
+        and not the number of modes, or other parameters that are not in principle trainable.
+        Keeps the order of the parameters as they are defined in the class constructor.
+
+        Args:
+            decimals (int): number of decimals to round to
+
+        Returns:
+            str: string representation of the parameter values
+        """
+        string = ""
+        for _, value in self.kw_parameters:
+            if math.asnumpy(value).ndim == 0:  # don't show arrays
+                string += f"{math.asnumpy(value):.{decimals}g}, "
+        return string.rstrip(", ")
+
+    @property
+    def kw_parameters(self) -> Tuple[Tuple[str, Tensor]]:
+        r"""Return a list of parameters within the Parametrized object
+        if they have been passed as keyword arguments to the class constructor.
+        """
+        return tuple((name, getattr(self, name).value) for name in self.param_names)
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
@@ -77,7 +110,9 @@ def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
     """
 
     for obj in object_:
-        if isinstance(obj, Sequence):  # pylint: disable=isinstance-second-argument-not-valid-type
+        if isinstance(
+            obj, (List, Tuple)
+        ):  # pylint: disable=isinstance-second-argument-not-valid-type
             yield from _traverse_parametrized(obj, extract_type)
         elif isinstance(obj, Parametrized):
             yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
