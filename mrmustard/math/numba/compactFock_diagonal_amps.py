@@ -1,17 +1,23 @@
-'''
+"""
 This module calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
 by applying the recursion relation in a selective manner.
-'''
+"""
 
 import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params, reorder_AB
+from mrmustard.math.numba.compactFock_helperFunctions import (
+    SQRT,
+    repeat_twice,
+    construct_dict_params,
+    reorder_AB,
+)
+
 
 @njit
 def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1):
-    '''
+    """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
@@ -23,7 +29,7 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
         arr0, arr2, arr1010, arr1001, arr1 (array, array, array, array, array): submatrices of the fock representation
     Returns:
         (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
-    '''
+    """
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
@@ -53,7 +59,9 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
 
     # Array0
     params_adapted = tuple_setitem(params, d, params[d] + 1)
-    arr0[params_adapted] = (GB[2 * d + 1] + A[2 * d + 1] @ G_in) / K_i[2 * d + 1]  # I could absorb K_i in A and GB
+    arr0[params_adapted] = (GB[2 * d + 1] + A[2 * d + 1] @ G_in) / K_i[
+        2 * d + 1
+    ]  # I could absorb K_i in A and GB
 
     # Array2
     if params[d] + 2 < cutoffs[d]:
@@ -63,13 +71,16 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs[i]:
             arr1010[(d, i - d - 1) + params] = (GB[2 * i] + A[2 * i] @ G_in) / K_i[2 * i]
-            arr1001[(d, i - d - 1) + params] = (GB[2 * i + 1] + A[2 * i + 1] @ G_in) / K_i[2 * i + 1]
+            arr1001[(d, i - d - 1) + params] = (GB[2 * i + 1] + A[2 * i + 1] @ G_in) / K_i[
+                2 * i + 1
+            ]
 
     return arr0, arr2, arr1010, arr1001
 
+
 @njit
 def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
-    '''
+    """
     Apply recurrence relation for pivot of type [a,a,b,b,c,c...]
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
@@ -79,7 +90,7 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
         arr0, arr1 (array, array): submatrices of the fock representation
     Returns:
         (array, array): updated versions of arr0, arr1
-    '''
+    """
     pivot = repeat_twice(params)
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
@@ -92,7 +103,9 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
     for i in range(2 * M):
         if params[i // 2] > 0:
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
-            G_in[i] = arr1[(i + 1 - 2 * (i % 2),) + params_adapted]  # [i+1-2*(i%2) for i in range(6)] = [1,0,3,2,5,4]
+            G_in[i] = arr1[
+                (i + 1 - 2 * (i % 2),) + params_adapted
+            ]  # [i+1-2*(i%2) for i in range(6)] = [1,0,3,2,5,4]
 
     ########## WRITE ##########
     G_in = np.multiply(K_l, G_in)
@@ -106,9 +119,12 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
 
     return arr1
 
+
 @njit
-def fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type):
-    '''
+def fock_representation_diagonal_amps_NUMBA(
+    A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+):
+    """
     Returns the PNR probabilities of a state or Choi state
     (by using the recurrence relation to calculate a limited number of Fock amplitudes)
     Args:
@@ -124,7 +140,7 @@ def fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr101
         tuple_type, list_type (numba types): numba types that need to be defined outside of numba compiled functions
     Returns:
         array: the fock representation
-    '''
+    """
     dict_params = construct_dict_params(cutoffs, tuple_type, list_type)
     for sum_params in range(sum(cutoffs)):
         for params in dict_params[sum_params]:
@@ -134,17 +150,20 @@ def fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr101
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M):
                 if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs[d] - 1):
-                    arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1)
+                    arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(
+                        A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1
+                    )
     return arr0, arr2, arr1010, arr1001, arr1
 
+
 def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
-    '''
+    """
     First initialise the submatrices of G (of which the shape depends on cutoff and M)
     and some other constants
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
-    '''
-    A, B = reorder_AB(A,B)
+    """
+    A, B = reorder_AB(A, B)
 
     cutoffs = tuple(cutoffs)
     tuple_type = numba.types.UniTuple(int64, M)
@@ -160,4 +179,6 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     else:
         arr1010 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
         arr1001 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
-    return fock_representation_diagonal_amps_NUMBA(A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type)
+    return fock_representation_diagonal_amps_NUMBA(
+        A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
+    )

@@ -22,8 +22,14 @@ from thewalrus.fock_gradients import (
     displacement as displacement_tw,
     grad_displacement as grad_displacement_tw,
 )
-from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_diagonal, grad_hermite_multidimensional_diagonal
-from mrmustard.math.numba.compactFock_inputValidation import hermite_multidimensional_1leftoverMode, grad_hermite_multidimensional_1leftoverMode
+from mrmustard.math.numba.compactFock_inputValidation import (
+    hermite_multidimensional_diagonal,
+    grad_hermite_multidimensional_diagonal,
+)
+from mrmustard.math.numba.compactFock_inputValidation import (
+    hermite_multidimensional_1leftoverMode,
+    grad_hermite_multidimensional_1leftoverMode,
+)
 from mrmustard.math.autocast import Autocast
 from mrmustard.types import (
     List,
@@ -396,7 +402,6 @@ class TFMath(MathInterface):
 
         return poly, grad
 
-
     @tf.custom_gradient
     def hermite_renormalized_diagonal(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
@@ -417,13 +422,15 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0,poly2,poly1010,poly1001,poly1 = tf.numpy_function(
-            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype]*5
+        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
         )
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_diagonal, [A, B, C, poly0, poly2, poly1010, poly1001, poly1], [poly0.dtype] * 3
+                grad_hermite_multidimensional_diagonal,
+                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                [poly0.dtype] * 3,
             )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
@@ -435,7 +442,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode(
-            self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
@@ -460,8 +467,9 @@ class TFMath(MathInterface):
 
         def grad(dLdpoly):
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_1leftoverMode, [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
-                [poly0.dtype] * 3
+                grad_hermite_multidimensional_1leftoverMode,
+                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                [poly0.dtype] * 3,
             )
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
@@ -470,6 +478,7 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly0, grad
+
     @tf.custom_gradient
     def displacement(self, r, phi, cutoff, tol=1e-15):
         """creates a single mode displacement matrix"""

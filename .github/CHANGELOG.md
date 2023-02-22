@@ -1,7 +1,6 @@
 # Release 0.4.0 (development release)
 
 ### New features
-
   * Ray-based distributed trainer is now added to `training.trainer`. It acts as a replacement for `for` loops and enables the parallelization of running many circuits as well as their optimizations. To install the extra dependencies: `pip install .[ray]`.
   [(#194)](https://github.com/XanaduAI/MrMustard/pull/194)
 
@@ -47,59 +46,61 @@
     )
     ```
 
-* Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
-  specified by the user, a value is sampled from the reduced state probability distribution and the
-  conditional state on the remaining modes is generated.
-  [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+  * Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
+    specified by the user, a value is sampled from the reduced state probability distribution and the
+    conditional state on the remaining modes is generated.
+    [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+
+      ```python
+      import numpy as np
+      from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+
+      # conditional state from measurement
+      conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+
+      # measurement outcome
+      measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+      ```
+
+  * The optimizer `minimize` method now accepts an optional callback function, which will be called at each step
+    of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
+    The result is added to the `callback_history` attribute of the optimizer.
+    [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
+
+  * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions.
+    Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform
+    contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
+    [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+    * the Math interface now supports linear system solving via `math.solve`.
+    [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 
     ```python
-    import numpy as np
-    from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+    from mrmustard.math.mmtensor import MMTensor
 
-    # conditional state from measurement
-    conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+    # define two tensors
+    A = MMTensor(np.random.rand(2, 3, 4), axis_labels=["foo", "bar", "contract"])
+    B = MMTensor(np.random.rand(4, 5, 6), axis_labels=["contract", "baz", "qux"])
 
-    # measurement outcome
-    measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+    # perform a tensor contraction
+    C = A @ B
+    C.axis_labels  # ["foo", "bar", "baz", "qux"]
+    C.shape # (2, 3, 5, 6)
+    C.tensor # extract actual result
     ```
 
-* The optimizer `minimize` method now accepts an optional callback function, which will be called at each step
-  of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
-  The result is added to the `callback_history` attribute of the optimizer.
-  [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
+  * MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int).
+    This will give reproducible results whenever randomness is involved. The seed is unset by default,
+    and it can be unset again with `settings.SEED = None`. If one desires,
+    the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
+    [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
 
-* We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions.
-  Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform
-  contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
-  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
-
-  * the Math interface now supports linear system solving via `math.solve`.
-  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
-
-  ```python
-  from mrmustard.math.mmtensor import MMTensor
-
-  # define two tensors
-  A = MMTensor(np.random.rand(2, 3, 4), axis_labels=["foo", "bar", "contract"])
-  B = MMTensor(np.random.rand(4, 5, 6), axis_labels=["contract", "baz", "qux"])
-
-  # perform a tensor contraction
-  C = A @ B
-  C.axis_labels  # ["foo", "bar", "baz", "qux"]
-  C.shape # (2, 3, 5, 6)
-  C.tensor # extract actual result
-  ```
-
-* MrMustard's settings object (accessible via `from mrmustard import settings`) now supports `SEED` (an int).
-  This will give reproducible results whenever randomness is involved. The seed is unset by default,
-  and it can be unset again with `settings.SEED = None`. If one desires,
-  the seeded random number generator is accessible directly via `settings.rng` (e.g. `settings.rng.normal()`).
-  [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
-
-* The `Circuit` class now has an ascii representation, which can be accessed via the repr method.
-  It looks great in Jupyter notebooks! There is a new option at `settings.CIRCUIT_DECIMALS` which controls
-  the number of decimals shown in the ascii representation. If None only the name of the gate is shown.
-  [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
+  * The `Circuit` class now has an ascii representation, which can be accessed via the repr method.
+    It looks great in Jupyter notebooks! There is a new option at `settings.CIRCUIT_DECIMALS` which controls
+    the number of decimals shown in the ascii representation. If None only the name of the gate is shown.
+    [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
+  * PNR sampling from Gaussian circuits using density matrices can now be performed faster. When all modes are detected, this is done by replacing `math.hermite_renormalized` by `math.hermite_renormalized_diagonal`. In case all but the first mode are detected, `math.hermite_renormalized_1leftoverMode` can be used. The complexity of these new methods is equal to performing a pure state simulation. The methods are differentiable, such that they can be used for defining a costfunction. [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
+  
 
 
 ### Breaking changes
