@@ -1,12 +1,13 @@
 """
 Unit tests for mrmustard.math.numba.compactFock~
 """
-import pytest
-from mrmustard.lab import *
+import numpy as np
+from mrmustard.lab.states import Thermal
+from mrmustard.lab.gates import Sgate, Dgate, Ggate
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math import Math
 math = Math()  # use methods in math if you want them to be differentiable
-import numpy as np
+
 
 def random_ABC(M):
     '''
