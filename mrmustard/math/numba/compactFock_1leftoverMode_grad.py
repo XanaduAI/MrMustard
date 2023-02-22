@@ -100,6 +100,20 @@ def write_block_grad(i, write, arr_read_pivot, read_GB, G_in, A, B, K_i, K_l, cu
     return arr_write_dA, arr_write_dB
 
 @njit
+def read_block(arr_write,arr_write_dA,arr_write_dB,idx_write,arr_read,arr_read_dA,arr_read_dB,idx_read_tail,cutoff_leftoverMode):
+    '''
+    Read the blocks of Fock amplitudes(of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    and their derivatives w.r.t A and B and write them to G_in, G_in_dA, G_in_dB
+    '''
+    for m in range(cutoff_leftoverMode):
+        for n in range(cutoff_leftoverMode):
+            arr_write[m, n, idx_write] = arr_read[(m, n,) + idx_read_tail]
+            arr_write_dA[m, n, idx_write] = arr_read_dA[(m, n,) + idx_read_tail]
+            arr_write_dB[m, n, idx_write] = arr_read_dB[(m, n,) + idx_read_tail]
+
+    return arr_write, arr_write_dA, arr_write_dB
+
+@njit
 def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,submatrices,submatrices_dA,submatrices_dB):
     '''
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
@@ -136,36 +150,40 @@ def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,subma
             GB[m, n] = arr1[(m, n) + read_GB] * B
 
     # Array0
-    for m in range(cutoff_leftoverMode):
-        for n in range(cutoff_leftoverMode):
-            G_in[m, n, 2 * d] = arr0[(m, n) + params]
-            G_in_dA[m, n, 2 * d] = arr0_dA[(m, n) + params]
-            G_in_dB[m, n, 2 * d] = arr0_dB[(m, n) + params]
+    # for m in range(cutoff_leftoverMode):
+    #     for n in range(cutoff_leftoverMode):
+    #         G_in[m, n, 2 * d] = arr0[(m, n) + params]
+    #         G_in_dA[m, n, 2 * d] = arr0_dA[(m, n) + params]
+    #         G_in_dB[m, n, 2 * d] = arr0_dB[(m, n) + params]
+    G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * d, arr0, arr0_dA, arr0_dB, params, cutoff_leftoverMode)
 
     # read from Array2
     if params[d] > 0:
         params_adapted = tuple_setitem(params, d, params[d] - 1)
-        read = (d,) + params_adapted
-        for m in range(cutoff_leftoverMode):
-            for n in range(cutoff_leftoverMode):
-                G_in[m, n, 2 * d + 1] = arr2[(m, n) + read]
-                G_in_dA[m, n, 2 * d + 1] = arr2_dA[(m, n) + read]
-                G_in_dB[m, n, 2 * d + 1] = arr2_dB[(m, n) + read]
+        # read = (d,) + params_adapted
+        # for m in range(cutoff_leftoverMode):
+        #     for n in range(cutoff_leftoverMode):
+        #         G_in[m, n, 2 * d + 1] = arr2[(m, n) + read]
+        #         G_in_dA[m, n, 2 * d + 1] = arr2_dA[(m, n) + read]
+        #         G_in_dB[m, n, 2 * d + 1] = arr2_dB[(m, n) + read]
+        G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * d + 1, arr2, arr2_dA, arr2_dB, (d,) + params_adapted, cutoff_leftoverMode)
 
     # read from Array11
     for i in range(d + 1, M):  # i>d
         if params[i] > 0:
             params_adapted = tuple_setitem(params, i, params[i] - 1)
-            read = (d, i - d - 1) + params_adapted
-            for m in range(cutoff_leftoverMode):
-                for n in range(cutoff_leftoverMode):
-                    G_in[m, n, 2 * i] = arr1001[(m, n) + read]
-                    G_in_dA[m, n, 2 * i] = arr1001_dA[(m, n) + read]
-                    G_in_dB[m, n, 2 * i] = arr1001_dB[(m, n) + read]
-
-                    G_in[m, n, 2 * i + 1] = arr1010[(m, n) + read]
-                    G_in_dA[m, n, 2 * i + 1] = arr1010_dA[(m, n) + read]
-                    G_in_dB[m, n, 2 * i + 1] = arr1010_dB[(m, n) + read]
+            # read = (d, i - d - 1) + params_adapted
+            # for m in range(cutoff_leftoverMode):
+            #     for n in range(cutoff_leftoverMode):
+            #         G_in[m, n, 2 * i] = arr1001[(m, n) + read]
+            #         G_in_dA[m, n, 2 * i] = arr1001_dA[(m, n) + read]
+            #         G_in_dB[m, n, 2 * i] = arr1001_dB[(m, n) + read]
+            #
+            #         G_in[m, n, 2 * i + 1] = arr1010[(m, n) + read]
+            #         G_in_dA[m, n, 2 * i + 1] = arr1010_dA[(m, n) + read]
+            #         G_in_dB[m, n, 2 * i + 1] = arr1010_dB[(m, n) + read]
+            G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * i, arr1001, arr1001_dA, arr1001_dB, (d, i - d - 1) + params_adapted, cutoff_leftoverMode)
+            G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * i + 1, arr1010, arr1010_dA, arr1010_dB, (d, i - d - 1) + params_adapted, cutoff_leftoverMode)
 
     ########## WRITE ##########
     for m in range(cutoff_leftoverMode):
@@ -231,11 +249,12 @@ def use_diag_pivot_grad(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0
         if params[i // 2] > 0:
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
             read = (i + 1 - 2 * (i % 2),) + params_adapted
-            for m in range(cutoff_leftoverMode):
-                for n in range(cutoff_leftoverMode):
-                    G_in[m, n, i] = arr1[(m, n) + read]  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
-                    G_in_dA[m, n, i] = arr1_dA[(m, n) + read]
-                    G_in_dB[m, n, i] = arr1_dB[(m, n) + read]
+            # for m in range(cutoff_leftoverMode):
+            #     for n in range(cutoff_leftoverMode):
+            #         G_in[m, n, i] = arr1[(m, n) + read]  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
+            #         G_in_dA[m, n, i] = arr1_dA[(m, n) + read]
+            #         G_in_dB[m, n, i] = arr1_dB[(m, n) + read]
+            G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, i, arr1, arr1_dA, arr1_dB, (i + 1 - 2 * (i % 2),) + params_adapted,cutoff_leftoverMode)  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
 
     ########## WRITE ##########
     for m in range(cutoff_leftoverMode):

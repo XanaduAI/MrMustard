@@ -146,10 +146,6 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
     for i in range(2 * M):
         if params[i // 2] > 0:
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
-            # for m in range(cutoff_leftoverMode):
-            #     for n in range(cutoff_leftoverMode):
-            #         G_in[m, n, i] = arr1[(m, n, i + 1 - 2 * (
-            #                     i % 2)) + params_adapted]  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
             G_in = read_block(G_in, i, arr1, (i + 1 - 2 * (i % 2),) + params_adapted, cutoff_leftoverMode) # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
 
 
