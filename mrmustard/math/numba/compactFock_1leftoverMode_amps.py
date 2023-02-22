@@ -41,15 +41,15 @@ def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, 
     return arr_write
 
 @njit
-def read_block(arr_write,idx_Gin,arr_read,idx_tail,cutoff_leftoverMode):
+def read_block(arr_write,idx_write,arr_read,idx_read_tail,cutoff_leftoverMode):
     '''
     Read the blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
     that are required to apply the recurrence relation and write them to G_in
     '''
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
-            G_in[m, n, idx_Gin] = arr_read[(m, n,) + idx_tail]
-    return G_in
+            arr_write[m, n, idx_write] = arr_read[(m, n,) + idx_read_tail]
+    return arr_write
 
 @njit
 def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1):
