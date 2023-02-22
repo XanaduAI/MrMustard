@@ -4,7 +4,6 @@ by applying the recursion relation in a selective manner.
 '''
 
 import numpy as np
-import matplotlib.pyplot as pt
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem

@@ -100,8 +100,8 @@ def write_block_grad(i, write, arr_read_pivot, read_GB, G_in, A, B, K_i, K_l, cu
     return arr_write_dA, arr_write_dB
 
 @njit
-def use_offDiag_pivot_grad(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1,
-                           arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB):
+def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,arr0,arr2,arr1010,arr1001,arr1,arr0_dA,
+                           arr2_dA,arr1010_dA,arr1001_dA,arr1_dA,arr0_dB,arr2_dB,arr1010_dB,arr1001_dB,arr1_dB):
     '''
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
@@ -327,4 +327,5 @@ def fock_representation_1leftoverMode_grad(A, B, M, arr0, arr2, arr1010, arr1001
     list_type = numba.types.ListType(tuple_type)
     zero_tuple = (0,) * (M - 1)
 
-    return fock_representation_1leftoverMode_grad_NUMBA(A, B, M, cutoff_leftoverMode, cutoffs_tail, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type, zero_tuple)
+    return fock_representation_1leftoverMode_grad_NUMBA(A, B, M, cutoff_leftoverMode, cutoffs_tail, arr0, arr2,
+                                                        arr1010, arr1001, arr1, tuple_type, list_type, zero_tuple)

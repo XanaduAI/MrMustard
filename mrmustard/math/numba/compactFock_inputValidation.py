@@ -4,8 +4,8 @@ compactFock_diagonal_amps.py, compactFock_diagonal_grad.py, compactFock_1leftove
 to validate the input provided by the user.
 '''
 
-import numpy as np
 from typing import Iterable
+import numpy as np
 from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.math.numba.compactFock_diagonal_grad import fock_representation_diagonal_grad
 from mrmustard.math.numba.compactFock_1leftoverMode_amps import fock_representation_1leftoverMode_amps
@@ -13,6 +13,9 @@ from mrmustard.math.numba.compactFock_1leftoverMode_grad import fock_representat
 from thewalrus._hafnian import input_validation
 
 def hermite_multidimensional_diagonal(A,B,G0,cutoffs,rtol=1e-05, atol=1e-08):
+    '''
+    Validation of user input for mrmustard.math.tensorflow.hermite_renormalized_diagonal
+    '''
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
@@ -26,6 +29,9 @@ def hermite_multidimensional_diagonal(A,B,G0,cutoffs,rtol=1e-05, atol=1e-08):
     return fock_representation_diagonal_amps(A, B, G0, M, cutoffs)
 
 def grad_hermite_multidimensional_diagonal(A,B,G0,arr0,arr2,arr1010,arr1001,arr1):
+    '''
+    Validation of user input for gradients of mrmustard.math.tensorflow.hermite_renormalized_diagonal
+    '''
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
     M = A.shape[0] // 2
@@ -34,6 +40,9 @@ def grad_hermite_multidimensional_diagonal(A,B,G0,arr0,arr2,arr1010,arr1001,arr1
     return arr0_dG0,arr0_dA,arr0_dB
 
 def hermite_multidimensional_1leftoverMode(A,B,G0,cutoffs,rtol=1e-05, atol=1e-08):
+    '''
+    Validation of user input for mrmustard.math.tensorflow.hermite_renormalized_1leftoverMode
+    '''
     input_validation(A, atol=atol, rtol=rtol)
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
@@ -47,6 +56,9 @@ def hermite_multidimensional_1leftoverMode(A,B,G0,cutoffs,rtol=1e-05, atol=1e-08
     return fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs)
 
 def grad_hermite_multidimensional_1leftoverMode(A,B,G0,arr0,arr2,arr1010,arr1001,arr1):
+    '''
+    Validation of user input for gradients of mrmustard.math.tensorflow.hermite_renormalized_1leftoverMode
+    '''
     if A.shape[0] != B.shape[0]:
         raise ValueError("The matrix A and vector B have incompatible dimensions")
     M = A.shape[0] // 2
