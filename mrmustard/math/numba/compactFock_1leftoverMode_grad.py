@@ -118,6 +118,7 @@ def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,subma
     arr0, arr2, arr1010, arr1001, arr1 = submatrices
     arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA = submatrices_dA
     arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB = submatrices_dB
+
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
