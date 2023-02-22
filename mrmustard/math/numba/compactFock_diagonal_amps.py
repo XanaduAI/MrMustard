@@ -7,7 +7,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params
+from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params, reorderAB
 
 @njit
 def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1):
@@ -144,6 +144,8 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     '''
+    A, B = reorderAB(A,B)
+
     cutoffs = tuple(cutoffs)
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)
