@@ -100,8 +100,7 @@ def write_block_grad(i, write, arr_read_pivot, read_GB, G_in, A, B, K_i, K_l, cu
     return arr_write_dA, arr_write_dB
 
 @njit
-def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,arr0,arr2,arr1010,arr1001,arr1,arr0_dA,
-                           arr2_dA,arr1010_dA,arr1001_dA,arr1_dA,arr0_dB,arr2_dB,arr1010_dB,arr1001_dB,arr1_dB):
+def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,submatrices,submatrices_dA,submatrices_dB):
     '''
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
@@ -116,6 +115,9 @@ def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,arr0,
     Returns:
         (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     '''
+    arr0, arr2, arr1010, arr1001, arr1 = submatrices
+    arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA = submatrices_dA
+    arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB = submatrices_dB
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
@@ -309,8 +311,8 @@ def fock_representation_1leftoverMode_grad_NUMBA(A, B, M, cutoff_leftoverMode, c
             for d in range(M - 1):
                 if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):
                     arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB = use_offDiag_pivot_grad(
-                        A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1,
-                        arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB)
+                        A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, d, [arr0, arr2, arr1010, arr1001, arr1],
+                        [arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA], [arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB])
     return arr0_dA, arr0_dB
 
 def fock_representation_1leftoverMode_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr1):
