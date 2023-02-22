@@ -42,7 +42,7 @@ def construct_dict_params(cutoffs,tuple_type,list_type):
         indices[sum(params)].append(params)
     return indices
 
-def reorder_ABC(A,B):
+def reorder_AB(A,B):
     '''
     In mrmustard.math.numba.compactFock~ we use the convention that dimensions of the Fock representation are ordered like mode0,mode0,mode1,mode1,...
     while mrmustard.physics.bargmann uses the convention mode0,mode1,...,mode0,mode1,... So we have to reorder A and B.
@@ -50,7 +50,6 @@ def reorder_ABC(A,B):
     '''
     A = -A
     ordering = np.arange(2 * A.shape[0]//2).reshape(2, -1).T.flatten()
-    A = math.gather(array=A,indices=ordering,axis=1)
-    A = math.gather(array=A,indices=ordering)
-    B = math.gather(array=B,indices=ordering)
+    A = A[:,ordering][ordering]
+    B = B[ordering]
     return A,B

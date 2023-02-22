@@ -7,7 +7,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params
+from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params, reorder_AB
 
 @njit
 def calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, arr_read_pivot_dA,
@@ -316,6 +316,8 @@ def fock_representation_1leftoverMode_grad(A, B, M, arr0, arr2, arr1010, arr1001
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     '''
+    A, B = reorder_AB(A, B)
+
     cutoffs = tuple(arr0.shape[1:])
     cutoff_leftoverMode = cutoffs[0]
     cutoffs_tail = tuple(cutoffs[1:])

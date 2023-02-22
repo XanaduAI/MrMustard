@@ -7,7 +7,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params
+from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params, reorder_AB
 
 @njit
 def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode):
@@ -213,6 +213,8 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     '''
+    A, B = reorder_AB(A, B)
+
     cutoff_leftoverMode = cutoffs[0]
     cutoffs_tail = tuple(cutoffs[1:])
     tuple_type = numba.types.UniTuple(int64, M - 1)

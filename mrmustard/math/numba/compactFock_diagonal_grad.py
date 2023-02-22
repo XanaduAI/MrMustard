@@ -7,7 +7,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params
+from mrmustard.math.numba.compactFock_helperFunctions import SQRT, repeat_twice, construct_dict_params, reorder_AB
 
 @njit
 def calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB):
@@ -204,6 +204,8 @@ def fock_representation_diagonal_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr
     First initialise some Numba types (needs to be done outside of Numba compiled function)
     Then calculate the fock representation.
     '''
+    A, B = reorder_AB(A, B)
+
     cutoffs = arr0.shape
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)
