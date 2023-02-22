@@ -150,38 +150,17 @@ def use_offDiag_pivot_grad(A,B,M,cutoff_leftoverMode,cutoffs_tail,params,d,subma
             GB[m, n] = arr1[(m, n) + read_GB] * B
 
     # Array0
-    # for m in range(cutoff_leftoverMode):
-    #     for n in range(cutoff_leftoverMode):
-    #         G_in[m, n, 2 * d] = arr0[(m, n) + params]
-    #         G_in_dA[m, n, 2 * d] = arr0_dA[(m, n) + params]
-    #         G_in_dB[m, n, 2 * d] = arr0_dB[(m, n) + params]
     G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * d, arr0, arr0_dA, arr0_dB, params, cutoff_leftoverMode)
 
     # read from Array2
     if params[d] > 0:
         params_adapted = tuple_setitem(params, d, params[d] - 1)
-        # read = (d,) + params_adapted
-        # for m in range(cutoff_leftoverMode):
-        #     for n in range(cutoff_leftoverMode):
-        #         G_in[m, n, 2 * d + 1] = arr2[(m, n) + read]
-        #         G_in_dA[m, n, 2 * d + 1] = arr2_dA[(m, n) + read]
-        #         G_in_dB[m, n, 2 * d + 1] = arr2_dB[(m, n) + read]
         G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * d + 1, arr2, arr2_dA, arr2_dB, (d,) + params_adapted, cutoff_leftoverMode)
 
     # read from Array11
     for i in range(d + 1, M):  # i>d
         if params[i] > 0:
             params_adapted = tuple_setitem(params, i, params[i] - 1)
-            # read = (d, i - d - 1) + params_adapted
-            # for m in range(cutoff_leftoverMode):
-            #     for n in range(cutoff_leftoverMode):
-            #         G_in[m, n, 2 * i] = arr1001[(m, n) + read]
-            #         G_in_dA[m, n, 2 * i] = arr1001_dA[(m, n) + read]
-            #         G_in_dB[m, n, 2 * i] = arr1001_dB[(m, n) + read]
-            #
-            #         G_in[m, n, 2 * i + 1] = arr1010[(m, n) + read]
-            #         G_in_dA[m, n, 2 * i + 1] = arr1010_dA[(m, n) + read]
-            #         G_in_dB[m, n, 2 * i + 1] = arr1010_dB[(m, n) + read]
             G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * i, arr1001, arr1001_dA, arr1001_dB, (d, i - d - 1) + params_adapted, cutoff_leftoverMode)
             G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, 2 * i + 1, arr1010, arr1010_dA, arr1010_dB, (d, i - d - 1) + params_adapted, cutoff_leftoverMode)
 
@@ -248,13 +227,8 @@ def use_diag_pivot_grad(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0
     for i in range(2 * M):
         if params[i // 2] > 0:
             params_adapted = tuple_setitem(params, i // 2, params[i // 2] - 1)
-            read = (i + 1 - 2 * (i % 2),) + params_adapted
-            # for m in range(cutoff_leftoverMode):
-            #     for n in range(cutoff_leftoverMode):
-            #         G_in[m, n, i] = arr1[(m, n) + read]  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
-            #         G_in_dA[m, n, i] = arr1_dA[(m, n) + read]
-            #         G_in_dB[m, n, i] = arr1_dB[(m, n) + read]
-            G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, i, arr1, arr1_dA, arr1_dB, (i + 1 - 2 * (i % 2),) + params_adapted,cutoff_leftoverMode)  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
+            read = (i + 1 - 2 * (i % 2),) + params_adapted # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
+            G_in, G_in_dA, G_in_dB = read_block(G_in, G_in_dA, G_in_dB, i, arr1, arr1_dA, arr1_dB, read, cutoff_leftoverMode)
 
     ########## WRITE ##########
     for m in range(cutoff_leftoverMode):
