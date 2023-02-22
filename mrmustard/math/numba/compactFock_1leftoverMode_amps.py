@@ -41,7 +41,7 @@ def write_block(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, 
     return arr_write
 
 @njit
-def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1):
+def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, submatrices):
     '''
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
@@ -55,6 +55,7 @@ def use_offDiag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr
     Returns:
         (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     '''
+    arr0, arr2, arr1010, arr1001, arr1 = submatrices
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
@@ -201,7 +202,7 @@ def fock_representation_1leftoverMode_amps_NUMBA(A, B, M, cutoff_leftoverMode, c
             for d in range(M - 1):
                 if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):
                     arr0, arr2, arr1010, arr1001 = use_offDiag_pivot(A, B, M - 1, cutoff_leftoverMode, cutoffs_tail,
-                                                                     params, d, arr0, arr2, arr1010, arr1001, arr1)
+                                                                     params, d, [arr0, arr2, arr1010, arr1001, arr1])
     return arr0, arr2, arr1010, arr1001, arr1
 
 def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
