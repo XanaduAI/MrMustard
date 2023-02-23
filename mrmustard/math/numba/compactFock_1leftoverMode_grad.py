@@ -104,10 +104,18 @@ def write_block_grad(
             (np.array([arr_read_pivot[(0, n - 1) + read_GB] * np.sqrt(n)]), G_in[0, n])
         )
         G_in_dA_adapted = np.concatenate(
-            (np.expand_dims(arr_read_pivot_dA[(0, n - 1) + read_GB], axis=0), G_in_dA[0, n]), axis=0
+            (
+                np.expand_dims(arr_read_pivot_dA[(0, n - 1) + read_GB], axis=0),
+                G_in_dA[0, n],
+            ),
+            axis=0,
         )
         G_in_dB_adapted = np.concatenate(
-            (np.expand_dims(arr_read_pivot_dB[(0, n - 1) + read_GB], axis=0), G_in_dB[0, n]), axis=0
+            (
+                np.expand_dims(arr_read_pivot_dB[(0, n - 1) + read_GB], axis=0),
+                G_in_dB[0, n],
+            ),
+            axis=0,
         )
         arr_write_dA[(0, n) + write], arr_write_dB[(0, n) + write] = calc_dA_dB(
             m,
@@ -137,10 +145,18 @@ def write_block_grad(
             (np.array([arr_read_pivot[(m - 1, 0) + read_GB] * np.sqrt(m)]), G_in[m, 0])
         )
         G_in_dA_adapted = np.concatenate(
-            (np.expand_dims(arr_read_pivot_dA[(m - 1, 0) + read_GB], axis=0), G_in_dA[m, 0]), axis=0
+            (
+                np.expand_dims(arr_read_pivot_dA[(m - 1, 0) + read_GB], axis=0),
+                G_in_dA[m, 0],
+            ),
+            axis=0,
         )
         G_in_dB_adapted = np.concatenate(
-            (np.expand_dims(arr_read_pivot_dB[(m - 1, 0) + read_GB], axis=0), G_in_dB[m, 0]), axis=0
+            (
+                np.expand_dims(arr_read_pivot_dB[(m - 1, 0) + read_GB], axis=0),
+                G_in_dB[m, 0],
+            ),
+            axis=0,
         )
         arr_write_dA[(m, 0) + write], arr_write_dB[(m, 0) + write] = calc_dA_dB(
             m,
@@ -264,9 +280,21 @@ def use_offDiag_pivot_grad(
     cutoffs_tail,
     params,
     d,
-    submatrices,
-    submatrices_dA,
-    submatrices_dB,
+    arr0,
+    arr2,
+    arr1010,
+    arr1001,
+    arr1,
+    arr0_dA,
+    arr2_dA,
+    arr1010_dA,
+    arr1001_dA,
+    arr1_dA,
+    arr0_dB,
+    arr2_dB,
+    arr1010_dB,
+    arr1001_dB,
+    arr1_dB,
 ):
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
@@ -282,28 +310,40 @@ def use_offDiag_pivot_grad(
     Returns:
         (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     """
-    arr0, arr2, arr1010, arr1001, arr1 = submatrices
-    arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA = submatrices_dA
-    arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB = submatrices_dB
+    # arr0, arr2, arr1010, arr1001, arr1 = submatrices
+    # arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA = submatrices_dA
+    # arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB = submatrices_dB
 
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
-    G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128)
+    G_in = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128
+    )
     G_in_dA = np.zeros(G_in.shape + A.shape, dtype=np.complex128)
     G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     ########## READ ##########
     read_GB = (2 * d,) + params
-    GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
+    GB = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128
+    )
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
             GB[m, n] = arr1[(m, n) + read_GB] * B
 
     # Array0
     G_in, G_in_dA, G_in_dB = read_block(
-        G_in, G_in_dA, G_in_dB, 2 * d, arr0, arr0_dA, arr0_dB, params, cutoff_leftoverMode
+        G_in,
+        G_in_dA,
+        G_in_dB,
+        2 * d,
+        arr0,
+        arr0_dA,
+        arr0_dB,
+        params,
+        cutoff_leftoverMode,
     )
 
     # read from Array2
@@ -437,7 +477,16 @@ def use_offDiag_pivot_grad(
                 G_in_dB,
             )
 
-    return arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB
+    return (
+        arr0_dA,
+        arr2_dA,
+        arr1010_dA,
+        arr1001_dA,
+        arr0_dB,
+        arr2_dB,
+        arr1010_dB,
+        arr1001_dB,
+    )
 
 
 @njit
@@ -470,13 +519,17 @@ def use_diag_pivot_grad(
     pivot = repeat_twice(params)
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
-    G_in = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128)
+    G_in = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, 2 * M), dtype=np.complex128
+    )
     G_in_dA = np.zeros(G_in.shape + A.shape, dtype=np.complex128)
     G_in_dB = np.zeros(G_in.shape + B.shape, dtype=np.complex128)
 
     ########## READ ##########
     read_GB = params
-    GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
+    GB = np.zeros(
+        (cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128
+    )
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
             GB[m, n] = arr0[(m, n) + read_GB] * B
@@ -489,7 +542,15 @@ def use_diag_pivot_grad(
                 i + 1 - 2 * (i % 2),
             ) + params_adapted  # [i+1-2*(i%2) for i in range(6)] == [1,0,3,2,5,4]
             G_in, G_in_dA, G_in_dB = read_block(
-                G_in, G_in_dA, G_in_dB, i, arr1, arr1_dA, arr1_dB, read, cutoff_leftoverMode
+                G_in,
+                G_in_dA,
+                G_in_dB,
+                i,
+                arr1,
+                arr1_dA,
+                arr1_dB,
+                read,
+                cutoff_leftoverMode,
             )
 
     ########## WRITE ##########
@@ -580,7 +641,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(
             arr0_dB[(m, 0) + zero_tuple] * B[0]
             + np.sqrt(m) * A[0, 0] * arr0_dB[(m - 1, 0) + zero_tuple]
         ) / np.sqrt(m + 1)
-        arr0_dB[(m + 1, 0) + zero_tuple][0] += arr0[(m, 0) + zero_tuple] / np.sqrt(m + 1)
+        arr0_dB[(m + 1, 0) + zero_tuple][0] += arr0[(m, 0) + zero_tuple] / np.sqrt(
+            m + 1
+        )
 
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode - 1):
@@ -600,7 +663,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(
                 + np.sqrt(m) * A[1, 0] * arr0_dB[(m - 1, n) + zero_tuple]
                 + np.sqrt(n) * A[1, 1] * arr0_dB[(m, n - 1) + zero_tuple]
             ) / np.sqrt(n + 1)
-            arr0_dB[(m, n + 1) + zero_tuple][1] += arr0[(m, n) + zero_tuple] / np.sqrt(n + 1)
+            arr0_dB[(m, n + 1) + zero_tuple][1] += arr0[(m, n) + zero_tuple] / np.sqrt(
+                n + 1
+            )
 
     dict_params = construct_dict_params(cutoffs_tail, tuple_type, list_type)
     for sum_params in range(sum(cutoffs_tail)):
@@ -623,7 +688,9 @@ def fock_representation_1leftoverMode_grad_NUMBA(
                 )
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M - 1):
-                if np.all(np.array(params)[:d] == 0) and (params[d] < cutoffs_tail[d] - 1):
+                if np.all(np.array(params)[:d] == 0) and (
+                    params[d] < cutoffs_tail[d] - 1
+                ):
                     (
                         arr0_dA,
                         arr2_dA,
@@ -641,9 +708,21 @@ def fock_representation_1leftoverMode_grad_NUMBA(
                         cutoffs_tail,
                         params,
                         d,
-                        [arr0, arr2, arr1010, arr1001, arr1],
-                        [arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA],
-                        [arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB],
+                        arr0,
+                        arr2,
+                        arr1010,
+                        arr1001,
+                        arr1,
+                        arr0_dA,
+                        arr2_dA,
+                        arr1010_dA,
+                        arr1001_dA,
+                        arr1_dA,
+                        arr0_dB,
+                        arr2_dB,
+                        arr1010_dB,
+                        arr1001_dB,
+                        arr1_dB,
                     )
     return arr0_dA, arr0_dB
 

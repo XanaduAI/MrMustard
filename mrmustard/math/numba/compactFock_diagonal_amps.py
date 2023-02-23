@@ -61,7 +61,7 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
     params_adapted = tuple_setitem(params, d, params[d] + 1)
     arr0[params_adapted] = (GB[2 * d + 1] + A[2 * d + 1] @ G_in) / K_i[
         2 * d + 1
-    ]  # I could absorb K_i in A and GB
+    ]
 
     # Array2
     if params[d] + 2 < cutoffs[d]:
