@@ -98,7 +98,7 @@ def test_compactFock_1leftover_gradients():
     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
 
     def cost_fn():
-        n2, n3 = 1,3  # number of detected photons
+        n2, n3 = 1, 3  # number of detected photons
         state_opt = Vacuum(3) >> I
         A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
         G = math.hermite_renormalized_1leftoverMode(
