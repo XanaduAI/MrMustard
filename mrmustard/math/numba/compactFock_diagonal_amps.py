@@ -59,9 +59,7 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
 
     # Array0
     params_adapted = tuple_setitem(params, d, params[d] + 1)
-    arr0[params_adapted] = (GB[2 * d + 1] + A[2 * d + 1] @ G_in) / K_i[
-        2 * d + 1
-    ]
+    arr0[params_adapted] = (GB[2 * d + 1] + A[2 * d + 1] @ G_in) / K_i[2 * d + 1]
 
     # Array2
     if params[d] + 2 < cutoffs[d]:
@@ -70,10 +68,12 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
     # Array11
     for i in range(d + 1, M):
         if params[i] + 1 < cutoffs[i]:
-            arr1010[(d, i - d - 1) + params] = (GB[2 * i] + A[2 * i] @ G_in) / K_i[2 * i]
-            arr1001[(d, i - d - 1) + params] = (GB[2 * i + 1] + A[2 * i + 1] @ G_in) / K_i[
-                2 * i + 1
+            arr1010[(d, i - d - 1) + params] = (GB[2 * i] + A[2 * i] @ G_in) / K_i[
+                2 * i
             ]
+            arr1001[(d, i - d - 1) + params] = (
+                GB[2 * i + 1] + A[2 * i + 1] @ G_in
+            ) / K_i[2 * i + 1]
 
     return arr0, arr2, arr1010, arr1001
 
@@ -163,7 +163,7 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     """
-    A, B = reorder_AB(A, B)
+    # A, B = reorder_AB(A, B)
 
     cutoffs = tuple(cutoffs)
     tuple_type = numba.types.UniTuple(int64, M)

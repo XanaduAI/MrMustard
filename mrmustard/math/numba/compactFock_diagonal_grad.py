@@ -302,7 +302,7 @@ def fock_representation_diagonal_grad(A, B, M, arr0, arr2, arr1010, arr1001, arr
     First initialise some Numba types (needs to be done outside of Numba compiled function)
     Then calculate the fock representation.
     """
-    A, B = reorder_AB(A, B)
+    # A, B = reorder_AB(A, B)
 
     cutoffs = arr0.shape
     tuple_type = numba.types.UniTuple(int64, M)

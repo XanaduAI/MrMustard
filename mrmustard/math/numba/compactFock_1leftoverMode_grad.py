@@ -310,9 +310,6 @@ def use_offDiag_pivot_grad(
     Returns:
         (array, array, array, array, array): updated versions of arr0, arr2, arr1010, arr1001, arr1
     """
-    # arr0, arr2, arr1010, arr1001, arr1 = submatrices
-    # arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA = submatrices_dA
-    # arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB = submatrices_dB
 
     pivot = repeat_twice(params)
     pivot[2 * d] += 1
@@ -734,7 +731,7 @@ def fock_representation_1leftoverMode_grad(A, B, M, arr0, arr2, arr1010, arr1001
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     """
-    A, B = reorder_AB(A, B)
+    # A, B = reorder_AB(A, B)
 
     cutoffs = tuple(arr0.shape[1:])
     cutoff_leftoverMode = cutoffs[0]

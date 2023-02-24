@@ -2,11 +2,10 @@
 Unit tests for mrmustard.math.numba.compactFock~
 """
 import numpy as np
-from mrmustard.lab.states import Thermal
-from mrmustard.lab.gates import Sgate, Dgate, Ggate
-from mrmustard.physics.bargmann import wigner_to_bargmann_rho
+from mrmustard.lab import Vacuum, State, SqueezedVacuum, Thermal, Sgate, Dgate, Ggate
+from mrmustard.physics.bargmann import wigner_to_bargmann_rho, fidelity, normalize
+from mrmustard.training import Optimizer
 from mrmustard.math import Math
-
 math = Math()  # use methods in math if you want them to be differentiable
 
 
@@ -71,3 +70,22 @@ def test_compactFock_1leftover():
             tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
         ]
     assert np.allclose(ref_leftover, G_leftover)
+
+def test_compactFock_1leftover_gradients():
+    """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+
+    def cost_fn():
+        n1 = 2 # number of detected photons
+        state_opt = Vacuum(2) >> I
+        A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
+        G = math.hermite_renormalized_1leftoverMode(math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[8, 3])
+        G_firstMode = G[:, :, n1]
+        conditional_state = normalize(State(dm=G_firstMode))
+        return - fidelity(conditional_state, SqueezedVacuum(r=1))
+
+    I = Ggate(num_modes=2, symplectic_trainable=True)
+    opt = Optimizer(symplectic_lr=0.1)
+    opt.minimize(cost_fn, by_optimizing=[I], max_steps=2)
+    assert opt.opt_history[-2] > opt.opt_history[-1]
+
+

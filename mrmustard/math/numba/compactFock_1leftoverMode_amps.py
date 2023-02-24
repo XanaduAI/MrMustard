@@ -290,7 +290,7 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
     (These initialisations currently cannot be done using Numba.)
     Then calculate the fock representation.
     """
-    A, B = reorder_AB(A, B)
+    # A, B = reorder_AB(A, B)
 
     cutoff_leftoverMode = cutoffs[0]
     cutoffs_tail = tuple(cutoffs[1:])

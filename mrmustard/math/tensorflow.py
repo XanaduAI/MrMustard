@@ -402,8 +402,28 @@ class TFMath(MathInterface):
 
         return poly, grad
 
-    @tf.custom_gradient
+    def reorder_AB_bargmann(
+            self, A: tf.Tensor, B: tf.Tensor
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
+        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
+        Moreover, the recurrence relation in mrmustard.math.numba.compactFock~ is defined such that A = -A compared to mrmustard.physics.bargmann.
+        """
+        A = -A
+        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        A = tf.gather(A, ordering, axis=1)
+        A = tf.gather(A, ordering)
+        B = tf.gather(B, ordering)
+        return A, B
+
     def hermite_renormalized_diagonal(
+            self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
+
+    @tf.custom_gradient
+    def hermite_renormalized_diagonal_reorderedAB(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
@@ -440,8 +460,14 @@ class TFMath(MathInterface):
 
         return poly0, grad
 
-    @tf.custom_gradient
     def hermite_renormalized_1leftoverMode(
+            self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        A,B = self.reorder_AB_bargmann(A,B)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A,B,C,cutoffs=cutoffs)
+
+    @tf.custom_gradient
+    def hermite_renormalized_1leftoverMode_reorderedAB(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
