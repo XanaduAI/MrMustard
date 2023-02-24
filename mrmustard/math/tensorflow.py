@@ -402,9 +402,7 @@ class TFMath(MathInterface):
 
         return poly, grad
 
-    def reorder_AB_bargmann(
-            self, A: tf.Tensor, B: tf.Tensor
-    ) -> Tuple[tf.Tensor, tf.Tensor]:
+    def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         Moreover, the recurrence relation in mrmustard.math.numba.compactFock~ is defined such that A = -A compared to mrmustard.physics.bargmann.
@@ -417,8 +415,11 @@ class TFMath(MathInterface):
         return A, B
 
     def hermite_renormalized_diagonal(
-            self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
@@ -461,10 +462,13 @@ class TFMath(MathInterface):
         return poly0, grad
 
     def hermite_renormalized_1leftoverMode(
-            self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        A,B = self.reorder_AB_bargmann(A,B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(A,B,C,cutoffs=cutoffs)
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     @tf.custom_gradient
     def hermite_renormalized_1leftoverMode_reorderedAB(
