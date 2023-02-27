@@ -781,7 +781,6 @@ class AdditiveNoise(Parametrized, Transformation):
             noise=noise,
             noise_trainable=noise_trainable,
             noise_bounds=noise_bounds,
-            modes=modes,
         )
         self._modes = modes
         self.is_unitary = False
