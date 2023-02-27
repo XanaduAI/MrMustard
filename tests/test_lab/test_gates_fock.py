@@ -112,8 +112,8 @@ def test_single_mode_fock_equals_gaussian_ket_dm_2(gate):
     gaussian_state = SqueezedVacuum(0.3)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.2)).dm([10])
-    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.2)).dm([10])
+    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).dm([10])
+    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.1)).dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
