@@ -214,11 +214,12 @@ class MMTensor:
         Tries to get attribute from self, then from self.tensor
 
         Args:
-        self (object): instance
-        name (str): attribute name
+            self (object): instance
+            name (str): attribute name
 
         Returns:
-        attribute value or raises AttributeError"""
+            attribute value or raises AttributeError
+"""
         try:
             return super().__getattribute__(name)
         except AttributeError:
