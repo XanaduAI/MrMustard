@@ -188,9 +188,7 @@ class MMTensor:
         return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
 
     def __getitem__(self, indices):
-        r"""
-        Implement indexing into the tensor.
-        """
+        """Implement indexing into the tensor."""
         indices = indices if isinstance(indices, tuple) else (indices,)
         axis_labels = self.axis_labels.copy()
         offset = 0
