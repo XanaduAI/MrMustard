@@ -48,9 +48,7 @@ class MMTensor:
             raise ValueError("The number of axis labels must be equal to the number of axes.")
 
     def __array__(self):
-        r"""
-        Implement the NumPy array interface.
-        """
+        r"""Implement the NumPy array interface."""
         return self.tensor
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
