@@ -174,9 +174,7 @@ class MMTensor:
         )
 
     def transpose(self, perm: Union[List[int], List[str]]):
-        r"""
-        Transpose the tensor using a list of axis labels or indices.
-        """
+        """Transpose the tensor using a list of axis labels or indices."""
         if set(perm) == set(self.axis_labels):
             perm = [self.axis_labels.index(label) for label in perm]
         return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
