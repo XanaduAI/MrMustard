@@ -16,15 +16,17 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional, Iterable
-from mrmustard.types import Matrix, Tensor
-from mrmustard.training import Parametrized
+from typing import Iterable, List, Optional, Tuple, Union
+
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import fock, gaussian
+from mrmustard.training import Parametrized
+from mrmustard.types import Matrix, Tensor
+
 from .abstract import FockMeasurement, Measurement, State
-from .states import DisplacedSqueezed, Coherent
 from .gates import Rgate
+from .states import Coherent, DisplacedSqueezed
 
 math = Math()
 
@@ -194,7 +196,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         )
 
         outcome = None
-        FockMeasurement.__init__(outcome, modes, cutoffs)
+        FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
