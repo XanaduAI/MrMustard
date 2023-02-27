@@ -212,8 +212,7 @@ class MMTensor:
             name (str): attribute name
 
         Returns:
-            attribute value or raises AttributeError
-"""
+            attribute value or raises AttributeError"""
         try:
             return super().__getattribute__(name)
         except AttributeError:
