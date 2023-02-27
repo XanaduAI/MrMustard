@@ -112,9 +112,7 @@ class MMTensor:
         return self.__add__(other)
 
     def __matmul__(self, other):
-        r"""
-        Overload the @ operator to perform tensor contractions.
-        """
+        r"""Overload the @ operator to perform tensor contractions."""
         # if not isinstance(other, MMTensor):
         #     raise TypeError(f"Cannot contract with object of type {type(other)}")
 
