@@ -31,8 +31,9 @@ __all__ = [
     "Vector",
     "Matrix",
     "Tensor",
+    "Trainable",
 ]
-from typing import Tuple, TypeVar, Protocol, Iterator, runtime_checkable, Union
+from typing import Iterator, Protocol, Tuple, TypeVar, Union, runtime_checkable
 
 import numpy as np
 
