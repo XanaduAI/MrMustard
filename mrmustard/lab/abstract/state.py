@@ -56,6 +56,7 @@ class State:
         ket: Array = None,
         dm: Array = None,
         cutoffs: Sequence[int] = None,
+        modes: Optional[int] = None,
         _norm: float = 1.0,
     ):
         r"""Initializes the state.
@@ -72,6 +73,7 @@ class State:
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Array): the Fock representation
             cutoffs (Sequence[int], default=None): set the cutoff dimensions of the state even if it is not a Fock state
+            modes (Optional[int], default=None): set the modes for the State. If set, the state is wrapped in an Operation.
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
@@ -100,6 +102,10 @@ class State:
             raise ValueError(
                 "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
             )
+        if modes:
+            from mrmustard.lab.circuit import Operation
+
+            self = Operation(self, [], modes, self.is_mixed)
 
     # def indices(self, modes) -> Union[Tuple[int], int]:
     #     r"""Returns the indices of the given modes.
