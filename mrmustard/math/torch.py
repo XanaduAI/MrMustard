@@ -31,6 +31,7 @@ from mrmustard.types import (
 from mrmustard.math.autocast import Autocast
 from .math_interface import MathInterface
 
+
 # pylint: disable=too-many-public-methods,no-self-use
 class TorchMath(MathInterface):
     r"""Torch implemantion of the :class:`Math` interface."""
@@ -335,7 +336,7 @@ class TorchMath(MathInterface):
             cost_fn (Callable): The cost function. Takes in two arguments:
                 - Output: The output tensor of the model.
             parameters (Dict): The parameters to optimize in three kinds:
-                symplectic, orthogonal and euclidean.
+                symplectic, unitary and euclidean.
             optimizer: The optimizer to be used by the math backend.
 
         Returns:

@@ -22,6 +22,7 @@ from matplotlib import cm
 import numpy as np
 from mrmustard import settings
 
+
 # pylint: disable=disallowed-name
 class Progressbar:
     "A spiffy loading bar to display the progress during an optimization."

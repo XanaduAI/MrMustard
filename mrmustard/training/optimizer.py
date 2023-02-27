@@ -29,9 +29,10 @@ math = Math()
 
 __all__ = ["Optimizer"]
 
+
 # pylint: disable=disallowed-name
 class Optimizer:
-    r"""An optimizer for any parametrized object: it can optimize euclidean, orthogonal and symplectic parameters.
+    r"""An optimizer for any parametrized object: it can optimize euclidean, unitary and symplectic parameters.
 
     .. note::
 
@@ -41,11 +42,16 @@ class Optimizer:
     """
 
     def __init__(
-        self, symplectic_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001
+        self,
+        symplectic_lr: float = 0.1,
+        unitary_lr: float = 0.1,
+        euclidean_lr: float = 0.001,
+        orthogonal_lr: float = 0.001,
     ):
         self.learning_rate = {
             "euclidean": euclidean_lr,
             "symplectic": symplectic_lr,
+            "unitary": unitary_lr,
             "orthogonal": orthogonal_lr,
         }
         self.opt_history: List[float] = [0]
@@ -86,12 +92,12 @@ class Optimizer:
     def apply_gradients(self, trainable_params, grads):
         """Apply gradients to variables.
 
-        This method group parameters by variable type (euclidean, symplectic, orthogonal) and
+        This method group parameters by variable type (euclidean, symplectic, unitary, orthogonal) and
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
 
-        # group grads and vars by type (i.e. euclidean, symplectic, orthogonal)
+        # group grads and vars by type (i.e. euclidean, symplectic, unitary, orthogonal)
         grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
 
         for param_type, grads_vars in grouped_vars_and_grads.items():
@@ -120,7 +126,7 @@ class Optimizer:
     @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
         """Groups `trainable_params` and `grads` by type into a dict of the form
-        `{"euclidean": [...], "orthogonal": [...], "symplectic": [...]}`."""
+        `{"euclidean": [...], "unitary": [...], "symplectic": [...], "orthogonal": [...]}`."""
         sorted_grads_and_vars = sorted(
             zip(grads, trainable_params), key=lambda grads_vars: grads_vars[1].type
         )

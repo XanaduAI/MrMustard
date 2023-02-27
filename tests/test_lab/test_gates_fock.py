@@ -27,6 +27,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Attenuator,
     Interferometer,
+    RealInterferometer,
 )
 from hypothesis import given, strategies as st
 from thewalrus.fock_gradients import (
@@ -134,6 +135,10 @@ def test_raise_interferometer_error():
     modes = [0, 2]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
-    modes = [2, 5, 6]
+    with pytest.raises(ValueError):
+        RealInterferometer(num_modes=num_modes, modes=modes)
+    modes = [2, 5, 6, 7]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
+    with pytest.raises(ValueError):
+        RealInterferometer(num_modes=num_modes, modes=modes)

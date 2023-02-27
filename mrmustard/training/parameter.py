@@ -49,7 +49,7 @@ There are three basic types of parameters:
     The dynamically assigned property is an instance of :class:`Parameter` and contains the
     ``value`` property which is a tensor of the autograd backend.
 
-    There are three types of trainable parameters: symplectic, euclidean and orthogonal.
+    There are three types of trainable parameters: symplectic, euclidean and unitary.
     Each type defines a different optimization procedure on the :py:training: module.
 
     .. code-block::
@@ -62,9 +62,9 @@ There are three basic types of parameters:
             def __init__(self, euclidean: Array):
                 super.__init__(euclidean=euclidean, euclidean_trainable=True)
 
-        class OrthogonalGate(Parametrized):
-            def __init__(self, orthogonal: Array):
-                super.__init__(orthogonal=orthogonal, orthogonal_trainable=True)
+        class UnitaryGate(Parametrized):
+            def __init__(self, unitary: Array):
+                super.__init__(unitary=unitary, unitary_trainable=True)
 
     The optimization procedure updates the value of the trainables *in-place*.
 
@@ -94,6 +94,7 @@ __all__ = [
     "Trainable",
     "Symplectic",
     "Euclidean",
+    "Unitary",
     "Orthogonal",
     "Constant",
     "create_parameter",
@@ -165,6 +166,15 @@ class Euclidean(Trainable):
         self.bounds = bounds
 
 
+class Unitary(Trainable):
+    """Unitary trainable. Uses :meth:`training.parameter_update.update_unitary`."""
+
+    def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
+        self._value = value_to_trainable(value, None, name)
+        self._name = name
+        self._owner = owner
+
+
 class Orthogonal(Trainable):
     """Orthogonal trainable. Uses :meth:`training.parameter_update.update_orthogonal`."""
 
@@ -180,11 +190,12 @@ class Constant(Parameter):
     """
 
     def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
-        self._value = (
-            value
-            if math.from_backend(value) and not math.is_trainable(value)
-            else math.new_constant(value, name)
-        )
+        if math.from_backend(value) and math.is_trainable(value):
+            self._value = value
+        elif type(value) in [list, int, float]:
+            self._value = math.new_variable(value, bounds=None, name=name)
+        else:
+            self._value = math.new_variable(value, bounds=None, name=name, dtype=value.dtype)
         self._name = name
         self._owner = owner
 
@@ -205,7 +216,7 @@ def create_parameter(
             for Euclidean parameters
 
     Returns:
-        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Orthogonal`
+        Parameter: an instance of a :class:`Constant` or :class:`Symplectic`, :class:`Unitary`, :class:`Orthogonal`
             or :class:`Euclidean` trainable.
     """
 
@@ -214,6 +225,9 @@ def create_parameter(
 
     if name.startswith("symplectic"):
         return Symplectic(value, name, owner)
+
+    if name.startswith("unitary"):
+        return Unitary(value, name, owner)
 
     if name.startswith("orthogonal"):
         return Orthogonal(value, name, owner)
@@ -230,8 +244,9 @@ def value_to_trainable(value: Any, bounds: Optional[Sequence], name: str) -> Ten
             for Euclidean parameters
         name (str): name of the parameter
     """
-    return (
-        value
-        if math.from_backend(value) and math.is_trainable(value)
-        else math.new_variable(value, bounds, name)
-    )
+    if math.from_backend(value) and math.is_trainable(value):
+        return value
+    elif type(value) in [list, int, float]:
+        return math.new_variable(value, bounds, name)
+    else:
+        return math.new_variable(value, bounds, name, value.dtype)
