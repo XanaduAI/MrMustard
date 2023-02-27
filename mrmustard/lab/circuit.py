@@ -22,6 +22,7 @@ __all__ = ["Circuit"]
 
 from typing import Dict, Optional, Union
 
+from mrmustard import settings
 from mrmustard.lab.abstract import Measurement, State, Transformation
 from mrmustard.utils.tagdispenser import TagDispenser
 
@@ -244,22 +245,41 @@ from mrmustard.utils.tagdispenser import TagDispenser
 
 
 class Wire:
-    r"""A wire of an operation that sits in a circuit.
+    r"""A wire of a Circuit or Operation. It corresponds to a wire going into or coming out of an
+    object in the circuit picture. Wires correspond to a single mode.
+    Wires are single or double depending on the nature of the object. As a rule of thumb wires
+    are single when states are pure and operations are unitary, and wires are double when states are
+    density matrices and operations are non-unitary (or unitary but they act on density matrices).
+    The Wire class is not meant to be used directly by users, but to serve as a utility class
+    for Circuits and Operations.
 
     Arguments:
+        owner Union[Circuit, Operation]: the Circuit or Operation that the wire belongs to
         connected (bool): whether the wire connects to other wires
         mode (int): the mode of the wire
         L (int): the left tag of the wire
         R (Optional[int]): the right tag of the wire
+        cutoff (Optional[int]): the Fock cutoff of the wire, defaults to settings.WIRE_CUTOFF
     """
 
-    def __init__(self, connected: bool, mode: int, L: int, R: Optional[int]):
+    def __init__(
+        self,
+        owner: Union[Circuit, Operation],
+        connected: bool,
+        mode: int,
+        L: int,
+        R: Optional[int] = None,
+        cutoff: Optional[int] = settings.WIRE_CUTOFF,
+    ):
+        self.owner: Union[Circuit, Operation] = owner
         self.connected: bool = connected
         self.mode: int = mode
         self.L: int = L
         self.R: Optional[int] = R
+        self.cutoff = cutoff
 
     def __eq__(self, other: Union[Wire, int]):
+        "checks if wires are on the same mode"
         if isinstance(other, Wire):
             return self.mode == other.mode
         elif isinstance(other, int):
@@ -272,22 +292,27 @@ class Wire:
 
 
 class Operation:
+    r"""A container for States, Transformations and Measurements that allows to place them inside
+    a circuit. It contains information about which modes in the circuit the operation is attached
+    to via its wires. Note that Operations are not meant for users, but to be used internally
+    by the Circuit class."""
+
     def __init__(
         self,
         op: Union[State, Transformation, Measurement],
         input_modes: list[int],
         output_modes: list[int],
-        dual_modes: bool = False,
+        dual_wires: bool = False,
     ):
         self.op = op
-        self.dual_modes: bool = dual_modes
-        self.tag_dispenser = TagDispenser()
+        self.dual_wires: bool = dual_wires
+        self.tag_dispenser: TagDispenser = TagDispenser()
         self.input_modes: Dict[int, Wire] = {
             m: Wire(
                 connected=False,
                 mode=m,
                 L=self.tag_dispenser.get_tag(),
-                R=self.tag_dispenser.get_tag() if dual_modes else None,
+                R=self.tag_dispenser.get_tag() if dual_wires else None,
             )
             for m in input_modes
         }
@@ -296,17 +321,26 @@ class Operation:
                 connected=False,
                 mode=m,
                 L=self.tag_dispenser.get_tag(),
-                R=self.tag_dispenser.get_tag() if dual_modes else None,
+                R=self.tag_dispenser.get_tag() if dual_wires else None,
             )
             for m in output_modes
         }
 
-        self.nout = len(self.output_modes)
-        self.nin = len(self.input_modes)
+        self.num_out = len(self.output_modes)
+        self.num_in = len(self.input_modes)
+
+    def make_dual(self):
+        "assigns a tag to the Right component of each input/output wire"
+        for mode, wire in self.input_modes.items():
+            wire.R = self.tag_dispenser.get_tag()
+        for mode, wire in self.output_modes.items():
+            wire.R = self.tag_dispenser.get_tag()
+        self.dual_wires = True
 
     def can_connect(self, other: Operation, mode: int):
-        if self.dual_modes != other.dual_modes:
-            raise ValueError("Cannot connect operations with different mode duality.")
+        "Checks whether this Operation can plug into another one."
+        if self.dual_wires != other.dual_wires:
+            raise ValueError("Cannot connect operations with different wire duality.")
         mode_available = mode in self.output_modes and mode in other.input_modes
         return (
             mode_available
@@ -315,47 +349,51 @@ class Operation:
         )
 
     def connect(self, other: Operation, mode: int):
-        # note that we mean that self forward-connects to other
+        "forward-connect to another Operation on the given mode."
         if self.can_connect(other, mode):
             inL_tag = other.input_modes[mode].L
             outL_tag = self.output_modes[mode].L
-            other.tag_dispenser.give_back_tag(max(inL_tag, outL_tag))
+            self.tag_dispenser.give_back_tag(max(inL_tag, outL_tag))
             other.input_modes[mode].L = min(inL_tag, outL_tag)
             other.input_modes[mode].connected = True
             self.output_modes[mode].connected = True
-            if self.dual_modes and other.dual_modes:
+            if self.dual_wires and other.dual_wires:
                 inR_tag = other.input_modes[mode].R
                 outR_tag = self.output_modes[mode].R
-                other.tag_dispenser.give_back_tag(max(inR_tag, outR_tag))
+                self.tag_dispenser.give_back_tag(max(inR_tag, outR_tag))
                 other.input_modes[mode].R = min(inR_tag, outR_tag)
 
     def __repr__(self):
-        return f"Operation[{self.op.__class__.__qualname__}](in={self.input_modes.keys()}, out={self.output_modes.keys()}, dual={self.dual_modes})"
+        return f"Operation[{self.op.__class__.__qualname__}](in={self.input_modes.keys()}, \
+                 out={self.output_modes.keys()}, dual={self.dual_wires})"
 
 
 class Circuit:
     def __init__(
         self,
         operations: list[Operation] = [],
-        dual_modes: bool = False,
+        dual_wires: bool = False,
     ):
-        self.dual_modes = dual_modes
-        self.operations = operations
+        self.dual_wires: bool = dual_wires
+        self.operations: list[Operation] = operations
         self.connect_all_operations()  # to do before setting input and output modes of the circuit
-        self.input_modes = {
+        self.set_input_output_modes()
+
+    def set_input_output_modes(self):
+        self.input_modes: Dict[int, Wire] = {
             mode: wire
             for op in self.operations
             for mode, wire in op.input_modes.items()
             if not wire.connected
         }
-        self.output_modes = {
+        self.output_modes: Dict[int, Wire] = {
             mode: wire
             for op in self.operations
             for mode, wire in op.output_modes.items()
             if not wire.connected
         }
 
-    def can_connect(self, other: Circuit):
+    def can_connect(self, other: Union[Circuit, Operation]):
         intersection = set(self.output_modes).intersection(set(other.input_modes))
         input_overlap = set(self.input_modes).intersection(set(other.input_modes) - intersection)
         output_overlap = (set(self.output_modes) - intersection).intersection(
@@ -364,47 +402,37 @@ class Circuit:
         return len(intersection) > 0 and len(input_overlap) == 0 and len(output_overlap) == 0
 
     def connect_all_operations(self):
-        # if two ops can be connected set the tags of the output modes of the first op to the input modes of the second op
+        # if two ops can be connected, set the tags of the output modes
+        # of the first op to the input modes of the second op
         for i, op1 in enumerate(self.operations):
             for mode in op1.output_modes:
-                mode_connected = False
-                for op2 in other.operations[i + 1 :]:
+                for op2 in self.operations[i + 1 :]:
                     if mode in op2.input_modes:
-                        mode_connected = True
                         op1.connect(op2, mode)
                         break
-                if mode_connected:
-                    break
-        self._connected = True
-
-        new_input_modes = self.input_modes + [
-            mode for mode in other.input_modes if mode not in self.output_modes
-        ]
-        new_output_modes = other.output_modes + [
-            mode for mode in self.output_modes if mode not in other.input_modes
-        ]
-        new_contents = self.operations + other.operations
-        return Circuit(
-            new_contents,
-            list(sorted(new_input_modes)),
-            list(sorted(new_output_modes)),
-            self.dual_modes or other.dual_modes,
-        )
 
     def connect(self, other):
         if not self.can_connect(other):
-            raise ValueError("Circuits cannot be connected")
-        # if two ops can be connected set the tags of the output modes of the first op to the input modes of the second op
-        for op1 in self.operations:
-            for op2 in other.operations:
-                intersection = set(self.output_modes).intersection(set(other.input_modes))
-                for mode in intersection:
-                    op2._tags["in_L"][op2.input_modes.index(mode)] = op1._tags["out_L"][
-                        op1.output_modes.index(mode)
-                    ]
-                    op2._tags["in_R"][op2.input_modes.index(mode)] = op1._tags["out_R"][
-                        op1.output_modes.index(mode)
-                    ]
+            raise ValueError("Cannot connect")
+        if self.dual_wires and not other.dual_wires:
+            other.make_dual()
+        if other.dual_wires and not self.dual_wires:
+            self.make_dual()
+        # if two ops can be connected set the tags of the output modes
+        # of the first op to the input modes of the second op
+        for mode, wire in self.output_modes.items():
+            if mode in other.input_modes.keys():
+                inL_tag = other.input_modes[mode].L
+                outL_tag = self.output_modes[mode].L
+                self.tag_dispenser.give_back_tag(max(inL_tag, outL_tag))
+                other.input_modes[mode].L = min(inL_tag, outL_tag)
+                other.input_modes[mode].connected = True
+                self.output_modes[mode].connected = True
+                if self.dual_wires and other.dual_wires:
+                    inR_tag = other.input_modes[mode].R
+                    outR_tag = self.output_modes[mode].R
+                    self.tag_dispenser.give_back_tag(max(inR_tag, outR_tag))
+                    other.input_modes[mode].R = min(inR_tag, outR_tag)
 
         new_input_modes = self.input_modes + [
             mode for mode in other.input_modes if mode not in self.output_modes
@@ -412,13 +440,15 @@ class Circuit:
         new_output_modes = other.output_modes + [
             mode for mode in self.output_modes if mode not in other.input_modes
         ]
-        new_contents = self.operations + other.operations
         return Circuit(
-            new_contents,
+            self.operations + other.operations,
             list(sorted(new_input_modes)),
             list(sorted(new_output_modes)),
-            self.dual_modes or other.dual_modes,
+            self.dual_wires or other.dual_wires,
         )
 
-
-#
+    def make_dual(self):
+        "assign new tags to each non-dual op"
+        for op in self.operations:
+            if not op.dual_wires:
+                op.make_dual()
