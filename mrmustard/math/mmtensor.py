@@ -182,9 +182,7 @@ class MMTensor:
         return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
 
     def reshape(self, shape, axis_labels=None):
-        r"""
-        Reshape the tensor. Allows to change the axis labels.
-        """
+        """Reshape the tensor. Allows to change the axis labels."""
         return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
 
     def __getitem__(self, indices):
