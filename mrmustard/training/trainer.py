@@ -98,13 +98,16 @@ Examples:
 
 """
 
-from inspect import signature, Parameter
-from functools import partial
-from typing import Sequence, Mapping
 import warnings
+from functools import partial
+from inspect import Parameter, signature
+from typing import Mapping, Sequence
+
 import numpy as np
 from rich.progress import track
+
 import mrmustard as mm
+
 from .optimizer import Optimizer
 
 
@@ -342,7 +345,7 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
         ) from e
 
     if not ray.is_initialized():
-        ray.init(num_cpus=num_cpus)
+        ray.init(num_cpus=num_cpus)  # pragma: no cover
 
     return_dict = False
     if isinstance(tasks, int):
