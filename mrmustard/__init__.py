@@ -35,12 +35,11 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        # clip(mean + 5*std, min, max) when auto-detecting the Fock cutoff
-        self.AUTOCUTOFF_STDEV_FACTOR = 5
+        self.AUTOCUTOFF_NORM = 0.999  # capture at least 99.9% of the probability
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         self.CIRCUIT_DECIMALS = 3
-        # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
+        # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
