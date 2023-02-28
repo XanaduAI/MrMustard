@@ -543,11 +543,14 @@ class RealInterferometer(Parametrized, Transformation):
         num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
         self.short_name = "RI"
 
