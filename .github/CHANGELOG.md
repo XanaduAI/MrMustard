@@ -191,6 +191,10 @@
 * Fixes a slicing issue that arises when we compute the fidelity between gaussian and fock states.
   [(#210)](https://github.com/XanaduAI/MrMustard/pull/210)
 
+* The sign of parameters in the circuit drawer are now displayed correctly.
+  [(#209)](https://github.com/XanaduAI/MrMustard/pull/209)
+
+
 ### Documentation
 
 ### Contributors 
