@@ -29,6 +29,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
 )
 
+from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
@@ -56,28 +57,34 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(
-    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
-) -> Tuple[int, ...]:
-    r"""Returns the autocutoffs of a Wigner state.
+def autocutoffs(cov: Matrix, means: Vector, probability: float):
+    r"""Returns the cutoffs of a Gaussian state by computing the 1-mode marginals until
+    the probability of the marginal is less than ``probability``.
 
     Args:
-        number_stdev: the photon number standard deviation in each mode
-            (i.e. the square root of the diagonal of the covariance matrix)
-        number_means: the photon number means vector
-        max_cutoff: the maximum cutoff
+        cov: the covariance matrix
+        means: the means vector
+        probability: the cutoff probability
 
     Returns:
         Tuple[int, ...]: the suggested cutoffs
     """
-    if max_cutoff is None:
-        max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
-    if min_cutoff is None:
-        min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
-    autocutoffs = settings.AUTOCUTOFF_MIN_CUTOFF + math.cast(
-        number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32"
-    )
-    return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
+    M = len(means) // 2
+    cutoffs = []
+    for i in range(M):
+        cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
+        means_i = np.array([means[i], means[i + M]])
+        # apply 1-d recursion until probability is less than 0.99
+        A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
+        diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
+        # find at what index in the cumsum the probability is more than 0.99
+        for i, val in enumerate(np.cumsum(diag)):
+            if val > probability:
+                cutoffs.append(max(i + 1, settings.AUTOCUTOFF_MIN_CUTOFF))
+                break
+        else:
+            cutoffs.append(settings.AUTOCUTOFF_MAX_CUTOFF)
+    return cutoffs
 
 
 def wigner_to_fock_state(
