@@ -3,7 +3,7 @@ import pytest
 from thewalrus.quantum import real_to_complex_displacements
 from thewalrus.random import random_covariance
 
-from mrmustard.lab import Coherent, Fock
+from mrmustard.lab import Coherent, Fock, State
 from mrmustard import physics
 from mrmustard.math import Math
 from mrmustard.physics import fock as fp
@@ -131,11 +131,25 @@ class TestMixedStates:
 
 
 class TestGaussianFock:
-    """Tests for the fidelity between a pair of states in Gaussian and Fock representation"""
+    """Tests for the fidelity between a pair of single-mode states in Gaussian and Fock representation"""
 
-    state1 = Coherent(x=1.0)
-    state2 = Fock(n=1)
+    state1ket = Coherent(x=1.0)
+    state1dm = State(dm=state1ket.dm())
+    state2ket = Fock(n=1)
+    state2dm = State(dm=state2ket.dm(state1dm.cutoffs))
 
-    def test_fidelity_across_representations(self):
+    def test_fidelity_across_representations_ket_ket(self):
         """Test that the fidelity of these two states is what it should be"""
-        assert np.allclose(physics.fidelity(self.state1, self.state2), 0.36787944, atol=1e-4)
+        assert np.allclose(physics.fidelity(self.state1ket, self.state2ket), 0.36787944, atol=1e-4)
+
+    def test_fidelity_across_representations_ket_dm(self):
+        """Test that the fidelity of these two states is what it should be"""
+        assert np.allclose(physics.fidelity(self.state1ket, self.state2dm), 0.36787944, atol=1e-4)
+
+    def test_fidelity_across_representations_dm_ket(self):
+        """Test that the fidelity of these two states is what it should be"""
+        assert np.allclose(physics.fidelity(self.state1dm, self.state2ket), 0.36787944, atol=1e-4)
+
+    def test_fidelity_across_representations_dm_dm(self):
+        """Test that the fidelity of these two states is what it should be"""
+        assert np.allclose(physics.fidelity(self.state1dm, self.state2dm), 0.36787944, atol=1e-4)
