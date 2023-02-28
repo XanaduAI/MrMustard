@@ -360,7 +360,7 @@ class Homodyne(Generaldyne):
 
         units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
         state = DisplacedSqueezed(
-            r=r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+            r=self.r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
         )
         super().__init__(state=state, outcome=outcome, modes=modes)
 
