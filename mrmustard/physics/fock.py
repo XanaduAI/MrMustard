@@ -19,7 +19,7 @@ This module contains functions for performing calculations on Fock states.
 """
 
 from functools import lru_cache
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Optional
 
 import numpy as np
 
