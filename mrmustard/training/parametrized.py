@@ -20,6 +20,8 @@ of the class.
 
 from typing import Any, Generator, List, Sequence, Tuple
 
+import numpy as np
+
 from mrmustard.math import Math
 from mrmustard.training.parameter import (
     Constant,
@@ -75,11 +77,16 @@ class Parametrized:
         Returns:
             str: string representation of the parameter values
         """
-        string = ""
+        strings = []
         for _, value in self.kw_parameters:
-            if math.asnumpy(value).ndim == 0:  # don't show arrays
-                string += f"{math.asnumpy(value):.{decimals}g}, "
-        return string.rstrip(", ")
+            value = math.asnumpy(value)
+            if value.ndim == 0:  # don't show arrays
+                value = np.round(value, decimals)
+                int_part = int(value)
+                decimal_part = np.round(value - int_part, decimals)
+                string = str(int_part) + f"{decimal_part:.{decimals}g}"[1:]
+            strings.append(string)
+        return ", ".join(strings)
 
     @property
     def kw_parameters(self) -> Tuple[Tuple[str, Tensor]]:

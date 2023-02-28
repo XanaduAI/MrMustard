@@ -54,7 +54,7 @@ def test_Dgate_1mode(state, x, y):
 
 def test_attenuator_on_fock():
     "tests that attenuating a fock state makes it mixed"
-    assert (Fock(10) >> Attenuator(0.5)).is_pure is False
+    assert not (Fock(10) >> Attenuator(0.5)).is_pure
 
 
 @given(state=n_mode_pure_state(num_modes=2), xxyy=array_of_(medium_float, minlen=4, maxlen=4))
@@ -207,11 +207,8 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
 
 
 def test_raise_interferometer_error():
-    """test Interferometer raises an error when both `modes` and `num_modes` are given"""
+    """test Interferometer raises an error when both `modes` and `num_modes` don't match"""
     num_modes = 3
     modes = [0, 2]
-    with pytest.raises(ValueError):
-        Interferometer(num_modes=num_modes, modes=modes)
-    modes = [2, 5, 6]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)

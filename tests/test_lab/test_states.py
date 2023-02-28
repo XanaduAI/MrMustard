@@ -202,7 +202,8 @@ def test_random_state_is_entangled():
 
 @given(modes=st.lists(st.integers(), min_size=2, max_size=5, unique=True))
 def test_getitem_set_modes(modes):
-    """Test that using `State.__getitem__` and `modes` kwarg correctly set the modes of the state."""
+    """Test that using `State.__getitem__` and `modes`
+    kwarg correctly set the modes of the state."""
 
     cutoff = len(modes) + 1
     ket = np.zeros([cutoff] * len(modes), dtype=np.complex128)
