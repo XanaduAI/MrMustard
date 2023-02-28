@@ -20,7 +20,14 @@ from mrmustard.training import Parametrized
 from mrmustard.math import Math
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import BSgate, S2gate
-from mrmustard.training.parameter import Constant, Unitary, Orthogonal, Euclidean, Symplectic, Trainable
+from mrmustard.training.parameter import (
+    Constant,
+    Unitary,
+    Orthogonal,
+    Euclidean,
+    Symplectic,
+    Trainable,
+)
 
 math = Math()
 

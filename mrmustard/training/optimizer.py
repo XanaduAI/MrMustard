@@ -42,7 +42,11 @@ class Optimizer:
     """
 
     def __init__(
-        self, symplectic_lr: float = 0.1, unitary_lr: float = 0.1, orthogonal_lr: float = 0.1, euclidean_lr: float = 0.001
+        self,
+        symplectic_lr: float = 0.1,
+        unitary_lr: float = 0.1,
+        orthogonal_lr: float = 0.1,
+        euclidean_lr: float = 0.001,
     ):
         self.learning_rate = {
             "euclidean": euclidean_lr,

@@ -225,7 +225,7 @@ def create_parameter(
 
     if name.startswith("symplectic"):
         return Symplectic(value, name, owner)
-    
+
     if name.startswith("unitary"):
         return Unitary(value, name, owner)
 
