@@ -2,78 +2,79 @@
 
 ### New features
 
-  * Ray-based distributed trainer is now added to `training.trainer`. It acts as a replacement for `for` loops and enables the parallelization of running many circuits as well as their optimizations. To install the extra dependencies: `pip install .[ray]`.
+* Ray-based distributed trainer is now added to `training.trainer`. It acts as a replacement for `for` loops and enables
+  the parallelization of running many circuits as well as their optimizations. To install the extra dependencies: `pip install .[ray]`.
   [(#194)](https://github.com/XanaduAI/MrMustard/pull/194)
 
-    ```python
-    from mrmustard.lab import Vacuum, Dgate, Ggate
-    from mrmustard.physics import fidelity
-    from mrmustard.training.trainer import map_trainer
+  ```python
+  from mrmustard.lab import Vacuum, Dgate, Ggate
+  from mrmustard.physics import fidelity
+  from mrmustard.training.trainer import map_trainer
 
-    def make_circ(x=0.):
-        return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
-    
-    def cost_fn(circ=make_circ(0.1), y_targ=0.):
-        target = Gaussian(1) >> Dgate(-1.5, y_targ)
-        s = Vacuum(1) >> circ
-        return -fidelity(s, target)
-    
-    # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
-    results_0 = map_trainer(
-        cost_fn=cost_fn,
-        tasks=5,
-    )
+  def make_circ(x=0.):
+      return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
+  
+  def cost_fn(circ=make_circ(0.1), y_targ=0.):
+      target = Gaussian(1) >> Dgate(-1.5, y_targ)
+      s = Vacuum(1) >> circ
+      return -fidelity(s, target)
+  
+  # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
+  results_0 = map_trainer(
+      cost_fn=cost_fn,
+      tasks=5,
+  )
 
-    # Use case 1: Run circuit optimization 5 times on randomly initialized circuits.
-    results_1 = map_trainer(
-        cost_fn=cost_fn,
-        device_factory=make_circ,
-        tasks=5,
-        max_steps=50,
-        symplectic_lr=0.05,
-    )
+  # Use case 1: Run circuit optimization 5 times on randomly initialized circuits.
+  results_1 = map_trainer(
+      cost_fn=cost_fn,
+      device_factory=make_circ,
+      tasks=5,
+      max_steps=50,
+      symplectic_lr=0.05,
+  )
 
-    # Use case 2: Run circuit optimization 2 times on randomly initialized circuits with custom parameters.
-    results_2 = map_trainer(
-        cost_fn=cost_fn,
-        device_factory=make_circ,
-        tasks=[
-            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
-            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
-        ],
-        y_targ=0.35,
-        symplectic_lr=0.05,
-        AUTOCUTOFF_MAX_CUTOFF=7,
-    )
-    ```
+  # Use case 2: Run circuit optimization 2 times on randomly initialized circuits with custom parameters.
+  results_2 = map_trainer(
+      cost_fn=cost_fn,
+      device_factory=make_circ,
+      tasks=[
+          {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
+          {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+      ],
+      y_targ=0.35,
+      symplectic_lr=0.05,
+      AUTOCUTOFF_MAX_CUTOFF=7,
+  )
+  ```
 
 * Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome value is
   specified by the user, a value is sampled from the reduced state probability distribution and the
   conditional state on the remaining modes is generated.
   [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
 
-    ```python
-    import numpy as np
-    from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+  ```python
+  import numpy as np
+  from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
 
-    # conditional state from measurement
-    conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+  # conditional state from measurement
+  conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
 
-    # measurement outcome
-    measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
-    ```
+  # measurement outcome
+  measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+  ```
 
 * The optimizer `minimize` method now accepts an optional callback function, which will be called at each step
   of the optimization and it will be passed the step number, the cost value, and the value of the trainable parameters.
   The result is added to the `callback_history` attribute of the optimizer.
   [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
 
+* the Math interface now supports linear system solving via `math.solve`.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
 * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for a very easy handling of tensor contractions.
   Internally MrMustard performs lots of tensor contractions and this wrapper allows one to label each index of a tensor and perform
   contractions using the `@` symbol as if it were a simple matrix multiplication (the indices with the same name get contracted).
-  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
-
-  * the Math interface now supports linear system solving via `math.solve`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 
   ```python
@@ -101,34 +102,40 @@
   the number of decimals shown in the ascii representation. If None only the name of the gate is shown.
   [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
 
-
+* PNR sampling from Gaussian circuits using density matrices can now be performed faster. When all modes are detected,
+  this is done by replacing `math.hermite_renormalized` by `math.hermite_renormalized_diagonal`.
+  In case all but the first mode are detected, `math.hermite_renormalized_1leftoverMode` can be used.
+  The complexity of these new methods is equal to performing a pure state simulation.
+  The methods are differentiable, such that they can be used for defining a costfunction.
+  [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
+  
 ### Breaking changes
 
 ### Improvements
 
 * The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-providing better numerical stability for larger cutoff and displacement values.
+  providing better numerical stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147) 
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
   [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
 
-    ```python
-      from mrmustard.utils.wigner import wigner_discretized
-      W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
-    ```
+  ```python
+    from mrmustard.utils.wigner import wigner_discretized
+    W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
+  ```
 
 * Calculate marginals independently from the Wigner function thus ensuring that the marginals are
-physical even though the Wigner function might not contain all the features of the state
-within the defined window. Also, expose some plot parameters and return the figure and axes.
+  physical even though the Wigner function might not contain all the features of the state
+  within the defined window. Also, expose some plot parameters and return the figure and axes.
   [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
 
 * Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses of `Transformation`.
-This allows for a more compact Fock representation where needed.
+  This allows for a more compact Fock representation where needed.
   [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
 
 * The `mrmustard.physics.fock` module now provides convenience functions for applying kraus operators and
-choi operators to kets and density matrices.
+  choi operators to kets and density matrices.
   [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
   ```python
@@ -140,11 +147,11 @@ choi operators to kets and density matrices.
   ```
 
 * Replaced norm with probability in the repr of `State`. This improves consistency over the old behaviour
-(norm was the sqrt of prob if the state was pure and prob if the state was mixed).
+  (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
   [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
 
 * Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related to those representation,
-which have been refactored and moved out of `physics.fock`.
+  which have been refactored and moved out of `physics.fock`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 
 
@@ -155,36 +162,39 @@ the other types, like `Batch[ComplexTensor]`. This will allow for better type ch
 * Added multiple tests and improved the use of Hypothesis.
   [(#191)](https://github.com/XanaduAI/MrMustard/pull/191)
 
+* The `fock.autocutoff` function now uses the new diagonal methods for calculating a probability-based cutoff.
+  Use `settings.AUTOCUTOFF_PROBABILITY` to set the probability threshold.
+  [(#203)](https://github.com/XanaduAI/MrMustard/pull/203)
 
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter
-of a number of gates in pallel.
- [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+  of a number of gates in pallel.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
 * The trace function in the fock module was giving incorrect results when called with certain choices of modes.
-This is now fixed.
- [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+  This is now fixed.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
 * The purity function for fock states no longer normalizes the density matrix before computing the purity.
- [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
 * The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
- [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
 * The internal fock representation of states returns the correct cutoffs in all cases (solves an issue when
-a pure dm was converted to ket).
-[(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
+  a pure dm was converted to ket).
+  [(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
 
 * The ray related tests were hanging in github action causing test to halt and fail. Now ray is forced to init with 1 cpu when running tests preventing the issue.
-[(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
+  [(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
 
 ### Documentation
 
 ### Contributors 
 
 This release contains contributions from (in alphabetical order):
-[Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
+[Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 ---
 
@@ -214,15 +224,15 @@ This release contains contributions from (in alphabetical order):
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
 * Parameter passthrough allows one to use custom variables and/or functions as parameters. For example we can use parameters of other gates:
-    ```python
-    from mrmustard.lab.gates import Sgate, BSgate
+  ```python
+  from mrmustard.lab.gates import Sgate, BSgate
 
-    BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
-    S0 = Sgate(r=BS.theta)[0]
-    S1 = Sgate(r=-BS.theta)[1]
+  BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
+  S0 = Sgate(r=BS.theta)[0]
+  S1 = Sgate(r=-BS.theta)[1]
 
-    circ = S0 >> S1 >> BS
-    ```
+  circ = S0 >> S1 >> BS
+  ```
   Another possibility is with functions:
   ```python
 
@@ -250,7 +260,6 @@ This release contains contributions from (in alphabetical order):
     print(mode.purity)
   ```
   [(#140)](https://github.com/XanaduAI/MrMustard/pull/140)
-
 
 ### Breaking changes
 
@@ -306,8 +315,8 @@ This release contains contributions from (in alphabetical order):
   applied to.
   [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
 
-
 ### Bug fixes
+
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
 
@@ -378,6 +387,7 @@ This release contains contributions from (in alphabetical order):
 * [Basic API reference](https://mrmustard.readthedocs.io/en/latest/introduction/basic_reference.html)
   is updated to use the latest Mr Mustard API.
   [(#119)](https://github.com/XanaduAI/MrMustard/pull/119)
+
 ### Contributors
 
 This release contains contributions from (in alphabetical order):

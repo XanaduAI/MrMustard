@@ -389,7 +389,11 @@ class TestNormalization:
         """Checks that projecting a two-mode coherent state onto a number state
         produces a state with the expected norm."""
         leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=normalize)[0]
-        assert np.isclose(expected_norm, physics.norm(leftover), atol=1e-5)
+        assert np.isclose(
+            expected_norm * np.sqrt(settings.AUTOCUTOFF_PROBABILITY),
+            physics.norm(leftover),
+            rtol=1 - settings.AUTOCUTOFF_PROBABILITY,
+        )
 
     def test_norm_2mode_gaussian_normalized(self):
         """Checks that after projection the norm of the leftover state is as expected."""
