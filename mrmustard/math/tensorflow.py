@@ -104,7 +104,10 @@ class TFMath(MathInterface):
             np.inf if bounds[1] is None else bounds[1],
         )
         if bounds != (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+
+            def constraint(x):
+                return tf.clip_by_value(x, bounds[0], bounds[1])
+
         else:
             constraint = None
         return constraint

@@ -15,12 +15,13 @@
 """
 Unit tests for the :class:`MMTensor`.
 """
+import numpy as np
 import pytest
-from mrmustard.math.mmtensor import MMTensor
+
 from mrmustard.math import Math
+from mrmustard.math.mmtensor import MMTensor
 
 math = Math()
-import numpy as np
 
 
 def test_mmtensor_creation():
@@ -71,6 +72,104 @@ def test_mmtensor_contract():
     array = np.array([[1, 2], [3, 4]])
     trace = MMTensor(array, axis_labels=["a", "a"]).contract().tensor
     assert trace == 5
+
+
+def test_mmtensor_getitem_slice():
+    """Test that MMTensor slices correctly"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    sliced = mmtensor[0, :, 0]
+    assert sliced.axis_labels == ["1"]
+    assert np.allclose(sliced, array[0, :, 0])
+
+
+def test_mmtensor_getitem_int():
+    """Test that MMTensor slices correctly"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    sliced = mmtensor[0, 0, 0]
+    assert sliced.axis_labels == []
+    assert np.allclose(sliced, array[0, 0, 0])
+
+
+def test_mmtensor_getitem_ellipsis_beginning():
+    """Test that MMTensor slices correctly"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    sliced = mmtensor[..., 2]
+    assert mmtensor[..., 2].axis_labels == ["0", "1"]
+    assert np.allclose(sliced, array[..., 2])
+
+
+def test_ufunc():
+    """Test that MMTensor ufuncs work"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    assert np.allclose(np.sin(mmtensor), np.sin(array))
+
+
+def test_mmtensor_algebra_add():
+    """Test that MMTensor addition works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    assert np.allclose(mmtensor + mmtensor, array + array)
+
+
+def test_mmtensor_algebra_add_different_labels():
+    """Test that MMTensor addition with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
+    mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
+    with pytest.raises(ValueError):
+        mmtensor1 + mmtensor2  # pylint: disable=pointless-statement
+
+
+def test_mmtensor_algebra_subtract():
+    """Test that MMTensor subtraction works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    assert np.allclose(mmtensor - mmtensor, array - array)
+
+
+def test_mmtensor_algebra_subtract_different_labels():
+    """Test that MMTensor subtraction with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
+    mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
+    with pytest.raises(ValueError):
+        mmtensor1 - mmtensor2  # pylint: disable=pointless-statement
+
+
+def test_mmtensor_algebra_multiply():
+    """Test that MMTensor multiplication works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    assert np.allclose(mmtensor * mmtensor, array * array)
+
+
+def test_mmtensor_algebra_multiply_different_labels():
+    """Test that MMTensor multiplication with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
+    mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
+    with pytest.raises(ValueError):
+        mmtensor1 * mmtensor2  # pylint: disable=pointless-statement
+
+
+def test_mmtensor_algebra_divide():
+    """Test that MMTensor division works"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor = MMTensor(array, axis_labels=["0", "1", "2"])
+    assert np.allclose(mmtensor / mmtensor, array / array)
+
+
+def test_mmtensor_algebra_divide_different_labels():
+    """Test that MMTensor division with different labels raises error"""
+    array = np.random.normal(size=(2, 3, 4))
+    mmtensor1 = MMTensor(array, axis_labels=["0", "1", "2"])
+    mmtensor2 = MMTensor(array, axis_labels=["0", "1", "3"])
+    with pytest.raises(ValueError):
+        mmtensor1 / mmtensor2  # pylint: disable=pointless-statement
 
 
 def test_mmtensor_contract_multiple_indices():
