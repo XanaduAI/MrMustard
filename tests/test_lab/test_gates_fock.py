@@ -12,33 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from hypothesis import given, strategies as st
 import numpy as np
+import pytest
+from hypothesis import given
 from thewalrus.fock_gradients import (
-    squeezing,
     beamsplitter,
-    two_mode_squeezing,
     mzgate,
+    squeezing,
+    two_mode_squeezing,
 )
 
-from tests.random import *
-from mrmustard.physics import fock
-from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
-from mrmustard.physics import fock
 from mrmustard.lab import (
-    Dgate,
-    Sgate,
-    Pgate,
-    Rgate,
-    CZgate,
-    CXgate,
-    BSgate,
-    MZgate,
-    S2gate,
     Attenuator,
+    BSgate,
+    Dgate,
     Interferometer,
-    Vacuum,
+    MZgate,
+    Rgate,
+    S2gate,
+    Sgate,
+)
+from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
+from mrmustard.physics import fock
+from tests.random import (
+    angle,
+    array_of_,
+    medium_float,
+    n_mode_pure_state,
+    r,
+    single_mode_cv_channel,
+    single_mode_unitary_gate,
+    two_mode_unitary_gate,
 )
 
 
@@ -50,7 +54,7 @@ def test_Dgate_1mode(state, x, y):
 
 def test_attenuator_on_fock():
     "tests that attenuating a fock state makes it mixed"
-    assert (Fock(10) >> Attenuator(0.5)).is_pure == False
+    assert not (Fock(10) >> Attenuator(0.5)).is_pure
 
 
 @given(state=n_mode_pure_state(num_modes=2), xxyy=array_of_(medium_float, minlen=4, maxlen=4))
@@ -203,11 +207,8 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
 
 
 def test_raise_interferometer_error():
-    """test Interferometer raises an error when both `modes` and `num_modes` are given"""
+    """test Interferometer raises an error when both `modes` and `num_modes` don't match"""
     num_modes = 3
     modes = [0, 2]
-    with pytest.raises(ValueError):
-        Interferometer(num_modes=num_modes, modes=modes)
-    modes = [2, 5, 6]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
