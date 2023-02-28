@@ -3,7 +3,8 @@ import pytest
 from thewalrus.quantum import real_to_complex_displacements
 from thewalrus.random import random_covariance
 
-from mrmustard import *
+from mrmustard.lab import *
+from mrmustard import physics
 from mrmustard.math import Math
 from mrmustard.physics import fock as fp
 from mrmustard.physics import gaussian as gp
@@ -127,3 +128,12 @@ class TestMixedStates:
         """Test fidelity of known mixed states."""
         expected = 5 / 6
         assert np.allclose(expected, fp.fidelity(self.state1, self.state2, False, False))
+
+
+class TestGaussianFock:
+    state1 = Coherent(x=1.0)
+    state2 = Fock(n=1)
+
+    def test_fidelity_across_representations(self):
+        """Test that the fidelity of two identical quantum states is 1"""
+        assert np.allclose(physics.fidelity(self.state1, self.state2), 0.36787944, atol=1e-4)

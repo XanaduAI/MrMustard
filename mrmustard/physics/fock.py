@@ -240,8 +240,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     if a_ket and b_ket:
         min_cutoffs = [slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)]
-        state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs]
+        state_a = state_a[tuple(min_cutoffs)]
+        state_b = state_b[tuple(min_cutoffs)]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
 
     if a_ket:
