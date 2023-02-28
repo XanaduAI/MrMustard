@@ -188,6 +188,9 @@
 * Various minor bug fixes.
 [(#202)](https://github.com/XanaduAI/MrMustard/pull/202)
 
+* Fixes a slicing issue that arises when we compute the fidelity between gaussian and fock states.
+  [(#210)](https://github.com/XanaduAI/MrMustard/pull/210)
+
 ### Documentation
 
 ### Contributors 
