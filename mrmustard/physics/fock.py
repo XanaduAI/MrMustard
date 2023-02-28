@@ -56,28 +56,28 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(
-    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
-) -> Tuple[int, ...]:
-    r"""Returns the autocutoffs of a Wigner state.
+# def autocutoffs(
+#     number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
+# ) -> Tuple[int, ...]:
+#     r"""Returns the autocutoffs of a Wigner state.
 
-    Args:
-        number_stdev: the photon number standard deviation in each mode
-            (i.e. the square root of the diagonal of the covariance matrix)
-        number_means: the photon number means vector
-        max_cutoff: the maximum cutoff
+#     Args:
+#         number_stdev: the photon number standard deviation in each mode
+#             (i.e. the square root of the diagonal of the covariance matrix)
+#         number_means: the photon number means vector
+#         max_cutoff: the maximum cutoff
 
-    Returns:
-        Tuple[int, ...]: the suggested cutoffs
-    """
-    if max_cutoff is None:
-        max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
-    if min_cutoff is None:
-        min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
-    autocutoffs = settings.AUTOCUTOFF_MIN_CUTOFF + math.cast(
-        number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32"
-    )
-    return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
+#     Returns:
+#         Tuple[int, ...]: the suggested cutoffs
+#     """
+#     if max_cutoff is None:
+#         max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
+#     if min_cutoff is None:
+#         min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
+#     autocutoffs = settings.AUTOCUTOFF_MIN_CUTOFF + math.cast(
+#         number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32"
+#     )
+#     return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
 
 
 def wigner_to_fock_state(
