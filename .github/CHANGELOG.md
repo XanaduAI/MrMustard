@@ -152,8 +152,6 @@ which have been refactored and moved out of `physics.fock`.
 
 ### Bug fixes
 
-* The unitary group optimization of the interferometer have been added. The symplectic matrix that describes an interferometer belongs to the intersection of the orthogonal group and the symplectic group, which is a unitary group. It fixed the issue that the optimization of the interferometer was orthogonal group optimization. [(#173)](https://github.com/XanaduAI/MrMustard/pull/173)
-
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter
 of a number of gates in pallel.
  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
@@ -174,6 +172,8 @@ a pure dm was converted to ket).
 
 * The ray related tests were hanging in github action causing test to halt and fail. Now ray is forced to init with 1 cpu when running tests preventing the issue.
 [(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
+
+* The unitary group optimization of the interferometer have been added. The symplectic matrix that describes an interferometer belongs to the intersection of the orthogonal group and the symplectic group, which is a unitary group. It fixed the issue that the optimization of the interferometer was orthogonal group optimization. [(#207)](https://github.com/XanaduAI/MrMustard/pull/207)
 
 ### Documentation
 

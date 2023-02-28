@@ -1217,7 +1217,7 @@ class MathInterface(ABC):
         Z = self.matmul(self.transpose(S), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
 
-   def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
+    def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
         r"""Convert the Euclidean gradient to a Riemannian gradient on the
         tangent bundle of the unitary manifold.
 
