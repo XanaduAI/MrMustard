@@ -329,7 +329,7 @@ class Homodyne(Generaldyne):
         quadrature_angle (float or List[float]): measurement quadrature angle
         result (optional float or List[float]): displacement amount
         modes (optional List[int]): the modes of the displaced squeezed state
-        r (optional float or List[float]): squeezing amount
+        r (optional float or List[float]): squeezing amount (default: ``settings.HOMODYNE_SQUEEZING``)
     """
 
     def __init__(
@@ -337,9 +337,9 @@ class Homodyne(Generaldyne):
         quadrature_angle: Union[float, List[float]],
         result: Optional[Union[float, List[float]]] = None,
         modes: Optional[List[int]] = None,
-        r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
+        r: Optional[Union[float, List[float]]] = None,
     ):
-        self.r = r
+        self.r = r or settings.HOMODYNE_SQUEEZING
         self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
 
         # if no ``result`` provided, sample the outcome
