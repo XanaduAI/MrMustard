@@ -12,27 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from threading import currentThread
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st, assume
+from hypothesis import assume, given
+from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
-from mrmustard.physics import gaussian as gp
+
+from mrmustard import settings
+from mrmustard.lab.abstract import State
+from mrmustard.lab.gates import Attenuator, Dgate, Ggate, Sgate
 from mrmustard.lab.states import (
-    Fock,
     Coherent,
-    Vacuum,
+    DisplacedSqueezed,
+    Fock,
     Gaussian,
     SqueezedVacuum,
-    DisplacedSqueezed,
     Thermal,
+    Vacuum,
 )
-from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
-from mrmustard.lab.abstract import State
-from mrmustard import settings
-from tests.random import *
-
 from mrmustard.math import Math
+from mrmustard.physics import gaussian as gp
+from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
 
 math = Math()
 
@@ -202,7 +202,8 @@ def test_random_state_is_entangled():
 
 @given(modes=st.lists(st.integers(), min_size=2, max_size=5, unique=True))
 def test_getitem_set_modes(modes):
-    """Test that using `State.__getitem__` and `modes` kwarg correctly set the modes of the state."""
+    """Test that using `State.__getitem__` and `modes`
+    kwarg correctly set the modes of the state."""
 
     cutoff = len(modes) + 1
     ket = np.zeros([cutoff] * len(modes), dtype=np.complex128)

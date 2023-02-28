@@ -649,7 +649,7 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
     dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-        2 * hbar**2
+        2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
     )
     CC = (cov**2 + mCm) / (2 * hbar**2)
     return (

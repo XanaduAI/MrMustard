@@ -184,6 +184,9 @@
 * The ray related tests were hanging in github action causing test to halt and fail. Now ray is forced to init with 1 cpu when running tests preventing the issue.
   [(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
 
+* Various minor bug fixes.
+[(#202)](https://github.com/XanaduAI/MrMustard/pull/202)
+
 ### Documentation
 
 ### Contributors 

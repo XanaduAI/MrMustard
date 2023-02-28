@@ -32,7 +32,7 @@ from mrmustard.physics.bargmann import (
 from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
+from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector, Optional
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -743,7 +743,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 
 def quadrature_distribution(
-    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: float = settings.HBAR
+    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: Optional[float] = None
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -778,6 +778,7 @@ def quadrature_distribution(
         )
 
     if x is None:
+        hbar = hbar or settings.HBAR
         x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
@@ -791,7 +792,7 @@ def quadrature_distribution(
 
 
 def sample_homodyne(
-    state: Tensor, quadrature_angle: float = 0.0, hbar: float = settings.HBAR
+    state: Tensor, quadrature_angle: float = 0.0, hbar: Optional[float] = None
 ) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
@@ -799,7 +800,6 @@ def sample_homodyne(
     Args:
         state (Tensor): ket or density matrix of the state being measured
         quadrature_angle (float): angle of the quadrature distribution
-        hbar: value of hbar
 
     Returns:
         tuple(float, float): outcome and probability of the outcome
@@ -810,7 +810,7 @@ def sample_homodyne(
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar)
+    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar or settings.HBAR)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution

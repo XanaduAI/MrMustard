@@ -21,12 +21,11 @@ This module defines gates and operations that can be applied to quantum modes to
 from typing import List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
+from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
 from mrmustard.physics import gaussian
 from mrmustard.training import Parametrized
 from mrmustard.types import Tensor
-
-from mrmustard.lab.abstract import Transformation
 
 math = Math()
 
@@ -501,7 +500,7 @@ class Interferometer(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and num_modes != len(modes):
-            raise ValueError("Invalid number of modes and the mode list here!")
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(
@@ -549,8 +548,8 @@ class RealInterferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes is not None and num_modes != len(modes):
-            raise ValueError("Invalid number of modes and the mode list here!")
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
