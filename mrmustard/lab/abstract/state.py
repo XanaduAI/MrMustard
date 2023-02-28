@@ -173,10 +173,7 @@ class State:
         if self._cutoffs is not None:
             return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
         if self._ket is None and self._dm is None:
-            return fock.autocutoffs(
-                self.number_stdev, self.number_means
-            )  # TODO: move autocutoffs in gaussian.py and pass cov, means
-
+            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_NORM)
         return list(
             self.fock.shape[: self.num_modes]
         )  # NOTE: triggered only if the fock representation already exists
@@ -338,9 +335,11 @@ class State:
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
+        # import pdb
+
+        # pdb.set_trace()
         if isinstance(other, State):
             return self._project_onto_state(other)
-
         try:
             return other.dual(self)
         except AttributeError as e:
