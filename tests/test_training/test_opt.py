@@ -149,7 +149,7 @@ def test_learning_two_mode_Interferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        Interferometer(num_modes=2, orthogonal_trainable=True),
+        Interferometer(num_modes=2, unitary_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=2)
@@ -158,7 +158,7 @@ def test_learning_two_mode_Interferometer():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
         return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
 
-    opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
+    opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
@@ -199,7 +199,7 @@ def test_learning_four_mode_Interferometer():
             r_trainable=True,
             phi_trainable=True,
         ),
-        Interferometer(num_modes=4, orthogonal_trainable=True),
+        Interferometer(num_modes=4, unitary_trainable=True),
     ]
     circ = Circuit(ops)
     state_in = Vacuum(num_modes=4)
@@ -216,7 +216,7 @@ def test_learning_four_mode_Interferometer():
             ** 2
         )
 
-    opt = Optimizer(orthogonal_lr=0.05)
+    opt = Optimizer(unitary_lr=0.05)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
