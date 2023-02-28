@@ -193,11 +193,12 @@ class Constant(Parameter):
     """
 
     def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
-        self._value = (
-            value
-            if math.from_backend(value) and not math.is_trainable(value)
-            else math.new_constant(value, name)
-        )
+        if math.from_backend(value) and not math.is_trainable(value):
+            return value
+        elif type(value) in [list, int, float]:
+            return math.new_constant(value, name)
+        else:
+            return math.new_constant(value, name, value.dtype)
         self._name = name
         self._owner = owner
 
