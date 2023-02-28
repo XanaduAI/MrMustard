@@ -31,7 +31,7 @@ from mrmustard.physics.bargmann import (
 
 from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
+from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector, Optional
 from mrmustard import settings
 from mrmustard.math import Math
 
@@ -735,7 +735,9 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     return xaxis
 
 
-def quadrature_distribution(state: Tensor, quadrature_angle: float = 0.0, x: Vector = None):
+def quadrature_distribution(
+    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: Optional[float] = None
+):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
     density matrix of the state and |x_\phi> the quadrature eigenvector with angle `\phi`
@@ -769,7 +771,8 @@ def quadrature_distribution(state: Tensor, quadrature_angle: float = 0.0, x: Vec
         )
 
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        hbar = hbar or settings.HBAR
+        x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (
@@ -781,7 +784,9 @@ def quadrature_distribution(state: Tensor, quadrature_angle: float = 0.0, x: Vec
     return x, math.cast(pdf, "float64")
 
 
-def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
+def sample_homodyne(
+    state: Tensor, quadrature_angle: float = 0.0, hbar: Optional[float] = None
+) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
 
@@ -798,7 +803,7 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle)
+    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar or settings.HBAR)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution
