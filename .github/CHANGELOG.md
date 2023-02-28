@@ -1,6 +1,7 @@
 # Release 0.4.0 (development release)
 
 ### New features
+
   * Ray-based distributed trainer is now added to `training.trainer`. It acts as a replacement for `for` loops and enables the parallelization of running many circuits as well as their optimizations. To install the extra dependencies: `pip install .[ray]`.
   [(#194)](https://github.com/XanaduAI/MrMustard/pull/194)
 
