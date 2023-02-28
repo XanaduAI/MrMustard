@@ -185,7 +185,7 @@
 ### Contributors 
 
 This release contains contributions from (in alphabetical order):
-[Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
+[Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil)
 
 ---
 
