@@ -108,7 +108,7 @@ def test_get_parameters():
     parametrized = Parametrized(**kwargs)
 
     trainable_params = parametrized.trainable_parameters
-    assert len(trainable_params) == 3
+    assert len(trainable_params) == 4
     assert all(isinstance(param, Trainable) for param in trainable_params)
 
     constant_params = parametrized.constant_parameters
