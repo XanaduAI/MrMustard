@@ -81,10 +81,11 @@ class Parametrized:
         for _, value in self.kw_parameters:
             value = math.asnumpy(value)
             if value.ndim == 0:  # don't show arrays
-                value = np.round(value, decimals)
+                sign = "-" if value < 0 else ""
+                value = np.abs(np.round(value, decimals))
                 int_part = int(value)
                 decimal_part = np.round(value - int_part, decimals)
-                string = str(int_part) + f"{decimal_part:.{decimals}g}"[1:]
+                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}"[1:]
             strings.append(string)
         return ", ".join(strings)
 
