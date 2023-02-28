@@ -401,7 +401,6 @@ class Homodyne(Generaldyne):
         x_outcome, probability = fock.sample_homodyne(
             state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
             quadrature_angle=self.quadrature_angle,
-            hbar=settings.HBAR,
         )
 
         # Define conditional state of the homodyne measurement device and rotate back to the original basis.
