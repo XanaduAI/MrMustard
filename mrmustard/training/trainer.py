@@ -344,8 +344,8 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             "Failed to import `ray` which is an extra dependency. Please install with `pip install -e .[ray]`."
         ) from e
 
-    if not ray.is_initialized():
-        ray.init(num_cpus=num_cpus)  # pragma: no cover
+    if not ray.is_initialized():  # pragma: no cover
+        ray.init(num_cpus=num_cpus)
 
     return_dict = False
     if isinstance(tasks, int):
