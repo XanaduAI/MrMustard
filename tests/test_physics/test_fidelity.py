@@ -1,13 +1,12 @@
+import numpy as np
 import pytest
+from thewalrus.quantum import real_to_complex_displacements
+from thewalrus.random import random_covariance
 
 from mrmustard import *
-import numpy as np
-import tensorflow as tf
-from thewalrus.random import random_covariance
-from thewalrus.quantum import real_to_complex_displacements
-from mrmustard.physics import gaussian as gp, fock as fp
-
 from mrmustard.math import Math
+from mrmustard.physics import fock as fp
+from mrmustard.physics import gaussian as gp
 
 math = Math()
 
