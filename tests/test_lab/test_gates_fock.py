@@ -117,7 +117,6 @@ def test_single_mode_fock_equals_gaussian_ket_dm_2(gate):
     assert np.allclose(via_fock_space_dm, via_phase_space_dm, atol=1e-5)
 
 
-
 @given(gate=two_mode_unitary_gate())
 def test_two_mode_fock_equals_gaussian(gate):
     """Test same state is obtained via fock representation or phase space
