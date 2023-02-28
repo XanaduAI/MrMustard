@@ -136,7 +136,6 @@ html_theme = "xanadu"
 html_theme_options = {
     "navbar_name": "Mr Mustard",
     "navbar_logo_path": "_static/mm_logo.png",
-
     "navbar_right_links": [
         {
             "name": "GitHub",
@@ -144,14 +143,10 @@ html_theme_options = {
             "icon": "fab fa-github",
         }
     ],
-
     "extra_copyrights": [
-        "TensorFlow, the TensorFlow logo, and any related marks are trademarks "
-        "of Google Inc."
+        "TensorFlow, the TensorFlow logo, and any related marks are trademarks " "of Google Inc."
     ],
-
     "google_analytics_tracking_id": "UA-116279123-2",
-
     "prev_next_button_colour": "#b79226",
     "prev_next_button_hover_colour": "#d7b348",
     "toc_marker_colour": "#b79226",
