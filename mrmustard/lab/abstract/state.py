@@ -173,7 +173,7 @@ class State:
         if self._cutoffs is not None:
             return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
         if self._ket is None and self._dm is None:
-            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_NORM)
+            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
         return list(
             self.fock.shape[: self.num_modes]
         )  # NOTE: triggered only if the fock representation already exists

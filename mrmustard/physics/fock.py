@@ -57,14 +57,14 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(cov: Matrix, means: Vector, norm: float):
+def autocutoffs(cov: Matrix, means: Vector, probability: float):
     r"""Returns the cutoffs of a Gaussian state by computing the 1-mode marginals until
-    the norm of the marginal is less than ``norm``.
+    the probability of the marginal is less than ``probability``.
 
     Args:
         cov: the covariance matrix
         means: the means vector
-        norm: the cutoff norm
+        probability: the cutoff probability
 
     Returns:
         Tuple[int, ...]: the suggested cutoffs
@@ -74,12 +74,12 @@ def autocutoffs(cov: Matrix, means: Vector, norm: float):
     for i in range(M):
         cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
         means_i = np.array([means[i], means[i + M]])
-        # apply 1-d recursion until norm is less than 0.99
+        # apply 1-d recursion until probability is less than 0.99
         A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
         diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
-        # find at what index in the cumsum the norm is more than 0.99
+        # find at what index in the cumsum the probability is more than 0.99
         for i, val in enumerate(np.cumsum(diag)):
-            if val > norm:
+            if val > probability:
                 cutoffs.append(max(i + 1, settings.AUTOCUTOFF_MIN_CUTOFF))
                 break
         else:
