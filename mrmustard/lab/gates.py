@@ -21,12 +21,11 @@ This module defines gates and operations that can be applied to quantum modes to
 from typing import List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
+from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
 from mrmustard.physics import gaussian
 from mrmustard.training import Parametrized
 from mrmustard.types import Tensor
-
-from mrmustard.lab.abstract import Transformation
 
 math = Math()
 
@@ -500,10 +499,8 @@ class Interferometer(Parametrized, Transformation):
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes is not None and (
-            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
-        ):
-            raise ValueError("Invalid number of modes and the mode list here!")
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             U = math.random_unitary(num_modes)
             orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
@@ -546,11 +543,14 @@ class RealInterferometer(Parametrized, Transformation):
         num_modes: int,
         orthogonal: Optional[Tensor] = None,
         orthogonal_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
         self.short_name = "RI"
 
