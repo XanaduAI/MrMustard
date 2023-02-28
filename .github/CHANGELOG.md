@@ -100,6 +100,7 @@
     It looks great in Jupyter notebooks! There is a new option at `settings.CIRCUIT_DECIMALS` which controls
     the number of decimals shown in the ascii representation. If None only the name of the gate is shown.
     [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
+
   * PNR sampling from Gaussian circuits using density matrices can now be performed faster. When all modes are detected, this is done by replacing `math.hermite_renormalized` by `math.hermite_renormalized_diagonal`. In case all but the first mode are detected, `math.hermite_renormalized_1leftoverMode` can be used. The complexity of these new methods is equal to performing a pure state simulation. The methods are differentiable, such that they can be used for defining a costfunction. [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
   
 
