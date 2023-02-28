@@ -193,7 +193,7 @@ math.cos(0.1)  # pytorch (upcoming)
 ```
 
 ### Optimization
-The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
+The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states, an unitary optimizer for interferometers, and an orthogonal optimizer for real interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
 displaced squeezed state.
