@@ -17,7 +17,7 @@ This module implements the quantum states upon which a quantum circuits acts on.
 """
 
 from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.types import Scalar, Vector, Matrix
+from mrmustard.typing import Scalar, Vector, RealMatrix
 from mrmustard import settings
 from mrmustard.physics import gaussian, fock
 from mrmustard.training import Parametrized
@@ -415,7 +415,7 @@ class Gaussian(Parametrized, State):
     def __init__(
         self,
         num_modes: int,
-        symplectic: Matrix = None,
+        symplectic: RealMatrix = None,
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,

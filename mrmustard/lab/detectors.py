@@ -16,13 +16,14 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import List, Tuple, Union, Optional, Iterable
+
 
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
-from mrmustard.types import Matrix, Tensor
+from mrmustard.typing import RealMatrix, RealVector
 
 from .abstract import FockMeasurement, Measurement, State
 from .gates import Rgate
@@ -68,7 +69,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         dark_counts_trainable: bool = False,
         efficiency_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         dark_counts_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        stochastic_channel: Matrix = None,
+        stochastic_channel: RealMatrix = None,
         modes: List[int] = None,
         cutoffs: Union[int, List[int]] = None,
     ):
@@ -235,7 +236,10 @@ class Generaldyne(Measurement):
     """
 
     def __init__(
-        self, state: State, outcome: Optional[Tensor] = None, modes: Optional[Iterable[int]] = None
+        self,
+        state: State,
+        outcome: Optional[RealVector] = None,
+        modes: Optional[Iterable[int]] = None,
     ) -> None:
         if not state.is_gaussian:
             raise TypeError("Generaldyne measurement state must be Gaussian.")
@@ -255,7 +259,7 @@ class Generaldyne(Measurement):
         super().__init__(outcome, modes)
 
     @property
-    def outcome(self) -> Tensor:
+    def outcome(self) -> RealVector:
         return self.state.means
 
     def primal(self, other: State) -> Union[State, float]:

@@ -155,12 +155,22 @@
   which have been refactored and moved out of `physics.fock`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 
+
+* The internal type system in MrMustard has been beefed up with much clearer types, like ComplexVector, RealMatrix, etc... as well as a generic type `Batch`, which can be parametrized using
+the other types, like `Batch[ComplexTensor]`. This will allow for better type checking and better error messages.
+  [(#199)](https://github.com/XanaduAI/MrMustard/pull/199)
+
 * Added multiple tests and improved the use of Hypothesis.
   [(#191)](https://github.com/XanaduAI/MrMustard/pull/191)
 
 * The `fock.autocutoff` function now uses the new diagonal methods for calculating a probability-based cutoff.
   Use `settings.AUTOCUTOFF_PROBABILITY` to set the probability threshold.
   [(#203)](https://github.com/XanaduAI/MrMustard/pull/203)
+  
+* The unitary group optimization (for the interferometer) and the orthogonal group optimization (for the real interferometer) have been added.
+  The symplectic matrix that describes an interferometer belongs to the intersection of the orthogonal group and the symplectic group, which is a unitary group,
+  so we needed both.
+  [(#208)](https://github.com/XanaduAI/MrMustard/pull/208)
 
 ### Bug fixes
 
@@ -186,9 +196,13 @@
   [(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
 
 * Various minor bug fixes.
-[(#202)](https://github.com/XanaduAI/MrMustard/pull/202)
+  [(#202)](https://github.com/XanaduAI/MrMustard/pull/202)
 
-* The unitary group optimization of the interferometer and the orthogonal group optimization of the real interferometer have been added. The symplectic matrix that describes an interferometer belongs to the intersection of the orthogonal group and the symplectic group, which is a unitary group. It fixed the issue that the optimization of the interferometer was orthogonal group optimization. And the symplectic matrix that describes a real interferometer belongs to an orthogonal group. [(#208)](https://github.com/XanaduAI/MrMustard/pull/208)
+* Fixed the issue that the optimization of the interferometer was using orthogonal group optimization rather than unitary.
+  [(#208)](https://github.com/XanaduAI/MrMustard/pull/208)
+
+* The sign of parameters in the circuit drawer are now displayed correctly.
+  [(#209)](https://github.com/XanaduAI/MrMustard/pull/209)
 
 ### Documentation
 
