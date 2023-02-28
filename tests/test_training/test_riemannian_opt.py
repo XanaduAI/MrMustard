@@ -47,7 +47,7 @@ def is_orthogonal(M, rtol=1e-05, atol=1e-08):
 def test_update_symplectic(n):
     """Testing the update of symplectic matrix remains to be symplectic"""
     S = math.new_variable(random_symplectic(n), name=None, dtype=tf.complex128, bounds=None)
-    for i in range(20):
+    for _ in range(20):
         dS_euclidean = math.new_variable(
             np.random.random((2 * n, 2 * n)) + 1j * np.random.random((2 * n, 2 * n)),
             name=None,
@@ -62,7 +62,7 @@ def test_update_symplectic(n):
 def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
     U = math.new_variable(unitary_group.rvs(dim=n), name=None, dtype=tf.complex128, bounds=None)
-    for i in range(20):
+    for _ in range(20):
         dU_euclidean = math.new_variable(
             np.random.random((n, n)) + 1j * np.random.random((n, n)),
             name=None,
@@ -82,7 +82,7 @@ def test_update_unitary(n):
 def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
     O = math.new_variable(math.random_orthogonal(n), name=None, dtype=tf.complex128, bounds=None)
-    for i in range(20):
+    for _ in range(20):
         dO_euclidean = math.new_variable(
             np.random.random((n, n)) + 1j * np.random.random((n, n)),
             name=None,
