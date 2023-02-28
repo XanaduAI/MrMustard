@@ -35,12 +35,7 @@ from mrmustard.physics.bargmann import (
 )
 
 from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
-from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.caching import tensor_int_cache
 from mrmustard.typing import Matrix, Scalar, Tensor, Vector
-from mrmustard import settings
-from mrmustard.math import Math
-
 
 math = Math()
 
