@@ -55,15 +55,15 @@ There are three basic types of parameters:
     .. code-block::
 
         class SymplecticGate(Parametrized):
-            def __init__(self, symplectic: Array):
+            def __init__(self, symplectic: Tensor):
                 super.__init__(symplectic=symplectic, symplectic_trainable=True)
 
         class EuclideanGate(Parametrized):
-            def __init__(self, euclidean: Array):
+            def __init__(self, euclidean: Tensor):
                 super.__init__(euclidean=euclidean, euclidean_trainable=True)
 
         class OrthogonalGate(Parametrized):
-            def __init__(self, orthogonal: Array):
+            def __init__(self, orthogonal: Tensor):
                 super.__init__(orthogonal=orthogonal, orthogonal_trainable=True)
 
     The optimization procedure updates the value of the trainables *in-place*.
@@ -85,7 +85,7 @@ from abc import ABC, abstractmethod
 
 from typing import Optional, Sequence, Any
 from mrmustard.math import Math
-from mrmustard.types import Tensor
+from mrmustard.typing import Tensor
 
 math = Math()
 
