@@ -137,18 +137,16 @@ class FockMeasurement(Measurement):
         the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
 
         Args
-            state (State): the quatum state
+            other (State): the quantum state
         Returns
             Tensor: a tensor representing the post-measurement state
         """
         cutoffs = []
-        used = 0
         for mode in other.modes:
             if mode in self._modes:
                 cutoffs.append(
                     max(settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)])
                 )
-                used += 1
             else:
                 cutoffs.append(other.cutoffs[other.indices(mode)])
         if self.should_recompute_stochastic_channel() or math.any(

@@ -12,27 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from threading import currentThread
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st, assume
+from hypothesis import assume, given
+from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
-from mrmustard.physics import gaussian as gp
+
+from mrmustard import settings
+from mrmustard.lab.abstract import State
+from mrmustard.lab.gates import Attenuator, Dgate, Ggate, Sgate
 from mrmustard.lab.states import (
-    Fock,
     Coherent,
-    Vacuum,
+    DisplacedSqueezed,
+    Fock,
     Gaussian,
     SqueezedVacuum,
-    DisplacedSqueezed,
     Thermal,
+    Vacuum,
 )
-from mrmustard.lab.gates import Attenuator, Sgate, Dgate, Ggate
-from mrmustard.lab.abstract import State
-from mrmustard import settings
-from tests.random import pure_state
-
 from mrmustard.math import Math
+from mrmustard.physics import gaussian as gp
+from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
 
 math = Math()
 
@@ -43,34 +43,26 @@ def xy_arrays(draw):
     return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 
-@st.composite
-def rphi_arrays(draw):
-    length = draw(st.integers(2, 10))
-    r = arrays(dtype=np.float, shape=(2, length), elements=st.floats(0.0, 1.0))
-    phi = arrays(dtype=np.float, shape=(2, length), elements=st.floats(0.0, 2 * np.pi))
-    return r, phi
-
-
-@given(st.integers(0, 10), st.floats(0.1, 5.0))
-def test_vacuum_state(num_modes, hbar):
-    cov, disp = gp.vacuum_cov(num_modes, hbar), gp.vacuum_means(num_modes, hbar)
-    assert np.allclose(cov, np.eye(2 * num_modes) * hbar / 2)
+@given(nmodes, st.floats(0.1, 5.0))
+def test_vacuum_state(nmodes, hbar):
+    cov, disp = gp.vacuum_cov(nmodes, hbar), gp.vacuum_means(nmodes, hbar)
+    assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
     assert np.allclose(disp, np.zeros_like(disp))
 
 
-@given(x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(x=medium_float, y=medium_float)
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
-@given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_list(hbar, x, y):
     assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
 
 
-@given(hbar=st.floats(0.5, 2.0), x=st.floats(-5.0, 5.0), y=st.floats(-5.0, 5.0))
+@given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_array(hbar, x, y):
     assert np.allclose(
         gp.displacement(np.array([x]), np.array([y]), hbar),
@@ -87,10 +79,8 @@ def test_coherent_state_multiple(xy):
     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
 
-@given(xy=xy_arrays())
-def test_the_purity_of_a_pure_state(xy):
-    x, y = xy
-    state = Coherent(x, y)
+@given(state=n_mode_pure_state(num_modes=1))
+def test_the_purity_of_a_pure_state(state):
     purity = gp.purity(state.cov, settings.HBAR)
     expected = 1.0
     assert np.isclose(purity, expected)
@@ -104,12 +94,7 @@ def test_the_purity_of_a_mixed_state(nbar):
     assert np.isclose(purity, expected)
 
 
-@given(
-    r1=st.floats(0.0, 1.0),
-    phi1=st.floats(0.0, 2 * np.pi),
-    r2=st.floats(0.0, 1.0),
-    phi2=st.floats(0.0, 2 * np.pi),
-)
+@given(r1=r, phi1=angle, r2=r, phi2=angle)
 def test_join_two_states(r1, phi1, r2, phi2):
     """Test Sgate acts the same in parallel or individually for two states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
@@ -118,14 +103,7 @@ def test_join_two_states(r1, phi1, r2, phi2):
     assert S1 & S2 == S12
 
 
-@given(
-    r1=st.floats(0.0, 1.0),
-    phi1=st.floats(0.0, 2 * np.pi),
-    r2=st.floats(0.0, 1.0),
-    phi2=st.floats(0.0, 2 * np.pi),
-    r3=st.floats(0.0, 1.0),
-    phi3=st.floats(0.0, 2 * np.pi),
-)
+@given(r1=r, phi1=angle, r2=r, phi2=angle, r3=r, phi3=angle)
 def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     """Test Sgate acts the same in parallel or individually for three states."""
     S1 = Vacuum(1) >> Sgate(r=r1, phi=phi1)
@@ -142,17 +120,17 @@ def test_coh_state(xy):
     assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
 
 
-@given(r=st.floats(0.0, 1.0), phi=st.floats(0.0, 2 * np.pi))
+@given(r=r, phi=angle)
 def test_sq_state(r, phi):
     """Test squeezed vacuum preparation."""
     assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
 
 
 @given(
-    x=st.floats(-1.0, 1.0),
-    y=st.floats(-1.0, 1.0),
-    r=st.floats(0.0, 1.0),
-    phi=st.floats(0.0, 2 * np.pi),
+    x=medium_float,
+    y=medium_float,
+    r=r,
+    phi=angle,
 )
 def test_dispsq_state(x, y, r, phi):
     """Test displaced squeezed state."""
@@ -224,7 +202,8 @@ def test_random_state_is_entangled():
 
 @given(modes=st.lists(st.integers(), min_size=2, max_size=5, unique=True))
 def test_getitem_set_modes(modes):
-    """Test that using `State.__getitem__` and `modes` kwarg correctly set the modes of the state."""
+    """Test that using `State.__getitem__` and `modes`
+    kwarg correctly set the modes of the state."""
 
     cutoff = len(modes) + 1
     ket = np.zeros([cutoff] * len(modes), dtype=np.complex128)

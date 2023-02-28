@@ -17,14 +17,17 @@ This module implements the set of detector classes that perform measurements on 
 """
 
 from typing import List, Tuple, Union, Optional, Iterable
-from mrmustard.typing import RealMatrix, RealVector
-from mrmustard.training import Parametrized
+
+
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import fock, gaussian
+from mrmustard.training import Parametrized
+from mrmustard.typing import RealMatrix, RealVector
+
 from .abstract import FockMeasurement, Measurement, State
-from .states import DisplacedSqueezed, Coherent
 from .gates import Rgate
+from .states import Coherent, DisplacedSqueezed
 
 math = Math()
 
@@ -194,7 +197,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         )
 
         outcome = None
-        FockMeasurement.__init__(outcome, modes, cutoffs)
+        FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
@@ -330,7 +333,7 @@ class Homodyne(Generaldyne):
         quadrature_angle (float or List[float]): measurement quadrature angle
         result (optional float or List[float]): displacement amount
         modes (optional List[int]): the modes of the displaced squeezed state
-        r (optional float or List[float]): squeezing amount
+        r (optional float or List[float]): squeezing amount (default: ``settings.HOMODYNE_SQUEEZING``)
     """
 
     def __init__(
@@ -338,9 +341,9 @@ class Homodyne(Generaldyne):
         quadrature_angle: Union[float, List[float]],
         result: Optional[Union[float, List[float]]] = None,
         modes: Optional[List[int]] = None,
-        r: Union[float, List[float]] = settings.HOMODYNE_SQUEEZING,
+        r: Optional[Union[float, List[float]]] = None,
     ):
-        self.r = r
+        self.r = r or settings.HOMODYNE_SQUEEZING
         self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
 
         # if no ``result`` provided, sample the outcome
@@ -361,7 +364,7 @@ class Homodyne(Generaldyne):
 
         units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
         state = DisplacedSqueezed(
-            r=r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+            r=self.r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
         )
         super().__init__(state=state, outcome=outcome, modes=modes)
 
@@ -402,7 +405,6 @@ class Homodyne(Generaldyne):
         x_outcome, probability = fock.sample_homodyne(
             state=reduced_state.ket() if reduced_state.is_pure else reduced_state.dm(),
             quadrature_angle=self.quadrature_angle,
-            hbar=settings.HBAR,
         )
 
         # Define conditional state of the homodyne measurement device and rotate back to the original basis.
