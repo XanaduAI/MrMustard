@@ -735,9 +735,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
     return xaxis
 
 
-def quadrature_distribution(
-    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: float = settings.HBAR
-):
+def quadrature_distribution(state: Tensor, quadrature_angle: float = 0.0, x: Vector = None):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
     density matrix of the state and |x_\phi> the quadrature eigenvector with angle `\phi`
@@ -771,7 +769,7 @@ def quadrature_distribution(
         )
 
     if x is None:
-        x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (
@@ -783,16 +781,13 @@ def quadrature_distribution(
     return x, math.cast(pdf, "float64")
 
 
-def sample_homodyne(
-    state: Tensor, quadrature_angle: float = 0.0, hbar: float = settings.HBAR
-) -> Tuple[float, float]:
+def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
 
     Args:
         state (Tensor): ket or density matrix of the state being measured
         quadrature_angle (float): angle of the quadrature distribution
-        hbar: value of hbar
 
     Returns:
         tuple(float, float): outcome and probability of the outcome
@@ -803,7 +798,7 @@ def sample_homodyne(
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar)
+    x, pdf = quadrature_distribution(state, quadrature_angle)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution
