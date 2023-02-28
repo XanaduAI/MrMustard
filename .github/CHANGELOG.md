@@ -193,6 +193,9 @@ the other types, like `Batch[ComplexTensor]`. This will allow for better type ch
 * Various minor bug fixes.
 [(#202)](https://github.com/XanaduAI/MrMustard/pull/202)
 
+* The sign of parameters in the circuit drawer are now displayed correctly.
+  [(#209)](https://github.com/XanaduAI/MrMustard/pull/209)
+
 ### Documentation
 
 ### Contributors 
