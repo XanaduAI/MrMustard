@@ -21,6 +21,7 @@ from mrmustard.training.parameter import (
     create_parameter,
     Constant,
     Orthogonal,
+    Unitary,
     Euclidean,
     Symplectic,
     Trainable,
@@ -48,12 +49,12 @@ def test_create_constant(from_backend):
     assert param.name == name
 
 
-@pytest.mark.parametrize("trainable_class", (Euclidean, Orthogonal, Symplectic))
+@pytest.mark.parametrize("trainable_class", (Euclidean, Unitary, Orthogonal, Symplectic))
 @pytest.mark.parametrize("from_backend", [True, False])
 @pytest.mark.parametrize("bounds", [None, (0, 10)])
 def test_create_trainable(trainable_class, from_backend, bounds):
     """Checks if the factory function `create_parameter`
-    returns an instance of the Euclidean/Orthogonal/Symplectic class when args
+    returns an instance of the Euclidean/Orthogonal/Symplectic/Unitary class when args
     are trainable."""
 
     value = 5

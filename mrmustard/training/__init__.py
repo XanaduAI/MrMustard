@@ -16,8 +16,8 @@
 in Mr Mustard.
 
 The :class:`Optimizer` uses Adam underneath the hood for Euclidean parameters and
-a custom Symplectic optimizer for Gaussian gates and states and an Orthogonal
-optimizer for interferometers.
+a custom Symplectic optimizer for Gaussian gates and states, a Unitary
+optimizer for interferometers and an Orthogonal optimizer for real interferometers.
 
 We can turn any simulation in Mr Mustard into an optimization by marking which
 parameters we wish to be trainable. Let's take a simple example:
