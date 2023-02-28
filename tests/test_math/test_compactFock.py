@@ -91,8 +91,8 @@ def test_compactFock_diagonal_gradients():
     I = Ggate(num_modes=3, symplectic_trainable=True)
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[I], max_steps=50)
-    for iter in range(2,50):
-        assert opt.opt_history[iter-1] >= opt.opt_history[iter]
+    for iter in range(2, 50):
+        assert opt.opt_history[iter - 1] >= opt.opt_history[iter]
 
 
 def test_compactFock_1leftover_gradients():
@@ -112,5 +112,5 @@ def test_compactFock_1leftover_gradients():
     I = Ggate(num_modes=3, symplectic_trainable=True)
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[I], max_steps=50)
-    for iter in range(2,50):
-        assert opt.opt_history[iter-1] >= opt.opt_history[iter]
+    for iter in range(2, 50):
+        assert opt.opt_history[iter - 1] >= opt.opt_history[iter]
