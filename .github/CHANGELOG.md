@@ -157,6 +157,10 @@
 * Added multiple tests and improved the use of Hypothesis.
   [(#191)](https://github.com/XanaduAI/MrMustard/pull/191)
 
+* The `fock.autocutoff` function now uses the new diagonal methods for calculating a probability-based cutoff.
+  Use `settings.AUTOCUTOFF_PROBABILITY` to set the probability threshold.
+  [(#203)](https://github.com/XanaduAI/MrMustard/pull/203)
+
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter
