@@ -549,6 +549,7 @@ class TFMath(MathInterface):
 
     @staticmethod
     def custom_gradient(func):
+        """Decorator to define a function with a custom gradient."""
         return tf.custom_gradient(func)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
