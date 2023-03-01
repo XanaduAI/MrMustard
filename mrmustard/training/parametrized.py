@@ -78,7 +78,7 @@ class Parametrized:
             str: string representation of the parameter values
         """
         strings = []
-        for _, value in self.kw_parameters:
+        for name, value in self.kw_parameters:
             value = math.asnumpy(value)
             if value.ndim == 0:  # don't show arrays
                 sign = "-" if value < 0 else ""
@@ -86,6 +86,8 @@ class Parametrized:
                 int_part = int(value)
                 decimal_part = np.round(value - int_part, decimals)
                 string = sign + str(int_part) + f"{decimal_part:.{decimals}g}"[1:]
+            else:
+                string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
 
