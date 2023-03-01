@@ -15,13 +15,13 @@
 """Tests for the ray-based trainer."""
 
 import sys
-
 from time import sleep
-import pytest
 
 import numpy as np
+import pytest
 import ray
-from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
+
+from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
@@ -133,8 +133,8 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
     make_circ, cost_fn = wrappers
 
     tasks = {
-        "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 20},
-        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 12},
+        "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 40},
+        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 20},
     }
 
     results = map_trainer(
