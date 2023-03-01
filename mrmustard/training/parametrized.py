@@ -128,12 +128,3 @@ def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
             yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
         elif isinstance(obj, extract_type):
             yield obj
-
-
-# plot histogram of abs value of elements of matrix M:
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-M = np.random.rand(100, 100)
-plt.hist(np.abs(M.flatten()), bins=100)
