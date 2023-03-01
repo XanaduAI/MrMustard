@@ -44,7 +44,7 @@ from mrmustard.physics.fock import (
     apply_choi_to_ket,
     apply_kraus_to_dm,
     apply_kraus_to_ket,
-    displacement,
+    _grad_displacement,
     _displacement,
 )
 
@@ -343,8 +343,8 @@ class TestDisplacement:
         cutoff = 4
         r = 1.0
         theta = np.pi / 8
-        _, grads = displacement(r, theta, cutoff)
-        Dr, Dtheta, _ = grads
+        T = _displacement(r, theta, cutoff)
+        Dr, Dtheta = _grad_displacement(T, r, theta)
 
         dr = 0.001
         dtheta = 0.001
@@ -402,5 +402,5 @@ class TestDisplacement:
                 ],
             ]
         )
-        T, _ = displacement(np.abs(alpha), np.angle(alpha), cutoff)
+        T = _displacement(np.abs(alpha), np.angle(alpha), cutoff)
         assert np.allclose(T, expected, atol=1e-5, rtol=0)
