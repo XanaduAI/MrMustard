@@ -155,6 +155,11 @@
   which have been refactored and moved out of `physics.fock`.
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
 
+
+* The internal type system in MrMustard has been beefed up with much clearer types, like ComplexVector, RealMatrix, etc... as well as a generic type `Batch`, which can be parametrized using
+the other types, like `Batch[ComplexTensor]`. This will allow for better type checking and better error messages.
+  [(#199)](https://github.com/XanaduAI/MrMustard/pull/199)
+
 * Added multiple tests and improved the use of Hypothesis.
   [(#191)](https://github.com/XanaduAI/MrMustard/pull/191)
 
