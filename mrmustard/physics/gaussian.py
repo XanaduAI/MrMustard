@@ -16,12 +16,14 @@
 This module contains functions for performing calculations on Gaussian states.
 """
 
-from typing import Tuple, Union, Sequence, Any, Optional
+from typing import Any, Optional, Sequence, Tuple, Union
+
 from thewalrus.quantum import is_pure_cov
-from mrmustard.typing import Matrix, Vector, Scalar
-from mrmustard.utils.xptensor import XPMatrix, XPVector
+
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 math = Math()
 
@@ -112,27 +114,22 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     return math.matmul(S, math.transpose(S)) * hbar / 2
 
 
-def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
+def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
     r"""Returns the covariance matrix of a Gaussian state.
 
     Args:
         symplectic (Tensor): symplectic matrix of a channel
         eigenvalues (vector): symplectic eigenvalues
-        hbar (float): value of hbar
 
     Returns:
         Tensor: covariance matrix of the Gaussian state
     """
     if eigenvalues is None:
-        return hbar / 2 * math.matmul(symplectic, math.transpose(symplectic))
+        return math.matmul(symplectic, math.transpose(symplectic))
 
-    return (
-        hbar
-        / 2
-        * math.matmul(
-            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
-            math.transpose(symplectic),
-        )
+    return math.matmul(
+        math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+        math.transpose(symplectic),
     )
 
 
