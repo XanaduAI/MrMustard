@@ -114,7 +114,7 @@
 
 ### Improvements
 
-* The `Dgate` is now implemented directly on MrMustard (instead of on The Walrus) to calculate the
+* The `Dgate` is now implemented directly in MrMustard (instead of on The Walrus) to calculate the
   unitary and gradients of the displacement gate in fock representation, providing better numerical
   stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
