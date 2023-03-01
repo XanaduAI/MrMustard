@@ -271,6 +271,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
 
     # mixed state
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States, Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
+
+    # trim states to have same cutoff
     min_cutoffs = [
         slice(min(a, b))
         for a, b in zip(
