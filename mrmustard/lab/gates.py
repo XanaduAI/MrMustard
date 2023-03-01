@@ -508,6 +508,7 @@ class Interferometer(Parametrized, Transformation):
         )
         self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
+        self.short_name = "I"
 
     @property
     def X_matrix(self):
@@ -554,6 +555,7 @@ class RealInterferometer(Parametrized, Transformation):
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
         self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
+        self.short_name = "RI"
 
     @property
     def X_matrix(self):
