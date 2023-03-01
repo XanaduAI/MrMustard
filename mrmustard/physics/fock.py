@@ -824,7 +824,7 @@ def sample_homodyne(
 
 
 @jit(nopython=True)
-def displacement(r, phi, cutoff, dtype=np.complex128):  # pragma: no cover
+def _displacement(r, phi, cutoff, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
@@ -875,7 +875,7 @@ def _laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
 
 
 @jit(nopython=True)
-def grad_displacement(T, r, phi):  # pragma: no cover
+def _grad_displacement(T, r, phi):  # pragma: no cover
     r"""Calculates the gradients of the displacement gate with respect to the displacement magnitude and angle.
 
     Args:
@@ -904,3 +904,20 @@ def grad_displacement(T, r, phi):  # pragma: no cover
             )
 
     return grad_r, grad_phi
+
+
+@math.custom_gradient
+def displacement(self, r, phi, cutoff, tol=1e-15):
+    """creates a single mode displacement matrix"""
+    if r > tol:
+        gate = displacement(self.asnumpy(r), self.asnumpy(phi), cutoff)
+    else:
+        gate = self.eye(cutoff, dtype="complex128")
+
+    def grad(dy):  # pragma: no cover
+        Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
+        grad_r = math.real(math.reduce_sum(dy * math.conj(Dr)))
+        grad_phi = math.real(math.reduce_sum(dy * math.conj(Dphi)))
+        return grad_r, grad_phi, None
+
+    return gate, grad
