@@ -24,6 +24,7 @@ from typing import Dict, Optional, Union
 
 from mrmustard import settings
 from mrmustard.lab.abstract import Measurement, State, Transformation
+from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.tagdispenser import TagDispenser
 
 # class Circuit(Parametrized):
@@ -254,29 +255,34 @@ class Wire:
     for Circuits and Operations.
 
     Arguments:
-        owner Union[Circuit, Operation]: the Circuit or Operation that the wire belongs to
-        connected (bool): whether the wire connects to other wires
+        origin Union[Circuit, Operation]: the Circuit or Operation that the wire belongs to
         mode (int): the mode of the wire
         L (int): the left tag of the wire
         R (Optional[int]): the right tag of the wire
         cutoff (Optional[int]): the Fock cutoff of the wire, defaults to settings.WIRE_CUTOFF
+        end (Optional[Union[Circuit, Operation]]): the Circuit or Operation that the wire is connected to
     """
 
     def __init__(
         self,
-        owner: Union[Circuit, Operation],
-        connected: bool,
+        origin: Union[Circuit, Operation],
         mode: int,
         L: int,
         R: Optional[int] = None,
         cutoff: Optional[int] = settings.WIRE_CUTOFF,
+        end: Optional[Union[Circuit, Operation]] = None,
     ):
-        self.owner: Union[Circuit, Operation] = owner
-        self.connected: bool = connected
+        self.origin: Union[Circuit, Operation] = origin
+        self.end: Union[Circuit, Operation] = end
         self.mode: int = mode
         self.L: int = L
         self.R: Optional[int] = R
         self.cutoff = cutoff
+
+    @property
+    def connected(self):
+        "checks if wire is connected to another operation"
+        return self.end is not None
 
     def __eq__(self, other: Union[Wire, int]):
         "checks if wires are on the same mode"
@@ -309,7 +315,7 @@ class Operation:
         self.tag_dispenser: TagDispenser = TagDispenser()
         self.input_modes: Dict[int, Wire] = {
             m: Wire(
-                connected=False,
+                origin=self,
                 mode=m,
                 L=self.tag_dispenser.get_tag(),
                 R=self.tag_dispenser.get_tag() if dual_wires else None,
@@ -318,7 +324,7 @@ class Operation:
         }
         self.output_modes: Dict[int, Wire] = {
             m: Wire(
-                connected=False,
+                origin=self,
                 mode=m,
                 L=self.tag_dispenser.get_tag(),
                 R=self.tag_dispenser.get_tag() if dual_wires else None,
@@ -328,6 +334,11 @@ class Operation:
 
         self.num_out = len(self.output_modes)
         self.num_in = len(self.input_modes)
+
+    def __hash__(self):
+        tags = [t for i in self.input_modes.values() for t in [i.L, i.R] if t is not None]
+        tags += [t for o in self.output_modes.values() for t in [o.L, o.R] if t is not None]
+        return hash(tuple(tags))
 
     def make_dual(self):
         "assigns a tag to the Right component of each input/output wire"
@@ -355,8 +366,8 @@ class Operation:
             outL_tag = self.output_modes[mode].L
             self.tag_dispenser.give_back_tag(max(inL_tag, outL_tag))
             other.input_modes[mode].L = min(inL_tag, outL_tag)
-            other.input_modes[mode].connected = True
-            self.output_modes[mode].connected = True
+            self.output_modes[mode].end = other
+            other.input_modes[mode].end = self
             if self.dual_wires and other.dual_wires:
                 inR_tag = other.input_modes[mode].R
                 outR_tag = self.output_modes[mode].R
@@ -364,8 +375,7 @@ class Operation:
                 other.input_modes[mode].R = min(inR_tag, outR_tag)
 
     def __repr__(self):
-        return f"Operation[{self.op.__class__.__qualname__}](in={self.input_modes.keys()}, \
-                 out={self.output_modes.keys()}, dual={self.dual_wires})"
+        return f"Operation[{self.op.__class__.__qualname__}](in={list(self.input_modes.keys())}, out={list(self.output_modes.keys())}, dual={self.dual_wires})"
 
 
 class Circuit:
@@ -418,32 +428,12 @@ class Circuit:
             other.make_dual()
         if other.dual_wires and not self.dual_wires:
             self.make_dual()
-        # if two ops can be connected set the tags of the output modes
-        # of the first op to the input modes of the second op
         for mode, wire in self.output_modes.items():
-            if mode in other.input_modes.keys():
-                inL_tag = other.input_modes[mode].L
-                outL_tag = self.output_modes[mode].L
-                self.tag_dispenser.give_back_tag(max(inL_tag, outL_tag))
-                other.input_modes[mode].L = min(inL_tag, outL_tag)
-                other.input_modes[mode].connected = True
-                self.output_modes[mode].connected = True
-                if self.dual_wires and other.dual_wires:
-                    inR_tag = other.input_modes[mode].R
-                    outR_tag = self.output_modes[mode].R
-                    self.tag_dispenser.give_back_tag(max(inR_tag, outR_tag))
-                    other.input_modes[mode].R = min(inR_tag, outR_tag)
+            if mode in other.input_modes:
+                wire.origin.connect(other, mode)
 
-        new_input_modes = self.input_modes + [
-            mode for mode in other.input_modes if mode not in self.output_modes
-        ]
-        new_output_modes = other.output_modes + [
-            mode for mode in self.output_modes if mode not in other.input_modes
-        ]
         return Circuit(
             self.operations + other.operations,
-            list(sorted(new_input_modes)),
-            list(sorted(new_output_modes)),
             self.dual_wires or other.dual_wires,
         )
 
@@ -452,3 +442,31 @@ class Circuit:
         for op in self.operations:
             if not op.dual_wires:
                 op.make_dual()
+
+    # a graph representation of the circuit
+    # shwoing the connections between the operations
+    # def __repr__(self):
+    #     import networkx as nx
+
+    #     G = nx.DiGraph()
+    #     for op in self.operations:
+    #         G.add_node(op)
+    #         for mode, wire in op.output_modes.items():
+    #             if wire.connected:
+    #                 G.add_edge(wire.origin, wire.end)
+    #     # visualize graph before returning
+    #     nx.draw(G)
+    #     return nx.nx_pydot.to_pydot(G).to_string()
+
+    _repr_markdown_ = None
+
+    def __repr__(self) -> str:
+        """String to display the object on the command line."""
+        return circuit_text([op.op for op in self.operations], decimals=settings.CIRCUIT_DECIMALS)
+
+    def TN_tensor_list(self):
+        "returns a list of tensors in the tensor network representation of the circuit"
+        tensors = []
+        for op in self.operations:
+            tensors.append(op.op.TN_tensor)
+        return tensors

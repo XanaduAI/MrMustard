@@ -15,15 +15,13 @@ class TagDispenser:
         2
     """
     _instance = None
+    _tags = []
+    _counter = 0
 
     def __new__(cls):
         if TagDispenser._instance is None:
             TagDispenser._instance = object.__new__(cls)
         return TagDispenser._instance
-
-    def __init__(self):
-        self._tags = []
-        self._counter = 0
 
     def get_tag(self) -> int:
         """Returns a new unique tag."""
