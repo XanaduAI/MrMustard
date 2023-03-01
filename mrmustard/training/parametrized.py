@@ -85,7 +85,7 @@ class Parametrized:
                 value = np.abs(np.round(value, decimals))
                 int_part = int(value)
                 decimal_part = np.round(value - int_part, decimals)
-                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}"[1:]
+                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
             strings.append(string)
         return ", ".join(strings)
 
