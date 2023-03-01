@@ -595,13 +595,17 @@ class Ggate(Parametrized, Transformation):
         num_modes: int,
         symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(num_modes)
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
+        if symplectic is None:
+            symplectic = math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
         )
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
         self.short_name = "G"
 
