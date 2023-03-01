@@ -30,6 +30,9 @@ from mrmustard.lab import (
     MZgate,
     Rgate,
     S2gate,
+    Attenuator,
+    RealInterferometer,
+    Vacuum,
     Sgate,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
@@ -212,3 +215,10 @@ def test_raise_interferometer_error():
     modes = [0, 2]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
+    with pytest.raises(ValueError):
+        RealInterferometer(num_modes=num_modes, modes=modes)
+    modes = [2, 5, 6, 7]
+    with pytest.raises(ValueError):
+        Interferometer(num_modes=num_modes, modes=modes)
+    with pytest.raises(ValueError):
+        RealInterferometer(num_modes=num_modes, modes=modes)
