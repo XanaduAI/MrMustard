@@ -907,12 +907,12 @@ def _grad_displacement(T, r, phi):  # pragma: no cover
 
 
 @math.custom_gradient
-def displacement(self, r, phi, cutoff, tol=1e-15):
+def displacement(r, phi, cutoff, tol=1e-15):
     """creates a single mode displacement matrix"""
     if r > tol:
-        gate = displacement(self.asnumpy(r), self.asnumpy(phi), cutoff)
+        gate = _displacement(math.asnumpy(r), math.asnumpy(phi), cutoff)
     else:
-        gate = self.eye(cutoff, dtype="complex128")
+        gate = math.eye(cutoff, dtype="complex128")
 
     def grad(dy):  # pragma: no cover
         Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
