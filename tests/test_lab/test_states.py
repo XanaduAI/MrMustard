@@ -145,6 +145,15 @@ def test_get_modes():
     assert b == (a & b).get_modes([2, 3])
 
 
+def test_hbar():
+    """Test cov matrix is linear in hbar."""
+    g = Gaussian(2)
+    p = g.purity
+    settings.HBAR = 1.234
+    assert g.purity == p
+    settings.HBAR = 2
+
+
 def test_get_single_mode():
     """Test get_modes leaves a single-mode state untouched."""
     a = Gaussian(1)[1]

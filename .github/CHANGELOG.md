@@ -209,6 +209,9 @@ the other types, like `Batch[ComplexTensor]`. This will allow for better type ch
 * The sign of parameters in the circuit drawer are now displayed correctly.
   [(#209)](https://github.com/XanaduAI/MrMustard/pull/209)
 
+* Fixed a bug in the Gaussian state which caused it to be multiplied by hbar/2 twice. Adds the argument `modes` to `Ggate`.
+  [(#212)](https://github.com/XanaduAI/MrMustard/pull/212)
+
 
 ### Documentation
 
