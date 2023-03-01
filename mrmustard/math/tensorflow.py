@@ -14,9 +14,12 @@
 
 """This module contains the Tensorflow implementation of the :class:`Math` interface."""
 
+from typing import Callable, List, Sequence, Tuple, Union, Optional
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
 from mrmustard.math.numba.compactFock_inputValidation import (
@@ -27,17 +30,9 @@ from mrmustard.math.numba.compactFock_inputValidation import (
     hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_1leftoverMode,
 )
+
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import (
-    List,
-    Tensor,
-    Sequence,
-    Tuple,
-    Optional,
-    Trainable,
-    Callable,
-    Union,
-)
+from mrmustard.typing import Tensor, Trainable
 from .math_interface import MathInterface
 
 

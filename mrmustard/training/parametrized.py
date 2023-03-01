@@ -29,7 +29,7 @@ from mrmustard.training.parameter import (
     Trainable,
     create_parameter,
 )
-from mrmustard.types import Tensor
+from mrmustard.typing import Tensor
 
 math = Math()
 
@@ -78,13 +78,16 @@ class Parametrized:
             str: string representation of the parameter values
         """
         strings = []
-        for _, value in self.kw_parameters:
+        for name, value in self.kw_parameters:
             value = math.asnumpy(value)
             if value.ndim == 0:  # don't show arrays
-                value = np.round(value, decimals)
+                sign = "-" if value < 0 else ""
+                value = np.abs(np.round(value, decimals))
                 int_part = int(value)
                 decimal_part = np.round(value - int_part, decimals)
-                string = str(int_part) + f"{decimal_part:.{decimals}g}"[1:]
+                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
+            else:
+                string = f"{name}"
             strings.append(string)
         return ", ".join(strings)
 

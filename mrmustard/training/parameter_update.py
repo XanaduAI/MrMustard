@@ -15,8 +15,10 @@
 """TODO: document this module
 """
 
-from mrmustard.types import Sequence, Tensor, Tuple
+from typing import Tuple, Sequence
 from mrmustard.math import Math
+from mrmustard.typing import Tensor
+
 from .parameter import Trainable
 
 math = Math()
@@ -41,18 +43,23 @@ def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symple
 def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], orthogonal_lr: float):
     r"""Updates the orthogonal parameters using the given orthogonal gradients.
     Implemented from:
-        Fiori S, Bengio Y. Quasi-Geodesic Neural Learning Algorithms
-        Over the Orthogonal Group: A Tutorial.
-        Journal of Machine Learning Research. 2005 May 1;6(5).
+        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
     """
     for dO_euclidean, O in grads_and_vars:
-        dO_orthogonal = 0.5 * (
-            dO_euclidean - math.matmul(math.matmul(O, math.transpose(dO_euclidean)), O)
-        )
-        new_value = math.matmul(
-            O, math.expm(orthogonal_lr * math.matmul(math.transpose(dO_orthogonal), O))
-        )
+        Y = math.euclidean_to_unitary(O, math.real(dO_euclidean))
+        new_value = math.matmul(O, math.expm(-orthogonal_lr * Y))
         math.assign(O, new_value)
+
+
+def update_unitary(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], unitary_lr: float):
+    r"""Updates the unitary parameters using the given unitary gradients.
+    Implemented from:
+        Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+    """
+    for dU_euclidean, U in grads_and_vars:
+        Y = math.euclidean_to_unitary(U, dU_euclidean)
+        new_value = math.matmul(U, math.expm(-unitary_lr * Y))
+        math.assign(U, new_value)
 
 
 def update_euclidean(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclidean_lr: float):
@@ -65,5 +72,6 @@ def update_euclidean(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], euclide
 param_update_method = {
     "euclidean": update_euclidean,
     "symplectic": update_symplectic,
+    "unitary": update_unitary,
     "orthogonal": update_orthogonal,
 }

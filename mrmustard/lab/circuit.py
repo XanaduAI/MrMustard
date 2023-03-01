@@ -20,13 +20,12 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-
+from mrmustard.typing import RealMatrix, RealVector
 from typing import List, Optional, Tuple
 
 from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
-from mrmustard.types import Matrix, Vector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
@@ -66,7 +65,9 @@ class Circuit(Transformation, Parametrized):
     @property
     def XYd(
         self,
-    ) -> Tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency.
+    ) -> Tuple[
+        RealMatrix, RealMatrix, RealVector
+    ]:  # NOTE: Overriding Transformation.XYd for efficiency
         X = XPMatrix(like_1=True)
         Y = XPMatrix(like_0=True)
         d = XPVector()
