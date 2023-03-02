@@ -172,6 +172,10 @@ the other types, like `Batch[ComplexTensor]`. This will allow for better type ch
   so we needed both.
   [(#208)](https://github.com/XanaduAI/MrMustard/pull/208)
 
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#200)](https://github.com/XanaduAI/MrMustard/pull/200)
+
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended as the same parameter
