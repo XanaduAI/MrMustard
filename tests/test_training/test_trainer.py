@@ -15,15 +15,19 @@
 """Tests for the ray-based trainer."""
 
 import sys
-
 from time import sleep
-import pytest
 
 import numpy as np
-from mrmustard.lab import Vacuum, Dgate, Ggate, Gaussian
+import pytest
+import ray
+
+from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
+
+NUM_CPUS = 1
+ray.init(num_cpus=NUM_CPUS)
 
 
 @pytest.fixture(scope="function")
@@ -57,6 +61,7 @@ def test_circ_cost(wrappers, tasks, seed):  # pylint: disable=redefined-outer-na
     results = map_trainer(
         cost_fn=cost_fn,
         tasks=tasks,
+        num_cpus=NUM_CPUS,
         **({"SEED": seed} if has_seed else {}),
     )
 
@@ -92,6 +97,7 @@ def test_circ_optimize(wrappers, tasks, return_type):  # pylint: disable=redefin
         max_steps=max_steps,
         symplectic_lr=0.05,
         return_type=return_type,
+        num_cpus=NUM_CPUS,
     )
 
     if isinstance(tasks, dict):
@@ -127,8 +133,8 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
     make_circ, cost_fn = wrappers
 
     tasks = {
-        "my-job": {"x": 0.1, "euclidean_lr": 0.005, "max_steps": 20},
-        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 12},
+        "my-job": {"x": 0.1, "euclidean_lr": 0.01, "max_steps": 100},
+        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 20},
     }
 
     results = map_trainer(
@@ -139,6 +145,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
         symplectic_lr=0.05,
         metric_fns=metric_fns,
         return_list=True,
+        num_cpus=NUM_CPUS,
     )
 
     assert set(results.keys()) == set(tasks.keys())
@@ -171,6 +178,7 @@ def test_no_ray(monkeypatch):
     with pytest.raises(ImportError, match="Failed to import `ray`"):
         _ = map_trainer(
             tasks=2,
+            num_cpus=NUM_CPUS,
         )
 
 
@@ -179,6 +187,7 @@ def test_invalid_tasks():
     with pytest.raises(ValueError, match="`tasks` is expected to be of type int, list, or dict."):
         _ = map_trainer(
             tasks=2.3,
+            num_cpus=NUM_CPUS,
         )
 
 
@@ -201,6 +210,7 @@ def test_no_pbar(wrappers):  # pylint: disable=redefined-outer-name
         cost_fn=cost_fn,
         tasks=2,
         pbar=False,
+        num_cpus=NUM_CPUS,
     )
     assert len(results) == 2
 
@@ -213,6 +223,7 @@ def test_unblock(wrappers, tasks):  # pylint: disable=redefined-outer-name
         cost_fn=cost_fn,
         tasks=tasks,
         unblock=True,
+        num_cpus=NUM_CPUS,
     )
     assert callable(result_getter)
 

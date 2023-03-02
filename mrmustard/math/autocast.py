@@ -15,7 +15,7 @@
 """This module contains the implementation of the decorator class :class:`Autocast`."""
 
 from functools import wraps
-from mrmustard.types import List
+from typing import List
 
 
 class Autocast:

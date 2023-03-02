@@ -19,21 +19,23 @@ This module contains functions for performing calculations on Fock states.
 """
 
 from functools import lru_cache
+from typing import List, Sequence, Tuple, Optional
+
 import numpy as np
 
-
+from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.mmtensor import MMTensor
 from mrmustard.physics.bargmann import (
+    wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
-    wigner_to_bargmann_Choi,
     wigner_to_bargmann_U,
 )
 
-from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.caching import tensor_int_cache
-from mrmustard.types import List, Tuple, Tensor, Scalar, Matrix, Sequence, Vector
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
+from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
 
@@ -56,28 +58,34 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(
-    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
-) -> Tuple[int, ...]:
-    r"""Returns the autocutoffs of a Wigner state.
+def autocutoffs(cov: Matrix, means: Vector, probability: float):
+    r"""Returns the cutoffs of a Gaussian state by computing the 1-mode marginals until
+    the probability of the marginal is less than ``probability``.
 
     Args:
-        number_stdev: the photon number standard deviation in each mode
-            (i.e. the square root of the diagonal of the covariance matrix)
-        number_means: the photon number means vector
-        max_cutoff: the maximum cutoff
+        cov: the covariance matrix
+        means: the means vector
+        probability: the cutoff probability
 
     Returns:
         Tuple[int, ...]: the suggested cutoffs
     """
-    if max_cutoff is None:
-        max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
-    if min_cutoff is None:
-        min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
-    autocutoffs = settings.AUTOCUTOFF_MIN_CUTOFF + math.cast(
-        number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32"
-    )
-    return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
+    M = len(means) // 2
+    cutoffs = []
+    for i in range(M):
+        cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
+        means_i = np.array([means[i], means[i + M]])
+        # apply 1-d recursion until probability is less than 0.99
+        A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
+        diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
+        # find at what index in the cumsum the probability is more than 0.99
+        for i, val in enumerate(np.cumsum(diag)):
+            if val > probability:
+                cutoffs.append(max(i + 1, settings.AUTOCUTOFF_MIN_CUTOFF))
+                break
+        else:
+            cutoffs.append(settings.AUTOCUTOFF_MAX_CUTOFF)
+    return cutoffs
 
 
 def wigner_to_fock_state(
@@ -233,8 +241,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     if a_ket and b_ket:
         min_cutoffs = [slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)]
-        state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs]
+        state_a = state_a[tuple(min_cutoffs)]
+        state_b = state_b[tuple(min_cutoffs)]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
 
     if a_ket:
@@ -242,8 +250,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             slice(min(a, b))
             for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])
         ]
-        state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs * 2]
+        state_a = state_a[tuple(min_cutoffs)]
+        state_b = state_b[tuple(min_cutoffs * 2)]
         a = math.reshape(state_a, -1)
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
@@ -254,8 +262,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             slice(min(a, b))
             for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
         ]
-        state_a = state_a[min_cutoffs * 2]
-        state_b = state_b[min_cutoffs]
+        state_a = state_a[tuple(min_cutoffs * 2)]
+        state_b = state_b[tuple(min_cutoffs)]
         b = math.reshape(state_b, -1)
         return math.real(
             math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
@@ -263,11 +271,25 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
 
     # mixed state
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States, Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
-    return (
-        math.trace(
-            math.sqrtm(math.matmul(math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a)))
+
+    # trim states to have same cutoff
+    min_cutoffs = [
+        slice(min(a, b))
+        for a, b in zip(
+            state_a.shape[: len(state_a.shape) // 2], state_b.shape[: len(state_b.shape) // 2]
         )
-        ** 2
+    ]
+    state_a = state_a[tuple(min_cutoffs * 2)]
+    state_b = state_b[tuple(min_cutoffs * 2)]
+    return math.abs(
+        (
+            math.trace(
+                math.sqrtm(
+                    math.matmul(math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a))
+                )
+            )
+            ** 2
+        )
     )
 
 
@@ -736,7 +758,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 
 def quadrature_distribution(
-    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: float = settings.HBAR
+    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: Optional[float] = None
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -771,6 +793,7 @@ def quadrature_distribution(
         )
 
     if x is None:
+        hbar = hbar or settings.HBAR
         x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
@@ -784,7 +807,7 @@ def quadrature_distribution(
 
 
 def sample_homodyne(
-    state: Tensor, quadrature_angle: float = 0.0, hbar: float = settings.HBAR
+    state: Tensor, quadrature_angle: float = 0.0, hbar: Optional[float] = None
 ) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
@@ -792,7 +815,6 @@ def sample_homodyne(
     Args:
         state (Tensor): ket or density matrix of the state being measured
         quadrature_angle (float): angle of the quadrature distribution
-        hbar: value of hbar
 
     Returns:
         tuple(float, float): outcome and probability of the outcome
@@ -803,7 +825,7 @@ def sample_homodyne(
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar)
+    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar or settings.HBAR)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution
