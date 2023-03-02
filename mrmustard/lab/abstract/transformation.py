@@ -111,7 +111,7 @@ class Transformation:
                 return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
             return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            choi = self.choi(cutoffs=state.cutoffs)
+            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx])
             n = state.num_modes
             N0 = list(range(0, n))
             N1 = list(range(n, 2 * n))
@@ -224,6 +224,10 @@ class Transformation:
 
     def choi(self, cutoffs: Sequence[int]):
         r"""Returns the Choi representation of the transformation."""
+        if len(cutoffs) not in (4 * self.num_modes, self.num_modes):
+            raise ValueError(
+                "The number of cutoffs must be either the number of modes or 4 times the number of modes."
+            )
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)

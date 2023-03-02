@@ -23,12 +23,11 @@ from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from mrmustard import settings
-
-from mrmustard.typing import RealMatrix, ComplexMatrix, Tensor
-from mrmustard.lab.abstract import Transformation
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
+from mrmustard.typing import ComplexMatrix, RealMatrix
 
 math = Math()
 

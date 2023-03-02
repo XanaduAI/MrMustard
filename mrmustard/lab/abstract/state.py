@@ -33,10 +33,10 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.typing import (
-    RealMatrix,
-    RealVector,
-    RealTensor,
     ComplexTensor,
+    RealMatrix,
+    RealTensor,
+    RealVector,
 )
 from mrmustard.utils import graphics
 
@@ -338,9 +338,6 @@ class State:
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        # import pdb
-
-        # pdb.set_trace()
         if isinstance(other, State):
             return self._project_onto_state(other)
         try:
