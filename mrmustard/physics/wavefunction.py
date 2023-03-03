@@ -19,10 +19,11 @@ This module contains functions for transforming to the wavefunction representati
 """
 
 import numpy as np
-from mrmustard.math.caching import tensor_int_cache
+
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.types import Tensor, Vector
+from mrmustard.math.caching import tensor_int_cache
+from mrmustard.typing import Tensor, Vector
 
 math = Math()
 
