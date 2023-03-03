@@ -23,7 +23,7 @@ from mrmustard.typing import RealMatrix, ComplexMatrix
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
-from mrmustard.physics import gaussian
+from mrmustard.physics import gaussian, fock
 from mrmustard.training import Parametrized
 
 math = Math()
@@ -107,9 +107,9 @@ class Dgate(Parametrized, Transformation):
         Ud = None
         for idx, cutoff in enumerate(cutoffs):
             if Ud is None:
-                Ud = math.displacement(r[idx], phi[idx], cutoff)
+                Ud = fock.displacement(r[idx], phi[idx], cutoff)
             else:
-                U_next = math.displacement(r[idx], phi[idx], cutoff)
+                U_next = fock.displacement(r[idx], phi[idx], cutoff)
                 Ud = math.outer(Ud, U_next)
 
         return math.transpose(

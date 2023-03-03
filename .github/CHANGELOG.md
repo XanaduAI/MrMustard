@@ -13,12 +13,12 @@
 
   def make_circ(x=0.):
       return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
-  
+
   def cost_fn(circ=make_circ(0.1), y_targ=0.):
       target = Gaussian(1) >> Dgate(-1.5, y_targ)
       s = Vacuum(1) >> circ
       return -fidelity(s, target)
-  
+
   # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
   results_0 = map_trainer(
       cost_fn=cost_fn,
@@ -109,14 +109,16 @@
   The complexity of these new methods is equal to performing a pure state simulation.
   The methods are differentiable, such that they can be used for defining a costfunction.
   [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
-  
+
 ### Breaking changes
 
 ### Improvements
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values.
-  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147) 
+* The `Dgate` is now implemented directly in MrMustard (instead of on The Walrus) to calculate the
+  unitary and gradients of the displacement gate in fock representation, providing better numerical
+  stability for larger cutoff and displacement values.
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+  [(#211)](https://github.com/XanaduAI/MrMustard/pull/211)
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
   [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
@@ -166,7 +168,7 @@ the other types, like `Batch[ComplexTensor]`. This will allow for better type ch
 * The `fock.autocutoff` function now uses the new diagonal methods for calculating a probability-based cutoff.
   Use `settings.AUTOCUTOFF_PROBABILITY` to set the probability threshold.
   [(#203)](https://github.com/XanaduAI/MrMustard/pull/203)
-  
+
 * The unitary group optimization (for the interferometer) and the orthogonal group optimization (for the real interferometer) have been added.
   The symplectic matrix that describes an interferometer belongs to the intersection of the orthogonal group and the symplectic group, which is a unitary group,
   so we needed both.
@@ -213,7 +215,7 @@ the other types, like `Batch[ComplexTensor]`. This will allow for better type ch
 
 ### Documentation
 
-### Contributors 
+### Contributors
 
 This release contains contributions from (in alphabetical order):
 [Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
