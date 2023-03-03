@@ -27,7 +27,7 @@ try:
 
     NUM_CPUS = 1
     ray.init(num_cpus=NUM_CPUS)
-except:
+except ImportError:
     ray_available = False
 
 from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
@@ -58,6 +58,8 @@ def wrappers():
 
 @pytest.mark.skipif(not ray_available, reason="ray is not available")
 class TestTrainer:
+    """Class containinf ray-related tests."""
+
     @pytest.mark.parametrize(
         "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": 0.07}}]
     )
