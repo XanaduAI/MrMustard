@@ -259,3 +259,9 @@ def test_phasenoise_large_noise():
     G1 = Gaussian(1)
     P = PhaseNoise(1000)
     assert (G1 >> P) == State(dm=math.diag(math.diag_part(G1.dm())))
+
+
+def test_phasenoise_zero_noise():
+    G1 = Gaussian(1)
+    P = PhaseNoise(0.0)
+    assert (G1 >> P) == State(dm=G1.dm())
