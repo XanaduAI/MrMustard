@@ -41,32 +41,6 @@ class ComplexFunction1D:
     def values(self) -> ComplexVector:
         return self.interp_real.y + 1j * self.interp_imag.y
 
-    # def plot(self):
-    #     phase = np.angle(self.values)
-    #     magnitude = np.abs(self.values)
-    #     # convert phase to be between 0 and 1
-    #     phase = (phase + np.pi) / (2 * np.pi)
-    #     fig, ax = plt.subplots()
-    #     ax.scatter(self.domain, magnitude, c=phase, cmap=cm.hsv, marker=".")
-    #     ax.plot(self.domain, magnitude, color="black", linewidth=1)
-    #     return ax
-    # def plot(self):
-    #     phase = (np.angle(self.values) + np.pi) / (2 * np.pi)
-    #     magnitude = np.abs(self.values)
-    #     fig, ax = plt.subplots()
-    #     # Use fill_between() to fill the area under the curve with HUE based on phase angle
-    #     ax.fill_between(
-    #         self.domain,
-    #         0,
-    #         magnitude,
-    #         where=magnitude >= 0,
-    #         interpolate=True,
-    #         color=cm.hsv(phase),
-    #         alpha=1.0,
-    #     )
-    #     # Plot the curve in black color with linewidth=1
-    #     ax.plot(self.domain, magnitude, color="black", linewidth=1)
-    #     return ax
     def plot(self):
         phase = np.angle(self.values)
         magnitude = np.abs(self.values)
@@ -105,7 +79,7 @@ class ComplexFunction1D:
         dy = interp1d(dom, dy)
         # we have a budget of max_dom_points,
         # we sample them between x.min() and x.max()
-        # using dy as a probability distribution
+        # using dy as probability distribution
         a = np.linspace(self.domain.min(), self.domain.max(), 10000)
         x = np.random.choice(
             a=a,
