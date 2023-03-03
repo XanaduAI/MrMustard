@@ -1,19 +1,4 @@
-# Release 0.5.0 (development release)
-
-### New features
-
-### Breaking changes
-
-### Improvements
-
-### Bug fixes
-
-### Documentation
-
-### Contributors
-
-
-# Release 0.4.0 (current release)
+# Release 0.4.0
 
 ### New features
 
@@ -29,12 +14,12 @@
 
   def make_circ(x=0.):
       return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
-  
+
   def cost_fn(circ=make_circ(0.1), y_targ=0.):
       target = Gaussian(1) >> Dgate(-1.5, y_targ)
       s = Vacuum(1) >> circ
       return -fidelity(s, target)
-  
+
   # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
   results_0 = map_trainer(
       cost_fn=cost_fn,
@@ -92,7 +77,7 @@
 * We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for
   a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor
   contractions and this wrapper allows one to label each index of a tensor and perform
-  contractions using the `@` symbol as if it were a simple matrix multiplication (the indices 
+  contractions using the `@` symbol as if it were a simple matrix multiplication (the indices
   with the same name get contracted).
   [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)<br>
   [(#195)](https://github.com/XanaduAI/MrMustard/pull/195)
@@ -130,7 +115,7 @@
   The complexity of these new methods is equal to performing a pure state simulation.
   The methods are differentiable, so that they can be used for defining a cost function.
   [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
-  
+
 ### Breaking changes
 
 ### Improvements
@@ -138,7 +123,7 @@
 * The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement
   gate in fock representation, providing better numerical stability for larger cutoff
   and displacement values.
-  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147) 
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
   [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
@@ -188,7 +173,7 @@
 * The `fock.autocutoff` function now uses the new diagonal methods for calculating a
   probability-based cutoff. Use `settings.AUTOCUTOFF_PROBABILITY` to set the probability threshold.
   [(#203)](https://github.com/XanaduAI/MrMustard/pull/203)
-  
+
 * The unitary group optimization (for the interferometer) and the orthogonal group optimization
   (for the real interferometer) have been added. The symplectic matrix that describes an
   interferometer belongs to the intersection of the orthogonal group and the symplectic group,
@@ -240,7 +225,7 @@
 
 ### Documentation
 
-### Contributors 
+### Contributors
 
 This release contains contributions from (in alphabetical order):
 [Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa),
