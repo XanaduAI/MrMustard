@@ -6,8 +6,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /mrmustard
 COPY . .
 
-RUN apt-get update
-RUN apt-get -y install --no-install-recommends sudo \
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends sudo \
     zsh \
     less \
     curl \
