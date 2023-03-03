@@ -20,7 +20,14 @@ from mrmustard.training import Parametrized
 from mrmustard.math import Math
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import BSgate, S2gate
-from mrmustard.training.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
+from mrmustard.training.parameter import (
+    Constant,
+    Unitary,
+    Orthogonal,
+    Euclidean,
+    Symplectic,
+    Trainable,
+)
 
 math = Math()
 
@@ -39,7 +46,7 @@ def test_attribute_assignment(kwargs):
         assert instance_attributes[f"{name}"].name == name
 
 
-@pytest.mark.parametrize("trainable_class", (Euclidean, Orthogonal, Symplectic))
+@pytest.mark.parametrize("trainable_class", (Euclidean, Orthogonal, Symplectic, Unitary))
 @pytest.mark.parametrize("bounds", [None, (0, 10)])
 def test_attribute_from_backend_type_assignment(trainable_class, bounds):
     """Test that arguments that are trainable get defined on the backend,
@@ -95,11 +102,13 @@ def test_get_parameters():
         "euclidian_attribute_trainable": True,
         "orthogonal_attribute": math.new_variable(4, None, "orthogonal_attribute"),
         "orthogonal_attribute_trainable": True,
+        "unitary_attribute": math.new_variable(4, None, "unitary_attribute"),
+        "unitary_attribute_trainable": True,
     }
     parametrized = Parametrized(**kwargs)
 
     trainable_params = parametrized.trainable_parameters
-    assert len(trainable_params) == 3
+    assert len(trainable_params) == 4
     assert all(isinstance(param, Trainable) for param in trainable_params)
 
     constant_params = parametrized.constant_parameters

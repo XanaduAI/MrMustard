@@ -15,11 +15,14 @@
 """This module contains the implementation of the class :class:`FockMeasurement`."""
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from mrmustard.math import Math
 
-from mrmustard.types import Tensor, Callable, Sequence, Iterable, Union
+from abc import ABC, abstractmethod
+from typing import Iterable, Sequence, Union
+
 from mrmustard import settings
+from mrmustard.math import Math
+from mrmustard.typing import Tensor
+
 from .state import State
 
 math = Math()
@@ -30,11 +33,11 @@ class Measurement(ABC):
     implement
 
     Args:
-        outcome (optional, List[float] or Array): the result of the measurement
+        outcome (optional, List[float] or Tensor): the result of the measurement
         modes (List[int]): the modes on which the measurement is acting on
     """
 
-    def __init__(self, outcome: Tensor, modes: Iterable[int]) -> None:
+    def __init__(self, outcome: Tensor, modes: Sequence[int]) -> None:
         super().__init__()
 
         if modes is None:
@@ -89,7 +92,7 @@ class Measurement(ABC):
             f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
         )
 
-    def __getitem__(self, items) -> Callable:
+    def __getitem__(self, items) -> Measurement:
         """Assign modes via the getitem syntax: allows measurements to be used as
         ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
         """
@@ -116,7 +119,7 @@ class FockMeasurement(Measurement):
     in the Fock basis.
     """
 
-    def __init__(self, outcome: Tensor, modes: Iterable[int], cutoffs: Iterable[int]) -> None:
+    def __init__(self, outcome: Tensor, modes: Sequence[int], cutoffs: Sequence[int]) -> None:
         self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
         super().__init__(outcome, modes)
 
@@ -134,18 +137,16 @@ class FockMeasurement(Measurement):
         the detector is measuring. The remaining indices correspond to the density matrix of the unmeasured modes.
 
         Args
-            state (State): the quatum state
+            other (State): the quantum state
         Returns
             Tensor: a tensor representing the post-measurement state
         """
         cutoffs = []
-        used = 0
         for mode in other.modes:
             if mode in self._modes:
                 cutoffs.append(
                     max(settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)])
                 )
-                used += 1
             else:
                 cutoffs.append(other.cutoffs[other.indices(mode)])
         if self.should_recompute_stochastic_channel() or math.any(
@@ -175,6 +176,13 @@ class FockMeasurement(Measurement):
     def should_recompute_stochastic_channel(self) -> bool:  # override in subclasses
         """Returns `True` if the stochastic channel has to be recomputed.
 
-        This method should be overriden by subclasses accordingly.
+        This method should be overriden by subclasses as needed.
         """
         return False
+
+    def recompute_stochastic_channel(self, cutoffs: Sequence[int]) -> None:
+        """Recomputes the stochastic channel.
+
+        This method should be overriden by subclasses as needed.
+        """
+        raise NotImplementedError

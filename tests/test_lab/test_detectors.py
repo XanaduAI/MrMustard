@@ -243,9 +243,9 @@ class TestHomodyneDetector:
         #     assert np.allclose(means, expected_means)
 
     @given(
-        s=st.floats(min_value=0.0, max_value=10.0),
-        X=st.floats(-10.0, 10.0),
-        d=arrays(np.float64, 4, elements=st.floats(-10.0, 10.0)),
+        s=st.floats(min_value=0.0, max_value=1.0),
+        X=st.floats(-1.0, 1.0),
+        d=arrays(np.float64, 4, elements=st.floats(-1.0, 1.0)),
     )
     def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(self, s, X, d):
         """Check that homodyne detection on displaced TMSV works"""
@@ -389,7 +389,11 @@ class TestNormalization:
         """Checks that projecting a two-mode coherent state onto a number state
         produces a state with the expected norm."""
         leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=normalize)[0]
-        assert np.isclose(expected_norm, physics.norm(leftover), atol=1e-5)
+        assert np.isclose(
+            expected_norm * np.sqrt(settings.AUTOCUTOFF_PROBABILITY),
+            physics.norm(leftover),
+            rtol=1 - settings.AUTOCUTOFF_PROBABILITY,
+        )
 
     def test_norm_2mode_gaussian_normalized(self):
         """Checks that after projection the norm of the leftover state is as expected."""

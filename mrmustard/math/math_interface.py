@@ -15,25 +15,19 @@
 """This module contains the :class:`Math` interface that every backend has to implement."""
 
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from functools import lru_cache
 from itertools import product
 import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
 from mrmustard import settings
-from mrmustard.types import (
-    List,
+from mrmustard.typing import (
     Tensor,
     Matrix,
     Scalar,
     Vector,
-    Sequence,
-    Tuple,
-    Optional,
-    Dict,
     Trainable,
-    Callable,
-    Any,
 )
 
 
@@ -1216,3 +1210,20 @@ class MathInterface(ABC):
         Jmat = self.J(S.shape[-1] // 2)
         Z = self.matmul(self.transpose(S), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+
+    def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
+        r"""Convert the Euclidean gradient to a Riemannian gradient on the
+        tangent bundle of the unitary manifold.
+
+        Implemented from:
+            Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+
+        Args:
+            U (Matrix): unitary matrix
+            dU_euclidean (Matrix): Euclidean gradient tensor
+
+        Returns:
+            Matrix: unitary gradient tensor
+        """
+        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
+        return 0.5 * (Z - self.conj(self.transpose(Z)))

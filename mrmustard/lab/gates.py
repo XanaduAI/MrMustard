@@ -19,12 +19,12 @@ This module defines gates and operations that can be applied to quantum modes to
 """
 
 from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.types import Tensor
+from mrmustard.typing import RealMatrix, ComplexMatrix
 from mrmustard import settings
-from mrmustard.training import Parametrized
-from mrmustard.physics import gaussian
+from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
-from .abstract import Transformation
+from mrmustard.physics import gaussian
+from mrmustard.training import Parametrized
 
 math = Math()
 
@@ -87,6 +87,7 @@ class Dgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "D"
 
     @property
     def d_vector(self):
@@ -157,6 +158,7 @@ class Sgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "S"
 
     @property
     def X_matrix(self):
@@ -195,6 +197,7 @@ class Rgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "R"
 
     @property
     def X_matrix(self):
@@ -251,6 +254,7 @@ class Pgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "P"
 
     @property
     def X_matrix(self):
@@ -284,6 +288,7 @@ class CXgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "CX"
 
     @property
     def X_matrix(self):
@@ -317,6 +322,7 @@ class CZgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "CZ"
 
     @property
     def X_matrix(self):
@@ -359,6 +365,7 @@ class BSgate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "BS"
 
     @property
     def X_matrix(self):
@@ -413,6 +420,7 @@ class MZgate(Parametrized, Transformation):
         self._internal = internal
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "MZ"
 
     @property
     def X_matrix(self):
@@ -460,6 +468,7 @@ class S2gate(Parametrized, Transformation):
         )
         self._modes = modes
         self.is_gaussian = True
+        self.short_name = "S2"
 
     @property
     def X_matrix(self):
@@ -473,79 +482,86 @@ class S2gate(Parametrized, Transformation):
 class Interferometer(Parametrized, Transformation):
     r"""N-mode interferometer.
 
-    It corresponds to a Ggate with zero mean and a ``2N x 2N`` orthogonal symplectic matrix.
+    It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
 
     Args:
         num_modes (int): the num_modes-mode interferometer
-        orthogonal (2d array): a valid orthogonal matrix. For N modes it must have shape `(2N,2N)`
-        orthogonal_trainable (bool): whether orthogonal is a trainable variable
+        unitary (2d array): a valid unitary matrix U. For N modes it must have shape `(N,N)`
+        unitary_trainable (bool): whether unitary is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
 
     def __init__(
         self,
         num_modes: int,
-        orthogonal: Optional[Tensor] = None,
-        orthogonal_trainable: bool = False,
+        unitary: Optional[ComplexMatrix] = None,
+        unitary_trainable: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        if modes is not None and (
-            num_modes != len(modes) or any(mode >= num_modes for mode in modes)
-        ):
-            raise ValueError("Invalid number of modes and the mode list here!")
-        if orthogonal is None:
-            U = math.random_unitary(num_modes)
-            orthogonal = math.block([[math.real(U), -math.imag(U)], [math.imag(U), math.real(U)]])
+        if modes is not None and num_modes != len(modes):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
+        if unitary is None:
+            unitary = math.random_unitary(num_modes)
         super().__init__(
-            orthogonal=orthogonal,
-            orthogonal_trainable=orthogonal_trainable,
+            unitary=unitary,
+            unitary_trainable=unitary_trainable,
         )
         self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
+        self.short_name = "I"
 
     @property
     def X_matrix(self):
-        return self.orthogonal.value
+        return math.block(
+            [
+                [math.real(self.unitary.value), -math.imag(self.unitary.value)],
+                [math.imag(self.unitary.value), math.real(self.unitary.value)],
+            ]
+        )
 
     def _validate_modes(self, modes):
-        if len(modes) != self.orthogonal.value.shape[-1] // 2:
+        if len(modes) != self.unitary.value.shape[-1]:
             raise ValueError(
-                f"Invalid number of modes: {len(modes)} (should be {self.orthogonal.shape[-1] // 2})"
+                f"Invalid number of modes: {len(modes)} (should be {self.unitary.shape[-1]})"
             )
 
     def __repr__(self):
         modes = self.modes
-        orthogonal = repr(math.asnumpy(self.orthogonal.value)).replace("\n", "")
-        return f"Interferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
+        unitary = repr(math.asnumpy(self.unitary.value)).replace("\n", "")
+        return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
 class RealInterferometer(Parametrized, Transformation):
-    r"""N-mode interferometer with a real unitary matrix (or block-diagonal orthogonal matrix).
+    r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix). This interferometer does not mix q and p.
     Does not mix q's and p's.
 
     Args:
-        orthogonal (2d array, optional): a valid orthogonal matrix. For N modes it must have shape `(N,N)`.
-            If set to `None` a random orthogonal matrix is used.
+        orthogonal (2d array, optional): a real unitary (orthogonal) matrix. For N modes it must have shape `(N,N)`.
+            If set to `None` a random real unitary (orthogonal) matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
 
     def __init__(
         self,
         num_modes: int,
-        orthogonal: Optional[Tensor] = None,
+        orthogonal: Optional[RealMatrix] = None,
         orthogonal_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
         super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
+        self.short_name = "RI"
 
     @property
     def X_matrix(self):
         return math.block(
             [
-                [self.orthogonal.value, math.zeros_like(self.orthogonal.value)],
+                [self.orthogonal.value, -math.zeros_like(self.orthogonal.value)],
                 [math.zeros_like(self.orthogonal.value), self.orthogonal.value],
             ]
         )
@@ -577,16 +593,21 @@ class Ggate(Parametrized, Transformation):
     def __init__(
         self,
         num_modes: int,
-        symplectic: Optional[Tensor] = None,
+        symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
+        modes: Optional[List[int]] = None,
     ):
-        symplectic = symplectic if symplectic is not None else math.random_symplectic(num_modes)
+        if modes is not None and (num_modes != len(modes)):
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
+        if symplectic is None:
+            symplectic = math.random_symplectic(num_modes)
         super().__init__(
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
         )
-        self._modes = list(range(num_modes))
+        self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
+        self.short_name = "G"
 
     @property
     def X_matrix(self):
@@ -661,6 +682,7 @@ class Attenuator(Parametrized, Transformation):
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True
+        self.short_name = "Att"
 
     @property
     def X_matrix(self):
@@ -717,6 +739,7 @@ class Amplifier(Parametrized, Transformation):
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True
+        self.short_name = "Amp"
 
     @property
     def X_matrix(self):
@@ -765,11 +788,11 @@ class AdditiveNoise(Parametrized, Transformation):
             noise=noise,
             noise_trainable=noise_trainable,
             noise_bounds=noise_bounds,
-            modes=modes,
         )
         self._modes = modes
         self.is_unitary = False
         self.is_gaussian = True
+        self.short_name = "Add"
 
     @property
     def Y_matrix(self):

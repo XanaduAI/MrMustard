@@ -14,26 +14,28 @@
 
 """This module contains the Tensorflow implementation of the :class:`Math` interface."""
 
+from typing import Callable, List, Sequence, Tuple, Union, Optional
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 from thewalrus.fock_gradients import (
     displacement as displacement_tw,
     grad_displacement as grad_displacement_tw,
 )
+from mrmustard.math.numba.compactFock_inputValidation import (
+    hermite_multidimensional_diagonal,
+    grad_hermite_multidimensional_diagonal,
+)
+from mrmustard.math.numba.compactFock_inputValidation import (
+    hermite_multidimensional_1leftoverMode,
+    grad_hermite_multidimensional_1leftoverMode,
+)
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import (
-    List,
-    Tensor,
-    Sequence,
-    Tuple,
-    Optional,
-    Trainable,
-    Callable,
-    Union,
-)
+from mrmustard.typing import Tensor, Trainable
 from .math_interface import MathInterface
 
 
@@ -103,7 +105,10 @@ class TFMath(MathInterface):
             np.inf if bounds[1] is None else bounds[1],
         )
         if bounds != (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+
+            def constraint(x):
+                return tf.clip_by_value(x, bounds[0], bounds[1])
+
         else:
             constraint = None
         return constraint
@@ -395,6 +400,113 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly, grad
+
+    def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
+        Moreover, the recurrence relation in mrmustard.math.numba.compactFock~ is defined such that A = -A compared to mrmustard.physics.bargmann.
+        """
+        A = -A
+        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        A = tf.gather(A, ordering, axis=1)
+        A = tf.gather(A, ordering)
+        B = tf.gather(B, ordering)
+        return A, B
+
+    def hermite_renormalized_diagonal(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
+
+    @tf.custom_gradient
+    def hermite_renormalized_diagonal_reorderedAB(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+        by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial.
+        """
+        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+        )
+
+        def grad(dLdpoly):
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_diagonal,
+                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                [poly0.dtype] * 3,
+            )
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly0, grad
+
+    def hermite_renormalized_1leftoverMode(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
+
+    @tf.custom_gradient
+    def hermite_renormalized_1leftoverMode_reorderedAB(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates all possible Fock representations of mode 0,
+        where all other modes are PNR detected.
+        This is done by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial.
+        """
+        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+            hermite_multidimensional_1leftoverMode, [A, B, C, cutoffs], [A.dtype] * 5
+        )
+
+        def grad(dLdpoly):
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_1leftoverMode,
+                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                [poly0.dtype] * 3,
+            )
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly0, grad
 
     @tf.custom_gradient
     def displacement(self, r, phi, cutoff, tol=1e-15):

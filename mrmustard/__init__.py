@@ -15,7 +15,6 @@
 """This is the top-most `__init__.py` file of MrMustard package."""
 
 import numpy as np
-
 import rich.table
 from rich import print
 
@@ -36,11 +35,11 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        # clip(mean + 5*std, min, max) when auto-detecting the Fock cutoff
-        self.AUTOCUTOFF_STDEV_FACTOR = 5
+        self.AUTOCUTOFF_PROBABILITY = 0.999  # capture at least 99.9% of the probability
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
-        # using cutoff=5 for each mode when determining if two transformations in fock repr are equal
+        self.CIRCUIT_DECIMALS = 3
+        # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
@@ -120,7 +119,7 @@ def about():
 
         >>> mm.about()
         Mr Mustard: a differentiable bridge between phase space and Fock space.
-        Copyright 2018-2021 Xanadu Quantum Technologies Inc.
+        Copyright 2021 Xanadu Quantum Technologies Inc.
 
         Python version:            3.6.10
         Platform info:             Linux-5.8.18-1-MANJARO-x86_64-with-arch-Manjaro-Linux
@@ -134,18 +133,19 @@ def about():
         Torch version:             1.10.0+cu102
     """
     # pylint: disable=import-outside-toplevel
-    import sys
-    import platform
     import os
-    import numpy
+    import platform
+    import sys
+
     import numba
+    import numpy
     import scipy
-    import thewalrus
     import tensorflow
+    import thewalrus
 
     # a QuTiP-style infobox
     print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
-    print("Copyright 2018-2021 Xanadu Quantum Technologies Inc.\n")
+    print("Copyright 2021 Xanadu Quantum Technologies Inc.\n")
 
     print("Python version:            {}.{}.{}".format(*sys.version_info[0:3]))
     print("Platform info:             {}".format(platform.platform()))
