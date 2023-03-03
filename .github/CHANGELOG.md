@@ -184,7 +184,7 @@
 ### Bug fixes
 
 * The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended
-  as the same parameter of a number of gates in pallel.
+  as the same parameter of a number of gates in parallel.
   [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
 
 * The trace function in the fock module was giving incorrect results when called with certain
