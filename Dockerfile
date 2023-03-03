@@ -16,6 +16,7 @@ RUN apt-get -y install --no-install-recommends sudo \
     fonts-powerline \
     locales \
     git
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ### GIT GLOBAL SETUP ###
 
@@ -33,16 +34,16 @@ RUN locale-gen en_US.UTF-8
 ENV TERM xterm
 ENV SHELL /bin/zsh
 # install oh-my-zsh
-RUN sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+RUN sh -c "$(wget -nv -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 ### PYTHON DEPENDENCIES INTALLATION ###
 
 # upgrade pip and install package manager
 RUN python -m pip install --no-cache-dir --upgrade pip
-RUN pip install -r requirements.txt
-RUN pip install -r requirements-dev.txt
-RUN pip install ray
-RUN pip install -e .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-dev.txt
+RUN pip install --no-cache-dir ray
+RUN pip install --no-cache-dir -e .
 
 ### TEAR DOWN IMAGE SETUP ###
 # switch back to dialog for any ad-hoc use of apt-get

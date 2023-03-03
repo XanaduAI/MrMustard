@@ -12,6 +12,7 @@ RUN apt-get update && \
     fonts-powerline \
     locales \
     graphviz
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ### GIT GLOBAL SETUP ###
 
@@ -29,7 +30,7 @@ RUN locale-gen en_US.UTF-8
 ENV TERM xterm
 ENV SHELL /bin/zsh
 # install oh-my-zsh
-RUN sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+RUN sh -c "$(wget -nv -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 ### PYTHON DEPENDENCIES INTALLATION ###
 
