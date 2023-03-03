@@ -230,7 +230,8 @@
 
 This release contains contributions from (in alphabetical order):
 [Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa),
-[Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
+[Yuan Yao](https://github.com/sylviemonet)
 
 ---
 
