@@ -15,8 +15,8 @@ RUN apt-get -y install --no-install-recommends sudo \
     graphviz \
     fonts-powerline \
     locales \
-    git
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    git \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ### GIT GLOBAL SETUP ###
 

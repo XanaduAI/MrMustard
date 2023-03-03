@@ -11,8 +11,8 @@ RUN apt-get update && \
     wget \
     fonts-powerline \
     locales \
-    graphviz
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    graphviz \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ### GIT GLOBAL SETUP ###
 
