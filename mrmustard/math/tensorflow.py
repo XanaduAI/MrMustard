@@ -21,10 +21,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-from thewalrus.fock_gradients import (
-    displacement as displacement_tw,
-    grad_displacement as grad_displacement_tw,
-)
+
 from mrmustard.math.numba.compactFock_inputValidation import (
     hermite_multidimensional_diagonal,
     grad_hermite_multidimensional_diagonal,
@@ -508,22 +505,6 @@ class TFMath(MathInterface):
 
         return poly0, grad
 
-    @tf.custom_gradient
-    def displacement(self, r, phi, cutoff, tol=1e-15):
-        """creates a single mode displacement matrix"""
-        if r > tol:
-            gate = displacement_tw(self.asnumpy(r), self.asnumpy(phi), cutoff)
-        else:
-            gate = self.eye(cutoff, dtype="complex128")
-
-        def grad(dy):  # pragma: no cover
-            Dr, Dphi = tf.numpy_function(grad_displacement_tw, (gate, r, phi), (gate.dtype,) * 2)
-            grad_r = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dr)))
-            grad_phi = tf.math.real(tf.reduce_sum(dy * tf.math.conj(Dphi)))
-            return grad_r, grad_phi, None
-
-        return gate, grad
-
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a matrix."""
@@ -561,6 +542,11 @@ class TFMath(MathInterface):
     def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         """Returns a tensor based on the truth value of the boolean mask."""
         return tf.boolean_mask(tensor, mask)
+
+    @staticmethod
+    def custom_gradient(func):
+        """Decorator to define a function with a custom gradient."""
+        return tf.custom_gradient(func)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)
