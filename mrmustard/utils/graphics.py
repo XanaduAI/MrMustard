@@ -15,13 +15,15 @@
 """A module containing utility classes and functions for graphical display."""
 
 from typing import Tuple
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import numpy as np
+from matplotlib import cm
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+
 from mrmustard import settings
 from mrmustard.physics.fock import quadrature_distribution
-from .wigner import wigner_discretized
+from mrmustard.physics.wigner import wigner_discretized
 
 
 # pylint: disable=disallowed-name
@@ -170,3 +172,57 @@ def mikkel_plot(
     ax[0][1].yaxis.set_label_position("right")
 
     return fig, ax
+
+
+def wave_function_polar(x, fx):
+    r"""
+    Plots the complex values of a function f(x) for each value of x on the y-z plane at x,
+    in polar coordinates. The points are colored by their phase angle using HUE colors.
+    :param f: A function that takes a complex number as input and returns a complex number.
+    :param x_range: A vector of values along the x axis.
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    r = np.abs(fx)
+    theta = np.angle(fx)
+    hue = (theta + np.pi) / (2 * np.pi)  # map phase angle to hue (0 to 1)
+    colors = cm.hsv(hue)
+
+    ax.scatter(x, r * np.cos(theta), r * np.sin(theta), c=colors, marker="o", alpha=1)
+
+    ax.set_xlabel("x")
+    ax.set_ylabel("Re(f)")
+    ax.set_zlabel("Im(f)")
+    ax.set_facecolor("white")
+    plt.rcParams["grid.color"] = (0.5, 0.5, 0.5, 0.3)
+    ax.grid(True)
+
+    # Center the Real(f(x)) and Imag(f(x)) axes at 0
+    y_max = np.max(np.abs(np.real(fx)))
+    z_max = np.max(np.abs(np.imag(fx)))
+    ax.set_ylim(-y_max, y_max)
+    ax.set_zlim(-z_max, z_max)
+
+    plt.show()
+    return ax
+
+
+def wave_function_cartesian(x, fx):
+    phase = np.angle(fx)
+    magnitude = np.abs(fx)
+    hue = (phase + np.pi) / (2 * np.pi)
+    fig, ax = plt.subplots()
+    for i in range(len(x) - 1):
+        x0, x1 = x[i], x[i + 1]
+        y0, y1 = magnitude[i], magnitude[i + 1]
+        # Fill the area under the curve with a color based on the phase angle
+        ax.fill_between(
+            [x0, x1],
+            [y0, y1],
+            color=cm.hsv(hue[i]),
+            alpha=0.5,
+        )
+    # Plot the curve in black color with linewidth=1
+    ax.plot(x, magnitude, color="black", linewidth=1)
+    return ax
