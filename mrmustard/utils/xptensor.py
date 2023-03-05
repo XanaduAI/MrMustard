@@ -19,10 +19,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple, Union
+from typing import (
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from mrmustard.math import Math
-from mrmustard.types import Matrix, Scalar, Tensor, Vector
+from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
 

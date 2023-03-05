@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.types import Tensor, Trainable
+from mrmustard.typing import Tensor, Trainable
 
 from .math_interface import MathInterface
 

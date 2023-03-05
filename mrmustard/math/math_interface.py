@@ -24,7 +24,7 @@ from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from mrmustard import settings
-from mrmustard.types import (
+from mrmustard.typing import (
     Matrix,
     Scalar,
     Tensor,
@@ -420,19 +420,6 @@ class MathInterface(ABC):
 
         Returns:
             array: renormalized hermite polynomials
-        """
-
-    @abstractmethod
-    def displacement(self, r: Scalar, phi: Scalar, cutoff: Scalar, tol):
-        r"""Calculates the matrix elements of the displacement gate and its derivatives.
-
-        Args:
-            r (float): displacement magnitude
-            phi (float): displacement angle
-            cutoff (int): Fock ladder cutoff
-            tol (float): r tolerance for returning identity instead of displacement
-        Returns:
-            Tuple(array[complex], function): matrix representing the displacement operation and its gradient
         """
 
     @abstractmethod
@@ -1212,3 +1199,20 @@ class MathInterface(ABC):
         Jmat = self.J(S.shape[-1] // 2)
         Z = self.matmul(self.transpose(S), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+
+    def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
+        r"""Convert the Euclidean gradient to a Riemannian gradient on the
+        tangent bundle of the unitary manifold.
+
+        Implemented from:
+            Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+
+        Args:
+            U (Matrix): unitary matrix
+            dU_euclidean (Matrix): Euclidean gradient tensor
+
+        Returns:
+            Matrix: unitary gradient tensor
+        """
+        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
+        return 0.5 * (Z - self.conj(self.transpose(Z)))

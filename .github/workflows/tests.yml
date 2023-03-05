@@ -22,7 +22,7 @@ jobs:
       - name: Setup python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Install dependencies
         run: |
@@ -30,8 +30,9 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install wheel pytest pytest-cov --upgrade
-          python setup.py bdist_wheel
-          pip install dist/*.whl
+          pip install .[ray]
+          # python setup.py bdist_wheel
+          # pip install dist/*.whl
 
       - name: Run tests
         run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
