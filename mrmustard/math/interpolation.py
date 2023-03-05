@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import numpy as np
-from matplotlib import cm
-from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 
+from mrmustard import settings
+from mrmustard.math import Math
 from mrmustard.typing import ComplexVector, RealVector
+from mrmustard.utils.graphics import wave_function_cartesian, wave_function_polar
 
 np.set_printoptions(suppress=True, linewidth=250)
 
 
+math = Math()
+
+
 class ComplexFunction1D:
     r"""A complex function of a real variable."""
-    max_dom_points = 1000
 
     def __init__(self, x: RealVector, y: ComplexVector):
         r"""Initialize the function with a set of points.
@@ -42,37 +45,25 @@ class ComplexFunction1D:
         return self.interp_real.y + 1j * self.interp_imag.y
 
     def plot(self):
-        phase = np.angle(self.values)
-        magnitude = np.abs(self.values)
-        # convert phase to be between 0 and 1
-        phase = (phase + np.pi) / (2 * np.pi)
-        fig, ax = plt.subplots()
-        # Use fill_between() to fill the area under the curve with a varying color
-        for i in range(len(self.domain) - 1):
-            x0, x1 = self.domain[i], self.domain[i + 1]
-            y0, y1 = magnitude[i], magnitude[i + 1]
-            # Compute the average phase angle in the x interval [x0, x1]
-            avg_phase = np.mean(phase[(self.domain >= x0) & (self.domain <= x1)])
-            # Fill the area under the curve with a color based on the average phase angle
-            ax.fill_between(
-                [x0, x1],
-                0,
-                [y0, y1],
-                where=[y0 >= 0, y1 >= 0],
-                interpolate=True,
-                color=cm.hsv(avg_phase),
-                alpha=0.5,
-            )
-        # Plot the curve in black color with linewidth=1
-        ax.plot(self.domain, magnitude, color="black", linewidth=1)
-        return ax
+        r"""
+        Plots the magnitude of the wave function for each value of x in cartesian coordinates.
+        The filling at x is colored by the phase angle of f(x) using HUE colors.
+        """
+        return wave_function_cartesian(self.domain, self.values)
+
+    def plot_polar(self):
+        r"""
+        Plots the complex values of the wave function for each value of x on the y-z plane at x,
+        in polar coordinates. The points are colored by their phase angle using HUE colors.
+        """
+        return wave_function_polar(self.domain, self.values)
 
     def resample(self) -> None:
         """Resample the domain to have at most max_dom_points points.
         Sample more points where the derivative is large.
         """
         min_, max_ = self.domain.min(), self.domain.max()
-        dom = np.linspace(min_, max_, self.max_dom_points)
+        dom = np.linspace(min_, max_, settings.MAX_DOM_POINTS)
         real_grad = np.gradient(self.interp_real(dom), dom)
         imag_grad = np.gradient(self.interp_imag(dom), dom)
         dy = np.abs(real_grad - 1j * imag_grad)  # Warning: unverified
@@ -83,7 +74,7 @@ class ComplexFunction1D:
         a = np.linspace(self.domain.min(), self.domain.max(), 10000)
         x = np.random.choice(
             a=a,
-            size=self.max_dom_points,
+            size=settings.MAX_DOM_POINTS,
             p=dy(a) / dy(a).sum(),
         )
         self.interp_real = interp1d(x, self.interp_real(x))
@@ -103,7 +94,7 @@ class ComplexFunction1D:
             f = ComplexFunction1D(x, y)
         else:
             raise TypeError(f"Cannot add {type(self)} and {type(other)}")
-        if len(x) > self.max_dom_points:
+        if len(x) > settings.MAX_DOM_POINTS:
             f.resample()
         return f
 
@@ -117,7 +108,7 @@ class ComplexFunction1D:
         elif isinstance(other, (int, float, complex)):
             x = self.domain
             f = ComplexFunction1D(x, self(x) * other)
-        if len(x) > self.max_dom_points:
+        if len(x) > settings.MAX_DOM_POINTS:
             f.resample()
         return f
 
@@ -142,7 +133,7 @@ class ComplexFunction1D:
             x = self.domain
             y = self(x) / other
             f = ComplexFunction1D(x, y)
-        if len(x) > self.max_dom_points:
+        if len(x) > self.settings.MAX_DOM_POINTS:
             f.resample()
         return f
 
@@ -159,3 +150,6 @@ class ComplexFunction1D:
             return ComplexFunction1D(x, y)
         else:
             raise NotImplementedError
+
+    def __array__(self, dtype=None) -> np.ndarray:
+        return np.array(self.values, dtype=dtype)
