@@ -89,3 +89,8 @@ def wormhole(shape: Vector[int]) -> Vector[int]:
 @njit
 def diagonal(shape: Vector[int]) -> Vector[int]:
     raise NotImplementedError("Diagonal strategy not implemented yet")
+
+
+@njit
+def dynamic_U(shape: Vector[int]) -> Vector[int]:
+    raise NotImplementedError("Diagonal strategy not implemented yet")

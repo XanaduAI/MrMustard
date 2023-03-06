@@ -16,6 +16,11 @@ def tensor_value(tensor, index):
     return tensor.flat[ravel_multi_index(index, tensor.shape)]
 
 
+@njit
+def tensor_set(tensor, index, value):
+    tensor.flat[ravel_multi_index(index, tensor.shape)] = value
+
+
 class FockDict:
     def __init__(self, M):
         self._data = numba.typed.Dict.empty(numba.types.UniTuple(numba.int64, M), numba.complex128)

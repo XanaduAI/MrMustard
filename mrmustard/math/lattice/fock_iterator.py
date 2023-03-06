@@ -12,29 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
-from mrmustard.math.lattice import recurrences, strategies
+from mrmustard.math.lattice import paths, steps
 from mrmustard.types import Tensor
 
 
 def vanilla(shape: Tuple[int], A, b, c) -> Tensor:
-    print("[vanilla] vanilla called")
+    # print("[vanilla] vanilla called")
     Z = np.zeros(shape, dtype=np.complex128)
     Z[(0,) * len(shape)] = c
-    print("[vanilla] initializing path...")
-    path = strategies.ndindex_iter(np.asarray(shape))
-    print("[vanilla] path initialized.")
-    print("[vanilla] calling next on path...")
-    skip = next(path)  # skip the zero index
-    print("[vanilla] skipped index", skip)
+    # print("[vanilla] initializing path...")
+    path = paths.ndindex_iter(np.asarray(shape))
+    # print("[vanilla] path initialized.")
+    # print("[vanilla] calling next on path...")
+    next(path)  # skip the zero index
+    # print("[vanilla] skipped index", skip)
     for index in path:
-        print("[vanilla] got index for vanilla_step:", index)
-        print("[vanilla] calling vanilla_step...")
-        val_at_index = recurrences.vanilla_step(Z, A, b, index)
-        print("[vanilla] vanilla_step returned", val_at_index)
-        print(f"[vanilla] setting Z[{tuple(index)}] to", val_at_index)
+        # print("[vanilla] got index for vanilla_step:", index)
+        # print("[vanilla] calling vanilla_step...")
+        val_at_index = steps.vanilla_step(Z, A, b, index)
+        # print("[vanilla] vanilla_step returned", val_at_index)
+        # print(f"[vanilla] setting Z[{tuple(index)}] to", val_at_index)
         Z[tuple(index)] = val_at_index
     return Z
+
+
+def adaptive_U(input_shape: Tuple[int], output_shape: Optional[Tuple[int]], A, b, c) -> Tensor:
+    r"""Computes the Fock amplitudes of a unitary transformation. If the output shape is not
+    specified, the output shape is determined by the cutoff that is necessary to achieve
+    prob = settings.AUTOCUTOFF_PROBABILITY."""
+
+    if output_shape is None:
+        output_shape = input_shape
+    path = paths.ndindex_iter(np.asarray(input_shape))
+    next(path)  # skip the zero index
+    for index in path:
+        val_at_index = steps.adaptive_U_step(Z, A, b, c, index)
+        Z[tuple(index)] = val_at_index
