@@ -119,9 +119,11 @@
 
 ### Improvements
 
-* The `Dgate` now uses The Walrus to calculate the unitary and gradients of the displacement gate in fock representation,
-  providing better numerical stability for larger cutoff and displacement values.
+* The `Dgate` is now implemented directly in MrMustard (instead of on The Walrus) to calculate the
+  unitary and gradients of the displacement gate in Fock representation, providing better numerical
+  stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+  [(#211)](https://github.com/XanaduAI/MrMustard/pull/211)
 
 * Now the Wigner function is implemented in its own module and uses numba for speed.
   [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
