@@ -111,7 +111,7 @@ class Transformation:
                 return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
             return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            choi = self.choi(cutoffs=state.cutoffs)
+            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx])
             n = state.num_modes
             N0 = list(range(0, n))
             N1 = list(range(n, 2 * n))
