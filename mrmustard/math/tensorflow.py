@@ -186,6 +186,11 @@ class TFMath(MathInterface):
     def log(self, x: tf.Tensor) -> tf.Tensor:
         return tf.math.log(x)
 
+    def log10(self, x: tf.Tensor) -> tf.Tensor:
+        numerator = self.log(x)
+        denominator = self.log(tf.constant(10, dtype=numerator.dtype))
+        return numerator / denominator
+
     @Autocast()
     def matmul(
         self,
