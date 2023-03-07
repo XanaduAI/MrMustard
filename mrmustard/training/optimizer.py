@@ -234,7 +234,6 @@ class Optimizer:
         return callbacks
 
     def _run_callbacks(self, callbacks, cost_fn, cost, trainables):
-
         new_cost_fn, new_grads = None, None
 
         for cb_tag, cb in callbacks.items():

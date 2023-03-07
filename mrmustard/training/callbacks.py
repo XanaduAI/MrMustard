@@ -48,7 +48,6 @@ class TensorboardCallback:
         trainables,
         **kwargs,
     ):
-
         step = len(optimizer.opt_history)
         cost = np.array(cost).item()
         tf.summary.scalar("cost", data=cost, step=step)
