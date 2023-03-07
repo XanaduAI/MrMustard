@@ -228,6 +228,9 @@
   by hbar/2 twice. Adds the argument `modes` to `Ggate`.
   [(#212)](https://github.com/XanaduAI/MrMustard/pull/212)
 
+* Fixes a bug in the cutoffs of the choi operator.
+  [(#216)](https://github.com/XanaduAI/MrMustard/pull/216)
+
 
 ### Documentation
 
