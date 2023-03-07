@@ -25,14 +25,13 @@ from thewalrus.fock_gradients import (
 from mrmustard.lab import (
     Attenuator,
     BSgate,
+    Coherent,
     Dgate,
     Interferometer,
     MZgate,
+    RealInterferometer,
     Rgate,
     S2gate,
-    Attenuator,
-    RealInterferometer,
-    Vacuum,
     Sgate,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
@@ -222,3 +221,8 @@ def test_raise_interferometer_error():
         Interferometer(num_modes=num_modes, modes=modes)
     with pytest.raises(ValueError):
         RealInterferometer(num_modes=num_modes, modes=modes)
+
+
+def test_choi_cutoffs():
+    output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
+    assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
