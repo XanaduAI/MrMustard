@@ -28,20 +28,43 @@ from mrmustard.training.parameter_update import param_update_method
 
 
 @dataclass
-class TensorboardCallback:
-    logdir: str = "./tb_logdir"
+class Callback:
     tag: str = None
+    call_freq: int = 1
+    call_count: int = 0
+
+    def call(self, **kwargs):
+        ...
+
+    def should_call(self, optimizer: Optimizer, **kwargs):
+        opt_step = len(optimizer.opt_history)
+        return opt_step % self.call_freq == 0
+
+    def __call__(
+        self,
+        **kwargs,
+    ):
+        if self.should_call(**kwargs):
+            result = self.call(**kwargs)
+            self.call_count += 1
+            return result
+
+
+@dataclass
+class TensorboardCallback(Callback):
+    logdir: str = "./tb_logdir"
+    suffix: str = None
     with_dB: bool = True
 
     def __post_init__(self):
-        self.tag = "" if not self.tag else f"-{self.tag}"
+        self.suffix = "" if not self.suffix else f"-{self.suffix}"
         self.writter_logdir = Path(self.logdir) / (
-            datetime.now().strftime("%Y%m%d-%H%M%S") + self.tag
+            datetime.now().strftime("%Y%m%d-%H%M%S") + self.suffix
         )
         self.tb_writer = tf.summary.create_file_writer(str(self.writter_logdir))
         self.tb_writer.set_as_default()
 
-    def __call__(
+    def call(
         self,
         optimizer,
         cost,
