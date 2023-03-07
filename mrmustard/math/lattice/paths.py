@@ -17,7 +17,7 @@ from typing import Iterator, Optional
 import numpy as np
 from numba import njit
 
-from mrmustard.types import Vector
+from mrmustard.typing import IntVector
 
 # Strategies are generators of indices that follow paths in an N-dim positive integer lattice.
 # The paths can cover the entire lattice, or just a subset of it.
@@ -28,7 +28,7 @@ from mrmustard.types import Vector
 
 
 @njit
-def ndindex_iter(shape: Vector[int]) -> Iterator[Vector[int]]:
+def ndindex_iter(shape: IntVector) -> Iterator[IntVector]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
     print(" " * 4 + "[ndindex_iter] index created:", index)
@@ -46,7 +46,7 @@ def ndindex_iter(shape: Vector[int]) -> Iterator[Vector[int]]:
 
 
 @njit
-def equal_weight_iter(shape: Vector[int], max_sum: Optional[int] = None) -> Iterator[Vector[int]]:
+def equal_weight_iter(shape: IntVector, max_sum: Optional[int] = None) -> Iterator[IntVector]:
     r"""yields the indices of a tensor with equal weight.
     Effectively, `shape` contains local cutoffs (the maximum value of each index)
     and `max_sum` is the global cutoff (the maximum sum of all indices).
@@ -77,20 +77,20 @@ def equal_weight_iter(shape: Vector[int], max_sum: Optional[int] = None) -> Iter
 
 
 @njit
-def grey_code_iter(shape: Vector[int]) -> Iterator[Vector[int]]:
+def grey_code_iter(shape: IntVector) -> Iterator[IntVector]:
     raise NotImplementedError("Grey code order strategy not implemented yet")
 
 
 @njit
-def wormhole(shape: Vector[int]) -> Vector[int]:
+def wormhole(shape: IntVector) -> IntVector:
     raise NotImplementedError("Wormhole strategy not implemented yet")
 
 
 @njit
-def diagonal(shape: Vector[int]) -> Vector[int]:
+def diagonal(shape: IntVector) -> IntVector:
     raise NotImplementedError("Diagonal strategy not implemented yet")
 
 
 @njit
-def dynamic_U(shape: Vector[int]) -> Vector[int]:
+def dynamic_U(shape: IntVector) -> IntVector:
     raise NotImplementedError("Diagonal strategy not implemented yet")

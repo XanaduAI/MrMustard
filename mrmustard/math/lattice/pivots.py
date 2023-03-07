@@ -17,21 +17,22 @@ from typing import Tuple
 
 from numba import njit
 
-from mrmustard.types import Vector
+from mrmustard.typing import IntVector
 
 
 @njit
-def first_pivot_fn(index: Vector[int]) -> Tuple[int, Vector[int]]:
+def first_pivot_fn(index: IntVector, pivot_idx: IntVector) -> Tuple[int, IntVector]:
     r"""returns the first available pivot index for the given index"""
+    pivot_idx[:] = index[:]
     for i, v in enumerate(index):
         if v > 0:
-            index[i] -= 1
-            return i, index
+            pivot_idx[i] = v - 1
+            return i, pivot_idx
     raise ValueError("Index is zero")
 
 
 @njit
-def smallest_pivot_fn(index: Vector[int]) -> Tuple[int, Vector[int]]:
+def smallest_pivot_fn(index: IntVector) -> Tuple[int, IntVector]:
     r"""returns the smallest available pivot index for the given index"""
     min_ = 2**64 - 1
     for i, v in enumerate(index):

@@ -17,9 +17,8 @@ from typing import Iterator
 
 import numpy as np
 from numba import njit
-from numpy.typing import NDArray
 
-from mrmustard.types import Batch, Matrix, Vector
+from mrmustard.typing import Batch, IntMatrix, IntVector
 
 #################################################################################
 ## All neighbours means all the indices that differ from the given pivot by ±1 ##
@@ -27,7 +26,7 @@ from mrmustard.types import Batch, Matrix, Vector
 
 
 @njit
-def all_neighbours_iter(pivot: NDArray[int]) -> Iterator[Vector[int]]:
+def all_neighbours_iter(pivot: IntVector) -> Iterator[IntVector]:
     r"yields the indices of all the nearest neighbours of the given pivot"
     for i in range(len(pivot)):
         pivot[i] += 1
@@ -38,9 +37,9 @@ def all_neighbours_iter(pivot: NDArray[int]) -> Iterator[Vector[int]]:
 
 
 @njit
-def all_neighbours_fn(pivot: Vector[int], Z: Matrix[int]) -> Batch[Vector[int]]:
+def all_neighbours_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
     r"returns the indices of the nearest neighbours of the given pivot as an array"
-    Z = np.zeros((2 * len(pivot), len(pivot)), dtype=np.int64)
+    # Z = np.zeros((2 * len(pivot), len(pivot)), dtype=np.int64)
     for i, p in enumerate(pivot):
         pivot[i] += 1
         Z[2 * i] = pivot
@@ -56,7 +55,7 @@ def all_neighbours_fn(pivot: Vector[int], Z: Matrix[int]) -> Batch[Vector[int]]:
 
 
 @njit
-def lower_neighbors_iter(pivot: Vector[int]) -> Iterator[Vector[int]]:
+def lower_neighbors_iter(pivot: IntVector) -> Iterator[IntVector]:
     r"yields the indices of the lower neighbours of the given index"
     for i in range(len(pivot)):
         pivot[i] -= 1
@@ -65,9 +64,8 @@ def lower_neighbors_iter(pivot: Vector[int]) -> Iterator[Vector[int]]:
 
 
 @njit
-def lower_neighbors_fn(pivot: Vector[int]) -> Batch[Vector[int]]:
+def lower_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
     r"returns the indices of the lower neighbours of the given index as an array"
-    Z = np.zeros((len(pivot), len(pivot)), dtype=np.int64)
     for i, p in enumerate(pivot):
         pivot[i] -= 1
         Z[i] = pivot
@@ -81,7 +79,7 @@ def lower_neighbors_fn(pivot: Vector[int]) -> Batch[Vector[int]]:
 
 
 @njit
-def upper_neighbors_iter(pivot: Vector[int]) -> Iterator[Vector[int]]:
+def upper_neighbors_iter(pivot: IntVector) -> Iterator[IntVector]:
     r"yields the indices of the upper neighbours of the given pivot"
     for i in range(len(pivot)):
         pivot[i] += 1
@@ -90,7 +88,7 @@ def upper_neighbors_iter(pivot: Vector[int]) -> Iterator[Vector[int]]:
 
 
 @njit
-def upper_neighbors_fn(pivot: Vector[int]) -> Batch[Vector[int]]:
+def upper_neighbors_fn(pivot: IntVector) -> Batch[IntVector]:
     r"returns the indices of the upper neighbours of the given index as an array"
     Z = np.zeros((len(pivot), len(pivot)), dtype=np.int64)
     for i, p in enumerate(pivot):
@@ -106,7 +104,7 @@ def upper_neighbors_fn(pivot: Vector[int]) -> Batch[Vector[int]]:
 
 
 @njit
-def bitstring_neighbours_iter(pivot: Vector[int], bitstring: Vector[int]) -> Iterator[Vector[int]]:
+def bitstring_neighbours_iter(pivot: IntVector, bitstring: IntVector) -> Iterator[IntVector]:
     r"yields the indices of the bitstring neighbours of the given index"
     for i, b in enumerate(bitstring):
         if b:  # b == 1 -> subtract 1
