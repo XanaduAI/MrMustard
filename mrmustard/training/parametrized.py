@@ -18,7 +18,7 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from typing import Any, Generator, List, Sequence, Tuple
+from typing import Any, Generator, List, Sequence, Tuple, Mapping
 
 import numpy as np
 
@@ -103,28 +103,64 @@ class Parametrized:
         """Return a list of trainable parameters within the Parametrized object
         by recursively traversing the object's fields
         """
-        return list(_traverse_parametrized(self.__dict__.values(), Trainable))
+        return list(_traverse_parametrized(self.__dict__, Trainable))
 
     @property
     def constant_parameters(self) -> List[Constant]:
         """Return a list of constant parameters within the Parametrized object
         by recursively traversing the object's fields
         """
-        return list(_traverse_parametrized(self.__dict__.values(), Constant))
+        return list(_traverse_parametrized(self.__dict__, Constant))
+
+    def traverse_trainables(self, owner_tag=None) -> Mapping[str, Trainable]:
+        """Return a list of trainable parameters within the Parametrized object
+        by recursively traversing the object's fields
+        """
+        owner_tag = owner_tag or f"{self.__class__.__qualname__}"
+        return dict(_traverse_parametrized(self.__dict__, Trainable, owner_tag))
+
+    def traverse_constants(self, owner=None) -> Mapping[str, Constant]:
+        """Return a list of constant parameters within the Parametrized object
+        by recursively traversing the object's fields
+        """
+        owner = owner or f"{self.__class__.__qualname__}"
+        return dict(_traverse_parametrized(self.__dict__, Constant, owner))
 
 
-def _traverse_parametrized(object_: Any, extract_type: Parameter) -> Generator:
+def _traverse_parametrized(
+    object_: Any, extract_type: Parameter, owner_tag: str = None
+) -> Generator:
     """This private method traverses recursively all the object's attributes for objects
     present in ``iterable`` which are instances of ``parameter_type`` or ``Parametrized``
     returning a generator with objects of type ``extract_type``.
     """
 
-    for obj in object_:
-        if isinstance(
-            obj, (List, Tuple)
-        ):  # pylint: disable=isinstance-second-argument-not-valid-type
-            yield from _traverse_parametrized(obj, extract_type)
-        elif isinstance(obj, Parametrized):
-            yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
-        elif isinstance(obj, extract_type):
-            yield obj
+    if owner_tag:
+        delim = "/"
+        if isinstance(object_, Sequence):
+            yield from _traverse_parametrized(
+                dict(enumerate(object_)), extract_type, owner_tag=owner_tag
+            )
+        else:
+            for k, obj in object_.items():
+                obj_tag = f"{owner_tag}[{k}]" if isinstance(k, int) else f"{owner_tag}{delim}{k}"
+                if isinstance(obj, (Mapping, List, Tuple)):
+                    yield from _traverse_parametrized(obj, extract_type, owner_tag=obj_tag)
+                elif isinstance(obj, Parametrized):
+                    yield from _traverse_parametrized(obj.__dict__, extract_type, owner_tag=obj_tag)
+                elif isinstance(obj, extract_type):
+                    yield obj_tag, obj
+
+    else:
+        if isinstance(object_, Mapping):
+            yield from _traverse_parametrized(list(object_.values()), extract_type)
+        else:
+            for obj in object_:
+                if isinstance(
+                    obj, (List, Tuple, Mapping)
+                ):  # pylint: disable=isinstance-second-argument-not-valid-type
+                    yield from _traverse_parametrized(obj, extract_type)
+                elif isinstance(obj, Parametrized):
+                    yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
+                elif isinstance(obj, extract_type):
+                    yield obj

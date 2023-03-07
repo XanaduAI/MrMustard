@@ -133,8 +133,8 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
     make_circ, cost_fn = wrappers
 
     tasks = {
-        "my-job": {"x": 0.1, "euclidean_lr": 0.01, "max_steps": 100},
-        "my-other-job": {"x": -0.7, "euclidean_lr": 0.1, "max_steps": 20},
+        "my-job": {"x": 0.1, "euclidean_lr": 0.001, "max_steps": 100},
+        "my-other-job": {"x": -0.7, "euclidean_lr": 0.01, "max_steps": 20},
     }
 
     results = map_trainer(
@@ -146,6 +146,7 @@ def test_circ_optimize_metrics(wrappers, metric_fns):  # pylint: disable=redefin
         metric_fns=metric_fns,
         return_list=True,
         num_cpus=NUM_CPUS,
+        SEED=99,
     )
 
     assert set(results.keys()) == set(tasks.keys())
