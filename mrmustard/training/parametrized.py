@@ -129,7 +129,7 @@ class Parametrized:
 
 def _traverse_parametrized(
     object_: Any, extract_type: Parameter, owner_tag: str = None
-) -> Generator:
+) -> Generator:  # pylint: disable=too-many-branches
     """This private method traverses recursively all the object's attributes for objects
     present in ``iterable`` which are instances of ``parameter_type`` or ``Parametrized``
     returning a generator with objects of type ``extract_type``.
