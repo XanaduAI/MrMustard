@@ -116,12 +116,17 @@
   The methods are differentiable, so that they can be used for defining a cost function.
   [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
 
+* MrMustard repo now provides a fully furnished vscode development container and a Dockerfile. To
+  find out how to use dev containers for development check the documentation
+  [here](https://code.visualstudio.com/docs/devcontainers/containers).
+  [(#214)](https://github.com/XanaduAI/MrMustard/pull/214)
+
 ### Breaking changes
 
 ### Improvements
 
 * The `Dgate` is now implemented directly in MrMustard (instead of on The Walrus) to calculate the
-  unitary and gradients of the displacement gate in fock representation, providing better numerical
+  unitary and gradients of the displacement gate in Fock representation, providing better numerical
   stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
   [(#211)](https://github.com/XanaduAI/MrMustard/pull/211)
