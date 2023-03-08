@@ -31,10 +31,8 @@ from mrmustard.typing import IntVector
 def ndindex_iter(shape: IntVector) -> Iterator[IntVector]:
     r"yields the indices of a tensor in row-major order"
     index = np.zeros_like(shape)
-    print(" " * 4 + "[ndindex_iter] index created:", index)
     while True:
-        print(" " * 4 + "[ndindex_iter] about to yield", index)
-        yield index
+        yield index.copy()  # TODO: is this copy necessary?
         for i in range(len(shape) - 1, -1, -1):
             if index[i] < shape[i] - 1:
                 index[i] += 1

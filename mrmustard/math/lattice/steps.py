@@ -54,38 +54,31 @@ def general_step(
     Ab_fn: Optional[Callable] = None,
 ):
     r"""Fock-Bargmann recurrence relation step. General version.
-    requires selecting a pivot and a set of neighbors.
+    Requires selecting a pivot and a set of neighbors.
     Args:
         tensor (array): tensor to calculate the amplitudes of
         A (array): matrix of coefficients
         b (array): vector of coefficients
         index (tuple): index of the amplitude to calculate
+        pivot_idx (array): array to store the pivot index
+        neighbors_idx (array): array to store the neighbors indices
         pivot_fn (callable): function that returns the pivot corresponding to the index
-        neighbors_fn (callable): function that returns the neighbors of the pivot
+        neighbors_fn (callable): function that returns the relevant neighbors of the pivot
         Ab_fn (callable): function that returns the new values of A and b
     Returns:
         complex: the value of the amplitude at the given index
     """
-    print(" " * 8 + "[general_step] called with index:", index)
-    i, pivot = pivot_fn(index, pivot_idx)
-    print(" " * 8 + "[general_step] i,pivot returned from index", index, (i, pivot))
-    A = A * np.expand_dims(np.sqrt(pivot), 0) / np.expand_dims(np.sqrt(pivot + 1), 1)
-    b = b / np.sqrt(pivot + 1)
+    i, pivot_idx = pivot_fn(index, pivot_idx)
+    b = b / np.sqrt(pivot_idx + 1)
+    A = A * (np.expand_dims(np.sqrt(pivot_idx), 0) / np.expand_dims(np.sqrt(pivot_idx + 1), 1))
     if Ab_fn is not None:
-        A, b = Ab_fn(A, b, pivot, neighbors_fn)
-    print(" " * 8 + "[general_step] about to call neighbors_fn")
+        A, b = Ab_fn(A, b, pivot_idx, neighbors_fn)
     neighbors = neighbors_fn(
-        pivot, neighbors_idx
+        pivot_idx, neighbors_idx
     )  # neighbors is an array of indices len(pivot) x len(pivot)
-    print(" " * 8 + "[general_step] neighbors obtained:", neighbors)
-    print(" " * 8 + "[general_step] computing tensor_value(tensor, pivot)")
-    value_at_index = b[i] * tensor_value(tensor, pivot)
-    print(" " * 8 + "[general_step] tensor value:", tensor_value(tensor, pivot))
+    value_at_index = b[i] * tensor_value(tensor, pivot_idx)
     for j, neighbor in enumerate(neighbors):
-        print(" " * 8 + "[general_step] neighbor:", neighbor, " <-- pivot:", pivot)
-        # value_at_index += tensor_value(tensor, neighbor)
         value_at_index += A[i, j] * tensor_value(tensor, neighbor)
-    # index[i] += 1  # restore the index
     return value_at_index
 
 
@@ -105,8 +98,6 @@ def vanilla_step(tensor, A, b, index: Vector, pivot_idx: Vector, neighbors_idx: 
     Returns:
         complex: the value of the amplitude at the given index
     """
-    print(" " * 4, "[vanilla_step] called with index:", index)
-    print(" " * 4, "[vanilla_step] calling general_step")
     return general_step(
         tensor, A, b, index, pivot_idx, neighbors_idx, first_pivot_fn, lower_neighbors_fn
     )

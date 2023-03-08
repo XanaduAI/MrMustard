@@ -15,31 +15,24 @@
 from typing import Optional, Tuple
 
 import numpy as np
+from numba import njit
 
-from mrmustard.math.lattice import paths, steps
+from mrmustard.math.lattice import paths, steps, utils
 from mrmustard.typing import Tensor
 
 
+@njit
 def vanilla(shape: Tuple[int], A, b, c) -> Tensor:
-    print("[vanilla] vanilla called")
     Z = np.zeros(shape, dtype=np.complex128)
-    Z[(0,) * len(shape)] = c
-    print(f"[vanilla] initializing path with shape {shape}...")
+    Z.flat[0] = c
     path = paths.ndindex_iter(np.asarray(shape))
-    print("[vanilla] path initialized.")
-    print("[vanilla] calling next on path to skip index...")
-    skip = next(path)  # skip the zero index
-    print("[vanilla] skipped index", skip)
+    next(path)  # skip the zero index
     pivot_idx = np.zeros(len(shape), dtype=np.int32)
     neighbors_idx = np.zeros((len(shape), len(shape)), dtype=np.int32)
     for index in path:
-        print("#" * 80)
-        print("[vanilla] got index for vanilla_step:", index)
-        print("[vanilla] calling vanilla_step...")
         val_at_index = steps.vanilla_step(Z, A, b, index, pivot_idx, neighbors_idx)
-        print("[vanilla] vanilla_step returned", val_at_index)
-        print(f"[vanilla] setting Z[{tuple(index)}] to", val_at_index)
-        Z[tuple(index)] = val_at_index
+        # Z[tuple(index)] = val_at_index
+        utils.tensor_set(Z, index, val_at_index)
     return Z
 
 
