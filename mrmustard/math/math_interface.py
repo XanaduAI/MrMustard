@@ -15,26 +15,21 @@
 """This module contains the :class:`Math` interface that every backend has to implement."""
 
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from functools import lru_cache
 from itertools import product
 import numpy as np
 from scipy.special import binom
 from scipy.stats import unitary_group, ortho_group
-
-from mrmustard.types import (
-    List,
+from mrmustard import settings
+from mrmustard.typing import (
     Tensor,
     Matrix,
     Scalar,
     Vector,
-    Sequence,
-    Tuple,
-    Optional,
-    Dict,
     Trainable,
-    Callable,
-    Any,
 )
+
 
 # pylint: disable=too-many-public-methods
 class MathInterface(ABC):
@@ -252,6 +247,30 @@ class MathInterface(ABC):
             array: hyperbolic cosine of array
         """
 
+    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
+        """Given two real tensors representing the real and imaginary part of a complex number,
+        this operation returns a complex tensor. The input tensors must have the same shape.
+
+        Args:
+            real (array): real part of the complex number
+            imag (array): imaginary part of the complex number
+
+        Returns:
+            array: complex array ``real + 1j * imag``
+        """
+
+    @abstractmethod
+    def atan2(self, y: Tensor, x: Tensor) -> Tensor:
+        r"""Computes the trignometric inverse tangent of y/x element-wise.
+
+        Args:
+            y (array): numerator array
+            x (array): denominator array
+
+        Returns:
+            array: arctan of y/x
+        """
+
     @abstractmethod
     def det(self, matrix: Tensor) -> Tensor:
         r"""Returns the determinant of matrix.
@@ -343,6 +362,17 @@ class MathInterface(ABC):
         Args:
             size (int): size of the identity matrix
             dtype (dtype): data type of the identity matrix
+
+        Returns:
+            matrix: identity matrix
+        """
+
+    @abstractmethod
+    def eye_like(self, array: Tensor) -> Tensor:
+        r"""Returns the identity matrix of the same shape and dtype as array.
+
+        Args:
+            array (array): array to create the identity matrix of
 
         Returns:
             matrix: identity matrix
@@ -659,6 +689,18 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def solve(self, matrix: Tensor, rhs: Tensor) -> Tensor:
+        r"""Returns the solution of the linear system :math:`Ax = b`.
+
+        Args:
+            matrix (array): matrix :math:`A`
+            rhs (array): vector :math:`b`
+
+        Returns:
+            array: solution :math:`x`
+        """
+
+    @abstractmethod
     def sqrt(self, x: Tensor, dtype=None) -> Tensor:
         r"""Returns the square root of ``x``.
 
@@ -803,6 +845,72 @@ class MathInterface(ABC):
             array: array of zeros
         """
 
+    @abstractmethod
+    def map_fn(self, func, elements: Tensor) -> Tensor:
+        """Transforms elems by applying fn to each element unstacked on axis 0.
+
+        Args:
+            func (func): The callable to be performed. It accepts one argument,
+                which will have the same (possibly nested) structure as elems.
+            elements (Tensor): A tensor or (possibly nested) sequence of tensors,
+                each of which will be unstacked along their first dimension.
+                ``func`` will be applied to the nested sequence of the resulting slices.
+
+        Returns:
+            Tensor: applied ``func`` on ``elements``
+        """
+
+    @abstractmethod
+    def squeeze(self, tensor: Tensor, axis: Optional[List[int]]) -> Tensor:
+        """Removes dimensions of size 1 from the shape of a tensor.
+
+        Args:
+            tensor (Tensor): the tensor to squeeze
+            axis (Optional[List[int]]): if specified, only squeezes the
+                dimensions listed, defaults to []
+
+        Returns:
+            Tensor: tensor with one or more dimensions of size 1 removed
+        """
+
+    @abstractmethod
+    def cholesky(self, input: Tensor) -> Tensor:
+        """Computes the Cholesky decomposition of square matrices.
+
+        Args:
+            input (Tensor)
+
+        Returns:
+            Tensor: tensor with the same type as input
+        """
+
+    @abstractmethod
+    def Categorical(self, probs: Tensor, name: str):
+        """Categorical distribution over integers.
+
+        Args:
+            probs (Tensor): tensor representing the probabilities of a set of Categorical
+                distributions.
+            name (str): name prefixed to operations created by this class
+
+        Returns:
+            tfp.distributions.Categorical: instance of ``tfp.distributions.Categorical`` class
+        """
+
+    @abstractmethod
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        """Multivariate normal distribution on `R^k` and parameterized by a (batch of) length-k loc
+        vector (aka "mu") and a (batch of) k x k scale matrix; covariance = scale @ scale.T
+        where @ denotes matrix-multiplication.
+
+        Args:
+            loc (Tensor): if this is set to None, loc is implicitly 0
+            scale_tril: lower-triangular Tensor with non-zero diagonal elements
+
+        Returns:
+            tfp.distributions.MultivariateNormalTriL: instance of ``tfp.distributions.MultivariateNormalTriL``
+        """
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -864,12 +972,12 @@ class MathInterface(ABC):
         Squeezing is sampled uniformly from 0.0 to ``max_r`` (1.0 by default).
         """
         if num_modes == 1:
-            W = np.exp(1j * np.random.uniform(size=(1, 1)))
-            V = np.exp(1j * np.random.uniform(size=(1, 1)))
+            W = np.exp(1j * settings.rng.uniform(size=(1, 1)))
+            V = np.exp(1j * settings.rng.uniform(size=(1, 1)))
         else:
-            W = unitary_group.rvs(dim=num_modes)
-            V = unitary_group.rvs(dim=num_modes)
-        r = np.random.uniform(low=0.0, high=max_r, size=num_modes)
+            W = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
+            V = unitary_group.rvs(dim=num_modes, random_state=settings.rng)
+        r = settings.rng.uniform(low=0.0, high=max_r, size=num_modes)
         OW = self.unitary_to_orthogonal(W)
         OV = self.unitary_to_orthogonal(V)
         dd = self.diag(self.concat([self.exp(-r), np.exp(r)], axis=0), k=0)
@@ -880,13 +988,13 @@ class MathInterface(ABC):
         """A random orthogonal matrix in :math:`O(N)`."""
         if N == 1:
             return np.array([[1.0]])
-        return ortho_group.rvs(dim=N)
+        return ortho_group.rvs(dim=N, random_state=settings.rng)
 
     def random_unitary(self, N: int) -> Tensor:
         """a random unitary matrix in :math:`U(N)`"""
         if N == 1:
-            return self.exp(1j * np.random.uniform(size=(1, 1)))
-        return unitary_group.rvs(dim=N)
+            return self.exp(1j * settings.rng.uniform(size=(1, 1)))
+        return unitary_group.rvs(dim=N, random_state=settings.rng)
 
     def single_mode_to_multimode_vec(self, vec, num_modes: int):
         r"""Apply the same 2-vector (i.e. single-mode) to a larger number of modes."""
@@ -1089,3 +1197,20 @@ class MathInterface(ABC):
         Jmat = self.J(S.shape[-1] // 2)
         Z = self.matmul(self.transpose(S), dS_euclidean)
         return 0.5 * (Z + self.matmul(self.matmul(Jmat, self.transpose(Z)), Jmat))
+
+    def euclidean_to_unitary(self, U: Matrix, dU_euclidean: Matrix) -> Matrix:
+        r"""Convert the Euclidean gradient to a Riemannian gradient on the
+        tangent bundle of the unitary manifold.
+
+        Implemented from:
+            Y Yao, F Miatto, N Quesada - arXiv preprint arXiv:2209.06069, 2022.
+
+        Args:
+            U (Matrix): unitary matrix
+            dU_euclidean (Matrix): Euclidean gradient tensor
+
+        Returns:
+            Matrix: unitary gradient tensor
+        """
+        Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
+        return 0.5 * (Z - self.conj(self.transpose(Z)))

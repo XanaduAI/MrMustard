@@ -17,9 +17,17 @@
 """This module contains the classes for representing Matrices and Vectors in phase space."""
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from mrmustard.types import Optional, Union, Matrix, Vector, List, Tensor, Tuple, Scalar
+from typing import (
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+
 from mrmustard.math import Math
+from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
 
@@ -65,7 +73,6 @@ class XPTensor(ABC):
         isVector: bool,
         modes: Union[Tuple[List[int], List[int]], None],
     ):
-
         self.like_0 = like_0
         self.shape = (
             None if tensor is None else tensor.shape[: len(tensor.shape) // 2]

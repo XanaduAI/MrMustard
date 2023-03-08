@@ -14,25 +14,29 @@
 
 """This module contains the implementation of the :class:`Transformation` class."""
 
+
+# pylint: disable = missing-function-docstring
+
 from __future__ import annotations
+
+from typing import (
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 
-from mrmustard.physics import gaussian, fock
-from mrmustard.types import (
-    Sequence,
-    List,
-    Tuple,
-    Optional,
-    Matrix,
-    Vector,
-    Callable,
-    Iterable,
-    Union,
-)
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
+from mrmustard.typing import RealMatrix, RealVector
+
 from .state import State
 
 math = Math()
@@ -40,7 +44,6 @@ math = Math()
 
 class Transformation:
     r"""Base class for all Transformations."""
-    _bell = None  # single-mode TMSV state for gaussian-to-fock conversion
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def primal(self, state: State) -> State:
@@ -73,22 +76,6 @@ class Transformation:
             new_state = self.transform_fock(state, dual=True)
         return new_state
 
-    @property
-    def bell(self):
-        r"""The N-mode two-mode squeezed vacuum for the choi-jamiolkowksi isomorphism."""
-        if self._bell is None:
-            cov = gaussian.two_mode_squeezed_vacuum_cov(
-                r=settings.CHOI_R, phi=0.0, hbar=settings.HBAR
-            )
-            means = gaussian.vacuum_means(num_modes=2, hbar=settings.HBAR)
-            bell = bell_single = State(cov=cov, means=means)
-            for _ in range(self.num_modes - 1):
-                bell = bell & bell_single
-            tot = 2 * self.num_modes
-            order = tuple(range(0, tot, 2)) + tuple(range(1, tot, 2))
-            self._bell = bell.get_modes(order)
-        return self._bell[self.modes + [m + self.num_modes for m in self.modes]]
-
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.
 
@@ -116,39 +103,37 @@ class Transformation:
         Returns:
             State: the transformed state
         """
+        op_idx = [state.modes.index(m) for m in self.modes]
         if self.is_unitary:
-            U = self.U(cutoffs=state.cutoffs)
-            transformation = fock.math.dagger(U) if dual else U
+            U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
+            U = math.dagger(U) if dual else U
+            if state.is_pure:
+                return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
+            return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            transformation = self.choi(cutoffs=state.cutoffs)
+            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx])
+            n = state.num_modes
+            N0 = list(range(0, n))
+            N1 = list(range(n, 2 * n))
+            N2 = list(range(2 * n, 3 * n))
+            N3 = list(range(3 * n, 4 * n))
             if dual:
-                n = len(state.cutoffs)
-                N0 = list(range(0, n))
-                N1 = list(range(n, 2 * n))
-                N2 = list(range(2 * n, 3 * n))
-                N3 = list(range(3 * n, 4 * n))
-                transformation = fock.math.transpose(transformation, N3 + N0 + N1 + N2)
-        new_fock = fock.CPTP(
-            transformation=transformation,
-            fock_state=state.ket(state.cutoffs) if state.is_pure else state.dm(state.cutoffs),
-            transformation_is_unitary=self.is_unitary,
-            state_is_dm=state.is_mixed,
-        )
-        if state.is_mixed or not self.is_unitary:
-            return State(dm=new_fock, modes=state.modes)
-        return State(ket=new_fock, modes=state.modes)
+                choi = math.transpose(choi, N1 + N0 + N3 + N2)  # we flip out-in
+
+            if state.is_pure:
+                return State(
+                    dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
+                )
+            return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
     @property
     def modes(self) -> Sequence[int]:
         """Returns the list of modes on which the transformation acts on."""
         if self._modes in (None, []):
-            X, Y, d = self.XYd
-            if d is not None:
-                self._modes = list(range(d.shape[-1] // 2))
-            elif X is not None:
-                self._modes = list(range(X.shape[-1] // 2))
-            elif Y is not None:
-                self._modes = list(range(Y.shape[-1] // 2))
+            for elem in self.XYd:
+                if elem is not None:
+                    self._modes = list(range(elem.shape[-1] // 2))
+                    break
         return self._modes
 
     @modes.setter
@@ -166,25 +151,25 @@ class Transformation:
         pass
 
     @property
-    def X_matrix(self) -> Optional[Matrix]:
+    def X_matrix(self) -> Optional[RealMatrix]:
         return None
 
     @property
-    def Y_matrix(self) -> Optional[Matrix]:
+    def Y_matrix(self) -> Optional[RealMatrix]:
         return None
 
     @property
-    def d_vector(self) -> Optional[Vector]:
+    def d_vector(self) -> Optional[RealVector]:
         return None
 
     @property
-    def X_matrix_dual(self) -> Optional[Matrix]:
+    def X_matrix_dual(self) -> Optional[RealMatrix]:
         if (X := self.X_matrix) is None:
             return None
         return gaussian.math.inv(X)
 
     @property
-    def Y_matrix_dual(self) -> Optional[Matrix]:
+    def Y_matrix_dual(self) -> Optional[RealMatrix]:
         if (Y := self.Y_matrix) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
@@ -192,7 +177,7 @@ class Transformation:
         return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
 
     @property
-    def d_vector_dual(self) -> Optional[Vector]:
+    def d_vector_dual(self) -> Optional[RealVector]:
         if (d := self.d_vector) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
@@ -200,7 +185,7 @@ class Transformation:
         return math.matmul(Xdual, d)
 
     @property
-    def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
+    def XYd(self) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
@@ -208,7 +193,7 @@ class Transformation:
         return self.X_matrix, self.Y_matrix, self.d_vector
 
     @property
-    def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
+    def XYd_dual(self) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
         Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
@@ -230,13 +215,11 @@ class Transformation:
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
-        choi_state = self.bell >> self
-        return fock.fock_representation(
-            choi_state.cov,
-            choi_state.means,
-            shape=cutoffs * 2,
-            return_unitary=True,
-            choi_r=settings.CHOI_R,
+        X, _, d = self.XYd
+        return fock.wigner_to_fock_U(
+            X if X is not None else math.eye(2 * self.num_modes),
+            d if d is not None else math.zeros((2 * self.num_modes,)),
+            shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
         )
 
     def choi(self, cutoffs: Sequence[int]):
@@ -244,16 +227,13 @@ class Transformation:
         if self.is_unitary:
             U = self.U(cutoffs)
             return fock.U_to_choi(U)
-
-        choi_state = self.bell >> self
-        choi_op = fock.fock_representation(
-            choi_state.cov,
-            choi_state.means,
-            shape=cutoffs * 4,
-            return_unitary=False,
-            choi_r=settings.CHOI_R,
+        X, Y, d = self.XYd
+        return fock.wigner_to_fock_Choi(
+            X if X is not None else math.eye(2 * self.num_modes),
+            Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
+            d if d is not None else math.zeros((2 * self.num_modes,)),
+            shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
         )
-        return choi_op
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.
@@ -291,7 +271,7 @@ class Transformation:
         """
         from ..circuit import (
             Circuit,
-        )  # WARNING - circular import: this is called at runtime so it's ok
+        )
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
@@ -384,7 +364,6 @@ class Transformation:
         return True
 
     def __repr__(self):
-
         class_name = self.__class__.__name__
         modes = self.modes
 
@@ -398,7 +377,6 @@ class Transformation:
         return f"{class_name}({params_str}, modes = {modes})".replace("\n", "")
 
     def __str__(self):
-
         class_name = self.__class__.__name__
         modes = self.modes
         return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"

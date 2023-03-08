@@ -5,26 +5,25 @@
 [![Actions Status](https://github.com/XanaduAI/MrMustard/workflows/Tests/badge.svg)](https://github.com/XanaduAI/MrMustard/actions)
 [![Python version](https://img.shields.io/pypi/pyversions/mrmustard.svg?style=popout-square)](https://pypi.org/project/MrMustard/)
 
-Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates across phase space and Fock space.
-It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (TensorFlow by default, PyTorch coming soon).
+Mr Mustard is a differentiable simulator with a sophisticated built-in optimizer, that operates seamlessly across phase space and Fock space. It is built on top of an agnostic autodiff interface, to allow for plug-and-play backends (TensorFlow by default).
 
 Mr Mustard supports:
 - Phase space representation of Gaussian states and Gaussian channels on an arbitrary number of modes
 - Exact Fock representation of any Gaussian circuit and any Gaussian state up to an arbitrary cutoff
-- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the orthogonal group (for interferometers)
-- Adam optimizer for euclidean parameters.
+- Riemannian optimization on the symplectic group (for Gaussian transformations) and on the unitary group (for interferometers)
+- Adam optimizer for euclidean parameters
 - single-mode gates (parallelizable):
-    - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise
+    - squeezing, displacement, phase rotation, attenuator, amplifier, additive noise, phase noise
 - two-mode gates:
     - beam splitter, Mach-Zehnder interferometer, two-mode squeezing, CX, CZ, CPHASE
 - N-mode gates (with dedicated Riemannian optimization):
-    - interferometer (orthogonal), Gaussian transformation (symplectic)
+    - Interferometer (unitary), RealInterferometer (orthogonal), Gaussian transformation (symplectic)
 - single-mode states (parallelizable):
-    - vacuum, coherent, squeezed, displaced-squeezed, thermal
+    - Vacuum, Coherent, SqueezedVacuum, Thermal, Fock
 - two-mode states:
-    - two-mode squeezed vacuum
+    - TMSV (two-mode squeezed vacuum)
 - N-mode states:
-    - Gaussian state
+    - Gaussian
 - Photon number moments and entropic measures
 - PNR detectors and Threshold detectors with trainable quantum efficiency and dark counts
 - Homodyne, Heterodyne and Generaldyne measurements
@@ -50,6 +49,10 @@ fock4 = Fock(4)                  # fock state |4>
 
 D  = Dgate(x=1.0, y=-0.4)         # Displacement by 1.0 along x and -0.4 along y
 S  = Sgate(r=0.5)                 # Squeezer with r=0.5
+R  = Rgate(phi=0.3)               # Phase rotation by 0.3
+A  = Amplifier(gain=2.0)          # noisy amplifier with 200% gain
+L  = Attenuator(0.5)              # pure loss channel with 50% transmissivity
+N  = AdditiveNoise(noise=0.1)     # additive noise with noise level 0.1
 
 BS = BSgate(theta=np.pi/4)          # 50/50 beam splitter
 S2 = S2gate(r=0.5)                  # two-mode squeezer
@@ -105,14 +108,14 @@ output = Vacuum(4) >> X8
 
 # lossy X8
 noise = lambda: np.random.uniform(size=4)
-X8_realistic = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
+X8_noisy = (Sgate(r=0.9 + 0.1*noise(), phi=0.1*noise())
                 >> Attenuator(0.89 + 0.01*noise())
                 >> Interferometer(4)
                 >> Attenuator(0.95 + 0.01*noise())
                )
 
 # 2-mode Bloch Messiah decomposition
-bloch_messiah = Sgate(r=[0.1,0.2]) >> BSgate(-0.1, 2.1) >> Dgate(x=[0.1, -0.4])
+bloch_messiah = Sgate(r=[0.1,0.2]) >> BSgate(theta=-0.1, phi=2.1) >> Dgate(x=[0.1, -0.4])
 my_state = Vacuum(2) >> bloch_messiah
 ```
 
@@ -129,7 +132,7 @@ Attenuator(0.5) << Coherent(0.1, 0.2) == Coherent(0.1, 0.2) >> Amplifier(2.0)
 This has the advantage of modelling lossy detectors without applying the loss channel to the state going into the detector, which can be overall faster e.g. if the state is kept pure by doing so.
 
 ## 5. Detectors
-There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne). However, Gaussian detectors are a thin wrapper over just Gaussian states, as Gaussian states can be used as projectors (i.e. `state << DisplacedSqueezed(...)` is how Homodyne performs a measurement).
+There are two types of detectors in Mr Mustard. Fock detectors (PNRDetector and ThresholdDetector) and Gaussian detectors (Homodyne, Heterodyne, Generaldyne).
 
 The PNR and Threshold detectors return an array of unnormalized measurement results, meaning that the elements of the array are the density matrices of the leftover systems, conditioned on the outcomes:
 ```python
@@ -179,15 +182,15 @@ swapped = joint.get_modes([1,0])
 ```
 
 ## 8. Fock representation
-The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutoffs)`. For circuits and gates it's `.U(cutoffs)` or `.choi(cutoffs)`. The Fock representation is exact (with minor caveats) and it doesn't break differentiability. This means that one can define cost functions on the Fock representation and backpropagate back to the phase space representation.
+The Fock representation of a State is obtained via `.ket(cutoffs)` or `.dm(cutoffs)`. For circuits and gates (transformations in general) it's `.U(cutoffs)` or `.choi(cutoffs)`, if available. The Fock representation is exact and it doesn't break differentiability. This means that one can define cost functions on the Fock representation and backpropagate back to the phase space representation.
 
 ```python
 # Fock representation of a coherent state
 Coherent(0.5).ket(cutoffs=[5])   # ket
 Coherent(0.5).dm(cutoffs=[5])    # density matrix
 
-Dgate(x=1.0).U(cutoffs=[15])  # truncated unitary op
-Dgate(x=1.0).choi(cutoffs=[15])  # truncated choi op
+Dgate(x=1.0).U(cutoffs=[15])  # truncated unitary matrix
+Dgate(x=1.0).choi(cutoffs=[15])  # truncated choi tensor
 ```
 
 States can be initialized in Fock representation and used as any other state:
@@ -214,8 +217,7 @@ The physics module contains a growing number of functions that we can apply to s
 
 
 # The math module
-The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface
-Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
+The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
 ```python
 from mrmustard import settings
 from mrmustard.math import Math
@@ -229,10 +231,9 @@ math.cos(0.1)  # pytorch (upcoming)
 ```
 
 ### Optimization
-The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and an orthogonal optimizer  for interferometers.
+The `Optimizer` (available in `mrmustard.training` uses Adam underneath the hood for Euclidean parameters and a custom symplectic optimizer for Gaussian gates and states and a unitary/orthogonal optimizer for interferometers.
 
-We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a
-displaced squeezed state.
+We can turn any simulation in Mr Mustard into an optimization by marking which parameters we wish to be trainable. Let's take a simple example: synthesizing a displaced squeezed state.
 
 ```python
 from mrmustard.lab import Dgate, Ggate, Attenuator, Vacuum, Coherent, DisplacedSqueezed
@@ -252,9 +253,11 @@ def cost_fn_sympl():
     state_out = Vacuum(1) >> G >> D >> L
     return 1 - fidelity(state_out, DisplacedSqueezed(r=0.3, phi=1.1, x=0.4, y=-0.2))
 
+# For illustration, here the Euclidean optimization doesn't include squeezing 
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
 opt.minimize(cost_fn_eucl, by_optimizing=[D])  # using Adam for D
 
+# But the symplectic optimization always does
 opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.01)
-opt.minimize(cost_fn_sympl, by_optimizing=[G,D])  # using Adam for D and the symplectic opt for G
+opt.minimize(cost_fn_sympl, by_optimizing=[G,D])  # uses Adam for D and the symplectic opt for G
 ```

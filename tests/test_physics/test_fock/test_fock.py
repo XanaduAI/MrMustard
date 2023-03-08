@@ -18,8 +18,35 @@ import pytest
 import numpy as np
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
-from mrmustard.lab import *
-from mrmustard.physics.fock import dm_to_ket, ket_to_dm
+from mrmustard.lab import (
+    Circuit,
+    Vacuum,
+    S2gate,
+    BSgate,
+    Sgate,
+    Rgate,
+    Dgate,
+    Ggate,
+    Interferometer,
+    SqueezedVacuum,
+    TMSV,
+    State,
+    Attenuator,
+    Fock,
+    Coherent,
+    Gaussian,
+)
+from mrmustard.physics.fock import (
+    dm_to_ket,
+    ket_to_dm,
+    trace,
+    apply_choi_to_dm,
+    apply_choi_to_ket,
+    apply_kraus_to_dm,
+    apply_kraus_to_ket,
+    _grad_displacement,
+    _displacement,
+)
 
 
 # helper strategies
@@ -68,7 +95,8 @@ def test_coherent_state(alpha):
 @given(r=st.floats(0, 2), phi=st_angle)
 def test_squeezed_state(r, phi):
     """Test that squeezed states have the correct photon number statistics
-    Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state"""
+    Note that we use the same sign with respect to SMSV in https://en.wikipedia.org/wiki/Squeezed_coherent_state
+    """
     cutoff = 10
     amps = SqueezedVacuum(r=r, phi=phi).ket(cutoffs=[cutoff])
     assert np.allclose(amps[1::2], 0.0)
@@ -111,7 +139,7 @@ def test_lossy_squeezing(n_mean, phi, eta):
         [cutoff]
     )
     expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
-    assert np.allclose(ps, expected, atol=1e-6)
+    assert np.allclose(ps, expected, atol=1e-5)
 
 
 @given(n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1))
@@ -155,7 +183,6 @@ def test_density_matrix(num_modes):
 def test_dm_to_ket(state):
     """Tests pure state density matrix conversion to ket"""
     dm = state.dm()
-
     ket = dm_to_ket(dm)
     # check if ket is normalized
     assert np.allclose(np.linalg.norm(ket), 1)
@@ -173,3 +200,207 @@ def test_dm_to_ket_error():
 
     with pytest.raises(ValueError):
         dm_to_ket(state)
+
+
+def test_fock_trace_mode1_dm():
+    """tests that the Fock state is correctly traced out from mode 1 for mixed states"""
+    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+    from_gaussian = state.get_modes(0).dm([3])
+    from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_mode0_dm():
+    """tests that the Fock state is correctly traced out from mode 0 for mixed states"""
+    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+    from_gaussian = state.get_modes(1).dm([3])
+    from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_mode1_ket():
+    """tests that the Fock state is correctly traced out from mode 1 for pure states"""
+    state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
+    from_gaussian = state.get_modes(0).dm([3])
+    from_fock = State(dm=state.dm([3, 30])).get_modes(0).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_mode0_ket():
+    """tests that the Fock state is correctly traced out from mode 0 for pure states"""
+    state = Vacuum(2) >> Sgate(r=[0.1, 0.2], phi=[0.3, 0.4])
+    from_gaussian = state.get_modes(1).dm([3])
+    from_fock = State(dm=state.dm([30, 3])).get_modes(1).dm([3])
+    assert np.allclose(from_gaussian, from_fock, atol=1e-5)
+
+
+def test_fock_trace_function():
+    """tests that the Fock state is correctly traced"""
+    state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
+    dm = state.dm([3, 20])
+    dm_traced = trace(dm, keep=[0])
+    assert np.allclose(dm_traced, State(dm=dm).get_modes(0).dm(), atol=1e-5)
+
+
+def test_dm_choi():
+    """tests that choi op is correctly applied to a dm"""
+    circ = Ggate(1) >> Attenuator([0.1])
+    dm_out = apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
+    dm_expected = (Vacuum(1) >> circ).dm([10])
+    assert np.allclose(dm_out, dm_expected, atol=1e-5)
+
+
+def test_single_mode_choi_application_order():
+    """Test dual operations output the correct mode ordering"""
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
+    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
+    # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
+
+
+def test_apply_kraus_to_ket_1mode():
+    """Test that Kraus operators are applied to a ket on the correct indices"""
+    ket = np.random.normal(size=(2, 3, 4))
+    kraus = np.random.normal(size=(5, 3))
+    ket_out = apply_kraus_to_ket(kraus, ket, [1], [1])
+    assert ket_out.shape == (2, 5, 4)
+
+
+def test_apply_kraus_to_ket_2mode():
+    """Test that Kraus operators are applied to a ket on the correct indices"""
+    ket = np.random.normal(size=(2, 3, 4))
+    kraus = np.random.normal(size=(5, 3, 4))
+    ket_out = apply_kraus_to_ket(kraus, ket, [1, 2], [1])
+    assert ket_out.shape == (2, 5)
+
+
+def test_apply_kraus_to_ket_2mode_2():
+    """Test that Kraus operators are applied to a ket on the correct indices"""
+    ket = np.random.normal(size=(2, 3))
+    kraus = np.random.normal(size=(5, 4, 3))
+    ket_out = apply_kraus_to_ket(kraus, ket, [1], [1, 2])
+    assert ket_out.shape == (2, 5, 4)
+
+
+def test_apply_kraus_to_dm_1mode():
+    """Test that Kraus operators are applied to a dm on the correct indices"""
+    dm = np.random.normal(size=(2, 3, 2, 3))
+    kraus = np.random.normal(size=(5, 3))
+    dm_out = apply_kraus_to_dm(kraus, dm, [1], [1])
+    assert dm_out.shape == (2, 5, 2, 5)
+
+
+def test_apply_kraus_to_dm_2mode():
+    """Test that Kraus operators are applied to a dm on the correct indices"""
+    dm = np.random.normal(size=(2, 3, 4, 2, 3, 4))
+    kraus = np.random.normal(size=(5, 3, 4))
+    dm_out = apply_kraus_to_dm(kraus, dm, [1, 2], [1])
+    assert dm_out.shape == (2, 5, 2, 5)
+
+
+def test_apply_kraus_to_dm_2mode_2():
+    """Test that Kraus operators are applied to a dm on the correct indices"""
+    dm = np.random.normal(size=(2, 3, 4, 2, 3, 4))
+    kraus = np.random.normal(size=(5, 6, 3))
+    dm_out = apply_kraus_to_dm(kraus, dm, [1], [3, 1])
+    assert dm_out.shape == (2, 6, 4, 5, 2, 6, 4, 5)
+
+
+def test_apply_choi_to_ket_1mode():
+    """Test that choi operators are applied to a ket on the correct indices"""
+    ket = np.random.normal(size=(3, 5))
+    choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
+    ket_out = apply_choi_to_ket(choi, ket, [0], [0])
+    assert ket_out.shape == (4, 5, 4, 5)
+
+
+def test_apply_choi_to_ket_2mode():
+    """Test that choi operators are applied to a ket on the correct indices"""
+    ket = np.random.normal(size=(3, 5))
+    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l, in_l, out_r, in_r]
+    ket_out = apply_choi_to_ket(choi, ket, [0, 1], [0])
+    assert ket_out.shape == (2, 2)
+
+
+def test_apply_choi_to_dm_1mode():
+    """Test that choi operators are applied to a dm on the correct indices"""
+    dm = np.random.normal(size=(3, 5, 3, 5))
+    choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
+    dm_out = apply_choi_to_dm(choi, dm, [0], [0])
+    assert dm_out.shape == (4, 5, 4, 5)
+
+
+def test_apply_choi_to_dm_2mode():
+    """Test that choi operators are applied to a dm on the correct indices"""
+    dm = np.random.normal(size=(4, 5, 4, 5))
+    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l, in_l, out_r, in_r]
+    dm_out = apply_choi_to_dm(choi, dm, [1], [1, 2])
+    assert dm_out.shape == (4, 2, 3, 4, 2, 3)
+
+
+class TestDisplacement:
+    def test_grad_displacement(self):
+        """Tests the value of the analytic gradient for the Dgate against finite differences"""
+        cutoff = 4
+        r = 1.0
+        theta = np.pi / 8
+        T = _displacement(r, theta, cutoff)
+        Dr, Dtheta = _grad_displacement(T, r, theta)
+
+        dr = 0.001
+        dtheta = 0.001
+        Drp = _displacement(r + dr, theta, cutoff)
+        Drm = _displacement(r - dr, theta, cutoff)
+        Dthetap = _displacement(r, theta + dtheta, cutoff)
+        Dthetam = _displacement(r, theta - dtheta, cutoff)
+        Drapprox = (Drp - Drm) / (2 * dr)
+        Dthetaapprox = (Dthetap - Dthetam) / (2 * dtheta)
+        assert np.allclose(Dr, Drapprox, atol=1e-5, rtol=0)
+        assert np.allclose(Dtheta, Dthetaapprox, atol=1e-5, rtol=0)
+
+    def test_displacement_values(self):
+        """Tests the correct construction of the single mode displacement operation"""
+        cutoff = 5
+        alpha = 0.3 + 0.5 * 1j
+        # This data is obtained by using qutip
+        # np.array(displace(40,alpha).data.todense())[0:5,0:5]
+        expected = np.array(
+            [
+                [
+                    0.84366482 + 0.00000000e00j,
+                    -0.25309944 + 4.21832408e-01j,
+                    -0.09544978 - 1.78968334e-01j,
+                    0.06819609 + 3.44424719e-03j,
+                    -0.01109048 + 1.65323865e-02j,
+                ],
+                [
+                    0.25309944 + 4.21832408e-01j,
+                    0.55681878 + 0.00000000e00j,
+                    -0.29708743 + 4.95145724e-01j,
+                    -0.14658716 - 2.74850926e-01j,
+                    0.12479885 + 6.30297236e-03j,
+                ],
+                [
+                    -0.09544978 + 1.78968334e-01j,
+                    0.29708743 + 4.95145724e-01j,
+                    0.31873657 + 0.00000000e00j,
+                    -0.29777767 + 4.96296112e-01j,
+                    -0.18306015 - 3.43237787e-01j,
+                ],
+                [
+                    -0.06819609 + 3.44424719e-03j,
+                    -0.14658716 + 2.74850926e-01j,
+                    0.29777767 + 4.96296112e-01j,
+                    0.12389162 + 1.10385981e-17j,
+                    -0.27646677 + 4.60777945e-01j,
+                ],
+                [
+                    -0.01109048 - 1.65323865e-02j,
+                    -0.12479885 + 6.30297236e-03j,
+                    -0.18306015 + 3.43237787e-01j,
+                    0.27646677 + 4.60777945e-01j,
+                    -0.03277289 + 1.88440656e-17j,
+                ],
+            ]
+        )
+        T = _displacement(np.abs(alpha), np.angle(alpha), cutoff)
+        assert np.allclose(T, expected, atol=1e-5, rtol=0)

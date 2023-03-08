@@ -11,21 +11,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from setuptools import setup, find_packages
+import platform
+
+from setuptools import find_packages, setup
 
 with open("mrmustard/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 requirements = [
-    "numpy",
-    "scipy",
-    "numba",
-    "thewalrus>=0.17.0",
-    "tensorflow>=2.4.0",
-    "rich",
-    "tqdm",
-    "matplotlib",
+    "numpy==1.23.5",
+    "scipy==1.8.0",
+    "numba==0.56.4",
+    "thewalrus==0.19.0",
+    "tensorflow_macos==2.10.0" if platform.system() == "Darwin" else "tensorflow==2.10.1",
+    "tensorflow-probability==0.18.0",
+    "rich==10.15.1",
+    "tqdm==4.62.3",
+    "matplotlib==3.5.0",
 ]
+
+extra_requirements = {
+    "ray": ["ray[tune]", "scikit-optimize"],
+}
 
 info = {
     "name": "mrmustard",
@@ -37,6 +44,7 @@ info = {
     "license": "Apache License 2.0",
     "packages": find_packages(where="."),
     "install_requires": requirements,
+    "extras_require": extra_requirements,
     "long_description": open("README.md", encoding="utf-8").read(),
     "long_description_content_type": "text/markdown",
 }
@@ -53,7 +61,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3 :: Only",

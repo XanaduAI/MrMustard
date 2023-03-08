@@ -16,13 +16,14 @@
 This module contains functions for performing calculations on Gaussian states.
 """
 
-from typing import Tuple, Union, Sequence, Any
-from numpy import pi
+from typing import Any, Optional, Sequence, Tuple, Union
+
 from thewalrus.quantum import is_pure_cov
-from mrmustard.types import Matrix, Vector, Scalar
-from mrmustard.utils.xptensor import XPMatrix, XPVector
+
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 math = Math()
 
@@ -113,27 +114,22 @@ def two_mode_squeezed_vacuum_cov(r: Vector, phi: Vector, hbar: float) -> Matrix:
     return math.matmul(S, math.transpose(S)) * hbar / 2
 
 
-def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None, hbar: float = 2.0) -> Matrix:
+def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
     r"""Returns the covariance matrix of a Gaussian state.
 
     Args:
         symplectic (Tensor): symplectic matrix of a channel
         eigenvalues (vector): symplectic eigenvalues
-        hbar (float): value of hbar
 
     Returns:
         Tensor: covariance matrix of the Gaussian state
     """
     if eigenvalues is None:
-        return hbar / 2 * math.matmul(symplectic, math.transpose(symplectic))
+        return math.matmul(symplectic, math.transpose(symplectic))
 
-    return (
-        hbar
-        / 2
-        * math.matmul(
-            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
-            math.transpose(symplectic),
-        )
+    return math.matmul(
+        math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+        math.transpose(symplectic),
     )
 
 
@@ -560,36 +556,56 @@ def general_dyne(
     cov: Matrix,
     means: Vector,
     proj_cov: Matrix,
-    proj_means: Vector,
-    modes: Sequence[int],
-    hbar: float,
+    proj_means: Optional[Vector] = None,
+    modes: Optional[Sequence[int]] = None,
 ) -> Tuple[Scalar, Matrix, Vector]:
-    r"""Returns the results of a general dyne measurement.
+    r"""Returns the results of a general-dyne measurement. If ``proj_means`` are not provided
+    (as ``None``), they are sampled from the probability distribution.
 
     Args:
-        cov (Matrix): covariance matrix of the state being measured
-        means (Vector): means vector of the state being measured
-        proj_cov (Matrix): covariance matrix of the state being projected onto
-        proj_means (Vector): means vector of the state being projected onto (i.e. the measurement outcome)
-        modes (Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1)
+        cov (Matrix): covariance matrix of the state being measured [units of `2\hbar`]
+        means (Vector): means vector of the state being measured [units of `\sqrt(\hbar)`]
+        proj_cov (Matrix): covariance matrix of the state being projected onto [units of `2\hbar`]
+        proj_means (Optional Vector): means vector of the state being projected onto
+            (i.e. the measurement outcome) [units of `\sqrt(\hbar)`]. If not provided, the means vector
+            is sampled from the generaldyne probability distribution.
+        modes (Optional Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1),
+            if modes are not provided then the first modes (according to the size of ``cov``) are measured.
 
     Returns:
-        Tuple[Scalar, Matrix, Vector]: the outcome probability, the post-measurement cov and means vector
+        Tuple[Scalar, Scalar, Matrix, Vector]:
+            outcome (sampled means vector of the measured subsystem) [units of `\sqrt(\hbar)`],
+            oucome probability [units of `\hbar**N`],
+            post-measurement covariace [units of `2\hbar`]
+            post-measurement means vector [units of `\sqrt{\hbar}`].
     """
-    N = cov.shape[-1] // 2
-    nB = proj_cov.shape[-1] // 2  # B is the system being measured
-    Amodes = [i for i in range(N) if i not in modes]
+    N, M = cov.shape[-1] // 2, proj_cov.shape[-1] // 2
+    # Bmodes are the modes being measured and Amodes are the leftover modes
+    Bmodes = modes or list(range(M))
+    Amodes = list(set(list(range(N))) - set(Bmodes))
+
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
-    proj_cov = math.cast(proj_cov, B.dtype)
-    proj_means = math.cast(proj_means, b.dtype)
-    inv = math.inv(B + proj_cov)
-    new_cov = A - math.matmul(math.matmul(AB, inv), math.transpose(AB))
-    new_means = a + math.matvec(math.matmul(AB, inv), proj_means - b)
-    prob = math.exp(-math.sum(math.matvec(inv, proj_means - b) * (proj_means - b))) / (
-        pi**nB * (hbar**-nB) * math.sqrt(math.det(B + proj_cov))
-    )  # TODO: check this (hbar part especially)
-    return prob, new_cov, new_means
+    reduced_cov = B + proj_cov
+
+    # covariances are divided by 2 to match tensorflow and MrMustard conventions
+    # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
+    pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
+    outcome = (
+        pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
+    )
+    prob = pdf.prob(outcome)
+
+    # calculate conditional output state of unmeasured modes
+    num_remaining_modes = N - M
+    if num_remaining_modes == 0:
+        return outcome, prob, None, None
+
+    AB_inv = math.matmul(AB, math.inv(reduced_cov))
+    new_cov = A - math.matmul(AB_inv, math.transpose(AB))
+    new_means = a + math.matvec(AB_inv, outcome - b)
+
+    return outcome, prob, new_cov, new_means
 
 
 # ~~~~~~~~~
@@ -630,7 +646,7 @@ def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
     dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-        2 * hbar**2
+        2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
     )
     CC = (cov**2 + mCm) / (2 * hbar**2)
     return (
@@ -747,8 +763,11 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the Von Neumann entropy
     """
+
+    def g(x):
+        return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+
     symp_vals = symplectic_eigenvals(cov, hbar)
-    g = lambda x: math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     entropy = math.sum(g(symp_vals))
     return entropy
 

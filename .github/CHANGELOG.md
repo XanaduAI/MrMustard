@@ -1,30 +1,258 @@
-# Release 0.4.0 (development release)
+# Release 0.4.0
 
 ### New features
+
+* Ray-based distributed trainer is now added to `training.trainer`. It acts as a replacement
+  for `for` loops and enables the parallelization of running many circuits as well as their
+  optimizations. To install the extra dependencies: `pip install .[ray]`.
+  [(#194)](https://github.com/XanaduAI/MrMustard/pull/194)
+
+  ```python
+  from mrmustard.lab import Vacuum, Dgate, Ggate
+  from mrmustard.physics import fidelity
+  from mrmustard.training.trainer import map_trainer
+
+  def make_circ(x=0.):
+      return Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(x=x, x_trainable=True, y_trainable=True)
+
+  def cost_fn(circ=make_circ(0.1), y_targ=0.):
+      target = Gaussian(1) >> Dgate(-1.5, y_targ)
+      s = Vacuum(1) >> circ
+      return -fidelity(s, target)
+
+  # Use case 0: Calculate the cost of a randomly initialized circuit 5 times without optimizing it.
+  results_0 = map_trainer(
+      cost_fn=cost_fn,
+      tasks=5,
+  )
+
+  # Use case 1: Run circuit optimization 5 times on randomly initialized circuits.
+  results_1 = map_trainer(
+      cost_fn=cost_fn,
+      device_factory=make_circ,
+      tasks=5,
+      max_steps=50,
+      symplectic_lr=0.05,
+  )
+
+  # Use case 2: Run circuit optimization 2 times on randomly initialized circuits with custom parameters.
+  results_2 = map_trainer(
+      cost_fn=cost_fn,
+      device_factory=make_circ,
+      tasks=[
+          {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
+          {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+      ],
+      y_targ=0.35,
+      symplectic_lr=0.05,
+      AUTOCUTOFF_MAX_CUTOFF=7,
+  )
+  ```
+
+* Sampling for homodyne measurements is now integrated in Mr Mustard: when no measurement outcome
+  value is specified by the user, a value is sampled from the reduced state probability distribution
+  and the conditional state on the remaining modes is generated.
+  [(#143)](https://github.com/XanaduAI/MrMustard/pull/143)
+
+  ```python
+  import numpy as np
+  from mrmustard.lab import Homodyne, TMSV, SqueezedVacuum
+
+  # conditional state from measurement
+  conditional_state = TMSV(r=0.5, phi=np.pi)[0, 1] >> Homodyne(quadrature_angle=np.pi/2)[1]
+
+  # measurement outcome
+  measurement_outcome = SqueezedVacuum(r=0.5) >> Homodyne()
+  ```
+
+* The optimizer `minimize` method now accepts an optional callback function, which will be called
+  at each step of the optimization and it will be passed the step number, the cost value,
+  and the value of the trainable parameters. The result is added to the `callback_history`
+  attribute of the optimizer.
+  [(#175)](https://github.com/XanaduAI/MrMustard/pull/175)
+
+* the Math interface now supports linear system solving via `math.solve`.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+* We introduce the tensor wrapper `MMTensor` (available in `math.mmtensor`) that allows for
+  a very easy handling of tensor contractions. Internally MrMustard performs lots of tensor
+  contractions and this wrapper allows one to label each index of a tensor and perform
+  contractions using the `@` symbol as if it were a simple matrix multiplication (the indices
+  with the same name get contracted).
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)<br>
+  [(#195)](https://github.com/XanaduAI/MrMustard/pull/195)
+
+  ```python
+  from mrmustard.math.mmtensor import MMTensor
+
+  # define two tensors
+  A = MMTensor(np.random.rand(2, 3, 4), axis_labels=["foo", "bar", "contract"])
+  B = MMTensor(np.random.rand(4, 5, 6), axis_labels=["contract", "baz", "qux"])
+
+  # perform a tensor contraction
+  C = A @ B
+  C.axis_labels  # ["foo", "bar", "baz", "qux"]
+  C.shape # (2, 3, 5, 6)
+  C.tensor # extract actual result
+  ```
+
+* MrMustard's settings object (accessible via `from mrmustard import settings`) now supports
+  `SEED` (an int). This will give reproducible results whenever randomness is involved.
+  The seed is assigned randomly by default, and it can be reassigned again by setting it to None:
+  `settings.SEED = None`. If one desires, the seeded random number generator is accessible directly
+  via `settings.rng` (e.g. `settings.rng.normal()`).
+  [(#183)](https://github.com/XanaduAI/MrMustard/pull/183)
+
+* The `Circuit` class now has an ascii representation, which can be accessed via the repr method.
+  It looks great in Jupyter notebooks! There is a new option at `settings.CIRCUIT_DECIMALS`
+  which controls the number of decimals shown in the ascii representation of the gate parameters.
+  If `None`, only the name of the gate is shown.
+  [(#196)](https://github.com/XanaduAI/MrMustard/pull/196)
+
+* PNR sampling from Gaussian circuits using density matrices can now be performed faster.
+  When all modes are detected, this is done by replacing `math.hermite_renormalized` by `math.hermite_renormalized_diagonal`. If all but the first mode are detected,
+  `math.hermite_renormalized_1leftoverMode` can be used.
+  The complexity of these new methods is equal to performing a pure state simulation.
+  The methods are differentiable, so that they can be used for defining a cost function.
+  [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
+
+* MrMustard repo now provides a fully furnished vscode development container and a Dockerfile. To
+  find out how to use dev containers for development check the documentation
+  [here](https://code.visualstudio.com/docs/devcontainers/containers).
+  [(#214)](https://github.com/XanaduAI/MrMustard/pull/214)
 
 ### Breaking changes
 
 ### Improvements
 
+* The `Dgate` is now implemented directly in MrMustard (instead of on The Walrus) to calculate the
+  unitary and gradients of the displacement gate in Fock representation, providing better numerical
+  stability for larger cutoff and displacement values.
+  [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
+  [(#211)](https://github.com/XanaduAI/MrMustard/pull/211)
+
+* Now the Wigner function is implemented in its own module and uses numba for speed.
+  [(#171)](https://github.com/XanaduAI/MrMustard/pull/171)
+
+  ```python
+    from mrmustard.utils.wigner import wigner_discretized
+    W, Q, P = wigner_discretized(dm, q, p) # dm is a density matrix
+  ```
+
+* Calculate marginals independently from the Wigner function thus ensuring that the marginals are
+  physical even though the Wigner function might not contain all the features of the state
+  within the defined window. Also, expose some plot parameters and return the figure and axes.
+  [(#179)](https://github.com/XanaduAI/MrMustard/pull/179)
+
+* Allows for full cutoff specification (index-wise rather than mode-wise) for subclasses
+  of `Transformation`. This allows for a more compact Fock representation where needed.
+  [(#181)](https://github.com/XanaduAI/MrMustard/pull/181)
+
+* The `mrmustard.physics.fock` module now provides convenience functions for applying kraus
+  operators and choi operators to kets and density matrices.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+  ```python
+  from mrmustard.physics.fock import apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm
+  ket_out = apply_kraus_to_ket(kraus, ket_in, indices)
+  dm_out = apply_choi_to_dm(choi, dm_in, indices)
+  dm_out = apply_kraus_to_dm(kraus, dm_in, indices)
+  dm_out = apply_choi_to_ket(choi, ket_in, indices)
+  ```
+
+* Replaced norm with probability in the repr of `State`. This improves consistency over the
+  old behaviour (norm was the sqrt of prob if the state was pure and prob if the state was mixed).
+  [(#182)](https://github.com/XanaduAI/MrMustard/pull/182)
+
+* Added two new modules (`physics.bargmann` and `physics.husimi`) to host the functions related
+  to those representations, which have been refactored and moved out of `physics.fock`.
+  [(#185)](https://github.com/XanaduAI/MrMustard/pull/185)
+
+* The internal type system in MrMustard has been beefed up with much clearer types, like ComplexVector,
+  RealMatrix, etc... as well as a generic type `Batch`, which can be parametrized using the other types,
+  like `Batch[ComplexTensor]`. This will allow for better type checking and better error messages.
+  [(#199)](https://github.com/XanaduAI/MrMustard/pull/199)
+
+* Added multiple tests and improved the use of Hypothesis.
+  [(#191)](https://github.com/XanaduAI/MrMustard/pull/191)
+
+* The `fock.autocutoff` function now uses the new diagonal methods for calculating a
+  probability-based cutoff. Use `settings.AUTOCUTOFF_PROBABILITY` to set the probability threshold.
+  [(#203)](https://github.com/XanaduAI/MrMustard/pull/203)
+
+* The unitary group optimization (for the interferometer) and the orthogonal group optimization
+  (for the real interferometer) have been added. The symplectic matrix that describes an
+  interferometer belongs to the intersection of the orthogonal group and the symplectic group,
+  which is a unitary group, so we needed both.
+  [(#208)](https://github.com/XanaduAI/MrMustard/pull/208)
+
 ### Bug fixes
+
+* The `Dgate` and the `Rgate` now correctly parse the case when a single scalar is intended
+  as the same parameter of a number of gates in parallel.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The trace function in the fock module was giving incorrect results when called with certain
+  choices of modes. This is now fixed.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The purity function for fock states no longer normalizes the density matrix before computing
+  the purity.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The function `dm_to_ket` no longer normalizes the density matrix before diagonalizing it.
+  [(#180)](https://github.com/XanaduAI/MrMustard/pull/180)
+
+* The internal fock representation of states returns the correct cutoffs in all cases
+  (solves an issue when a pure dm was converted to ket).
+  [(#184)](https://github.com/XanaduAI/MrMustard/pull/184)
+
+* The ray related tests were hanging in github action causing tests to halt and fail.
+  Now ray is forced to init with 1 cpu when running tests preventing the issue.
+  [(#201)](https://github.com/XanaduAI/MrMustard/pull/201)
+
+* Various minor bug fixes.
+  [(#202)](https://github.com/XanaduAI/MrMustard/pull/202)
+
+* Fixed the issue that the optimization of the interferometer was using orthogonal group
+  optimization rather than unitary.
+  [(#208)](https://github.com/XanaduAI/MrMustard/pull/208)
+
+* Fixes a slicing issue that arises when we compute the fidelity between gaussian and fock states.
+  [(#210)](https://github.com/XanaduAI/MrMustard/pull/210)
+
+* The sign of parameters in the circuit drawer are now displayed correctly.
+  [(#209)](https://github.com/XanaduAI/MrMustard/pull/209)
+
+* Fixed a bug in the Gaussian state which caused its covariance matrix to be multiplied
+  by hbar/2 twice. Adds the argument `modes` to `Ggate`.
+  [(#212)](https://github.com/XanaduAI/MrMustard/pull/212)
+
+* Fixes a bug in the cutoffs of the choi operator.
+  [(#216)](https://github.com/XanaduAI/MrMustard/pull/216)
+
 
 ### Documentation
 
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
+[Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa),
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
+[Yuan Yao](https://github.com/sylviemonet)
 
 ---
 
-# Release 0.3.0 (current release)
+# Release 0.3.0
 
 ### New features
-* Can switch progress bar on and off (default is on) from the settings via `settings.PROGRESSBAR = True/False`.
+* Can switch progress bar on and off (default is on) from the settings via
+  `settings.PROGRESSBAR = True/False`.
   [(#128)](https://github.com/XanaduAI/MrMustard/issues/128)
 
 * States in Gaussian and Fock representation now can be concatenated.
   ```python
-  from mrmustard.lab.states import Gaussian, Fock'
+  from mrmustard.lab.states import Gaussian, Fock
   from mrmustard.lab.gates import Attenuator
 
   # concatenate pure states
@@ -41,16 +269,17 @@ This release contains contributions from (in alphabetical order):
   ```
   [(#130)](https://github.com/XanaduAI/MrMustard/pull/130)
 
-* Parameter passthrough allows one to use custom variables and/or functions as parameters. For example we can use parameters of other gates:
-    ```python
-    from mrmustard.lab.gates import Sgate, BSgate
+* Parameter passthrough allows one to use custom variables and/or functions as parameters.
+  For example we can use parameters of other gates:
+  ```python
+  from mrmustard.lab.gates import Sgate, BSgate
 
-    BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
-    S0 = Sgate(r=BS.theta)[0]
-    S1 = Sgate(r=-BS.theta)[1]
+  BS = BSgate(theta=np.pi/4, theta_trainable=True)[0,1]
+  S0 = Sgate(r=BS.theta)[0]
+  S1 = Sgate(r=-BS.theta)[1]
 
-    circ = S0 >> S1 >> BS
-    ```
+  circ = S0 >> S1 >> BS
+  ```
   Another possibility is with functions:
   ```python
 
@@ -69,7 +298,8 @@ This release contains contributions from (in alphabetical order):
   ```
   [(#131)](https://github.com/XanaduAI/MrMustard/pull/131)
 
-* Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix the q and p quadratures.
+* Adds the new trainable gate `RealInterferometer`: an interferometer that doesn't mix
+  the q and p quadratures.
   [(#132)](https://github.com/XanaduAI/MrMustard/pull/132)
 
 * Now marginals can be iterated over:
@@ -81,7 +311,8 @@ This release contains contributions from (in alphabetical order):
 
 ### Breaking changes
 
-* The Parametrized and Training classes have been refactored: now trainable tensors are wrapped in an instance of the `Parameter` class. To define a set of parameters do
+* The Parametrized and Training classes have been refactored: now trainable tensors are wrapped
+  in an instance of the `Parameter` class. To define a set of parameters do
   ```python
   from mrmustard.training import Parametrized
 
@@ -116,8 +347,9 @@ This release contains contributions from (in alphabetical order):
 
 ### Improvements
 
-* The Parametrized and Training classes have been refactored. The new training module has been added
-  and with it the new `Parameter` class: now trainable tensors are being wrapped in an instance of `Parameter`.
+* The Parametrized and Training classes have been refactored. The new training module has been
+  added and with it the new `Parameter` class: now trainable tensors are being wrapped
+  in an instance of `Parameter`.
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
   patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
 
@@ -129,11 +361,12 @@ This release contains contributions from (in alphabetical order):
   and on a jupyter notebook produces a table with valuable information of the Transformation objects.
   [(#141)](https://github.com/XanaduAI/MrMustard/pull/141)
 
-* Add the argument 'modes' to the `Interferometer` operation to indicate which modes the Interferometer is
-  applied to.
+* Add the argument 'modes' to the `Interferometer` operation to indicate which modes
+  the Interferometer is applied to.
   [(#121)](https://github.com/XanaduAI/MrMustard/pull/121)
 
 ### Bug fixes
+
 * Fixed a bug in the `State.ket()` method. An attribute was called with a typo in its name.
   [(#135)](https://github.com/XanaduAI/MrMustard/pull/135)
 
@@ -141,6 +374,10 @@ This release contains contributions from (in alphabetical order):
 transposing the indices of the input tensor. Now `math.dagger` appropriately calculates the
 Hermitian conjugate of an operator.
   [(#156)](https://github.com/XanaduAI/MrMustard/pull/156)
+
+* The application of a Choi operator to a density matrix was resulting in a transposed dm. Now
+the order of the indices in the application of a choi operator to dm and ket is correct.
+  [(#188)](https://github.com/XanaduAI/MrMustard/pull/188)
 
 ### Documentation
 
@@ -186,7 +423,8 @@ This release contains contributions from (in alphabetical order):
 
 ### Bug fixes
 
-* Setting the modes on which detectors and state acts using `modes` kwarg or `__getitem__` give consistent results.
+* Setting the modes on which detectors and state acts using `modes` kwarg or `__getitem__`
+  give consistent results.
   [(#114)](https://github.com/XanaduAI/MrMustard/pull/114)
 
 * Lists are used instead of generators for indices in fidelity calculations.
@@ -200,11 +438,13 @@ This release contains contributions from (in alphabetical order):
 * [Basic API reference](https://mrmustard.readthedocs.io/en/latest/introduction/basic_reference.html)
   is updated to use the latest Mr Mustard API.
   [(#119)](https://github.com/XanaduAI/MrMustard/pull/119)
+
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
 
-[Sebastián Duque](https://github.com/sduquemesa), [Theodor Isacsson](https://github.com/thisac/), [Filippo Miatto](https://github.com/ziofil)
+[Sebastián Duque](https://github.com/sduquemesa), [Theodor Isacsson](https://github.com/thisac/),
+[Filippo Miatto](https://github.com/ziofil)
 
 
 # Release 0.1.1

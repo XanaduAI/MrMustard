@@ -12,69 +12,114 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from mrmustard.lab.circuit import Circuit
-from mrmustard.lab.states import Fock, State, SqueezedVacuum, TMSV
-from mrmustard.lab.gates import (
-    Dgate,
-    Sgate,
-    Pgate,
-    Rgate,
-    CZgate,
-    CXgate,
-    BSgate,
-    MZgate,
-    S2gate,
-    Attenuator,
-    Interferometer,
-)
-from hypothesis import given, strategies as st
-from thewalrus.fock_gradients import (
-    displacement,
-    squeezing,
-    beamsplitter,
-    two_mode_squeezing,
-    mzgate,
-)
 import numpy as np
-from tests import random
+import pytest
+from hypothesis import given
+from thewalrus.fock_gradients import (
+    beamsplitter,
+    mzgate,
+    squeezing,
+    two_mode_squeezing,
+)
+
+from mrmustard.lab import (
+    Attenuator,
+    BSgate,
+    Coherent,
+    Dgate,
+    Interferometer,
+    MZgate,
+    RealInterferometer,
+    Rgate,
+    S2gate,
+    Sgate,
+)
+from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
+from mrmustard.physics import fock
+from tests.random import (
+    angle,
+    array_of_,
+    medium_float,
+    n_mode_pure_state,
+    r,
+    single_mode_cv_channel,
+    single_mode_unitary_gate,
+    two_mode_unitary_gate,
+)
 
 
-@given(state=random.pure_state(num_modes=1), xy=random.vector(2))
-def test_Dgate_1mode(state, xy):
-    x, y = xy
+@given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)
+def test_Dgate_1mode(state, x, y):
     state_out = state >> Dgate(x, y) >> Dgate(-x, -y)
     assert state_out == state
 
 
 def test_attenuator_on_fock():
     "tests that attenuating a fock state makes it mixed"
-    assert (Fock(10) >> Attenuator(0.5)).is_pure == False
+    assert not (Fock(10) >> Attenuator(0.5)).is_pure
 
 
-@given(state=random.pure_state(num_modes=2), xxyy=random.vector(4))
+@given(state=n_mode_pure_state(num_modes=2), xxyy=array_of_(medium_float, minlen=4, maxlen=4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
     state_out = state >> Dgate([x1, x2], [y1, y2]) >> Dgate([-x1, -x2], [-y1, -y2])
     assert state_out == state
 
 
-@pytest.mark.parametrize("gate", [Sgate(r=1), Dgate(1.0, 1.0), Pgate(10), Rgate(np.pi / 2)])
-def test_single_mode_fock_equals_gaussian(gate):
+@given(gate=single_mode_cv_channel())
+def test_single_mode_fock_equals_gaussian_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [30]
+    cutoffs = [60]
     gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
-@pytest.mark.parametrize(
-    "gate", [BSgate(np.pi / 2), MZgate(np.pi / 2), CZgate(0.1), CXgate(0.1), S2gate(0.1)]
-)
+@given(gate=single_mode_cv_channel())
+def test_single_mode_fock_equals_gaussian_ket_dm(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [60]
+    gaussian_state = SqueezedVacuum(0.5)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_dm = (fock_state >> gate).dm([10])
+    via_phase_space_dm = (gaussian_state >> gate).dm([10])
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
+
+
+@given(gate=single_mode_unitary_gate())
+def test_single_mode_fock_equals_gaussian_ket(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [60]
+    gaussian_state = SqueezedVacuum(0.5)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_ket = (fock_state >> gate).ket([10])
+    via_phase_space_ket = (gaussian_state >> gate).ket([10])
+    phase = np.exp(1j * np.angle(via_fock_space_ket[0]))
+    assert np.allclose(via_fock_space_ket, phase * via_phase_space_ket)
+
+
+@given(gate=single_mode_unitary_gate())
+def test_single_mode_fock_equals_gaussian_ket_dm_2(gate):
+    """Test same state is obtained via fock representation or phase space
+    for single mode circuits."""
+    cutoffs = [50]
+    gaussian_state = SqueezedVacuum(-0.1)
+    fock_state = State(ket=gaussian_state.ket(cutoffs))
+
+    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).dm([10])
+    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.1)).dm([10])
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm, atol=1e-5)
+
+
+@given(gate=two_mode_unitary_gate())
 def test_two_mode_fock_equals_gaussian(gate):
     """Test same state is obtained via fock representation or phase space
     for two modes circuits."""
@@ -82,58 +127,102 @@ def test_two_mode_fock_equals_gaussian(gate):
     gaussian_state = TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs).numpy()
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs).numpy()
+    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
-@given(x=st.floats(min_value=-2, max_value=2), y=st.floats(min_value=-2, max_value=2))
-def test_fock_representation_displacement(x, y):
-    D = Dgate(x=x, y=y)
-    expected = displacement(r=np.sqrt(x**2 + y**2), phi=np.arctan2(y, x), cutoff=20)
-    assert np.allclose(expected, D.U(cutoffs=[20]), atol=1e-5)
+@pytest.mark.parametrize(
+    "cutoffs,x,y",
+    [
+        [[5], 0.3, 0.5],
+        [[5], 0.0, 0.0],
+        [[2, 2], [0.1, 0.1], [0.25, -0.2]],
+        [[3, 3], [0.0, 0.0], [0.0, 0.0]],
+        [[2, 5, 1], [0.1, 5.0, 1.0], [-0.3, 0.1, 0.0]],
+        [[3, 3, 3, 3], [0.1, 0.2, 0.3, 0.4], [-0.5, -4, 3.1, 4.2]],
+    ],
+)
+def test_fock_representation_displacement(cutoffs, x, y):
+    """Tests that DGate returns the correct unitary."""
+
+    # apply gate
+    dgate = Dgate(x, y)
+    Ud = dgate.U(cutoffs)
+
+    # compare with the standard way of calculating
+    # transformation unitaries using the Choi isomorphism
+    X = np.eye(2 * len(cutoffs))
+    expected_Ud = fock.wigner_to_fock_U(X, dgate.XYd[-1], cutoffs * 2)
+
+    assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
 
-@given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
+@given(r=r, phi=angle)
 def test_fock_representation_squeezing(r, phi):
     S = Sgate(r=r, phi=phi)
     expected = squeezing(r=r, theta=phi, cutoff=20)
     assert np.allclose(expected, S.U(cutoffs=[20]), atol=1e-5)
 
 
-@given(
-    theta=st.floats(min_value=0, max_value=2 * np.pi),
-    phi=st.floats(min_value=0, max_value=2 * np.pi),
-)
+@given(theta=angle, phi=angle)
 def test_fock_representation_beamsplitter(theta, phi):
     BS = BSgate(theta=theta, phi=phi)
     expected = beamsplitter(theta=theta, phi=phi, cutoff=20)
     assert np.allclose(expected, BS.U(cutoffs=[20, 20]), atol=1e-5)
 
 
-@given(r=st.floats(min_value=0, max_value=2), phi=st.floats(min_value=0, max_value=2 * np.pi))
+@given(r=r, phi=angle)
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
     expected = two_mode_squeezing(r=r, theta=phi, cutoff=20)
     assert np.allclose(expected, S2.U(cutoffs=[20, 20]), atol=1e-5)
 
 
-@given(
-    phi_a=st.floats(min_value=0, max_value=2 * np.pi, allow_infinity=False, allow_nan=False),
-    phi_b=st.floats(min_value=0, max_value=2 * np.pi, allow_infinity=False, allow_nan=False),
-)
+@given(phi_a=angle, phi_b=angle)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
     assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
 
 
+@pytest.mark.parametrize(
+    "cutoffs,angles,modes",
+    [
+        [[5, 4, 3], [np.pi, np.pi / 2, np.pi / 4], None],
+        [[3, 4], [np.pi / 3, np.pi / 2], [0, 1]],
+        [[3], np.pi / 6, [0]],
+    ],
+)
+def test_fock_representation_rgate(cutoffs, angles, modes):
+    """Tests that DGate returns the correct unitary."""
+
+    # apply gate
+    rgate = Rgate(angles, modes=modes)
+    R = rgate.U(cutoffs)
+
+    # compare with the standard way of calculating
+    # transformation unitaries using the Choi isomorphism
+    d = np.zeros(2 * len(cutoffs))
+    expected_R = fock.wigner_to_fock_U(rgate.XYd[0], d, cutoffs * 2)
+    assert np.allclose(R, expected_R, atol=1e-5)
+
+
 def test_raise_interferometer_error():
-    """test Interferometer raises an error when both `modes` and `num_modes` are given"""
+    """test Interferometer raises an error when both `modes` and `num_modes` don't match"""
     num_modes = 3
     modes = [0, 2]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
-    modes = [2, 5, 6]
+    with pytest.raises(ValueError):
+        RealInterferometer(num_modes=num_modes, modes=modes)
+    modes = [2, 5, 6, 7]
     with pytest.raises(ValueError):
         Interferometer(num_modes=num_modes, modes=modes)
+    with pytest.raises(ValueError):
+        RealInterferometer(num_modes=num_modes, modes=modes)
+
+
+def test_choi_cutoffs():
+    output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
+    assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate

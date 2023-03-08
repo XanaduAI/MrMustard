@@ -16,13 +16,15 @@
 This module implements the quantum states upon which a quantum circuits acts on.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.types import Scalar, Vector, Matrix
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
-from mrmustard.lab.abstract import State
-from mrmustard.physics import gaussian, fock
-from mrmustard.training import Parametrized
 from mrmustard.math import Math
+from mrmustard.physics import fock, gaussian
+from mrmustard.training import Parametrized
+from mrmustard.typing import RealMatrix, Scalar, Vector
+
+from .abstract import State
 
 math = Math()
 
@@ -415,7 +417,7 @@ class Gaussian(Parametrized, State):
     def __init__(
         self,
         num_modes: int,
-        symplectic: Matrix = None,
+        symplectic: RealMatrix = None,
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
@@ -444,13 +446,13 @@ class Gaussian(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value, settings.HBAR)
+        cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value, settings.HBAR)
+        return gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
 
     @property
     def is_mixed(self):

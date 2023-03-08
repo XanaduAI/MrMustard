@@ -14,22 +14,27 @@
 
 """This module contains the Tensorflow implementation of the :class:`Math` interface."""
 
+from typing import Callable, List, Sequence, Tuple, Union, Optional
+
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
+
 from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
 
-from mrmustard.math.autocast import Autocast
-from mrmustard.types import (
-    List,
-    Tensor,
-    Sequence,
-    Tuple,
-    Optional,
-    Trainable,
-    Callable,
-    Union,
+from mrmustard.math.numba.compactFock_inputValidation import (
+    hermite_multidimensional_diagonal,
+    grad_hermite_multidimensional_diagonal,
 )
+from mrmustard.math.numba.compactFock_inputValidation import (
+    hermite_multidimensional_1leftoverMode,
+    grad_hermite_multidimensional_1leftoverMode,
+)
+
+from mrmustard.math.autocast import Autocast
+from mrmustard.typing import Tensor, Trainable
 from .math_interface import MathInterface
+
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
@@ -91,7 +96,10 @@ class TFMath(MathInterface):
             np.inf if bounds[1] is None else bounds[1],
         )
         if bounds != (-np.inf, np.inf):
-            constraint: Optional[Callable] = lambda x: tf.clip_by_value(x, bounds[0], bounds[1])
+
+            def constraint(x):
+                return tf.clip_by_value(x, bounds[0], bounds[1])
+
         else:
             constraint = None
         return constraint
@@ -115,6 +123,12 @@ class TFMath(MathInterface):
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
 
+    def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
+        return tf.math.atan2(y, x)
+
+    def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
+        return tf.complex(real, imag)
+
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
 
@@ -125,7 +139,9 @@ class TFMath(MathInterface):
         return tf.linalg.diag_part(array)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
-        return tf.einsum(string, *tensors)
+        if type(string) is str:
+            return tf.einsum(string, *tensors)
+        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
@@ -138,6 +154,9 @@ class TFMath(MathInterface):
 
     def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
         return tf.eye(size, dtype=dtype)
+
+    def eye_like(self, array: tf.Tensor) -> Tensor:
+        return tf.eye(array.shape[-1], dtype=array.dtype)
 
     def from_backend(self, value) -> bool:
         return isinstance(value, (tf.Tensor, tf.Variable))
@@ -249,6 +268,12 @@ class TFMath(MathInterface):
     def sinh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sinh(array)
 
+    def solve(self, matrix: tf.Tensor, rhs: tf.Tensor) -> tf.Tensor:
+        if len(rhs.shape) == len(matrix.shape) - 1:
+            rhs = tf.expand_dims(rhs, -1)
+            return tf.linalg.solve(matrix, rhs)[..., 0]
+        return tf.linalg.solve(matrix, rhs)
+
     def sqrt(self, x: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.sqrt(self.cast(x, dtype))
 
@@ -294,6 +319,21 @@ class TFMath(MathInterface):
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
         return tf.zeros_like(array)
 
+    def map_fn(self, func, elements):
+        return tf.map_fn(func, elements)
+
+    def squeeze(self, tensor, axis=None):
+        return tf.squeeze(tensor, axis=axis or [])
+
+    def cholesky(self, input: Tensor):
+        return tf.linalg.cholesky(input)
+
+    def Categorical(self, probs: Tensor, name: str):
+        return tfp.distributions.Categorical(probs=probs, name=name)
+
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
+        return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
+
     # ~~~~~~~~~~~~~~~~~
     # Special functions
     # ~~~~~~~~~~~~~~~~~
@@ -338,8 +378,11 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = tf.numpy_function(
-            hermite_multidimensional, [A, shape, B, C, True, True, True], A.dtype
+        if isinstance(shape, List) and len(shape) == 1:
+            shape = shape[0]
+
+        poly = hermite_multidimensional(
+            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
         )
 
         def grad(dLdpoly):
@@ -353,6 +396,113 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly, grad
+
+    def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
+        Moreover, the recurrence relation in mrmustard.math.numba.compactFock~ is defined such that A = -A compared to mrmustard.physics.bargmann.
+        """
+        A = -A
+        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        A = tf.gather(A, ordering, axis=1)
+        A = tf.gather(A, ordering)
+        B = tf.gather(B, ordering)
+        return A, B
+
+    def hermite_renormalized_diagonal(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
+
+    @tf.custom_gradient
+    def hermite_renormalized_diagonal_reorderedAB(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+        by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial.
+        """
+        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+        )
+
+        def grad(dLdpoly):
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_diagonal,
+                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                [poly0.dtype] * 3,
+            )
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly0, grad
+
+    def hermite_renormalized_1leftoverMode(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
+
+    @tf.custom_gradient
+    def hermite_renormalized_1leftoverMode_reorderedAB(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates all possible Fock representations of mode 0,
+        where all other modes are PNR detected.
+        This is done by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial.
+        """
+        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+            hermite_multidimensional_1leftoverMode, [A, B, C, cutoffs], [A.dtype] * 5
+        )
+
+        def grad(dLdpoly):
+            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                grad_hermite_multidimensional_1leftoverMode,
+                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                [poly0.dtype] * 3,
+            )
+            ax = tuple(range(dLdpoly.ndim))
+            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+            return dLdA, dLdB, dLdC
+
+        return poly0, grad
 
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
@@ -391,6 +541,11 @@ class TFMath(MathInterface):
     def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         """Returns a tensor based on the truth value of the boolean mask."""
         return tf.boolean_mask(tensor, mask)
+
+    @staticmethod
+    def custom_gradient(func):
+        """Decorator to define a function with a custom gradient."""
+        return tf.custom_gradient(func)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)
