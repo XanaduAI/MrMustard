@@ -32,7 +32,7 @@ class Callback:
     optimizer_step: int = 0
     callback_step: int = 0
 
-    def get_opt_step(self, optimizer, **kwargs):
+    def get_opt_step(self, optimizer, **kwargs):  # pylint: disable=unused-argument
         """Gets current step from optimizer."""
         self.optimizer_step = len(optimizer.opt_history)
         return self.optimizer_step
@@ -42,23 +42,18 @@ class Callback:
 
     def trigger(self, **kwargs) -> bool:  # pylint: disable=unused-argument
         """User implemented custom trigger conditions."""
-        ...
 
     def call(self, **kwargs) -> Optional[Mapping]:  # pylint: disable=unused-argument
         """User implemented main callback logic."""
-        ...
 
     def update_cost_fn(self, **kwargs) -> Optional[Callable]:  # pylint: disable=unused-argument
         """User implemented cost_fn modifier."""
-        ...
 
     def update_grads(self, **kwargs) -> Optional[Sequence]:  # pylint: disable=unused-argument
         """User implemented gradient modifier."""
-        ...
 
     def update_optimizer(self, optimizer, **kwargs):  # pylint: disable=unused-argument
         """User implemented optimizer update scheduler."""
-        ...
 
     def __call__(
         self,
@@ -102,6 +97,7 @@ class TensorboardCallback(Callback):
         self.tb_writer = None
 
     def init_writer(self, trainables):
+        """Initializes tblog folders and writer."""
         if (self.writter_logdir is None) or (self.optimizer_step == 0):
             self.prefix = self.prefix or f"optim_{len(trainables)}_params"
             self.writter_logdir = Path(self.logdir) / (
