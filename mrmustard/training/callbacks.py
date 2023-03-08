@@ -18,45 +18,53 @@
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Mapping, Sequence
 import numpy as np
 import tensorflow as tf
 
 
 @dataclass
 class Callback:
+    """Base callback class for optimizers."""
+
     tag: str = None
     steps_per_call: int = 1
     optimizer_step: int = 0
     callback_step: int = 0
 
     def get_opt_step(self, optimizer, **kwargs):
+        """Gets current step from optimizer."""
         self.optimizer_step = len(optimizer.opt_history)
         return self.optimizer_step
 
-    def should_call(self, **kwargs):
+    def _should_call(self, **kwargs) -> bool:
         return (self.get_opt_step(**kwargs) % self.steps_per_call == 0) or self.trigger(**kwargs)
 
-    def trigger(self, **kwargs):
+    def trigger(self, **kwargs) -> bool:  # pylint: disable=unused-argument
+        """User implemented custom trigger conditions."""
         ...
 
-    def call(self, **kwargs):
+    def call(self, **kwargs) -> Optional[Mapping]:  # pylint: disable=unused-argument
+        """User implemented main callback logic."""
         ...
 
-    def update_cost_fn(self, **kwargs):
+    def update_cost_fn(self, **kwargs) -> Optional[Callable]:  # pylint: disable=unused-argument
+        """User implemented cost_fn modifier."""
         ...
 
-    def update_grads(self, **kwargs):
+    def update_grads(self, **kwargs) -> Optional[Sequence]:  # pylint: disable=unused-argument
+        """User implemented gradient modifier."""
         ...
 
-    def update_optimizer(self, optimizer, **kwargs):
+    def update_optimizer(self, optimizer, **kwargs):  # pylint: disable=unused-argument
+        """User implemented optimizer update scheduler."""
         ...
 
     def __call__(
         self,
         **kwargs,
     ):
-        if self.should_call(**kwargs):
+        if self._should_call(**kwargs):
             self.callback_step += 1
             callback_result = {
                 "optimizer_step": self.optimizer_step,
@@ -81,6 +89,8 @@ class Callback:
 
 @dataclass
 class TensorboardCallback(Callback):
+    """Callback for enabling Tensorboard tracking of optimizations."""
+
     logdir: str = "./tb_logdir"
     prefix: Optional[str] = None
     cost_converter: Optional[Callable] = None
@@ -89,6 +99,7 @@ class TensorboardCallback(Callback):
 
     def __post_init__(self):
         self.writter_logdir = None
+        self.tb_writer = None
 
     def init_writer(self, trainables):
         if (self.writter_logdir is None) or (self.optimizer_step == 0):
@@ -105,7 +116,9 @@ class TensorboardCallback(Callback):
         cost,
         trainables,
         **kwargs,
-    ):
+    ):  # pylint: disable=unused-argument
+        """Logs costs and parameters to Tensorboard."""
+
         self.init_writer(trainables=trainables)
         obj_tag = "objectives"
 
