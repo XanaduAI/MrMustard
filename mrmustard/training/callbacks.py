@@ -18,51 +18,86 @@
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Callable, Optional
 import numpy as np
 import tensorflow as tf
-
-from mrmustard import Optimizer
-from mrmustard.utils import graphics
-from mrmustard.training.parameter_update import param_update_method
 
 
 @dataclass
 class Callback:
     tag: str = None
-    call_freq: int = 1
-    call_count: int = 0
+    steps_per_call: int = 1
+    optimizer_step: int = 0
+    callback_step: int = 0
+
+    def get_opt_step(self, optimizer, **kwargs):
+        self.optimizer_step = len(optimizer.opt_history)
+        return self.optimizer_step
+
+    def should_call(self, **kwargs):
+        return (self.get_opt_step(**kwargs) % self.steps_per_call == 0) or self.trigger(**kwargs)
+
+    def trigger(self, **kwargs):
+        ...
 
     def call(self, **kwargs):
         ...
 
-    def should_call(self, optimizer: Optimizer, **kwargs):
-        opt_step = len(optimizer.opt_history)
-        return opt_step % self.call_freq == 0
+    def update_cost_fn(self, **kwargs):
+        ...
+
+    def update_grads(self, **kwargs):
+        ...
+
+    def update_optimizer(self, optimizer, **kwargs):
+        ...
 
     def __call__(
         self,
         **kwargs,
     ):
         if self.should_call(**kwargs):
-            result = self.call(**kwargs)
-            self.call_count += 1
-            return result
+            self.callback_step += 1
+            callback_result = {
+                "optimizer_step": self.optimizer_step,
+                "callback_step": self.callback_step,
+            }
+
+            callback_result.update(self.call(**kwargs) or {})
+
+            new_cost_fn = self.update_cost_fn(callback_result=callback_result, **kwargs)
+            if callable(new_cost_fn):
+                callback_result["cost_fn"] = new_cost_fn
+
+            new_grads = self.update_grads(callback_result=callback_result, **kwargs)
+            if new_grads is not None:
+                callback_result["grads"] = new_grads
+
+            # Modifies the optimizer inplace, e.g. its learning rates.
+            self.update_optimizer(callback_result=callback_result, **kwargs)
+
+            return callback_result
 
 
 @dataclass
 class TensorboardCallback(Callback):
     logdir: str = "./tb_logdir"
-    suffix: str = None
-    with_dB: bool = True
+    prefix: Optional[str] = None
+    cost_converter: Optional[Callable] = None
+    track_grads: bool = False
+    keep_history: bool = False
 
     def __post_init__(self):
-        self.suffix = "" if not self.suffix else f"-{self.suffix}"
-        self.writter_logdir = Path(self.logdir) / (
-            datetime.now().strftime("%Y%m%d-%H%M%S") + self.suffix
-        )
-        self.tb_writer = tf.summary.create_file_writer(str(self.writter_logdir))
-        self.tb_writer.set_as_default()
+        self.writter_logdir = None
+
+    def init_writer(self, trainables):
+        if (self.writter_logdir is None) or (self.optimizer_step == 0):
+            self.prefix = self.prefix or f"optim_{len(trainables)}_params"
+            self.writter_logdir = Path(self.logdir) / (
+                f"{self.prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            )
+            self.tb_writer = tf.summary.create_file_writer(str(self.writter_logdir))
+            self.tb_writer.set_as_default()
 
     def call(
         self,
@@ -71,28 +106,37 @@ class TensorboardCallback(Callback):
         trainables,
         **kwargs,
     ):
-        step = len(optimizer.opt_history)
+        self.init_writer(trainables=trainables)
+        obj_tag = "objectives"
+
         cost = np.array(cost).item()
-        tf.summary.scalar("cost", data=cost, step=step)
-        if self.with_dB:
-            delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
-            cost_dB = -10 * np.log10(delta**2)
-            tf.summary.scalar("dB", data=cost_dB, step=step)
+
+        obj_scalars = {
+            f"{obj_tag}/cost": cost,
+        }
+        if self.cost_converter is not None:
+            obj_scalars[
+                f"{obj_tag}/{self.cost_converter.__qualname__}(cost)"
+            ] = self.cost_converter(cost)
 
         if "orig_cost" in optimizer.callback_history:
             orig_cost = np.array(optimizer.callback_history["orig_cost"][-1]).item()
-            tf.summary.scalar("orig_cost", data=orig_cost, step=step)
-            if self.with_dB:
-                orig_delta = np.sqrt(np.log(1 / (abs(orig_cost) ** 2)) / (2 * np.pi))
-                orig_cost_dB = -10 * np.log10(orig_delta**2)
-                tf.summary.scalar("orig_dB", data=orig_cost_dB, step=step)
+            obj_scalars[f"{obj_tag}/orig_cost"] = orig_cost
+            if self.cost_converter is not None:
+                obj_scalars[
+                    f"{obj_tag}/{self.cost_converter.__qualname__}(orig_cost)"
+                ] = self.cost_converter(orig_cost)
 
-        for k, v in trainables.items():
-            tf.summary.scalar(k, data=v.value.numpy(), step=step)
+        for k, v in obj_scalars.items():
+            tf.summary.scalar(k, data=v, step=self.optimizer_step)
 
-        return {
-            "step": step,
-            "cost": cost,
-            "dB": cost_dB,
-            **trainables,
-        }
+        for k, (x, dx) in trainables.items():
+            tf.summary.scalar(k, data=np.array(x.value), step=self.optimizer_step)
+            if self.track_grads:
+                tf.summary.scalar(f"grads:{k}", data=np.array(dx.value), step=self.optimizer_step)
+
+        if self.keep_history:
+            return {
+                **obj_scalars,
+                **trainables,
+            }

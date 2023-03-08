@@ -18,6 +18,7 @@ used within Mr Mustard.
 
 from itertools import chain, groupby
 from typing import List, Callable, Sequence, Union, Mapping, Dict
+from mrmustard.training.callbacks import Callback
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
@@ -138,13 +139,13 @@ class Optimizer:
             update_method(grads_and_vars, param_lr)
 
     @staticmethod
-    def _get_trainable_params(trainable_items, root_tag: str = "by_optimizing"):
+    def _get_trainable_params(trainable_items, root_tag: str = "optimized"):
         """Traverses all instances of Parametrized or trainable items that belong to the backend
         and return a tuple of 2 lists: (traversal tags, trainable parameters)
         """
         trainables = []
         for i, item in enumerate(trainable_items):
-            owner_tag = f"{root_tag}[{i}]"
+            owner_tag = f"{root_tag}[{i}]:{item.__class__.__qualname__}"
             if isinstance(item, Parametrized):
                 trainables.append(item.traverse_trainables(owner_tag=owner_tag).items())
             elif math.from_backend(item) and math.is_trainable(item):
@@ -220,9 +221,15 @@ class Optimizer:
         if callbacks is None:
             callbacks = {}
         elif callable(callbacks):
-            callbacks = {callbacks.__qualname__: callbacks}
+            callbacks = {
+                callbacks.tag
+                if isinstance(callbacks, Callback)
+                else callbacks.__qualname__: callbacks
+            }
         elif isinstance(callbacks, Sequence):
-            callbacks = {cb.__qualname__: cb for cb in callbacks}
+            callbacks = {
+                cb.tag if isinstance(cb, Callback) else cb.__qualname__: cb for cb in callbacks
+            }
         elif not isinstance(callbacks, Mapping):
             raise TypeError(
                 f"Argument `callbacks` expected to be a callable or a list/dict of callables, got {type(callbacks)}."
@@ -242,7 +249,7 @@ class Optimizer:
 
             cb_result = cb(
                 optimizer=self,
-                cost_fn=cost_fn,
+                cost_fn=cost_fn if new_cost_fn is None else new_cost_fn,
                 cost=cost,
                 trainables=trainables,
             )
@@ -253,7 +260,12 @@ class Optimizer:
                 )
 
             new_cost_fn = cb_result.pop("cost_fn", None)
-            new_grads = cb_result.get("grads", None)
+
+            if "grads" in cb_result:
+                new_grads = cb_result["grads"]
+                trainables = {
+                    tag: (x, dx) for (tag, (x, _)), dx in zip(trainables.items(), new_grads)
+                }
 
             if cb_result is not None:
                 self.callback_history[cb_tag].append(cb_result)
