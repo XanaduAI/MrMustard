@@ -2,6 +2,17 @@
 
 ### New features
 
+* Optimization callback functionalities has been improved. A dedicated `Callback` class is added which
+  is able to access the optimizer, the cost function, the parameters as well as gradients, during the
+  optimization. In addition, multiple callbacks can be specified. This opens up the endless possiblities
+  of customizing the the optimization progress with schedulers, trackers, heuristics, tricks, etc.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
+* Tensorboard based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
+  It can automatically track costs as well as all trainable parameters during optimization in realtime.
+  Tensorboard can be most conveniently viewed from VScode.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
 ### Breaking Changes
 
 ### Improvements
