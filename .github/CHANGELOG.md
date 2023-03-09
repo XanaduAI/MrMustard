@@ -24,6 +24,10 @@
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
+[Zeyue Niu](https://github.com/zeyueN)
+
+---
+
 # Release 0.4.0 (current release)
 
 ### New features
