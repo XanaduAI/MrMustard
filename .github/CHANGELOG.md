@@ -6,6 +6,8 @@
 
 ### Improvements
 
+* Fixed flaky test for RealInterferometer.
+  [(#224)](https://github.com/XanaduAI/MrMustard/pull/224)
 ### Bug fixes
 
 * Unpins package versions in setup.py that got mistakenly pinned in 0.4.0.
