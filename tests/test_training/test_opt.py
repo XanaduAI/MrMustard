@@ -56,11 +56,23 @@ def test_S2gate_coincidence_prob(n):
     def cost_fn():
         return -tf.abs((Vacuum(2) >> S[0, 1]).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
 
+    def cb(optimizer, cost, trainables, **kwargs):
+        return {
+            "cost": cost,
+            "lr": optimizer.learning_rate["euclidean"],
+            "num_trainables": len(trainables),
+        }
+
     opt = Optimizer(euclidean_lr=0.01)
-    opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
+    opt.minimize(cost_fn, by_optimizing=[S], max_steps=300, callbacks=cb)
 
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
     assert np.allclose(-cost_fn(), expected, atol=1e-5)
+
+    cb_result = opt.callback_history.get("test_S2gate_coincidence_prob.<locals>.cb")
+    assert set([res["num_trainables"] for res in cb_result]) == {2}
+    assert set([res["lr"] for res in cb_result]) == {0.01}
+    assert [res["cost"] for res in cb_result] == opt.opt_history[1:]
 
 
 @given(i=st.integers(1, 5), k=st.integers(1, 5))

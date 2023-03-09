@@ -115,6 +115,18 @@ def test_get_parameters():
     assert len(constant_params) == 2
     assert all(isinstance(param, Constant) for param in constant_params)
 
+    trainable_params = parametrized.traverse_trainables(owner_tag="foo")
+    assert len(trainable_params) == 4
+    assert all(isinstance(param, Trainable) for param in trainable_params.values())
+    assert all(tag.startswith("foo") for tag in trainable_params)
+    assert all(tag.split("/")[1] in kwargs for tag in trainable_params)
+
+    constant_params = parametrized.traverse_constants()
+    assert len(constant_params) == 2
+    assert all(isinstance(param, Constant) for param in constant_params.values())
+    assert all(tag.startswith("Parametrized") for tag in constant_params)
+    assert all(tag.split("/")[1] in kwargs for tag in constant_params)
+
 
 def test_get_nested_parameters():
     """Test that nested Parametrized objects (e.g. a circuit) return all the trainable
@@ -137,3 +149,13 @@ def test_get_nested_parameters():
 
     assert (s2.phi in trainables) and (bs.theta in trainables)
     assert (s2.r in constants) and (bs.phi in constants)
+
+    trainables = circ.traverse_trainables()
+    constants = circ.traverse_constants("Device")
+    assert len(trainables) == 2
+    assert len(constants) == 2
+    assert all(tag.startswith("Circuit/_ops[") for tag in trainables)
+    assert all(tag.startswith("Device/_ops[") for tag in constants)
+
+    assert (s2.phi in trainables.values()) and (bs.theta in trainables.values())
+    assert (s2.r in constants.values()) and (bs.phi in constants.values())
