@@ -127,40 +127,52 @@ class Parametrized:
         return dict(_traverse_parametrized(self.__dict__, Constant, owner))
 
 
-def _traverse_parametrized(
-    object_: Any, extract_type: Parameter, owner_tag: str = None
-) -> Generator:  # pylint: disable=too-many-branches
+def _traverse_parametrized_untagged(object_: Sequence, extract_type: Parameter) -> Generator:
     """This private method traverses recursively all the object's attributes for objects
     present in ``iterable`` which are instances of ``parameter_type`` or ``Parametrized``
     returning a generator with objects of type ``extract_type``.
     """
+    for obj in object_:
+        if isinstance(
+            obj, (List, Tuple, Mapping)
+        ):  # pylint: disable=isinstance-second-argument-not-valid-type
+            yield from _traverse_parametrized(obj, extract_type)
+        elif isinstance(obj, Parametrized):
+            yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
+        elif isinstance(obj, extract_type):
+            yield obj
 
+
+def _traverse_parametrized_tagged(
+    object_: Mapping, extract_type: Parameter, owner_tag: str = None
+) -> Generator:
+    """This private method traverses recursively, while accumulating tags, all the object's
+    attributes for objects present in ``iterable`` which are instances of ``parameter_type``
+    or ``Parametrized`` returning a generator of 2-tuples of the form (str, ``extract_type``).
+    """
+
+    delim = "/"
+    for k, obj in object_.items():
+        obj_tag = f"{owner_tag}[{k}]" if isinstance(k, int) else f"{owner_tag}{delim}{k}"
+        if isinstance(obj, (Mapping, List, Tuple)):
+            yield from _traverse_parametrized(obj, extract_type, owner_tag=obj_tag)
+        elif isinstance(obj, Parametrized):
+            yield from _traverse_parametrized(obj.__dict__, extract_type, owner_tag=obj_tag)
+        elif isinstance(obj, extract_type):
+            yield obj_tag, obj
+
+
+def _traverse_parametrized(
+    object_: Any, extract_type: Parameter, owner_tag: str = None
+) -> Generator:
     if owner_tag:
-        delim = "/"
-        if isinstance(object_, Sequence):
-            yield from _traverse_parametrized(
-                dict(enumerate(object_)), extract_type, owner_tag=owner_tag
-            )
-        else:
-            for k, obj in object_.items():
-                obj_tag = f"{owner_tag}[{k}]" if isinstance(k, int) else f"{owner_tag}{delim}{k}"
-                if isinstance(obj, (Mapping, List, Tuple)):
-                    yield from _traverse_parametrized(obj, extract_type, owner_tag=obj_tag)
-                elif isinstance(obj, Parametrized):
-                    yield from _traverse_parametrized(obj.__dict__, extract_type, owner_tag=obj_tag)
-                elif isinstance(obj, extract_type):
-                    yield obj_tag, obj
-
+        yield from _traverse_parametrized_tagged(
+            object_=dict(enumerate(object_)) if isinstance(object_, Sequence) else object_,
+            extract_type=extract_type,
+            owner_tag=owner_tag,
+        )
     else:
-        if isinstance(object_, Mapping):
-            yield from _traverse_parametrized(list(object_.values()), extract_type)
-        else:
-            for obj in object_:
-                if isinstance(
-                    obj, (List, Tuple, Mapping)
-                ):  # pylint: disable=isinstance-second-argument-not-valid-type
-                    yield from _traverse_parametrized(obj, extract_type)
-                elif isinstance(obj, Parametrized):
-                    yield from _traverse_parametrized(obj.__dict__.values(), extract_type)
-                elif isinstance(obj, extract_type):
-                    yield obj
+        yield from _traverse_parametrized_untagged(
+            object_=list(object_.values()) if isinstance(object_, Mapping) else object_,
+            extract_type=extract_type,
+        )

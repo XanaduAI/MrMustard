@@ -80,6 +80,7 @@ class Callback:
             self.update_optimizer(callback_result=callback_result, **kwargs)
 
             return callback_result
+        return None
 
 
 @dataclass
@@ -90,7 +91,8 @@ class TensorboardCallback(Callback):
     prefix: Optional[str] = None
     cost_converter: Optional[Callable] = None
     track_grads: bool = False
-    keep_history: bool = False
+    log_objectives: bool = True
+    log_trainables: bool = False
 
     def __post_init__(self):
         self.writter_logdir = None
@@ -112,7 +114,7 @@ class TensorboardCallback(Callback):
         cost,
         trainables,
         **kwargs,
-    ):  # pylint: disable=unused-argument
+    ):  # pylint: disable=unused-argument,arguments-differ
         """Logs costs and parameters to Tensorboard."""
 
         self.init_writer(trainables=trainables)
@@ -144,8 +146,9 @@ class TensorboardCallback(Callback):
             if self.track_grads:
                 tf.summary.scalar(f"grads:{k}", data=np.array(dx.value), step=self.optimizer_step)
 
-        if self.keep_history:
-            return {
-                **obj_scalars,
-                **trainables,
-            }
+        result = obj_scalars if self.log_objectives else {}
+
+        if self.log_trainables:
+            result.update(trainables)
+
+        return result
