@@ -14,30 +14,27 @@
 
 """optimization tests"""
 
-from hypothesis import given, strategies as st
-
 import numpy as np
 import tensorflow as tf
-
-from thewalrus.symplectic import two_mode_squeezing
-
+from hypothesis import given
+from hypothesis import strategies as st
+from mrmustard import settings
+from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
-    Sgate,
-    Rgate,
     BSgate,
-    S2gate,
     Ggate,
     Interferometer,
     RealInterferometer,
+    Rgate,
+    S2gate,
+    Sgate,
 )
-from mrmustard.lab.circuit import Circuit
-from mrmustard.training import Optimizer, Parametrized
-from mrmustard.lab.states import Vacuum, SqueezedVacuum
+from mrmustard.lab.states import SqueezedVacuum, Vacuum
+from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
-from mrmustard import settings
-
-from mrmustard.math import Math
+from mrmustard.training import Optimizer, Parametrized
+from thewalrus.symplectic import two_mode_squeezing
 
 math = Math()
 
@@ -224,33 +221,42 @@ def test_learning_four_mode_Interferometer():
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
     settings.SEED = 6
+    solution_O = np.array(
+        [
+            [0.5, -0.5, 0.5, 0.5],
+            [-0.5, -0.5, -0.5, 0.5],
+            [0.5, 0.5, -0.5, 0.5],
+            [0.5, -0.5, -0.5, -0.5],
+        ]
+    )
+    solution_S = (np.arcsinh(1.0), np.array([0.0, np.pi / 2, -np.pi, -np.pi / 2]))
+    pertubed = (
+        RealInterferometer(orthogonal=solution_O, num_modes=4)
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 1])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[2, 3])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
+    )
+    perturbed_O = pertubed._ops[0].orthogonal.value
+
     ops = [
         Sgate(
-            r=settings.rng.uniform(size=4),
-            phi=settings.rng.normal(size=4),
+            r=solution_S[0] + settings.rng.normal(scale=0.01, size=4),
+            phi=solution_S[1] + settings.rng.normal(scale=0.01, size=4),
             r_trainable=True,
             phi_trainable=True,
         ),
-        RealInterferometer(num_modes=4, orthogonal_trainable=True),
+        RealInterferometer(orthogonal=perturbed_O, num_modes=4, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
-    state_in = Vacuum(num_modes=4)
 
     def cost_fn():
-        amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
-        return (
-            -math.abs(
-                math.sum(
-                    amps[1, 1]
-                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
-                )
-            )
-            ** 2
-        )
+        amps = (Vacuum(num_modes=4) >> circ).ket(cutoffs=[2, 2, 3, 3])
+        return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
 
     opt = Optimizer()
 
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=400)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
