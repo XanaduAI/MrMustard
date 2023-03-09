@@ -19,15 +19,15 @@ with open("mrmustard/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
 
 requirements = [
-    "numpy==1.23.5",
-    "scipy==1.8.0",
-    "numba==0.56.4",
-    "thewalrus==0.19.0",
-    "tensorflow_macos==2.10.0" if platform.system() == "Darwin" else "tensorflow==2.10.1",
-    "tensorflow-probability==0.18.0",
-    "rich==10.15.1",
-    "tqdm==4.62.3",
-    "matplotlib==3.5.0",
+    "numpy",
+    "scipy",
+    "numba",
+    "thewalrus",
+    "tensorflow==2.10.1" if platform.system() != "Darwin" else "tensorflow_macos==2.10.0",
+    "tensorflow-probability",
+    "rich",
+    "tqdm",
+    "matplotlib",
 ]
 
 extra_requirements = {
