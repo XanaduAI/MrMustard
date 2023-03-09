@@ -84,7 +84,7 @@ class Callback:
 
 
 @dataclass
-class TensorboardCallback(Callback):
+class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attributes
     """Callback for enabling Tensorboard tracking of optimizations."""
 
     logdir: str = "./tb_logdir"
