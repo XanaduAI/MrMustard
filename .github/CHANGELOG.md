@@ -1,3 +1,22 @@
+# Release 0.4.1
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+* Unpins package versions in setup.py that got mistakenly pinned in 0.4.0.
+  [(#223)](https://github.com/XanaduAI/MrMustard/pull/223)
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil)
+
+
 # Release 0.4.0
 
 ### New features
