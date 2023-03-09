@@ -237,7 +237,7 @@ def test_learning_four_mode_RealInterferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    perturbed_O = pertubed._ops[0].orthogonal.value
+    perturbed_O = pertubed._ops[0].orthogonal.value  # pylint: disable=protected-access
 
     ops = [
         Sgate(
