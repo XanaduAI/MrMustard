@@ -32,6 +32,7 @@ from mrmustard.lab.gates import (
 )
 from mrmustard.lab.circuit import Circuit
 from mrmustard.training import Optimizer, Parametrized
+from mrmustard.training.callbacks import Callback
 from mrmustard.lab.states import Vacuum, SqueezedVacuum
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -69,7 +70,7 @@ def test_S2gate_coincidence_prob(n):
     expected = 1 / (n + 1) * (n / (n + 1)) ** n
     assert np.allclose(-cost_fn(), expected, atol=1e-5)
 
-    cb_result = opt.callback_history.get("test_S2gate_coincidence_prob.<locals>.cb")
+    cb_result = opt.callback_history.get("cb")
     assert set([res["num_trainables"] for res in cb_result]) == {2}
     assert set([res["lr"] for res in cb_result]) == {0.01}
     assert [res["cost"] for res in cb_result] == opt.opt_history[1:]
@@ -102,8 +103,15 @@ def test_hong_ou_mandel_optimizer(i, k):
         return tf.abs((state_in >> circ).ket(cutoffs=[cutoff] * 4)[i, 1, i + k - 1, k]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
+    opt.minimize(
+        cost_fn,
+        by_optimizing=[circ],
+        max_steps=300,
+        callbacks=[Callback(tag="null_cb", steps_per_call=3)],
+    )
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
+    assert "null_cb" in opt.callback_history
+    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) - 1) // 3
 
 
 def test_learning_two_mode_squeezing():

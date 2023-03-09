@@ -145,18 +145,20 @@ class Optimizer:
         """
         trainables = []
         for i, item in enumerate(trainable_items):
-            owner_tag = f"{root_tag}[{i}]:{item.__class__.__qualname__}"
+            owner_tag = f"{root_tag}[{i}]"
             if isinstance(item, Parametrized):
-                trainables.append(item.traverse_trainables(owner_tag=owner_tag).items())
+                tag = f"{owner_tag}:{item.__class__.__qualname__}"
+                trainables.append(item.traverse_trainables(owner_tag=tag).items())
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above
                 # returns a list, hence ensuring we have a list of lists
+                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
                 trainables.append(
                     [
                         (
-                            owner_tag,
+                            tag,
                             create_parameter(
-                                item, name="from_backend", is_trainable=True, owner=owner_tag
+                                item, name="from_backend", is_trainable=True, owner=tag
                             ),
                         )
                     ]
@@ -222,13 +224,11 @@ class Optimizer:
             callbacks = {}
         elif callable(callbacks):
             callbacks = {
-                callbacks.tag
-                if isinstance(callbacks, Callback)
-                else callbacks.__qualname__: callbacks
+                callbacks.tag if isinstance(callbacks, Callback) else callbacks.__name__: callbacks
             }
         elif isinstance(callbacks, Sequence):
             callbacks = {
-                cb.tag if isinstance(cb, Callback) else cb.__qualname__: cb for cb in callbacks
+                cb.tag if isinstance(cb, Callback) else cb.__name__: cb for cb in callbacks
             }
         elif not isinstance(callbacks, Mapping):
             raise TypeError(
@@ -267,7 +267,7 @@ class Optimizer:
                     tag: (x, dx) for (tag, (x, _)), dx in zip(trainables.items(), new_grads)
                 }
 
-            if cb_result is not None:
+            if cb_result is not None and cb_result:
                 self.callback_history[cb_tag].append(cb_result)
 
         return new_cost_fn, new_grads
