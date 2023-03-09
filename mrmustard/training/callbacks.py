@@ -107,6 +107,7 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         self.root_logdir = Path(self.root_logdir)
 
         # Initialize only when first called to use optimization time rather than init time:
+        self.logdir = None
         self.writter_logdir = None
         self.tb_writer = None
 

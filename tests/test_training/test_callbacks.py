@@ -17,8 +17,6 @@
 import numpy as np
 import tensorflow as tf
 
-from thewalrus.symplectic import two_mode_squeezing
-
 from mrmustard.lab.gates import (
     BSgate,
     S2gate,
