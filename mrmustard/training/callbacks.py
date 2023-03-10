@@ -44,7 +44,7 @@ Examples:
 
     def cost_fn():
         ...
-    
+
     def as_dB(cost):
         delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
         cost_dB = -10 * np.log10(delta**2)
@@ -61,7 +61,7 @@ Examples:
     opt.minimize(cost_fn, max_steps=200, by_optimizing=[...], callbacks=[tb_cb, rolling_cost_cb])
 
     # VScode can be used to open the Tensorboard frontend for live monitoring.
-    
+
     opt.callback_history['TensorboardCallback']
     opt.callback_history['rolling_cost_cb']
 
