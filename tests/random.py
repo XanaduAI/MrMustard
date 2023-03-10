@@ -13,26 +13,27 @@
 # limitations under the License.
 
 import numpy as np
-from hypothesis import given, strategies as st
+from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
+
+from mrmustard import settings
 from mrmustard.lab import (
+    AdditiveNoise,
+    Amplifier,
+    Attenuator,
+    BSgate,
+    CXgate,
+    CZgate,
     Dgate,
-    Sgate,
+    Ggate,
+    Interferometer,
+    MZgate,
     Pgate,
     Rgate,
-    CZgate,
-    CXgate,
-    BSgate,
-    MZgate,
     S2gate,
-    Attenuator,
-    Amplifier,
-    AdditiveNoise,
-    Interferometer,
-    Ggate,
+    Sgate,
     Vacuum,
 )
-from mrmustard import settings
 
 # numbers
 integer32bits = st.integers(min_value=0, max_value=2**31 - 1)
@@ -80,7 +81,9 @@ def none_or_(strategy):
 
 
 # bounds
-bounds_check = lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+def bounds_check(t):
+    return t[0] < t[1] if t[0] is not None and t[1] is not None else True
+
 
 angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(bounds_check)
 positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(bounds_check)
@@ -305,7 +308,7 @@ def displacedsqueezed(draw, num_modes):
     r = array_of_(r, num_modes, num_modes)
     phi = array_of_(angle, num_modes, num_modes)
     x = array_of_(medium_float, num_modes, num_modes)
-    y = array_of_(medium_float, num_modes, num_modes)
+    array_of_(medium_float, num_modes, num_modes)
     return DisplacedSqueezed(r=draw(r), phi=draw(phi), x=draw(x), y=draw(x))
 
 
