@@ -74,7 +74,7 @@ def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
     O = math.new_variable(math.random_orthogonal(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
-        dO_euclidean = (np.random.random((n, n)) + 1j * np.random.random((n, n)),)
+        dO_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_orthogonal([[dO_euclidean, O]], 0.01)
         assert is_unitary(O.numpy()), "training step does not result in a unitary matrix"
         ortho = np.block(
