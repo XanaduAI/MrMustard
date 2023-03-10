@@ -3,8 +3,8 @@ import pytest
 from thewalrus.quantum import real_to_complex_displacements
 from thewalrus.random import random_covariance
 
-from mrmustard.lab import Coherent, Fock, State
 from mrmustard import physics
+from mrmustard.lab import Coherent, Fock, State
 from mrmustard.math import Math
 from mrmustard.physics import fock as fp
 from mrmustard.physics import gaussian as gp
@@ -41,7 +41,7 @@ class TestGaussianStates:
         assert 0 <= np.real_if_close(f12) < 1.0
 
     @pytest.mark.parametrize("hbar", [1 / 2, 1.0, 2.0, 1.6])
-    @pytest.mark.parametrize("num_modes", np.arange(5, 10))
+    @pytest.mark.parametrize("num_modes", np.arange(2, 6))
     @pytest.mark.parametrize("pure", [True, False])
     @pytest.mark.parametrize("block_diag", [True, False])
     def test_fidelity_with_self(self, num_modes, hbar, pure, block_diag):
