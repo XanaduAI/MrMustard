@@ -6,7 +6,7 @@
 
 ### Improvements
 
-* Fixed flaky test for RealInterferometer.
+* Fixed flaky optimization tests and removed tf dependency.
   [(#224)](https://github.com/XanaduAI/MrMustard/pull/224)
 ### Bug fixes
 
