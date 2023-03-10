@@ -13,7 +13,32 @@
   Tensorboard can be most conveniently viewed from VScode.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
 
+  ```python
+  import numpy as np
+  from mrmustard.training import Optimizer, TensorboardCallback
+
+  def cost_fn():
+      ...
+  
+  def as_dB(cost):
+      delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
+      cost_dB = -10 * np.log10(delta**2)
+      return cost_dB
+
+  tb_cb = TensorboardCallback(cost_converter=as_dB, track_grads=True)
+
+  opt = Optimizer(euclidean_lr = 0.001);
+  opt.minimize(cost_fn, max_steps=200, by_optimizing=[...], callbacks=tb_cb)
+
+  # Logs will be stored in `tb_cb.logdir` which defaults to `./tb_logdir/...` but can be customized.
+  # VScode can be used to open the Tensorboard frontend for live monitoring.
+  # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
+  ```
+
 ### Breaking Changes
+
+* The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
+  multiple callbacks to it.
 
 ### Improvements
 

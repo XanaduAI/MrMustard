@@ -75,9 +75,14 @@ class Optimizer:
                 contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
-            callbacks (Callable or List/Dict of Callables): functions that will be executed at each step of
-                the optimization, which takes as arguments the training step (int), the cost and the trainable
-                parameter dict. The return value is stored in self.callback_history.
+            callbacks (:class:`Callback`, `Callable`, or List/Dict of them): callback functions that
+                will be executed at each step of the optimization after backprop but before gradient
+                gets applied. It takes as arguments the optimizer itself, training step (int), the
+                cost value, the cost function, and the trainable parameters (values & grads) dict.
+                The optional returned dict for each step is stored in self.callback_history which
+                is a callback-name-keyed dict with each value a list of such callback result dicts.
+                Learn more about how to use callbacks to have finer control of the optimization
+                process in the :mod:`.callbacks` module.
         """
         callbacks = self._coerce_callbacks(callbacks)
 
@@ -141,7 +146,8 @@ class Optimizer:
     @staticmethod
     def _get_trainable_params(trainable_items, root_tag: str = "optimized"):
         """Traverses all instances of Parametrized or trainable items that belong to the backend
-        and return a tuple of 2 lists: (traversal tags, trainable parameters)
+        and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
+        are traversal paths of collecting all parent tags for reaching each parameter.
         """
         trainables = []
         for i, item in enumerate(trainable_items):
@@ -241,6 +247,7 @@ class Optimizer:
         return callbacks
 
     def _run_callbacks(self, callbacks, cost_fn, cost, trainables):
+        """Iteratively calls all callbacks and applies the necessary updates."""
         new_cost_fn, new_grads = None, None
 
         for cb_tag, cb in callbacks.items():

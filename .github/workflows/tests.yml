@@ -4,6 +4,13 @@ on:
     branches:
       - develop
   pull_request:
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'mrmustard/**'
+      - 'tests/**'
+      - 'setup.py'
+      - 'requirements*'
+      - 'pytest.ini'
 
 jobs:
   pytest:

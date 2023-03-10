@@ -113,18 +113,20 @@ class Parametrized:
         return list(_traverse_parametrized(self.__dict__, Constant))
 
     def traverse_trainables(self, owner_tag=None) -> Mapping[str, Trainable]:
-        """Return a list of trainable parameters within the Parametrized object
-        by recursively traversing the object's fields
+        """Return a dict of trainable parameters within the Parametrized object
+        by recursively traversing the object's fields. The key for each parameter
+        will be the path of tags for reaching it from the top level Parametrized.
         """
         owner_tag = owner_tag or f"{self.__class__.__qualname__}"
         return dict(_traverse_parametrized(self.__dict__, Trainable, owner_tag))
 
-    def traverse_constants(self, owner=None) -> Mapping[str, Constant]:
-        """Return a list of constant parameters within the Parametrized object
-        by recursively traversing the object's fields
+    def traverse_constants(self, owner_tag=None) -> Mapping[str, Constant]:
+        """Return a dict of constant parameters within the Parametrized object
+        by recursively traversing the object's fields. The key for each parameter
+        will be the path of tags for reaching it from the top level Parametrized.
         """
-        owner = owner or f"{self.__class__.__qualname__}"
-        return dict(_traverse_parametrized(self.__dict__, Constant, owner))
+        owner_tag = owner_tag or f"{self.__class__.__qualname__}"
+        return dict(_traverse_parametrized(self.__dict__, Constant, owner_tag))
 
 
 def _traverse_parametrized_untagged(object_: Sequence, extract_type: Parameter) -> Generator:
@@ -165,6 +167,10 @@ def _traverse_parametrized_tagged(
 def _traverse_parametrized(
     object_: Any, extract_type: Parameter, owner_tag: str = None
 ) -> Generator:
+    """The recursive parameter traversal to be used for both tagged and untagged collection
+    Depending on if the argument `owner_tag` is provided.
+    """
+
     if owner_tag:
         yield from _traverse_parametrized_tagged(
             object_=dict(enumerate(object_)) if isinstance(object_, Sequence) else object_,

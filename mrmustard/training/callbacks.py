@@ -12,7 +12,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains the implementation of common callbacks for optimizations.
+"""This module contains the implementation of callback functionalities for optimizations.
+
+Callbacks allow users to have finer control over the optimization process by executing
+predefined routines as optimization progresses. Even though the :meth:`Optimizer.minimize` accepts
+`Callable` functions directly, the :class:`Callback` class modularizes the logic and makes it
+easier for users to inherit from it and come up with their own custom callbacks.
+
+Things you can do with callbacks:
+
+* Logging custom metrics.
+* Tracking parameters and costs with Tensorboard.
+* Scheduling learning rates.
+* Modifying the gradient update that gets applied.
+* Updating cost_fn to alter the optimization landscape in our favour.
+* Adding some RL into the optimizer.
+* ...
+
+Builtin callbacks:
+
+* :class:`Callback`: The base class, to be used for building custom callbacks.
+* :class:`TensorboardCallback`: Tracks costs, parameter values and gradients in Tensorboard.
+
+Examples:
+=========
+
+.. code-block::
+
+    import numpy as np
+    from mrmustard.training import Optimizer, TensorboardCallback
+
+    def cost_fn():
+        ...
+    
+    def as_dB(cost):
+        delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
+        cost_dB = -10 * np.log10(delta**2)
+        return cost_dB
+
+    tb_cb = TensorboardCallback(cost_converter=as_dB, track_grads=True)
+
+    def rolling_cost_cb(optimizer, cost, **kwargs):
+        return {
+            'rolling_cost': np.mean(optimizer.opt_history[-10:] + [cost]),
+        }
+
+    opt = Optimizer(euclidean_lr = 0.001);
+    opt.minimize(cost_fn, max_steps=200, by_optimizing=[...], callbacks=[tb_cb, rolling_cost_cb])
+
+    # VScode can be used to open the Tensorboard frontend for live monitoring.
+    
+    opt.callback_history['TensorboardCallback']
+    opt.callback_history['rolling_cost_cb']
+
 """
 
 from dataclasses import dataclass
@@ -29,9 +81,31 @@ math = Math()
 
 @dataclass
 class Callback:
-    """Base callback class for optimizers."""
+    """Base callback class for optimizers. Users can inherit from this class and define the
+    following custom logic:
 
+    * `.trigger`:
+        Custom triggering condition, other than the regular schedule set by `step_per_call`.
+    * `.call`:
+        The main routine to be customized.
+    * `.update_cost_fn`:
+        The custom cost_fn updater, which is expected to return a new cost_fn callable to
+        replace the original one passed to the optimizer.
+    * `.update_grads`:
+        The custom grads modifyer, which is expected to return a list of parameter gradients
+        after modification, to be applied to the parameters.
+    * `.update_optimizer`:
+        The custom optimizer updater, which is expected to modify the optimizer inplace for
+        things like scheduling learning rates.
+
+    """
+
+    #: Custom tag for a callball instance to be used as keys in `Optimizer.callback_history`.
+    #: Defaults to the class name.
     tag: str = None
+
+    #: Sets calling frequency of this callback. Defaults to once per optimization step.
+    #: Use higher values to reduce overhead.
     steps_per_call: int = 1
 
     def __post_init__(self):
@@ -92,14 +166,43 @@ class Callback:
 
 @dataclass
 class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attributes
-    """Callback for enabling Tensorboard tracking of optimizations."""
+    """Callback for enabling Tensorboard tracking of optimization progresses.
 
+    Things tracked:
+
+    * the cost
+    * the transformed cost, if a `cost_converter` is provided
+    * trainable parameter values
+    * trainable parameter gradients (if `track_grads` is `True`)
+
+    To start the Tensorboard frontend, either:
+
+    * use VSCode: F1 -> Tensorboard -> select your `root_logdir/experiment_tag`.
+    * use command line: `tensorboard --logdir=root_logdir/experiment_tag` and open link in browser.
+
+
+    """
+
+    #: The root logdir for tensorboard logging.
     root_logdir: Union[str, Path] = "./tb_logdir"
+
+    #: The tag for experiment subfolder to group similar optimizations together for easy comparisons.
+    #: Defaults to the hash of all trainable variables' names.
     experiment_tag: Optional[str] = None
+
+    #: Extra prefix to name the optimization experiment.
     prefix: Optional[str] = None
+
+    #: Transformation on cost for the purpose of better interpretation.
     cost_converter: Optional[Callable] = None
+
+    #: Whether to track gradients as well as the values for trainable parameters.
     track_grads: bool = False
+
+    #: Whether to return objectives in the callback results to be stored.
     log_objectives: bool = True
+
+    #: Whether to return parameter values in the callback results to be stored.
     log_trainables: bool = False
 
     def __post_init__(self):
@@ -119,10 +222,13 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
             ).hexdigest()
             self.experiment_tag = self.experiment_tag or f"experiment-{trainable_key_hash[:7]}"
             self.logdir = self.root_logdir / self.experiment_tag
-            self.prefix = self.prefix or f"optim_{len(trainables)}_params"
+            self.prefix = self.prefix or "optim"
+            existing_exp = [path for path in self.logdir.glob("*") if path.is_dir()]
             optim_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-            self.writter_logdir = self.logdir / (f"{self.prefix}-{optim_timestamp}")
+            self.writter_logdir = self.logdir / (
+                f"{self.prefix}-{len(existing_exp):03d}-{optim_timestamp}"
+            )
             self.tb_writer = tf.summary.create_file_writer(str(self.writter_logdir))
             self.tb_writer.set_as_default()
 
