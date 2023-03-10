@@ -59,12 +59,7 @@ def test_update_unitary(n):
     """Testing the update of unitary matrix remains to be unitary"""
     U = math.new_variable(unitary_group.rvs(dim=n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
-        dU_euclidean = math.new_variable(
-            np.random.random((n, n)) + 1j * np.random.random((n, n)),
-            name=None,
-            dtype="complex128",
-            bounds=None,
-        )
+        dU_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_unitary([[dU_euclidean, U]], 0.01)
         assert is_unitary(U.numpy()), "training step does not result in a unitary matrix"
         sym = np.block(
@@ -79,12 +74,7 @@ def test_update_orthogonal(n):
     """Testing the update of orthogonal matrix remains to be orthogonal"""
     O = math.new_variable(math.random_orthogonal(n), name=None, dtype="complex128", bounds=None)
     for _ in range(20):
-        dO_euclidean = math.new_variable(
-            np.random.random((n, n)) + 1j * np.random.random((n, n)),
-            name=None,
-            dtype="complex128",
-            bounds=None,
-        )
+        dO_euclidean = (np.random.random((n, n)) + 1j * np.random.random((n, n)),)
         update_orthogonal([[dO_euclidean, O]], 0.01)
         assert is_unitary(O.numpy()), "training step does not result in a unitary matrix"
         ortho = np.block(
