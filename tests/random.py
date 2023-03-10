@@ -18,13 +18,16 @@ from hypothesis.extra.numpy import arrays
 
 from mrmustard import settings
 from mrmustard.lab import (
+    TMSV,
     AdditiveNoise,
     Amplifier,
     Attenuator,
     BSgate,
+    Coherent,
     CXgate,
     CZgate,
     Dgate,
+    DisplacedSqueezed,
     Ggate,
     Interferometer,
     MZgate,
@@ -32,6 +35,8 @@ from mrmustard.lab import (
     Rgate,
     S2gate,
     Sgate,
+    SqueezedVacuum,
+    Thermal,
     Vacuum,
 )
 
@@ -297,19 +302,19 @@ def n_mode_unitary_gate(draw, num_modes=None):
 @st.composite
 def squeezed_vacuum(draw, num_modes):
     r"""Return a random squeezed vacuum state."""
-    r = array_of_(r, num_modes, num_modes)
+    r_vec = array_of_(r, num_modes, num_modes)
     phi = array_of_(angle, num_modes, num_modes)
-    return SqueezedVacuum(r=draw(r), phi=draw(phi))
+    return SqueezedVacuum(r=draw(r_vec), phi=draw(phi))
 
 
 @st.composite
 def displacedsqueezed(draw, num_modes):
     r"""Return a random displaced squeezed state."""
-    r = array_of_(r, num_modes, num_modes)
+    r_vec = array_of_(r, num_modes, num_modes)
     phi = array_of_(angle, num_modes, num_modes)
     x = array_of_(medium_float, num_modes, num_modes)
-    array_of_(medium_float, num_modes, num_modes)
-    return DisplacedSqueezed(r=draw(r), phi=draw(phi), x=draw(x), y=draw(x))
+    y = array_of_(medium_float, num_modes, num_modes)
+    return DisplacedSqueezed(r=draw(r_vec), phi=draw(phi), x=draw(x), y=draw(y))
 
 
 @st.composite
@@ -321,7 +326,7 @@ def coherent(draw, num_modes):
 
 
 @st.composite
-def tmsv(draw):
+def tmsv(draw, phi):
     r"""Return a random two-mode squeezed vacuum state."""
     return TMSV(r=draw(r), phi=draw(phi))
 
