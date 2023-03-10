@@ -31,18 +31,15 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
-
-from mrmustard.physics.wavefunction import oscillator_eigenstates
-
 from mrmustard.physics import fock, gaussian
+from mrmustard.physics.wavefunction import oscillator_eigenstates
 from mrmustard.typing import (
-    RealMatrix,
-    RealVector,
-    RealTensor,
     ComplexTensor,
+    RealMatrix,
+    RealTensor,
+    RealVector,
 )
 from mrmustard.utils import graphics
-
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -310,31 +307,30 @@ class State:
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
         return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
 
-    def wavefunctionQ(self, q: Sequence[float]):
+    def wavefunctionQ(self, qs: Sequence[Sequence[float]]):
         r"""Returns the position wavefunction of the state at a vector of positions.
 
         Args:
-            q (Sequence[float]): the position vector
+            qs (Sequence[Sequence[float]]): a sequence of positions for each mode
 
         Returns:
-            Tensor: the wavefunction
+            Tensor: the wavefunction at the given positions
         """
-        if self.num_modes > 1:
-            raise NotImplementedError("wavefunction only implemented for single mode states")
 
-        h_n = oscillator_eigenstates(q, self.cutoffs[0])
+        krausses = [math.transpose(oscillator_eigenstates(q, c)) for q, c in zip(qs, self.cutoffs)]
 
         if self.is_mixed:
             dm = self.dm()
-            wavefunction = math.einsum(
-                "ar,ab,bs->rs", h_n, dm, h_n
-            )  # NOTE: the first h_n should be conjugated but it's real
+            for i, h_n in enumerate(krausses):
+                dm = fock.apply_kraus_to_dm(h_n, dm, [i])
+            return dm
         else:
             ket = self.ket()
-            wavefunction = math.tensordot(ket, h_n, axes=[[0], [0]])
-        return wavefunction
+            for i, h_n in enumerate(krausses):
+                ket = fock.apply_kraus_to_ket(h_n, ket, [i])
+            return ket
 
-    def wavefunctionP(self, p: Sequence[float]):
+    def wavefunctionP(self, ps: Sequence[Sequence[float]]):
         r"""Returns the momentum wavefunction of the state at a vector of momenta.
 
         Args:
@@ -343,20 +339,27 @@ class State:
         Returns:
             Tensor: the wavefunction
         """
-        if self.num_modes > 1:
-            raise NotImplementedError("wavefunction only implemented for single mode states")
 
-        h_n_fourier = math.pow(math.astensor(1j), math.arange(self.cutoffs[0]))[
-            :, None
-        ] * math.cast(oscillator_eigenstates(p, self.cutoffs[0]), "complex128")
+        # krausses = math.pow(math.astensor(1j), math.arange(self.cutoffs[0]))[:, None] * math.cast(
+        #     oscillator_eigenstates(p, self.cutoffs[0]), "complex128"
+        # )
+
+        krausses = [math.transpose(oscillator_eigenstates(p, c)) for p, c in zip(ps, self.cutoffs)]
+        krausses = [
+            math.pow(math.astensor(1j), math.arange(c))[None, :] * math.cast(k, "complex128")
+            for k, c in zip(krausses, self.cutoffs)
+        ]
 
         if self.is_mixed:
             dm = self.dm()
-            wavefunction = math.einsum("ar,ab,bs->rs", h_n_fourier, dm, h_n_fourier)
+            for i, h_n in enumerate(krausses):
+                dm = fock.apply_kraus_to_dm(h_n, dm, [i])
+            return dm
         else:
             ket = self.ket()
-            wavefunction = math.tensordot(ket, h_n_fourier, axes=[[0], [0]])
-        return wavefunction
+            for i, h_n in enumerate(krausses):
+                ket = fock.apply_kraus_to_ket(h_n, ket, [i])
+            return ket
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
