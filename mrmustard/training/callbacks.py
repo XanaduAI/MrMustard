@@ -100,7 +100,7 @@ class Callback:
 
     """
 
-    #: Custom tag for a callball instance to be used as keys in `Optimizer.callback_history`.
+    #: Custom tag for a callback instance to be used as keys in `Optimizer.callback_history`.
     #: Defaults to the class name.
     tag: str = None
 
