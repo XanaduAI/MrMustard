@@ -20,7 +20,14 @@ from mrmustard.training import Parametrized
 from mrmustard.math import Math
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import BSgate, S2gate
-from mrmustard.training.parameter import Constant, Orthogonal, Euclidean, Symplectic, Trainable
+from mrmustard.training.parameter import (
+    Constant,
+    Unitary,
+    Orthogonal,
+    Euclidean,
+    Symplectic,
+    Trainable,
+)
 
 math = Math()
 
@@ -39,7 +46,7 @@ def test_attribute_assignment(kwargs):
         assert instance_attributes[f"{name}"].name == name
 
 
-@pytest.mark.parametrize("trainable_class", (Euclidean, Orthogonal, Symplectic))
+@pytest.mark.parametrize("trainable_class", (Euclidean, Orthogonal, Symplectic, Unitary))
 @pytest.mark.parametrize("bounds", [None, (0, 10)])
 def test_attribute_from_backend_type_assignment(trainable_class, bounds):
     """Test that arguments that are trainable get defined on the backend,
@@ -95,16 +102,30 @@ def test_get_parameters():
         "euclidian_attribute_trainable": True,
         "orthogonal_attribute": math.new_variable(4, None, "orthogonal_attribute"),
         "orthogonal_attribute_trainable": True,
+        "unitary_attribute": math.new_variable(4, None, "unitary_attribute"),
+        "unitary_attribute_trainable": True,
     }
     parametrized = Parametrized(**kwargs)
 
     trainable_params = parametrized.trainable_parameters
-    assert len(trainable_params) == 3
+    assert len(trainable_params) == 4
     assert all(isinstance(param, Trainable) for param in trainable_params)
 
     constant_params = parametrized.constant_parameters
     assert len(constant_params) == 2
     assert all(isinstance(param, Constant) for param in constant_params)
+
+    trainable_params = parametrized.traverse_trainables(owner_tag="foo")
+    assert len(trainable_params) == 4
+    assert all(isinstance(param, Trainable) for param in trainable_params.values())
+    assert all(tag.startswith("foo") for tag in trainable_params)
+    assert all(tag.split("/")[1] in kwargs for tag in trainable_params)
+
+    constant_params = parametrized.traverse_constants()
+    assert len(constant_params) == 2
+    assert all(isinstance(param, Constant) for param in constant_params.values())
+    assert all(tag.startswith("Parametrized") for tag in constant_params)
+    assert all(tag.split("/")[1] in kwargs for tag in constant_params)
 
 
 def test_get_nested_parameters():
@@ -128,3 +149,13 @@ def test_get_nested_parameters():
 
     assert (s2.phi in trainables) and (bs.theta in trainables)
     assert (s2.r in constants) and (bs.phi in constants)
+
+    trainables = circ.traverse_trainables()
+    constants = circ.traverse_constants("Device")
+    assert len(trainables) == 2
+    assert len(constants) == 2
+    assert all(tag.startswith("Circuit/_ops[") for tag in trainables)
+    assert all(tag.startswith("Device/_ops[") for tag in constants)
+
+    assert (s2.phi in trainables.values()) and (bs.theta in trainables.values())
+    assert (s2.r in constants.values()) and (bs.phi in constants.values())

@@ -17,9 +17,10 @@
 """
 This module contains the implementation of a tensor wrapper class.
 """
-
-from typing import List, Optional, Union
 import string
+from numbers import Number
+from typing import List, Optional, Union
+
 from mrmustard.math import Math
 
 math = Math()
@@ -29,7 +30,8 @@ class MMTensor:
     r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API)."""
 
     def __init__(self, array, axis_labels=None):
-        # If the input array is an MMTensor, use its tensor and axis labels (or the provided ones if specified)
+        # If the input array is an MMTensor,
+        # use its tensor and axis labels (or the provided ones if specified)
         if isinstance(array, MMTensor):
             self.tensor = array.tensor
             self.axis_labels = axis_labels or array.axis_labels
@@ -46,24 +48,71 @@ class MMTensor:
             raise ValueError("The number of axis labels must be equal to the number of axes.")
 
     def __array__(self):
-        """
-        Implement the NumPy array interface.
-        """
+        r"""Implement the NumPy array interface."""
         return self.tensor
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-        """
+        r"""
         Implement the NumPy ufunc interface.
         """
         if method == "__call__":
+            inputs = [i.tensor if isinstance(i, MMTensor) else i for i in inputs]
             return MMTensor(ufunc(*inputs, **kwargs), self.axis_labels)
         else:
-            return NotImplemented
+            return NotImplemented(f"Cannot call {method} on {ufunc}.")
+
+    def __mul__(self, other):
+        r"""implement the * operator"""
+        if isinstance(other, Number):
+            return MMTensor(self.tensor * other, self.axis_labels)
+        if isinstance(other, MMTensor):
+            self.check_axis_labels_match(other)
+            return MMTensor(self.tensor * other.tensor, self.axis_labels)
+        return NotImplemented(f"Cannot multiply {type(self)} and {type(other)}")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        r"""implement the / operator"""
+        if isinstance(other, MMTensor):
+            self.check_axis_labels_match(other)
+            return MMTensor(self.tensor / other.tensor, self.axis_labels)
+        try:
+            return MMTensor(self.tensor / other, self.axis_labels)
+        except TypeError:
+            return NotImplemented(f"Cannot divide {type(self)} by {type(other)}")
+
+    def __add__(self, other):
+        r"""implement the + operator"""
+        if isinstance(other, MMTensor):
+            self.check_axis_labels_match(other)
+            return MMTensor(self.tensor + other.tensor, self.axis_labels)
+        try:
+            return MMTensor(self.tensor + other, self.axis_labels)
+        except TypeError:
+            return NotImplemented(f"Cannot add {type(self)} and {type(other)}")
+
+    def __sub__(self, other):
+        return self.__add__(-other)
+
+    def __neg__(self):
+        return MMTensor(-self.tensor, self.axis_labels)
+
+    def check_axis_labels_match(self, other):
+        r"""
+        Check that the axis labels of *this* tensor match those of another tensor.
+        """
+        if self.axis_labels != other.axis_labels:
+            raise ValueError(
+                f"Axis labels must match (got {self.axis_labels} and {other.axis_labels})"
+            )
+
+    def __radd__(self, other):
+        return self.__add__(other)
 
     def __matmul__(self, other):
-        """
-        Overload the @ operator to perform tensor contractions.
-        """
+        r"""Overload the @ operator to perform tensor contractions."""
         # if not isinstance(other, MMTensor):
         #     raise TypeError(f"Cannot contract with object of type {type(other)}")
 
@@ -88,8 +137,8 @@ class MMTensor:
         )
 
     def contract(self, relabeling: Optional[List[str]] = None):
-        """
-        Contract the tensor along the specified indices using einsum.
+        r"""
+        Contract *this* tensor along the specified indices using einsum.
 
         Args:
             relabeling (list[str]): An optional list of new axis labels.
@@ -110,61 +159,60 @@ class MMTensor:
                 unique_labels.append(label)
         repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
 
-        # Turn labels into consecutive ascii lower-case letters, with same letters corresponding to the same label
+        # Turn labels into consecutive ascii lower-case letters,
+        # with same letters corresponding to the same label
         label_map = {label: string.ascii_lowercase[i] for i, label in enumerate(unique_labels)}
         labels = [label_map[label] for label in self.axis_labels]
 
         # create einsum string from labels
         einsum_str = "".join(labels)
 
-        # Contract the tensor and assign new axis labels (unique labels except for the contracted ones)
+        # Contract the tensor and assign new axis labels (unique except for the contracted ones)
         return MMTensor(
             math.einsum(einsum_str, self.tensor),
             [label for label in unique_labels if label not in repeated],
         )
 
     def transpose(self, perm: Union[List[int], List[str]]):
-        """
-        Transpose the tensor using a list of axis labels or indices.
-        """
+        """Transpose the tensor using a list of axis labels or indices."""
         if set(perm) == set(self.axis_labels):
             perm = [self.axis_labels.index(label) for label in perm]
         return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
 
     def reshape(self, shape, axis_labels=None):
-        """
-        Reshape the tensor. Allows to change the axis labels.
-        """
+        """Reshape the tensor. Allows to change the axis labels."""
         return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
 
     def __getitem__(self, indices):
-        """
-        Implement indexing into the tensor.
-        """
-        if isinstance(indices, tuple):
-            axis_labels = []
-            for i, ind in enumerate(indices):
-                if ind is Ellipsis and i == 0:
-                    axis_labels += self.axis_labels[:i]
-                elif isinstance(ind, slice):
-                    axis_labels += self.axis_labels[i]
-                elif ind is Ellipsis and i > 0:
-                    axis_labels += self.axis_labels[i:]
-                    break
-            return MMTensor(self.tensor[indices], axis_labels)
-        else:
-            # Index along a single axis and take care of the axis labels
-            return MMTensor(
-                self.tensor[indices], self.axis_labels[:indices] + self.axis_labels[indices + 1 :]
-            )
+        """Implement indexing into the tensor."""
+        indices = indices if isinstance(indices, tuple) else (indices,)
+        axis_labels = self.axis_labels.copy()
+        offset = 0
+        for i, ind in enumerate(indices):
+            if isinstance(ind, int):
+                axis_labels.pop(i + offset)
+                offset -= 1
+            elif ind is Ellipsis and i == 0:
+                offset = len(self.tensor.shape) - len(indices)
+            elif ind is Ellipsis and i > 0:
+                break
+
+        return MMTensor(self.tensor[indices], axis_labels)
 
     def __repr__(self):
         return f"MMTensor({self.tensor}, {self.axis_labels})"
 
     def __getattribute__(self, name):
-        """
-        Implement the underlying array's methods.
-        """
+        r"""
+        Overrides built-in getattribute method for fallback attribute lookup.
+        Tries to get attribute from self, then from self.tensor
+
+        Args:
+            self (object): instance
+            name (str): attribute name
+
+        Returns:
+            attribute value or raises AttributeError"""
         try:
             return super().__getattribute__(name)
         except AttributeError:

@@ -17,23 +17,26 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.types import (
-    Array,
-    Iterable,
-    List,
-    Matrix,
-    Optional,
-    Sequence,
-    Tensor,
-    Union,
-    Vector,
+from mrmustard.typing import (
+    RealMatrix,
+    RealVector,
+    RealTensor,
+    ComplexTensor,
 )
 from mrmustard.utils import graphics
 
@@ -49,12 +52,13 @@ class State:
 
     def __init__(
         self,
-        cov: Matrix = None,
-        means: Vector = None,
-        eigenvalues: Array = None,
-        symplectic: Matrix = None,
-        ket: Array = None,
-        dm: Array = None,
+        cov: RealMatrix = None,
+        means: RealVector = None,
+        eigenvalues: RealVector = None,
+        symplectic: RealMatrix = None,
+        ket: ComplexTensor = None,
+        dm: ComplexTensor = None,
+        modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         modes: Optional[int] = None,
         _norm: float = 1.0,
@@ -69,11 +73,11 @@ class State:
         Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
-            eigenvalues (Array): the eigenvalues of the covariance matrix
+            eigenvalues (Tensor): the eigenvalues of the covariance matrix
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
-            fock (Array): the Fock representation
-            cutoffs (Sequence[int], default=None): set the cutoff dimensions of the state even if it is not a Fock state
-            modes (Optional[int], default=None): set the modes for the State. If set, the state is wrapped in an Operation.
+            fock (Tensor): the Fock representation
+            modes (optional, Sequence[int]): the modes in which the state is defined
+            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
@@ -155,17 +159,17 @@ class State:
         return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
-    def means(self) -> Optional[Vector]:
+    def means(self) -> Optional[RealVector]:
         r"""Returns the means vector of the state."""
         return self._means
 
     @property
-    def cov(self) -> Optional[Matrix]:
+    def cov(self) -> Optional[RealMatrix]:
         r"""Returns the covariance matrix of the state."""
         return self._cov
 
     @property
-    def number_stdev(self) -> Vector:
+    def number_stdev(self) -> RealVector:
         r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
         if self.is_gaussian:
             return math.sqrt(math.diag_part(self.number_cov))
@@ -180,10 +184,7 @@ class State:
         if self._cutoffs is not None:
             return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
         if self._ket is None and self._dm is None:
-            return fock.autocutoffs(
-                self.number_stdev, self.number_means
-            )  # TODO: move autocutoffs in gaussian.py and pass cov, means to it
-
+            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
         return list(
             self.fock.shape[: self.num_modes]
         )  # NOTE: triggered only if the fock representation already exists
@@ -199,7 +200,7 @@ class State:
         return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
 
     @property
-    def fock(self) -> Array:
+    def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
@@ -214,7 +215,7 @@ class State:
         return self._ket if self._ket is not None else self._dm
 
     @property
-    def number_means(self) -> Vector:
+    def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
         if self.is_gaussian:
             return gaussian.number_means(self.cov, self.means, settings.HBAR)
@@ -222,7 +223,7 @@ class State:
         return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
 
     @property
-    def number_cov(self) -> Matrix:
+    def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
         if not self.is_gaussian:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
@@ -244,7 +245,7 @@ class State:
             return norm**2
         return norm
 
-    def ket(self, cutoffs: List[int] = None) -> Optional[Tensor]:
+    def ket(self, cutoffs: List[int] = None) -> Optional[ComplexTensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
         Args:
@@ -281,7 +282,7 @@ class State:
                 return padded[tuple(slice(s) for s in cutoffs)]
         return self._ket[tuple(slice(s) for s in cutoffs)]
 
-    def dm(self, cutoffs: List[int] = None) -> Tensor:
+    def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
 
         Args:
@@ -313,7 +314,7 @@ class State:
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
         return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
 
-    def fock_probabilities(self, cutoffs: Sequence[int]) -> Tensor:
+    def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
 
         If the state is pure, they are the absolute value squared of the ket amplitudes.
@@ -323,7 +324,7 @@ class State:
             cutoffs List[int]: the cutoff dimensions for each mode
 
         Returns:
-            Array: the probabilities
+            Tensor: the probabilities
         """
         if self._fock_probabilities is None:
             if self.is_mixed:
@@ -345,9 +346,11 @@ class State:
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
+        # import pdb
+
+        # pdb.set_trace()
         if isinstance(other, State):
             return self._project_onto_state(other)
-
         try:
             return other.dual(self)
         except AttributeError as e:
@@ -488,8 +491,8 @@ class State:
             cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
         )
 
-    def __getitem__(self, item):
-        "setting the modes of a state (same API as `Transformation`)"
+    def __getitem__(self, item) -> State:
+        "setting the modes of a state (same API of `Transformation`)"
         if isinstance(item, int):
             item = [item]
         elif isinstance(item, Iterable):
@@ -503,7 +506,7 @@ class State:
         self._modes = item
         return self
 
-    def get_modes(self, item):
+    def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""
         if isinstance(item, int):
             item = [item]
@@ -529,7 +532,7 @@ class State:
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:
             return False
@@ -550,7 +553,7 @@ class State:
                 self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
             )
 
-    def __rshift__(self, other):
+    def __rshift__(self, other: Transformation) -> State:
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
         if issubclass(other.__class__, State):
             raise TypeError(

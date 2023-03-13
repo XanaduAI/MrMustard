@@ -19,9 +19,10 @@ This module contains functions for performing calculations on Fock states.
 """
 
 from functools import lru_cache
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Optional
 
 import numpy as np
+from numba import jit
 
 from mrmustard import settings
 from mrmustard.math import Math
@@ -33,9 +34,12 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.types import Matrix, Scalar, Tensor, Vector
+
+from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
+from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
+SQRT = np.sqrt(np.arange(1e6))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~
@@ -56,28 +60,34 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
-def autocutoffs(
-    number_stdev: Matrix, number_means: Vector, max_cutoff: int = None, min_cutoff: int = None
-) -> Tuple[int, ...]:
-    r"""Returns the autocutoffs of a Wigner state.
+def autocutoffs(cov: Matrix, means: Vector, probability: float):
+    r"""Returns the cutoffs of a Gaussian state by computing the 1-mode marginals until
+    the probability of the marginal is less than ``probability``.
 
     Args:
-        number_stdev: the photon number standard deviation in each mode
-            (i.e. the square root of the diagonal of the covariance matrix)
-        number_means: the photon number means vector
-        max_cutoff: the maximum cutoff
+        cov: the covariance matrix
+        means: the means vector
+        probability: the cutoff probability
 
     Returns:
         Tuple[int, ...]: the suggested cutoffs
     """
-    if max_cutoff is None:
-        max_cutoff = settings.AUTOCUTOFF_MAX_CUTOFF
-    if min_cutoff is None:
-        min_cutoff = settings.AUTOCUTOFF_MIN_CUTOFF
-    autocutoffs = settings.AUTOCUTOFF_MIN_CUTOFF + math.cast(
-        number_means + number_stdev * settings.AUTOCUTOFF_STDEV_FACTOR, "int32"
-    )
-    return [int(n) for n in math.clip(autocutoffs, min_cutoff, max_cutoff)]
+    M = len(means) // 2
+    cutoffs = []
+    for i in range(M):
+        cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
+        means_i = np.array([means[i], means[i + M]])
+        # apply 1-d recursion until probability is less than 0.99
+        A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
+        diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
+        # find at what index in the cumsum the probability is more than 0.99
+        for i, val in enumerate(np.cumsum(diag)):
+            if val > probability:
+                cutoffs.append(max(i + 1, settings.AUTOCUTOFF_MIN_CUTOFF))
+                break
+        else:
+            cutoffs.append(settings.AUTOCUTOFF_MAX_CUTOFF)
+    return cutoffs
 
 
 def wigner_to_fock_state(
@@ -233,8 +243,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
     r"""Computes the fidelity between two states in Fock representation."""
     if a_ket and b_ket:
         min_cutoffs = [slice(min(a, b)) for a, b in zip(state_a.shape, state_b.shape)]
-        state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs]
+        state_a = state_a[tuple(min_cutoffs)]
+        state_b = state_b[tuple(min_cutoffs)]
         return math.abs(math.sum(math.conj(state_a) * state_b)) ** 2
 
     if a_ket:
@@ -242,8 +252,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             slice(min(a, b))
             for a, b in zip(state_a.shape, state_b.shape[: len(state_b.shape) // 2])
         ]
-        state_a = state_a[min_cutoffs]
-        state_b = state_b[min_cutoffs * 2]
+        state_a = state_a[tuple(min_cutoffs)]
+        state_b = state_b[tuple(min_cutoffs * 2)]
         a = math.reshape(state_a, -1)
         return math.real(
             math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
@@ -254,8 +264,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             slice(min(a, b))
             for a, b in zip(state_a.shape[: len(state_a.shape) // 2], state_b.shape)
         ]
-        state_a = state_a[min_cutoffs * 2]
-        state_b = state_b[min_cutoffs]
+        state_a = state_a[tuple(min_cutoffs * 2)]
+        state_b = state_b[tuple(min_cutoffs)]
         b = math.reshape(state_b, -1)
         return math.real(
             math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
@@ -263,11 +273,25 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
 
     # mixed state
     # Richard Jozsa (1994) Fidelity for Mixed Quantum States, Journal of Modern Optics, 41:12, 2315-2323, DOI: 10.1080/09500349414552171
-    return (
-        math.trace(
-            math.sqrtm(math.matmul(math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a)))
+
+    # trim states to have same cutoff
+    min_cutoffs = [
+        slice(min(a, b))
+        for a, b in zip(
+            state_a.shape[: len(state_a.shape) // 2], state_b.shape[: len(state_b.shape) // 2]
         )
-        ** 2
+    ]
+    state_a = state_a[tuple(min_cutoffs * 2)]
+    state_b = state_b[tuple(min_cutoffs * 2)]
+    return math.abs(
+        (
+            math.trace(
+                math.sqrtm(
+                    math.matmul(math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a))
+                )
+            )
+            ** 2
+        )
     )
 
 
@@ -743,7 +767,7 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 
 def quadrature_distribution(
-    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: float = settings.HBAR
+    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: Optional[float] = None
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -778,6 +802,7 @@ def quadrature_distribution(
         )
 
     if x is None:
+        hbar = hbar or settings.HBAR
         x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
@@ -791,7 +816,7 @@ def quadrature_distribution(
 
 
 def sample_homodyne(
-    state: Tensor, quadrature_angle: float = 0.0, hbar: float = settings.HBAR
+    state: Tensor, quadrature_angle: float = 0.0, hbar: Optional[float] = None
 ) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
@@ -799,7 +824,6 @@ def sample_homodyne(
     Args:
         state (Tensor): ket or density matrix of the state being measured
         quadrature_angle (float): angle of the quadrature distribution
-        hbar: value of hbar
 
     Returns:
         tuple(float, float): outcome and probability of the outcome
@@ -810,7 +834,7 @@ def sample_homodyne(
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar)
+    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar or settings.HBAR)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution
@@ -820,3 +844,103 @@ def sample_homodyne(
     probability_sample = math.gather(probs, sample_idx)
 
     return homodyne_sample, probability_sample
+
+
+@jit(nopython=True)
+def _displacement(r, phi, cutoff, dtype=np.complex128):  # pragma: no cover
+    r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
+    Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
+
+    Args:
+        r (float): displacement magnitude
+        phi (float): displacement angle
+        cutoff (int): Fock ladder cutoff
+        dtype (data type): Specifies the data type used for the calculation
+
+    Returns:
+        array[complex]: matrix representing the displacement operation.
+    """
+    D = np.zeros((cutoff, cutoff), dtype=dtype)
+    rng = np.arange(cutoff)
+    rng[0] = 1
+    log_k_fac = np.cumsum(np.log(rng))
+    for n_minus_m in range(cutoff):
+        m_max = cutoff - n_minus_m
+        logL = np.log(_laguerre(r**2.0, m_max, n_minus_m))
+        for m in range(m_max):
+            n = n_minus_m + m
+            D[n, m] = np.exp(
+                0.5 * (log_k_fac[m] - log_k_fac[n])
+                + n_minus_m * np.log(r)
+                - (r**2.0) / 2.0
+                + 1j * phi * n_minus_m
+                + logL[m]
+            )
+            D[m, n] = (-1.0) ** (n_minus_m) * np.conj(D[n, m])
+    return D
+
+
+@jit(nopython=True, cache=True)
+def _laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
+    r"""Returns the N first generalized Laguerre polynomials evaluated at x.
+
+    Args:
+        x (float): point at which to evaluate the polynomials
+        N (int): maximum Laguerre polynomial to calculate
+        alpha (float): continuous parameter for the generalized Laguerre polynomials
+    """
+    L = np.zeros(N, dtype=dtype)
+    L[0] = 1.0
+    if N > 1:
+        for m in range(0, N - 1):
+            L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (m + 1)
+    return L
+
+
+@jit(nopython=True)
+def _grad_displacement(T, r, phi):  # pragma: no cover
+    r"""Calculates the gradients of the displacement gate with respect to the displacement magnitude and angle.
+
+    Args:
+        T (array[complex]): array representing the gate
+        r (float): displacement magnitude
+        phi (float): displacement angle
+
+    Returns:
+        tuple[array[complex], array[complex]]: The gradient of the displacement gate with respect to r and phi
+    """
+    cutoff = T.shape[0]
+    dtype = T.dtype
+    ei = np.exp(1j * phi)
+    eic = np.exp(-1j * phi)
+    alpha = r * ei
+    alphac = r * eic
+    sqrt = np.sqrt(np.arange(cutoff, dtype=dtype))
+    grad_r = np.zeros((cutoff, cutoff), dtype=dtype)
+    grad_phi = np.zeros((cutoff, cutoff), dtype=dtype)
+
+    for m in range(cutoff):
+        for n in range(cutoff):
+            grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
+            grad_phi[m, n] = (
+                sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
+            )
+
+    return grad_r, grad_phi
+
+
+@math.custom_gradient
+def displacement(r, phi, cutoff, tol=1e-15):
+    """creates a single mode displacement matrix"""
+    if r > tol:
+        gate = _displacement(math.asnumpy(r), math.asnumpy(phi), cutoff)
+    else:
+        gate = math.eye(cutoff, dtype="complex128")
+
+    def grad(dy):  # pragma: no cover
+        Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
+        grad_r = math.real(math.reduce_sum(dy * math.conj(Dr)))
+        grad_phi = math.real(math.reduce_sum(dy * math.conj(Dphi)))
+        return grad_r, grad_phi, None
+
+    return gate, grad

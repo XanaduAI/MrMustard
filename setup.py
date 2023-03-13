@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from setuptools import setup, find_packages
+import platform
+
+from setuptools import find_packages, setup
 
 with open("mrmustard/_version.py") as f:
     version = f.readlines()[-1].split()[-1].strip("\"'")
@@ -21,8 +23,8 @@ requirements = [
     "scipy",
     "numba",
     "thewalrus>=0.17.0",
-    "tensorflow>=2.4.0",
-    "tensorflow-probability",
+    "tensorflow<=2.10.1" if platform.system() != "Darwin" else "tensorflow_macos<=2.10.0",
+    "tensorflow-probability<=0.18.0",
     "rich",
     "tqdm",
     "matplotlib",
@@ -59,7 +61,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3 :: Only",

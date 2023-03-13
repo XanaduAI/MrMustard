@@ -4,6 +4,13 @@ on:
     branches:
       - develop
   pull_request:
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'mrmustard/**'
+      - 'tests/**'
+      - 'setup.py'
+      - 'requirements*'
+      - 'pytest.ini'
 
 jobs:
   pytest:
@@ -22,7 +29,7 @@ jobs:
       - name: Setup python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Install dependencies
         run: |

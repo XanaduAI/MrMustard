@@ -14,7 +14,20 @@
 
 """This module contains the implementation of the :class:`Transformation` class."""
 
+
+# pylint: disable = missing-function-docstring
+
 from __future__ import annotations
+
+from typing import (
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 
@@ -22,17 +35,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
-from mrmustard.types import (
-    Callable,
-    Iterable,
-    List,
-    Matrix,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    Vector,
-)
+from mrmustard.typing import RealMatrix, RealVector
 
 from .state import State
 
@@ -108,7 +111,7 @@ class Transformation:
                 return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
             return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            choi = self.choi(cutoffs=state.cutoffs)
+            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx])
             n = state.num_modes
             N0 = list(range(0, n))
             N1 = list(range(n, 2 * n))
@@ -148,25 +151,25 @@ class Transformation:
         pass
 
     @property
-    def X_matrix(self) -> Optional[Matrix]:
+    def X_matrix(self) -> Optional[RealMatrix]:
         return None
 
     @property
-    def Y_matrix(self) -> Optional[Matrix]:
+    def Y_matrix(self) -> Optional[RealMatrix]:
         return None
 
     @property
-    def d_vector(self) -> Optional[Vector]:
+    def d_vector(self) -> Optional[RealVector]:
         return None
 
     @property
-    def X_matrix_dual(self) -> Optional[Matrix]:
+    def X_matrix_dual(self) -> Optional[RealMatrix]:
         if (X := self.X_matrix) is None:
             return None
         return gaussian.math.inv(X)
 
     @property
-    def Y_matrix_dual(self) -> Optional[Matrix]:
+    def Y_matrix_dual(self) -> Optional[RealMatrix]:
         if (Y := self.Y_matrix) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
@@ -174,7 +177,7 @@ class Transformation:
         return math.matmul(math.matmul(Xdual, Y), math.transpose(Xdual))
 
     @property
-    def d_vector_dual(self) -> Optional[Vector]:
+    def d_vector_dual(self) -> Optional[RealVector]:
         if (d := self.d_vector) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
@@ -182,7 +185,7 @@ class Transformation:
         return math.matmul(Xdual, d)
 
     @property
-    def XYd(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
+    def XYd(self) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
@@ -190,7 +193,7 @@ class Transformation:
         return self.X_matrix, self.Y_matrix, self.d_vector
 
     @property
-    def XYd_dual(self) -> Tuple[Optional[Matrix], Optional[Matrix], Optional[Vector]]:
+    def XYd_dual(self) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
         Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
