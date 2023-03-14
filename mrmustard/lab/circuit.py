@@ -376,32 +376,28 @@ class CircuitPart(ABC):
             bool: whether the connection is possible
         """
         if self.dual_wires_enabled != other.dual_wires_enabled:
-            reason = "dual wires mismatch"
-            return False, reason
+            return False, "dual wires mismatch"
 
-        intersection = set(self.output_wires.keys()).intersection(set(other.input_wires.keys()))
-        if len(self.plugin_modes(other)) == 0:
-            reason = "no common modes"
-            return False, reason
+        intersection = self.plugin_modes(other)
+
+        if len(intersection) == 0:
+            return False, "no common modes"
 
         for mode in intersection:
             if self.output_wires[mode].end is not None or other.input_wires[mode].end is not None:
-                reason = "common mode already connected"
-                return False, reason
+                return False, "common mode already connected"
 
         input_overlap = set(self.input_wires.keys()).intersection(
             set(other.input_wires.keys()) - intersection
         )
         if len(input_overlap) > 0:
-            reason = "input modes overlap"
-            return False, reason
+            return False, "input modes overlap"
 
         output_overlap = (set(self.output_wires.keys()) - intersection).intersection(
             set(other.output_wires.keys())
         )
         if len(output_overlap) > 0:
-            reason = "output modes overlap"
-            return False, reason
+            return False, "output modes overlap"
 
         return True, ""
 
