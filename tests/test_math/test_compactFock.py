@@ -77,19 +77,19 @@ def test_compactFock_diagonal_gradients():
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
     G = Ggate(num_modes=3, symplectic_trainable=True)
 
-    def cost_fn(G):
+    def cost_fn():
         n1, n2, n3 = 2, 2, 4  # number of detected photons
         state_opt = Vacuum(3) >> G
         A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
-        G = math.hermite_renormalized_diagonal(
+        probs = math.hermite_renormalized_diagonal(
             math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[n1 + 1, n2 + 1, n3 + 1]
         )
-        p = G[n1, n2, n3]
+        p = probs[n1, n2, n3]
         p_target = 0.5
         return math.abs(p_target - p)
 
     opt = Optimizer(symplectic_lr=0.1)
-    opt.minimize(lambda: cost_fn(G), by_optimizing=[G], max_steps=50)
+    opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
