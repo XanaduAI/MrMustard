@@ -302,7 +302,7 @@ class Wire:
             self._R = value
 
     @property
-    def connected(self):
+    def is_connected(self) -> bool:
         "checks if wire is connected to another operation."
         return self.origin is not None and self.end is not None
 
@@ -357,7 +357,7 @@ class CircuitPart(ABC):
     @property
     def connected(self) -> bool:
         "Returns True if at least one wire of this CircuitPart is connected to other CircuitParts."
-        return any(w.connected for w in self.all_wires)
+        return any(w.is_connected for w in self.all_wires)
 
     def plugin_modes(self, other: CircuitPart) -> set[int]:
         "Returns the set of modes that would be used if self was plugged into other."
@@ -406,7 +406,7 @@ class CircuitPart(ABC):
         return True, ""
 
     def connect_wires(self, other: CircuitPart) -> None:
-        "Forward-connect the given mode to another CircuitPart."
+        "Forward-connect the given CircuitPart to another CircuitPart."
         can, reason = self.can_connect(other)
         if not can:
             raise ValueError(reason)
@@ -469,8 +469,9 @@ class Operation(CircuitPart):
             + f"out={list(self.output_wires.keys())}, dual_wires_enabled={self.dual_wires_enabled})"
         )
 
-    def TN_tensor(self):
-
+    def TN_tensor(self) -> Tensor:
+        "Returns the TensorNetwork Tensor of this Operation."
+        return self.op.TN_tensor()
 
 
 class Circuit(CircuitPart):
@@ -488,12 +489,12 @@ class Circuit(CircuitPart):
         self.output_wires: Dict[int, Wire] = {}
         for part in self.parts:
             for mode, wire in part.input_wires.items():
-                if not wire.connected:
+                if not wire.is_connected:
                     if mode in self.input_wires:
                         raise ValueError("Duplicate input mode.")
                     self.input_wires[mode] = wire
             for mode, wire in part.output_wires.items():
-                if not wire.connected:
+                if not wire.is_connected:
                     if mode in self.output_wires:
                         raise ValueError("Duplicate output mode.")
                     self.output_wires[mode] = wire
@@ -504,7 +505,7 @@ class Circuit(CircuitPart):
             for part2 in self.parts[i + 1 :]:
                 if part1.can_connect(part2):
                     part1.connect_wires(part2)
-                    if all(wire.connected for wire in part1.output_wires.values()):
+                    if all(wire.is_connected for wire in part1.output_wires.values()):
                         break
 
     def enable_dual_wires(self) -> None:
@@ -529,7 +530,7 @@ class Circuit(CircuitPart):
     #     for op in self.operations:
     #         G.add_node(op)
     #         for mode, wire in op.output_modes.items():
-    #             if wire.connected:
+    #             if wire.is_connected:
     #                 G.add_edge(wire.origin, wire.end)
     #     # visualize graph before returning
     #     nx.draw(G)
@@ -551,6 +552,6 @@ class Circuit(CircuitPart):
     def __repr__(self) -> str:
         return circuit_text(self.ops, decimals=settings.CIRCUIT_DECIMALS)
 
-    def TN_tensor_list(self) -> list(Tensor):
+    def TN_tensor_list(self) -> list[Tensor]:
         "returns a list of tensors in the tensor network representation of the circuit"
         return [op.TN_tensor for op in self.ops]
