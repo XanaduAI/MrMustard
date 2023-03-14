@@ -222,7 +222,7 @@ def test_learning_four_mode_Interferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    perturbed_U = perturbed._ops[0].unitary.value
+    perturbed_U = perturbed._ops[0].unitary.value    # pylint: disable=protected-access
 
     ops = [
         Sgate(
