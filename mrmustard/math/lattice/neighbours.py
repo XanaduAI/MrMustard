@@ -17,6 +17,7 @@ from typing import Iterator
 
 import numpy as np
 from numba import njit
+from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import Batch, IntMatrix, IntVector
 
@@ -70,9 +71,6 @@ def lower_neighbors(pivot: IntVector) -> Iterator[tuple[int, IntVector]]:
         pivot[j] -= 1
         yield j, pivot
         pivot[j] += 1
-
-
-from numba.cpython.unsafe.tuple import tuple_setitem
 
 
 @njit

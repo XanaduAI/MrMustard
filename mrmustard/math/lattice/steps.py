@@ -25,18 +25,9 @@ from typing import Callable, Optional
 import numpy as np
 from numba import njit
 
-from mrmustard.math.lattice.neighbours import lower_neighbors, lower_neighbors_tuple
-from mrmustard.math.lattice.pivots import first_pivot, first_pivot_tuple
-from mrmustard.math.lattice.utils import tensor_value
-from mrmustard.typing import (
-    Batch,
-    ComplexMatrix,
-    ComplexTensor,
-    ComplexVector,
-    IntVector,
-    IntMatrix,
-    Vector,
-)
+from mrmustard.math.lattice.neighbours import lower_neighbors_tuple
+from mrmustard.math.lattice.pivots import first_pivot_tuple
+
 
 # TODO: gradients
 

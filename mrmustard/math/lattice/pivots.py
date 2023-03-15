@@ -16,6 +16,7 @@
 from typing import Tuple
 
 from numba import njit
+from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import IntVector
 
@@ -42,11 +43,8 @@ def first_pivot(index: IntVector) -> Tuple[int, IntVector]:
     raise ValueError("Index is zero")
 
 
-from numba.cpython.unsafe.tuple import tuple_setitem
-
-
 @njit
-def first_pivot_tuple(index: tuple[int,...]) -> Tuple[int, tuple[int,...]]:
+def first_pivot_tuple(index: tuple[int, ...]) -> Tuple[int, tuple[int, ...]]:
     r"""returns the first available pivot index for the given index."""
     for i, v in enumerate(index):
         if v > 0:

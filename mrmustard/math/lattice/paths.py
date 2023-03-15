@@ -15,7 +15,8 @@
 from typing import Iterator, Optional
 
 import numpy as np
-from numba import njit
+from numba import njit, typeof, prange
+from numba.typed import Dict, List
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import IntVector
@@ -95,21 +96,21 @@ def find_combinations(cutoffs, total):
     return result[1:]
 
 
-@njit
+@njit(cache=True)
 def equal_weight_path(
-    shape: tuple[int, ...], max_sum: Optional[int] = None
+    cutoffs: tuple[int, ...], max_photons: Optional[int] = None
 ) -> Iterator[list[tuple[int, ...]]]:
     r"""yields the indices of a tensor with equal weight.
-    Effectively, `shape` contains local cutoffs (the maximum value of each index)
-    and `max_sum` is the global cutoff (the maximum sum of all indices).
-    If `max_sum` is not given, only the local cutoffs are used and the iterator
-    yields  all possible indices within the tensor shape. In this case it becomes
+    Effectively, `cutoffs` contains local cutoffs (the maximum value of each index)
+    and `max_photons` is the global cutoff (the maximum sum of all indices).
+    If `max_photons` is not given, only the local cutoffs are used and the iterator
+    yields  all possible indices within the tensor `cutoffs`. In this case it becomes
     like `ndindex_iter` just in a different order.
     """
-    if max_sum is None:
-        max_sum = sum(shape) - len(shape)
-    for s in range(max_sum + 1):
-        yield find_combinations(shape, s)
+    if max_photons is None:
+        max_photons = sum(cutoffs) - len(cutoffs)
+    for s in range(max_photons + 1):
+        yield find_combinations(cutoffs, s)
 
 
 @njit
