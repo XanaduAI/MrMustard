@@ -12,22 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
-
 import numpy as np
-from numba import njit
+from numba import njit, prange
 
 from mrmustard.math.lattice import paths, steps, utils
-from mrmustard.typing import Tensor
+from mrmustard.typing import Tensor, ComplexMatrix, ComplexVector
 
 
 @njit
-def vanilla(shape: Tuple[int, ...], A, b, c) -> Tensor:
+def vanilla(shape: tuple[int, ...], A, b, c) -> Tensor:
     # init output tensor
     Z = np.zeros(shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = paths.ndindex_iter(shape)  # np.ndindex(shape)
+    path = paths.ndindex_path(shape)
 
     # write vacuum amplitude
     Z[next(path)] = c
@@ -38,15 +36,24 @@ def vanilla(shape: Tuple[int, ...], A, b, c) -> Tensor:
     return Z
 
 
-def adaptive_U(input_shape: Tuple[int], output_shape: Optional[Tuple[int]], A, b, c) -> Tensor:
-    r"""Computes the Fock amplitudes of a unitary transformation. If the output shape is not
-    specified, the output shape is determined by the cutoff that is necessary to achieve
-    prob = settings.AUTOCUTOFF_PROBABILITY."""
+@njit(parallel=True)
+def factorial(
+    shape: tuple[int, ...], A: ComplexMatrix, b: ComplexVector, c: complex, max_prob: float
+) -> Tensor:
+    # init output tensor
+    Z = np.zeros(shape, dtype=np.complex128)
 
-    if output_shape is None:
-        output_shape = input_shape
-    path = paths.ndindex_iter(np.asarray(input_shape))
-    next(path)  # skip the zero index
-    for index in path:
-        val_at_index = steps.adaptive_U_step(Z, A, b, c, index)
-        Z[tuple(index)] = val_at_index
+    # initialize path iterator
+    path = paths.equal_weight_path(shape)
+
+    # write vacuum amplitude
+    Z[next(path)[0]] = c
+
+    # iterate over all other indices in parallel and stop if norm is large enough
+    for n, indices in enumerate(path):
+        for i in prange(len(indices)):
+            Z[indices[i]] = steps.vanilla_step(Z, A, b, indices[i])
+        if np.linalg.norm(Z.reshape(-1)) ** 2 > max_prob:
+            break
+
+    return Z

@@ -59,7 +59,7 @@ def zero_tuple(model: tuple[int, ...]) -> tuple[int, ...]:
 
 
 @njit
-def ndindex_iter(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
+def ndindex_path(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
     r"yields the indices of a tensor in row-major order"
     index = tuple_setitem(shape, 0, 0)
     for i in range(1, len(shape)):
@@ -76,7 +76,29 @@ def ndindex_iter(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
 
 
 @njit
-def equal_weight_iter(shape: IntVector, max_sum: Optional[int] = None) -> Iterator[IntVector]:
+def _find_combinations(cutoffs, total, index, current, result):
+    if index == len(cutoffs):
+        if total == 0:
+            result.append(current)
+        return
+
+    for value in range(cutoffs[index]):
+        if total - value >= 0:
+            new_current = tuple_setitem(current, index, value)
+            _find_combinations(cutoffs, total - value, index + 1, new_current, result)
+
+
+@njit
+def find_combinations(cutoffs, total):
+    result = [cutoffs]
+    _find_combinations(cutoffs, total, 0, cutoffs, result)
+    return result[1:]
+
+
+@njit
+def equal_weight_path(
+    shape: tuple[int, ...], max_sum: Optional[int] = None
+) -> Iterator[list[tuple[int, ...]]]:
     r"""yields the indices of a tensor with equal weight.
     Effectively, `shape` contains local cutoffs (the maximum value of each index)
     and `max_sum` is the global cutoff (the maximum sum of all indices).
@@ -84,26 +106,10 @@ def equal_weight_iter(shape: IntVector, max_sum: Optional[int] = None) -> Iterat
     yields  all possible indices within the tensor shape. In this case it becomes
     like `ndindex_iter` just in a different order.
     """
-    max_ = sum(shape) - len(shape) - 1  # allows to fill the entire tensor
-    max_sum = max_ if max_sum is None else min(max_sum, max_)
-    for weight in range(max_sum + 1):
-        index = np.zeros_like(shape)
-        k = 0
-        # first we distribute the weight over the indices
-        while weight > 0:
-            index[k] = weight if weight < shape[k] else shape[k] - 1
-            weight -= index[k]
-            k += 1
-        # now we move units from the first index to the next until we run out
-        while True:
-            yield index
-            for i in range(len(index) - 1):
-                if index[i] > 0 and index[i + 1] < shape[i + 1] - 1:
-                    index[i] -= 1
-                    index[i + 1] += 1
-                    break
-            else:
-                break
+    if max_sum is None:
+        max_sum = sum(shape) - len(shape)
+    for s in range(max_sum + 1):
+        yield find_combinations(shape, s)
 
 
 @njit
