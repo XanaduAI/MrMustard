@@ -39,13 +39,11 @@ def all_neighbours_iter(pivot: IntVector) -> Iterator[IntVector]:
 @njit
 def all_neighbours_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
     r"returns the indices of the nearest neighbours of the given pivot as an array"
-    # Z = np.zeros((2 * len(pivot), len(pivot)), dtype=np.int64)
-    for i, p in enumerate(pivot):
-        pivot[i] += 1
+    for i, _ in enumerate(pivot):
         Z[2 * i] = pivot
-        pivot[i] -= 2
         Z[2 * i + 1] = pivot
-        pivot[i] += 1
+        Z[2 * i, i] += 1
+        Z[2 * i + 1, i] -= 1
     return Z
 
 
@@ -55,22 +53,33 @@ def all_neighbours_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
 
 
 @njit
-def lower_neighbors_iter(pivot: IntVector) -> Iterator[IntVector]:
-    r"yields the indices of the lower neighbours of the given index"
-    for i in range(len(pivot)):
-        pivot[i] -= 1
-        yield pivot
-        pivot[i] += 1
+def lower_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
+    r"returns the indices of the lower neighbours of the given index as an array"
+    for j, _ in enumerate(pivot):
+        Z[j] = pivot
+        Z[j, j] -= 1
+    return Z
 
 
 @njit
-def lower_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
-    r"returns the indices of the lower neighbours of the given index as an array"
-    for i, p in enumerate(pivot):
-        pivot[i] -= 1
-        Z[i] = pivot
-        pivot[i] += 1
-    return Z
+def lower_neighbors(pivot: IntVector) -> Iterator[tuple[int, IntVector]]:
+    r"""yields the indices of the lower neighbours of the given index.
+    Modifies the index in place.
+    """
+    for j in range(len(pivot)):
+        pivot[j] -= 1
+        yield j, pivot
+        pivot[j] += 1
+
+
+from numba.cpython.unsafe.tuple import tuple_setitem
+
+
+@njit
+def lower_neighbors_tuple(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
+    r"""yields the indices of the lower neighbours of the given index."""
+    for j in range(len(pivot)):
+        yield j, tuple_setitem(pivot, j, pivot[j] - 1)
 
 
 ####################################################################################
@@ -79,7 +88,7 @@ def lower_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
 
 
 @njit
-def upper_neighbors_iter(pivot: IntVector) -> Iterator[IntVector]:
+def upper_neighbors(pivot: IntVector) -> Iterator[IntVector]:
     r"yields the indices of the upper neighbours of the given pivot"
     for i in range(len(pivot)):
         pivot[i] += 1
@@ -88,13 +97,11 @@ def upper_neighbors_iter(pivot: IntVector) -> Iterator[IntVector]:
 
 
 @njit
-def upper_neighbors_fn(pivot: IntVector) -> Batch[IntVector]:
+def upper_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
     r"returns the indices of the upper neighbours of the given index as an array"
-    Z = np.zeros((len(pivot), len(pivot)), dtype=np.int64)
-    for i, p in enumerate(pivot):
-        pivot[i] += 1
+    for i, _ in enumerate(pivot):
         Z[i] = pivot
-        pivot[i] -= 1
+        Z[i, i] += 1
     return Z
 
 

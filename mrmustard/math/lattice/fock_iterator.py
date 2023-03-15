@@ -22,17 +22,19 @@ from mrmustard.typing import Tensor
 
 
 @njit
-def vanilla(shape: Tuple[int], A, b, c) -> Tensor:
+def vanilla(shape: Tuple[int, ...], A, b, c) -> Tensor:
+    # init output tensor
     Z = np.zeros(shape, dtype=np.complex128)
-    Z.flat[0] = c
-    path = paths.ndindex_iter(np.asarray(shape))
-    next(path)  # skip the zero index
-    pivot_idx = np.zeros(len(shape), dtype=np.int32)
-    neighbors_idx = np.zeros((len(shape), len(shape)), dtype=np.int32)
+
+    # initialize path iterator
+    path = paths.ndindex_iter(shape)  # np.ndindex(shape)
+
+    # write vacuum amplitude
+    Z[next(path)] = c
+
+    # iterate over all other indices
     for index in path:
-        val_at_index = steps.vanilla_step(Z, A, b, index, pivot_idx, neighbors_idx)
-        # Z[tuple(index)] = val_at_index
-        utils.tensor_set(Z, index, val_at_index)
+        Z[index] = steps.vanilla_step(Z, A, b, index)
     return Z
 
 

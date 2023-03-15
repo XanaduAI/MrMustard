@@ -23,11 +23,34 @@ from mrmustard.typing import IntVector
 @njit
 def first_pivot_fn(index: IntVector, pivot_idx: IntVector) -> Tuple[int, IntVector]:
     r"""returns the first available pivot index for the given index"""
-    pivot_idx[:] = index[:]
+    pivot_idx[:] = index
     for i, v in enumerate(index):
         if v > 0:
             pivot_idx[i] = v - 1
             return i, pivot_idx
+    raise ValueError("Index is zero")
+
+
+@njit
+def first_pivot(index: IntVector) -> Tuple[int, IntVector]:
+    r"""returns the first available pivot index for the given index.
+    Modifies the index in place."""
+    for i, v in enumerate(index):
+        if v > 0:
+            index[i] -= 1
+            return i, index
+    raise ValueError("Index is zero")
+
+
+from numba.cpython.unsafe.tuple import tuple_setitem
+
+
+@njit
+def first_pivot_tuple(index: tuple[int,...]) -> Tuple[int, tuple[int,...]]:
+    r"""returns the first available pivot index for the given index."""
+    for i, v in enumerate(index):
+        if v > 0:
+            return i, tuple_setitem(index, i, v - 1)
     raise ValueError("Index is zero")
 
 

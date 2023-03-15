@@ -16,6 +16,7 @@ from typing import Iterator, Optional
 
 import numpy as np
 from numba import njit
+from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import IntVector
 
@@ -28,19 +29,50 @@ from mrmustard.typing import IntVector
 
 
 @njit
-def ndindex_iter(shape: IntVector) -> Iterator[IntVector]:
+def zero_tuple(model: tuple[int, ...]) -> tuple[int, ...]:
+    if len(model) == 0:
+        return ()
+    elif len(model) == 1:
+        return (0,)
+    elif len(model) == 2:
+        return (0, 0)
+    elif len(model) == 3:
+        return (0, 0, 0)
+    elif len(model) == 4:
+        return (0, 0, 0, 0)
+    elif len(model) == 5:
+        return (0, 0, 0, 0, 0)
+    elif len(model) == 6:
+        return (0, 0, 0, 0, 0, 0)
+    elif len(model) == 7:
+        return (0, 0, 0, 0, 0, 0, 0)
+    elif len(model) == 8:
+        return (0, 0, 0, 0, 0, 0, 0, 0)
+    elif len(model) == 9:
+        return (0, 0, 0, 0, 0, 0, 0, 0, 0)
+    elif len(model) == 10:
+        return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    elif len(model) == 11:
+        return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    else:
+        raise ValueError("model too long")
+
+
+@njit
+def ndindex_iter(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
     r"yields the indices of a tensor in row-major order"
-    index = np.zeros_like(shape)
+    index = tuple_setitem(shape, 0, 0)
+    for i in range(1, len(shape)):
+        index = tuple_setitem(index, i, 0)
     while True:
-        yield index.copy()  # TODO: is this copy necessary?
+        yield index
         for i in range(len(shape) - 1, -1, -1):
             if index[i] < shape[i] - 1:
-                index[i] += 1
+                index = tuple_setitem(index, i, index[i] + 1)
                 break
-            else:
-                index[i] = 0
-                if i == 0:
-                    return
+            index = tuple_setitem(index, i, 0)
+            if i == 0:
+                return
 
 
 @njit

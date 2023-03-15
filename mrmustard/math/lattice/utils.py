@@ -4,76 +4,88 @@ from numba import njit
 
 
 @njit
-def ravel_multi_index(index, shape):
-    res = 0
-    for i in range(len(index)):
-        res += index[i] * np.prod(np.asarray(shape)[i + 1 :])
-    return res
+def ravel_index(index, strides):
+    result = 0
+    for i in range(index.shape[0]):
+        result += index[i] * strides[i]
+    return result
 
 
 @njit
-def tensor_value(tensor, index):
-    return tensor.flat[ravel_multi_index(index, tensor.shape)]
+def tensor_value(tensor, index, strides):
+    return tensor.flat[ravel_index(index, strides)]
 
 
 @njit
-def tensor_set(tensor, index, value):
-    tensor.flat[ravel_multi_index(index, tensor.shape)] = value
+def tensor_set(tensor, index, value, strides):
+    tensor.flat[ravel_index(index, strides)] = value
 
 
 class FockDict:
+    r"""A dictionary that stores the values of a tensor in Fock basis.
+    Args:
+        M (int): number of modes
+
+    Example:
+        >>> fock = FockDict(2)
+        >>> fock[0, 0] = 1.0
+        >>> fock[1, 0] = 2.0
+        >>> fock[0, 1] = 3.0
+        >>> fock[1, 1] = 4.0
+        >>> fock[0, 0]
+        1.0
+        >>> fock[1, 0]
+        2.0
+        >>> fock[0, 1]
+        3.0
+        >>> fock[1, 1]
+        4.0
+        >>> fock[0, 0] = 5.0
+        >>> fock[0, 0]
+        5.0
+    """
+
     def __init__(self, M):
         self._data = numba.typed.Dict.empty(numba.types.UniTuple(numba.int64, M), numba.complex128)
         self.M = M
 
-    def __getitem__(self, indices):
-        if isinstance(indices, int):
+    def _parse_indices(self, indices):
+        if isinstance(indices, int) or isinstance(indices, slice):
             indices = (indices,)
-        if isinstance(indices, tuple):
-            if all(isinstance(n, int) for n in indices) and len(indices) == self.M:
-                return self._data[indices] if indices in self._data else 0.0
-            slices = ()
-            for index in indices:
-                if isinstance(index, int):
-                    slices = slices + (slice(index, index + 1),)
-                elif isinstance(index, slice):
-                    slices = slices + (index,)
-                else:
-                    raise TypeError(f"Invalid index type: {type(index)}")
-            for i in range(len(indices), self.M):
-                slices = slices + (slice(None),)
-
-            new = FockDict(self.M)
-            for key, value in self._data.items():
-                if compatible(key, slices):
-                    new._data[key] = value
-            return new
-
+        elif isinstance(indices, tuple):
+            if len(indices) > self.M:
+                raise IndexError(f"Too many indices for FockDict with dimension {self.M}")
         else:
             raise TypeError(f"Invalid index type: {type(indices)}")
+
+        full_indices = list(indices) + [slice(None)] * (self.M - len(indices))
+        return tuple(full_indices)
+
+    def __getitem__(self, indices):
+        indices = self._parse_indices(indices)
+
+        new = FockDict(self.M)
+        for key, value in self._data.items():
+            if all(
+                idx == key[i] if isinstance(idx, int) else idx.start <= key[i] < idx.stop
+                for i, idx in enumerate(indices)
+            ):
+                new._data[key] = value
+
+        return new if len(new._data) > 1 else next(iter(new._data.values()), 0.0)
 
     def __setitem__(self, indices, value):
-        if isinstance(indices, tuple):
-            self._data[indices] = value
-        elif isinstance(indices, int):
-            self._data[(indices,)] = value
-        else:
-            raise TypeError(f"Invalid index type: {type(indices)}")
+        indices = self._parse_indices(indices)
+
+        for key in list(self._data.keys()):
+            if all(
+                idx == key[i] if isinstance(idx, int) else idx.start <= key[i] < idx.stop
+                for i, idx in enumerate(indices)
+            ):
+                del self._data[key]
+
+        if not any(isinstance(idx, slice) for idx in indices):
+            self._data[tuple(indices)] = value
 
     def __repr__(self):
         return f"FockDict({len(self._data)} elements)"
-
-
-@njit
-def compatible(key, slices):
-    for i, s in enumerate(slices):
-        if not_compatible_slice(key[i], s):
-            return False
-    return True
-
-
-@njit
-def not_compatible_slice(key_i, s):
-    if (s.start is not None and key_i < s.start) or (s.stop is not None and key_i >= s.stop):
-        return True
-    return False

@@ -25,8 +25,8 @@ from typing import Callable, Optional
 import numpy as np
 from numba import njit
 
-from mrmustard.math.lattice.neighbours import lower_neighbors_fn
-from mrmustard.math.lattice.pivots import first_pivot_fn
+from mrmustard.math.lattice.neighbours import lower_neighbors, lower_neighbors_tuple
+from mrmustard.math.lattice.pivots import first_pivot, first_pivot_tuple
 from mrmustard.math.lattice.utils import tensor_value
 from mrmustard.typing import (
     Batch,
@@ -34,56 +34,17 @@ from mrmustard.typing import (
     ComplexTensor,
     ComplexVector,
     IntVector,
-    Matrix,
+    IntMatrix,
     Vector,
 )
 
 # TODO: gradients
 
-
-@njit
-def general_step(
-    tensor: ComplexTensor,
-    A: ComplexMatrix,
-    b: ComplexVector,
-    index: IntVector,
-    pivot_idx: IntVector,
-    neighbors_idx: Batch[IntVector],
-    pivot_fn: Callable[[IntVector], IntVector],
-    neighbors_fn: Callable[[IntVector], Batch[IntVector]],
-    Ab_fn: Optional[Callable] = None,
-):
-    r"""Fock-Bargmann recurrence relation step. General version.
-    Requires selecting a pivot and a set of neighbors.
-    Args:
-        tensor (array): tensor to calculate the amplitudes of
-        A (array): matrix of coefficients
-        b (array): vector of coefficients
-        index (tuple): index of the amplitude to calculate
-        pivot_idx (array): array to store the pivot index
-        neighbors_idx (array): array to store the neighbors indices
-        pivot_fn (callable): function that returns the pivot corresponding to the index
-        neighbors_fn (callable): function that returns the relevant neighbors of the pivot
-        Ab_fn (callable): function that returns the new values of A and b
-    Returns:
-        complex: the value of the amplitude at the given index
-    """
-    i, pivot_idx = pivot_fn(index, pivot_idx)
-    b = b / np.sqrt(pivot_idx + 1)
-    A = A * (np.expand_dims(np.sqrt(pivot_idx), 0) / np.expand_dims(np.sqrt(pivot_idx + 1), 1))
-    if Ab_fn is not None:
-        A, b = Ab_fn(A, b, pivot_idx, neighbors_fn)
-    neighbors = neighbors_fn(
-        pivot_idx, neighbors_idx
-    )  # neighbors is an array of indices len(pivot) x len(pivot)
-    value_at_index = b[i] * tensor_value(tensor, pivot_idx)
-    for j, neighbor in enumerate(neighbors):
-        value_at_index += A[i, j] * tensor_value(tensor, neighbor)
-    return value_at_index
+SQRT = np.sqrt(np.arange(10000))
 
 
 @njit
-def vanilla_step(tensor, A, b, index: Vector, pivot_idx: Vector, neighbors_idx: Matrix) -> complex:
+def vanilla_step(tensor, A, b, index: tuple[int, ...]) -> complex:
     r"""Fock-Bargmann recurrence relation step. Vanilla version.
     This function calculates the index `index` of `tensor`.
     The appropriate pivot and neighbours must exist.
@@ -93,14 +54,18 @@ def vanilla_step(tensor, A, b, index: Vector, pivot_idx: Vector, neighbors_idx: 
         A (array): matrix of coefficients
         b (array): vector of coefficients
         index (Sequence): index of the amplitude to calculate
-        pivot_fn (callable): function that returns the pivot corresponding to the index
-        neighbors_fn (callable): function that returns the neighbors of the pivot
     Returns:
         complex: the value of the amplitude at the given index
     """
-    return general_step(
-        tensor, A, b, index, pivot_idx, neighbors_idx, first_pivot_fn, lower_neighbors_fn
-    )
+    # index -> pivot
+    i, pivot = first_pivot_tuple(index)
 
+    # calculate value at index: pivot contribution
+    denom = SQRT[pivot[i] + 1]
+    value_at_index = b[i] / denom * tensor[pivot]
 
-### array to tuple functions ###
+    # neighbors contribution
+    for j, neighbor in lower_neighbors_tuple(pivot):
+        value_at_index += A[i, j] / denom * SQRT[pivot[j]] * tensor[neighbor]
+
+    return value_at_index
