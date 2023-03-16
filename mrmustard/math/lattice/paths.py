@@ -15,7 +15,7 @@
 from typing import Iterator, Optional
 
 import numpy as np
-from numba import njit, typeof, prange
+from numba import njit, typeof, prange, types, typed
 from numba.typed import Dict, List
 from numba.cpython.unsafe.tuple import tuple_setitem
 
@@ -25,38 +25,6 @@ from mrmustard.typing import IntVector
 # The paths can cover the entire lattice, or just a subset of it.
 # Strategies have to be generators because they enumerate lots of indices
 # and we don't want to allocate memory for all of them at once.
-# These strategies don't even reallocate memory for each index: they just
-# yield the same array over and over again, modified each time, beware!
-
-
-@njit
-def zero_tuple(model: tuple[int, ...]) -> tuple[int, ...]:
-    if len(model) == 0:
-        return ()
-    elif len(model) == 1:
-        return (0,)
-    elif len(model) == 2:
-        return (0, 0)
-    elif len(model) == 3:
-        return (0, 0, 0)
-    elif len(model) == 4:
-        return (0, 0, 0, 0)
-    elif len(model) == 5:
-        return (0, 0, 0, 0, 0)
-    elif len(model) == 6:
-        return (0, 0, 0, 0, 0, 0)
-    elif len(model) == 7:
-        return (0, 0, 0, 0, 0, 0, 0)
-    elif len(model) == 8:
-        return (0, 0, 0, 0, 0, 0, 0, 0)
-    elif len(model) == 9:
-        return (0, 0, 0, 0, 0, 0, 0, 0, 0)
-    elif len(model) == 10:
-        return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    elif len(model) == 11:
-        return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    else:
-        raise ValueError("model too long")
 
 
 @njit
@@ -77,26 +45,38 @@ def ndindex_path(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
 
 
 @njit
-def _find_combinations(cutoffs, total, index, current, result):
-    if index == len(cutoffs):
-        if total == 0:
-            result.append(current)
+def _binomial_subspace(cutoffs, weight, mode, basis_element, basis):
+    if mode == len(cutoffs):
+        if weight == 0:
+            basis.append(basis_element)
         return
 
-    for value in range(cutoffs[index]):
-        if total - value >= 0:
-            new_current = tuple_setitem(current, index, value)
-            _find_combinations(cutoffs, total - value, index + 1, new_current, result)
+    for photons in range(cutoffs[mode]):  # could be prange?
+        if weight - photons >= 0:
+            basis_element = tuple_setitem(basis_element, mode, photons)
+            _binomial_subspace(cutoffs, weight - photons, mode + 1, basis_element, basis)
+
+
+def FACTORIAL_PATHS_n(modes):
+    return typed.Dict.empty(
+        key_type=typeof(((0,) * modes, 0)),
+        value_type=types.ListType(typeof((0,) * modes)),
+    )
+
+
+FACTORIAL_PATHS_DICT = {modes: FACTORIAL_PATHS_n(modes) for modes in range(1, 100)}
 
 
 @njit
-def find_combinations(cutoffs, total):
-    result = [cutoffs]
-    _find_combinations(cutoffs, total, 0, cutoffs, result)
-    return result[1:]
+def binomial_subspace(cutoffs, weight):
+    basis = typed.List(
+        [cutoffs]
+    )  # this is just so that numba can infer the type, then we remove it
+    _binomial_subspace(cutoffs, weight, 0, cutoffs, basis)
+    return basis[1:]  # remove the dummy element
 
 
-@njit(cache=True)
+@njit
 def equal_weight_path(
     cutoffs: tuple[int, ...], max_photons: Optional[int] = None
 ) -> Iterator[list[tuple[int, ...]]]:
@@ -110,7 +90,7 @@ def equal_weight_path(
     if max_photons is None:
         max_photons = sum(cutoffs) - len(cutoffs)
     for s in range(max_photons + 1):
-        yield find_combinations(cutoffs, s)
+        yield binomial_subspace(cutoffs, s)
 
 
 @njit

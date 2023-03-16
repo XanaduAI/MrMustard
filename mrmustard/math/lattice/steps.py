@@ -20,10 +20,11 @@
 # a recipe made of two parts. The function to recompute A and b is determined by
 # which neighbours are used.
 
-from typing import Callable, Optional
+from typing import Union
+from mrmustard.typing import Tensor
 
 import numpy as np
-from numba import njit
+from numba import njit, types
 
 from mrmustard.math.lattice.neighbours import lower_neighbors_tuple
 from mrmustard.math.lattice.pivots import first_pivot_tuple
@@ -35,13 +36,13 @@ SQRT = np.sqrt(np.arange(10000))
 
 
 @njit
-def vanilla_step(tensor, A, b, index: tuple[int, ...]) -> complex:
+def vanilla_step(data: Union[Tensor, dict], A, b, index: tuple[int, ...]) -> complex:
     r"""Fock-Bargmann recurrence relation step. Vanilla version.
     This function calculates the index `index` of `tensor`.
     The appropriate pivot and neighbours must exist.
 
     Args:
-        tensor (array): tensor to calculate the amplitudes of
+        data: Tensor|dict (array): fock amplitudes data store that supports getitem[tuple[int, ...]]
         A (array): matrix of coefficients
         b (array): vector of coefficients
         index (Sequence): index of the amplitude to calculate
@@ -53,10 +54,38 @@ def vanilla_step(tensor, A, b, index: tuple[int, ...]) -> complex:
 
     # calculate value at index: pivot contribution
     denom = SQRT[pivot[i] + 1]
-    value_at_index = b[i] / denom * tensor[pivot]
+    value_at_index = b[i] / denom * data[pivot]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors_tuple(pivot):
-        value_at_index += A[i, j] / denom * SQRT[pivot[j]] * tensor[neighbor]
+        value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data[neighbor]
+
+    return value_at_index
+
+
+@njit
+def vanilla_step_dict(data: types.DictType, A, b, index: tuple[int, ...]) -> complex:
+    r"""Fock-Bargmann recurrence relation step. Vanilla version.
+    This function calculates the index `index` of `tensor`.
+    The appropriate pivot and neighbours must exist.
+
+    Args:
+        data: dict(tuple[int,...],complex): fock amplitudes numba dict
+        A (array): matrix of coefficients
+        b (array): vector of coefficients
+        index (Sequence): index of the amplitude to calculate
+    Returns:
+        complex: the value of the amplitude at the given index
+    """
+    # index -> pivot
+    i, pivot = first_pivot_tuple(index)
+
+    # calculate value at index: pivot contribution
+    denom = SQRT[pivot[i] + 1]
+    value_at_index = b[i] / denom * data[pivot]
+
+    # neighbors contribution
+    for j, neighbor in lower_neighbors_tuple(pivot):
+        value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
 
     return value_at_index
