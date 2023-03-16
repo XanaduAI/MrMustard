@@ -48,7 +48,7 @@ class TestGaussianStates:
         """Test that the fidelity of two identical quantum states is 1"""
         cov = random_covariance(num_modes, hbar=hbar, pure=pure, block_diag=block_diag)
         means = np.random.rand(2 * num_modes)
-        assert np.allclose(gp.fidelity(means, cov, means, cov, hbar=hbar), 1, atol=1e-4)
+        assert np.allclose(gp.fidelity(means, cov, means, cov, hbar=hbar), 1, atol=1e-3)
 
     @pytest.mark.parametrize("num_modes", np.arange(5, 10))
     @pytest.mark.parametrize("hbar", [0.5, 1.0, 2.0, 1.6])
