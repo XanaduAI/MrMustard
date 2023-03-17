@@ -63,7 +63,7 @@ def upper_neighbors_tuple(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[i
 @njit
 def bitstring_neighbours_tuple(
     pivot: tuple[int, ...], bitstring: tuple[int, ...]
-) -> Iterator[int, tuple[int, ...]]:
+) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"yields the indices of the bitstring neighbours of the given index"
     for i, b in enumerate(bitstring):
         if b:  # b == 1 -> lower

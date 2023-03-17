@@ -17,9 +17,8 @@ from typing import Optional
 import numpy as np
 from numba import njit, typed, types
 
-from mrmustard import settings
 from mrmustard.math.lattice import paths, steps
-from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector, IntVector
 
 
 @njit
@@ -74,10 +73,6 @@ def binomial(
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``. Some entries may be zero.
     """
-    # sort out max prob
-    if max_prob is None:
-        max_prob = settings.BINOMIAL_STRATEGY_MAX_PROB
-
     # sort out global cutoff
     if global_cutoff is None:
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
@@ -98,8 +93,11 @@ def binomial(
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
         Z, prob_subspace = steps.binomial_step(Z, A, b, indices)  # numba parallelized function
         prob += prob_subspace
-        if prob > max_prob:
-            break
+        try:
+            if prob > max_prob:
+                break
+        except TypeError:
+            pass
     return Z
 
 
