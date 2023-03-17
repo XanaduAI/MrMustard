@@ -51,6 +51,41 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     return Z
 
 
+@njit
+def vanilla_grad(
+    Z, shape: tuple[int, ...], A, b, dL_dZ
+) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    r"""Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
+    in ndindex order.
+
+    Args:
+        Z (np.ndarray): Tensor result of the forward pass
+        shape (tuple[int, ...]): shape of the output tensor
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+        dL_dZ (np.ndarray): gradient of the loss with respect to the output tensor
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+
+    # init gradients
+    dL_dA = np.zeros_like(A)
+    dL_db = np.zeros_like(b)
+    dL_dc = 0.0
+
+    # initialize path iterator
+    path = paths.ndindex_path(shape)
+    next(path)
+
+    dL_dc = np.sum(dL_dZ * Z)
+
+    # iterate over the rest of the indices
+    for index in path:
+        dL_dA, dL_db = steps.vanilla_step_grad(Z, index, dL_dA, dL_db, dL_dZ)
+    return dL_dA, dL_db, dL_dc
+
+
 def binomial(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,

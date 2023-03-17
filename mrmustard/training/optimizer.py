@@ -17,14 +17,16 @@ used within Mr Mustard.
 """
 
 from itertools import chain, groupby
-from typing import List, Callable, Sequence, Union, Mapping, Dict
-from mrmustard.training.callbacks import Callback
-from mrmustard.utils import graphics
+from typing import Callable, Dict, List, Mapping, Sequence, Union
+
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
+from mrmustard.training.callbacks import Callback
+from mrmustard.utils import graphics
+
 from .parameter import Parameter, Trainable, create_parameter
-from .parametrized import Parametrized
 from .parameter_update import param_update_method
+from .parametrized import Parametrized
 
 math = Math()
 
@@ -55,9 +57,10 @@ class Optimizer:
             "unitary": unitary_lr,
             "orthogonal": orthogonal_lr,
         }
-        self.opt_history: List[float] = [0]
+        self.opt_history: List[float] = [1e-5, 0.0]
         self.callback_history: Dict[str, List] = {}
         self.log = create_logger(__name__)
+        self.__history_sum = 0.0
 
     def minimize(
         self,
@@ -212,13 +215,12 @@ class Optimizer:
     def should_stop(self, max_steps: int) -> bool:
         r"""Returns ``True`` if the optimization should stop (either because
         the loss is stable or because the maximum number of steps is reached)."""
-        if max_steps != 0 and len(self.opt_history) > max_steps:
+        if max_steps != 0 and len(self.opt_history) - 2 > max_steps:
             return True
-        if len(self.opt_history) > 20:  # if cost varies less than 10e-6 over 20 steps
-            if (
-                sum(abs(self.opt_history[-i - 1] - self.opt_history[-i]) for i in range(1, 20))
-                < 1e-6
-            ):
+        self.__history_sum += abs(self.opt_history[-2] - self.opt_history[-1])
+        if len(self.opt_history) > 20:  # stop if cost varies less than 10e-6 over 20 steps
+            self.__history_sum -= abs(self.opt_history[-21] - self.opt_history[-20])
+            if self.__history_sum < 1e-6:
                 self.log.info("Loss looks stable, stopping here.")
                 return True
         return False

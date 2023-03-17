@@ -20,12 +20,13 @@
 # a recipe made of two parts. The function to recompute A and b is determined by
 # which neighbours are used.
 
+
 import numpy as np
 from numba import njit, types
 
 from mrmustard.math.lattice.neighbours import lower_neighbors_tuple
 from mrmustard.math.lattice.pivots import first_pivot_tuple
-from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector, Tensor
+from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 # TODO: gradients
 
@@ -33,7 +34,12 @@ SQRT = np.sqrt(np.arange(10000))
 
 
 @njit
-def vanilla_step(data: Tensor, A, b, index: tuple[int, ...]) -> complex:
+def vanilla_step(
+    data: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    index: tuple[int, ...],
+) -> complex:
     r"""Fock-Bargmann recurrence relation step. Vanilla version.
     This function calculates the index `index` of `tensor`.
     The appropriate pivot and neighbours must exist.
@@ -58,6 +64,38 @@ def vanilla_step(data: Tensor, A, b, index: tuple[int, ...]) -> complex:
         value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data[neighbor]
 
     return value_at_index
+
+
+@njit
+def vanilla_step_grad(
+    data: ComplexTensor,
+    index: tuple[int, ...],
+    dL_dA: ComplexMatrix,
+    dL_db: ComplexVector,
+    dL_ddata: ComplexTensor,
+) -> tuple[ComplexMatrix, ComplexVector]:
+    r"""Gradient of the Fock-Bargmann recurrence relation step. Vanilla version.
+
+    Args:
+        data (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
+        index (Sequence): index of the amplitude to calculate
+        dL_dA (array): gradient of the loss with respect to A
+        dL_db (array): gradient of the loss with respect to b
+        dL_ddata (array): gradient of the loss with respect to the data
+    Returns:
+        tuple[array, array]: the gradient of the loss with respect to A and b
+    """
+    # index -> pivot
+    i, pivot = first_pivot_tuple(index)
+
+    # calculate value at index: pivot contribution to dL_db
+    dL_db[i] += SQRT[pivot[i]] * data[pivot] * dL_ddata[index]
+
+    # neighbors contribution to dL_dA
+    for j, neighbor in lower_neighbors_tuple(pivot):
+        dL_dA[i, j] += 1 / denom * SQRT[pivot[j]] * data[neighbor] * dL_ddata[neighbor]
+
+    return dL_dA, dL_db
 
 
 @njit
