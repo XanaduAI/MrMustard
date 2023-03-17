@@ -14,30 +14,27 @@
 
 """optimization tests"""
 
-from hypothesis import given, strategies as st
-
 import numpy as np
-import tensorflow as tf
-
+from hypothesis import given
+from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
 
+from mrmustard import settings
+from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
-    Sgate,
-    Rgate,
     BSgate,
-    S2gate,
     Ggate,
     Interferometer,
     RealInterferometer,
+    Rgate,
+    S2gate,
+    Sgate,
 )
-from mrmustard.lab.circuit import Circuit
-from mrmustard.training import Optimizer, Parametrized
-from mrmustard.lab.states import Vacuum, SqueezedVacuum
+from mrmustard.lab.states import SqueezedVacuum, Vacuum
+from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
-from mrmustard import settings
-
-from mrmustard.math import Math
+from mrmustard.training import Optimizer, Parametrized
 
 math = Math()
 
@@ -47,14 +44,12 @@ def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
     settings.SEED = 42
     S = S2gate(
-        r=abs(settings.rng.normal()),
-        phi=settings.rng.normal(),
+        r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
         r_trainable=True,
-        phi_trainable=True,
     )
 
     def cost_fn():
-        return -tf.abs((Vacuum(2) >> S[0, 1]).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
+        return -math.abs((Vacuum(2) >> S[0, 1]).ket(cutoffs=[n + 1, n + 1])[n, n]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[S], max_steps=300)
@@ -87,7 +82,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     cutoff = 1 + i + k
 
     def cost_fn():
-        return tf.abs((state_in >> circ).ket(cutoffs=[cutoff] * 4)[i, 1, i + k - 1, k]) ** 2
+        return math.abs((state_in >> circ).ket(cutoffs=[cutoff] * 4)[i, 1, i + k - 1, k]) ** 2
 
     opt = Optimizer(euclidean_lr=0.01)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
@@ -116,11 +111,11 @@ def test_learning_two_mode_squeezing():
 
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
-        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
+        return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.05)
 
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
     assert np.allclose(-cost_fn(), 0.25, atol=1e-5)
 
 
@@ -131,7 +126,7 @@ def test_learning_two_mode_Ggate():
 
     def cost_fn():
         amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2])
-        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
+        return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
 
@@ -156,7 +151,7 @@ def test_learning_two_mode_Interferometer():
 
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
-        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
+        return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(unitary_lr=0.5, euclidean_lr=0.01)
 
@@ -181,7 +176,7 @@ def test_learning_two_mode_RealInterferometer():
 
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
-        return -tf.abs(amps[1, 1]) ** 2 + tf.abs(amps[0, 1]) ** 2
+        return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(orthogonal_lr=0.5, euclidean_lr=0.01)
 
@@ -192,65 +187,101 @@ def test_learning_two_mode_RealInterferometer():
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
     settings.SEED = 4
+    solution_U = np.array(
+        [
+            [
+                -0.47541806 + 0.00045878j,
+                -0.41513474 - 0.27218387j,
+                -0.11065812 - 0.39556922j,
+                -0.29912017 + 0.51900235j,
+            ],
+            [
+                -0.05246398 + 0.5209089j,
+                -0.29650069 - 0.40653082j,
+                0.57434638 - 0.04417284j,
+                0.28230532 - 0.24738672j,
+            ],
+            [
+                0.28437557 + 0.08773767j,
+                0.18377764 - 0.66496587j,
+                -0.5874942 - 0.19866946j,
+                0.2010813 - 0.10210844j,
+            ],
+            [
+                -0.63173183 - 0.11057324j,
+                -0.03468292 + 0.15245454j,
+                -0.25390362 - 0.2244298j,
+                0.18706333 - 0.64375049j,
+            ],
+        ]
+    )
+    perturbed = (
+        Interferometer(num_modes=4, unitary=solution_U)
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 1])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[2, 3])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
+    )
+    X = math.cast(perturbed.XYd[0], "complex128")
+    perturbed_U = X[:4, :4] + 1j * X[4:, :4]
+
     ops = [
         Sgate(
-            r=settings.rng.uniform(size=4),
-            phi=settings.rng.normal(size=4),
+            r=settings.rng.normal(loc=np.arcsinh(1.0), scale=0.01, size=4),
             r_trainable=True,
-            phi_trainable=True,
         ),
-        Interferometer(num_modes=4, unitary_trainable=True),
+        Interferometer(unitary=perturbed_U, num_modes=4, unitary_trainable=True),
     ]
     circ = Circuit(ops)
-    state_in = Vacuum(num_modes=4)
 
     def cost_fn():
-        amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
-        return (
-            -math.abs(
-                math.sum(
-                    amps[1, 1]
-                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
-                )
-            )
-            ** 2
-        )
+        amps = (Vacuum(num_modes=4) >> circ).ket(cutoffs=[3, 3, 3, 3])
+        return -math.abs((amps[1, 1, 2, 0] + amps[1, 1, 0, 2]) / np.sqrt(2)) ** 2
 
     opt = Optimizer(unitary_lr=0.05)
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=1000)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
     settings.SEED = 6
+    solution_O = np.array(
+        [
+            [0.5, -0.5, 0.5, 0.5],
+            [-0.5, -0.5, -0.5, 0.5],
+            [0.5, 0.5, -0.5, 0.5],
+            [0.5, -0.5, -0.5, -0.5],
+        ]
+    )
+    solution_S = (np.arcsinh(1.0), np.array([0.0, np.pi / 2, -np.pi, -np.pi / 2]))
+    pertubed = (
+        RealInterferometer(orthogonal=solution_O, num_modes=4)
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 1])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[2, 3])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
+        >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
+    )
+    perturbed_O = pertubed.XYd[0][:4, :4]
+
     ops = [
         Sgate(
-            r=settings.rng.uniform(size=4),
-            phi=settings.rng.normal(size=4),
+            r=solution_S[0] + settings.rng.normal(scale=0.01, size=4),
+            phi=solution_S[1] + settings.rng.normal(scale=0.01, size=4),
             r_trainable=True,
             phi_trainable=True,
         ),
-        RealInterferometer(num_modes=4, orthogonal_trainable=True),
+        RealInterferometer(orthogonal=perturbed_O, num_modes=4, orthogonal_trainable=True),
     ]
     circ = Circuit(ops)
-    state_in = Vacuum(num_modes=4)
 
     def cost_fn():
-        amps = (state_in >> circ).ket(cutoffs=[3, 3, 3, 3])
-        return (
-            -math.abs(
-                math.sum(
-                    amps[1, 1]
-                    * np.array([[0, 0, 1 / np.sqrt(2)], [0, 0, 0], [1 / np.sqrt(2), 0, 0]])
-                )
-            )
-            ** 2
-        )
+        amps = (Vacuum(num_modes=4) >> circ).ket(cutoffs=[2, 2, 3, 3])
+        return -math.abs((amps[1, 1, 0, 2] + amps[1, 1, 2, 0]) / np.sqrt(2)) ** 2
 
     opt = Optimizer()
 
-    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=400)
+    opt.minimize(cost_fn, by_optimizing=[circ], max_steps=200)
     assert np.allclose(-cost_fn(), 0.0625, atol=1e-5)
 
 
@@ -268,7 +299,7 @@ def test_squeezing_hong_ou_mandel_optimizer():
     circ = Circuit([S_01, S_23, S_12])
 
     def cost_fn():
-        return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        return math.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
@@ -291,7 +322,7 @@ def test_parameter_passthrough():
     circ = Circuit(ops)
 
     def cost_fn():
-        return tf.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+        return math.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[par], max_steps=300)
@@ -343,7 +374,7 @@ def test_opt_backend_param():
         state_out = Vacuum(1) >> S >> Rgate(angle=r_angle)
         return 1 - fidelity(state_out, target_state)
 
-    opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.1)
+    opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2)
+    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-4)
