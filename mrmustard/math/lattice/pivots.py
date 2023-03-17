@@ -13,38 +13,12 @@
 # limitations under the License.
 #
 
-from typing import Tuple
-
 from numba import njit
 from numba.cpython.unsafe.tuple import tuple_setitem
 
-from mrmustard.typing import IntVector
-
 
 @njit
-def first_pivot_fn(index: IntVector, pivot_idx: IntVector) -> Tuple[int, IntVector]:
-    r"""returns the first available pivot index for the given index"""
-    pivot_idx[:] = index
-    for i, v in enumerate(index):
-        if v > 0:
-            pivot_idx[i] = v - 1
-            return i, pivot_idx
-    raise ValueError("Index is zero")
-
-
-@njit
-def first_pivot(index: IntVector) -> Tuple[int, IntVector]:
-    r"""returns the first available pivot index for the given index.
-    Modifies the index in place."""
-    for i, v in enumerate(index):
-        if v > 0:
-            index[i] -= 1
-            return i, index
-    raise ValueError("Index is zero")
-
-
-@njit
-def first_pivot_tuple(index: tuple[int, ...]) -> Tuple[int, tuple[int, ...]]:
+def first_pivot_tuple(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     r"""returns the first available pivot index for the given index."""
     for i, v in enumerate(index):
         if v > 0:
@@ -53,7 +27,7 @@ def first_pivot_tuple(index: tuple[int, ...]) -> Tuple[int, tuple[int, ...]]:
 
 
 @njit
-def smallest_pivot_fn(index: IntVector) -> Tuple[int, IntVector]:
+def smallest_pivot_tuple(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     r"""returns the smallest available pivot index for the given index"""
     min_ = 2**64 - 1
     for i, v in enumerate(index):
@@ -62,5 +36,4 @@ def smallest_pivot_fn(index: IntVector) -> Tuple[int, IntVector]:
             min_i = i
     if min_ == 2**64 - 1:
         raise ValueError("Index is zero")
-    index[min_i] -= 1
-    return min_i, index
+    return min_i, tuple_setitem(index, min_i, min_ - 1)

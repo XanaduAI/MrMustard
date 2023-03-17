@@ -33,9 +33,10 @@ class Settings:
     def __init__(self):
         self._backend = "tensorflow"
         self.HBAR = 2.0
-        self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        self.AUTOCUTOFF_PROBABILITY = 0.999  # capture at least 99.9% of the probability
+        self.AUTOCUTOFF_PROBABILITY = (
+            0.9999  # capture at least 99.99% of the probability by default
+        )
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         self.CIRCUIT_DECIMALS = 3
@@ -50,6 +51,7 @@ class Settings:
         self.PROGRESSBAR = True
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
+        self.BINOMIAL_STRATEGY_MAX_PROB = 0.9999
 
     @property
     def SEED(self):

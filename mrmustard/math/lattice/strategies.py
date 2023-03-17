@@ -12,19 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import numba
-from numba import njit, prange, typed, types
-from typing import Optional, Union
+from typing import Optional
 
-from mrmustard.math.lattice import paths, steps, utils
-from mrmustard.math.lattice.paths import FACTORIAL_PATHS_DICT
-from mrmustard.typing import ComplexTensor, ComplexMatrix, ComplexVector
+import numpy as np
+from numba import njit, typed, types
+
+from mrmustard import settings
+from mrmustard.math.lattice import paths, steps
+from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
-    r"""Vanilla Fock-Bargmann strategy."""
+    r"""Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
+    in ndindex order.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): B vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
 
     # init output tensor
     Z = np.zeros(shape, dtype=np.complex128)
@@ -35,24 +46,39 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     # write vacuum amplitude
     Z[next(path)] = c
 
-    # iterate over all other indices
+    # iterate over the rest of the indices
     for index in path:
         Z[index] = steps.vanilla_step(Z, A, b, index)
     return Z
 
 
-FACTORIAL_PATHS_PYTHON = {}
-
-
-def factorial_python(
+def binomial(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,
     b: ComplexVector,
     c: complex,
-    max_prob: float = 0.999,
+    max_prob: Optional[float] = None,
     global_cutoff: Optional[int] = None,
 ) -> ComplexTensor:
-    r"""Factorial speedup strategy."""
+    r"""Binomial strategy (fill ket by weight), python version with numba function/loop.
+
+    Args:
+        local_cutoffs (tuple[int, ...]): local cutoffs of the tensor (used at least as shape)
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): B vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+        max_prob (float): max L2 norm. If reached, the computation is stopped early.
+        global_cutoff (Optional[int]): global cutoff (max total photon number considered).
+            If not given it is calculated from the local cutoffs.
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``. Some entries may be zero.
+    """
+    # sort out max prob
+    if max_prob is None:
+        max_prob = settings.BINOMIAL_STRATEGY_MAX_PROB
+
+    # sort out global cutoff
     if global_cutoff is None:
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
 
@@ -63,21 +89,21 @@ def factorial_python(
     Z.flat[0] = c
     prob = np.abs(c) ** 2
 
-    # iterate over all other indices in parallel and stop if norm is large enough
+    # iterate over subspaces by weight and stop if norm is large enough. Caches indices.
     for photons in range(1, global_cutoff):
         try:
-            indices = FACTORIAL_PATHS_PYTHON[(local_cutoffs, photons)]
+            indices = paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)]
         except KeyError:
             indices = paths.binomial_subspace(local_cutoffs, photons)
-            FACTORIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = factorial_step(Z, A, b, indices)  # numba parallelized function
+            paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
+        Z, prob_subspace = steps.binomial_step(Z, A, b, indices)  # numba parallelized function
         prob += prob_subspace
         if prob > max_prob:
             break
     return Z
 
 
-def factorial_dict(
+def binomial_dict(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,
     b: ComplexVector,
@@ -85,11 +111,25 @@ def factorial_dict(
     max_prob: Optional[float] = None,
     global_cutoff: Optional[int] = None,
 ) -> dict[tuple[int, ...], complex]:
-    r"""Factorial speedup strategy."""
+    r"""Factorial speedup strategy (fill ket by weight), python version with numba function/loop.
+    Uses a dictionary to store the output.
+
+    Args:
+        local_cutoffs (tuple[int, ...]): local cutoffs of the tensor (used at least as shape)
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): B vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+        max_prob (float): max L2 norm. If reached, the computation is stopped early.
+        global_cutoff (Optional[int]): global cutoff (max total photon number considered).
+            If not given it is calculated from the local cutoffs.
+
+    Returns:
+        dict[tuple[int, ...], complex]: Fock representation of the Gaussian tensor.
+    """
     if global_cutoff is None:
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
 
-    # init output dict
+    # init numba output dict
     Z = typed.Dict.empty(
         key_type=types.UniTuple(types.int64, len(local_cutoffs)),
         value_type=types.complex128,
@@ -99,14 +139,14 @@ def factorial_dict(
     Z[(0,) * len(local_cutoffs)] = c
     prob = np.abs(c) ** 2
 
-    # iterate over all other indices in parallel and stop if norm is large enough
+    # iterate over subspaces by weight and stop if norm is large enough. Caches indices.
     for photons in range(1, global_cutoff):
         try:
-            indices = FACTORIAL_PATHS_PYTHON[(local_cutoffs, photons)]
+            indices = paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)]
         except KeyError:
             indices = paths.binomial_subspace(local_cutoffs, photons)
-            FACTORIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = factorial_step_dict(Z, A, b, indices)  # numba parallelized function
+            paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
+        Z, prob_subspace = steps.binomial_step(Z, A, b, indices)  # numba parallelized function
         prob += prob_subspace
         try:
             if prob > max_prob:
@@ -117,37 +157,7 @@ def factorial_dict(
 
 
 @njit
-def factorial_step(
-    Z: ComplexTensor,
-    A: ComplexMatrix,
-    b: ComplexVector,
-    subspace_indices: list[tuple[int, ...]],
-) -> tuple[ComplexTensor, float]:
-    prob = 0.0
-    for i in range(len(subspace_indices)):
-        value = steps.vanilla_step(Z, A, b, subspace_indices[i])
-        Z[subspace_indices[i]] = value
-        prob = prob + np.abs(value) ** 2
-    return Z, prob
-
-
-@njit
-def factorial_step_dict(
-    Z: types.DictType,
-    A: ComplexMatrix,
-    b: ComplexVector,
-    subspace_indices: list[tuple[int, ...]],
-) -> tuple[ComplexTensor, float]:
-    prob = 0.0
-    for i in range(len(subspace_indices)):
-        value = steps.vanilla_step_dict(Z, A, b, subspace_indices[i])
-        Z[subspace_indices[i]] = value
-        prob = prob + np.abs(value) ** 2
-    return Z, prob
-
-
-@njit
-def factorial_numba(
+def binomial_numba(
     local_cutoffs: tuple[int, ...],
     A: ComplexMatrix,
     b: ComplexVector,
@@ -156,7 +166,7 @@ def factorial_numba(
     max_prob: float = 0.999,
     global_cutoff: Optional[int] = None,
 ) -> ComplexTensor:
-    r"""Factorial speedup strategy."""
+    r"""Binomial strategy (fill by weight), fully numba version."""
     if global_cutoff is None:
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
 
@@ -174,7 +184,7 @@ def factorial_numba(
         except Exception:  # pylint: disable=broad-except
             indices = paths.binomial_subspace(local_cutoffs, photons)
             FP[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = factorial_step(Z, A, b, indices)
+        Z, prob_subspace = steps.binomial_step(Z, A, b, indices)
         prob += prob_subspace
         if prob > max_prob:
             break

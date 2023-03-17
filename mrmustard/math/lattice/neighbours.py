@@ -15,11 +15,8 @@
 
 from typing import Iterator
 
-import numpy as np
 from numba import njit
 from numba.cpython.unsafe.tuple import tuple_setitem
-
-from mrmustard.typing import Batch, IntMatrix, IntVector
 
 #################################################################################
 ## All neighbours means all the indices that differ from the given pivot by ±1 ##
@@ -27,50 +24,16 @@ from mrmustard.typing import Batch, IntMatrix, IntVector
 
 
 @njit
-def all_neighbours_iter(pivot: IntVector) -> Iterator[IntVector]:
-    r"yields the indices of all the nearest neighbours of the given pivot"
-    for i in range(len(pivot)):
-        pivot[i] += 1
-        yield pivot
-        pivot[i] -= 2
-        yield pivot
-        pivot[i] += 1
-
-
-@njit
-def all_neighbours_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
-    r"returns the indices of the nearest neighbours of the given pivot as an array"
-    for i, _ in enumerate(pivot):
-        Z[2 * i] = pivot
-        Z[2 * i + 1] = pivot
-        Z[2 * i, i] += 1
-        Z[2 * i + 1, i] -= 1
-    return Z
+def all_neighbors_tuple(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
+    r"""yields the indices of all the neighbours of the given index."""
+    for j in range(len(pivot)):
+        yield j, tuple_setitem(pivot, j, pivot[j] - 1)
+        yield j, tuple_setitem(pivot, j, pivot[j] + 1)
 
 
 ####################################################################################
 ## Lower neighbours means all the indices that differ from the given index by -1  ##
 ####################################################################################
-
-
-@njit
-def lower_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
-    r"returns the indices of the lower neighbours of the given index as an array"
-    for j, _ in enumerate(pivot):
-        Z[j] = pivot
-        Z[j, j] -= 1
-    return Z
-
-
-@njit
-def lower_neighbors(pivot: IntVector) -> Iterator[tuple[int, IntVector]]:
-    r"""yields the indices of the lower neighbours of the given index.
-    Modifies the index in place.
-    """
-    for j in range(len(pivot)):
-        pivot[j] -= 1
-        yield j, pivot
-        pivot[j] += 1
 
 
 @njit
@@ -86,21 +49,10 @@ def lower_neighbors_tuple(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[i
 
 
 @njit
-def upper_neighbors(pivot: IntVector) -> Iterator[IntVector]:
-    r"yields the indices of the upper neighbours of the given pivot"
-    for i in range(len(pivot)):
-        pivot[i] += 1
-        yield pivot
-        pivot[i] -= 1
-
-
-@njit
-def upper_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
-    r"returns the indices of the upper neighbours of the given index as an array"
-    for i, _ in enumerate(pivot):
-        Z[i] = pivot
-        Z[i, i] += 1
-    return Z
+def upper_neighbors_tuple(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
+    r"""yields the indices of the lower neighbours of the given index."""
+    for j in range(len(pivot)):
+        yield j, tuple_setitem(pivot, j, pivot[j] + 1)
 
 
 ####################################################################################################
@@ -109,14 +61,12 @@ def upper_neighbors_fn(pivot: IntVector, Z: IntMatrix) -> Batch[IntVector]:
 
 
 @njit
-def bitstring_neighbours_iter(pivot: IntVector, bitstring: IntVector) -> Iterator[IntVector]:
+def bitstring_neighbours_tuple(
+    pivot: tuple[int, ...], bitstring: tuple[int, ...]
+) -> Iterator[int, tuple[int, ...]]:
     r"yields the indices of the bitstring neighbours of the given index"
     for i, b in enumerate(bitstring):
-        if b:  # b == 1 -> subtract 1
-            pivot[i] -= 1
-            yield pivot
-            pivot[i] += 1
-        else:  # b == 0 -> add 1
-            pivot[i] += 1
-            yield pivot
-            pivot[i] -= 1
+        if b:  # b == 1 -> lower
+            yield i, tuple_setitem(pivot, i, pivot[i] - 1)
+        else:  # b == 0 -> upper
+            yield i, tuple_setitem(pivot, i, pivot[i] + 1)

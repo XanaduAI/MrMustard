@@ -14,9 +14,7 @@
 
 from typing import Iterator, Optional
 
-import numpy as np
-from numba import njit, typeof, prange, types, typed
-from numba.typed import Dict, List
+from numba import njit, typed, typeof, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import IntVector
@@ -44,6 +42,9 @@ def ndindex_path(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
                 return
 
 
+BINOMIAL_PATHS_PYTHON = {}
+
+
 @njit
 def _binomial_subspace(cutoffs, weight, mode, basis_element, basis):
     if mode == len(cutoffs):
@@ -57,16 +58,6 @@ def _binomial_subspace(cutoffs, weight, mode, basis_element, basis):
             _binomial_subspace(cutoffs, weight - photons, mode + 1, basis_element, basis)
 
 
-def FACTORIAL_PATHS_n(modes):
-    return typed.Dict.empty(
-        key_type=typeof(((0,) * modes, 0)),
-        value_type=types.ListType(typeof((0,) * modes)),
-    )
-
-
-FACTORIAL_PATHS_DICT = {modes: FACTORIAL_PATHS_n(modes) for modes in range(1, 100)}
-
-
 @njit
 def binomial_subspace(cutoffs, weight):
     basis = typed.List(
@@ -76,7 +67,16 @@ def binomial_subspace(cutoffs, weight):
     return basis[1:]  # remove the dummy element
 
 
+def FACTORIAL_PATHS_n(modes):
+    return typed.Dict.empty(
+        key_type=typeof(((0,) * modes, 0)),
+        value_type=types.ListType(typeof((0,) * modes)),
+    )
+
+FACTORIAL_PATHS_DICT = {modes: FACTORIAL_PATHS_n(modes) for modes in range(1, 100)}
+
 @njit
+
 def equal_weight_path(
     cutoffs: tuple[int, ...], max_photons: Optional[int] = None
 ) -> Iterator[list[tuple[int, ...]]]:
