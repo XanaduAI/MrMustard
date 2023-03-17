@@ -25,15 +25,14 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install -r requirements.txt
-          pip install wheel pytest pytest-cov pytest-mock hypothesis --upgrade
+          pip install ray wheel pytest pytest-cov pytest-mock hypothesis --upgrade
 
       - name: Run tests
         run: |
           python -m pytest tests -p no:warnings --tb=native
 
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PIPY_TOKEN }}

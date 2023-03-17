@@ -39,9 +39,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-          pip install wheel pytest pytest-cov pytest-mock hypothesis --upgrade
+          pip install ray wheel pytest pytest-cov pytest-mock hypothesis --upgrade
 
       - name: Run tests
         run: |
