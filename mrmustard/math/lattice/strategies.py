@@ -144,7 +144,7 @@ def binomial_dict(
         except KeyError:
             indices = paths.binomial_subspace(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = steps.binomial_step(Z, A, b, indices)  # numba parallelized function
+        Z, prob_subspace = steps.binomial_step_dict(Z, A, b, indices)  # numba parallelized function
         prob += prob_subspace
         try:
             if prob > max_prob:
