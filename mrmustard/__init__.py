@@ -51,7 +51,6 @@ class Settings:
         self.PROGRESSBAR = True
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
-        self.BINOMIAL_STRATEGY_MAX_PROB = 0.9999
 
     @property
     def SEED(self):
