@@ -189,3 +189,18 @@ def binomial_numba(
         if prob > max_prob:
             break
     return Z
+
+
+@njit
+def wormhole(shape: IntVector) -> IntVector:
+    raise NotImplementedError("Wormhole strategy not implemented yet")
+
+
+@njit
+def diagonal(shape: IntVector) -> IntVector:
+    raise NotImplementedError("Diagonal strategy not implemented yet")
+
+
+@njit
+def dynamic_U(shape: IntVector) -> IntVector:
+    raise NotImplementedError("Diagonal strategy not implemented yet")

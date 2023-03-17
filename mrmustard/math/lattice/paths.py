@@ -14,7 +14,7 @@
 
 from typing import Iterator, Optional
 
-from numba import njit, typed, typeof, types
+from numba import njit, typed
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import IntVector
@@ -67,16 +67,16 @@ def binomial_subspace(cutoffs, weight):
     return basis[1:]  # remove the dummy element
 
 
-def FACTORIAL_PATHS_n(modes):
-    return typed.Dict.empty(
-        key_type=typeof(((0,) * modes, 0)),
-        value_type=types.ListType(typeof((0,) * modes)),
-    )
+# def FACTORIAL_PATHS_n(modes):
+#     return typed.Dict.empty(
+#         key_type=typeof(((0,) * modes, 0)),
+#         value_type=types.ListType(typeof((0,) * modes)),
+#     )
 
-FACTORIAL_PATHS_DICT = {modes: FACTORIAL_PATHS_n(modes) for modes in range(1, 100)}
+# FACTORIAL_PATHS_DICT = {modes: FACTORIAL_PATHS_n(modes) for modes in range(1, 100)}
+
 
 @njit
-
 def equal_weight_path(
     cutoffs: tuple[int, ...], max_photons: Optional[int] = None
 ) -> Iterator[list[tuple[int, ...]]]:
@@ -96,18 +96,3 @@ def equal_weight_path(
 @njit
 def grey_code_iter(shape: IntVector) -> Iterator[IntVector]:
     raise NotImplementedError("Grey code order strategy not implemented yet")
-
-
-@njit
-def wormhole(shape: IntVector) -> IntVector:
-    raise NotImplementedError("Wormhole strategy not implemented yet")
-
-
-@njit
-def diagonal(shape: IntVector) -> IntVector:
-    raise NotImplementedError("Diagonal strategy not implemented yet")
-
-
-@njit
-def dynamic_U(shape: IntVector) -> IntVector:
-    raise NotImplementedError("Diagonal strategy not implemented yet")
