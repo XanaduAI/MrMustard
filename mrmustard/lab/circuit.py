@@ -307,7 +307,7 @@ class Wire:
         return self.origin is not None and self.end is not None
 
     @property
-    def double(self):
+    def is_double(self):
         "whether the wire has an R component."
         return self.R is not None
 
@@ -329,7 +329,7 @@ class Wire:
     def __repr__(self):
         return (
             f"Wire: {self.origin}" + " ==> "
-            if self.double
+            if self.is_double
             else " --> " + f"{self.end} | mode={self.mode}, L={self.L}, R={self.R}."
         )
 
