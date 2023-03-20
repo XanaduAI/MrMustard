@@ -52,38 +52,55 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
 
 
 @njit
-def vanilla_grad(
-    Z, shape: tuple[int, ...], A, b, dL_dZ
-) -> tuple[ComplexMatrix, ComplexVector, complex]:
-    r"""Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
-    in ndindex order.
-
-    Args:
-        Z (np.ndarray): Tensor result of the forward pass
-        shape (tuple[int, ...]): shape of the output tensor
-        A (np.ndarray): A matrix of the Fock-Bargmann representation
-        c (complex): vacuum amplitude
-        dL_dZ (np.ndarray): gradient of the loss with respect to the output tensor
-
-    Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+def vanilla_jacobian(G, A, b, c) -> tuple[ComplexTensor, ComplexTensor, ComplexTensor]:
+    r"""Vanilla Fock-Bargmann strategy gradient. Returns dG/dA, dG/db, dG/dc.
+    Notice that G is a holomorphic function of A, b, c. This means that there is only
+    one gradient to care about for each parameter (i.e. not dG/dA.conj() etc).
     """
 
-    # init gradients
-    dL_dA = np.zeros_like(A)
-    dL_db = np.zeros_like(b)
-    dL_dc = 0.0
+    # init output tensors
+    dGdA = np.zeros(G.shape + A.shape, dtype=np.complex128)
+    dGdb = np.zeros(G.shape + b.shape, dtype=np.complex128)
+    dGdc = G / c
 
     # initialize path iterator
-    path = paths.ndindex_path(shape)
-    next(path)
+    path = paths.ndindex_path(G.shape)
 
-    dL_dc = np.sum(dL_dZ * Z)
+    # skip first index
+    next(path)
 
     # iterate over the rest of the indices
     for index in path:
-        dL_dA, dL_db = steps.vanilla_step_grad(Z, index, dL_dA, dL_db, dL_dZ)
-    return dL_dA, dL_db, dL_dc
+        dGdA, dGdb = steps.vanilla_step_grad(G, A, b, index, dGdA, dGdb)
+
+    return dGdA, dGdb, dGdc
+
+
+@njit
+def vanilla_grad(G, A, b, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): B vector of the Fock-Bargmann representation
+        c (complex): vacuum amplitude
+        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
+    """
+
+    # init gradients
+    dGdA, dGdb, dGdc = vanilla_jacobian(G, A, b, c)
+
+    # inner product of the gradients with the loss gradient
+    axes = [ax for ax, _ in enumerate(G.shape)]
+    dLdA = np.tensordot(dLdG, dGdA, axes=(axes, axes))
+    dLdb = np.tensordot(dLdG, dGdb, axes=(axes, axes))
+    dLdc = np.tensordot(dLdG, dGdc, axes=(axes, axes))
+
+    return dLdA, dLdb, dLdc
 
 
 def binomial(

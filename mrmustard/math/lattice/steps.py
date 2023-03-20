@@ -30,12 +30,12 @@ from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 # TODO: gradients
 
-SQRT = np.sqrt(np.arange(10000))
+SQRT = np.sqrt(np.arange(100000))
 
 
 @njit
 def vanilla_step(
-    data: ComplexTensor,
+    G: ComplexTensor,
     A: ComplexMatrix,
     b: ComplexVector,
     index: tuple[int, ...],
@@ -45,7 +45,7 @@ def vanilla_step(
     The appropriate pivot and neighbours must exist.
 
     Args:
-        data (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
+        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
         A (array): matrix of coefficients
         b (array): vector of coefficients
         index (Sequence): index of the amplitude to calculate
@@ -56,46 +56,54 @@ def vanilla_step(
     i, pivot = first_pivot_tuple(index)
 
     # calculate value at index: pivot contribution
-    denom = SQRT[pivot[i] + 1]
-    value_at_index = b[i] / denom * data[pivot]
+    value_at_index = b[i] / SQRT[index[i]] * G[pivot]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors_tuple(pivot):
-        value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data[neighbor]
+        value_at_index += A[i, j] * SQRT[pivot[j]] / SQRT[index[i]] * G[neighbor]
 
     return value_at_index
 
 
 @njit
 def vanilla_step_grad(
-    data: ComplexTensor,
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
     index: tuple[int, ...],
-    dL_dA: ComplexMatrix,
-    dL_db: ComplexVector,
-    dL_ddata: ComplexTensor,
+    dGdA: ComplexTensor,
+    dGdB: ComplexTensor,
 ) -> tuple[ComplexMatrix, ComplexVector]:
-    r"""Gradient of the Fock-Bargmann recurrence relation step. Vanilla version.
+    r"""Gradient of the Fock-Bargmann recurrence relation step (i.e. of the value_at_index)
+    with respect to A and b. Vanilla version. It updates the dGdB and dGdA tensors at the
+    given index.
 
     Args:
-        data (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
-        index (Sequence): index of the amplitude to calculate
-        dL_dA (array): gradient of the loss with respect to A
-        dL_db (array): gradient of the loss with respect to b
-        dL_ddata (array): gradient of the loss with respect to the data
+        G (array or dict): fully computed data store that supports getitem[tuple[int, ...]]
+        A (array): matrix of coefficients
+        b (array): vector of coefficients
+        c (complex): vacuum amplitude
+        index (Sequence): index of the amplitude to calculate the gradient of
+        dGdB (array): gradient of G with respect to b (partially computed)
+        dGdA (array): gradient of G with respect to A (partially computed)
     Returns:
-        tuple[array, array]: the gradient of the loss with respect to A and b
+        tuple[array, array]: the updated dGdB and dGdA tensors
     """
     # index -> pivot
     i, pivot = first_pivot_tuple(index)
 
-    # calculate value at index: pivot contribution to dL_db
-    dL_db[i] += SQRT[pivot[i]] * data[pivot] * dL_ddata[index]
+    # pivot contribution
+    dGdB[index] += b[i] / SQRT[index[i]] * dGdB[pivot]
+    dGdB[index + (i,)] += G[pivot] / SQRT[index[i]]
+    dGdA[index] += b[i] / SQRT[index[i]] * dGdA[pivot]
 
-    # neighbors contribution to dL_dA
+    # neighbors contribution
     for j, neighbor in lower_neighbors_tuple(pivot):
-        dL_dA[i, j] += 1 / denom * SQRT[pivot[j]] * data[neighbor] * dL_ddata[neighbor]
+        dGdB[index] += A[i, j] * SQRT[pivot[j]] / SQRT[index[i]] * dGdB[neighbor]
+        dGdA[index] += A[i, j] * SQRT[pivot[j]] / SQRT[index[i]] * dGdA[neighbor]
+        dGdA[index + (i, j)] += SQRT[pivot[j]] / SQRT[index[i]] * G[neighbor]
 
-    return dL_dA, dL_db
+    return dGdA, dGdB
 
 
 @njit
