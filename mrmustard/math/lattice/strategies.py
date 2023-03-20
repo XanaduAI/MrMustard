@@ -71,7 +71,7 @@ def vanilla_jacobian(G, A, b, c) -> tuple[ComplexTensor, ComplexTensor, ComplexT
 
     # iterate over the rest of the indices
     for index in path:
-        dGdA, dGdb = steps.vanilla_step_grad(G, A, b, index, dGdA, dGdb)
+        dGdA, dGdb = steps.vanilla_step_jacobian(G, A, b, index, dGdA, dGdb)
 
     return dGdA, dGdb, dGdc
 
@@ -96,9 +96,44 @@ def vanilla_grad(G, A, b, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, comple
 
     # inner product of the gradients with the loss gradient
     axes = [ax for ax, _ in enumerate(G.shape)]
-    dLdA = np.tensordot(dLdG, dGdA, axes=(axes, axes))
-    dLdb = np.tensordot(dLdG, dGdb, axes=(axes, axes))
-    dLdc = np.tensordot(dLdG, dGdc, axes=(axes, axes))
+    dLdA = np.sum(np.expand_dims(np.expand_dims(dLdG, -1), -1) * dGdA, axis=axes)
+    dLdb = np.sum(np.expand_dims(dLdG, -1) * dGdb, axes=axes)
+    dLdc = np.sum(dGdc * dLdG)
+
+    return dLdA, dLdb, dLdc
+
+
+@njit
+def vanilla_grad2(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass
+        D (int): Dimension of the A/b tensors
+        c (complex): vacuum amplitude
+        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
+    """
+    dA = np.zeros((D, D), dtype=np.complex128)
+    db = np.zeros(D, dtype=np.complex128)
+    dLdA = np.zeros_like(dA)
+    dLdb = np.zeros_like(db)
+
+    # initialize path iterator
+    path = paths.ndindex_path(G.shape)
+
+    # skip first index
+    next(path)
+
+    # iterate over the rest of the indices
+    for index in path:
+        dA, db = steps.vanilla_step_grad(G, D, index, dA, db)
+        dLdA += dA * dLdG[index]
+        dLdb += db * dLdG[index]
+
+    dLdc = np.sum(G * dLdG) / c
 
     return dLdA, dLdb, dLdc
 

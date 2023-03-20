@@ -673,7 +673,9 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     R = np.array([[2 + 0j]])  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        poly = math.hermite_renormalized(R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff)
+        poly = math.hermite_renormalized(
+            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
+        )
         return math.cast(poly, "float64")
 
     hermite_polys = math.map_fn(f_hermite_polys, x_tensor)

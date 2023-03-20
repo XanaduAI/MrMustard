@@ -31,7 +31,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.typing import (
     ComplexTensor,
     RealMatrix,
@@ -497,6 +497,17 @@ class State:
             )
         self._modes = item
         return self
+
+    def bargmann(self) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+        r"""Returns the Bargmann representation of the state."""
+        if self.is_gaussian:
+            if self.is_pure:
+                A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
+            else:
+                A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
+        else:
+            return None
+        return A, B, C
 
     def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""

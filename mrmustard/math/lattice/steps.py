@@ -23,6 +23,7 @@
 
 import numpy as np
 from numba import njit, types
+from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.math.lattice.neighbours import lower_neighbors_tuple
 from mrmustard.math.lattice.pivots import first_pivot_tuple
@@ -66,14 +67,14 @@ def vanilla_step(
 
 
 @njit
-def vanilla_step_grad(
+def vanilla_step_jacobian(
     G: ComplexTensor,
     A: ComplexMatrix,
     b: ComplexVector,
     index: tuple[int, ...],
     dGdA: ComplexTensor,
     dGdB: ComplexTensor,
-) -> tuple[ComplexMatrix, ComplexVector]:
+) -> tuple[ComplexTensor, ComplexTensor]:
     r"""Gradient of the Fock-Bargmann recurrence relation step (i.e. of the value_at_index)
     with respect to A and b. Vanilla version. It updates the dGdB and dGdA tensors at the
     given index.
@@ -93,17 +94,47 @@ def vanilla_step_grad(
     i, pivot = first_pivot_tuple(index)
 
     # pivot contribution
-    dGdB[index] += b[i] / SQRT[index[i]] * dGdB[pivot]
+    dGdB[index] += b[i] * dGdB[pivot] / SQRT[index[i]]
     dGdB[index + (i,)] += G[pivot] / SQRT[index[i]]
-    dGdA[index] += b[i] / SQRT[index[i]] * dGdA[pivot]
+    dGdA[index] += b[i] * dGdA[pivot] / SQRT[index[i]]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors_tuple(pivot):
-        dGdB[index] += A[i, j] * SQRT[pivot[j]] / SQRT[index[i]] * dGdB[neighbor]
-        dGdA[index] += A[i, j] * SQRT[pivot[j]] / SQRT[index[i]] * dGdA[neighbor]
-        dGdA[index + (i, j)] += SQRT[pivot[j]] / SQRT[index[i]] * G[neighbor]
+        dGdB[index] += A[i, j] * dGdB[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
+        dGdA[index] += A[i, j] * dGdA[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
+        dGdA[index + (i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
 
     return dGdA, dGdB
+
+
+@njit
+def vanilla_step_grad(
+    G: ComplexTensor,
+    D: int,
+    index: tuple[int, ...],
+    dA: ComplexMatrix,
+    db: ComplexVector,
+) -> tuple[ComplexMatrix, ComplexVector]:
+    r"""Gradient of the Fock-Bargmann recurrence relation step (i.e. of the value_at_index)
+    with respect to A and b. Vanilla version. It updates the dGdB and dGdA tensors at the
+    given index.
+
+    Args:
+        G (array or dict): fully computed data store that supports getitem[tuple[int, ...]]
+        D (int): dimension of the A,b tensors
+        index (Sequence): index of the amplitude to calculate the gradient of
+        dA (array): empty array to store the gradient of G[index] with respect to A
+        db (array): empty array to store the gradient of G[index] with respect to B
+    Returns:
+        tuple[array, array]: the updated dGdB and dGdA tensors
+    """
+    for i in range(D):
+        pivot_i = tuple_setitem(index, i, index[i] - 1)
+        db[i] = SQRT[index[i]] * G[pivot_i]
+        for j in range(D):
+            dA[i, j] = -SQRT[index[i] * pivot_i[j]] * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
+
+    return dA, db
 
 
 @njit

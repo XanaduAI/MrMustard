@@ -19,9 +19,13 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from thewalrus import grad_hermite_multidimensional, hermite_multidimensional
+from thewalrus._hermite_multidimensional import (
+    grad_hermite_multidimensional,
+    hermite_multidimensional,
+)
 
 from mrmustard.math.autocast import Autocast
+from mrmustard.math.lattice.strategies import vanilla_grad, vanilla_grad2, vanilla_jacobian
 from mrmustard.math.numba.compactFock_inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
@@ -30,6 +34,9 @@ from mrmustard.math.numba.compactFock_inputValidation import (
 )
 from mrmustard.typing import Tensor, Trainable
 
+vanilla_grad
+vanilla_grad2
+vanilla_jacobian
 from .math_interface import MathInterface
 
 
@@ -375,14 +382,21 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        if isinstance(shape, List) and len(shape) == 1:
-            shape = shape[0]
-
         poly = hermite_multidimensional(
             self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
         )
+        # _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        # poly = vanilla(tuple(shape), -_A, _B, _C)
 
         def grad(dLdpoly):
+            # dGdA, dGdb, dGdc = vanilla_jacobian(G, A, b, c)
+            # dLdA, dLdB, dLdC = vanilla_grad2(poly, A.shape[-1], self.asnumpy(C), np.conj(dLdpoly))
+            # return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
+            # return vanilla_grad(G, _A, _B, _C, np.conj(dLdGconj))
+            # dpoly_dA, dpoly_dB, dpoly_dC = tf.numpy_function(
+            #     vanilla_jacobian, [poly, _A, _B, _C], [poly.dtype] * 3
+            # )
+
             dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
                 grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
             )
