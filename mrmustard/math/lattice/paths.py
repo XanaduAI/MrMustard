@@ -30,6 +30,7 @@ BINOMIAL_PATHS_PYTHON = {}
 
 @njit
 def _binomial_subspace(cutoffs, weight, mode, basis_element, basis):
+    r"""Recursive function to generate all indices of a tensor with equal weight."""
     if mode == len(cutoffs):
         if weight == 0:
             basis.append(basis_element)
@@ -43,6 +44,7 @@ def _binomial_subspace(cutoffs, weight, mode, basis_element, basis):
 
 @njit
 def binomial_subspace(cutoffs, weight):
+    r"""Returns all indices of a tensor with equal weight."""
     basis = typed.List(
         [cutoffs]
     )  # this is just so that numba can infer the type, then we remove it
