@@ -811,7 +811,7 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0) -> 
     f0_top = math.det((matsqrtm + I) @ (W @ (1j * J)))
     f0_bot = math.det(cov1 + cov2)
 
-    f0 = (f0_top / f0_bot) ** (1 / 2)  # square of equation 98
+    f0 = math.sqrt(f0_top / f0_bot)  # square of equation 98
 
     dot = math.sum(
         math.transpose(deltar) * math.matvec(cov12_inv, deltar)
