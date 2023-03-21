@@ -413,7 +413,12 @@ class TFMath(MathInterface):
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
         G = strategies.binomial(
-            tuple(shape), _A, _B, _C, max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY
+            tuple(shape),
+            _A,
+            _B,
+            _C,
+            max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY,
+            global_cutoff=global_cutoff or sum(shape) - len(shape),
         )
 
         def grad(dLdGconj):
