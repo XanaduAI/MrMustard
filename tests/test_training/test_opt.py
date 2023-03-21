@@ -17,6 +17,8 @@
 import numpy as np
 from hypothesis import given
 from hypothesis import strategies as st
+from thewalrus.symplectic import two_mode_squeezing
+
 from mrmustard import settings
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
@@ -35,7 +37,6 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer, Parametrized
 from mrmustard.training.callbacks import Callback
 from tests.random import angle
-from thewalrus.symplectic import two_mode_squeezing
 
 math = Math()
 

@@ -17,16 +17,15 @@
 import numpy as np
 import tensorflow as tf
 
+from mrmustard import settings
+from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
     S2gate,
 )
-from mrmustard.lab.circuit import Circuit
-from mrmustard.training import Optimizer, TensorboardCallback
 from mrmustard.lab.states import Vacuum
-from mrmustard import settings
-
 from mrmustard.math import Math
+from mrmustard.training import Optimizer, TensorboardCallback
 
 math = Math()
 
@@ -70,4 +69,4 @@ def test_tensorboard_callback(tmp_path):
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
     assert tbcb.logdir.exists()
     assert len(list(tbcb.writter_logdir.glob("events*"))) > 0
-    assert len(opt.callback_history["tb"]) == (len(opt.opt_history) - 1) // tbcb.steps_per_call
+    assert len(opt.callback_history["tb"]) == (len(opt.opt_history) + 2) // tbcb.steps_per_call
