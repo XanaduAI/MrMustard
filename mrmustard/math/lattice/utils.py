@@ -1,10 +1,10 @@
 import numba
-import numpy as np
 from numba import njit
 
 
 @njit
 def ravel_index(index, strides):
+    r"""Converts a multi-dimensional index to a single index."""
     result = 0
     for i in range(index.shape[0]):
         result += index[i] * strides[i]
@@ -13,11 +13,13 @@ def ravel_index(index, strides):
 
 @njit
 def tensor_value(tensor, index, strides):
+    "read a value from a tensor"
     return tensor.flat[ravel_index(index, strides)]
 
 
 @njit
 def tensor_set(tensor, index, value, strides):
+    "write a value to a tensor"
     tensor.flat[ravel_index(index, strides)] = value
 
 
