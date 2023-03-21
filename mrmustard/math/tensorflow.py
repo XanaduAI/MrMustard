@@ -19,17 +19,10 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from thewalrus import grad_hermite_multidimensional, hermite_multidimensional
 
-hermite_multidimensional  # TODO: REMOVE
-grad_hermite_multidimensional  # TODO: REMOVE
-
-
+from mrmustard import settings
 from mrmustard.math.autocast import Autocast
 from mrmustard.math.lattice import strategies
-
-strategies  # TODO: REMOVE
-
 from mrmustard.math.numba.compactFock_inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
@@ -392,31 +385,42 @@ class TFMath(MathInterface):
 
         return G, grad
 
-    # @tf.custom_gradient
-    # def hermite_renormalized(
-    #     self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
-    # ) -> tf.Tensor:
-    #     r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-    #     series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-    #     at the denominator rather than :math:`n!`.
+    @tf.custom_gradient
+    def hermite_renormalized_binomial(
+        self,
+        A: tf.Tensor,
+        B: tf.Tensor,
+        C: tf.Tensor,
+        shape: Tuple[int],
+        max_prob: Optional[float] = None,
+        global_cutoff: Optional[int] = None,
+    ) -> tf.Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. The computation fills the tensor in order of
+        total photon number (global cutoff).
 
-    #     Args:
-    #         A: The A matrix.
-    #         B: The B vector.
-    #         C: The C scalar.
-    #         shape: The shape of the final tensor.
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor (local cutoffs)
+            max_prob (optional float): The maximum probability of the state.
+            global_cutoff (optional int): The global cutoff.
 
-    #     Returns:
-    #         The renormalized Hermite polynomial of given shape.
-    #     """
-    #     _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-    #     G = strategies.binomial(tuple(shape), _A, _B, _C, max_prob=settings.AUTOCUTOFF_PROBABILITY)
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        G = strategies.binomial(
+            tuple(shape), _A, _B, _C, max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY
+        )
 
-    #     def grad(dLdGconj):
-    #         dLdA, dLdB, dLdC = strategies.vanilla_grad(G, _A.shape[-1], _C, np.conj(dLdGconj))
-    #         return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
+        def grad(dLdGconj):
+            dLdA, dLdB, dLdC = strategies.vanilla_grad(G, _A.shape[-1], _C, np.conj(dLdGconj))
+            return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
 
-    #     return G, grad
+        return G, grad
 
     def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
