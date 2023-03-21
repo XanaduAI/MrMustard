@@ -110,29 +110,28 @@ def vanilla_step_jacobian(
 @njit
 def vanilla_step_grad(
     G: ComplexTensor,
-    D: int,
     index: tuple[int, ...],
     dA: ComplexMatrix,
     db: ComplexVector,
 ) -> tuple[ComplexMatrix, ComplexVector]:
     r"""Gradient of the Fock-Bargmann recurrence relation step (i.e. of the value_at_index)
-    with respect to A and b. Vanilla version. It updates the dGdB and dGdA tensors at the
-    given index.
+    with respect to A and b. Vanilla version. dA and db will be used to update the dGdB and dGdA
+    tensors at `index`.
 
     Args:
         G (array or dict): fully computed data store that supports getitem[tuple[int, ...]]
-        D (int): dimension of the A,b tensors
         index (Sequence): index of the amplitude to calculate the gradient of
         dA (array): empty array to store the gradient of G[index] with respect to A
         db (array): empty array to store the gradient of G[index] with respect to B
     Returns:
         tuple[array, array]: the updated dGdB and dGdA tensors
     """
-    for i in range(D):
+    for i in range(len(db)):
         pivot_i = tuple_setitem(index, i, index[i] - 1)
         db[i] = SQRT[index[i]] * G[pivot_i]
-        for j in range(D):
-            dA[i, j] = -SQRT[index[i] * pivot_i[j]] * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
+        dA[i, i] = 0.5 * SQRT[index[i] * pivot_i[i]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
+        for j in range(i + 1, len(db)):
+            dA[i, j] = SQRT[index[i] * pivot_i[j]] * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
 
     return dA, db
 

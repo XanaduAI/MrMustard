@@ -115,10 +115,10 @@ def wigner_to_fock_state(
     """
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
-        return math.hermite_renormalized(-A, B, C, shape=shape)
+        return math.hermite_renormalized(A, B, C, shape=shape)
     else:
         A, B, C = wigner_to_bargmann_psi(cov, means)
-        return math.hermite_renormalized(-A, B, C, shape=shape)
+        return math.hermite_renormalized(A, B, C, shape=shape)
 
 
 def wigner_to_fock_U(X, d, shape):
@@ -135,7 +135,7 @@ def wigner_to_fock_U(X, d, shape):
         Tensor: the fock representation of the unitary transformation
     """
     A, B, C = wigner_to_bargmann_U(X, d)
-    return math.hermite_renormalized(-A, B, C, shape=shape)
+    return math.hermite_renormalized(A, B, C, shape=shape)
 
 
 def wigner_to_fock_Choi(X, Y, d, shape):
@@ -153,7 +153,7 @@ def wigner_to_fock_Choi(X, Y, d, shape):
         Tensor: the fock representation of the Choi matrix
     """
     A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    return math.hermite_renormalized(-A, B, C, shape=shape)
+    return math.hermite_renormalized(A, B, C, shape=shape)
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:

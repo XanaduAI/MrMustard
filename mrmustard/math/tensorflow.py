@@ -19,13 +19,9 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from thewalrus._hermite_multidimensional import (
-    grad_hermite_multidimensional,
-    hermite_multidimensional,
-)
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.math.lattice.strategies import vanilla_grad, vanilla_grad2, vanilla_jacobian
+from mrmustard.math.lattice import strategies
 from mrmustard.math.numba.compactFock_inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
@@ -34,9 +30,6 @@ from mrmustard.math.numba.compactFock_inputValidation import (
 )
 from mrmustard.typing import Tensor, Trainable
 
-vanilla_grad
-vanilla_grad2
-vanilla_jacobian
 from .math_interface import MathInterface
 
 
@@ -370,8 +363,8 @@ class TFMath(MathInterface):
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:  # TODO this is not ready
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`.
 
         Args:
             A: The A matrix.
@@ -382,38 +375,21 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        poly = hermite_multidimensional(
-            self.asnumpy(A), shape, self.asnumpy(B), self.asnumpy(C), True, True, True
-        )
-        # _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        # poly = vanilla(tuple(shape), -_A, _B, _C)
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        G = strategies.vanilla(tuple(shape), _A, _B, _C)
 
-        def grad(dLdpoly):
-            # dGdA, dGdb, dGdc = vanilla_jacobian(G, A, b, c)
-            # dLdA, dLdB, dLdC = vanilla_grad2(poly, A.shape[-1], self.asnumpy(C), np.conj(dLdpoly))
-            # return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
-            # return vanilla_grad(G, _A, _B, _C, np.conj(dLdGconj))
-            # dpoly_dA, dpoly_dB, dpoly_dC = tf.numpy_function(
-            #     vanilla_jacobian, [poly, _A, _B, _C], [poly.dtype] * 3
-            # )
+        def grad(dLdGconj):
+            dLdA, dLdB, dLdC = strategies.vanilla_grad2(G, _A.shape[-1], _C, np.conj(dLdGconj))
+            return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
 
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional, [poly, A, B, C], [poly.dtype] * 3
-            )
-            ax = tuple(range(dLdpoly.ndim))
-            dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-            dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-            dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-            return dLdA, dLdB, dLdC
-
-        return poly, grad
+        return G, grad
 
     def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         Moreover, the recurrence relation in mrmustard.math.numba.compactFock~ is defined such that A = -A compared to mrmustard.physics.bargmann.
         """
-        A = -A
+        # A = -A
         ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
         A = tf.gather(A, ordering, axis=1)
         A = tf.gather(A, ordering)

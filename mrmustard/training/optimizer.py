@@ -57,7 +57,7 @@ class Optimizer:
             "unitary": unitary_lr,
             "orthogonal": orthogonal_lr,
         }
-        self.opt_history: List[float] = [1e-5, 0.0]
+        self.opt_history: List[float] = []
         self.callback_history: Dict[str, List] = {}
         self.log = create_logger(__name__)
         self.__history_sum = 0.0
@@ -215,7 +215,9 @@ class Optimizer:
     def should_stop(self, max_steps: int) -> bool:
         r"""Returns ``True`` if the optimization should stop (either because
         the loss is stable or because the maximum number of steps is reached)."""
-        if max_steps != 0 and len(self.opt_history) - 2 > max_steps:
+        if len(self.opt_history) < 2:
+            return False
+        if max_steps != 0 and len(self.opt_history) > max_steps:
             return True
         self.__history_sum += abs(self.opt_history[-2] - self.opt_history[-1])
         if len(self.opt_history) > 20:  # stop if cost varies less than 10e-6 over 20 steps

@@ -116,8 +116,9 @@ def vanilla_grad2(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]
     Returns:
         tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
     """
-    dA = np.zeros((D, D), dtype=np.complex128)
-    db = np.zeros(D, dtype=np.complex128)
+    # init gradients
+    dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
+    db = np.zeros(D, dtype=np.complex128)  # component of dL/db
     dLdA = np.zeros_like(dA)
     dLdb = np.zeros_like(db)
 
@@ -129,7 +130,7 @@ def vanilla_grad2(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]
 
     # iterate over the rest of the indices
     for index in path:
-        dA, db = steps.vanilla_step_grad(G, D, index, dA, db)
+        dA, db = steps.vanilla_step_grad(G, index, dA, db)
         dLdA += dA * dLdG[index]
         dLdb += db * dLdG[index]
 

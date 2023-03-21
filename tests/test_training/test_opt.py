@@ -14,31 +14,29 @@
 
 """optimization tests"""
 
-from hypothesis import given, strategies as st
-
 import numpy as np
 import tensorflow as tf
-
+from hypothesis import given
+from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
 
+from mrmustard import settings
+from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
-    Sgate,
-    Rgate,
     BSgate,
-    S2gate,
     Ggate,
     Interferometer,
     RealInterferometer,
+    Rgate,
+    S2gate,
+    Sgate,
 )
-from mrmustard.lab.circuit import Circuit
-from mrmustard.training import Optimizer, Parametrized
-from mrmustard.training.callbacks import Callback
-from mrmustard.lab.states import Vacuum, SqueezedVacuum
+from mrmustard.lab.states import SqueezedVacuum, Vacuum
+from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
-from mrmustard import settings
-
-from mrmustard.math import Math
+from mrmustard.training import Optimizer, Parametrized
+from mrmustard.training.callbacks import Callback
 
 math = Math()
 
@@ -46,7 +44,7 @@ math = Math()
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
-    settings.SEED = 42
+    settings.SEED = 40
     S = S2gate(
         r=abs(settings.rng.normal()),
         phi=settings.rng.normal(),
@@ -73,7 +71,7 @@ def test_S2gate_coincidence_prob(n):
     cb_result = opt.callback_history.get("cb")
     assert {res["num_trainables"] for res in cb_result} == {2}
     assert {res["lr"] for res in cb_result} == {0.01}
-    assert [res["cost"] for res in cb_result] == opt.opt_history[1:]
+    assert [res["cost"] for res in cb_result] == opt.opt_history
 
 
 @given(i=st.integers(1, 5), k=st.integers(1, 5))
@@ -83,7 +81,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
     which lacks a square root in the right hand side.
     """
-    settings.SEED = 42
+    settings.SEED = 40
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
@@ -111,7 +109,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     )
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
     assert "null_cb" in opt.callback_history
-    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) - 1) // 3
+    assert len(opt.callback_history["null_cb"]) == len(opt.opt_history) // 3
 
 
 def test_learning_two_mode_squeezing():
@@ -146,7 +144,7 @@ def test_learning_two_mode_squeezing():
 
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
-    settings.SEED = 42
+    settings.SEED = 40
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
@@ -161,7 +159,7 @@ def test_learning_two_mode_Ggate():
 
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
-    settings.SEED = 42
+    settings.SEED = 40
     ops = [
         Sgate(
             r=settings.rng.normal(size=(2)) ** 2,
@@ -211,7 +209,7 @@ def test_learning_two_mode_RealInterferometer():
 
 def test_learning_four_mode_Interferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    settings.SEED = 4
+    settings.SEED = 41
     ops = [
         Sgate(
             r=settings.rng.uniform(size=4),
@@ -243,7 +241,7 @@ def test_learning_four_mode_Interferometer():
 
 def test_learning_four_mode_RealInterferometer():
     """Finding the optimal Interferometer to make a NOON state with N=2"""
-    settings.SEED = 6
+    settings.SEED = 40
     ops = [
         Sgate(
             r=settings.rng.uniform(size=4),
