@@ -14,7 +14,7 @@
 
 from typing import Iterator, Optional
 
-from numba import njit, typed
+from numba import njit, typed, typeof, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.typing import IntVector
@@ -23,23 +23,6 @@ from mrmustard.typing import IntVector
 # The paths can cover the entire lattice, or just a subset of it.
 # Strategies have to be generators because they enumerate lots of indices
 # and we don't want to allocate memory for all of them at once.
-
-
-@njit
-def ndindex_path(shape: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
-    r"yields the indices of a tensor in row-major order"
-    index = tuple_setitem(shape, 0, 0)
-    for i in range(1, len(shape)):
-        index = tuple_setitem(index, i, 0)
-    while True:
-        yield index
-        for i in range(len(shape) - 1, -1, -1):
-            if index[i] < shape[i] - 1:
-                index = tuple_setitem(index, i, index[i] + 1)
-                break
-            index = tuple_setitem(index, i, 0)
-            if i == 0:
-                return
 
 
 BINOMIAL_PATHS_PYTHON = {}
@@ -67,13 +50,14 @@ def binomial_subspace(cutoffs, weight):
     return basis[1:]  # remove the dummy element
 
 
-# def FACTORIAL_PATHS_n(modes):
-#     return typed.Dict.empty(
-#         key_type=typeof(((0,) * modes, 0)),
-#         value_type=types.ListType(typeof((0,) * modes)),
-#     )
+def BINOMIAL_PATHS_NUMBA_n(modes):
+    return typed.Dict.empty(
+        key_type=typeof(((0,) * modes, 0)),
+        value_type=types.ListType(typeof((0,) * modes)),
+    )
 
-# FACTORIAL_PATHS_DICT = {modes: FACTORIAL_PATHS_n(modes) for modes in range(1, 100)}
+
+BINOMIAL_PATHS_NUMBA = {modes: BINOMIAL_PATHS_NUMBA_n(modes) for modes in range(1, 100)}
 
 
 @njit

@@ -40,7 +40,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     Z = np.zeros(shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = paths.ndindex_path(shape)
+    path = np.ndindex(shape)
 
     # write vacuum amplitude
     Z[next(path)] = c
@@ -77,34 +77,7 @@ def vanilla_jacobian(G, A, b, c) -> tuple[ComplexTensor, ComplexTensor, ComplexT
 
 
 @njit
-def vanilla_grad(G, A, b, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
-    r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
-
-    Args:
-        G (np.ndarray): Tensor result of the forward pass
-        A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): B vector of the Fock-Bargmann representation
-        c (complex): vacuum amplitude
-        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
-
-    Returns:
-        tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
-    """
-
-    # init gradients
-    dGdA, dGdb, dGdc = vanilla_jacobian(G, A, b, c)
-
-    # inner product of the gradients with the loss gradient
-    axes = [ax for ax, _ in enumerate(G.shape)]
-    dLdA = np.sum(np.expand_dims(np.expand_dims(dLdG, -1), -1) * dGdA, axis=axes)
-    dLdb = np.sum(np.expand_dims(dLdG, -1) * dGdb, axes=axes)
-    dLdc = np.sum(dGdc * dLdG)
-
-    return dLdA, dLdb, dLdc
-
-
-@njit
-def vanilla_grad2(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
+def vanilla_grad(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
     r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
 
     Args:
@@ -123,7 +96,7 @@ def vanilla_grad2(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]
     dLdb = np.zeros_like(db)
 
     # initialize path iterator
-    path = paths.ndindex_path(G.shape)
+    path = np.ndindex(G.shape)
 
     # skip first index
     next(path)
@@ -166,11 +139,11 @@ def binomial(
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
 
     # init output tensor
-    Z = np.zeros(local_cutoffs, dtype=np.complex128)
+    G = np.zeros(local_cutoffs, dtype=np.complex128)
 
     # write vacuum amplitude
-    Z.flat[0] = c
-    prob = np.abs(c) ** 2
+    G.flat[0] = c
+    # prob = np.abs(c) ** 2
 
     # iterate over subspaces by weight and stop if norm is large enough. Caches indices.
     for photons in range(1, global_cutoff):
@@ -179,14 +152,15 @@ def binomial(
         except KeyError:
             indices = paths.binomial_subspace(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = steps.binomial_step(Z, A, b, indices)  # numba parallelized function
-        prob += prob_subspace
-        try:
-            if prob > max_prob:
-                break
-        except TypeError:
-            pass
-    return Z
+        # G, prob_subspace = steps.binomial_step(G, A, b, indices)  # numba parallelized function
+        G = steps.binomial_step(G, A, b, indices)  # numba parallelized function
+        # prob += prob_subspace
+        # try:
+        #     if prob > max_prob:
+        #         break
+        # except TypeError:  # max_prob is None
+        #     pass
+    return G
 
 
 def binomial_dict(

@@ -41,29 +41,29 @@ def vanilla_step(
     b: ComplexVector,
     index: tuple[int, ...],
 ) -> complex:
-    r"""Fock-Bargmann recurrence relation step. Vanilla version.
-    This function calculates the index `index` of `tensor`.
+    r"""Fock-Bargmann recurrence relation step, vanilla version.
+    This function calculates the index `index` of the Gaussian tensor `G`.
     The appropriate pivot and neighbours must exist.
 
     Args:
         G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
-        A (array): matrix of coefficients
-        b (array): vector of coefficients
+        A (array): A matrix of the Fock-Bargmann representation
+        b (array): B vector of the Fock-Bargmann representation
         index (Sequence): index of the amplitude to calculate
     Returns:
         complex: the value of the amplitude at the given index
     """
-    # index -> pivot
+    # get pivot
     i, pivot = first_pivot_tuple(index)
 
-    # calculate value at index: pivot contribution
-    value_at_index = b[i] / SQRT[index[i]] * G[pivot]
+    # pivot contribution
+    value_at_index = b[i] * G[pivot]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors_tuple(pivot):
-        value_at_index += A[i, j] * SQRT[pivot[j]] / SQRT[index[i]] * G[neighbor]
+        value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
 
-    return value_at_index
+    return value_at_index / SQRT[index[i]]
 
 
 @njit
@@ -75,20 +75,19 @@ def vanilla_step_jacobian(
     dGdA: ComplexTensor,
     dGdB: ComplexTensor,
 ) -> tuple[ComplexTensor, ComplexTensor]:
-    r"""Gradient of the Fock-Bargmann recurrence relation step (i.e. of the value_at_index)
-    with respect to A and b. Vanilla version. It updates the dGdB and dGdA tensors at the
-    given index.
+    r"""Jacobian contribution of a single Fock-Bargmann recurrence relation step, vanilla version.
+    It updates the dGdB and dGdA tensors at the given index.
 
     Args:
-        G (array or dict): fully computed data store that supports getitem[tuple[int, ...]]
-        A (array): matrix of coefficients
-        b (array): vector of coefficients
+        G (array or dict): fully computed store that supports __getitem__(index: tuple[int, ...])
+        A (array): A matrix of the Fock-Bargmann representation
+        b (array): B vector of the Fock-Bargmann representation
         c (complex): vacuum amplitude
-        index (Sequence): index of the amplitude to calculate the gradient of
+        index (Sequence): index at which to compute the jacobian
         dGdB (array): gradient of G with respect to b (partially computed)
         dGdA (array): gradient of G with respect to A (partially computed)
     Returns:
-        tuple[array, array]: the updated dGdB and dGdA tensors
+        tuple[array, array]: the dGdB and dGdA tensors updated at the given index
     """
     # index -> pivot
     i, pivot = first_pivot_tuple(index)
@@ -114,12 +113,13 @@ def vanilla_step_grad(
     dA: ComplexMatrix,
     db: ComplexVector,
 ) -> tuple[ComplexMatrix, ComplexVector]:
-    r"""Gradient of the Fock-Bargmann recurrence relation step (i.e. of the value_at_index)
-    with respect to A and b. Vanilla version. dA and db will be used to update the dGdB and dGdA
-    tensors at `index`.
+    r"""Gradient with respect to A and b of a single Fock-Bargmann recurrence relation step,
+    vanilla version. dA and db can be used to update the dGdB and dGdA tensors at `index`,
+    or as part of the contraction with the gradient of the Gaussian tensor G.
+    Note that the gradient depends only on G and not on the values of A and b.
 
     Args:
-        G (array or dict): fully computed data store that supports getitem[tuple[int, ...]]
+        G (array or dict): fully computed store that supports __getitem__(index: tuple[int, ...])
         index (Sequence): index of the amplitude to calculate the gradient of
         dA (array): empty array to store the gradient of G[index] with respect to A
         db (array): empty array to store the gradient of G[index] with respect to B
@@ -138,14 +138,14 @@ def vanilla_step_grad(
 
 @njit
 def vanilla_step_dict(data: types.DictType, A, b, index: tuple[int, ...]) -> complex:
-    r"""Fock-Bargmann recurrence relation step. Vanilla version.
-    This function calculates the index `index` of `tensor`.
+    r"""Fock-Bargmann recurrence relation step, vanilla version with numba dict.
+    This function calculates the index `index` of the Gaussian tensor `G`.
     The appropriate pivot and neighbours must exist.
 
     Args:
         data: dict(tuple[int,...],complex): fock amplitudes numba dict
-        A (array): matrix of coefficients
-        b (array): vector of coefficients
+        A (array): A matrix of the Fock-Bargmann representation
+        b (array): b vector of the Fock-Bargmann representation
         index (Sequence): index of the amplitude to calculate
     Returns:
         complex: the value of the amplitude at the given index
@@ -166,14 +166,15 @@ def vanilla_step_dict(data: types.DictType, A, b, index: tuple[int, ...]) -> com
 
 @njit
 def binomial_step(
-    Z: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
 ) -> tuple[ComplexTensor, float]:
-    r"""Binomial step (whole subspace), array version.
-    Iterates over the indices in ``subspace_indices`` and updates the tensor ``Z``.
-    Returns the updated tensor and the probability of the subspace.
+    r"""Binomial recurrence relation step, i.e. it computes a whole subspace of G corresponding to
+    the indices in ``subspace_indices`` where sum(index) = const.
+    Ii iterates over the indices in ``subspace_indices`` and updates the tensor ``G``.
+    It returns the updated tensor and the probability of the subspace.
 
     Args:
-        Z (np.ndarray): Tensor to be filled
+        G (np.ndarray): Tensor filled up to the previous subspace
         A (np.ndarray): A matrix of the Fock-Bargmann representation
         b (np.ndarray): B vector of the Fock-Bargmann representation
         subspace_indices (list[tuple[int, ...]]): list of indices to be updated
@@ -181,26 +182,27 @@ def binomial_step(
     Returns:
         tuple[np.ndarray, float]: updated tensor and probability of the subspace
     """
-    prob = 0.0
+    # prob = 0.0
 
     for i in range(len(subspace_indices)):
-        value = vanilla_step(Z, A, b, subspace_indices[i])
-        Z[subspace_indices[i]] = value
-        prob = prob + np.abs(value) ** 2
+        value = vanilla_step(G, A, b, subspace_indices[i])
+        G[subspace_indices[i]] = value
+        # prob = prob + np.abs(value) ** 2
 
-    return Z, prob
+    return G  # , prob
 
 
 @njit
 def binomial_step_dict(
-    Z: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
+    G: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
 ) -> tuple[types.DictType, float]:
-    r"""Binomial step (whole subspace), dictionary version.
-    Iterates over the indices in ``subspace_indices`` and updates the dictionary ``Z``.
-    Returns the updated dictionary and the probability of the subspace.
+    r"""Binomial recurrence relation step, i.e. it computes a whole subspace of G corresponding to
+    the indices in ``subspace_indices`` where sum(index) = const. Dictionary version.
+    Ii iterates over the indices in ``subspace_indices`` and updates the tensor ``G``.
+    It returns the updated tensor and the probability of the subspace.
 
     Args:
-        Z (types.DictType): Dictionary to be filled
+        Z (types.DictType): Dictionary filled up to the previous subspace
         A (np.ndarray): A matrix of the Fock-Bargmann representation
         b (np.ndarray): B vector of the Fock-Bargmann representation
         subspace_indices (list[tuple[int, ...]]): list of indices to be updated
@@ -211,8 +213,8 @@ def binomial_step_dict(
     prob = 0.0
 
     for i in range(len(subspace_indices)):
-        value = vanilla_step_dict(Z, A, b, subspace_indices[i])
-        Z[subspace_indices[i]] = value
+        value = vanilla_step_dict(G, A, b, subspace_indices[i])
+        G[subspace_indices[i]] = value
         prob = prob + np.abs(value) ** 2
 
-    return Z, prob
+    return G, prob
