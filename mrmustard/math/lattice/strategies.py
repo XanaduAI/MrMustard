@@ -252,14 +252,17 @@ def binomial_numba(
 
 @njit
 def wormhole(shape: IntVector) -> IntVector:
+    r"wormhole strategy, not implemented yet"
     raise NotImplementedError("Wormhole strategy not implemented yet")
 
 
 @njit
 def diagonal(shape: IntVector) -> IntVector:
+    r"diagonal strategy, not implemented yet"
     raise NotImplementedError("Diagonal strategy not implemented yet")
 
 
 @njit
 def dynamic_U(shape: IntVector) -> IntVector:
+    r"dynamic U strategy, not implemented yet"
     raise NotImplementedError("Diagonal strategy not implemented yet")
