@@ -35,24 +35,45 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
+* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
   multiple callbacks to it.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
+* The opt_history attribute of `Optimizer` now doesn't have the placeholder 1 at the beginning.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
 
 ### Improvements
 
-* Fixed flaky optimization tests and removed tf dependency.
-  [(#224)](https://github.com/XanaduAI/MrMustard/pull/224)
+* The math module now has a submodule `lattice` for constructing recurrence relation strategies in the Fock lattice.
+  There are a few predefined strategies in `mrmustard.math.lattice.strategies`.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+* Gradients in the Fock lattice are now computed using the vector-jacobian product. This saves a lot of memory and 
+  speeds up the optimization process by roughly 4x.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+* Tests of the compact_fock module now use hypothesis.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
 
 ### Bug fixes
+
+* Fixed a bug that would prevent gradients of the displacement from being computed
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+* Fixed a bug that would make two progress bars appear during an optimization
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
 
 ### Documentation
 
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
-[Zeyue Niu](https://github.com/zeyueN)
+[Zeyue Niu](https://github.com/zeyueN), [Filippo Miatto](https://github.com/ziofil)
 
 ---
 
