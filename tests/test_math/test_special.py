@@ -27,7 +27,7 @@ def test_reduction_to_renorm_physicists_polys():
     x = np.arange(-1, 1, 0.1)
     init = 1
     n_max = 5
-    A = np.ones([init, init], dtype=complex)
+    A = -np.ones([init, init], dtype=complex)
     vals = np.array(
         [
             math.hermite_renormalized(2 * A, 2 * np.array([x0], dtype=complex), 1, (n_max,))
