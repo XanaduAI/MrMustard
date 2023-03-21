@@ -132,7 +132,7 @@ def binomial(
             If not given it is calculated from the local cutoffs.
 
     Returns:
-        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``. Some entries may be zero.
+        G, prob (np.ndarray, float): Fock representation of the Gaussian tensor with shape ``shape`` and L2 norm
     """
     # sort out global cutoff
     if global_cutoff is None:
@@ -143,7 +143,7 @@ def binomial(
 
     # write vacuum amplitude
     G.flat[0] = c
-    # prob = np.abs(c) ** 2
+    prob = np.abs(c) ** 2
 
     # iterate over subspaces by weight and stop if norm is large enough. Caches indices.
     for photons in range(1, global_cutoff):
@@ -152,15 +152,14 @@ def binomial(
         except KeyError:
             indices = paths.binomial_subspace(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        # G, prob_subspace = steps.binomial_step(G, A, b, indices)  # numba parallelized function
-        G = steps.binomial_step(G, A, b, indices)  # numba parallelized function
-        # prob += prob_subspace
-        # try:
-        #     if prob > max_prob:
-        #         break
-        # except TypeError:  # max_prob is None
-        #     pass
-    return G
+        G, prob_subspace = steps.binomial_step(G, A, b, indices)  # numba parallelized function
+        prob += prob_subspace
+        try:
+            if prob > max_prob:
+                break
+        except TypeError:  # max_prob is None
+            pass
+    return G, prob
 
 
 def binomial_dict(
