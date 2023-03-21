@@ -29,8 +29,6 @@ from mrmustard.math.lattice.neighbours import lower_neighbors_tuple
 from mrmustard.math.lattice.pivots import first_pivot_tuple
 from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
-# TODO: gradients
-
 SQRT = np.sqrt(np.arange(100000))
 
 

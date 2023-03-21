@@ -17,14 +17,6 @@ from typing import Iterator, Optional
 from numba import njit, typed, typeof, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
-from mrmustard.typing import IntVector
-
-# Strategies are generators of indices that follow paths in an N-dim positive integer lattice.
-# The paths can cover the entire lattice, or just a subset of it.
-# Strategies have to be generators because they enumerate lots of indices
-# and we don't want to allocate memory for all of them at once.
-
-
 BINOMIAL_PATHS_PYTHON = {}
 
 
