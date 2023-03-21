@@ -53,6 +53,7 @@ def binomial_subspace(cutoffs, weight):
 
 
 def BINOMIAL_PATHS_NUMBA_n(modes):
+    r"creates a numba dictionary for the paths"
     return typed.Dict.empty(
         key_type=typeof(((0,) * modes, 0)),
         value_type=types.ListType(typeof((0,) * modes)),
@@ -77,8 +78,3 @@ def equal_weight_path(
         max_photons = sum(cutoffs) - len(cutoffs)
     for s in range(max_photons + 1):
         yield binomial_subspace(cutoffs, s)
-
-
-@njit
-def grey_code_iter(shape: IntVector) -> Iterator[IntVector]:
-    raise NotImplementedError("Grey code order strategy not implemented yet")
