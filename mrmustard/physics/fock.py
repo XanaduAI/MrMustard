@@ -931,7 +931,7 @@ def displacement(r, phi, cutoff, tol=1e-15):
         gate = math.eye(cutoff, dtype="complex128")
 
     def grad(dy):  # pragma: no cover
-        Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
+        Dr, Dphi = _grad_displacement(math.asnumpy(gate), math.asnumpy(r), math.asnumpy(phi))
         grad_r = math.real(math.sum(dy * math.conj(Dr)))
         grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
         return grad_r, grad_phi, None
