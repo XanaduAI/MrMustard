@@ -18,6 +18,8 @@ This file contains a singleton class (TagDispenser) that generates unique tags (
 
 from typing import Optional
 
+import numpy as np
+
 
 class TagDispenser:
     r"""A singleton class that generates unique tags (ints).
@@ -60,7 +62,9 @@ class TagDispenser:
             elif tag is None:
                 pass
             else:
-                raise ValueError(f"Cannot accept tag {tag}.")
+                raise ValueError(
+                    f"Cannot accept tag {tag}: self._tags={self._tags}, self._counter={self._counter}"
+                )
 
     def reset(self):
         """Resets the dispenser."""

@@ -33,10 +33,10 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.typing import (
-    RealMatrix,
-    RealVector,
-    RealTensor,
     ComplexTensor,
+    RealMatrix,
+    RealTensor,
+    RealVector,
 )
 from mrmustard.utils import graphics
 
@@ -60,7 +60,6 @@ class State:
         dm: ComplexTensor = None,
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
-        modes: Optional[int] = None,
         _norm: float = 1.0,
     ):
         r"""Initializes the state.

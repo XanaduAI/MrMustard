@@ -18,14 +18,14 @@ from collections import defaultdict
 
 
 def mode_set(op):
-    "includes modes in between min and max of op.modes"
+    r"""includes modes in between min and max of op.input_modes."""
     return set(range(min(op.modes), max(op.modes) + 1))
 
 
 def drawable_layers(ops):
     r"""Determine non-overlapping yet dense placement of ops into layers for drawing.
     Arguments:
-        ops Iterable[op]: a list of operations
+        ops Iterable[op]: a list of Operations
 
     Returns:
         dict[int:list[op]] : At index k is a list of operations for the k-th layer
@@ -43,7 +43,7 @@ def drawable_layers(ops):
 def _add_grouping_symbols(op, layer_str):
     r"""Adds symbols indicating the extent of a given object."""
     S = mode_set(op)
-    if len(S) > 1:
+    if len(S) > 1 and not op.parallelizable:
         layer_str[min(S)] = "╭"
         layer_str[max(S)] = "╰"
         for w in range(min(S) + 1, max(S)):
@@ -76,7 +76,7 @@ def circuit_text(
 ):
     r"""Text based diagram for a Quantum circuit.
     Arguments:
-        ops (List[Transformation]): the operations and measurements to draw as a list of MrMustard operations
+        ops (List[Operation]): the operations to draw as a list of MrMustard operations
         decimals (optional(int)): How many decimal points to include when formatting operation parameters.
             Default ``None`` will omit parameters from operation labels.
     Returns:

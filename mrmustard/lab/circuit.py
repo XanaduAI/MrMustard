@@ -21,13 +21,13 @@ from __future__ import annotations
 __all__ = ["Circuit"]
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Union, Iterator
+from typing import Dict, Iterator, Optional, Union
 
 from mrmustard import settings
 from mrmustard.lab.abstract import Measurement, State, Transformation
+from mrmustard.typing import Tensor
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.tagdispenser import TagDispenser
-from mrmustard.typing import Tensor
 
 # class Circuit(Parametrized):
 #     r"""Represents a quantum circuit: a wrapper around States, Transformations and Measurements
@@ -249,9 +249,9 @@ from mrmustard.typing import Tensor
 
 class Wire:
     r"""A wire of a CircuitPart. It corresponds to a wire going into or coming out of an
-    object in the circuit picture. Wires correspond to a single mode.
-    Wires are single or double (i.e. having only L or also R component) depending on the nature of the object.
-    As a rule of thumb wires are single when states are pure and operations are unitary, and they are double
+    object in the circuit picture. Although wire corresponds to a single mode, wires are single or double
+    (i.e. having only L or also R component) depending on the nature of the gate/state.
+    Usually wires are single when states are pure and operations are unitary, and they are double
     when states are density matrices and operations are non-unitary (or unitary but they act on density matrices).
 
     Arguments:
@@ -267,17 +267,32 @@ class Wire:
         self,
         origin: CircuitPart,
         mode: int,
-        L: int,
+        L: Optional[int] = None,
         R: Optional[int] = None,
         cutoff: Optional[int] = settings.WIRE_CUTOFF,
         end: Optional[CircuitPart] = None,
+        is_output: bool = True,
     ):
         self.origin = origin
         self.end = end
         self.mode = mode
-        self._L = L
+        self._L = L or TagDispenser().get_tag()
         self._R = R
         self.cutoff = cutoff
+        self.is_output = is_output
+
+    @classmethod
+    def disconnected_like(cls, wire: Wire):
+        r"""Creates a disconnected wire like the given one.
+        Re-issues the tags of the given wire and unplugs the end."""
+        return cls(
+            wire.origin,
+            wire.mode,
+            TagDispenser().get_tag(),
+            TagDispenser().get_tag(),
+            wire.cutoff,
+            is_output=wire.is_output,
+        )
 
     @property
     def L(self):
@@ -306,19 +321,27 @@ class Wire:
         "checks if wire is connected to another operation."
         return self.origin is not None and self.end is not None
 
+    def connect_to(self, end: CircuitPart):
+        "connects the wire to another CircuitPart"
+        if self.end:
+            raise ValueError("Wire already connected.")
+        self.end = end
+
     @property
     def is_double(self):
-        "whether the wire has an R component."
+        "whether the wire has an R part."
         return self.R is not None
 
     def enable_dual_part(self):
         "enables the dual (R) part of the wire."
         if self.R:
-            raise ValueError("Wire already has dual component.")
+            raise ValueError("Wire already has dual (R) part.")
         self.R = TagDispenser().get_tag()
 
     def __eq__(self, other: Union[Wire, int]):
-        "checks if wires are on the same mode"
+        r"""checks if wires are on the same mode or if given mode is correct.
+        For example, Wire(origin, 0, 42) == 0 is True.
+        """
         if isinstance(other, Wire):
             return self.mode == other.mode
         elif isinstance(other, int):
@@ -327,11 +350,12 @@ class Wire:
             return False
 
     def __repr__(self):
-        return (
-            f"Wire: {self.origin}" + " ==> "
-            if self.is_double
-            else " --> " + f"{self.end} | mode={self.mode}, L={self.L}, R={self.R}."
-        )
+        origin = self.origin.name if self.origin is not None else "..."
+        end = self.end.name if self.end is not None else "..."
+        arrow = " ==> " if self.is_double else " --> "
+        wire = f"{origin} {arrow} {end}" if self.is_output else f"{end} {arrow} {origin}"
+
+        return f"Wire: {wire} | mode={self.mode}, L={self.L}, R={self.R})"
 
     def __del__(self):
         TagDispenser().give_back_tag(self.L, self.R)
@@ -343,6 +367,7 @@ class CircuitPart(ABC):
     dual_wires_enabled: bool
     input_wires: Dict[int, Wire]
     output_wires: Dict[int, Wire]
+    name: str
 
     @abstractmethod
     def enable_dual_wires(self) -> None:
@@ -350,9 +375,9 @@ class CircuitPart(ABC):
 
     @property
     def all_wires(self) -> Iterator[Wire]:
-        "Yields all wires of this CircuitPart (input and output)."
-        yield from self.input_wires.values()
-        yield from self.output_wires.values()
+        "Yields all wires of this CircuitPart (output and input)."
+        yield from (w for w in self.output_wires.values())
+        yield from (w for w in self.input_wires.values())
 
     @property
     def connected(self) -> bool:
@@ -385,7 +410,10 @@ class CircuitPart(ABC):
 
         for mode in intersection:
             if self.output_wires[mode].end is not None or other.input_wires[mode].end is not None:
-                return False, "common mode already connected"
+                return (
+                    False,
+                    f"common mode already connected {self.output_wires[mode].end} {other.input_wires[mode].end}",
+                )
 
         input_overlap = set(self.input_wires.keys()).intersection(
             set(other.input_wires.keys()) - intersection
@@ -403,14 +431,13 @@ class CircuitPart(ABC):
 
     def connect_wires(self, other: CircuitPart) -> None:
         "Forward-connect the given CircuitPart to another CircuitPart."
-        can, reason = self.can_connect(other)
+        can, fail_reason = self.can_connect(other)
         if not can:
-            raise ValueError(reason)
+            raise ValueError(fail_reason)
         for mode in self.plugin_modes(other):
+            # share the wire between the two operations
             self.output_wires[mode].end = other
-            other.input_wires[mode].end = self
-            other.input_wires[mode].L = self.output_wires[mode].L
-            other.input_wires[mode].R = self.output_wires[mode].R
+            other.input_wires[mode] = self.output_wires[mode]
 
 
 class Operation(CircuitPart):
@@ -426,6 +453,7 @@ class Operation(CircuitPart):
         dual_wires_enabled: bool = False,
     ):
         self.op = op
+        self.name = op.__class__.__qualname__
         self.dual_wires_enabled: bool = dual_wires_enabled
         self.input_wires: Dict[int, Wire] = {
             m: Wire(
@@ -433,6 +461,7 @@ class Operation(CircuitPart):
                 mode=m,
                 L=TagDispenser().get_tag(),
                 R=TagDispenser().get_tag() if dual_wires_enabled else None,
+                is_output=False,
             )
             for m in input_modes
         }
@@ -442,12 +471,26 @@ class Operation(CircuitPart):
                 mode=m,
                 L=TagDispenser().get_tag(),
                 R=TagDispenser().get_tag() if dual_wires_enabled else None,
+                is_output=True,
             )
             for m in output_modes
         }
 
         self.num_out = len(output_modes)
         self.num_in = len(input_modes)
+
+    @property
+    def modes(self):
+        if set(self.input_wires.keys()) == set(self.output_wires.keys()):
+            return self.input_wires.keys()
+        else:
+            raise ValueError("Operation has different input and output modes.")
+
+    def __getattr__(self, name):
+        if name in self.__dict__:
+            return self.__dict__[name]
+        else:
+            return getattr(self.op, name)
 
     def enable_dual_wires(self) -> None:
         "Enables the dual (R) part of all the wires throughout this Operation."
@@ -461,9 +504,17 @@ class Operation(CircuitPart):
 
     def __repr__(self):
         return (
-            f"Operation[{self.op.__class__.__qualname__}](in={list(self.input_wires.keys())},"
+            f"Operation[{self.op.__class__.__qualname__}](in={list(self.input_wires.keys())}, "
             + f"out={list(self.output_wires.keys())}, dual_wires_enabled={self.dual_wires_enabled})"
         )
+
+    def __rshift__(self, other: CircuitPart) -> Circuit:
+        other_parts = other.parts if isinstance(other, Circuit) else [other]
+        dual = self.dual_wires_enabled or other.dual_wires_enabled
+        if dual:
+            self.enable_dual_wires()
+            other.enable_dual_wires()
+        return Circuit([self] + other_parts, dual_wires_enabled=dual)
 
     def TN_tensor(self) -> Tensor:
         "Returns the TensorNetwork Tensor of this Operation."
@@ -478,6 +529,7 @@ class Circuit(CircuitPart):
         parts: Optional[list[CircuitPart]] = None,
         dual_wires_enabled: bool = False,
     ):
+        print("parts =", parts)
         self.dual_wires_enabled = dual_wires_enabled
         self.parts = parts or []
         self.connect_all_parts()  # NOTE: to do before setting input and output wires
@@ -494,11 +546,13 @@ class Circuit(CircuitPart):
                     if mode in self.output_wires:
                         raise ValueError("Duplicate output mode.")
                     self.output_wires[mode] = wire
+        self.name = "Circuit"
 
     def connect_all_parts(self):
         r"""Connects parts in the circuit according to their input and output modes."""
         for i, part1 in enumerate(self.parts):
             for part2 in self.parts[i + 1 :]:
+                print(i, part1, part2)
                 if part1.can_connect(part2):
                     part1.connect_wires(part2)
                     if all(wire.is_connected for wire in part1.output_wires.values()):
@@ -532,7 +586,7 @@ class Circuit(CircuitPart):
     #     nx.draw(G)
     #     return nx.nx_pydot.to_pydot(G).to_string()
 
-    _repr_markdown_ = None
+    # _repr_markdown_ = None
 
     @property
     def ops(self):
@@ -540,10 +594,21 @@ class Circuit(CircuitPart):
         ops = []
         for part in self.parts:
             if isinstance(part, Operation):
+                print(part)
                 ops.append(part)
             elif isinstance(part, Circuit):
                 ops += part.ops
         return ops
+
+    @property
+    def disconnected_ops(self):
+        "returns a list of circuit ops, where all ops have been re-issused new wires"
+        ops = self.ops
+        for op in ops:
+            for mode, wire in op.input_wires.items():
+                op.input_wires[mode] = Wire.disconnected_like(wire)
+            for mode, wire in op.output_wires.items():
+                op.output_wires[mode] = Wire.disconnected_like(wire)
 
     def __repr__(self) -> str:
         return circuit_text(self.ops, decimals=settings.CIRCUIT_DECIMALS)

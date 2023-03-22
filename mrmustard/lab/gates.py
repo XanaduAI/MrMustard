@@ -18,13 +18,14 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.typing import RealMatrix, ComplexMatrix
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
+from mrmustard.typing import ComplexMatrix, RealMatrix
 
 math = Math()
 
@@ -88,6 +89,7 @@ class Dgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "D"
+        self.parallelizable = True
 
     @property
     def d_vector(self):
@@ -159,6 +161,7 @@ class Sgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "S"
+        self.parallelizable = True
 
     @property
     def X_matrix(self):
@@ -198,6 +201,7 @@ class Rgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "R"
+        self.parallelizable = True
 
     @property
     def X_matrix(self):
@@ -255,6 +259,7 @@ class Pgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "P"
+        self.parallelizable = True
 
     @property
     def X_matrix(self):
@@ -289,6 +294,7 @@ class CXgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "CX"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -323,6 +329,7 @@ class CZgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "CZ"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -366,6 +373,7 @@ class BSgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "BS"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -421,6 +429,7 @@ class MZgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "MZ"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -469,6 +478,7 @@ class S2gate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "S2"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -509,6 +519,7 @@ class Interferometer(Parametrized, Transformation):
         self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
         self.short_name = "I"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -556,6 +567,7 @@ class RealInterferometer(Parametrized, Transformation):
         self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
         self.short_name = "RI"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -608,6 +620,7 @@ class Ggate(Parametrized, Transformation):
         self._modes = modes or list(range(num_modes))
         self.is_gaussian = True
         self.short_name = "G"
+        self.parallelizable = False
 
     @property
     def X_matrix(self):
@@ -683,6 +696,7 @@ class Attenuator(Parametrized, Transformation):
         self.is_unitary = False
         self.is_gaussian = True
         self.short_name = "Att"
+        self.parallelizable = True
 
     @property
     def X_matrix(self):
@@ -740,6 +754,7 @@ class Amplifier(Parametrized, Transformation):
         self.is_unitary = False
         self.is_gaussian = True
         self.short_name = "Amp"
+        self.parallelizable = True
 
     @property
     def X_matrix(self):
@@ -793,6 +808,7 @@ class AdditiveNoise(Parametrized, Transformation):
         self.is_unitary = False
         self.is_gaussian = True
         self.short_name = "Add"
+        self.parallelizable = True
 
     @property
     def Y_matrix(self):
