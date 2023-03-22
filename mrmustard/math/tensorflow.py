@@ -547,6 +547,20 @@ class TFMath(MathInterface):
         """Decorator to define a function with a custom gradient."""
         return tf.custom_gradient(func)
 
+    @staticmethod
+    def numpy_function(func, inp, Tout):
+        """Wraps a python function and uses it as a TensorFlow op.
+
+        Args:
+            func: A Python function, which accepts numpy.ndarray objects as arguments and returns a list of numpy.ndarray objects (or a single numpy.ndarray).
+            inp: A list of tf.Tensor objects.
+            Tout: A list or tuple of tensorflow data types or a single tensorflow data
+
+        Returns:
+            Single or list of tf.Tensor which func computes.
+        """
+        return tf.numpy_function(func, inp, Tout)
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
