@@ -362,4 +362,3 @@ def test_dgate_optimization():
 
     opt = Optimizer()
     opt.minimize(cost_fn, by_optimizing=[dgate])
-
