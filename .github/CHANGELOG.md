@@ -19,7 +19,7 @@
 
   def cost_fn():
       ...
-  
+
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -43,6 +43,9 @@
 ### Improvements
 
 ### Bug fixes
+
+* Exposes the `numpy_function` method of the Tensorflow backend, fixing a bug with the `Dgate` optimization.
+  [(#230)](https://github.com/XanaduAI/MrMustard/pull/230)
 
 ### Documentation
 
