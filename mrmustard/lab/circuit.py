@@ -482,7 +482,7 @@ class Operation(CircuitPart):
     @property
     def modes(self):
         if set(self.input_wires.keys()) == set(self.output_wires.keys()):
-            return self.input_wires.keys()
+            return list(self.input_wires.keys())
         else:
             raise ValueError("Operation has different input and output modes.")
 
@@ -529,7 +529,6 @@ class Circuit(CircuitPart):
         parts: Optional[list[CircuitPart]] = None,
         dual_wires_enabled: bool = False,
     ):
-        print("parts =", parts)
         self.dual_wires_enabled = dual_wires_enabled
         self.parts = parts or []
         self.connect_all_parts()  # NOTE: to do before setting input and output wires
@@ -552,7 +551,6 @@ class Circuit(CircuitPart):
         r"""Connects parts in the circuit according to their input and output modes."""
         for i, part1 in enumerate(self.parts):
             for part2 in self.parts[i + 1 :]:
-                print(i, part1, part2)
                 if part1.can_connect(part2):
                     part1.connect_wires(part2)
                     if all(wire.is_connected for wire in part1.output_wires.values()):
@@ -564,27 +562,11 @@ class Circuit(CircuitPart):
             part.enable_dual_wires()
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
-        other_parts = other.parts if isinstance(other, Circuit) else [other]
         dual = self.dual_wires_enabled or other.dual_wires_enabled
         if dual:
             self.enable_dual_wires()
             other.enable_dual_wires()
-        return Circuit(self.parts + other_parts, dual_wires_enabled=dual)
-
-    # a graph representation of the circuit
-    # shwoing the connections between the operations
-    # def __repr__(self):
-    #     import networkx as nx
-
-    #     G = nx.DiGraph()
-    #     for op in self.operations:
-    #         G.add_node(op)
-    #         for mode, wire in op.output_modes.items():
-    #             if wire.is_connected:
-    #                 G.add_edge(wire.origin, wire.end)
-    #     # visualize graph before returning
-    #     nx.draw(G)
-    #     return nx.nx_pydot.to_pydot(G).to_string()
+        return Circuit([self, other], dual_wires_enabled=dual)
 
     # _repr_markdown_ = None
 
@@ -594,7 +576,6 @@ class Circuit(CircuitPart):
         ops = []
         for part in self.parts:
             if isinstance(part, Operation):
-                print(part)
                 ops.append(part)
             elif isinstance(part, Circuit):
                 ops += part.ops

@@ -55,7 +55,7 @@ def _add_op(op, layer_str, decimals):
     r"""Updates `layer_str` with `op` operation."""
     layer_str = _add_grouping_symbols(op, layer_str)
     control = []
-    if op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
+    if op.op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
         control = [op.modes[0]]
     label = op.short_name
     if decimals is not None:

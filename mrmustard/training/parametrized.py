@@ -18,7 +18,7 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from typing import Any, Generator, List, Sequence, Tuple, Mapping
+from typing import Any, Generator, List, Mapping, Sequence, Tuple
 
 import numpy as np
 
@@ -77,15 +77,19 @@ class Parametrized:
         Returns:
             str: string representation of the parameter values
         """
+
+        def val_to_string(value):
+            sign = "-" if value < 0 else ""
+            value = np.abs(np.round(value, decimals))
+            int_part = int(value)
+            decimal_part = np.round(value - int_part, decimals)
+            return sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
+
         strings = []
         for name, value in self.kw_parameters:
             value = math.asnumpy(value)
             if value.ndim == 0:  # don't show arrays
-                sign = "-" if value < 0 else ""
-                value = np.abs(np.round(value, decimals))
-                int_part = int(value)
-                decimal_part = np.round(value - int_part, decimals)
-                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
+                string = val_to_string(value)
             else:
                 string = f"{name}"
             strings.append(string)
