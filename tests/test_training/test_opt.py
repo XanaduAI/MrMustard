@@ -29,7 +29,7 @@ from mrmustard.lab.gates import (
     Ggate,
     Interferometer,
     RealInterferometer,
-    Dgate
+    Dgate,
 )
 from mrmustard.lab.circuit import Circuit
 from mrmustard.training import Optimizer, Parametrized
@@ -368,6 +368,7 @@ def test_opt_backend_param():
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
     assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-2)
+
 
 def test_dgate_optimization():
     """Test that Dgate is optimized correctly."""
