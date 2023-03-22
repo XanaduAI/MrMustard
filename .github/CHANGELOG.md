@@ -20,7 +20,7 @@
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil)
+[Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
 
 
 # Release 0.4.0
