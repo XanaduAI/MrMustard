@@ -19,7 +19,7 @@ This module contains functions for performing calculations on Fock states.
 """
 
 from functools import lru_cache
-from typing import List, Sequence, Tuple, Optional
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 from numba import jit
@@ -28,14 +28,13 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.mmtensor import MMTensor
+from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-
-from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
@@ -931,9 +930,9 @@ def displacement(r, phi, cutoff, tol=1e-15):
         gate = math.eye(cutoff, dtype="complex128")
 
     def grad(dy):  # pragma: no cover
-        Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
-        grad_r = math.real(math.reduce_sum(dy * math.conj(Dr)))
-        grad_phi = math.real(math.reduce_sum(dy * math.conj(Dphi)))
+        Dr, Dphi = _grad_displacement(math.asnumpy(gate), math.asnumpy(r), math.asnumpy(phi))
+        grad_r = math.real(math.sum(dy * math.conj(Dr)))
+        grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
         return grad_r, grad_phi, None
 
     return gate, grad
