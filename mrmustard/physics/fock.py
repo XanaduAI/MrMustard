@@ -932,8 +932,8 @@ def displacement(r, phi, cutoff, tol=1e-15):
 
     def grad(dy):  # pragma: no cover
         Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
-        grad_r = math.real(math.reduce_sum(dy * math.conj(Dr)))
-        grad_phi = math.real(math.reduce_sum(dy * math.conj(Dphi)))
+        grad_r = math.real(math.sum(dy * math.conj(Dr)))
+        grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
         return grad_r, grad_phi, None
 
     return gate, grad
