@@ -23,6 +23,7 @@ from mrmustard import settings
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
+    Dgate,
     Ggate,
     Interferometer,
     RealInterferometer,
@@ -30,7 +31,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import SqueezedVacuum, Vacuum
+from mrmustard.lab.states import DisplacedSqueezed, SqueezedVacuum, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -378,3 +379,19 @@ def test_opt_backend_param():
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
     assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-4)
+
+
+def test_dgate_optimization():
+    """Test that Dgate is optimized correctly."""
+    settings.SEED = 24
+
+    dgate = Dgate(x_trainable=True, y_trainable=True)
+    target_state = DisplacedSqueezed(r=0.0, x=1.0, y=1.0)
+
+    def cost_fn():
+        state_out = Vacuum(1) >> dgate
+
+        return 1 - fidelity(state_out, target_state)
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[dgate])

@@ -15,10 +15,13 @@
 * Unpins package versions in setup.py that got mistakenly pinned in 0.4.0.
   [(#223)](https://github.com/XanaduAI/MrMustard/pull/223)
 
+* fixing a bug with the `Dgate` optimization
+  [(#232)](https://github.com/XanaduAI/MrMustard/pull/232)
+
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil)
+[Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
 
 
 # Release 0.4.0
