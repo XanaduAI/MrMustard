@@ -8,6 +8,7 @@
 
 * Fixed flaky optimization tests and removed tf dependency.
   [(#224)](https://github.com/XanaduAI/MrMustard/pull/224)
+  [(#233)](https://github.com/XanaduAI/MrMustard/pull/233)
 
 ### Bug fixes
 
