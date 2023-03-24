@@ -16,6 +16,8 @@
 
 import numpy as np
 from scipy.special import eval_hermite, factorial
+
+from hypothesis import given, strategies as st
 from mrmustard.math import Math
 
 math = Math()
@@ -32,3 +34,12 @@ def test_reduction_to_renorm_physicists_polys():
     ).T
     expected = np.array([eval_hermite(i, x) / np.sqrt(factorial(i)) for i in range(len(vals))])
     assert np.allclose(vals, expected)
+
+
+@given(x=st.floats(0, 10))
+def test_log10(x):
+    """Tests base 10 logarithm."""
+    result = math.log10(x)
+    expected = np.log10(x)
+
+    assert np.isclose(result.numpy(), expected)

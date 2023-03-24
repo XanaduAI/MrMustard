@@ -469,6 +469,17 @@ class MathInterface(ABC):
         """
 
     @abstractmethod
+    def log10(self, x: Tensor) -> Tensor:
+        r"""Returns the base 10 logarithm of ``x``.
+
+        Args:
+            x (array): array to take the base 10 logarithm of
+
+        Returns:
+            array: base 10 logarithm of ``x``
+        """
+
+    @abstractmethod
     def matmul(
         self,
         a: Tensor,
