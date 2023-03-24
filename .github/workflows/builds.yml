@@ -45,12 +45,4 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ ${{ matrix.python-version }} == "3.9" ]; then COVERAGE="--cov=mrmustard --cov-report=term-missing --cov-report=xml"; else COVERAGE=""; fi
-          python -m pytest tests -p no:warnings --tb=native ${{COVERAGE}}
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        if: ${{ matrix.python-version }} == '3.9'
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: true
+          python -m pytest tests -p no:warnings --tb=native

@@ -229,7 +229,6 @@ def test_raise_interferometer_error():
     with pytest.raises(ValueError):
         RealInterferometer(num_modes=num_modes, modes=modes)
 
-
 @given(phase_stdev=medium_float.filter(lambda x: x > 0))
 def test_phasenoise_creates_dm(phase_stdev):
     """test that the phase noise gate is correctly applied"""
@@ -265,3 +264,8 @@ def test_phasenoise_zero_noise():
     G1 = Gaussian(1)
     P = PhaseNoise(0.0)
     assert (G1 >> P) == State(dm=G1.dm())
+
+def test_choi_cutoffs():
+    output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
+    assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
+
