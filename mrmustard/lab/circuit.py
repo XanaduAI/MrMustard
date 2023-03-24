@@ -271,15 +271,13 @@ class Wire:
         R: Optional[int] = None,
         cutoff: Optional[int] = settings.WIRE_CUTOFF,
         end: Optional[CircuitPart] = None,
-        is_output: bool = True,
     ):
         self.origin = origin
         self.end = end
         self.mode = mode
-        self._L = L or TagDispenser().get_tag()
-        self._R = R
+        self.L = L or TagDispenser().get_tag()
+        self.R = R
         self.cutoff = cutoff
-        self.is_output = is_output
 
     @classmethod
     def disconnected_like(cls, wire: Wire):
@@ -291,30 +289,7 @@ class Wire:
             TagDispenser().get_tag(),
             TagDispenser().get_tag(),
             wire.cutoff,
-            is_output=wire.is_output,
         )
-
-    @property
-    def L(self):
-        "left tag of the wire"
-        return self._L
-
-    @L.setter
-    def L(self, value):
-        if self._L != value:
-            TagDispenser().give_back_tag(self._L)
-            self._L = value
-
-    @property
-    def R(self):
-        "right tag of the wire"
-        return self._R
-
-    @R.setter
-    def R(self, value):
-        if self._R != value and self._R is not None:
-            TagDispenser().give_back_tag(self._R)
-            self._R = value
 
     @property
     def is_connected(self) -> bool:
@@ -353,12 +328,9 @@ class Wire:
         origin = self.origin.name if self.origin is not None else "..."
         end = self.end.name if self.end is not None else "..."
         arrow = " ==> " if self.is_double else " --> "
-        wire = f"{origin} {arrow} {end}" if self.is_output else f"{end} {arrow} {origin}"
+        wire = f"{origin} {arrow} {end}"
 
-        return f"Wire: {wire} | mode={self.mode}, L={self.L}, R={self.R})"
-
-    def __del__(self):
-        TagDispenser().give_back_tag(self.L, self.R)
+        return f"Wire: {wire} | mode={self.mode}, L={self.L}, R={self.R}"
 
 
 class CircuitPart(ABC):
@@ -461,7 +433,6 @@ class Operation(CircuitPart):
                 mode=m,
                 L=TagDispenser().get_tag(),
                 R=TagDispenser().get_tag() if dual_wires_enabled else None,
-                is_output=False,
             )
             for m in input_modes
         }
@@ -471,7 +442,6 @@ class Operation(CircuitPart):
                 mode=m,
                 L=TagDispenser().get_tag(),
                 R=TagDispenser().get_tag() if dual_wires_enabled else None,
-                is_output=True,
             )
             for m in output_modes
         }
@@ -567,6 +537,23 @@ class Circuit(CircuitPart):
             self.enable_dual_wires()
             other.enable_dual_wires()
         return Circuit([self, other], dual_wires_enabled=dual)
+
+    def re_tag(self):
+        "Re-tags all the wires in the circuit."
+        tags = []
+        for part in self.parts:
+            for wire in part.all_wires:
+                tags.append(wire.L)
+                if wire.R is not None:
+                    tags.append(wire.R)
+        # re-issue unique tags starting from 0
+        tag_dispenser = TagDispenser().reset()
+        for tag in sorted(tags):
+            retag = {tag: tag_dispenser.get_tag()}
+            for part in self.parts:
+                for wire in part.all_wires:
+                    wire.L = retag[wire.L]
+                    wire.R = retag[wire.R] if wire.R is not None else None
 
     # _repr_markdown_ = None
 
