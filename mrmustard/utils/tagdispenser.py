@@ -70,7 +70,7 @@ class TagDispenser:
         """Resets the dispenser."""
         self._tags = []
         self._counter = 0
-        return self
+        return self  # for chaining
 
     def __repr__(self):
         _next = self._tags[0] if len(self._tags) > 0 else self._counter
