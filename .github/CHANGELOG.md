@@ -1,4 +1,59 @@
-# Release 0.4.0
+# Release 0.5.0 (development release)
+
+### New features
+
+* Optimization callback functionalities has been improved. A dedicated `Callback` class is added which
+  is able to access the optimizer, the cost function, the parameters as well as gradients, during the
+  optimization. In addition, multiple callbacks can be specified. This opens up the endless possiblities
+  of customizing the the optimization progress with schedulers, trackers, heuristics, tricks, etc.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
+* Tensorboard based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
+  It can automatically track costs as well as all trainable parameters during optimization in realtime.
+  Tensorboard can be most conveniently viewed from VScode.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
+  ```python
+  import numpy as np
+  from mrmustard.training import Optimizer, TensorboardCallback
+
+  def cost_fn():
+      ...
+  
+  def as_dB(cost):
+      delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
+      cost_dB = -10 * np.log10(delta**2)
+      return cost_dB
+
+  tb_cb = TensorboardCallback(cost_converter=as_dB, track_grads=True)
+
+  opt = Optimizer(euclidean_lr = 0.001);
+  opt.minimize(cost_fn, max_steps=200, by_optimizing=[...], callbacks=tb_cb)
+
+  # Logs will be stored in `tb_cb.logdir` which defaults to `./tb_logdir/...` but can be customized.
+  # VScode can be used to open the Tensorboard frontend for live monitoring.
+  # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
+  ```
+
+### Breaking Changes
+
+* The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
+  multiple callbacks to it.
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Contributors
+
+This release contains contributions from (in alphabetical order):
+[Zeyue Niu](https://github.com/zeyueN)
+
+---
+
+# Release 0.4.0 (current release)
 
 ### New features
 
@@ -116,12 +171,17 @@
   The methods are differentiable, so that they can be used for defining a cost function.
   [(#154)](https://github.com/XanaduAI/MrMustard/pull/154)
 
+* MrMustard repo now provides a fully furnished vscode development container and a Dockerfile. To
+  find out how to use dev containers for development check the documentation
+  [here](https://code.visualstudio.com/docs/devcontainers/containers).
+  [(#214)](https://github.com/XanaduAI/MrMustard/pull/214)
+
 ### Breaking changes
 
 ### Improvements
 
 * The `Dgate` is now implemented directly in MrMustard (instead of on The Walrus) to calculate the
-  unitary and gradients of the displacement gate in fock representation, providing better numerical
+  unitary and gradients of the displacement gate in Fock representation, providing better numerical
   stability for larger cutoff and displacement values.
   [(#147)](https://github.com/XanaduAI/MrMustard/pull/147)
   [(#211)](https://github.com/XanaduAI/MrMustard/pull/211)
@@ -222,6 +282,9 @@
 * Fixed a bug in the Gaussian state which caused its covariance matrix to be multiplied
   by hbar/2 twice. Adds the argument `modes` to `Ggate`.
   [(#212)](https://github.com/XanaduAI/MrMustard/pull/212)
+
+* Fixes a bug in the cutoffs of the choi operator.
+  [(#216)](https://github.com/XanaduAI/MrMustard/pull/216)
 
 
 ### Documentation
