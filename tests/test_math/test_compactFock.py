@@ -85,10 +85,9 @@ def test_compactFock_diagonal_gradients():
             math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[n1 + 1, n2 + 1, n3 + 1]
         )
         p = probs[n1, n2, n3]
-        p_target = 0.5
-        return math.abs(p_target - p)
+        return -math.real(p)
 
-    opt = Optimizer(symplectic_lr=0.1)
+    opt = Optimizer(symplectic_lr=0.5)
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]

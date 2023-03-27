@@ -62,18 +62,42 @@
 
 ### Bug fixes
 
-* Fixed a bug that would prevent gradients of the displacement from being computed
-  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
-
 * Fixed a bug that would make two progress bars appear during an optimization
   [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+### Bug fixes
 
 ### Documentation
 
 ### Contributors
+[Sebastian Duque Mesa](https://github.com/sduquemesa), [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
 
-This release contains contributions from (in alphabetical order):
-[Zeyue Niu](https://github.com/zeyueN), [Filippo Miatto](https://github.com/ziofil)
+---
+
+# Release 0.4.1
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+* Fixed flaky optimization tests and removed tf dependency.
+  [(#224)](https://github.com/XanaduAI/MrMustard/pull/224)
+  [(#233)](https://github.com/XanaduAI/MrMustard/pull/233)
+
+### Bug fixes
+
+* Unpins package versions in setup.py that got mistakenly pinned in 0.4.0.
+  [(#223)](https://github.com/XanaduAI/MrMustard/pull/223)
+
+* fixing a bug with the `Dgate` optimization
+  [(#232)](https://github.com/XanaduAI/MrMustard/pull/232)
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
 
 ---
 
