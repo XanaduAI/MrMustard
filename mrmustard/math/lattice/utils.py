@@ -13,28 +13,6 @@
 # limitations under the License.
 
 import numba
-from numba import njit
-
-
-@njit
-def ravel_index(index, strides):
-    r"""Converts a multi-dimensional index to a single index."""
-    result = 0
-    for i in range(index.shape[0]):
-        result += index[i] * strides[i]
-    return result
-
-
-@njit
-def tensor_value(tensor, index, strides):
-    "read a value from a tensor"
-    return tensor.flat[ravel_index(index, strides)]
-
-
-@njit
-def tensor_set(tensor, index, value, strides):
-    "write a value to a tensor"
-    tensor.flat[ravel_index(index, strides)] = value
 
 
 class FockDict:
@@ -50,15 +28,11 @@ class FockDict:
         >>> fock[1, 1] = 4.0
         >>> fock[0, 0]
         1.0
-        >>> fock[1, 0]
-        2.0
-        >>> fock[0, 1]
-        3.0
-        >>> fock[1, 1]
-        4.0
         >>> fock[0, 0] = 5.0
         >>> fock[0, 0]
         5.0
+        >>> fock[0, :]
+        FockDict({(0, 0): 5.0, (0, 1): 3.0})
     """
 
     def __init__(self, M):
