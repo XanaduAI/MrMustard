@@ -34,9 +34,6 @@ def binomial_recurrence(shape, k):
     return result
 
 
-# turn this into a generator
-
-
 def binomial_recurrence_gen(shape, k):
     if len(shape) == 1:
         if shape[0] >= k:
@@ -56,7 +53,7 @@ class BinomialData:
         if len(shape) > 0:
             return super().__new__(cls)
 
-    def __init__(self, shape, weight, index=()):
+    def __init__(self, shape, index=()):
         self.shape = shape
         self.index = index
         self.axis = []
