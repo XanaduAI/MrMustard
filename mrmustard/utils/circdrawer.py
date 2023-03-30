@@ -19,7 +19,7 @@ from collections import defaultdict
 
 def mode_set(op):
     r"""includes modes in between min and max of op.input_modes."""
-    return set(range(min(op.modes), max(op.modes) + 1))
+    return set(range(min(op.output_indices), max(op.output_indices) + 1))
 
 
 def drawable_layers(ops):
@@ -47,7 +47,7 @@ def _add_grouping_symbols(op, layer_str):
         layer_str[min(S)] = "╭"
         layer_str[max(S)] = "╰"
         for w in range(min(S) + 1, max(S)):
-            layer_str[w] = "├" if w in op.modes else "│"  # other option: ┼
+            layer_str[w] = "├" if w in op.output_indices else "│"  # other option: ┼
     return layer_str
 
 
@@ -55,16 +55,16 @@ def _add_op(op, layer_str, decimals):
     r"""Updates `layer_str` with `op` operation."""
     layer_str = _add_grouping_symbols(op, layer_str)
     control = []
-    if op.op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
-        control = [op.modes[0]]
+    if op.wrapped.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
+        control = [list(op.output_indices)[0]]
     label = op.short_name
     if decimals is not None:
         param_string = op.param_string(decimals)
         if param_string == "":
-            param_string = str(len(op.modes))
+            param_string = str(len(op.output_indices))
         label += "(" + param_string + ")"
 
-    for w in op.modes:
+    for w in op.output_indices:
         layer_str[w] += "•" if w in control else label
 
     return layer_str
@@ -83,7 +83,7 @@ def circuit_text(
         str : String based graphic of the circuit.
     """
     # get all modes used by the ops and sort them
-    modes = sorted(list(set().union(*[op.modes for op in ops])))
+    modes = sorted(list(set().union(*[op.output_indices | op.input_indices for op in ops])))
     # include all modes between min and max (need to draw over them)
     all_modes = range(min(modes), max(modes) + 1)
 

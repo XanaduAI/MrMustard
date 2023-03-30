@@ -43,12 +43,12 @@ class Settings:
         self.EQ_TRANSFORMATION_CUTOFF = 5
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
-
         self.OPT_EINSUM_OPTIMIZE = "auto-hq"  # can be "auto", "greedy", "optimal", "auto-hq"
         # for the detectors
         self.PNR_INTERNAL_CUTOFF = 50
         self.HOMODYNE_SQUEEZING = 10.0
         # misc
+        self.FLATTEN_CIRCUIT = True
         self.PROGRESSBAR = True
         self.WIRE_CUTOFF = 50
         self._seed = np.random.randint(0, 2**31 - 1)
