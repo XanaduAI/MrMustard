@@ -28,7 +28,7 @@ try:
     NUM_CPUS = 1
     ray.init(num_cpus=NUM_CPUS)
 except ImportError:
-    ray_available = False
+    ray_available = False  #
 
 from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
 from mrmustard.physics import fidelity
