@@ -48,8 +48,10 @@ def wrappers():
             [circ] if return_type == "list" else {"circ": circ} if return_type == "dict" else circ
         )
 
+    G = Gaussian(1)
+
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
-        target = Gaussian(1) >> Dgate(-0.1, y_targ)
+        target = G >> Dgate(-0.1, y_targ)
         s = Vacuum(1) >> circ
         return -fidelity(s, target)
 
