@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numba
+
 
 def digits_to_int(digits):
     return sum(digit * 10**i for i, digit in enumerate(digits))
@@ -78,7 +80,7 @@ class BinomialData:
     def __getitem__(self, key):
         if type(key) == int:
             return self.axis[key]
-        elif type(key) == tuple:
+        if type(key) == tuple:
             if len(key) == 1:
                 return self.axis[key[0]]
             return self.axis[key[0]][key[1:]]
@@ -132,7 +134,7 @@ class FockDict:
         self.M = M
 
     def _parse_indices(self, indices):
-        if isinstance(indices, int) or isinstance(indices, slice):
+        if isinstance(indices, (int, slice)):
             indices = (indices,)
         elif isinstance(indices, tuple):
             if len(indices) > self.M:
