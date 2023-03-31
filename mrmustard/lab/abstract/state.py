@@ -49,7 +49,7 @@ math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
-class State:
+class State:  # pylint: disable=too-many-public-methods
     r"""Base class for quantum states."""
 
     def __init__(
@@ -537,7 +537,7 @@ class State:
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:
             return False
