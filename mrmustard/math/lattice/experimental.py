@@ -84,6 +84,7 @@ class BinomialData:
             if len(key) == 1:
                 return self.axis[key[0]]
             return self.axis[key[0]][key[1:]]
+        raise TypeError(f"Invalid index type: {type(key)}")
 
     def __iter__(self):
         yield from self.axis
