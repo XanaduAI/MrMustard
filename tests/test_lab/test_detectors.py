@@ -88,7 +88,7 @@ class TestPNRDetector:
     def test_detector_two_mode_squeezed_state(self, r, phi, eta_s, eta_i, dc_s, dc_i):
         """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
         pnr = PNRDetector(efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
-        ps = Vacuum(2) >> S2gate(r=r, phi=phi) >> pnr
+        ps = Vacuum(2) >> S2gate(r=r, phi=phi) << pnr
         n = np.arange(len(ps))
         mean_s = np.sum(ps, axis=1) @ n
         n_s = eta_s * np.sinh(r) ** 2
