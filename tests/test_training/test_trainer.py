@@ -50,12 +50,17 @@ def wrappers():
 
     G = Gaussian(1)
 
-    def cost_fn(circ=make_circ(0.1), y_targ=0.0):
+    def cost_fn_fixed(circ=make_circ(0.1), y_targ=0.0):
         target = G >> Dgate(-0.1, y_targ)
         s = Vacuum(1) >> circ
         return -fidelity(s, target)
 
-    return make_circ, cost_fn
+    def cost_fn_rnd(circ=make_circ(0.1), y_targ=0.0):
+        target = Gaussian(1) >> Dgate(-0.1, y_targ)
+        s = Vacuum(1) >> circ
+        return -fidelity(s, target)
+
+    return make_circ, cost_fn_fixed, cost_fn_rnd
 
 
 @pytest.mark.skipif(not ray_available, reason="ray is not available")
@@ -69,7 +74,7 @@ class TestTrainer:
     def test_circ_cost(self, wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
         """Test distributed cost calculations."""
         has_seed = isinstance(seed, int)
-        _, cost_fn = wrappers
+        _, _, cost_fn = wrappers
         results = map_trainer(
             cost_fn=cost_fn,
             tasks=tasks,
@@ -103,7 +108,7 @@ class TestTrainer:
     ):  # pylint: disable=redefined-outer-name
         """Test distributed optimizations."""
         max_steps = 15
-        make_circ, cost_fn = wrappers
+        make_circ, cost_fn, _ = wrappers
         results = map_trainer(
             cost_fn=cost_fn,
             device_factory=make_circ,
@@ -145,7 +150,7 @@ class TestTrainer:
         self, wrappers, metric_fns
     ):  # pylint: disable=redefined-outer-name
         """Tests custom metric functions on final circuits."""
-        make_circ, cost_fn = wrappers
+        make_circ, cost_fn, _ = wrappers
 
         tasks = {
             "my-job": {"x": 0.1, "euclidean_lr": 0.01, "max_steps": 100},
@@ -208,7 +213,7 @@ class TestTrainer:
 
     def test_warn_unused_kwargs(self, wrappers):  # pylint: disable=redefined-outer-name
         """Test warning of unused kwargs"""
-        _, cost_fn = wrappers
+        _, cost_fn, _ = wrappers
         with pytest.warns(UserWarning, match="Unused kwargs:"):
             results = train_device(
                 cost_fn=cost_fn,
@@ -219,7 +224,7 @@ class TestTrainer:
 
     def test_no_pbar(self, wrappers):  # pylint: disable=redefined-outer-name
         """Test turning off pregress bar"""
-        _, cost_fn = wrappers
+        _, cost_fn, _ = wrappers
         results = map_trainer(
             cost_fn=cost_fn,
             tasks=2,
@@ -231,7 +236,7 @@ class TestTrainer:
     @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
     def test_unblock(self, wrappers, tasks):  # pylint: disable=redefined-outer-name
         """Test unblock async mode"""
-        _, cost_fn = wrappers
+        _, cost_fn, _ = wrappers
         result_getter = map_trainer(
             cost_fn=cost_fn,
             tasks=tasks,
