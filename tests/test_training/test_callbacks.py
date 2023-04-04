@@ -17,16 +17,15 @@
 import numpy as np
 import tensorflow as tf
 
+from mrmustard import settings
+from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
     S2gate,
 )
-from mrmustard.lab.circuit import Circuit
-from mrmustard.training import Optimizer, TensorboardCallback
 from mrmustard.lab.states import Vacuum
-from mrmustard import settings
-
 from mrmustard.math import Math
+from mrmustard.training import Optimizer, TensorboardCallback
 
 math = Math()
 
