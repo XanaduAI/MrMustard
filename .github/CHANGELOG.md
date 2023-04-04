@@ -35,10 +35,46 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
+* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
   multiple callbacks to it.
+
+### Improvements
+
+* The math module now has a submodule `lattice` for constructing recurrence relation strategies in the Fock lattice.
+  There are a few predefined strategies in `mrmustard.math.lattice.strategies`.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+* Gradients in the Fock lattice are now computed using the vector-jacobian product. This saves a lot of memory and 
+  speeds up the optimization process by roughly 4x.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+* Tests of the compact_fock module now use hypothesis.
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+### Bug fixes
+
+* Fixed a bug that would make two progress bars appear during an optimization
+  [(#198)](https://github.com/XanaduAI/MrMustard/pull/198)
+
+### Bug fixes
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
+
+---
+
+# Release 0.4.1
+
+### New features
+
+### Breaking changes
 
 ### Improvements
 
@@ -58,9 +94,6 @@
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
-
-This release contains contributions from (in alphabetical order):
-[Zeyue Niu](https://github.com/zeyueN)
 
 ---
 
