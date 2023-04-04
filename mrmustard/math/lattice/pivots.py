@@ -18,7 +18,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 
 
 @njit
-def first_pivot_tuple(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
+def first_available_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     r"""returns the first available pivot for the given index. A pivot is a nearest neighbor
     of the index. Here we pick the first available pivot.
 
@@ -35,15 +35,15 @@ def first_pivot_tuple(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
 
 
 @njit
-def smallest_pivot_tuple(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
+def smallest_pivot(index: tuple[int, ...]) -> tuple[int, tuple[int, ...]]:
     r"""returns the pivot closest to a zero index. A pivot is a nearest neighbor
-    of the index. Here we pick the pivot with the smallest non-zero index.
+    of the index. Here we pick the pivot with the smallest non-zero element.
 
     Arguments:
         index: the index to get the smallest pivot of.
 
     Returns:
-        the index that was decremented and the pivot
+        (int, tuple) the index of the element that was decremented and the pivot
     """
     min_ = 2**64 - 1
     for i, v in enumerate(index):
