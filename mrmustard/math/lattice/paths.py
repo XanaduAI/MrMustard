@@ -21,31 +21,57 @@ BINOMIAL_PATHS_PYTHON = {}
 
 
 @njit
-def _binomial_subspace(cutoffs, weight, mode, basis_element, basis):
-    r"""Recursive function to generate all indices of a tensor with equal weight."""
+def _binomial_subspace_basis(
+    cutoffs: tuple[int, ...],
+    weight: int,
+    mode: int,
+    basis_element: tuple[int, ...],
+    basis: typed.List[tuple[int, ...]],
+):
+    r"""Step of the recursive function to generate all indices
+    of a tensor with equal weight.
+    If cutoffs is an empty tuple, the the basis element is appended to the list.
+    Otherwise it loops over the values of the given mode, and it calls itself recursively
+    to construct the rest of the basis elements.
+
+    Arguments:
+        cutoffs (tuple[int, ...]): the cutoffs of the tensor
+        weight (int): the weight of the subspace
+        mode (int): the mode to loop over
+        basis_element (tuple[int, ...]): the current basis element to construct
+        basis (list[tuple[int, ...]]): the list of basis elements to eventually append to
+    """
     if mode == len(cutoffs):
-        if weight == 0:
+        if weight == 0:  # ran out of photons to distribute
             basis.append(basis_element)
         return
 
     for photons in range(cutoffs[mode]):  # could be prange?
         if weight - photons >= 0:
             basis_element = tuple_setitem(basis_element, mode, photons)
-            _binomial_subspace(cutoffs, weight - photons, mode + 1, basis_element, basis)
+            _binomial_subspace_basis(cutoffs, weight - photons, mode + 1, basis_element, basis)
 
 
 @njit
-def binomial_subspace(cutoffs, weight):
-    r"""Returns all indices of a tensor with equal weight."""
+def binomial_subspace_basis(cutoffs: tuple[int, ...], weight: int):
+    r"""Returns all indices of a tensor with given weight.
+
+    Arguments:
+        cutoffs (tuple[int, ...]): the cutoffs of the tensor
+        weight (int): the weight of the subspace
+
+    Returns:
+        list[tuple[int, ...]]: the list of basis elements of the subspace
+    """
     basis = typed.List(
         [cutoffs]
     )  # this is just so that numba can infer the type, then we remove it
-    _binomial_subspace(cutoffs, weight, 0, cutoffs, basis)
+    _binomial_subspace_basis(cutoffs, weight, 0, cutoffs, basis)
     return basis[1:]  # remove the dummy element
 
 
 def BINOMIAL_PATHS_NUMBA_n(modes):
-    r"creates a numba dictionary for the paths"
+    r"Creates a numba dictionary to store the paths and effectively cache them."
     return typed.Dict.empty(
         key_type=typeof(((0,) * modes, 0)),
         value_type=types.ListType(typeof((0,) * modes)),
@@ -53,20 +79,3 @@ def BINOMIAL_PATHS_NUMBA_n(modes):
 
 
 BINOMIAL_PATHS_NUMBA = {modes: BINOMIAL_PATHS_NUMBA_n(modes) for modes in range(1, 100)}
-
-
-@njit
-def equal_weight_path(
-    cutoffs: tuple[int, ...], max_photons: Optional[int] = None
-) -> Iterator[list[tuple[int, ...]]]:
-    r"""yields the indices of a tensor with equal weight.
-    Effectively, `cutoffs` contains local cutoffs (the maximum value of each index)
-    and `max_photons` is the global cutoff (the maximum sum of all indices).
-    If `max_photons` is not given, only the local cutoffs are used and the iterator
-    yields  all possible indices within the tensor `cutoffs`. In this case it becomes
-    like `ndindex_iter` just in a different order.
-    """
-    if max_photons is None:
-        max_photons = sum(cutoffs) - len(cutoffs)
-    for s in range(max_photons + 1):
-        yield binomial_subspace(cutoffs, s)
