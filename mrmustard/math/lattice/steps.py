@@ -22,7 +22,7 @@
 
 
 import numpy as np
-from numba import njit, types, prange
+from numba import njit, prange, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
 from mrmustard.math.lattice.neighbours import lower_neighbors
