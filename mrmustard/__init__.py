@@ -14,11 +14,14 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+
 import numpy as np
 import rich.table
 from rich import print
-
+from rich.traceback import install
 from ._version import __version__
+
+install(show_locals=True)
 
 
 # pylint: disable=too-many-instance-attributes
