@@ -365,7 +365,8 @@ class TFMath(MathInterface):
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`.
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape.
 
         Args:
             A: The A matrix.
@@ -392,37 +393,38 @@ class TFMath(MathInterface):
         B: tf.Tensor,
         C: tf.Tensor,
         shape: Tuple[int],
-        max_prob: Optional[float] = None,
-        global_cutoff: Optional[int] = None,
+        max_l2: Optional[float],
+        global_cutoff: Optional[int],
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. The computation fills the tensor in order of
-        total photon number (global cutoff).
+        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
+        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
+        not provided, is set to the default value of the AUTOCUTOFF_PROBABILITY setting.
 
         Args:
             A: The A matrix.
             B: The B vector.
             C: The C scalar.
-            shape: The shape of the final tensor (local cutoffs)
-            max_prob (optional float): The maximum probability of the state.
+            shape: The shape of the final tensor (local cutoffs).
+            max_l2 (float): The maximum squared L2 norm of the tensor.
             global_cutoff (optional int): The global cutoff.
 
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        G = strategies.binomial(
+        G,_ = strategies.binomial(
             tuple(shape),
             _A,
             _B,
             _C,
-            max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY,
-            global_cutoff=global_cutoff or sum(shape) - len(shape),
+            max_l2=max_l2 or settings.AUTOCUTOFF_PROBABILITY,
+            global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_grad(G, _A.shape[-1], _C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_grad(G, _C, np.conj(dLdGconj))
             return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
 
         return G, grad
