@@ -12,28 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from hypothesis import given, strategies as st
-
-from thewalrus.symplectic import two_mode_squeezing, squeezing, rotation, beam_splitter, expand
 import numpy as np
+from hypothesis import given
+from hypothesis import strategies as st
+from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
-from mrmustard import settings
 from mrmustard.lab.gates import (
-    Sgate,
+    Amplifier,
+    Attenuator,
     BSgate,
-    S2gate,
-    Rgate,
-    MZgate,
-    Pgate,
     CXgate,
     CZgate,
     Dgate,
-    Amplifier,
-    Attenuator,
+    MZgate,
+    Pgate,
+    Rgate,
+    S2gate,
+    Sgate,
 )
-from mrmustard.lab.states import Vacuum, TMSV, Thermal
-from mrmustard.physics.gaussian import quadratic_phase, controlled_Z, controlled_X
+from mrmustard.lab.states import TMSV, Thermal, Vacuum
+from mrmustard.physics.gaussian import controlled_X, controlled_Z
 
 
 @given(r=st.floats(0, 2))
@@ -135,7 +133,7 @@ def test_BSgate(theta, phi):
 @given(r=st.floats(0, 1), phi=st.floats(0, 2 * np.pi))
 def test_S2gate(r, phi):
     """Tests the S2gate is implemented correctly by applying it on one half of a maximally entangled state"""
-    r_choi = settings.CHOI_R
+    r_choi = np.arcsinh(1.0)
     S2 = S2gate(r=r, phi=phi)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
     cov = (bell[0, 1, 2, 3] >> S2[0, 1]).cov
@@ -150,7 +148,7 @@ def test_S2gate(r, phi):
 @given(phi_ex=st.floats(0, 2 * np.pi), phi_in=st.floats(0, 2 * np.pi))
 def test_MZgate_external_tms(phi_ex, phi_in):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
-    r_choi = settings.CHOI_R
+    r_choi = np.arcsinh(1.0)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
     MZ = MZgate(phi_a=phi_ex, phi_b=phi_in, internal=False)
     cov = (bell[0, 1, 2, 3] >> MZ[0, 1]).cov
@@ -173,7 +171,7 @@ def test_MZgate_external_tms(phi_ex, phi_in):
 @given(phi_a=st.floats(0, 2 * np.pi), phi_b=st.floats(0, 2 * np.pi))
 def test_MZgate_internal_tms(phi_a, phi_b):
     """Tests the MZgate is implemented correctly by applying it on one half of a maximally entangled state"""
-    r_choi = settings.CHOI_R
+    r_choi = np.arcsinh(1.0)
     bell = (TMSV(r_choi) & TMSV(r_choi)).get_modes([0, 2, 1, 3])
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=True)
     cov = (bell[0, 1, 2, 3] >> MZ[0, 1]).cov
