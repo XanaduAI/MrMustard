@@ -93,21 +93,27 @@ def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
     shape: Sequence[int],
+    max_prob: float,
+    max_photons: int,
     return_dm: bool = True,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
     Use with caution: if the cov matrix is that of a mixed state,
     setting return_dm to False will produce nonsense.
+    If return_dm=False, we can apply max_prob and max_photons to stop the
+    computation of the Fock representation early, when those conditions are met.
 
     * If the state is pure it can return the state vector (ket) or the density matrix.
-        The index order is going to be ket_i where i is the only multimode index.
+        The index ordering is going to be [i's] in ket_i
     * If the state is mixed it can return the density matrix.
-        The index order is going to be dm_ij where j is the right multimode index and i is the left one.
+        The index order is going to be [i's,j's] in dm_ij
 
     Args:
         cov: the Wigner covariance matrix
         means: the Wigner means vector
         shape: the shape of the tensor
+        max_prob: the maximum probability of a the state (applies only if the ket is returned)
+        max_photons: the maximum number of photons in the state (applies only if the ket is returned)
         return_dm: whether to return the density matrix (otherwise it returns the ket)
 
     Returns:
@@ -116,8 +122,12 @@ def wigner_to_fock_state(
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
         return math.hermite_renormalized(A, B, C, shape=shape)
-    else:
+    else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
+        if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
+            return math.hermite_renormalized_binomial(
+                A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
+            )
         return math.hermite_renormalized(A, B, C, shape=shape)
 
 
