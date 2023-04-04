@@ -18,9 +18,10 @@
 This module contains functions for transforming to the Bargmann representation.
 """
 import numpy as np
-from mrmustard.physics.husimi import wigner_to_husimi, pq_to_aadag
+
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
 
 math = Math()
 
@@ -51,10 +52,10 @@ def wigner_to_bargmann_rho(cov, means):
     here we define it as `A = [[A_11, A_10], [A_01, A_00]]`. For `B` we have `B = [B_0, B_1] -> B = [B_1, B_0]`.
     """
     N = cov.shape[-1] // 2
-    Q, beta = wigner_to_husimi(cov, means)
     A = math.matmul(
         cayley(pq_to_aadag(cov), c=0.5), math.Xmat(N)
     )  # X on the right, so the index order will be rho_{left,right}:
+    Q, beta = wigner_to_husimi(cov, means)
     B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
     C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
     return A, B, C
