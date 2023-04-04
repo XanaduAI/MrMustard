@@ -22,11 +22,11 @@
 
 
 import numpy as np
-from numba import njit, types
+from numba import njit, types, prange
 from numba.cpython.unsafe.tuple import tuple_setitem
 
-from mrmustard.math.lattice.neighbours import lower_neighbors_tuple
-from mrmustard.math.lattice.pivots import first_pivot_tuple
+from mrmustard.math.lattice.neighbours import lower_neighbors
+from mrmustard.math.lattice.pivots import first_available_pivot
 from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
@@ -40,8 +40,10 @@ def vanilla_step(
     index: tuple[int, ...],
 ) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version.
-    This function calculates the index `index` of the Gaussian tensor `G`.
-    The appropriate pivot and neighbours must exist.
+    This function returns the amplitude of the Gaussian tensor G
+    at G[index]. It does not modify G.
+    The necessary pivot and neighbours must have already been computed,
+    as this step will read those values from G.
 
     Args:
         G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
@@ -52,13 +54,13 @@ def vanilla_step(
         complex: the value of the amplitude at the given index
     """
     # get pivot
-    i, pivot = first_pivot_tuple(index)
+    i, pivot = first_available_pivot(index)
 
     # pivot contribution
     value_at_index = b[i] * G[pivot]
 
     # neighbors contribution
-    for j, neighbor in lower_neighbors_tuple(pivot):
+    for j, neighbor in lower_neighbors(pivot):
         value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
 
     return value_at_index / SQRT[index[i]]
@@ -88,7 +90,7 @@ def vanilla_step_jacobian(
         tuple[array, array]: the dGdB and dGdA tensors updated at the given index
     """
     # index -> pivot
-    i, pivot = first_pivot_tuple(index)
+    i, pivot = first_available_pivot(index)
 
     # pivot contribution
     dGdB[index] += b[i] * dGdB[pivot] / SQRT[index[i]]
@@ -96,7 +98,7 @@ def vanilla_step_jacobian(
     dGdA[index] += b[i] * dGdA[pivot] / SQRT[index[i]]
 
     # neighbors contribution
-    for j, neighbor in lower_neighbors_tuple(pivot):
+    for j, neighbor in lower_neighbors(pivot):
         dGdB[index] += A[i, j] * dGdB[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index] += A[i, j] * dGdA[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
         dGdA[index + (i, j)] += G[neighbor] * SQRT[pivot[j]] / SQRT[index[i]]
@@ -135,13 +137,15 @@ def vanilla_step_grad(
 
 
 @njit
-def vanilla_step_dict(data: types.DictType, A, b, index: tuple[int, ...]) -> complex:
+def vanilla_step_dict(
+    data: types.DictType, A: ComplexMatrix, b: ComplexVector, index: tuple[int, ...]
+) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version with numba dict.
     This function calculates the index `index` of the Gaussian tensor `G`.
     The appropriate pivot and neighbours must exist.
 
     Args:
-        data: dict(tuple[int,...],complex): fock amplitudes numba dict
+        data: dict(tuple[int,...], complex): fock amplitudes numba dict
         A (array): A matrix of the Fock-Bargmann representation
         b (array): b vector of the Fock-Bargmann representation
         index (Sequence): index of the amplitude to calculate
@@ -149,14 +153,14 @@ def vanilla_step_dict(data: types.DictType, A, b, index: tuple[int, ...]) -> com
         complex: the value of the amplitude at the given index
     """
     # index -> pivot
-    i, pivot = first_pivot_tuple(index)
+    i, pivot = first_available_pivot(index)
 
     # calculate value at index: pivot contribution
     denom = SQRT[pivot[i] + 1]
     value_at_index = b[i] / denom * data[pivot]
 
     # neighbors contribution
-    for j, neighbor in lower_neighbors_tuple(pivot):
+    for j, neighbor in lower_neighbors(pivot):
         value_at_index += A[i, j] / denom * SQRT[pivot[j]] * data.get(neighbor, 0.0 + 0.0j)
 
     return value_at_index
@@ -166,9 +170,9 @@ def vanilla_step_dict(data: types.DictType, A, b, index: tuple[int, ...]) -> com
 def binomial_step(
     G: ComplexTensor, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
 ) -> tuple[ComplexTensor, float]:
-    r"""Binomial recurrence relation step, i.e. it computes a whole subspace of G corresponding to
-    the indices in ``subspace_indices`` where sum(index) = const.
-    Ii iterates over the indices in ``subspace_indices`` and updates the tensor ``G``.
+    r"""Computes a whole subspace of the ``G`` tensor at the indices in
+    ``subspace_indices`` (a subspace is such that `sum(index) = const`).
+    It updates the tensor ``G``.
     It returns the updated tensor and the probability of the subspace.
 
     Args:
@@ -180,27 +184,27 @@ def binomial_step(
     Returns:
         tuple[np.ndarray, float]: updated tensor and probability of the subspace
     """
-    # prob = 0.0
+    norm = 0.0
 
-    for i in range(len(subspace_indices)):
+    for i in prange(len(subspace_indices)):
         value = vanilla_step(G, A, b, subspace_indices[i])
         G[subspace_indices[i]] = value
-        # prob = prob + np.abs(value) ** 2
+        norm = norm + np.abs(value) ** 2
 
-    return G  # , prob
+    return G, norm
 
 
 @njit
 def binomial_step_dict(
     G: types.DictType, A: ComplexMatrix, b: ComplexVector, subspace_indices: list[tuple[int, ...]]
 ) -> tuple[types.DictType, float]:
-    r"""Binomial recurrence relation step, i.e. it computes a whole subspace of G corresponding to
-    the indices in ``subspace_indices`` where sum(index) = const. Dictionary version.
-    Ii iterates over the indices in ``subspace_indices`` and updates the tensor ``G``.
-    It returns the updated tensor and the probability of the subspace.
+    r"""Computes a whole subspace of the ``G`` dict at the indices in
+    ``subspace_indices`` (a subspace is such that `sum(index) = const`).
+    It updates the dict ``G``. It returns the updated G dict
+    and the total probability of the subspace.
 
     Args:
-        Z (types.DictType): Dictionary filled up to the previous subspace
+        G (types.DictType): Dictionary filled up to the previous subspace
         A (np.ndarray): A matrix of the Fock-Bargmann representation
         b (np.ndarray): B vector of the Fock-Bargmann representation
         subspace_indices (list[tuple[int, ...]]): list of indices to be updated
