@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterator, Optional
-
 from numba import njit, typed, typeof, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
