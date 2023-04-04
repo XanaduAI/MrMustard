@@ -381,7 +381,7 @@ class TFMath(MathInterface):
         G = strategies.vanilla(tuple(shape), _A, _B, _C)
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_grad(G, _A.shape[-1], _C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
             return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
 
         return G, grad
@@ -414,7 +414,7 @@ class TFMath(MathInterface):
             The renormalized Hermite polynomial of given shape.
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        G,_ = strategies.binomial(
+        G, _ = strategies.binomial(
             tuple(shape),
             _A,
             _B,
@@ -424,7 +424,7 @@ class TFMath(MathInterface):
         )
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_grad(G, _C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
             return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
 
         return G, grad
