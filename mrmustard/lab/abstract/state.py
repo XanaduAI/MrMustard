@@ -239,12 +239,21 @@ class State:  # pylint: disable=too-many-public-methods
             return norm**2
         return norm
 
-    def ket(self, cutoffs: List[int] = None) -> Optional[ComplexTensor]:
+    def ket(
+        self,
+        cutoffs: List[int] = None,
+        max_prob: float = 1.0,
+        max_photons: int = None,
+    ) -> Optional[ComplexTensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
         Args:
             cutoffs List[int or None]: The cutoff dimensions for each mode. If a mode cutoff is
                 ``None``, it's guessed automatically.
+            max_prob (float): The maximum probability of the state. Defaults to 1.0.
+                (used to stop the calculation of the amplitudes early)
+            max_photons (int): The maximum number of photons in the state, summing over all modes
+                (used to stop the calculation of the amplitudes early)
 
         Returns:
             Tensor: the ket
@@ -257,9 +266,19 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
+        # sort out max_photons
+        if max_photons is None:
+            max_photons = sum(cutoffs) - len(cutoffs)
+
+        # TODO: shouldn't we check if trainable instead? that's when we want to recompute fock
         if self.is_gaussian:
             self._ket = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=cutoffs, return_dm=False
+                self.cov,
+                self.means,
+                shape=cutoffs,
+                return_dm=False,
+                max_prob=max_prob,
+                max_photons=max_photons,
             )
         else:  # only fock representation is available
             if self._ket is None:
