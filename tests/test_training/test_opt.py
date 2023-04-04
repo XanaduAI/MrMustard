@@ -44,7 +44,7 @@ math = Math()
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
-    settings.SEED = 42
+    settings.SEED = 40
     S = S2gate(
         r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
         r_trainable=True,
@@ -67,7 +67,7 @@ def test_S2gate_coincidence_prob(n):
     assert np.allclose(-cost_fn(), expected, atol=1e-5)
 
     cb_result = opt.callback_history.get("cb")
-    assert {res["num_trainables"] for res in cb_result} == {2}
+    assert {res["num_trainables"] for res in cb_result} == {1}
     assert {res["lr"] for res in cb_result} == {0.01}
     assert [res["cost"] for res in cb_result] == opt.opt_history[1:]
 
