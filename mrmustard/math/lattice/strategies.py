@@ -79,18 +79,19 @@ def vanilla_jacobian(G, A, b, c) -> tuple[ComplexTensor, ComplexTensor, ComplexT
 
 
 @njit
-def vanilla_grad(G, D, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
+def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
     r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
 
     Args:
         G (np.ndarray): Tensor result of the forward pass
-        D (int): Dimension of the A/b tensors
         c (complex): vacuum amplitude
         dLdG (np.ndarray): gradient of the loss with respect to the output tensor
 
     Returns:
         tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
     """
+    D = G.ndim
+
     # init gradients
     dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
     db = np.zeros(D, dtype=np.complex128)  # component of dL/db
@@ -119,8 +120,8 @@ def binomial(
     A: ComplexMatrix,
     b: ComplexVector,
     c: complex,
-    max_prob: Optional[float] = None,
-    global_cutoff: Optional[int] = None,
+    max_l2: float,
+    global_cutoff: int,
 ) -> ComplexTensor:
     r"""Binomial strategy (fill ket by weight), python version with numba function/loop.
 
@@ -129,39 +130,70 @@ def binomial(
         A (np.ndarray): A matrix of the Fock-Bargmann representation
         b (np.ndarray): B vector of the Fock-Bargmann representation
         c (complex): vacuum amplitude
-        max_prob (float): max L2 norm. If reached, the computation is stopped early.
-        global_cutoff (Optional[int]): global cutoff (max total photon number considered).
-            If not given it is calculated from the local cutoffs.
+        max_l2 (float): max L2 norm. If reached, the computation is stopped early.
+        global_cutoff (Optional[int]): global cutoff (max total photon number considered + 1).
 
     Returns:
         G, prob (np.ndarray, float): Fock representation of the Gaussian tensor with shape ``shape`` and L2 norm
     """
-    # sort out global cutoff
-    if global_cutoff is None:
-        global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
-
     # init output tensor
     G = np.zeros(local_cutoffs, dtype=np.complex128)
 
     # write vacuum amplitude
     G.flat[0] = c
-    prob = np.abs(c) ** 2
+    norm = np.abs(c) ** 2
 
     # iterate over subspaces by weight and stop if norm is large enough. Caches indices.
     for photons in range(1, global_cutoff):
         try:
             indices = paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)]
         except KeyError:
-            indices = paths.binomial_subspace(local_cutoffs, photons)
+            indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        G, prob_subspace = steps.binomial_step(G, A, b, indices)  # numba parallelized function
-        prob += prob_subspace
+        G, subspace_norm = steps.binomial_step(G, A, b, indices)  # numba parallelized function
+        norm += subspace_norm
         try:
-            if prob > max_prob:
+            if norm > max_l2:
                 break
-        except TypeError:  # max_prob is None
+        except TypeError:  # max_l2 is None
             pass
-    return G, prob
+    return G, norm
+
+
+def binomial_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
+    r"""Binomial strategy gradient. Returns dL/dA, dL/db, dL/dc.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass
+        c (complex): vacuum amplitude
+        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
+    """
+    D = G.ndim
+
+    # init gradients
+    dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
+    db = np.zeros(D, dtype=np.complex128)  # component of dL/db
+    dLdA = np.zeros_like(dA)
+    dLdb = np.zeros_like(db)
+
+    # initialize path iterator
+    path = np.ndindex(G.shape)
+
+    # skip first index
+    next(path)
+
+    # iterate over the rest of the indices
+    for index in path:
+        dA, db = steps.binomial_step_grad(G, index, dA, db)
+        dLdA += dA * dLdG[index]
+        dLdb += db * dLdG[index]
+
+    dLdc = np.sum(G * dLdG) / c
+
+    return dLdA, dLdb, dLdc
 
 
 def binomial_dict(
@@ -205,7 +237,7 @@ def binomial_dict(
         try:
             indices = paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)]
         except KeyError:
-            indices = paths.binomial_subspace(local_cutoffs, photons)
+            indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
         Z, prob_subspace = steps.binomial_step_dict(Z, A, b, indices)  # numba parallelized function
         prob += prob_subspace
@@ -243,7 +275,7 @@ def binomial_numba(
         try:
             indices = FP[(local_cutoffs, photons)]
         except Exception:  # pylint: disable=broad-except
-            indices = paths.binomial_subspace(local_cutoffs, photons)
+            indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             FP[(local_cutoffs, photons)] = indices
         Z, prob_subspace = steps.binomial_step(Z, A, b, indices)
         prob += prob_subspace
