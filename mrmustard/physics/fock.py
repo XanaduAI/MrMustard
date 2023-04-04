@@ -93,8 +93,8 @@ def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
     shape: Sequence[int],
-    max_prob: float,
-    max_photons: int,
+    max_prob: float = 1.0,
+    max_photons: Optional[int] = None,
     return_dm: bool = True,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
@@ -124,6 +124,8 @@ def wigner_to_fock_state(
         return math.hermite_renormalized(A, B, C, shape=shape)
     else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
+        if max_photons is None:
+            max_photons = sum(shape) - len(shape)
         if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
             return math.hermite_renormalized_binomial(
                 A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
