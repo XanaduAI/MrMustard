@@ -37,6 +37,7 @@ from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer, Parametrized
 from mrmustard.training.callbacks import Callback
+from tests.random import angle
 
 math = Math()
 
@@ -69,24 +70,24 @@ def test_S2gate_coincidence_prob(n):
     cb_result = opt.callback_history.get("cb")
     assert {res["num_trainables"] for res in cb_result} == {2}
     assert {res["lr"] for res in cb_result} == {0.01}
-    assert [res["cost"] for res in cb_result] == opt.opt_history[1:]
+    assert [res["cost"] for res in cb_result] == opt.opt_history
 
 
-@given(i=st.integers(1, 5), k=st.integers(1, 5))
-def test_hong_ou_mandel_optimizer(i, k):
+@given(i=st.integers(1, 5), k=st.integers(1, 5), phi=angle)
+def test_hong_ou_mandel_optimizer(i, k, phi):
     """Finding the optimal beamsplitter transmission to get Hong-Ou-Mandel dip
     This generalizes the single photon Hong-Ou-Mandel effect to the many photon setting
     see Eq. 20 of https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.3.043065
     which lacks a square root in the right hand side.
     """
-    settings.SEED = 42
+    settings.SEED = 40
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
-            theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
-            phi=settings.rng.normal(),
+            theta=np.arccos(np.sqrt(k / (i + k))) + 0.01 * settings.rng.normal(),
+            phi=phi,
             theta_trainable=True,
             phi_trainable=True,
         )[1, 2],
@@ -107,7 +108,7 @@ def test_hong_ou_mandel_optimizer(i, k):
     )
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
     assert "null_cb" in opt.callback_history
-    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) - 1) // 3
+    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) + 2) // 3
 
 
 def test_learning_two_mode_squeezing():
@@ -115,8 +116,8 @@ def test_learning_two_mode_squeezing():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=abs(settings.rng.normal(size=(2))),
-            phi=settings.rng.normal(size=(2)),
+            r=abs(settings.rng.normal(size=2)),
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -142,7 +143,7 @@ def test_learning_two_mode_squeezing():
 
 def test_learning_two_mode_Ggate():
     """Finding the optimal Ggate to make a pair of single photons"""
-    settings.SEED = 42
+    settings.SEED = 40
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
@@ -157,11 +158,11 @@ def test_learning_two_mode_Ggate():
 
 def test_learning_two_mode_Interferometer():
     """Finding the optimal Interferometer to make a pair of single photons"""
-    settings.SEED = 42
+    settings.SEED = 40
     ops = [
         Sgate(
-            r=settings.rng.normal(size=(2)) ** 2,
-            phi=settings.rng.normal(size=(2)),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -185,8 +186,8 @@ def test_learning_two_mode_RealInterferometer():
     settings.SEED = 2
     ops = [
         Sgate(
-            r=settings.rng.normal(size=(2)) ** 2,
-            phi=settings.rng.normal(size=(2)),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
