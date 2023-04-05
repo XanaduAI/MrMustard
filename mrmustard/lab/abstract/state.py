@@ -604,7 +604,9 @@ class State:  # pylint: disable=too-many-public-methods
             warnings.warn(
                 "scalar multiplication forces conversion to fock representation", UserWarning
             )
-            return self.fock  # trigger creation of fock representation
+            if self.is_pure:
+                return State(ket=self.ket() * other)
+            return State(dm=self.dm() * other)
         if self._dm is not None:
             return State(dm=self.dm() * other, modes=self.modes)
         if self._ket is not None:
