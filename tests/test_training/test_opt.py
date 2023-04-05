@@ -115,8 +115,8 @@ def test_learning_two_mode_squeezing():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=abs(settings.rng.normal(size=(2))),
-            phi=settings.rng.normal(size=(2)),
+            r=abs(settings.rng.normal(size=2)),
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -160,8 +160,8 @@ def test_learning_two_mode_Interferometer():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=settings.rng.normal(size=(2)) ** 2,
-            phi=settings.rng.normal(size=(2)),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -185,8 +185,8 @@ def test_learning_two_mode_RealInterferometer():
     settings.SEED = 2
     ops = [
         Sgate(
-            r=settings.rng.normal(size=(2)) ** 2,
-            phi=settings.rng.normal(size=(2)),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
