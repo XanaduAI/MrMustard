@@ -173,7 +173,7 @@ class TorchMath(MathInterface):
 
         Returns:
         """
-
+        # pylint: disable=unused-variable
         batch_size = array.shape[0]
         input_channels = array.shape[1]
         output_channels = ...  # TODO: unsure of how to get output channels
