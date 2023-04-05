@@ -14,7 +14,7 @@
 
 """This module contains the Pytorch implementation of the :class:`Math` interface."""
 
-from typing import Callable, List, Optional, Sequence, Tuple, Union, Dict
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -174,12 +174,12 @@ class TorchMath(MathInterface):
         Returns:
         """
 
-        array.shape[0]
+        batch_size = array.shape[0]
         input_channels = array.shape[1]
         output_channels = ...  # TODO: unsure of how to get output channels
 
         if array.dim() == 3:  # 1D case
-            array.shape[2]
+            signal_length = array.shape[2]
 
             m = torch.nn.Conv1d(
                 input_channels,
@@ -193,8 +193,8 @@ class TorchMath(MathInterface):
             return m(array)
 
         if array.dim() == 4:  # 2D case
-            array.shape[2]
-            array.shape[3]
+            input_height = array.shape[2]
+            input_width = array.shape[3]
 
             m = torch.nn.Conv2d(
                 input_channels,
