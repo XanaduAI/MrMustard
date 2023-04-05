@@ -28,7 +28,7 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 @njit
 def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of all the neighbours of the given index."""
-    for j in range(len(pivot)):
+    for j in range(len(pivot)):  # pylint: disable=consider-using-enumerate
         yield j, tuple_setitem(pivot, j, pivot[j] - 1)
         yield j, tuple_setitem(pivot, j, pivot[j] + 1)
 
@@ -41,7 +41,7 @@ def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]
 @njit
 def lower_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of the lower neighbours of the given index."""
-    for j in range(len(pivot)):
+    for j in range(len(pivot)):  # pylint: disable=consider-using-enumerate
         yield j, tuple_setitem(pivot, j, pivot[j] - 1)
 
 

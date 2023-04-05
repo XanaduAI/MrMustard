@@ -127,7 +127,7 @@ def vanilla_step_grad(
     Returns:
         tuple[array, array]: the updated dGdB and dGdA tensors
     """
-    for i in range(len(db)):
+    for i in range(len(db)):  # pylint: disable=consider-using-enumerate
         pivot_i = tuple_setitem(index, i, index[i] - 1)
         db[i] = SQRT[index[i]] * G[pivot_i]
         dA[i, i] = 0.5 * SQRT[index[i] * pivot_i[i]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
@@ -215,7 +215,7 @@ def binomial_step_dict(
     """
     prob = 0.0
 
-    for i in range(len(subspace_indices)):
+    for i in prange(len(subspace_indices)):
         value = vanilla_step_dict(G, A, b, subspace_indices[i])
         G[subspace_indices[i]] = value
         prob = prob + np.abs(value) ** 2
