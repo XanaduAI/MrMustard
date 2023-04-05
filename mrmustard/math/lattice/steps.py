@@ -20,6 +20,7 @@
 # a recipe made of two parts. The function to recompute A and b is determined by
 # which neighbours are used.
 
+"""Fock-Bargmann recurrence relation steps for Gaussian states."""
 
 import numpy as np
 from numba import njit, prange, types
