@@ -13,6 +13,8 @@
 # limitations under the License.
 #
 
+"""neighbours functions"""
+
 from typing import Iterator
 
 from numba import njit
@@ -61,7 +63,7 @@ def upper_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ..
 
 
 @njit
-def bitstring_neighbours(
+def bitstring_neighbors(
     pivot: tuple[int, ...], bitstring: tuple[int, ...]
 ) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"yields the indices of the bitstring neighbours of the given index"
