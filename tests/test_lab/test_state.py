@@ -46,4 +46,4 @@ def test_division_dm():
 
     scaled = G / 42.0
 
-    assert np.allclose(scaled.dm(G.cutoffs)), G.dm() / 42.0)
+    assert np.allclose(scaled.dm(G.cutoffs)), G.dm() / 42.0
