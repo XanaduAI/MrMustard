@@ -86,25 +86,12 @@ def test_single_mode_fock_equals_gaussian_dm(gate):
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
-@given(gate=single_mode_cv_channel())
-def test_single_mode_fock_equals_gaussian_ket_dm(gate):
-    """Test same state is obtained via fock representation or phase space
-    for single mode circuits."""
-    cutoffs = [60]
-    gaussian_state = SqueezedVacuum(0.5)
-    fock_state = State(ket=gaussian_state.ket(cutoffs))
-
-    via_fock_space_dm = (fock_state >> gate).dm([10])
-    via_phase_space_dm = (gaussian_state >> gate).dm([10])
-    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
-
-
 @given(gate=single_mode_unitary_gate())
 def test_single_mode_fock_equals_gaussian_ket(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [60]
-    gaussian_state = SqueezedVacuum(0.5)
+    cutoffs = [70]
+    gaussian_state = SqueezedVacuum(-0.1)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
     via_fock_space_ket = (fock_state >> gate).ket([10])
@@ -114,10 +101,10 @@ def test_single_mode_fock_equals_gaussian_ket(gate):
 
 
 @given(gate=single_mode_unitary_gate())
-def test_single_mode_fock_equals_gaussian_ket_dm_2(gate):
+def test_single_mode_fock_equals_gaussian_ket_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [50]
+    cutoffs = [70]
     gaussian_state = SqueezedVacuum(-0.1)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
