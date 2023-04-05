@@ -39,6 +39,33 @@
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
   multiple callbacks to it.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
+### Improvements
+
+* The opt_history attribute of `Optimizer` now doesn't have a placeholder at the beginning.
+  [(#236)](https://github.com/XanaduAI/MrMustard/pull/236)
+
+* Using rich tracebacks now.
+  [(#236)](https://github.com/XanaduAI/MrMustard/pull/236)
+
+### Bug fixes
+
+* fixes a bug whereby two progress bars are shown during an optimization
+  [(#236)](https://github.com/XanaduAI/MrMustard/pull/236)
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
+
+---
+
+# Release 0.4.1
+
+### New features
+
+### Breaking changes
 
 ### Improvements
 
@@ -58,9 +85,6 @@
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
-
-This release contains contributions from (in alphabetical order):
-[Zeyue Niu](https://github.com/zeyueN)
 
 ---
 
