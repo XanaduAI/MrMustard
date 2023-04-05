@@ -15,12 +15,16 @@
 """A module containing utility classes and functions for graphical display."""
 
 from typing import Tuple
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import numpy as np
+from matplotlib import cm
+from rich.console import Console
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
+
 from mrmustard import settings
 from mrmustard.physics.fock import quadrature_distribution
+
 from .wigner import wigner_discretized
 
 
@@ -43,6 +47,7 @@ class Progressbar:
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 TextColumn("Cost = {task.fields[loss]:.5f} | ⏳ "),
                 TimeRemainingColumn(),
+                console=Console(force_terminal=False),
             )
         self.taskID = self.bar.add_task(
             description="Optimizing...",
