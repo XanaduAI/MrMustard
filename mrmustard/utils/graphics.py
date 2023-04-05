@@ -14,6 +14,8 @@
 
 """A module containing utility classes and functions for graphical display."""
 
+# pylint: disable=wrong-import-order
+
 from typing import Tuple
 
 import matplotlib.pyplot as plt

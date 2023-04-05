@@ -14,6 +14,7 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
+# pylint: disable=wrong-import-order
 
 import numpy as np
 import rich.table
