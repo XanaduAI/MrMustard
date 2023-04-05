@@ -620,8 +620,9 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
-            return self.fock
-
+            if self.is_pure:
+                return State(ket=self.ket() / other)
+            return State(dm=self.dm() / other)
         if self._dm is not None:
             return State(dm=self.dm() / other, modes=self.modes)
         if self._ket is not None:
