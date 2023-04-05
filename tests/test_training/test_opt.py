@@ -146,7 +146,7 @@ def test_learning_two_mode_Ggate():
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
-        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2])
+        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2], max_prob=0.9999)
         return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
