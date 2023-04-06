@@ -39,18 +39,18 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
     """
 
     # init output tensor
-    Z = np.zeros(shape, dtype=np.complex128)
+    G = np.zeros(shape, dtype=np.complex128)
 
     # initialize path iterator
     path = np.ndindex(shape)
 
     # write vacuum amplitude
-    Z[next(path)] = c
+    G[next(path)] = c
 
     # iterate over the rest of the indices
     for index in path:
-        Z[index] = steps.vanilla_step(Z, A, b, index)
-    return Z
+        G[index] = steps.vanilla_step(G, A, b, index)
+    return G
 
 
 @njit
@@ -187,13 +187,13 @@ def binomial_dict(
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
 
     # init numba output dict
-    Z = typed.Dict.empty(
+    G = typed.Dict.empty(
         key_type=types.UniTuple(types.int64, len(local_cutoffs)),
         value_type=types.complex128,
     )
 
     # write vacuum amplitude
-    Z[(0,) * len(local_cutoffs)] = c
+    G[(0,) * len(local_cutoffs)] = c
     prob = np.abs(c) ** 2
 
     # iterate over subspaces by weight and stop if norm is large enough. Caches indices.
@@ -203,14 +203,14 @@ def binomial_dict(
         except KeyError:
             indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             paths.BINOMIAL_PATHS_PYTHON[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = steps.binomial_step_dict(Z, A, b, indices)  # numba parallelized function
+        G, prob_subspace = steps.binomial_step_dict(G, A, b, indices)  # numba parallelized function
         prob += prob_subspace
         try:
             if prob > max_prob:
                 break
         except TypeError:
             pass
-    return Z
+    return G
 
 
 @njit
@@ -228,10 +228,10 @@ def binomial_numba(
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)
 
     # init output tensor
-    Z = np.zeros(local_cutoffs, dtype=np.complex128)
+    G = np.zeros(local_cutoffs, dtype=np.complex128)
 
     # write vacuum amplitude
-    Z.flat[0] = c
+    G.flat[0] = c
     prob = np.abs(c) ** 2
 
     # iterate over all other indices in parallel and stop if norm is large enough
@@ -241,11 +241,11 @@ def binomial_numba(
         except Exception:  # pylint: disable=broad-except
             indices = paths.binomial_subspace_basis(local_cutoffs, photons)
             FP[(local_cutoffs, photons)] = indices
-        Z, prob_subspace = steps.binomial_step(Z, A, b, indices)
+        G, prob_subspace = steps.binomial_step(G, A, b, indices)
         prob += prob_subspace
         if prob > max_prob:
             break
-    return Z
+    return G
 
 
 @njit
