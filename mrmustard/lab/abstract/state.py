@@ -31,6 +31,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.interpolation import ComplexFunctionND
 from mrmustard.physics import fock, gaussian
 from mrmustard.physics.wavefunction import oscillator_eigenstates
 from mrmustard.typing import (
@@ -307,16 +308,17 @@ class State:
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
         return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
 
-    def wavefunctionQ(self, qs: Sequence[Sequence[float]]):
+    def wavefunctionQ(self, qs: Optional[Sequence[Sequence[float]]] = None):
         r"""Returns the position wavefunction of the state at a vector of positions.
 
         Args:
-            qs (Sequence[Sequence[float]]): a sequence of positions for each mode
+            qs (optional Sequence[Sequence[float]]): a sequence of positions for each mode.
+                If ``None``, a set of positions is automatically generated.
 
         Returns:
-            Tensor: the wavefunction at the given positions
+            ComplexFunctionND: the wavefunction at the given positions wrapped in a
+            :class:`~.ComplexFunctionND` object.
         """
-
         krausses = [math.transpose(oscillator_eigenstates(q, c)) for q, c in zip(qs, self.cutoffs)]
 
         if self.is_mixed:
@@ -328,22 +330,19 @@ class State:
             ket = self.ket()
             for i, h_n in enumerate(krausses):
                 ket = fock.apply_kraus_to_ket(h_n, ket, [i])
-            return ket
+            return ket  # now in q basis
 
-    def wavefunctionP(self, ps: Sequence[Sequence[float]]):
+    def wavefunctionP(self, ps: Optional[Sequence[Sequence[float]]]):
         r"""Returns the momentum wavefunction of the state at a vector of momenta.
 
         Args:
-            p (Sequence[float]): the momentum vector
+            ps (optional Sequence[Sequence[float]]): a sequence of momenta for each mode.
+                If ``None``, a set of momenta is automatically generated.
 
         Returns:
-            Tensor: the wavefunction
+            ComplexFunctionND: the wavefunction at the given momenta wrapped in a
+            :class:`~.ComplexFunctionND` object.
         """
-
-        # krausses = math.pow(math.astensor(1j), math.arange(self.cutoffs[0]))[:, None] * math.cast(
-        #     oscillator_eigenstates(p, self.cutoffs[0]), "complex128"
-        # )
-
         krausses = [math.transpose(oscillator_eigenstates(p, c)) for p, c in zip(ps, self.cutoffs)]
         krausses = [
             math.pow(math.astensor(1j), math.arange(c))[None, :] * math.cast(k, "complex128")

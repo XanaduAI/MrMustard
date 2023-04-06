@@ -14,25 +14,22 @@
 
 """This module contains the Tensorflow implementation of the :class:`Math` interface."""
 
-from typing import Callable, List, Sequence, Tuple, Union, Optional
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-
-from thewalrus import hermite_multidimensional, grad_hermite_multidimensional
-
-from mrmustard.math.numba.compactFock_inputValidation import (
-    hermite_multidimensional_diagonal,
-    grad_hermite_multidimensional_diagonal,
-)
-from mrmustard.math.numba.compactFock_inputValidation import (
-    hermite_multidimensional_1leftoverMode,
-    grad_hermite_multidimensional_1leftoverMode,
-)
+from thewalrus import grad_hermite_multidimensional, hermite_multidimensional
 
 from mrmustard.math.autocast import Autocast
+from mrmustard.math.numba.compactFock_inputValidation import (
+    grad_hermite_multidimensional_1leftoverMode,
+    grad_hermite_multidimensional_diagonal,
+    hermite_multidimensional_1leftoverMode,
+    hermite_multidimensional_diagonal,
+)
 from mrmustard.typing import Tensor, Trainable
+
 from .math_interface import MathInterface
 
 
@@ -72,7 +69,18 @@ class TFMath(MathInterface):
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return self.cast(tf.reshape(array, [-1]), dtype)
+        array = self.astensor(array, dtype=dtype)
+        if len(array.shape) == 0:
+            return tf.reshape(array, (1,))
+        return array
+
+    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        array = self.astensor(array, dtype=dtype)
+        if len(array.shape) == 0:
+            return tf.reshape(array, (1, 1))
+        if len(array.shape) == 1:
+            return tf.reshape(array, (array.shape[0], 1))
+        return array
 
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:

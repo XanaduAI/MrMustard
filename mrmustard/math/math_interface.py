@@ -15,19 +15,21 @@
 """This module contains the :class:`Math` interface that every backend has to implement."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from functools import lru_cache
 from itertools import product
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
 import numpy as np
 from scipy.special import binom
-from scipy.stats import unitary_group, ortho_group
+from scipy.stats import ortho_group, unitary_group
+
 from mrmustard import settings
 from mrmustard.typing import (
-    Tensor,
     Matrix,
     Scalar,
-    Vector,
+    Tensor,
     Trainable,
+    Vector,
 )
 
 
@@ -135,6 +137,19 @@ class MathInterface(ABC):
 
         Returns:
             array: array with at least one dimension
+        """
+
+    @abstractmethod
+    def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least two dimensions.
+        If needed the array is expanded along the last dimension.
+
+        Args:
+            array (array): array to convert
+            dtype (dtype): data type of the array
+
+        Returns:
+            array: array with at least two dimensions
         """
 
     @abstractmethod

@@ -156,6 +156,8 @@ class ComplexFunction1D:
             x = self.domain
             y = other / self(x)
             return ComplexFunction1D(x, y)
+        else:
+            raise TypeError(f"Cannot divide {type(other)} by {type(self)}")
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs) -> ComplexFunction1D:
         if method == "__call__":
@@ -170,7 +172,7 @@ class ComplexFunction1D:
 
 
 class ComplexFunctionND:
-    r"""A complex function of N-dimensional real variables."""
+    r"""A complex function of N-dimensional real variables f: R^N -> C"""
 
     def __init__(self, x: RealTensor, y: ComplexTensor):
         r"""Initialize the function with a set of points.
@@ -180,15 +182,25 @@ class ComplexFunctionND:
             x (math.Tensor): the domain of the function (shape: (num_points, N))
             y (math.Tensor): the values of the function (shape: (num_points,))
         """
-        self.x = x
+        self.x = math.atleast_2d(x)
         self.y = y
         self.nd = x.shape[1]
 
+    @property
+    def grid(self):
+        return tuple(np.asarray(np.sort(np.unique(self.x[:, i]))) for i in range(self.nd))
+
     def interp(self, x_eval) -> math.Tensor:
-        grid = [math.sort(self.x[:, i]) for i in range(self.nd)]
-        y_real = tfp.math.batch_interp_rectilinear_nd_grid(x_eval, grid, math.math.real(self.y))
-        y_imag = tfp.math.batch_interp_rectilinear_nd_grid(x_eval, grid, math.math.imag(self.y))
-        return y_real + 1j * y_imag
+        y_real = tfp.math.batch_interp_rectilinear_nd_grid(
+            x_eval,
+            self.grid,
+            math.real(self.y),
+            axis=-self.nd,  # to work in batches add batch axes to grid
+        )
+        y_imag = tfp.math.batch_interp_rectilinear_nd_grid(
+            x_eval, self.grid, math.imag(self.y), axis=-self.nd
+        )
+        return math.make_complex(y_real, y_imag)
 
     @property
     def domain(self) -> math.Tensor:
@@ -206,12 +218,9 @@ class ComplexFunctionND:
         Returns:
             math.Tensor: the values of the function at x_eval (shape: (num_eval_points,))
         """
-        return self.interp(x_eval)
+        return self.interp(math.atleast_2d(x_eval, dtype="float64"))
 
-    # You can define arithmetic operations, such as __add__, __mul__, etc., similar to the 1D case.
-    # You will need to ensure that the domains and values are compatible in the N-dimensional case.
-
-    def __add__(self, other: Union[ComplexFunctionND, int, float, complex]) -> ComplexFunctionND:
+    def __add__(self, other: ComplexFunctionND | int | float | complex) -> ComplexFunctionND:
         if isinstance(other, self.__class__):
             if other.nd != self.nd:
                 raise ValueError("Cannot add functions with different number of dimensions")
@@ -228,4 +237,73 @@ class ComplexFunctionND:
             raise TypeError(f"Cannot add {type(self)} and {type(other)}")
         return f
 
-    # TODO: Implement the other arithmetic operations (__radd__, __mul__, __rmul__, etc.)
+    def __radd__(self, other: int | float | complex) -> ComplexFunctionND:
+        return self + other
+
+    def __mul__(self, other: ComplexFunctionND | int | float | complex) -> ComplexFunctionND:
+        if isinstance(other, self.__class__):
+            if other.nd != self.nd:
+                raise ValueError("Cannot add functions with different number of dimensions")
+
+            # For now, let's assume that x_eval will be adding the original domain (self.x) to itself.
+            x_eval = self.domain
+            y = self(x_eval) * other(x_eval)
+            f = ComplexFunctionND(x_eval, y)
+        elif isinstance(other, (int, float, complex)):
+            x_eval = self.domain
+            y = self(x_eval) * other
+            f = ComplexFunctionND(x_eval, y)
+        return f
+
+    def __rmul__(self, other: int | float | complex) -> ComplexFunctionND:
+        return self * other
+
+    def __neg__(self) -> ComplexFunctionND:
+        return ComplexFunctionND(self.domain, -self.values)
+
+    def __sub__(self, other: ComplexFunctionND | int | float | complex) -> ComplexFunctionND:
+        return self + (-other)
+
+    def __rsub__(self, other: int | float | complex) -> ComplexFunctionND:
+        return other + (-self)
+
+    def __pow__(self, other: int | float | complex) -> ComplexFunctionND:
+        if isinstance(other, (int, float, complex)):
+            x_eval = self.domain
+            y = self(x_eval) ** other
+            f = ComplexFunctionND(x_eval, y)
+        return f
+
+    def __truediv__(self, other: ComplexFunctionND | int | float | complex) -> ComplexFunctionND:
+        if isinstance(other, self.__class__):
+            if other.nd != self.nd:
+                raise ValueError("Cannot add functions with different number of dimensions")
+
+            # For now, let's assume that x_eval will be adding the original domain (self.x) to itself.
+            x_eval = self.domain
+            y = self(x_eval) / other(x_eval)
+            f = ComplexFunctionND(x_eval, y)
+        elif isinstance(other, (int, float, complex)):
+            x_eval = self.domain
+            y = self(x_eval) / other
+            f = ComplexFunctionND(x_eval, y)
+        return f
+
+    def __rtruediv__(self, other: int | float | complex) -> ComplexFunctionND:
+        if isinstance(other, (int, float, complex)):
+            x_eval = self.domain
+            y = other / self(x_eval)
+            return ComplexFunctionND(x_eval, y)
+        else:
+            raise TypeError(f"Cannot divide {type(other)} by {type(self)}")
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs) -> ComplexFunctionND:
+        if method == "__call__":
+            x = inputs[0].domain
+            y = ufunc(*(input(x) for input in inputs), **kwargs)
+            return ComplexFunctionND(x, y)
+        else:
+            raise NotImplementedError
+
+    def __array__(self, dtype=None) -> np.ndarray:
+        return np.array(self.values, dtype=dtype)
