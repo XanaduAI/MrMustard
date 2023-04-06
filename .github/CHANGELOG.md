@@ -65,8 +65,8 @@
   There are a few predefined strategies in `mrmustard.math.lattice.strategies`.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
-* Gradients in the Fock lattice are now computed using the vector-jacobian product. This saves a lot of memory and 
-  speeds up the optimization process by roughly 4x.
+* Gradients in the Fock lattice are now computed using the vector-jacobian product.
+  This saves a lot of memory and speeds up the optimization process by roughly 4x.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * Tests of the compact_fock module now use hypothesis.
