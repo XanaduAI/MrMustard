@@ -38,8 +38,8 @@
 * Gaussian states support a `bargmann` method for returning the bargmann representation. 
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
-* The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`. Use them to speed-up 
-  the filling of a ket array up to a certain probability or *total* photon number.
+* The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
+  Use them to speed-up the filling of a ket array up to a certain probability or *total* photon number.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
   ```python
