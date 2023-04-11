@@ -539,6 +539,12 @@ class Circuit(CircuitPart):
         "Flattens the circuit."
         return Circuit([op.disconnect() for op in self.ops])
 
+    def __gt__(self, other):
+        if not isinstance(other, (Circuit, Operation)):
+            has_dual = not other.is_pure or not other.is_unitary or not other.is_projective
+            other = Operation(other, other.input_modes, other.output_modes, has_dual)
+        return Circuit([self, other])
+
     # def tag_map(self) -> dict[int, int]:
     #     tags = []
     #     for op in self.ops:

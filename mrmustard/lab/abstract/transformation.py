@@ -262,6 +262,31 @@ class Transformation:
 
     # TODO: use __class_getitem__ for compiler stuff
 
+    def __gt__(self, other: Transformation):
+        r"""Concatenates self with other (self before other).
+
+        If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
+        E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
+
+        Args:
+            other: another transformation
+
+        Returns:
+            Circuit: A circuit that concatenates self with other
+        """
+        from mrmustard.lab.circuit import Circuit, Operation
+
+        op1 = Operation(self, self.modes, self.modes, not self.is_unitary)
+        if isinstance(other, Circuit):
+            return Circuit([op1] + other.parts)
+        if hasattr(other, "is_unitary"):
+            op2 = Operation(other, other.modes, other.modes, not other.is_unitary)
+        elif hasattr(other, "is_projective"):
+            op2 = Operation(other, other.modes, [], not other.is_projective)
+        else:
+            raise ValueError(f"Cannot concatenate {type(self)} with {type(other)}")
+        return Circuit([op1, op2])
+
     # pylint: disable=import-outside-toplevel,cyclic-import
     def __rshift__(self, other: Transformation):
         r"""Concatenates self with other (other after self).

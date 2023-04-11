@@ -19,11 +19,11 @@ from __future__ import annotations
 import warnings
 from typing import (
     TYPE_CHECKING,
+    Any,
     Iterable,
     List,
     Optional,
     Sequence,
-    Tuple,
     Union,
 )
 
@@ -105,23 +105,7 @@ class State:
             raise ValueError(
                 "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
             )
-        if modes:
-            from mrmustard.lab.circuit import Operation
-
-            self = Operation(self, [], modes, self.is_mixed)
-
-    # def indices(self, modes) -> Union[Tuple[int], int]:
-    #     r"""Returns the indices of the given modes.
-
-    #     Args:
-    #         modes (Sequence[int] or int): the modes or mode
-
-    #     Returns:
-    #         Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
-    #     """
-    #     if isinstance(modes, int):
-    #         return self.modes.index(modes)
-    #     return tuple(self.modes.index(m) for m in modes)
+        self.modes = modes if modes is not None else list(range(self.num_modes))
 
     @property
     def purity(self) -> float:
@@ -566,6 +550,19 @@ class State:
         E.g., ``self << other`` where other is a ``State`` and ``self`` is either a ``State`` or a ``Transformation``.
         """
         return other.primal(self)
+
+    def __gt__(self, other: Transformation) -> Any:
+        r"""Concatenates current state to other, creating a 'new type' circuit if necessary."""
+        from mrmustard.lab.circuit import Circuit, Operation
+
+        op1 = Operation(self, [], self.modes, not self.is_pure)
+        if isinstance(other, Circuit):
+            op2 = other
+        elif hasattr(other, "is_unitary"):
+            op2 = Operation(other, other.modes, other.modes, not other.is_unitary)
+        elif hasattr(other, "is_projective"):
+            op2 = Operation(other, other.modes, [], not other.is_projective)
+        return Circuit([op1, op2])
 
     def __add__(self, other: State):
         r"""Implements a mixture of states (only available in fock representation for the moment)."""

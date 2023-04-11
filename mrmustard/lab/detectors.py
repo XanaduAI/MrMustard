@@ -16,8 +16,9 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional, Iterable
+from typing import Iterable, List, Optional, Tuple, Union
 
+import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
@@ -131,6 +132,11 @@ class PNRDetector(Parametrized, FockMeasurement):
                     )
                 )
 
+    @property
+    def is_projective(self):
+        r"""Returns True if the detector does a projective measurement, False otherwise."""
+        return np.isclose(1 - self.efficiency.value, 0) and np.isclose(self.dark_counts.value, 0.0)
+
 
 # pylint: disable: no-member
 class ThresholdDetector(Parametrized, FockMeasurement):
@@ -225,6 +231,13 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 condprob = math.concat([row1, row2], axis=0)
                 self._internal_stochastic_channel.append(condprob)
 
+    @property
+    def is_projective(self):
+        r"""Returns True if the detector does a projective measurement, False otherwise."""
+        return np.isclose(1 - self.efficiency.value, 0) and np.isclose(
+            self.dark_count_prob.value, 0.0
+        )
+
 
 class Generaldyne(Measurement):
     r"""Generaldyne measurement on given modes.
@@ -285,6 +298,11 @@ class Generaldyne(Measurement):
 
     def _measure_fock(self, other) -> Union[State, float]:
         raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
+
+    @property
+    def is_projective(self):
+        r"""Returns True if the detector does a projective measurement, False otherwise."""
+        return self.state.is_pure
 
 
 class Heterodyne(Generaldyne):
