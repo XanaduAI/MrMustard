@@ -15,14 +15,17 @@
 This module contains logic for the text-based circuit drawer for MrMustard
 """
 from collections import defaultdict
+from typing import Any, Optional
+
+Operation = Any  # actually Operation, but circular import
 
 
-def mode_set(op):
+def mode_set(op: Operation):
     r"""includes modes in between min and max of op.input_modes."""
-    return set(range(min(op.output_indices), max(op.output_indices) + 1))
+    return set(range(min(op.output_modes), max(op.output_modes) + 1))
 
 
-def drawable_layers(ops):
+def drawable_layers(ops: list[Operation]) -> dict[int, list[Operation]]:
     r"""Determine non-overlapping yet dense placement of ops into layers for drawing.
     Arguments:
         ops Iterable[op]: a list of Operations
@@ -33,38 +36,46 @@ def drawable_layers(ops):
     layers = defaultdict(list)
     k = 0
     for new_op in ops:
-        # if there's any overlap, add to next layer
+        # if there's any overlap, move to next layer
         if any(mode_set(new_op) & mode_set(op) for op in layers[k]):
             k += 1
+        # add the new op to the layer
         layers[k].append(new_op)
     return layers
 
 
-def _add_grouping_symbols(op, layer_str):
+def add_grouping_symbols(op: Operation, layer_str: dict[int, str]) -> dict[int, str]:
     r"""Adds symbols indicating the extent of a given object."""
     S = mode_set(op)
     if len(S) > 1 and not op.parallelizable:
         layer_str[min(S)] = "╭"
         layer_str[max(S)] = "╰"
         for w in range(min(S) + 1, max(S)):
-            layer_str[w] = "├" if w in op.output_indices else "│"  # other option: ┼
+            layer_str[w] = "├" if w in op.output_modes else "│"  # other option: ┼
     return layer_str
 
 
-def _add_op(op, layer_str, decimals):
+def add_op(
+    op: Operation, layer_str: dict[int, str], decimals: Optional[int] = None
+) -> dict[int, str]:
     r"""Updates `layer_str` with `op` operation."""
-    layer_str = _add_grouping_symbols(op, layer_str)
+
+    # add grouping symbols
+    layer_str = add_grouping_symbols(op, layer_str)
+
+    # add the operation label and parameters
     control = []
     if op.wrapped.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
-        control = [list(op.output_indices)[0]]
+        control = [list(op.output_modes)[0]]
     label = op.short_name
     if decimals is not None:
         param_string = op.param_string(decimals)
         if param_string == "":
-            param_string = str(len(op.output_indices))
+            param_string = str(len(op.output_modes))
         label += "(" + param_string + ")"
 
-    for w in op.output_indices:
+    # add the control symbol
+    for w in op.output_modes:
         layer_str[w] += "•" if w in control else label
 
     return layer_str
@@ -83,7 +94,7 @@ def circuit_text(
         str : String based graphic of the circuit.
     """
     # get all modes used by the ops and sort them
-    modes = sorted(list(set().union(*[op.output_indices | op.input_indices for op in ops])))
+    modes = sorted(list(set().union(*[op.output_modes | op.input_modes for op in ops])))
     # include all modes between min and max (need to draw over them)
     all_modes = range(min(modes), max(modes) + 1)
 
@@ -95,7 +106,7 @@ def circuit_text(
     for layer in drawable_layers(ops).values():
         layer_str = [filler] * (max(all_modes) - min(all_modes) + 1)
         for op in layer:
-            layer_str = _add_op(op, layer_str, decimals)
+            layer_str = add_op(op, layer_str, decimals)
 
         max_label_len = max(len(s) for s in layer_str)
         layer_str = [s.ljust(max_label_len, filler) for s in layer_str]

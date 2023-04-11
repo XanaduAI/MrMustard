@@ -251,6 +251,12 @@ class Transformation:
             modes = list(items)
         else:
             raise ValueError(f"{items} is not a valid slice or list of modes.")
+
+        if len(modes) > self.num_modes:
+            raise ValueError(
+                f"Cannot set transformation on {len(modes)} modes, "
+                f"it acts on {self.num_modes} modes."
+            )
         self.modes = modes
         return self
 
