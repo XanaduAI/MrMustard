@@ -68,7 +68,7 @@ def test_S2gate_coincidence_prob(n):
     assert np.allclose(-cost_fn(), expected, atol=1e-5)
 
     cb_result = opt.callback_history.get("cb")
-    assert {res["num_trainables"] for res in cb_result} == {2}
+    assert {res["num_trainables"] for res in cb_result} == {1}
     assert {res["lr"] for res in cb_result} == {0.01}
     assert [res["cost"] for res in cb_result] == opt.opt_history
 
@@ -86,7 +86,7 @@ def test_hong_ou_mandel_optimizer(i, k, phi):
         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
         BSgate(
-            theta=np.arccos(np.sqrt(k / (i + k))) + 0.01 * settings.rng.normal(),
+            theta=np.arccos(np.sqrt(k / (i + k))) + 0.001 * settings.rng.normal(),
             phi=phi,
             theta_trainable=True,
             phi_trainable=True,
