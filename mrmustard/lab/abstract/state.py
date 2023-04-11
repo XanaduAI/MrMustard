@@ -30,6 +30,7 @@ from typing import (
 import numpy as np
 
 from mrmustard import settings
+from mrmustard.lab.abstract.operation import Operation
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.typing import (
@@ -47,7 +48,7 @@ math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
-class State:
+class State(Operation):
     r"""Base class for quantum states."""
 
     def __init__(
@@ -61,6 +62,8 @@ class State:
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         _norm: float = 1.0,
+        name: str = "State",
+        **kwargs,
     ):
         r"""Initializes the state.
 
@@ -103,9 +106,15 @@ class State:
             self._purity = 1.0 if ket is not None else None
         else:
             raise ValueError(
-                "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
+                "State must be initialized with cov/means, eigenvalues and symplectic matrix, or a fock representation"
             )
-        self.modes = modes if modes is not None else list(range(self.num_modes))
+        super().__init__(
+            modes_in=[],
+            modes_out=modes or list(range(self.num_modes)),
+            has_dual=not self.is_pure,
+            name=name,
+            **kwargs,
+        )
 
     @property
     def purity(self) -> float:
@@ -474,20 +483,20 @@ class State:
             cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
         )
 
-    def __getitem__(self, item) -> State:
-        "setting the modes of a state (same API of `Transformation`)"
-        if isinstance(item, int):
-            item = [item]
-        elif isinstance(item, Iterable):
-            item = list(item)
-        else:
-            raise TypeError("item must be int or iterable")
-        if len(item) != self.num_modes:
-            raise ValueError(
-                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
-            )
-        self._modes = item
-        return self
+    # def __getitem__(self, item) -> State:
+    #     "setting the modes of a state (same API of `Transformation`)"
+    #     if isinstance(item, int):
+    #         item = [item]
+    #     elif isinstance(item, Iterable):
+    #         item = list(item)
+    #     else:
+    #         raise TypeError("item must be int or iterable")
+    #     if len(item) != self.num_modes:
+    #         raise ValueError(
+    #             f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
+    #         )
+    #     self._modes = item
+    #     return self
 
     def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""
@@ -536,13 +545,16 @@ class State:
                 self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
             )
 
-    def __rshift__(self, other: Transformation) -> State:
-        r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
-        if issubclass(other.__class__, State):
-            raise TypeError(
-                f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
-            )
-        return other.primal(self)
+    # def __rshift__(self, other: Transformation) -> State:
+    #     r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
+    #     if issubclass(other.__class__, State):
+    #         raise TypeError(
+    #             f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
+    #         )
+    #     return other.primal(self)
+
+    # def __rshift__(self, other: CircuitPart) -> Circuit:
+    #     return Circuit([self, other])
 
     def __lshift__(self, other: State):
         r"""Implements projection onto a state or the dual transformation applied on a state.

@@ -16,10 +16,11 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Iterable, Sequence, Union
+from abc import ABC, abstractmethod, abstractproperty
+from typing import Sequence, Union
 
 from mrmustard import settings
+from mrmustard.lab.abstract.operation import Operation
 from mrmustard.math import Math
 from mrmustard.typing import Tensor
 
@@ -28,7 +29,7 @@ from .state import State
 math = Math()
 
 
-class Measurement(ABC):
+class Measurement(Operation, ABC):
     """this is an abstract class holding the common methods and properties
     that any measurement should implement
 
@@ -37,24 +38,18 @@ class Measurement(ABC):
         modes (List[int]): the modes on which the measurement is acting on
     """
 
-    def __init__(self, outcome: Tensor, modes: Sequence[int]) -> None:
-        super().__init__()
-
+    def __init__(self, outcome: Tensor, modes: Sequence[int], name: str, **kwargs) -> None:
         if modes is None:
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
-        self._modes = modes
         self._outcome = outcome
-        self.modes_in = modes
-        self.modes_out: list[int] = []
+        self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
+        super().__init__(
+            modes_in=modes, modes_out=[], has_dual=not self.is_projective, name=name, **kwargs
+        )
 
-        self._is_postselected = False if outcome is None else True
-        """used to evaluate if the measurement outcome should be
-        sampled or is already defined by the user (postselection)"""
-
-    @property
-    def modes(self):
-        r"""returns the modes being measured"""
-        return self._modes
+    @abstractproperty
+    def is_projective(self):
+        r"""returns whether the measurement is projective or not"""
 
     @property
     def num_modes(self):
@@ -90,29 +85,24 @@ class Measurement(ABC):
 
         return self._measure_fock(other)
 
-    def __lshift__(self, other) -> Union[State, float]:
-        if isinstance(other, State):
-            self.primal(other)
+    # def __rshift__(self, other) -> Union[State, float]:
+    #     return Circuit([self, other])
 
-        raise TypeError(
-            f"Cannot apply Measurement '{self.__qualname__}' to '{other.__qualname__}'."
-        )
+    # def __getitem__(self, items) -> Measurement:
+    #     """Assign modes via the getitem syntax: allows measurements to be used as
+    #     ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
+    #     """
+    #     if isinstance(items, int):
+    #         modes = [items]
+    #     elif isinstance(items, slice):
+    #         modes = list(range(items.start, items.stop, items.step))
+    #     elif isinstance(items, (Sequence, Iterable)):
+    #         modes = list(items)
+    #     else:
+    #         raise ValueError(f"{items} is not a valid slice or list of modes.")
+    #     self._modes = modes
 
-    def __getitem__(self, items) -> Measurement:
-        """Assign modes via the getitem syntax: allows measurements to be used as
-        ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
-        """
-        if isinstance(items, int):
-            modes = [items]
-        elif isinstance(items, slice):
-            modes = list(range(items.start, items.stop, items.step))
-        elif isinstance(items, (Sequence, Iterable)):
-            modes = list(items)
-        else:
-            raise ValueError(f"{items} is not a valid slice or list of modes.")
-        self._modes = modes
-
-        return self
+    #     return self
 
 
 class FockMeasurement(Measurement):
@@ -125,9 +115,11 @@ class FockMeasurement(Measurement):
     in the Fock basis.
     """
 
-    def __init__(self, outcome: Tensor, modes: Sequence[int], cutoffs: Sequence[int]) -> None:
+    def __init__(
+        self, outcome: Tensor, modes: Sequence[int], cutoffs: Sequence[int], **kwargs
+    ) -> None:
         self._cutoffs = cutoffs or [settings.PNR_INTERNAL_CUTOFF] * len(modes)
-        super().__init__(outcome, modes)
+        super().__init__(outcome, modes, name="Fock", **kwargs)
 
     @property
     def outcome(self):
@@ -150,7 +142,7 @@ class FockMeasurement(Measurement):
         """
         cutoffs = []
         for mode in other.modes:
-            if mode in self._modes:
+            if mode in self.modes:
                 cutoffs.append(
                     max(settings.PNR_INTERNAL_CUTOFF, other.cutoffs[other.indices(mode)])
                 )
@@ -172,10 +164,10 @@ class FockMeasurement(Measurement):
         # put back the last len(self.modes) modes at the beginning
         output = math.transpose(
             dm,
-            list(range(dm.ndim - len(self._modes), dm.ndim))
-            + list(range(dm.ndim - len(self._modes))),
+            list(range(dm.ndim - len(self.modes), dm.ndim))
+            + list(range(dm.ndim - len(self.modes))),
         )
-        if len(output.shape) == len(self._modes):  # all modes are measured
+        if len(output.shape) == len(self.modes):  # all modes are measured
             output = math.real(output)  # return probabilities
         return output
 

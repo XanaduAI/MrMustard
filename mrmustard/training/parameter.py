@@ -86,8 +86,8 @@ There are three basic types of parameters:
 # pylint: disable=super-init-not-called
 
 from abc import ABC, abstractmethod
+from typing import Any, Optional, Sequence
 
-from typing import Optional, Sequence, Any
 from mrmustard.math import Math
 from mrmustard.typing import Tensor
 

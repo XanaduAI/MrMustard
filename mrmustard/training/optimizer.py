@@ -17,14 +17,16 @@ used within Mr Mustard.
 """
 
 from itertools import chain, groupby
-from typing import List, Callable, Sequence, Union, Mapping, Dict
-from mrmustard.training.callbacks import Callback
-from mrmustard.utils import graphics
+from typing import Callable, Dict, List, Mapping, Sequence, Union
+
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
+from mrmustard.training.callbacks import Callback
+from mrmustard.utils import graphics
+
 from .parameter import Parameter, Trainable, create_parameter
-from .parametrized import Parametrized
 from .parameter_update import param_update_method
+from .parametrized import Parametrized
 
 math = Math()
 

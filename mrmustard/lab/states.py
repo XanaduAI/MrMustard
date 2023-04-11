@@ -43,6 +43,8 @@ __all__ = [
 
 class Vacuum(State):
     r"""The N-mode vacuum state."""
+    short_name = "Vac"
+    parallelizable = False
 
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
@@ -50,7 +52,7 @@ class Vacuum(State):
         State.__init__(self, cov=cov, means=means)
 
 
-class Coherent(Parametrized, State):
+class Coherent(State, Parametrized):
     r"""The N-mode coherent state.
 
     Equivalent to applying a displacement to the vacuum state:
@@ -84,6 +86,9 @@ class Coherent(Parametrized, State):
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Coherent``
     """
+    is_gaussian = True
+    short_name = "Coh"
+    parallelizable = True
 
     def __init__(
         self,
@@ -96,22 +101,24 @@ class Coherent(Parametrized, State):
         modes: Optional[Sequence[int]] = None,
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
+        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
+        means = gaussian.displacement(x, y, settings.HBAR)
+        cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
+        super().__init__(
+            cov=cov,
+            means=means,
+            cutoffs=cutoffs,
+            modes=modes,
             x=x,
             y=y,
             x_trainable=x_trainable,
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
+            **kwargs,
         )
-        self._modes = modes
         self._normalize = normalize
-
-        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-        cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def means(self):
@@ -151,6 +158,9 @@ class SqueezedVacuum(Parametrized, State):
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``SqueezedVacuum``,
     """
+    is_gaussian = True
+    short_name = "SqV"
+    parallelizable = True
 
     def __init__(
         self,
@@ -173,7 +183,6 @@ class SqueezedVacuum(Parametrized, State):
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
         )
-        self._modes = modes
         self._normalize = normalize
 
         cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
@@ -206,6 +215,9 @@ class TMSV(Parametrized, State):
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``TMSV``
     """
+    is_gaussian = True
+    short_name = "TMSV"
+    parallelizable = False
 
     def __init__(
         self,
@@ -228,7 +240,6 @@ class TMSV(Parametrized, State):
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
         )
-        self._modes = modes
         self._normalize = normalize
 
         cov = gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
@@ -265,6 +276,9 @@ class Thermal(Parametrized, State):
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Thermal``
     """
+    is_gaussian = True
+    short_name = "Th"
+    parallelizable = True
 
     def __init__(
         self,
@@ -281,7 +295,6 @@ class Thermal(Parametrized, State):
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
         )
-        self._modes = modes
         self._normalize = normalize
 
         cov = gaussian.thermal_cov(self.nbar.value, settings.HBAR)
@@ -334,6 +347,9 @@ class DisplacedSqueezed(Parametrized, State):
         cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``DisplacedSqueezed``
     """
+    is_gaussian = True
+    short_name = "Dsq"
+    parallelizable = True
 
     def __init__(
         self,
@@ -368,7 +384,6 @@ class DisplacedSqueezed(Parametrized, State):
             x_bounds=x_bounds,
             y_bounds=y_bounds,
         )
-        self._modes = modes
         self._normalize = normalize
 
         cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
@@ -414,6 +429,9 @@ class Gaussian(Parametrized, State):
         normalize (bool, default False): whether to normalize the leftover state when projecting onto Gaussian
     """
 
+    short_name = "G"
+    parallelizable = False
+
     def __init__(
         self,
         num_modes: int,
@@ -443,7 +461,6 @@ class Gaussian(Parametrized, State):
             eigenvalues_bounds=eigenvalues_bounds,
             symplectic_bounds=(None, None),
         )
-        self._modes = modes
         self._normalize = normalize
 
         cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
@@ -469,6 +486,9 @@ class Fock(Parametrized, State):
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Fock``
     """
 
+    short_name = "F"
+    parallelizable = True
+
     def __init__(
         self,
         n: Sequence[int],
@@ -480,7 +500,6 @@ class Fock(Parametrized, State):
         Parametrized.__init__(self)
 
         self._n = [n] if isinstance(n, int) else n
-        self._modes = modes
         self._normalize = normalize
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):

@@ -18,8 +18,6 @@ This module implements the set of detector classes that perform measurements on 
 
 from typing import Iterable, List, Optional, Tuple, Union
 
-import numpy as np
-
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
@@ -61,6 +59,9 @@ class PNRDetector(Parametrized, FockMeasurement):
         modes (Optional List[int]): list of modes to apply the detector to
         cutoffs (int or List[int]): largest phton number measurement cutoff for each mode
     """
+    is_gaussian = False
+    parallelizable = True
+    short_name = "PNR"
 
     def __init__(
         self,
@@ -73,17 +74,8 @@ class PNRDetector(Parametrized, FockMeasurement):
         stochastic_channel: RealMatrix = None,
         modes: List[int] = None,
         cutoffs: Union[int, List[int]] = None,
+        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            efficiency=math.atleast_1d(efficiency),
-            dark_counts=math.atleast_1d(dark_counts),
-            efficiency_trainable=efficiency_trainable,
-            dark_counts_trainable=dark_counts_trainable,
-            efficiency_bounds=efficiency_bounds,
-            dark_counts_bounds=dark_counts_bounds,
-        )
-
         self._stochastic_channel = stochastic_channel
         self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
 
@@ -94,9 +86,22 @@ class PNRDetector(Parametrized, FockMeasurement):
         else:
             num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
 
-        modes = modes or list(range(num_modes))
-        outcome = None
-        FockMeasurement.__init__(self, outcome, modes, cutoffs)
+        print("pnr calling super")
+        super().__init__(
+            efficiency=math.atleast_1d(efficiency),
+            dark_counts=math.atleast_1d(dark_counts),
+            efficiency_trainable=efficiency_trainable,
+            dark_counts_trainable=dark_counts_trainable,
+            efficiency_bounds=efficiency_bounds,
+            dark_counts_bounds=dark_counts_bounds,
+        )
+        FockMeasurement.__init__(
+            self,
+            outcome=None,
+            modes=modes or list(range(num_modes)),
+            cutoffs=cutoffs,
+            **kwargs,
+        )
 
         self.recompute_stochastic_channel()
 
@@ -106,7 +111,7 @@ class PNRDetector(Parametrized, FockMeasurement):
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
-            cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
+            cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self.modes)
         self._internal_stochastic_channel = []
         if self._stochastic_channel is not None:
             self._internal_stochastic_channel = self._stochastic_channel
@@ -135,7 +140,7 @@ class PNRDetector(Parametrized, FockMeasurement):
     @property
     def is_projective(self):
         r"""Returns True if the detector does a projective measurement, False otherwise."""
-        return np.isclose(1 - self.efficiency.value, 0) and np.isclose(self.dark_counts.value, 0.0)
+        return not (self.efficiency.value < 1.0 or self.dark_counts.value > 0.0)
 
 
 # pylint: disable: no-member
@@ -161,6 +166,9 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         stochastic_channel (Optional 2d array): if supplied, this stochastic_channel will be used for belief propagation
         modes (Optional List[int]): list of modes to apply the detector to
     """
+    is_gaussian = False
+    parallelizable = True
+    short_name = "APD"  # poetic license
 
     def __init__(
         self,
@@ -172,38 +180,37 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         dark_count_prob_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         stochastic_channel=None,
         modes: List[int] = None,
+        **kwargs,
     ):
+        eff = math.atleast_1d(efficiency)  # for convenience
+        dc = math.atleast_1d(dark_count_prob)
+
         if modes is not None:
             num_modes = len(modes)
         else:
-            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_count_prob)))
+            num_modes = max(len(eff), len(dc))
 
-        if len(math.atleast_1d(efficiency)) == 1 and num_modes > 1:
-            efficiency = math.tile(math.atleast_1d(efficiency), [num_modes])
-        if len(math.atleast_1d(dark_count_prob)) == 1 and num_modes > 1:
-            dark_count_prob = math.tile(math.atleast_1d(dark_count_prob), [num_modes])
+        if eff.size == 1 and num_modes > 1:
+            efficiency = math.tile(eff, [num_modes])
+        if dc.size == 1 and num_modes > 1:
+            dark_count_prob = math.tile(dc, [num_modes])
 
-        modes = modes or list(range(num_modes))
+        self._stochastic_channel = stochastic_channel
+        self._should_recompute_stochastic_channel = (
+            efficiency_trainable or dark_count_prob_trainable
+        )
 
-        Parametrized.__init__(
-            self,
+        super().__init__(
+            modes=modes or list(range(num_modes)),
+            cutoffs=1,
             efficiency=efficiency,
             dark_count_prob=dark_count_prob,
             efficiency_trainable=efficiency_trainable,
             dark_count_prob_trainable=dark_count_prob_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_count_prob_bounds=dark_count_prob_bounds,
+            **kwargs,
         )
-
-        self._stochastic_channel = stochastic_channel
-
-        cutoffs = [2] * num_modes
-        self._should_recompute_stochastic_channel = (
-            efficiency_trainable or dark_count_prob_trainable
-        )
-
-        outcome = None
-        FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self.recompute_stochastic_channel()
 
@@ -213,7 +220,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
     def recompute_stochastic_channel(self, cutoffs: List[int] = None):
         """recompute belief using the defined `stochastic channel`"""
         if cutoffs is None:
-            cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self._modes)
+            cutoffs = [settings.PNR_INTERNAL_CUTOFF] * len(self.modes)
         self._internal_stochastic_channel = []
         if self._stochastic_channel is not None:
             self._internal_stochastic_channel = self._stochastic_channel
@@ -234,9 +241,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
     @property
     def is_projective(self):
         r"""Returns True if the detector does a projective measurement, False otherwise."""
-        return np.isclose(1 - self.efficiency.value, 0) and np.isclose(
-            self.dark_count_prob.value, 0.0
-        )
+        return not (self.efficiency.value < 1.0 or self.dark_count_prob.value > 0.0)
 
 
 class Generaldyne(Measurement):
@@ -253,6 +258,7 @@ class Generaldyne(Measurement):
         state: State,
         outcome: Optional[RealVector] = None,
         modes: Optional[Iterable[int]] = None,
+        **kwargs,
     ) -> None:
         if not state.is_gaussian:
             raise TypeError("Generaldyne measurement state must be Gaussian.")
@@ -269,7 +275,7 @@ class Generaldyne(Measurement):
             # ensure measurement and state act on the same modes
             self.state = state[modes]
 
-        super().__init__(outcome, modes)
+        super().__init__(outcome=outcome, modes=modes, **kwargs)
 
     @property
     def outcome(self) -> RealVector:
@@ -322,6 +328,7 @@ class Heterodyne(Generaldyne):
         x: Union[float, List[float]] = 0.0,
         y: Union[float, List[float]] = 0.0,
         modes: List[int] = None,
+        **kwargs,
     ):
         if (x is None) ^ (y is None):  # XOR
             raise ValueError("Both `x` and `y` arguments should be defined or set to `None`.")
@@ -339,8 +346,13 @@ class Heterodyne(Generaldyne):
         modes = modes or list(range(x.shape[0]))
 
         units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
-        state = Coherent(x / units_factor, y / units_factor)
-        super().__init__(state=state, outcome=outcome, modes=modes)
+        super().__init__(
+            state=Coherent(x / units_factor, y / units_factor),
+            outcome=outcome,
+            modes=modes,
+            name="Heterodyne",
+            **kwargs,
+        )
 
 
 class Homodyne(Generaldyne):
@@ -360,6 +372,7 @@ class Homodyne(Generaldyne):
         result: Optional[Union[float, List[float]]] = None,
         modes: Optional[List[int]] = None,
         r: Optional[Union[float, List[float]]] = None,
+        **kwargs,
     ):
         self.r = r or settings.HOMODYNE_SQUEEZING
         self.quadrature_angle = math.atleast_1d(quadrature_angle, dtype="float64")
@@ -381,10 +394,15 @@ class Homodyne(Generaldyne):
         modes = modes or list(range(self.quadrature_angle.shape[0]))
 
         units_factor = math.sqrt(2.0 * settings.HBAR, dtype="float64")
-        state = DisplacedSqueezed(
-            r=self.r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+        super().__init__(
+            state=DisplacedSqueezed(
+                r=self.r, phi=2 * self.quadrature_angle, x=x / units_factor, y=y / units_factor
+            ),
+            outcome=outcome,
+            modes=modes,
+            name="Homodyne",
+            **kwargs,
         )
-        super().__init__(state=state, outcome=outcome, modes=modes)
 
     def _measure_gaussian(self, other) -> Union[State, float]:
         # rotate modes to be measured to the Homodyne basis

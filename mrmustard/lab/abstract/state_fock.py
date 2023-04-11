@@ -329,20 +329,20 @@ class FockState:
             modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
         )
 
-    def __getitem__(self, item):
-        "setting the modes of a state (same API as `Transformation`)"
-        if isinstance(item, int):
-            item = [item]
-        elif isinstance(item, Iterable):
-            item = list(item)
-        else:
-            raise TypeError("item must be int or iterable")
-        if len(item) != self.num_modes:
-            raise ValueError(
-                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
-            )
-        self._modes = item
-        return Operation(self)
+    # def __getitem__(self, item):
+    #     "setting the modes of a state (same API as `Transformation`)"
+    #     if isinstance(item, int):
+    #         item = [item]
+    #     elif isinstance(item, Iterable):
+    #         item = list(item)
+    #     else:
+    #         raise TypeError("item must be int or iterable")
+    #     if len(item) != self.num_modes:
+    #         raise ValueError(
+    #             f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
+    #         )
+    #     self._modes = item
+    #     return Operation(self)
 
     def get_modes(self, item):
         r"""Returns the state on the given modes."""

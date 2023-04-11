@@ -22,8 +22,10 @@ It contains the items you'd find in a lab:
 * the Circuit class
 """
 
-from .circuit import *
-from .states import *
-from .gates import *
-from .detectors import *
-from .abstract import State
+
+from mrmustard.lab.abstract import State
+from mrmustard.lab.detectors import *
+from mrmustard.lab.gates import *
+from mrmustard.lab.states import *
+
+State

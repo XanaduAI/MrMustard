@@ -22,7 +22,6 @@ from __future__ import annotations
 from typing import (
     Callable,
     Iterable,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -32,6 +31,7 @@ from typing import (
 import numpy as np
 
 from mrmustard import settings
+from mrmustard.lab.abstract.operation import Operation
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
@@ -42,9 +42,24 @@ from .state import State
 math = Math()
 
 
-class Transformation:
+class Transformation(Operation):
     r"""Base class for all Transformations."""
-    is_unitary = True  # whether the transformation is unitary (True by default)
+    is_unitary: bool
+
+    def __init__(
+        self,
+        modes_in: list[int],
+        modes_out: list[int],
+        name: str,
+        **kwargs,
+    ):
+        super().__init__(
+            modes_in=modes_in,
+            modes_out=modes_out,
+            has_dual=not self.is_unitary,
+            name=name,
+            **kwargs,
+        )
 
     def primal(self, state: State) -> State:
         r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
@@ -126,21 +141,21 @@ class Transformation:
                 )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    @property
-    def modes(self) -> Sequence[int]:
-        """Returns the list of modes on which the transformation acts on."""
-        if self._modes in (None, []):
-            for elem in self.XYd:
-                if elem is not None:
-                    self._modes = list(range(elem.shape[-1] // 2))
-                    break
-        return self._modes
+    # @property
+    # def modes(self) -> Sequence[int]:
+    #     """Returns the list of modes on which the transformation acts on."""
+    #     if self._modes in (None, []):
+    #         for elem in self.XYd:
+    #             if elem is not None:
+    #                 self._modes = list(range(elem.shape[-1] // 2))
+    #                 break
+    #     return self._modes
 
-    @modes.setter
-    def modes(self, modes: List[int]):
-        r"""Sets the modes on which the transformation acts."""
-        self._validate_modes(modes)
-        self._modes = modes
+    # @modes.setter
+    # def modes(self, modes: List[int]):
+    #     r"""Sets the modes on which the transformation acts."""
+    #     self._validate_modes(modes)
+    #     self._modes = modes
 
     @property
     def num_modes(self) -> int:
@@ -287,26 +302,19 @@ class Transformation:
             raise ValueError(f"Cannot concatenate {type(self)} with {type(other)}")
         return Circuit([op1, op2])
 
-    # pylint: disable=import-outside-toplevel,cyclic-import
-    def __rshift__(self, other: Transformation):
-        r"""Concatenates self with other (other after self).
+    # def __rshift__(self, other: Transformation):
+    #     r"""Concatenates self with other (other after self).
 
-        If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
-        E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
+    #     If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
+    #     E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
 
-        Args:
-            other: another transformation
+    #     Args:
+    #         other: another transformation
 
-        Returns:
-            Circuit: A circuit that concatenates self with other
-        """
-        from ..circuit import (
-            Circuit,
-        )
-
-        ops1 = self._ops if isinstance(self, Circuit) else [self]
-        ops2 = other._ops if isinstance(other, Circuit) else [other]
-        return Circuit(ops1 + ops2)
+    #     Returns:
+    #         Circuit: A circuit that concatenates self with other
+    #     """
+    #     return Circuit([self, other])
 
     def __lshift__(self, other: Union[State, Transformation]):
         r"""Applies the dual of self to other.
