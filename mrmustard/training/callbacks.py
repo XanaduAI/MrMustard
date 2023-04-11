@@ -67,13 +67,15 @@ Examples:
 
 """
 
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime
-import hashlib
 from pathlib import Path
-from typing import Callable, Optional, Mapping, Sequence, Union
+from typing import Callable, Mapping, Optional, Sequence, Union
+
 import numpy as np
 import tensorflow as tf
+
 from mrmustard.math import Math
 
 math = Math()
@@ -115,7 +117,7 @@ class Callback:
 
     def get_opt_step(self, optimizer, **kwargs):  # pylint: disable=unused-argument
         """Gets current step from optimizer."""
-        self.optimizer_step = len(optimizer.opt_history)
+        self.optimizer_step = len(optimizer.opt_history) + 1
         return self.optimizer_step
 
     def _should_call(self, **kwargs) -> bool:

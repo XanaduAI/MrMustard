@@ -108,7 +108,7 @@ def test_hong_ou_mandel_optimizer(i, k, phi):
     )
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
     assert "null_cb" in opt.callback_history
-    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) + 2) // 3
+    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) - 1) // 3
 
 
 def test_learning_two_mode_squeezing():
