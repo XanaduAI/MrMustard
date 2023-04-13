@@ -13,26 +13,32 @@
 # limitations under the License.
 
 import numpy as np
-from hypothesis import given, strategies as st
+from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
+
+from mrmustard import settings
 from mrmustard.lab import (
+    TMSV,
+    AdditiveNoise,
+    Amplifier,
+    Attenuator,
+    BSgate,
+    Coherent,
+    CXgate,
+    CZgate,
     Dgate,
-    Sgate,
+    DisplacedSqueezed,
+    Ggate,
+    Interferometer,
+    MZgate,
     Pgate,
     Rgate,
-    CZgate,
-    CXgate,
-    BSgate,
-    MZgate,
     S2gate,
-    Attenuator,
-    Amplifier,
-    AdditiveNoise,
-    Interferometer,
-    Ggate,
+    Sgate,
+    SqueezedVacuum,
+    Thermal,
     Vacuum,
 )
-from mrmustard import settings
 
 # numbers
 integer32bits = st.integers(min_value=0, max_value=2**31 - 1)
@@ -80,7 +86,9 @@ def none_or_(strategy):
 
 
 # bounds
-bounds_check = lambda t: t[0] < t[1] if t[0] is not None and t[1] is not None else True
+def bounds_check(t):
+    return t[0] < t[1] if t[0] is not None and t[1] is not None else True
+
 
 angle_bounds = st.tuples(none_or_(angle), none_or_(angle)).filter(bounds_check)
 positive_bounds = st.tuples(none_or_(positive), none_or_(positive)).filter(bounds_check)
@@ -294,19 +302,19 @@ def n_mode_unitary_gate(draw, num_modes=None):
 @st.composite
 def squeezed_vacuum(draw, num_modes):
     r"""Return a random squeezed vacuum state."""
-    r = array_of_(r, num_modes, num_modes)
+    r_vec = array_of_(r, num_modes, num_modes)
     phi = array_of_(angle, num_modes, num_modes)
-    return SqueezedVacuum(r=draw(r), phi=draw(phi))
+    return SqueezedVacuum(r=draw(r_vec), phi=draw(phi))
 
 
 @st.composite
 def displacedsqueezed(draw, num_modes):
     r"""Return a random displaced squeezed state."""
-    r = array_of_(r, num_modes, num_modes)
+    r_vec = array_of_(r, num_modes, num_modes)
     phi = array_of_(angle, num_modes, num_modes)
     x = array_of_(medium_float, num_modes, num_modes)
     y = array_of_(medium_float, num_modes, num_modes)
-    return DisplacedSqueezed(r=draw(r), phi=draw(phi), x=draw(x), y=draw(x))
+    return DisplacedSqueezed(r=draw(r_vec), phi=draw(phi), x=draw(x), y=draw(y))
 
 
 @st.composite
@@ -318,7 +326,7 @@ def coherent(draw, num_modes):
 
 
 @st.composite
-def tmsv(draw):
+def tmsv(draw, phi):
     r"""Return a random two-mode squeezed vacuum state."""
     return TMSV(r=draw(r), phi=draw(phi))
 
