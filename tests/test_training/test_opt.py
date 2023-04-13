@@ -83,8 +83,8 @@ def test_hong_ou_mandel_optimizer(i, k, phi):
     settings.SEED = 40
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
-        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
+        S2gate(r=r, phi=angle, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=angle, phi_trainable=True)[2, 3],
         BSgate(
             theta=np.arccos(np.sqrt(k / (i + k))) + 0.001 * settings.rng.normal(),
             phi=phi,
