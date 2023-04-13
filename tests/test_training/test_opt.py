@@ -83,8 +83,8 @@ def test_hong_ou_mandel_optimizer(i, k, phi):
     settings.SEED = 40
     r = np.arcsinh(1.0)
     s2_0, s2_1, bs = (
-        S2gate(r=r, phi=angle, phi_trainable=True)[0, 1],
-        S2gate(r=r, phi=angle, phi_trainable=True)[2, 3],
+        S2gate(r=r, phi=phi, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=phi, phi_trainable=True)[2, 3],
         BSgate(
             theta=np.arccos(np.sqrt(k / (i + k))) + 0.001 * settings.rng.normal(),
             phi=phi,
@@ -108,7 +108,7 @@ def test_hong_ou_mandel_optimizer(i, k, phi):
     )
     assert np.allclose(np.cos(bs.theta.value) ** 2, k / (i + k), atol=1e-2)
     assert "null_cb" in opt.callback_history
-    assert len(opt.callback_history["null_cb"]) == (len(opt.opt_history) - 1) // 3
+    assert len(opt.callback_history["null_cb"]) == len(opt.opt_history) // 3
 
 
 def test_learning_two_mode_squeezing():
