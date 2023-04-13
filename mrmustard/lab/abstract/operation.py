@@ -22,7 +22,6 @@ class Operation(CircuitPart):
         name: str = None,
         **kwargs,
     ):
-        print(f"Operation.__init__({modes_in}, {modes_out}, {has_dual}, {name}, {kwargs})")
         self.name = name or self.__class__.__qualname__
         self.input_wire_at_mode: dict[int, Wire] = {
             m: Wire(
@@ -78,12 +77,6 @@ class Operation(CircuitPart):
         "hash function so that Operations can be used as keys in dictionaries."
         tags = tuple(tag for wire in self.all_wires for tag in [wire.L, wire.R] if tag is not None)
         return hash(tags)
-
-    # def __repr__(self):
-    #     return (
-    #         f"Operation[{self.wrapped.__class__.__qualname__}](inputs={list(self.modes_in)}, "
-    #         + f"outputs={list(self.modes_out)}, has_dual={self.has_dual})"
-    #     )
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
         other_parts = other.parts if isinstance(other, Circuit) else [other]

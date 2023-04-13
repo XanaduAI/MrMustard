@@ -48,24 +48,26 @@ class Parametrized:
     """
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
-        print(f"parametrized init called with {kwargs}")
         owner = f"{self.__class__.__qualname__}"
         self.param_names = []  # list of parameter names to preserve order
+        remaining_params = {}
         for name, value in kwargs.items():
-            # only keep parameters that can be trainable
+            # filter untrainable parameters
             if f"{name}_trainable" not in kwargs:
+                if name.endswith("_bounds") or name.endswith("_trainable"):
+                    continue
+                remaining_params[name] = value
                 continue
 
             # convert into parameter class
             is_trainable = kwargs.get(f"{name}_trainable", False) or math.is_trainable(value)
             bounds = kwargs.get(f"{name}_bounds", None)
-            print(value, name, is_trainable, bounds, owner)
             param = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign parameter as attribute of the class
             self.__dict__[name] = param
             self.param_names.append(name)
-        super().__init__(self, **kwargs)
+        super().__init__(**remaining_params)
 
     def param_string(self, decimals: int) -> str:
         r"""Returns a string representation of the parameter values, separated by commas and rounded

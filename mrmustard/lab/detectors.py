@@ -34,7 +34,7 @@ __all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heter
 
 
 # pylint: disable=no-member
-class PNRDetector(Parametrized, FockMeasurement):
+class PNRDetector(FockMeasurement, Parametrized):
     r"""Photon Number Resolving detector.
 
     If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
@@ -76,6 +76,7 @@ class PNRDetector(Parametrized, FockMeasurement):
         cutoffs: Union[int, List[int]] = None,
         **kwargs,
     ):
+        self.is_projective = not (efficiency < 1.0 or dark_counts > 0.0)
         self._stochastic_channel = stochastic_channel
         self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
 
@@ -86,23 +87,18 @@ class PNRDetector(Parametrized, FockMeasurement):
         else:
             num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
 
-        print("pnr calling super")
         super().__init__(
+            outcome=None,
+            modes=modes or list(range(num_modes)),
+            cutoffs=cutoffs,
             efficiency=math.atleast_1d(efficiency),
             dark_counts=math.atleast_1d(dark_counts),
             efficiency_trainable=efficiency_trainable,
             dark_counts_trainable=dark_counts_trainable,
             efficiency_bounds=efficiency_bounds,
             dark_counts_bounds=dark_counts_bounds,
-        )
-        FockMeasurement.__init__(
-            self,
-            outcome=None,
-            modes=modes or list(range(num_modes)),
-            cutoffs=cutoffs,
             **kwargs,
         )
-
         self.recompute_stochastic_channel()
 
     def should_recompute_stochastic_channel(self):
@@ -137,14 +133,9 @@ class PNRDetector(Parametrized, FockMeasurement):
                     )
                 )
 
-    @property
-    def is_projective(self):
-        r"""Returns True if the detector does a projective measurement, False otherwise."""
-        return not (self.efficiency.value < 1.0 or self.dark_counts.value > 0.0)
-
 
 # pylint: disable: no-member
-class ThresholdDetector(Parametrized, FockMeasurement):
+class ThresholdDetector(FockMeasurement, Parametrized):
     r"""Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
 
     If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
@@ -182,6 +173,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         modes: List[int] = None,
         **kwargs,
     ):
+        self.is_projective = not (efficiency < 1.0 or dark_count_prob > 0.0)
         eff = math.atleast_1d(efficiency)  # for convenience
         dc = math.atleast_1d(dark_count_prob)
 
@@ -201,6 +193,7 @@ class ThresholdDetector(Parametrized, FockMeasurement):
         )
 
         super().__init__(
+            outcome=None,
             modes=modes or list(range(num_modes)),
             cutoffs=1,
             efficiency=efficiency,
@@ -237,11 +230,6 @@ class ThresholdDetector(Parametrized, FockMeasurement):
                 # rest = math.zeros((cut - 2, cut), dtype=row1.dtype)
                 condprob = math.concat([row1, row2], axis=0)
                 self._internal_stochastic_channel.append(condprob)
-
-    @property
-    def is_projective(self):
-        r"""Returns True if the detector does a projective measurement, False otherwise."""
-        return not (self.efficiency.value < 1.0 or self.dark_count_prob.value > 0.0)
 
 
 class Generaldyne(Measurement):
@@ -306,9 +294,9 @@ class Generaldyne(Measurement):
         raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
 
     @property
-    def is_projective(self):
+    def has_dual(self):
         r"""Returns True if the detector does a projective measurement, False otherwise."""
-        return self.state.is_pure
+        return self.state.is_mixed
 
 
 class Heterodyne(Generaldyne):

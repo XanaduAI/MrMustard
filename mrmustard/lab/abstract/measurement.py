@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Sequence, Union
 
 from mrmustard import settings
@@ -46,10 +46,6 @@ class Measurement(Operation, ABC):
         super().__init__(
             modes_in=modes, modes_out=[], has_dual=not self.is_projective, name=name, **kwargs
         )
-
-    @abstractproperty
-    def is_projective(self):
-        r"""returns whether the measurement is projective or not"""
 
     @property
     def num_modes(self):

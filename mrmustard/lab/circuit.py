@@ -20,7 +20,7 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from mrmustard import settings
 from mrmustard.lab.abstract.operation import CircuitPart, Wire
@@ -291,21 +291,13 @@ class Circuit(CircuitPart):
         "Flattens the circuit."
         return Circuit([op.disconnect() for op in self.ops])
 
-    # def tag_map(self) -> dict[int, int]:
-    #     tags = []
-    #     for op in self.ops:
-    #         for wire in op.all_wires:
-    #             tags.append(wire.L)
-    #             if wire.R is not None:
-    #                 tags.append(wire.R)
-    #     # re-issue unique tags starting from 0
-    #     tag_map = {}
-    #     index = 0
-    #     for tag in sorted(tags):
-    #         if tag not in tag_map:
-    #             tag_map[tag] = index
-    #             index += 1
-    #     return tag_map
+    State = Any  # to avoid circular import
+
+    def __call__(self) -> State:
+        state = self.ops[0]
+        for next_op in self.ops[1:]:
+            state = next_op.primal(state)
+        return state
 
     # _repr_markdown_ = None
 

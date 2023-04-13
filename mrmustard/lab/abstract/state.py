@@ -51,6 +51,12 @@ math = Math()
 class State(Operation):
     r"""Base class for quantum states."""
 
+    def __init_symbolic__(
+        self,
+        *kwargs
+    ):
+
+
     def __init__(
         self,
         cov: RealMatrix = None,
@@ -108,10 +114,13 @@ class State(Operation):
             raise ValueError(
                 "State must be initialized with cov/means, eigenvalues and symplectic matrix, or a fock representation"
             )
+
         super().__init__(
             modes_in=[],
             modes_out=modes or list(range(self.num_modes)),
-            has_dual=not self.is_pure,
+            has_dual=gaussian.purity(cov, settings.HBAR) < 1.0
+            if self.is_gaussian
+            else dm is not None,
             name=name,
             **kwargs,
         )
@@ -124,21 +133,7 @@ class State(Operation):
                 self._purity = gaussian.purity(self.cov, settings.HBAR)
             else:
                 self._purity = fock.purity(self._dm)
-        if self._purity < 1.0:
-            self._LR = True
         return self._purity
-
-    @property
-    def LR(self) -> bool:
-        """Returns whether the state is left-right symmetric."""
-        if self._LR is None:
-            if self._dm is not None:
-                self._LR = True
-            elif self.purity < 1.0:
-                self._LR = True
-            else:
-                self._LR = False
-        return self._LR
 
     @property
     def is_mixed(self):

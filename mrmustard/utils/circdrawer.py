@@ -21,7 +21,7 @@ Operation = Any  # actually Operation, but circular import
 
 
 def mode_set(op: Operation):
-    r"""includes modes in between min and max of op.modes_in."""
+    r"""includes modes in between min and max of op.modes_in because of vertical wires."""
     return set(range(min(op.modes), max(op.modes) + 1))
 
 
