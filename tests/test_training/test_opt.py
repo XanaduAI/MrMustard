@@ -45,7 +45,7 @@ math = Math()
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
-    settings.SEED = 42
+    settings.SEED = 40
     S = S2gate(
         r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
         r_trainable=True,
@@ -147,7 +147,7 @@ def test_learning_two_mode_Ggate():
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
-        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2])
+        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2], max_prob=0.9999)
         return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)

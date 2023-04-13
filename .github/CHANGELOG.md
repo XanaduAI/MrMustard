@@ -35,24 +35,50 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
+* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
+  Use them to speed-up the filling of a ket array up to a certain probability or *total* photon number.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+  ```python
+  from mrmustard.lab import Gaussian
+
+  # Fills the ket array up to 99% probability or up to the |0,3>, |1,2>, |2,1>, |3,0> subspace, whichever is reached first.
+  # The array has the autocutoff shape, unless the cutoffs are specified explicitly.
+  ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
+  ```
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
   multiple callbacks to it.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
 
+* The `opt_history` attribute of `Optimizer` does not have the placeholder at the beginning anymore.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
 ### Improvements
 
-* The opt_history attribute of `Optimizer` now doesn't have a placeholder at the beginning.
-  [(#236)](https://github.com/XanaduAI/MrMustard/pull/236)
+* The math module now has a submodule `lattice` for constructing recurrence relation strategies in the Fock lattice.
+  There are a few predefined strategies in `mrmustard.math.lattice.strategies`.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* Gradients in the Fock lattice are now computed using the vector-jacobian product.
+  This saves a lot of memory and speeds up the optimization process by roughly 4x.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* Tests of the compact_fock module now use hypothesis.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * Using rich tracebacks now.
   [(#236)](https://github.com/XanaduAI/MrMustard/pull/236)
 
 ### Bug fixes
 
-* fixes a bug whereby two progress bars are shown during an optimization
-  [(#236)](https://github.com/XanaduAI/MrMustard/pull/236)
+* Fixed a bug that would make two progress bars appear during an optimization
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 ### Documentation
 

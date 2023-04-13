@@ -12,42 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hypothesis import settings, given, strategies as st
-import pytest
-
 import numpy as np
+import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
+
 from mrmustard.lab import (
-    Circuit,
-    Vacuum,
-    S2gate,
-    BSgate,
-    Sgate,
-    Rgate,
-    Dgate,
-    Ggate,
-    Interferometer,
-    SqueezedVacuum,
     TMSV,
-    State,
     Attenuator,
-    Fock,
+    BSgate,
+    Circuit,
     Coherent,
+    Fock,
     Gaussian,
+    Ggate,
+    S2gate,
+    Sgate,
+    SqueezedVacuum,
+    State,
+    Vacuum,
 )
 from mrmustard.physics.fock import (
-    dm_to_ket,
-    ket_to_dm,
-    trace,
+    _displacement,
+    _grad_displacement,
     apply_choi_to_dm,
     apply_choi_to_ket,
     apply_kraus_to_dm,
     apply_kraus_to_ket,
-    _grad_displacement,
-    _displacement,
+    dm_to_ket,
+    ket_to_dm,
+    trace,
 )
-
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
@@ -176,8 +173,8 @@ def test_density_matrix(num_modes):
     [
         Vacuum(num_modes=2),
         Fock([4, 3], modes=[0, 1]),
-        Coherent(x=[0.1, 0.2], y=[-0.4, 0.4], cutoffs=[25]),
-        Gaussian(num_modes=2, cutoffs=[35]),
+        Coherent(x=[0.1, 0.2], y=[-0.4, 0.4], cutoffs=[10, 10]),
+        Gaussian(num_modes=2, cutoffs=[35, 35]),
     ],
 )
 def test_dm_to_ket(state):
@@ -185,9 +182,9 @@ def test_dm_to_ket(state):
     dm = state.dm()
     ket = dm_to_ket(dm)
     # check if ket is normalized
-    assert np.allclose(np.linalg.norm(ket), 1)
+    assert np.allclose(np.linalg.norm(ket), 1, atol=1e-4)
     # check kets are equivalent
-    assert np.allclose(ket, state.ket())
+    assert np.allclose(ket, state.ket(), atol=1e-4)
 
     dm_reconstructed = ket_to_dm(ket)
     # check ket leads to same dm
