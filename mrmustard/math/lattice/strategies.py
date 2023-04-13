@@ -263,4 +263,4 @@ def diagonal(shape: IntVector) -> IntVector:
 @njit
 def dynamic_U(shape: IntVector) -> IntVector:
     r"dynamic U strategy, not implemented yet"
-    raise NotImplementedError("Diagonal strategy not implemented yet")
+    raise NotImplementedError("Dynamic strategy not implemented yet")
