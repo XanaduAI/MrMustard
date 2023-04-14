@@ -89,3 +89,7 @@ class Operation(CircuitPart):
     def TN_tensor(self) -> Tensor:
         "Returns the TensorNetwork Tensor of this Operation."
         return self.TN_tensor()
+
+    def __call__(self, **kwargs):
+        for name, value in kwargs.items():
+            setattr(self, name, value)

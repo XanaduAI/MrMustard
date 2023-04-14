@@ -51,11 +51,8 @@ math = Math()
 class State(Operation):
     r"""Base class for quantum states."""
 
-    def __init_symbolic__(
-        self,
-        *kwargs
-    ):
-
+    def __init_symbolic__(self, *kwargs):
+        pass
 
     def __init__(
         self,

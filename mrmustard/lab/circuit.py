@@ -288,16 +288,23 @@ class Circuit(CircuitPart):
         return Circuit([self, other])
 
     def flatten(self) -> Circuit:
-        "Flattens the circuit."
+        "Flattens and rewires the circuit."
         return Circuit([op.disconnect() for op in self.ops])
 
     State = Any  # to avoid circular import
 
-    def __call__(self) -> State:
-        state = self.ops[0]
+    def __call__(self, **kwargs) -> Circuit | State:
+        op = self.ops[0](**kwargs)  # assumes op is a State
         for next_op in self.ops[1:]:
-            state = next_op.primal(state)
-        return state
+            next_op(**kwargs)  # set the values of the symbolic parameters
+            try:
+                op = next_op.primal(op)
+            except AttributeError:  # triggered if op is not a State
+                not_a_state = True
+                continue  # because we still want to pass the kwargs to all the ops
+        if not_a_state:
+            return self
+        return op
 
     # _repr_markdown_ = None
 
