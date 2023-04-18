@@ -33,7 +33,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
 from mrmustard.typing import RealMatrix, RealVector
 
@@ -45,6 +45,20 @@ math = Math()
 class Transformation:
     r"""Base class for all Transformations."""
     is_unitary = True  # whether the transformation is unitary (True by default)
+
+    def bargmann(self):
+        X, Y, d = self.XYd
+        if self.is_unitary:
+            return bargmann.wigner_to_bargmann_U(
+                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
+                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
+            )
+        else:
+            return bargmann.wigner_to_bargmann_Choi(
+                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
+                Y if Y is not None else math.zeros((d.shape[-1], d.shape[-1]), dtype=d.dtype),
+                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
+            )
 
     def primal(self, state: State) -> State:
         r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
