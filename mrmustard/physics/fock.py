@@ -27,6 +27,7 @@ from numba import jit
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.lattice import strategies
 from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.physics.bargmann import (
@@ -937,16 +938,64 @@ def _grad_displacement(T, r, phi):  # pragma: no cover
 
 @math.custom_gradient
 def displacement(r, phi, cutoff, tol=1e-15):
-    """creates a single mode displacement matrix"""
+    r"""creates a single mode displacement matrix"""
     if r > tol:
         gate = _displacement(math.asnumpy(r), math.asnumpy(phi), cutoff)
     else:
         gate = math.eye(cutoff, dtype="complex128")
 
-    def grad(dy):  # pragma: no cover
+    def grad(dy):
         Dr, Dphi = _grad_displacement(math.asnumpy(gate), math.asnumpy(r), math.asnumpy(phi))
         grad_r = math.real(math.sum(dy * math.conj(Dr)))
         grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
         return grad_r, grad_phi, None
 
     return gate, grad
+
+
+@math.custom_gradient
+def beamsplitter(theta: float, phi: float, cutoffs: Sequence[int]):
+    r"""creates a beamsplitter tensor with given cutoffs"""
+    unitary = strategies.beamsplitter(cutoffs, math.asnumpy(theta), math.asnumpy(phi))
+
+    def vjp(dLdGc):
+        return strategies.beamsplitter_vjp(
+            math.asnumpy(unitary), dLdGc, math.asnumpy(theta), math.asnumpy(phi)
+        )
+
+    return unitary, vjp
+
+
+@math.custom_gradient
+def squeezer(r, phi, cutoffs):
+    r"""creates a single mode squeezer matrix"""
+    unitary = strategies.squeezing(cutoffs, math.asnumpy(r), math.asnumpy(phi))
+
+    def vjp(dLdGc):
+        return strategies.squeezing_vjp(
+            math.asnumpy(unitary), dLdGc, math.asnumpy(r), math.asnumpy(phi)
+        )
+
+    return unitary, vjp
+
+
+@math.custom_gradient
+def phase_rotation(phi, cutoffs):
+    r"""creates the diagonal of a single mode phase rotation matrix"""
+    unitary = strategies.rotation(cutoffs, math.asnumpy(phi))
+
+    def vjp(dLdGc):
+        return strategies.rotation_vjp(math.asnumpy(unitary), dLdGc, math.asnumpy(phi))
+
+    return unitary, vjp
+
+
+@math.custom_gradient
+def thermal(phi, cutoffs):
+    r"""creates the diagonal of a single mode thermal state"""
+    unitary = strategies.thermal(cutoffs, math.asnumpy(phi))
+
+    def vjp(dLdGc):
+        return strategies.thermal_vjp(math.asnumpy(unitary), dLdGc, math.asnumpy(phi))
+
+    return unitary, vjp
