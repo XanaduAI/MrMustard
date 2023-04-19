@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from mrmustard.math import Math
 from mrmustard.math.datatypes import AutoData
+from mrmustard.physics.representations import Glauber, Husimi, Wigner
 from mrmustard.types import Number
 
 math = Math()
@@ -25,21 +26,30 @@ class Representation:
     r"""Abstract representation class, no implementations in here, just
     the right calls to the appropriate repA -> repB methods with default
     routing via Q representation.
+
+    The Representation class enables functionality like:
+    >>> wigner = Wigner(cov = ..., means = ...)
+    >>> stellar = Stellar(wigner)
+
+    In this example it automatically understands that cov and means are gaussian data,
+    and in the conversion to Stellar they become A,B,C i.e. quadratic poly data.
+
+    Args:
+        repr (Representation): Representation to be converted
+        **kwargs: Keyword arguments to be passed to the data class
     """
 
-    def __init__(self, representation: Representation = None, **kwargs):
-        if representation is not None and len(kwargs) > 0:
-            raise TypeError("Either pass a single representation or keyword arguments, not both")
-        if isinstance(representation, Representation):
-            self = self.from_representation(
-                representation
-            )  # triggers default sequence of transformations
-        elif representation is None:
+    def __init__(self, repr: Representation = None, /, **kwargs):
+        if repr is not None and len(kwargs) > 0:
+            raise TypeError(
+                "Either pass a representation (positional only) or keyword arguments, not both"
+            )
+        if isinstance(repr, Representation):
+            self = self.from_representation(repr)  # triggers default sequence of transformations
+        elif repr is None:
             self.data = AutoData(**kwargs)
         else:
-            raise TypeError(
-                f"Cannot initialize representation from {representation.__class__.__qualname__}"
-            )
+            raise TypeError(f"Cannot initialize from {repr.__class__.__qualname__}")
 
     def __getattr__(self, name):
         # Intercept access to non-existent attributes of Representation like 'ket',
@@ -50,13 +60,13 @@ class Representation:
         except AttributeError:
             raise AttributeError(f"{self.__class__.__qualname__}'s data has no attribute {name}")
 
-    def from_representation(self, representation):
-        # If the representation is already of the right type, return it
+    def from_representation(self, repr):
+        # If the representation is already of the right type, return it.
+        if isinstance(repr, self.__class__):
+            return repr
         # Otherwise, call the appropriate from_xyz method
-        if isinstance(representation, self.__class__):
-            return representation
-        return getattr(self, f"from_{representation.__class__.__qualname__.lower()}")(
-            representation
+        return getattr(self, f"from_{repr.__class__.__qualname__.lower()}")(
+            repr
         )  # calls the first transformation in the sequence
 
     # From leaves = from branch
@@ -73,11 +83,11 @@ class Representation:
         return self.from_husimi(Husimi(wavefunctionP))
 
     # From branches = from trunk
-    def from_stellar(self, stellar):
-        return self.from_husimi(Husimi(stellar))
-
     def from_wavefunctionx(self, wavefunctionX):
         return self.from_husimi(Husimi(wavefunctionX))
+
+    def from_stellar(self, stellar):
+        return self.from_husimi(Husimi(stellar))
 
     def from_wigner(self, wigner):
         return self.from_husimi(Husimi(wigner))
@@ -91,9 +101,10 @@ class Representation:
                 f"Cannot perform {operation} between {self.__class__} and {other.__class__}"
             )
 
-    # Operations between representations are defined in terms of operations between data
+    # The implementation of these ops between representations depends on the underlying data
     def __add__(self, other):
         self._typecheck(other, "addition")
+        # NOTE: self and other are in the same repr, so data.preferred exists and is the same
         return self.__class__(self.data.preferred + other.data.preferred)
 
     def __sub__(self, other):
@@ -113,3 +124,6 @@ class Representation:
     def __truediv__(self, other):
         if isinstance(other, Number):
             return self.__class__(self.data.preferred / other)
+        elif isinstance(other, Representation):
+            self._typecheck(other, "division")
+        return self.__class__(self.data.preferred / other.data.preferred)

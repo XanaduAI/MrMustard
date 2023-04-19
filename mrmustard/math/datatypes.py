@@ -28,9 +28,9 @@ math = Math()
 
 
 class MatVecData(Data):
-    r"""Class for storing a batch of matrices and vectors, representing the exponent of
-    a batch of Gaussian functions. The data for each gaussian is either in the form of
-    a (cov,mean,coeff) triple or in terms of a quadratic polynomial.
+    r"""Class for storing a batch of matrices and vectors that are in the exponent of
+    a batch of Gaussian functions. The data for each Gaussian is either in the form of
+    a (cov,mean,coeff) triple or in terms of a (A,B,C) triple (quadratic poly).
     """
 
     def __init__(self, mat: Batched[Matrix], vec: Batched[Vector], coeff: Batched[Scalar]):
@@ -38,7 +38,13 @@ class MatVecData(Data):
         self.vec = math.atleast_2d(vec)
         self.coeff = math.atleast_1d(coeff)
 
+    @property
+    def batch_size(self):
+        return self.coeff.shape[0]
+
     def __add__(self, other: MatVecData) -> MatVecData:
+        if self.__class__ != other.__class__:
+            return ValueError(f"Cannot add {self.__class__} and {other.__class__}.")
         if np.allclose(self.mat, other.mat) and np.allclose(self.vec, other.vec):
             return MatVecData(self.mat, self.vec, self.coeff + other.coeff)
         return MatVecData(
@@ -48,16 +54,17 @@ class MatVecData(Data):
         )
 
     def simplify(self) -> None:
-        to_check = set(range(len(self.mat)))
+        r"""Simplify the data by combining terms that are equal."""
+        indices_to_check = set(range(self.batch_size))
         removed = set()
-        while to_check:
-            i = to_check.pop()
-            for j in to_check.copy():
+        while indices_to_check:
+            i = indices_to_check.pop()
+            for j in indices_to_check.copy():
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
                     self.coeff[i] += self.coeff[j]
-                    to_check.remove(j)
+                    indices_to_check.remove(j)
                     removed.add(j)
-        to_keep = [i for i in range(len(self.mat)) if i not in removed]
+        to_keep = [i for i in range(self.batch_size) if i not in removed]
         self.mat = self.mat[to_keep]
         self.vec = self.vec[to_keep]
         self.coeff = self.coeff[to_keep]
@@ -70,6 +77,7 @@ class MatVecData(Data):
         )
 
     def __and__(self, other: MatVecData) -> MatVecData:
+        r"Tensor product"
         mat = []
         vec = []
         coeff = []
