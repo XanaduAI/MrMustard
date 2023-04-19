@@ -18,13 +18,14 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.typing import RealMatrix, ComplexMatrix
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
+from mrmustard.typing import ComplexMatrix, RealMatrix
 
 math = Math()
 
@@ -366,6 +367,9 @@ class BSgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "BS"
+
+    def U(self, cutoffs: Optional[List[int]]):
+        return fock.beamsplitter(cutoffs, self.theta.value, self.phi.value)
 
     @property
     def X_matrix(self):
