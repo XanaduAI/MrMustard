@@ -21,7 +21,7 @@ from mrmustard.typing import ComplexTensor
 SQRT = np.sqrt(np.arange(100000))
 
 
-# @njit
+@njit
 def squeezer(cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128):
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
 
