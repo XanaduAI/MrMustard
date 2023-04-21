@@ -960,7 +960,10 @@ def beamsplitter(theta: float, phi: float, cutoffs: Sequence[int]):
 
     def vjp(dLdGc):
         return strategies.beamsplitter_vjp(
-            math.asnumpy(unitary), dLdGc, math.asnumpy(theta), math.asnumpy(phi)
+            math.asnumpy(unitary),
+            math.asnumpy(math.conj(dLdGc)),
+            math.asnumpy(theta),
+            math.asnumpy(phi),
         )
 
     return unitary, vjp
@@ -969,10 +972,10 @@ def beamsplitter(theta: float, phi: float, cutoffs: Sequence[int]):
 @math.custom_gradient
 def squeezer(r, phi, cutoffs):
     r"""creates a single mode squeezer matrix"""
-    unitary = strategies.squeezing(cutoffs, math.asnumpy(r), math.asnumpy(phi))
+    unitary = strategies.squeezer(cutoffs, math.asnumpy(r), math.asnumpy(phi))
 
     def vjp(dLdGc):
-        return strategies.squeezing_vjp(
+        return strategies.squeezer_vjp(
             math.asnumpy(unitary), dLdGc, math.asnumpy(r), math.asnumpy(phi)
         )
 
