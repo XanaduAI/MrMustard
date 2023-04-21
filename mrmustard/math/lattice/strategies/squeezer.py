@@ -18,42 +18,39 @@ from numba import njit
 from mrmustard.math.lattice import steps
 from mrmustard.typing import ComplexTensor
 
+SQRT = np.sqrt(np.arange(100000))
 
-@njit
+
+# @njit
 def squeezer(cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128):
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
 
     Args:
-        cutoffs (tuple[int, int]): Fock ladder cutoffs in phase space for the output and input modes.
+        cutoffs (tuple[int, int]): Fock cutoffs for the output and input modes.
         r (float): squeezing magnitude
         theta (float): squeezing angle
-        dtype (data type): Specifies the data type used for the calculation.
+        dtype (data type): data type used for the calculation.
 
     Returns:
         array (ComplexMatrix): matrix representing the squeezing gate.
     """
+    M, N = cutoffs
     S = np.zeros(cutoffs, dtype=dtype)
-    sqrt = np.sqrt(np.arange(max(cutoffs), dtype=dtype))
 
     eitheta_tanhr = np.exp(1j * theta) * np.tanh(r)
+    eitheta_tanhr_conj = np.conj(eitheta_tanhr)
     sechr = 1.0 / np.cosh(r)
-    R = np.array(
-        [
-            [-eitheta_tanhr, sechr],
-            [sechr, np.conj(eitheta_tanhr)],
-        ]
-    )
 
     S[0, 0] = np.sqrt(sechr)
-    for m in range(2, cutoffs[0], 2):
-        S[m, 0] = sqrt[m - 1] / sqrt[m] * R[0, 0] * S[m - 2, 0]
+    for m in range(2, M, 2):
+        S[m, 0] = -SQRT[m - 1] / SQRT[m] * eitheta_tanhr * S[m - 2, 0]
 
-    for m in range(0, cutoffs[0]):
-        for n in range(1, cutoffs[1]):
+    for m in range(M):
+        for n in range(1, N):
             if (m + n) % 2 == 0:
                 S[m, n] = (
-                    sqrt[n - 1] / sqrt[n] * R[1, 1] * S[m, n - 2]
-                    + sqrt[m] / sqrt[n] * R[0, 1] * S[m - 1, n - 1]
+                    SQRT[n - 1] / SQRT[n] * eitheta_tanhr_conj * S[m, n - 2]
+                    + SQRT[m] / SQRT[n] * sechr * S[m - 1, n - 1]
                 )
     return S
 
@@ -63,7 +60,7 @@ def squeezer_vjp(
     G: ComplexTensor,
     dLdG: ComplexTensor,
     r: float,
-    theta: float,
+    phi: float,
 ) -> tuple[float, float]:
     r"""Squeezing gradients with respect to r and theta.
     This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
@@ -73,42 +70,112 @@ def squeezer_vjp(
         G (np.ndarray): Tensor result of the forward pass
         dLdG (np.ndarray): gradient of the loss with respect to the output tensor
         r (float): squeezing magnitude
-        theta (float): squeezing angle
+        phi (float): squeezing angle
 
     Returns:
-        tuple[float, float]: dL/dr, dL/dtheta
+        tuple[float, float]: dL/dr, dL/phi
     """
-    D = G.ndim
     M, N = G.shape
 
     # init gradients
-    dA = np.zeros((D, D), dtype=np.complex128)
-    db = np.zeros(D, dtype=np.complex128)
+    dA = np.zeros((2, 2), dtype=np.complex128)  # dGdA at an index (of G)
+    _ = np.zeros(2, dtype=np.complex128)
     dLdA = np.zeros_like(dA)
-    dLdb = np.zeros_like(db)
 
-    # rank 2
+    # first column
+    for m in range(2, M, 2):
+        dA, _ = steps.vanilla_step_grad(G, (m, 0), dA, _)
+        dLdA += dA * dLdG[m, 0]
+
+    # rest of the matrix
     for m in range(M):
-        for n in range(N):
+        for n in range(1, N):
             if (m + n) % 2 == 0:
-                dA, db = steps.vanilla_step_grad(G, (m, n), dA, db)
+                dA, _ = steps.vanilla_step_grad(G, (m, n), dA, _)
                 dLdA += dA * dLdG[m, n]
-                dLdb += db * dLdG[m, n]
 
-    eitheta_tanhr = np.exp(1j * theta) * np.tanh(r)
-    sechr = 1.0 / np.cosh(r)
-    R = np.array(
-        [
-            [-eitheta_tanhr, sechr],
-            [sechr, np.conj(eitheta_tanhr)],
-        ]
-    )
+    dLdC = np.sum(G * dLdG)  # np.sqrt(np.cosh(r)) cancels out with 1 / np.sqrt(np.cosh(r)) later
+    # chain rule
+    d_sech = -np.tanh(r) / np.cosh(r)
+    d_tanh = 1.0 / np.cosh(r) ** 2
+    tanh = np.tanh(r)
+    exp = np.exp(1j * phi)
+    exp_conj = np.exp(-1j * phi)
 
     dLdr = 2 * np.real(
-        np.conj(-eitheta_tanhr) * dLdA[0, 0] + np.conj(R[1, 1]) * dLdA[1, 1] + R[0, 1] * dLdA[0, 1]
+        -dLdA[0, 0] * exp * d_tanh
+        + dLdA[0, 1] * d_sech
+        + dLdA[1, 1] * exp_conj * d_tanh
+        - np.conj(dLdC) * 0.5 * tanh  # / np.sqrt(np.cosh(r))
     )
-    dLdtheta = 2 * np.real(
-        np.conj(R[0, 0]) * dLdA[0, 0] + np.conj(R[1, 1]) * dLdA[1, 1] - R[0, 1] * dLdA[0, 1]
-    )
+    dLdphi = 2 * np.real(-dLdA[0, 0] * 1j * exp * tanh - dLdA[1, 1] * 1j * exp_conj * tanh)
 
-    return dLdr, dLdtheta
+    return dLdr, dLdphi
+
+
+@njit
+def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):
+    r"""Calculates the matrix elements of the single-mode squeezed state using recurrence relations.
+
+    Args:
+        cutoff (int): Fock cutoff for the ket
+        r (float): squeezing magnitude
+        theta (float): squeezing angle
+        dtype (data type): data type used for the calculation.
+
+    Returns:
+        array (ComplexMatrix): matrix representing the squeezing gate.
+    """
+    S = np.zeros(cutoff, dtype=dtype)
+    eitheta_tanhr = np.exp(1j * theta) * np.tanh(r)
+    S[0] = np.sqrt(1.0 / np.cosh(r))
+
+    for m in range(2, cutoff, 2):
+        S[m] = SQRT[m - 1] / SQRT[m] * eitheta_tanhr * S[m - 2]
+
+    return S
+
+
+@njit
+def squeezed_vjp(
+    G: ComplexTensor,
+    dLdG: ComplexTensor,
+    r: float,
+    phi: float,
+) -> tuple[float, float]:
+    r"""Squeezed state gradients with respect to r and theta.
+    This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
+    but it is more efficient to include this chain rule step in the numba function, since we can.
+
+    Args:
+        G (np.ndarray): Tensor result of the forward pass
+        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
+        r (float): squeezing magnitude
+        phi (float): squeezing angle
+
+    Returns:
+        tuple[float, float]: dL/dr, dL/phi
+    """
+    M = G.shape[0]
+
+    # init gradients
+    dA = np.zeros((1, 1), dtype=np.complex128)
+    _ = np.zeros(1, dtype=np.complex128)
+    dLdA = np.zeros_like(dA)
+
+    # first column
+    for m in range(2, M, 2):
+        dA, _ = steps.vanilla_step_grad(G, (m,), dA, _)
+        dLdA += dA * dLdG[m]
+
+    # chain rule
+    tanh = np.tanh(r)
+    d_tanh = 1.0 / np.cosh(r) ** 2
+    exp = np.exp(1j * phi)
+
+    dLdC = np.sum(G * dLdG)  # np.sqrt(np.cosh(r)) cancels out with 1 / np.sqrt(np.cosh(r)) later
+
+    dLdr = 2 * np.real(-dLdA[0, 0] * exp * d_tanh - np.conj(dLdC) * 0.5 * tanh)
+    dLdphi = 2 * np.real(-dLdA[0, 0] * 1j * exp * tanh)
+
+    return dLdr, dLdphi

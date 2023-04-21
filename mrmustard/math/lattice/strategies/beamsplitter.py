@@ -36,8 +36,14 @@ def beamsplitter(
     shape: tuple[int, int, int, int], theta: float, phi: float, dtype=np.complex128
 ) -> ComplexTensor:
     r"""Calculates the Fock representation of the beamsplitter.
-    It takes advantage of particle conservation (m+n=p+q) to avoid
-    one for loop.
+    It takes advantage of input-output particle conservation (m+n=p+q)
+    to avoid one for loop. Inspired from the original implementation in
+    the walrus by @ziofil. Here is how the parameters are used in the
+    code:
+
+    X = [[0,V],[v^T,0]]   # BS symplectic matrix
+    V = [[ct, -st expm],  # BS unitary
+         [st exp, ct]]
 
     Args:
         shape (tuple[int, int, int, int]): shape of the Fock representation
@@ -88,7 +94,15 @@ def beamsplitter_vjp(
 ) -> tuple[ComplexMatrix, ComplexVector, complex]:
     r"""Beamsplitter gradients with respect to theta and phi.
     This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
-    but it is more efficient to include this chain rule step in the numba function, since we can.
+    but it is more efficient to include this chain rule step in the numba function,
+    since we can.
+
+    We use these derivatives of the BS unitary:
+
+    dVdt = [[-st, -ct exp],
+            [ct exp, -st]]
+    dVdphi = [[0, -i ct expm],
+              [i ct exp, 0]]
 
     Args:
         G (np.ndarray): Tensor result of the forward pass
@@ -99,12 +113,11 @@ def beamsplitter_vjp(
     Returns:
         tuple[float, float]: dL/dtheta, dL/dphi
     """
-    D = G.ndim
     M, N, P, Q = G.shape
 
     # init gradients
-    dA = np.zeros((D, D), dtype=np.complex128)
-    db = np.zeros(D, dtype=np.complex128)
+    dA = np.zeros((4, 4), dtype=np.complex128)
+    db = np.zeros(4, dtype=np.complex128)
     dLdA = np.zeros_like(dA)
     dLdb = np.zeros_like(db)
 
@@ -130,10 +143,12 @@ def beamsplitter_vjp(
     st = np.sin(theta)
     ct = np.cos(theta)
     e = np.exp(1j * phi)
-    # omitting bottom-left block because dLdA should be zero there?
+    em = np.exp(-1j * phi)
+
+    # omitting bottom-left block because dLdA should be zero there
     dLdtheta = 2 * np.real(
-        -st * dLdA[0, 2] - np.conj(ct * e) * dLdA[1, 3] + ct * e * dLdA[2, 0] - st * dLdA[3, 1]
+        -st * dLdA[0, 2] - ct * em * dLdA[0, 3] + ct * e * dLdA[1, 2] - st * dLdA[1, 3]
     )
-    dLdphi = 2 * np.real(1j * st * np.conj(e) * dLdA[0, 3] + st * e * dLdA[1, 2])
+    dLdphi = 2 * np.real(1j * st * em * dLdA[0, 3] + 1j * st * e * dLdA[1, 2])
 
     return dLdtheta, dLdphi
