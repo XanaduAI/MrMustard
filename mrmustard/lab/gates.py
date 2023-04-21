@@ -161,6 +161,41 @@ class Sgate(Parametrized, Transformation):
         self.is_gaussian = True
         self.short_name = "S"
 
+    def U(self, cutoffs: Sequence[int], output_cutoffs: Optional[Sequence[int]] = None):
+        r"""Returns the unitary representation of the Squeezing gate.
+            If one cutoff per mode is provided, it is used for input and output cutoff.
+            It is possible to provide a sequence twice as long with outputs and then
+            inputs cutoff for each mode. For example [5,7] for two modes means that
+            the first mode has input and output cutoff 5, while the second mode has
+            input and output cutoff 7. But [5,6,7,8] for two modes means that the output cutoffs
+            are 5 and 6, while the input cutoffs are 7 and 8.
+        Args:
+            cutoffs (Sequence[int]): cutoff dimensions.
+            out_cutoffs (Sequence[int]): output cutoff dimensions. If None, same as input.
+
+        """
+        N = self.num_modes
+        # this works both or scalar r/phi and vector r/phi:
+        r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
+        phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
+
+        # calculate squeezing unitary for each mode and concatenate with outer product
+        if output_cutoffs is None:
+            output_cutoffs = cutoffs
+        tuples = [(output_cutoffs[i], cutoffs[i]) for i in range(self.num_modes)]
+        Us = None
+        for idx, out_in in enumerate(tuples):
+            if Us is None:
+                Us = fock.squeezer(r[idx], phi[idx], out_in)
+            else:
+                U_next = fock.squeezer(r[idx], phi[idx], out_in)
+                Us = math.outer(Us, U_next)
+
+        return math.transpose(
+            Us,
+            list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+        )
+
     @property
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
@@ -368,8 +403,13 @@ class BSgate(Parametrized, Transformation):
         self.is_gaussian = True
         self.short_name = "BS"
 
-    def U(self, cutoffs: Optional[List[int]]):
-        return fock.beamsplitter(cutoffs, self.theta.value, self.phi.value)
+    def U(self, cutoffs: Optional[List[int]], output_cutoffs: Optional[List[int]] = None):
+        cutoffs = cutoffs + cutoffs if output_cutoffs is None else output_cutoffs + cutoffs
+        return fock.beamsplitter(
+            self.theta.value,
+            self.phi.value,
+            tuple(cutoffs),
+        )
 
     @property
     def X_matrix(self):
