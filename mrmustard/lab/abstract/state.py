@@ -306,13 +306,13 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_pure:
-            ket = self.ket(cutoffs=cutoffs)
+            ket = self.ket(cutoffs=cutoffs[: self.num_modes])
             if ket is not None:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs * 2, return_dm=True
+                    self.cov, self.means, shape=cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
@@ -320,8 +320,8 @@ class State:  # pylint: disable=too-many-public-methods
                     padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
                 else:
                     padded = self._dm
-                return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
-        return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
+                return padded[tuple(slice(s) for s in cutoffs)]
+        return self._dm[tuple(slice(s) for s in cutoffs)]
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
