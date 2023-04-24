@@ -243,7 +243,7 @@ def test_learning_four_mode_Interferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    X = math.cast(perturbed.XYd[0], "complex128")
+    X = math.cast(perturbed.XYd()[0], "complex128")
     perturbed_U = X[:4, :4] + 1j * X[4:, :4]
 
     ops = [
@@ -283,7 +283,7 @@ def test_learning_four_mode_RealInterferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    perturbed_O = pertubed.XYd[0][:4, :4]
+    perturbed_O = pertubed.XYd()[0][:4, :4]
 
     ops = [
         Sgate(
