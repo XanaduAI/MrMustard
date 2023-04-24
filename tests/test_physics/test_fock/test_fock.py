@@ -34,9 +34,8 @@ from mrmustard.lab import (
     State,
     Vacuum,
 )
+from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics.fock import (
-    _displacement,
-    _grad_displacement,
     apply_choi_to_dm,
     apply_choi_to_ket,
     apply_kraus_to_dm,
@@ -242,15 +241,15 @@ def test_fock_trace_function():
 def test_dm_choi():
     """tests that choi op is correctly applied to a dm"""
     circ = Ggate(1) >> Attenuator([0.1])
-    dm_out = apply_choi_to_dm(circ.choi([10]), Vacuum(1).dm([10]), [0], [0])
-    dm_expected = (Vacuum(1) >> circ).dm([10])
+    dm_out = apply_choi_to_dm(circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10, 10]), [0], [0])
+    dm_expected = (Vacuum(1) >> circ).dm([10, 10])
     assert np.allclose(dm_out, dm_expected, atol=1e-5)
 
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
-    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
-    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40, 40]))
+    assert np.allclose(s.dm([10, 10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10, 10]))
     # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
 
 
@@ -329,7 +328,7 @@ def test_apply_choi_to_dm_1mode():
 def test_apply_choi_to_dm_2mode():
     """Test that choi operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(4, 5, 4, 5))
-    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l, in_l, out_r, in_r]
+    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l_1,2, in_l_1, out_r_1,2, in_r_1]
     dm_out = apply_choi_to_dm(choi, dm, [1], [1, 2])
     assert dm_out.shape == (4, 2, 3, 4, 2, 3)
 
@@ -340,15 +339,15 @@ class TestDisplacement:
         cutoff = 4
         r = 1.0
         theta = np.pi / 8
-        T = _displacement(r, theta, cutoff)
-        Dr, Dtheta = _grad_displacement(T, r, theta)
+        T = displacement((cutoff, cutoff), r, theta)
+        Dr, Dtheta = grad_displacement(T, r, theta)
 
         dr = 0.001
         dtheta = 0.001
-        Drp = _displacement(r + dr, theta, cutoff)
-        Drm = _displacement(r - dr, theta, cutoff)
-        Dthetap = _displacement(r, theta + dtheta, cutoff)
-        Dthetam = _displacement(r, theta - dtheta, cutoff)
+        Drp = displacement((cutoff, cutoff), r + dr, theta)
+        Drm = displacement((cutoff, cutoff), r - dr, theta)
+        Dthetap = displacement((cutoff, cutoff), r, theta + dtheta)
+        Dthetam = displacement((cutoff, cutoff), r, theta - dtheta)
         Drapprox = (Drp - Drm) / (2 * dr)
         Dthetaapprox = (Dthetap - Dthetam) / (2 * dtheta)
         assert np.allclose(Dr, Drapprox, atol=1e-5, rtol=0)
@@ -399,5 +398,5 @@ class TestDisplacement:
                 ],
             ]
         )
-        T = _displacement(np.abs(alpha), np.angle(alpha), cutoff)
+        T = displacement((cutoff, cutoff), np.abs(alpha), np.angle(alpha))
         assert np.allclose(T, expected, atol=1e-5, rtol=0)
