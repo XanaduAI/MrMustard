@@ -17,6 +17,7 @@ import pytest
 from hypothesis import given
 from thewalrus.fock_gradients import (
     beamsplitter,
+    displacement,
     mzgate,
     squeezing,
     two_mode_squeezing,
@@ -97,12 +98,12 @@ def test_single_mode_fock_equals_gaussian_ket(gate):
 def test_single_mode_fock_equals_gaussian_ket_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [70]
+    cutoffs = (70,)
     gaussian_state = SqueezedVacuum(-0.1)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).dm([10])
-    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.1)).dm([10])
+    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).dm([10, 10])
+    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.1)).dm([10, 10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm, atol=1e-5)
 
 
@@ -110,7 +111,7 @@ def test_single_mode_fock_equals_gaussian_ket_dm(gate):
 def test_two_mode_fock_equals_gaussian(gate):
     """Test same state is obtained via fock representation or phase space
     for two modes circuits."""
-    cutoffs = [20, 20]
+    cutoffs = (20, 20)
     gaussian_state = TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
@@ -122,12 +123,12 @@ def test_two_mode_fock_equals_gaussian(gate):
 @pytest.mark.parametrize(
     "cutoffs,x,y",
     [
-        [[5], 0.3, 0.5],
-        [[5], 0.0, 0.0],
-        [[2, 2], [0.1, 0.1], [0.25, -0.2]],
-        [[3, 3], [0.0, 0.0], [0.0, 0.0]],
-        [[2, 5, 1], [0.1, 5.0, 1.0], [-0.3, 0.1, 0.0]],
-        [[3, 3, 3, 3], [0.1, 0.2, 0.3, 0.4], [-0.5, -4, 3.1, 4.2]],
+        [[5, 5], 0.3, 0.5],
+        [[5, 5], 0.0, 0.0],
+        [[2, 2, 2, 2], [0.1, 0.1], [0.25, -0.2]],
+        [[3, 3, 3, 3], [0.0, 0.0], [0.0, 0.0]],
+        [[2, 5, 1, 2, 5, 1], [0.1, 5.0, 1.0], [-0.3, 0.1, 0.0]],
+        [[3, 3, 3, 3, 3, 3, 3, 3], [0.1, 0.2, 0.3, 0.4], [-0.5, -4, 3.1, 4.2]],
     ],
 )
 def test_fock_representation_displacement(cutoffs, x, y):
@@ -139,8 +140,38 @@ def test_fock_representation_displacement(cutoffs, x, y):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    X = np.eye(2 * len(cutoffs))
-    expected_Ud = fock.wigner_to_fock_U(X, dgate.XYd[-1], cutoffs * 2)
+    X, _, d = dgate.XYd(allow_none=False)
+    expected_Ud = fock.wigner_to_fock_U(X, d, cutoffs)
+
+    assert np.allclose(Ud, expected_Ud, atol=1e-5)
+
+
+def test_fock_representation_displacement_rectangular():
+    """Tests that DGate returns the correct unitary."""
+    x, y = 0.3, 0.5
+    cutoffs = 5, 10
+    # apply gate
+    dgate = Dgate(x, y)
+    Ud = dgate.U(cutoffs)
+
+    # compare with tw implementation
+    X, _, d = dgate.XYd(allow_none=False)
+    expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:5, :10]
+
+    assert np.allclose(Ud, expected_Ud, atol=1e-5)
+
+
+def test_fock_representation_displacement_rectangular2():
+    """Tests that DGate returns the correct unitary."""
+    x, y = 0.3, 0.5
+    cutoffs = 10, 5
+    # apply gate
+    dgate = Dgate(x, y)
+    Ud = dgate.U(cutoffs)
+
+    # compare with tw implementation
+    X, _, d = dgate.XYd(allow_none=False)
+    expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:10, :5]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -149,36 +180,36 @@ def test_fock_representation_displacement(cutoffs, x, y):
 def test_fock_representation_squeezing(r, phi):
     S = Sgate(r=r, phi=phi)
     expected = squeezing(r=r, theta=phi, cutoff=20)
-    assert np.allclose(expected, S.U(cutoffs=[20]), atol=1e-5)
+    assert np.allclose(expected, S.U(cutoffs=[20, 20]), atol=1e-5)
 
 
 @given(theta=angle, phi=angle)
 def test_fock_representation_beamsplitter(theta, phi):
     BS = BSgate(theta=theta, phi=phi)
-    expected = beamsplitter(theta=theta, phi=phi, cutoff=20)
-    assert np.allclose(expected, BS.U(cutoffs=[20, 20]), atol=1e-5)
+    expected = beamsplitter(theta=theta, phi=phi, cutoff=10)
+    assert np.allclose(expected, BS.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
 
 
 @given(r=r, phi=angle)
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
-    expected = two_mode_squeezing(r=r, theta=phi, cutoff=20)
-    assert np.allclose(expected, S2.U(cutoffs=[20, 20]), atol=1e-5)
+    expected = two_mode_squeezing(r=r, theta=phi, cutoff=10)
+    assert np.allclose(expected, S2.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
 
 
 @given(phi_a=angle, phi_b=angle)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
-    expected = mzgate(theta=phi_b, phi=phi_a, cutoff=20)
-    assert np.allclose(expected, MZ.U(cutoffs=[20, 20]), atol=1e-5)
+    expected = mzgate(theta=phi_b, phi=phi_a, cutoff=10)
+    assert np.allclose(expected, MZ.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
 
 
 @pytest.mark.parametrize(
     "cutoffs,angles,modes",
     [
-        [[5, 4, 3], [np.pi, np.pi / 2, np.pi / 4], None],
-        [[3, 4], [np.pi / 3, np.pi / 2], [0, 1]],
-        [[3], np.pi / 6, [0]],
+        [[5, 4, 3, 5, 4, 3], [np.pi, np.pi / 2, np.pi / 4], None],
+        [[3, 4, 3, 4], [np.pi / 3, np.pi / 2], [0, 1]],
+        [[3, 3], np.pi / 6, [0]],
     ],
 )
 def test_fock_representation_rgate(cutoffs, angles, modes):
@@ -190,8 +221,8 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    d = np.zeros(2 * len(cutoffs))
-    expected_R = fock.wigner_to_fock_U(rgate.XYd[0], d, cutoffs * 2)
+    d = np.zeros(len(cutoffs))
+    expected_R = fock.wigner_to_fock_U(rgate.X_matrix, d, cutoffs)
     assert np.allclose(R, expected_R, atol=1e-5)
 
 
