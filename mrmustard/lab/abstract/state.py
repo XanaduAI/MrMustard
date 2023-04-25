@@ -176,9 +176,10 @@ class State:  # pylint: disable=too-many-public-methods
     def cutoffs(self) -> List[int]:
         r"""Returns the cutoff dimensions for each mode."""
         if self._cutoffs is not None:
-            return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
+            return self._cutoffs
         if self._ket is None and self._dm is None:
             return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
+
         return list(
             self.fock.shape[: self.num_modes]
         )  # NOTE: triggered only if the fock representation already exists
@@ -312,7 +313,7 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs, return_dm=True
+                    self.cov, self.means, shape= , return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
@@ -621,11 +622,15 @@ class State:  # pylint: disable=too-many-public-methods
         if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
             if self.is_pure:
+                print(f"using ket of shape {self.ket().shape}")
                 return State(ket=self.ket() / other)
+            print(f"using dm of shape {self.dm().shape}")
             return State(dm=self.dm() / other)
         if self._dm is not None:
+            print(f"using dm of shape {self.dm().shape}")
             return State(dm=self.dm() / other, modes=self.modes)
         if self._ket is not None:
+            print(f"using ket of shape {self.ket().shape}")
             return State(ket=self.ket() / other, modes=self.modes)
         raise ValueError("No fock representation available")
 

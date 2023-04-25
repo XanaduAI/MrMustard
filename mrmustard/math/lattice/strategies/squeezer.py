@@ -46,7 +46,8 @@ def squeezer(cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex1
         S[m, 0] = -SQRT[m - 1] / SQRT[m] * eitheta_tanhr * S[m - 2, 0]
 
     for m in range(M):
-        for n in range(1, N):
+        for n in range(2 - (m % 2), N, 2):
+            # for n in range(1, N):
             if (m + n) % 2 == 0:
                 S[m, n] = (
                     SQRT[n - 1] / SQRT[n] * eitheta_tanhr_conj * S[m, n - 2]
