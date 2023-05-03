@@ -150,7 +150,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
+        return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[RealVector]:
@@ -175,14 +175,16 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def cutoffs(self) -> List[int]:
         r"""Returns the cutoff dimensions for each mode."""
-        if self._cutoffs is not None:
-            return self._cutoffs
-        if self._ket is None and self._dm is None:
-            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
-
-        return list(
-            self.fock.shape[: self.num_modes]
-        )  # NOTE: triggered only if the fock representation already exists
+        if self._cutoffs is None:
+            if self._ket is None and self._dm is None:
+                self._cutoffs = fock.autocutoffs(
+                    self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
+                ) * (1 + bool(self._ket is not None))
+            else:
+                self._cutoffs = (
+                    self._ket.shape if self._ket is not None else self._dm.shape[: self.num_modes]
+                )
+        return self._cutoffs
 
     @property
     def shape(self) -> List[int]:
@@ -313,7 +315,7 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape= , return_dm=True
+                    self.cov, self.means, shape=cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
