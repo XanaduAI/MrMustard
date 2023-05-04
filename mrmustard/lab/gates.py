@@ -265,7 +265,7 @@ class Rgate(Parametrized, Transformation):
 
         # calculate rotation unitary for each mode and concatenate with outer product
         Ur = None
-        for idx, cutoff in enumerate(cutoffs[:self.num_modes]):
+        for idx, cutoff in enumerate(cutoffs[: self.num_modes]):
             theta = math.arange(cutoff) * angles[idx]
             if Ur is None:
                 Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
