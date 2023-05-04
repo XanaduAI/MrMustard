@@ -241,15 +241,15 @@ def test_fock_trace_function():
 def test_dm_choi():
     """tests that choi op is correctly applied to a dm"""
     circ = Ggate(1) >> Attenuator([0.1])
-    dm_out = apply_choi_to_dm(circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10, 10]), [0], [0])
-    dm_expected = (Vacuum(1) >> circ).dm([10, 10])
+    dm_out = apply_choi_to_dm(circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10]), [0], [0])
+    dm_expected = (Vacuum(1) >> circ).dm([10])
     assert np.allclose(dm_out, dm_expected, atol=1e-5)
 
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
-    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40, 40]))
-    assert np.allclose(s.dm([10, 10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10, 10]))
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
+    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
     # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
 
 

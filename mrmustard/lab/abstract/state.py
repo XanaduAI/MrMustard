@@ -94,12 +94,17 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(
+                eigenvalues, 1.0 / settings.HBAR
+            )  # TODO: check hbar
             self.num_modes = symplectic.shape[-1] // 2
         elif ket is not None or dm is not None:
             self.is_gaussian = False
+            self.is_hilbert_vector = ket is not None
             self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
             self._purity = 1.0 if ket is not None else None
         else:
@@ -174,16 +179,21 @@ class State:  # pylint: disable=too-many-public-methods
 
     @property
     def cutoffs(self) -> List[int]:
-        r"""Returns the cutoff dimensions for each mode."""
+        r"""Returns the Hilbert space dimension of each mode."""
         if self._cutoffs is None:
             if self._ket is None and self._dm is None:
                 self._cutoffs = fock.autocutoffs(
                     self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
-                ) * (1 + bool(self._ket is not None))
-            else:
-                self._cutoffs = (
-                    self._ket.shape if self._ket is not None else self._dm.shape[: self.num_modes]
                 )
+            else:
+                self._cutoffs = [
+                    int(c)
+                    for c in (
+                        self._ket.shape
+                        if self._ket is not None
+                        else self._dm.shape[: self.num_modes]
+                    )
+                ]
         return self._cutoffs
 
     @property
@@ -194,14 +204,14 @@ class State:  # pylint: disable=too-many-public-methods
         the first two moments of the number operator.
         """
         # NOTE: if we initialize State(dm=pure_dm), self.fock returns the dm, which does not have shape self.cutoffs
-        return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
+        return self.cutoffs if self.is_hilbert_vector else self.cutoffs + self.cutoffs
 
     @property
     def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
+                self.cov, self.means, shape=self.shape, return_dm=not self.is_hilbert_vector
             )
             if self.is_mixed:
                 self._dm = _fock
@@ -232,7 +242,7 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        return fock.norm(self.fock, self._dm is not None)
+        return fock.norm(self.fock, not self.is_hilbert_vector)
 
     @property
     def probability(self) -> float:
@@ -284,7 +294,7 @@ class State:  # pylint: disable=too-many-public-methods
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
                     self._ket = fock.dm_to_ket(self._dm)
-            current_cutoffs = list(self._ket.shape[: self.num_modes])
+            current_cutoffs = [int(s) for s in self._ket.shape]
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
@@ -309,13 +319,13 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
         if self.is_pure:
-            ket = self.ket(cutoffs=cutoffs[: self.num_modes])
+            ket = self.ket(cutoffs=cutoffs)
             if ket is not None:
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs, return_dm=True
+                    self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
@@ -323,8 +333,8 @@ class State:  # pylint: disable=too-many-public-methods
                     padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
                 else:
                     padded = self._dm
-                return padded[tuple(slice(s) for s in cutoffs)]
-        return self._dm[tuple(slice(s) for s in cutoffs)]
+                return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
+        return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
