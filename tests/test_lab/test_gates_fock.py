@@ -155,7 +155,6 @@ def test_fock_representation_displacement_rectangular():
     Ud = dgate.U(cutoffs)
 
     # compare with tw implementation
-    X, _, d = dgate.XYd(allow_none=False)
     expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:5, :10]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
@@ -170,7 +169,6 @@ def test_fock_representation_displacement_rectangular2():
     Ud = dgate.U(cutoffs)
 
     # compare with tw implementation
-    X, _, d = dgate.XYd(allow_none=False)
     expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:10, :5]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)

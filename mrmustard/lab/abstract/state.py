@@ -98,9 +98,7 @@ class State:  # pylint: disable=too-many-public-methods
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(
-                eigenvalues, 1.0 / settings.HBAR
-            )  # TODO: check hbar
+            self.is_hilbert_vector = np.allclose(eigenvalues, 2.0 / settings.HBAR)
             self.num_modes = symplectic.shape[-1] // 2
         elif ket is not None or dm is not None:
             self.is_gaussian = False
