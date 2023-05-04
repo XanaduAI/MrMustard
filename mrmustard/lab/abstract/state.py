@@ -31,9 +31,11 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.typing import (
+    ComplexMatrix,
     ComplexTensor,
+    ComplexVector,
     RealMatrix,
     RealTensor,
     RealVector,
@@ -47,7 +49,7 @@ math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
-class State:
+class State:  # pylint: disable=too-many-public-methods
     r"""Base class for quantum states."""
 
     def __init__(
@@ -237,12 +239,21 @@ class State:
             return norm**2
         return norm
 
-    def ket(self, cutoffs: List[int] = None) -> Optional[ComplexTensor]:
+    def ket(
+        self,
+        cutoffs: List[int] = None,
+        max_prob: float = 1.0,
+        max_photons: int = None,
+    ) -> Optional[ComplexTensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
         Args:
             cutoffs List[int or None]: The cutoff dimensions for each mode. If a mode cutoff is
                 ``None``, it's guessed automatically.
+            max_prob (float): The maximum probability of the state. Defaults to 1.0.
+                (used to stop the calculation of the amplitudes early)
+            max_photons (int): The maximum number of photons in the state, summing over all modes
+                (used to stop the calculation of the amplitudes early)
 
         Returns:
             Tensor: the ket
@@ -255,9 +266,15 @@ class State:
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
+        # TODO: shouldn't we check if trainable instead? that's when we want to recompute fock
         if self.is_gaussian:
             self._ket = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=cutoffs, return_dm=False
+                self.cov,
+                self.means,
+                shape=cutoffs,
+                return_dm=False,
+                max_prob=max_prob,
+                max_photons=max_photons,
             )
         else:  # only fock representation is available
             if self._ket is None:
@@ -495,6 +512,17 @@ class State:
         self._modes = item
         return self
 
+    def bargmann(self) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+        r"""Returns the Bargmann representation of the state."""
+        if self.is_gaussian:
+            if self.is_pure:
+                A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
+            else:
+                A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
+        else:
+            return None
+        return A, B, C
+
     def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""
         if isinstance(item, int):
@@ -521,7 +549,7 @@ class State:
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:
             return False
@@ -573,7 +601,9 @@ class State:
             warnings.warn(
                 "scalar multiplication forces conversion to fock representation", UserWarning
             )
-            return self.fock  # trigger creation of fock representation
+            if self.is_pure:
+                return State(ket=self.ket() * other)
+            return State(dm=self.dm() * other)
         if self._dm is not None:
             return State(dm=self.dm() * other, modes=self.modes)
         if self._ket is not None:
@@ -587,8 +617,9 @@ class State:
         """
         if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
-            return self.fock
-
+            if self.is_pure:
+                return State(ket=self.ket() / other)
+            return State(dm=self.dm() / other)
         if self._dm is not None:
             return State(dm=self.dm() / other, modes=self.modes)
         if self._ket is not None:
