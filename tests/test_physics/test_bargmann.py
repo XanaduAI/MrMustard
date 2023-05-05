@@ -35,7 +35,7 @@ def test_wigner_to_bargmann_U():
 
 def test_wigner_to_bargmann_choi():
     """Test that the Bargmann representation of a Choi matrix is correct"""
-    G = Ggate(2) >> Dgate(0.1, 0.2) >> Attenuator([0.9, 1.0])
+    G = Ggate(2) >> Dgate(0.1, 0.2) >> Attenuator(0.9)
     X, Y, d = G.XYd(allow_none=False)
     for x, y in zip(G.bargmann(), wigner_to_bargmann_Choi(X, Y, d)):
         assert np.allclose(x, y)

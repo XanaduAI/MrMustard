@@ -47,7 +47,7 @@ class Transformation:
     is_unitary = True  # whether the transformation is unitary (True by default)
 
     def bargmann(self):
-        X, Y, d = self.XYd()
+        X, Y, d = self.XYd(allow_none=False)
         if self.is_unitary:
             return bargmann.wigner_to_bargmann_U(
                 X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
