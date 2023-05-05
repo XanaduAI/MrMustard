@@ -632,15 +632,11 @@ class State:  # pylint: disable=too-many-public-methods
         if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
             if self.is_pure:
-                print(f"using ket of shape {self.ket().shape}")
                 return State(ket=self.ket() / other)
-            print(f"using dm of shape {self.dm().shape}")
             return State(dm=self.dm() / other)
         if self._dm is not None:
-            print(f"using dm of shape {self.dm().shape}")
             return State(dm=self.dm() / other, modes=self.modes)
         if self._ket is not None:
-            print(f"using ket of shape {self.ket().shape}")
             return State(ket=self.ket() / other, modes=self.modes)
         raise ValueError("No fock representation available")
 
