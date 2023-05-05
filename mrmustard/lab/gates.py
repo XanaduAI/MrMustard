@@ -334,7 +334,7 @@ class BSgate(Parametrized, Transformation):
 
     It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
-    
+
     N.B. the phase in BSgate(theta,phi,modes=[i,j]) is equivalent to
     Rgate(-phi, modes=[j]) >> BSgate(theta) >> Rgate(phi, modes=[j])
 
@@ -389,16 +389,16 @@ class MZgate(Parametrized, Transformation):
         2. if ``internal=False``, both phases act on the upper arm: ``phi_a`` before the first BS, ``phi_b`` after the first BS.
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
-    
+
     N.B. when internal=False, MZgate is equivalent to Rgate(phi_a) >> BSgate(pi/4, pi/2) >> Rgate(phi_b) >> BSgate(-pi/4, -pi/2),
     and when internal=True, MZgate is equivalent to BSgate(pi/4, pi/2)>>Rgate([phi_a, phi_b]) >> BSgate(-pi/4, -pi/2).
 
     Args:
-        phi_a (float): if internal = True, the phase on the upper arm of the MZ interferometer; if internal = False, the phase 
+        phi_a (float): if internal = True, the phase on the upper arm of the MZ interferometer; if internal = False, the phase
                        on the upper arm before the first beamsplitter
         phi_a_bounds (float, float): bounds for phi_a
         phi_a_trainable (bool): whether phi_a is a trainable variable
-        phi_b (float): if internal = True, the phase on the lower arm of the MZ interferometer; if internal = False, the phase 
+        phi_b (float): if internal = True, the phase on the lower arm of the MZ interferometer; if internal = False, the phase
                        on the upper arm after the first beamsplitter
         phi_b_bounds (float, float): bounds for phi_b
         phi_b_trainable (bool): whether phi_b is a trainable variable

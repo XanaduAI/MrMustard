@@ -81,6 +81,8 @@
 
 ### Documentation
 
+* BSgate and MZgate conventions clarified in their docstrings
+
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
 
