@@ -18,4 +18,3 @@ python:
    - requirements: requirements.txt
    - method: pip
      path: .
-   system_packages: true
