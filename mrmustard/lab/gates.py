@@ -335,7 +335,7 @@ class BSgate(Parametrized, Transformation):
     It applies to a single pair of modes.
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    N.B. the phase in ``BSgate(theta,phi,modes=[i,j])`` is equivalent to
+    The phase in ``BSgate(theta,phi,modes=[i,j])`` is equivalent to
     ``Rgate(-phi, modes=[j]) >> BSgate(theta) >> Rgate(phi, modes=[j])``
     Args:
         theta (float): the transmissivity angle
@@ -389,7 +389,7 @@ class MZgate(Parametrized, Transformation):
 
     One can optionally set bounds for each parameter, which the optimizer will respect.
 
-    N.B. when internal=False, MZgate is equivalent to ``Rgate(phi_a) >> BSgate(pi/4, pi/2) >> Rgate(phi_b) >> BSgate(-pi/4, -pi/2)``,
+    When internal=False, MZgate is equivalent to ``Rgate(phi_a) >> BSgate(pi/4, pi/2) >> Rgate(phi_b) >> BSgate(-pi/4, -pi/2)``,
     and when internal=True, MZgate is equivalent to ``BSgate(pi/4, pi/2)>>Rgate([phi_a, phi_b]) >> BSgate(-pi/4, -pi/2)``.
 
     Args:
