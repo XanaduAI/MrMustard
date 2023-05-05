@@ -196,11 +196,10 @@ class Sgate(Parametrized, Transformation):
                 else:
                     U_next = fock.squeezer(r[idx], phi[idx], out_in)
                     Us = math.outer(Us, U_next)
-
-                return math.transpose(
-                    Us,
-                    list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
-                )
+            return math.transpose(
+                Us,
+                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+            )
         else:
             return fock.squeezer(r[0], phi[0], tuple(cutoffs))
 

@@ -146,6 +146,14 @@ def test_fock_representation_displacement(cutoffs, x, y):
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
 
+@given(x1=medium_float, x2=medium_float, y1=medium_float, y2=medium_float)
+def test_parallel_displacement(x1, x2, y1, y2):
+    U12 = Dgate([x1, x2], [y1, y2]).U([2, 7, 2, 7])
+    U1 = Dgate(x1, y1).U([2, 2])
+    U2 = Dgate(x2, y2).U([7, 7])
+    assert np.allclose(U12, np.transpose(np.tensordot(U1, U2, [[], []]), [0, 2, 1, 3]))
+
+
 def test_fock_representation_displacement_rectangular():
     """Tests that DGate returns the correct unitary."""
     x, y = 0.3, 0.5
@@ -179,6 +187,14 @@ def test_fock_representation_squeezing(r, phi):
     S = Sgate(r=r, phi=phi)
     expected = squeezing(r=r, theta=phi, cutoff=20)
     assert np.allclose(expected, S.U(cutoffs=[20, 20]), atol=1e-5)
+
+
+@given(r1=r, phi1=angle, r2=r, phi2=angle)
+def test_parallel_squeezing(r1, phi1, r2, phi2):
+    U12 = Sgate([r1, r2], [phi1, phi2]).U([5, 7, 5, 7])
+    U1 = Sgate(r1, phi1).U([5, 5])
+    U2 = Sgate(r2, phi2).U([7, 7])
+    assert np.allclose(U12, np.transpose(np.tensordot(U1, U2, [[], []]), [0, 2, 1, 3]))
 
 
 @given(theta=angle, phi=angle)
