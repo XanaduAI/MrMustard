@@ -1,5 +1,5 @@
 sphinx
-docutils
+docutils<0.19
 m2r2
 sphinx-autodoc-typehints
 sphinx-copybutton
