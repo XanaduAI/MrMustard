@@ -228,19 +228,6 @@ class Transformation:
         ddual = math.zeros_like(Xdual[:, 0]) if self.d_vector_dual is None else self.d_vector_dual
         return Xdual, Ydual, ddual
 
-    @property
-    def is_phase_covariant(self) -> bool:
-        X, Y, d = self.XYd(allow_none=True)
-        if d is not None:
-            return False
-        X_is_diagonal = math.allclose(X, math.diag(math.diag_part(X)))
-        if X is not None and not X_is_diagonal:
-            return False
-        Y_is_diagonal = math.allclose(Y, math.diag(math.diag_part(Y)))
-        if Y is not None and not Y_is_diagonal:
-            return False
-        return True
-
     def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
