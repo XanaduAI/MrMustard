@@ -415,3 +415,25 @@ def test_dgate_optimization():
 
     opt = Optimizer()
     opt.minimize(cost_fn, by_optimizing=[dgate])
+
+    assert np.allclose(dgate.x.numpy(), 1.0, atol=1e-4)
+    assert np.allclose(dgate.y.numpy(), 1.0, atol=1e-4)
+
+
+def test_sgate_optimization():
+    """Test that Sgate is optimized correctly."""
+    settings.SEED = 24
+
+    sgate = Sgate(r_trainable=True, phi_trainable=True)
+    target_state = SqueezedVacuum(r=0.2, phi=0.1)
+
+    def cost_fn():
+        state_out = Vacuum(1) >> sgate
+
+        return 1 - fidelity(state_out, target_state)
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[sgate])
+
+    assert np.allclose(sgate.r.numpy(), 0.2, atol=1e-4)
+    assert np.allclose(sgate.phi.numpy(), 0.1, atol=1e-4)
