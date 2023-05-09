@@ -31,7 +31,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import DisplacedSqueezed, SqueezedVacuum, Vacuum
+from mrmustard.lab.states import DisplacedSqueezed, Gaussian, SqueezedVacuum, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -436,3 +436,24 @@ def test_sgate_optimization():
 
     assert np.allclose(sgate.r.value, 0.1, atol=0.01)
     assert np.allclose(sgate.phi.value, 0.2, atol=0.01)
+
+
+def test_bsgate_optimization():
+    """Test that Sgate is optimized correctly."""
+    settings.SEED = 25
+
+    G = Gaussian(2)
+
+    bsgate = BSgate(0.05, 0.1, theta_trainable=True, phi_trainable=True)
+    target_state = (G >> BSgate(0.1, 0.2)).ket(cutoffs=[40, 40])
+
+    def cost_fn():
+        state_out = G >> bsgate
+
+        return -math.abs(math.sum(math.conj(state_out.ket([40, 40])) * target_state)) ** 2
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[bsgate])
+
+    assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
+    assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)
