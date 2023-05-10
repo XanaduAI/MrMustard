@@ -17,6 +17,7 @@
 from ._version import __version__
 from ._settings import settings
 
+
 def version():
     r"""Version number of Mr Mustard.
 
