@@ -16,7 +16,7 @@
 Tests for the Settings class.
 """
 
-from mrmustard import Settings
+from mrmustard._settings import Settings
 
 
 def test_settings_seed_randomness_at_init():
