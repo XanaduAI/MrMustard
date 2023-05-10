@@ -89,7 +89,6 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
     return cutoffs
 
 
-
 def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
@@ -398,7 +397,6 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     new_axis_labels = sorted(kraus_ket.axis_labels, key=lambda x: int(x.split("_")[-1]))
 
     return kraus_ket.transpose(new_axis_labels).tensor
-
 
 
 def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
