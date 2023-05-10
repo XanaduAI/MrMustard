@@ -48,9 +48,11 @@ def test_backend_redirection_torch():
 def test_error_for_wrong_backend():
     """Test error is raise when using a backend that is not allowed"""
     backend = settings.BACKEND
+    math = Math()
+    settings.BACKEND = "unexisting_backend"
+
     with pytest.raises(ValueError) as exception_info:
-        settings.BACKEND = "unexisting_backend"
-        assert exception_info.value.args[0] == f"Backend must be either 'tensorflow' or 'torch'"
+        math.sin(0.0)
 
     # set back to initial value to avoid side effects
-    settings.BACKEND = backend
+    settings.BACKEND = "tensorflow"
