@@ -15,7 +15,7 @@
 """The :py:class:`.Settings` contains the global configurations parameters used when
 executing MrMustard.
 
-To set any of the parameters use, for example,
+To set any of the parameters simply assign the new value for them:
 
 .. code::
 
@@ -49,9 +49,8 @@ class Settings:
         """reduced Planck constant unit value"""
 
         # States autocutoff
-        self.AUTOCUTOFF_STDEV_FACTOR: int = 5
-        """sets how many photon-number standard deviations to use when automatically
-        detecting the Fock cutoff, see :py:func:`~mrmustard.physics.fock.autocutoffs` for details"""
+        self.AUTOCUTOFF_PROBABILITY = 0.999
+        """sets the threshold probability when automatically computing photon-number cutoffs"""
         self.AUTOCUTOFF_MAX_CUTOFF: int = 100
         """maximum automatic photon-number cutoff value"""
         self.AUTOCUTOFF_MIN_CUTOFF: int = 1
@@ -82,7 +81,7 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         """random number generator"""
 
-        self._backend: str = "tensorflow"
+        self.BACKEND: str = "tensorflow"
 
     @property
     def SEED(self):
