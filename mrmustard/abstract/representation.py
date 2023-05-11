@@ -68,8 +68,9 @@ class Representation:
         return getattr(self, f"from_{repr.__class__.__qualname__.lower()}")(
             repr
         )  # calls the first transformation in the sequence
-
-    # From leaves = from branch
+    
+    # Shortest trajectory in the MVP graph
+    ## From leaves = from branch
     def from_charp(self, charP):
         return self.from_glauber(Glauber(charP))
 
@@ -80,11 +81,17 @@ class Representation:
         return self.from_wigner(Wigner(charW))
 
     def from_wavefunctionp(self, wavefunctionP):
-        return self.from_husimi(Husimi(wavefunctionP))
+        return self.from_wavefunctionx(WavefunctionX(wavefunctionP))
 
-    # From branches = from trunk
+    ## From branches = from trunk
+    def from_stellar(self, stellar):
+        return self.from_husimi(Husimi(stellar))
+    
+    def from_fock(self, fock):
+        return self.from_stellar(Stellar(fock))
+
     def from_wavefunctionx(self, wavefunctionX):
-        return self.from_husimi(Husimi(wavefunctionX))
+        return self.from_fock(Fock(wavefunctionX))
 
     def from_stellar(self, stellar):
         return self.from_husimi(Husimi(stellar))
