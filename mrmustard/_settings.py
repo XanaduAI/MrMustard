@@ -30,9 +30,10 @@ To set any of the parameters simply assign the new value for them:
 
 """
 
-import numpy as np
-import rich.table
 from rich import print as rprint
+import rich.table
+
+import numpy as np
 
 
 # pylint: disable=too-many-instance-attributes
@@ -62,15 +63,15 @@ class Settings:
         self.EQ_TRANSFORMATION_CUTOFF: int = 5
         """sets the cutoff value per mode when determining if the Choi representation of
         two transformations in the photon-number basis are equal"""
-        self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
+        self.EQ_TRANSFORMATION_RTOL_FOCK: float = 1e-3
         """tolerance for equality comparison between transformations in Fock representation"""
-        self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
+        self.EQ_TRANSFORMATION_RTOL_GAUSS: float = 1e-6
         """tolerance for equality comparison between transformations in Wigner representation"""
 
         # for the detectors
-        self.PNR_INTERNAL_CUTOFF = 50
+        self.PNR_INTERNAL_CUTOFF: int = 50
         """default internal cutoff of photon-number resolving detectors"""
-        self.HOMODYNE_SQUEEZING = 10.0
+        self.HOMODYNE_SQUEEZING: float = 10.0
         """squeezing value of the squeezed state used for homodyne detection"""
 
         self.PROGRESSBAR: bool = True
