@@ -94,12 +94,12 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
-    def U(self, cutoffs: Sequence[int]):
+    def U(self, shape: Sequence[int]):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
         Arguments:
-            cutoffs (Sequence[int]): the Fock basis truncation for each mode
+            shape (Sequence[int]): the Fock basis truncation for each index of U
                 in the order (out_1, out_2,..., in_1, in_2,...)
 
         Returns:
@@ -109,17 +109,15 @@ class Dgate(Parametrized, Transformation):
         N = self.num_modes
         x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
         y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
-        r = math.sqrt(x * x + y * y)
-        phi = math.atan2(y, x)
 
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product
             Ud = None
-            for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
+            for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
                 if Ud is None:
-                    Ud = fock.displacement(r[idx], phi[idx], out_in)
+                    Ud = fock.displacement(x[idx], y[idx], out_in)
                 else:
-                    U_next = fock.displacement(r[idx], phi[idx], out_in)
+                    U_next = fock.displacement(x[idx], y[idx], out_in)
                     Ud = math.outer(Ud, U_next)
 
             return math.transpose(
@@ -127,7 +125,7 @@ class Dgate(Parametrized, Transformation):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.displacement(r[0], phi[0], tuple(cutoffs))
+            return fock.displacement(x[0], y[0], tuple(shape))
 
 
 class Sgate(Parametrized, Transformation):
@@ -192,16 +190,16 @@ class Sgate(Parametrized, Transformation):
             Us = None
             for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
                 if Us is None:
-                    Us = fock.squeezer(r[idx], phi[idx], out_in)
+                    Us = fock.squeezer(r=r[idx], phi=phi[idx], cutoffs=out_in)
                 else:
-                    U_next = fock.squeezer(r[idx], phi[idx], out_in)
+                    U_next = fock.squeezer(r=r[idx], phi=phi[idx], cutoffs=out_in)
                     Us = math.outer(Us, U_next)
             return math.transpose(
                 Us,
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.squeezer(r[0], phi[0], tuple(cutoffs))
+            return fock.squeezer(r=r[0], phi=phi[0], cutoffs=tuple(cutoffs))
 
     @property
     def X_matrix(self):

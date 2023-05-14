@@ -36,6 +36,7 @@ from mrmustard.lab import (
     Sgate,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
+from mrmustard.math import Math
 from mrmustard.physics import fock
 from tests.random import (
     angle,
@@ -47,6 +48,8 @@ from tests.random import (
     single_mode_unitary_gate,
     two_mode_unitary_gate,
 )
+
+math = Math()
 
 
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)
@@ -148,10 +151,41 @@ def test_fock_representation_displacement(cutoffs, x, y):
 
 @given(x1=medium_float, x2=medium_float, y1=medium_float, y2=medium_float)
 def test_parallel_displacement(x1, x2, y1, y2):
+    """Tests that parallel Dgate returns the correct unitary."""
     U12 = Dgate([x1, x2], [y1, y2]).U([2, 7, 2, 7])
     U1 = Dgate(x1, y1).U([2, 2])
     U2 = Dgate(x2, y2).U([7, 7])
     assert np.allclose(U12, np.transpose(np.tensordot(U1, U2, [[], []]), [0, 2, 1, 3]))
+
+
+def test_squeezer_grad():
+    """tests fock squeezer gradient against finite differences"""
+    cutoffs = [5, 5]
+    r = math.new_variable(0.5, None, "r")
+    phi = math.new_variable(0.1, None, "phi")
+    delta = 1e-6
+    dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (2 * delta)
+    dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (2 * delta)
+    _, (gradr, gradphi) = math.value_and_gradients(
+        lambda: fock.squeezer(r, phi, cutoffs=cutoffs), [r, phi]
+    )
+    assert np.allclose(gradr, 2 * np.real(np.sum(dUdr)))
+    assert np.allclose(gradphi, 2 * np.real(np.sum(dUdphi)))
+
+
+def test_displacement_grad():
+    """tests fock displacement gradient against finite differences"""
+    cutoffs = [5, 5]
+    x = math.new_variable(0.5, None, "x")
+    y = math.new_variable(0.1, None, "y")
+    delta = 1e-6
+    dUdx = (Dgate(x + delta, y).U(cutoffs) - Dgate(x - delta, y).U(cutoffs)) / (2 * delta)
+    dUdy = (Dgate(x, y + delta).U(cutoffs) - Dgate(x, y - delta).U(cutoffs)) / (2 * delta)
+    _, (gradx, grady) = math.value_and_gradients(
+        lambda: fock.displacement(x, y, cutoffs=cutoffs), [x, y]
+    )
+    assert np.allclose(gradx, 2 * np.real(np.sum(dUdx)))
+    assert np.allclose(grady, 2 * np.real(np.sum(dUdy)))
 
 
 def test_fock_representation_displacement_rectangular():
@@ -191,6 +225,7 @@ def test_fock_representation_squeezing(r, phi):
 
 @given(r1=r, phi1=angle, r2=r, phi2=angle)
 def test_parallel_squeezing(r1, phi1, r2, phi2):
+    """Tests that two parallel squeezers return the correct unitary."""
     U12 = Sgate([r1, r2], [phi1, phi2]).U([5, 7, 5, 7])
     U1 = Sgate(r1, phi1).U([5, 5])
     U2 = Sgate(r2, phi2).U([7, 7])

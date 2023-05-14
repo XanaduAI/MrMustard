@@ -859,67 +859,70 @@ def sample_homodyne(
 
 
 @math.custom_gradient
-def displacement(r, phi, cutoffs, tol=1e-15):
+def displacement(x, y, shape, tol=1e-15):
     r"""creates a single mode displacement matrix"""
-    if r > tol:
-        gate = strategies.displacement(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
-    else:
-        gate = math.eye(cutoffs[-1], dtype="complex128")
+    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
 
-    def grad(dy):
-        Dr, Dphi = strategies.grad_displacement(
-            math.asnumpy(gate), math.asnumpy(r), math.asnumpy(phi)
-        )
-        grad_r = math.real(math.sum(dy * math.conj(Dr)))
-        grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
-        return grad_r, grad_phi, None
+    if np.sqrt(x * x + y * y) > tol:
+        gate = strategies.displacement(tuple(shape), alpha)
+    else:
+        gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
+
+    def grad(dL_dDc):
+        dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
+        # dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da), axis=(-2, -1))
+        dL_dac = np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da)
+        dLdx = 2 * np.real(dL_dac)
+        dLdy = 2 * np.imag(dL_dac)
+        return dLdx, dLdy
 
     return gate, grad
 
 
 @math.custom_gradient
 def beamsplitter(theta: float, phi: float, cutoffs: Sequence[int]):
-    r"""creates a beamsplitter tensor with given cutoffs"""
-    unitary = strategies.beamsplitter(tuple(cutoffs), math.asnumpy(theta), math.asnumpy(phi))
+    r"""creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy"""
+    bs_unitary = strategies.beamsplitter(tuple(cutoffs), math.asnumpy(theta), math.asnumpy(phi))
 
     def vjp(dLdGc):
         return strategies.beamsplitter_vjp(
-            math.asnumpy(unitary),
+            math.asnumpy(bs_unitary),
             math.asnumpy(math.conj(dLdGc)),
             math.asnumpy(theta),
             math.asnumpy(phi),
         )
 
-    return unitary, vjp
+    return bs_unitary, vjp
 
 
 @math.custom_gradient
 def squeezer(r, phi, cutoffs):
-    r"""creates a single mode squeezer matrix"""
-    unitary = strategies.squeezer(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
+    r"""creates a single mode squeezer matrix using a numba-based fock lattice strategy"""
+    sq_unitary = strategies.squeezer(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
 
     def vjp(dLdGc):
-        return strategies.squeezer_vjp(
-            math.asnumpy(unitary),
+        dr, dphi = strategies.squeezer_vjp(
+            math.asnumpy(sq_unitary),
             math.asnumpy(math.conj(dLdGc)),
             math.asnumpy(r),
             math.asnumpy(phi),
         )
+        return dr, dphi
 
-    return unitary, vjp
+    return sq_unitary, vjp
 
 
 @math.custom_gradient
 def squeezed(r, phi, cutoffs):
-    r"""creates a single mode squeezer matrix"""
-    unitary = strategies.squeezed(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
+    r"""creates a single mode squeezed state using a numba-based fock lattice strategy"""
+    sq_ket = strategies.squeezed(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
 
     def vjp(dLdGc):
-        return strategies.squeezer_vjp(
-            math.asnumpy(unitary),
+        return strategies.squeezed_vjp(
+            math.asnumpy(sq_ket),
             math.asnumpy(math.conj(dLdGc)),
             math.asnumpy(r),
             math.asnumpy(phi),
         )
 
-    return unitary, vjp
+    return sq_ket, vjp

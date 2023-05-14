@@ -17,26 +17,71 @@
 import numpy as np
 from numba import jit
 
+# @jit(nopython=True)
+# def displacement(cutoffs, r, phi, dtype=np.complex128):  # pragma: no cover
+#     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
+#     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
-@jit(nopython=True)
-def displacement(cutoffs, r, phi, dtype=np.complex128):  # pragma: no cover
+#     Args:
+#         r (float): displacement magnitude
+#         phi (float): displacement angle
+#         cutoffs (tuple[int, int]): Fock ladder output-input cutoffs
+#         dtype (data type): Specifies the data type used for the calculation
+
+#     Returns:
+#         array[complex]: matrix representing the displacement operation.
+#     """
+#     N, M = cutoffs
+#     flipped = False
+#     if N < M:
+#         N, M = M, N
+#         flipped = True
+#     D = np.zeros((N, M), dtype=dtype)
+#     rng = np.arange(max(*cutoffs))
+#     rng[0] = 1
+#     log_k_fac = np.cumsum(np.log(rng))
+#     for n_minus_m in range(N):
+#         m_max = min(M, N - n_minus_m)
+#         logL = np.log(laguerre(r**2.0, m_max, n_minus_m))
+#         for m in range(m_max):
+#             n = n_minus_m + m
+#             sign = 2 * (not (flipped and n > m and n_minus_m % 2)) - 1
+#             conj = 2 * (not (flipped and n > m)) - 1
+#             D[n, m] = sign * np.exp(
+#                 +0.5 * (log_k_fac[m] - log_k_fac[n])
+#                 + n_minus_m * np.log(r)
+#                 - (r**2.0) / 2.0
+#                 + conj * 1j * phi * n_minus_m
+#                 + logL[m]
+#             )
+#             if n < M:
+#                 D[m, n] = (-1.0) ** n_minus_m * np.conj(D[n, m])
+#     return D if not flipped else np.transpose(D)
+
+
+# rewrite displacement in terms of x and y:
+# @jit(nopython=True)
+def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
     Args:
-        r (float): displacement magnitude
-        phi (float): displacement angle
+        alpha (complex): displacement magnitude and angle
         cutoffs (tuple[int, int]): Fock ladder output-input cutoffs
         dtype (data type): Specifies the data type used for the calculation
 
     Returns:
         array[complex]: matrix representing the displacement operation.
     """
+    r = np.abs(alpha)
+    phi = np.angle(alpha)
     N, M = cutoffs
     flipped = False
     if N < M:
         N, M = M, N
         flipped = True
+
+    print((N, M), dtype)
     D = np.zeros((N, M), dtype=dtype)
     rng = np.arange(max(*cutoffs))
     rng[0] = 1
@@ -77,33 +122,58 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     return L
 
 
+# @jit(nopython=True)
+# def grad_displacement(T, r, phi):  # pragma: no cover
+#     r"""Calculates the gradient of the displacement gate with respect to the magnitude and angle of the displacement.
+
+#     Args:
+#         T (array[complex]): array representing the gate
+#         r (float): displacement magnitude
+#         phi (float): displacement angle
+
+#     Returns:
+#         tuple[array[complex], array[complex]]: The gradient of the displacement gate with respect to r and phi
+#     """
+#     cutoff = T.shape[0]
+#     dtype = T.dtype
+#     ei = np.exp(1j * phi)
+#     eic = np.exp(-1j * phi)
+#     alpha = r * ei
+#     alphac = r * eic
+#     sqrt = np.sqrt(np.arange(cutoff, dtype=dtype))
+#     grad_r = np.zeros((cutoff, cutoff), dtype=dtype)
+#     grad_phi = np.zeros((cutoff, cutoff), dtype=dtype)
+
+#     for m in range(cutoff):
+#         for n in range(cutoff):
+#             grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
+#             grad_phi[m, n] = (
+#                 sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
+#             )
+
+#     return grad_r, grad_phi
+
+
 @jit(nopython=True)
-def grad_displacement(T, r, phi):  # pragma: no cover
-    r"""Calculates the gradients of the displacement gate with respect to the displacement magnitude and angle.
+def jacobian_displacement(D, alpha):  # pragma: no cover
+    r"""Calculates the jacobian of the displacement gate with respect to the complex displacement.
+    The jacobian in this case has the same shape as the array D, as the displacement is a scalar.
+    Note that for backprop purposes we return the jacobian with respect to the conjugate of alpha.
 
     Args:
-        T (array[complex]): array representing the gate
-        r (float): displacement magnitude
-        phi (float): displacement angle
+        D (array[complex]): the D gate in fock representation. Batch dimensions are allowed.
+        alpha (complex): complex displacement
 
     Returns:
-        tuple[array[complex], array[complex]]: The gradient of the displacement gate with respect to r and phi
+        array[complex]: The jacbian of the displacement gate with respect to alpha
     """
-    cutoff = T.shape[0]
-    dtype = T.dtype
-    ei = np.exp(1j * phi)
-    eic = np.exp(-1j * phi)
-    alpha = r * ei
-    alphac = r * eic
-    sqrt = np.sqrt(np.arange(cutoff, dtype=dtype))
-    grad_r = np.zeros((cutoff, cutoff), dtype=dtype)
-    grad_phi = np.zeros((cutoff, cutoff), dtype=dtype)
-
-    for m in range(cutoff):
-        for n in range(cutoff):
-            grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
-            grad_phi[m, n] = (
-                sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
-            )
-
-    return grad_r, grad_phi
+    shape = D.shape[-2:]
+    alphac = np.conj(alpha)
+    sqrt = np.sqrt(np.arange(shape[0] + shape[1], dtype=D.dtype))
+    jac_alpha = np.zeros(D.shape, dtype=D.dtype)  # i.e. dD_dalpha for all m,n
+    jac_alphac = np.zeros(D.shape, dtype=D.dtype)  # i.e. dD_dalphac for all m,n
+    for m in range(shape[0]):
+        for n in range(shape[1]):
+        jac_alpha[m,n] = -alphac * D[m,n] + sqrt[m] * D[m - 1,n]
+        jac_alphac[m,n] = -alpha * D[:, n] - sqrt[n] * D[:, n - 1]
+    return jac_alpha, jac_alphac
