@@ -74,17 +74,18 @@ class Dgate(Transformation, Parametrized):
 
     def __init__(
         self,
-        x: Union[Optional[float], Optional[List[float]]] = 0.0,
-        y: Union[Optional[float], Optional[List[float]]] = 0.0,
+        x: Union[float, List[float]] = 0.0,
+        y: Union[float, List[float]] = 0.0,
         x_trainable: bool = False,
         y_trainable: bool = False,
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
     ):
+        m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(m)),
+            modes_out=modes or list(range(m)),
             name="Dgate",
             x=x,
             y=y,
@@ -149,17 +150,17 @@ class Sgate(Transformation, Parametrized):
 
     def __init__(
         self,
-        r: Union[Optional[float], Optional[List[float]]] = 0.0,
-        phi: Union[Optional[float], Optional[List[float]]] = 0.0,
+        r: Union[float, list[float]] = 0.0,
+        phi: Union[float, list[float]] = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
+            modes_out=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
             r=r,
             phi=phi,
@@ -198,14 +199,14 @@ class Rgate(Transformation, Parametrized):
 
     def __init__(
         self,
-        angle: Union[Optional[float], Optional[List[float]]] = 0.0,
+        angle: Union[float, list[float]] = 0.0,
         angle_trainable: bool = False,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(len(math.atleast_1d(angle)))),
+            modes_out=modes or list(range(len(math.atleast_1d(angle)))),
             name="Rgate",
             angle=angle,
             angle_trainable=angle_trainable,
@@ -259,14 +260,14 @@ class Pgate(Transformation, Parametrized):
 
     def __init__(
         self,
-        shearing: Union[Optional[float], Optional[List[float]]] = 0.0,
+        shearing: Union[Optional[float], Optional[list[float]]] = 0.0,
         shearing_trainable: bool = False,
         shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(len(math.atleast_1d(shearing)))),
+            modes_out=modes or list(range(len(math.atleast_1d(shearing)))),
             name="Pgate",
             shearing=shearing,
             shearing_trainable=shearing_trainable,
@@ -303,8 +304,8 @@ class CXgate(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or [0, 1],
+            modes_out=modes or [0, 1],
             name="CXgate",
             s=s,
             s_trainable=s_trainable,
@@ -342,8 +343,8 @@ class CZgate(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or [0, 1],
+            modes_out=modes or [0, 1],
             name="CZgate",
             s=s,
             s_trainable=s_trainable,
@@ -378,17 +379,17 @@ class BSgate(Transformation, Parametrized):
 
     def __init__(
         self,
-        theta: Optional[float] = 0.0,
-        phi: Optional[float] = 0.0,
+        theta: float = 0.0,
+        phi: float = 0.0,
         theta_trainable: bool = False,
         phi_trainable: bool = False,
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or [0, 1],
+            modes_out=modes or [0, 1],
             name="BSgate",
             theta=theta,
             phi=phi,
@@ -435,8 +436,8 @@ class MZgate(Transformation, Parametrized):
 
     def __init__(
         self,
-        phi_a: Optional[float] = 0.0,
-        phi_b: Optional[float] = 0.0,
+        phi_a: float = 0.0,
+        phi_b: float = 0.0,
         phi_a_trainable: bool = False,
         phi_b_trainable: bool = False,
         phi_a_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
@@ -445,8 +446,8 @@ class MZgate(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or [0, 1],
+            modes_out=modes or [0, 1],
             name="MZgate",
             phi_a=phi_a,
             phi_b=phi_b,
@@ -489,8 +490,8 @@ class S2gate(Transformation, Parametrized):
 
     def __init__(
         self,
-        r: Optional[float] = 0.0,
-        phi: Optional[float] = 0.0,
+        r: float = 0.0,
+        phi: float = 0.0,
         r_trainable: bool = False,
         phi_trainable: bool = False,
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
@@ -498,8 +499,8 @@ class S2gate(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or [0, 1],
+            modes_out=modes or [0, 1],
             name="S2gate",
             r=r,
             phi=phi,
@@ -539,7 +540,7 @@ class Interferometer(Transformation, Parametrized):
         num_modes: int,
         unitary: Optional[ComplexMatrix] = None,
         unitary_trainable: bool = False,
-        modes: Optional[List[int]] = None,
+        modes: Optional[list[int]] = None,
     ):
         if modes is not None and num_modes != len(modes):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -730,8 +731,8 @@ class Attenuator(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(len(math.atleast_1d(transmissivity)))),
+            modes_out=modes or list(range(len(math.atleast_1d(transmissivity)))),
             name="Attenuator",
             transmissivity=transmissivity,
             nbar=nbar,
@@ -790,8 +791,8 @@ class Amplifier(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(len(math.atleast_1d(gain)))),
+            modes_out=modes or list(range(len(math.atleast_1d(gain)))),
             name="Amplifier",
             gain=gain,
             gain_trainable=gain_trainable,
@@ -849,8 +850,8 @@ class AdditiveNoise(Transformation, Parametrized):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes or list(range(len(math.atleast_1d(noise)))),
+            modes_out=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
             noise=noise,
             noise_trainable=noise_trainable,

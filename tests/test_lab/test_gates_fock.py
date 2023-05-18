@@ -51,19 +51,19 @@ from tests.random import (
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)
 def test_Dgate_1mode(state, x, y):
     state_out = state >> Dgate(x, y) >> Dgate(-x, -y)
-    assert state_out == state
+    assert state_out.run() == state
 
 
 def test_attenuator_on_fock():
     "tests that attenuating a fock state makes it mixed"
-    assert not (Fock(10) >> Attenuator(0.5)).is_pure
+    assert not (Fock(10) > Attenuator(0.5)).is_pure
 
 
 @given(state=n_mode_pure_state(num_modes=2), xxyy=array_of_(medium_float, minlen=4, maxlen=4))
 def test_Dgate_2mode(state, xxyy):
     x1, x2, y1, y2 = xxyy
     state_out = state >> Dgate([x1, x2], [y1, y2]) >> Dgate([-x1, -x2], [-y1, -y2])
-    assert state_out == state
+    assert state_out.run() == state
 
 
 @given(gate=single_mode_cv_channel())
@@ -71,11 +71,11 @@ def test_single_mode_fock_equals_gaussian_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
     cutoffs = [60]
-    gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
+    gaussian_state = SqueezedVacuum(0.5) > Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
+    via_fock_space_dm = (fock_state > gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state > gate).dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
@@ -87,8 +87,8 @@ def test_single_mode_fock_equals_gaussian_ket_dm(gate):
     gaussian_state = SqueezedVacuum(0.5)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm([10])
-    via_phase_space_dm = (gaussian_state >> gate).dm([10])
+    via_fock_space_dm = (fock_state > gate).dm([10])
+    via_phase_space_dm = (gaussian_state > gate).dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
@@ -100,8 +100,8 @@ def test_single_mode_fock_equals_gaussian_ket(gate):
     gaussian_state = SqueezedVacuum(0.5)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
-    via_fock_space_ket = (fock_state >> gate).ket([10])
-    via_phase_space_ket = (gaussian_state >> gate).ket([10])
+    via_fock_space_ket = (fock_state > gate).ket([10])
+    via_phase_space_ket = (gaussian_state > gate).ket([10])
     phase = np.exp(1j * np.angle(via_fock_space_ket[0]))
     assert np.allclose(via_fock_space_ket, phase * via_phase_space_ket)
 
@@ -114,8 +114,8 @@ def test_single_mode_fock_equals_gaussian_ket_dm_2(gate):
     gaussian_state = SqueezedVacuum(-0.1)
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).dm([10])
-    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.1)).dm([10])
+    via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).run().dm([10])
+    via_phase_space_dm = (gaussian_state > gate > Attenuator(0.1)).run().dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm, atol=1e-5)
 
 
@@ -124,11 +124,11 @@ def test_two_mode_fock_equals_gaussian(gate):
     """Test same state is obtained via fock representation or phase space
     for two modes circuits."""
     cutoffs = [20, 20]
-    gaussian_state = TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)
+    gaussian_state = (TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)).run()
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
-    via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
+    via_fock_space_dm = (fock_state > gate).dm(cutoffs)
+    via_phase_space_dm = (gaussian_state > gate).dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
@@ -224,5 +224,5 @@ def test_raise_interferometer_error():
 
 
 def test_choi_cutoffs():
-    output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
+    output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) > Attenuator(0.5, modes=[1])
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate

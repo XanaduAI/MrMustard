@@ -17,8 +17,8 @@
 from mrmustard import settings
 from mrmustard.lab import BSgate, Ggate
 from mrmustard.utils.circdrawer import (
-    _add_grouping_symbols,
-    _add_op,
+    add_grouping_symbols,
+    add_op,
     circuit_text,
     drawable_layers,
     mode_set,
@@ -52,7 +52,7 @@ def test_drawable_layers_mix_overlap():
 def test_add_grouping_symbols_BS():
     r"""Tests that _add_grouping_symbols returns the correct symbols"""
     op = BSgate(0.5)[3, 11]
-    assert _add_grouping_symbols(op, ["-"] * 12) == [
+    assert add_grouping_symbols(op, ["-"] * 12) == [
         "-",
         "-",
         "-",
@@ -71,7 +71,7 @@ def test_add_grouping_symbols_BS():
 def test_add_grouping_symbols_G():
     r"""Tests that _add_grouping_symbols returns the correct symbols"""
     op = Ggate(5)[1, 2, 3, 4, 5]
-    assert _add_grouping_symbols(op, ["-"] * 6) == [
+    assert add_grouping_symbols(op, ["-"] * 6) == [
         "-",
         "╭",
         "├",
@@ -84,9 +84,9 @@ def test_add_grouping_symbols_G():
 def test_add_op():
     r"""Tests that _add_op returns the correct symbols"""
     op = Ggate(5)[1, 2, 3, 4, 5]
-    layer_str = _add_grouping_symbols(op, ["-"] * 6)
+    layer_str = add_grouping_symbols(op, ["-"] * 6)
     decimals = None
-    assert _add_op(op, layer_str, decimals) == [
+    assert add_op(op, layer_str, decimals) == [
         "-",
         "╭G",
         "├G",

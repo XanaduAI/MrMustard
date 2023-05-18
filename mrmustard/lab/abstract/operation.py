@@ -79,6 +79,7 @@ class Operation(CircuitPart):
         return hash(tags)
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
+        "Delayed primal mode: self >> other becomes a circuit that will be evaluated later."
         other_parts = other.parts if isinstance(other, Circuit) else [other]
         dual = self.has_dual or other.has_dual
         if dual:
@@ -86,10 +87,10 @@ class Operation(CircuitPart):
             other.enable_dual()
         return Circuit([self] + other_parts)
 
+    def __gt__(self, other: Operation) -> Operation:
+        "Immediate primal mode: self > other is evaluated and then returned."
+        return other.primal(self)  # Operation shouldn't need to know about primal
+
     def TN_tensor(self) -> Tensor:
         "Returns the TensorNetwork Tensor of this Operation."
         return self.TN_tensor()
-
-    def __call__(self, **kwargs):
-        for name, value in kwargs.items():
-            setattr(self, name, value)

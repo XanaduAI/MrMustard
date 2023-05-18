@@ -147,8 +147,8 @@ class Trainable(Parameter, ABC):
     def __init__(self, value: Any, name: str, owner: Optional[str] = None) -> None:
         pass
 
-    def __setattr__(self, __value: Any) -> None:
-        return object.__setattr__(self.value, __value)
+    def __set__(self, __value: Any) -> None:
+        self._value = __value
 
 
 class Symplectic(Trainable):
@@ -205,8 +205,8 @@ class Constant(Parameter):
         self._name = name
         self._owner = owner
 
-    def __setattr__(self, __value: Any) -> None:
-        return self.__init__(__value, self.name, self.owner)
+    # def __set__(self, __value: Any) -> None:
+    #     self.__init__(__value, self.name, self.owner)
 
 
 def create_parameter(

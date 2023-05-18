@@ -20,12 +20,13 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from mrmustard import settings
 from mrmustard.lab.abstract.operation import CircuitPart, Wire
-from mrmustard.typing import Tensor
+from mrmustard.typing import Matrix, Tensor, Vector
 from mrmustard.utils.circdrawer import circuit_text
+from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 # class Circuit(Parametrized):
 #     r"""Represents a quantum circuit: a wrapper around States, Transformations and Measurements
@@ -246,7 +247,9 @@ from mrmustard.utils.circdrawer import circuit_text
 
 
 class Circuit(CircuitPart):
-    r"""A collection of interconnected Operations that can be run as a quantum device."""
+    r"""A collection of interconnected Operations that can be run as a quantum device.
+    The order matters for the Operations in the Circuit, as they are applied sequentially.
+    """
 
     def __init__(self, parts: Optional[list[CircuitPart]] = None, name: str = "Circuit"):
         self.has_dual = any(part.has_dual for part in parts)
@@ -254,17 +257,20 @@ class Circuit(CircuitPart):
         self.connect_all_parts()  # important: do before setting input and output wires
         self.input_wire_at_mode: Dict[int, Wire] = {}
         self.output_wire_at_mode: Dict[int, Wire] = {}
+
+        # check for duplicate input and output modes
         for part in self.parts:
             for mode, wire in part.input_wire_at_mode.items():
                 if not wire.is_connected:
                     if mode in self.modes_in:
-                        raise ValueError("Duplicate input mode.")
+                        raise ValueError(f"Duplicate input mode {mode}.")
                     self.input_wire_at_mode[mode] = wire
             for mode, wire in part.output_wire_at_mode.items():
                 if not wire.is_connected:
                     if mode in self.modes_out:
-                        raise ValueError("Duplicate output mode.")
+                        raise ValueError(f"Duplicate output mode {mode}.")
                     self.output_wire_at_mode[mode] = wire
+
         self.name = name
 
     def connect_all_parts(self):
@@ -291,20 +297,16 @@ class Circuit(CircuitPart):
         "Flattens and rewires the circuit."
         return Circuit([op.disconnect() for op in self.ops])
 
-    State = Any  # to avoid circular import
-
-    def __call__(self, **kwargs) -> Circuit | State:
-        op = self.ops[0](**kwargs)  # assumes op is a State
+    def run(self):
+        op = self.ops[0]
+        if isinstance(op, Circuit):
+            op = op.run()
         for next_op in self.ops[1:]:
-            next_op(**kwargs)  # set the values of the symbolic parameters
-            try:
-                op = next_op.primal(op)
-            except AttributeError:  # triggered if op is not a State
-                not_a_state = True
-                continue  # because we still want to pass the kwargs to all the ops
-        if not_a_state:
-            return self
+            op = next_op.primal(op)
         return op
+
+    def sample(self, shots: int) -> list:
+        pass
 
     # _repr_markdown_ = None
 
@@ -325,3 +327,40 @@ class Circuit(CircuitPart):
     def TN_tensor_list(self) -> list[Tensor]:
         "returns a list of tensors in the tensor network representation of the circuit"
         return [op.TN_tensor for op in self.ops]
+
+    # old methods that we keep for now:
+
+    @property
+    def XYd(
+        self,
+    ) -> tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency.
+        X = XPMatrix(like_1=True)
+        Y = XPMatrix(like_0=True)
+        d = XPVector()
+        for op in self._ops:
+            opx, opy, opd = op.XYd
+            opX = XPMatrix.from_xxpp(opx, modes=(op.modes, op.modes), like_1=True)
+            opY = XPMatrix.from_xxpp(opy, modes=(op.modes, op.modes), like_0=True)
+            opd = XPVector.from_xxpp(opd, modes=op.modes)
+            if opX.shape is not None and opX.shape[-1] == 1 and len(op.modes) > 1:
+                opX = opX.clone(len(op.modes), modes=(op.modes, op.modes))
+            if opY.shape is not None and opY.shape[-1] == 1 and len(op.modes) > 1:
+                opY = opY.clone(len(op.modes), modes=(op.modes, op.modes))
+            if opd.shape is not None and opd.shape[-1] == 1 and len(op.modes) > 1:
+                opd = opd.clone(len(op.modes), modes=op.modes)
+            X = opX @ X
+            Y = opX @ Y @ opX.T + opY
+            d = opX @ d + opd
+        return X.to_xxpp(), Y.to_xxpp(), d.to_xxpp()
+
+    @property
+    def is_gaussian(self):
+        """Returns `true` if all operations in the circuit are Gaussian."""
+        return all(op.is_gaussian for op in self.ops)
+
+    def __len__(self):
+        return len(self.ops)
+
+    def __str__(self):
+        """String representation of the circuit."""
+        return f"< Circuit | {len(self.ops)} ops >"

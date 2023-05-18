@@ -19,7 +19,6 @@ from __future__ import annotations
 import warnings
 from typing import (
     TYPE_CHECKING,
-    Any,
     Iterable,
     List,
     Optional,
@@ -114,8 +113,9 @@ class State(Operation):
 
         super().__init__(
             modes_in=[],
-            modes_out=modes or list(range(self.num_modes)),
-            has_dual=gaussian.purity(cov, settings.HBAR) < 1.0
+            modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above
+            has_dual=gaussian.purity(cov, settings.HBAR)
+            < 1.0 - 1e-6  # NOTE: will be replaced by not is_hilbert_vector
             if self.is_gaussian
             else dm is not None,
             name=name,
@@ -555,18 +555,18 @@ class State(Operation):
         """
         return other.primal(self)
 
-    def __gt__(self, other: Transformation) -> Any:
-        r"""Concatenates current state to other, creating a 'new type' circuit if necessary."""
-        from mrmustard.lab.circuit import Circuit, Operation
+    # def __gt__(self, other: Transformation) -> Any:
+    #     r"""Concatenates current state to other, creating a 'new type' circuit if necessary."""
+    #     from mrmustard.lab.circuit import Circuit, Operation
 
-        op1 = Operation(self, [], self.modes, not self.is_pure)
-        if isinstance(other, Circuit):
-            op2 = other
-        elif hasattr(other, "is_unitary"):
-            op2 = Operation(other, other.modes, other.modes, not other.is_unitary)
-        elif hasattr(other, "is_projective"):
-            op2 = Operation(other, other.modes, [], not other.is_projective)
-        return Circuit([op1, op2])
+    #     op1 = Operation(self, [], self.modes, not self.is_pure)
+    #     if isinstance(other, Circuit):
+    #         op2 = other
+    #     elif hasattr(other, "is_unitary"):
+    #         op2 = Operation(other, other.modes, other.modes, has_dual=not other.is_unitary)
+    #     elif hasattr(other, "is_projective"):
+    #         op2 = Operation(other, other.modes, [], has_dual=not other.is_projective)
+    #     return Circuit([op1, op2])
 
     def __add__(self, other: State):
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
