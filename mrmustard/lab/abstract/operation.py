@@ -39,10 +39,14 @@ class Operation(CircuitPart):
             )
             for m in modes_out
         }
-        self.has_dual = has_dual
         super().__init__(**kwargs)
 
     _repr_markdown_ = None
+
+    @property
+    def has_dual(self) -> bool:
+        "Whether this Operation has a dual (R) part."
+        return any(wire.has_dual for wire in self.all_wires)
 
     def disconnect(self) -> Operation:
         "Re-issue new wires for this operation"
@@ -80,12 +84,10 @@ class Operation(CircuitPart):
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
         "Delayed primal mode: self >> other becomes a circuit that will be evaluated later."
-        other_parts = other.parts if isinstance(other, Circuit) else [other]
-        dual = self.has_dual or other.has_dual
-        if dual:
+        if self.has_dual or other.has_dual:
             self.enable_dual()
             other.enable_dual()
-        return Circuit([self] + other_parts)
+        return Circuit([self] + (other if isinstance(other, Circuit) else [other]))
 
     def __gt__(self, other: Operation) -> Operation:
         "Immediate primal mode: self > other is evaluated and then returned."

@@ -252,7 +252,6 @@ class Circuit(CircuitPart):
     """
 
     def __init__(self, parts: Optional[list[CircuitPart]] = None, name: str = "Circuit"):
-        self.has_dual = any(part.has_dual for part in parts)
         self.parts = parts or []
         self.connect_all_parts()  # important: do before setting input and output wires
         self.input_wire_at_mode: Dict[int, Wire] = {}
@@ -272,6 +271,10 @@ class Circuit(CircuitPart):
                     self.output_wire_at_mode[mode] = wire
 
         self.name = name
+
+    @property
+    def has_dual(self) -> bool:
+        return any(part.has_dual for part in self.parts)
 
     def connect_all_parts(self):
         r"""Connects parts in the circuit according to their input and output modes."""

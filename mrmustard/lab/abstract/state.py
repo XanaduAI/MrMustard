@@ -111,6 +111,8 @@ class State(Operation):
                 "State must be initialized with cov/means, eigenvalues and symplectic matrix, or a fock representation"
             )
 
+        self.parallelizable = False
+        self.short_name = "St"
         super().__init__(
             modes_in=[],
             modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above

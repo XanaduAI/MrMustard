@@ -67,10 +67,11 @@ def add_op(
     control = []
     if op.__class__.__qualname__ in ["BSgate", "MZgate", "CZgate", "CXgate"]:
         control = [list(op.modes_out)[0]]
-    label = op.short_name
+    label = op.short_name or op.__class__.__qualname__[:2]
     if decimals is not None:
-        param_string = op.param_string(decimals)
-        if param_string == "":
+        try:
+            param_string = op.param_string(decimals)
+        except AttributeError:
             param_string = str(len(op.modes_out))
         label += "(" + param_string + ")"
 

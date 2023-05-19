@@ -67,9 +67,8 @@ class Wire:
 
     def enable_dual(self):
         "enables the dual (R) part of the wire."
-        if self.R:
-            raise ValueError("Wire already has dual (R) part.")
-        self.R = TagDispenser().get_tag()
+        if not self.R:
+            self.R = TagDispenser().get_tag()
 
     def __repr__(self):
         origin = self.origin.name if self.origin is not None else "..."
@@ -94,7 +93,6 @@ class CircuitPart(ABC):
         "Enables the dual (R) part of all the wires throughout this CircuitPart."
         for wire in self.all_wires:
             wire.R = TagDispenser().get_tag()
-        self.has_dual = True
 
     @property  # NOTE: override this property in subclasses if the subclass has internal wires
     def all_wires(self) -> Iterator[Wire]:
@@ -123,17 +121,17 @@ class CircuitPart(ABC):
         return all(w.is_connected for w in self.all_wires)
 
     def can_connect_output_mode(self, other: CircuitPart, mode: int) -> tuple[bool, str]:
-        r"""Checks whether this Operation can plug into another one, at a given mode.
+        r"""Checks whether this CircuitPart can plug into another one, at a given mode.
         This is the case if the modes exist, if they are not already connected
         and if there is no overlap between the output and input indices.
         In other words, the operations can be plugged as in a circuit diagram.
 
         Arguments:
-            other (Operation): the other Operation
+            other (CircuitPart): the other CircuitPart
             mode (int): the mode to check
 
         Returns:
-            bool: whether the connection is possible
+            (bool, str): whether the connection is possible and an failure message
         """
         if mode not in self.modes_out:
             return False, f"mode {mode} not an output of {self}."

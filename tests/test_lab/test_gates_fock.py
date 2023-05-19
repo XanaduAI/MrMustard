@@ -115,7 +115,7 @@ def test_single_mode_fock_equals_gaussian_ket_dm_2(gate):
     fock_state = State(ket=gaussian_state.ket(cutoffs))
 
     via_fock_space_dm = (fock_state >> gate >> Attenuator(0.1)).run().dm([10])
-    via_phase_space_dm = (gaussian_state > gate > Attenuator(0.1)).run().dm([10])
+    via_phase_space_dm = (gaussian_state >> gate >> Attenuator(0.1)).run().dm([10])
     assert np.allclose(via_fock_space_dm, via_phase_space_dm, atol=1e-5)
 
 
@@ -127,8 +127,8 @@ def test_two_mode_fock_equals_gaussian(gate):
     gaussian_state = (TMSV(0.1) >> BSgate(np.pi / 2) >> Attenuator(0.5)).run()
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 
-    via_fock_space_dm = (fock_state > gate).dm(cutoffs)
-    via_phase_space_dm = (gaussian_state > gate).dm(cutoffs)
+    via_fock_space_dm = (fock_state >> gate).run().dm(cutoffs)
+    via_phase_space_dm = (gaussian_state >> gate).run().dm(cutoffs)
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
