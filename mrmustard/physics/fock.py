@@ -19,7 +19,7 @@ This module contains functions for performing calculations on Fock states.
 """
 
 from functools import lru_cache
-from typing import List, Sequence, Tuple, Optional
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 from numba import jit
@@ -28,14 +28,13 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.mmtensor import MMTensor
+from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-
-from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
@@ -94,21 +93,27 @@ def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
     shape: Sequence[int],
+    max_prob: float = 1.0,
+    max_photons: Optional[int] = None,
     return_dm: bool = True,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
     Use with caution: if the cov matrix is that of a mixed state,
     setting return_dm to False will produce nonsense.
+    If return_dm=False, we can apply max_prob and max_photons to stop the
+    computation of the Fock representation early, when those conditions are met.
 
     * If the state is pure it can return the state vector (ket) or the density matrix.
-        The index order is going to be ket_i where i is the only multimode index.
+        The index ordering is going to be [i's] in ket_i
     * If the state is mixed it can return the density matrix.
-        The index order is going to be dm_ij where j is the right multimode index and i is the left one.
+        The index order is going to be [i's,j's] in dm_ij
 
     Args:
         cov: the Wigner covariance matrix
         means: the Wigner means vector
         shape: the shape of the tensor
+        max_prob: the maximum probability of a the state (applies only if the ket is returned)
+        max_photons: the maximum number of photons in the state (applies only if the ket is returned)
         return_dm: whether to return the density matrix (otherwise it returns the ket)
 
     Returns:
@@ -116,10 +121,16 @@ def wigner_to_fock_state(
     """
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
-        return math.hermite_renormalized(-A, B, C, shape=shape)
-    else:
+        return math.hermite_renormalized(A, B, C, shape=shape)
+    else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
-        return math.hermite_renormalized(-A, B, C, shape=shape)
+        if max_photons is None:
+            max_photons = sum(shape) - len(shape)
+        if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
+            return math.hermite_renormalized_binomial(
+                A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
+            )
+        return math.hermite_renormalized(A, B, C, shape=shape)
 
 
 def wigner_to_fock_U(X, d, shape):
@@ -136,7 +147,7 @@ def wigner_to_fock_U(X, d, shape):
         Tensor: the fock representation of the unitary transformation
     """
     A, B, C = wigner_to_bargmann_U(X, d)
-    return math.hermite_renormalized(-A, B, C, shape=shape)
+    return math.hermite_renormalized(A, B, C, shape=shape)
 
 
 def wigner_to_fock_Choi(X, Y, d, shape):
@@ -154,7 +165,7 @@ def wigner_to_fock_Choi(X, Y, d, shape):
         Tensor: the fock representation of the Choi matrix
     """
     A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    return math.hermite_renormalized(-A, B, C, shape=shape)
+    return math.hermite_renormalized(A, B, C, shape=shape)
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -678,10 +689,12 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
 
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
-    R = np.array([[2 + 0j]])  # to get the physicist polys
+    R = -np.array([[2 + 0j]])  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        poly = math.hermite_renormalized(R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff)
+        poly = math.hermite_renormalized(
+            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
+        )
         return math.cast(poly, "float64")
 
     hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
@@ -938,9 +951,9 @@ def displacement(r, phi, cutoff, tol=1e-15):
         gate = math.eye(cutoff, dtype="complex128")
 
     def grad(dy):  # pragma: no cover
-        Dr, Dphi = math.numpy_function(_grad_displacement, (gate, r, phi), (gate.dtype,) * 2)
-        grad_r = math.real(math.reduce_sum(dy * math.conj(Dr)))
-        grad_phi = math.real(math.reduce_sum(dy * math.conj(Dphi)))
+        Dr, Dphi = _grad_displacement(math.asnumpy(gate), math.asnumpy(r), math.asnumpy(phi))
+        grad_r = math.real(math.sum(dy * math.conj(Dr)))
+        grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
         return grad_r, grad_phi, None
 
     return gate, grad
