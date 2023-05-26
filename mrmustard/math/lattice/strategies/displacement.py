@@ -17,50 +17,8 @@
 import numpy as np
 from numba import jit
 
-# @jit(nopython=True)
-# def displacement(cutoffs, r, phi, dtype=np.complex128):  # pragma: no cover
-#     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
-#     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
 
-#     Args:
-#         r (float): displacement magnitude
-#         phi (float): displacement angle
-#         cutoffs (tuple[int, int]): Fock ladder output-input cutoffs
-#         dtype (data type): Specifies the data type used for the calculation
-
-#     Returns:
-#         array[complex]: matrix representing the displacement operation.
-#     """
-#     N, M = cutoffs
-#     flipped = False
-#     if N < M:
-#         N, M = M, N
-#         flipped = True
-#     D = np.zeros((N, M), dtype=dtype)
-#     rng = np.arange(max(*cutoffs))
-#     rng[0] = 1
-#     log_k_fac = np.cumsum(np.log(rng))
-#     for n_minus_m in range(N):
-#         m_max = min(M, N - n_minus_m)
-#         logL = np.log(laguerre(r**2.0, m_max, n_minus_m))
-#         for m in range(m_max):
-#             n = n_minus_m + m
-#             sign = 2 * (not (flipped and n > m and n_minus_m % 2)) - 1
-#             conj = 2 * (not (flipped and n > m)) - 1
-#             D[n, m] = sign * np.exp(
-#                 +0.5 * (log_k_fac[m] - log_k_fac[n])
-#                 + n_minus_m * np.log(r)
-#                 - (r**2.0) / 2.0
-#                 + conj * 1j * phi * n_minus_m
-#                 + logL[m]
-#             )
-#             if n < M:
-#                 D[m, n] = (-1.0) ** n_minus_m * np.conj(D[n, m])
-#     return D if not flipped else np.transpose(D)
-
-
-# rewrite displacement in terms of x and y:
-# @jit(nopython=True)
+@jit(nopython=True)
 def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
     Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
@@ -81,7 +39,6 @@ def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover
         N, M = M, N
         flipped = True
 
-    print((N, M), dtype)
     D = np.zeros((N, M), dtype=dtype)
     rng = np.arange(max(*cutoffs))
     rng[0] = 1

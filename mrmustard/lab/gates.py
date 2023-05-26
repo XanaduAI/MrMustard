@@ -94,12 +94,12 @@ class Dgate(Parametrized, Transformation):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
-    def U(self, shape: Sequence[int]):
+    def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
         Arguments:
-            shape (Sequence[int]): the Fock basis truncation for each index of U
+            cutoffs (Sequence[int]): the Fock basis truncation for each index of U
                 in the order (out_1, out_2,..., in_1, in_2,...)
 
         Returns:
@@ -113,7 +113,7 @@ class Dgate(Parametrized, Transformation):
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product
             Ud = None
-            for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
+            for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
                 if Ud is None:
                     Ud = fock.displacement(x[idx], y[idx], out_in)
                 else:
@@ -125,7 +125,7 @@ class Dgate(Parametrized, Transformation):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.displacement(x[0], y[0], tuple(shape))
+            return fock.displacement(x[0], y[0], tuple(cutoffs))
 
 
 class Sgate(Parametrized, Transformation):

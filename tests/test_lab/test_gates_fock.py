@@ -37,6 +37,7 @@ from mrmustard.lab import (
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
 from mrmustard.math import Math
+from mrmustard.math.lattice import strategies
 from mrmustard.physics import fock
 from tests.random import (
     angle,
@@ -176,16 +177,17 @@ def test_squeezer_grad():
 def test_displacement_grad():
     """tests fock displacement gradient against finite differences"""
     cutoffs = [5, 5]
-    x = math.new_variable(0.5, None, "x")
+    x = math.new_variable(0.1, None, "x")
     y = math.new_variable(0.1, None, "y")
+    alpha = math.make_complex(x,y).numpy()
     delta = 1e-6
-    dUdx = (Dgate(x + delta, y).U(cutoffs) - Dgate(x - delta, y).U(cutoffs)) / (2 * delta)
-    dUdy = (Dgate(x, y + delta).U(cutoffs) - Dgate(x, y - delta).U(cutoffs)) / (2 * delta)
-    _, (gradx, grady) = math.value_and_gradients(
-        lambda: fock.displacement(x, y, cutoffs=cutoffs), [x, y]
-    )
-    assert np.allclose(gradx, 2 * np.real(np.sum(dUdx)))
-    assert np.allclose(grady, 2 * np.real(np.sum(dUdy)))
+    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (2 * delta)
+    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (2 * delta)
+
+    D = fock.displacement(x, y, shape=cutoffs)
+    dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(D), alpha)
+    assert np.allclose(dD_da + dD_dac, dUdx)
+    assert np.allclose(1j*(dD_da - dD_dac), dUdy)
 
 
 def test_fock_representation_displacement_rectangular():
