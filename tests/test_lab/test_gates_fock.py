@@ -179,15 +179,19 @@ def test_displacement_grad():
     cutoffs = [5, 5]
     x = math.new_variable(0.1, None, "x")
     y = math.new_variable(0.1, None, "y")
-    alpha = math.make_complex(x,y).numpy()
+    alpha = math.make_complex(x, y).numpy()
     delta = 1e-6
-    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (2 * delta)
-    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (2 * delta)
+    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
+        2 * delta
+    )
+    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (
+        2 * delta
+    )
 
     D = fock.displacement(x, y, shape=cutoffs)
     dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(D), alpha)
     assert np.allclose(dD_da + dD_dac, dUdx)
-    assert np.allclose(1j*(dD_da - dD_dac), dUdy)
+    assert np.allclose(1j * (dD_da - dD_dac), dUdy)
 
 
 def test_fock_representation_displacement_rectangular():
