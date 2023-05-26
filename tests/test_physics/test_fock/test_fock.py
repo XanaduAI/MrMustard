@@ -334,8 +334,7 @@ def test_apply_choi_to_dm_2mode():
 
 
 class TestDisplacement:
-    def test_grad_displacement(self):
-        """Tests the value of the analytic gradient for the Dgate against finite differences"""
+x        """Tests the value of the analytic gradient for the Dgate against finite differences"""
         cutoff = 4
         r = 1.0
         theta = np.pi / 8
