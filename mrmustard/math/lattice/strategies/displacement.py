@@ -122,50 +122,51 @@ def laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
     return L
 
 
-# @jit(nopython=True)
-# def grad_displacement(T, r, phi):  # pragma: no cover
-#     r"""Calculates the gradient of the displacement gate with respect to the magnitude and angle of the displacement.
+@jit(nopython=True)
+def grad_displacement(T, r, phi):  # pragma: no cover
+    r"""Calculates the gradient of the displacement gate with respect to the magnitude and angle of the displacement.
 
-#     Args:
-#         T (array[complex]): array representing the gate
-#         r (float): displacement magnitude
-#         phi (float): displacement angle
+    Args:
+        T (array[complex]): array representing the gate
+        r (float): displacement magnitude
+        phi (float): displacement angle
 
-#     Returns:
-#         tuple[array[complex], array[complex]]: The gradient of the displacement gate with respect to r and phi
-#     """
-#     cutoff = T.shape[0]
-#     dtype = T.dtype
-#     ei = np.exp(1j * phi)
-#     eic = np.exp(-1j * phi)
-#     alpha = r * ei
-#     alphac = r * eic
-#     sqrt = np.sqrt(np.arange(cutoff, dtype=dtype))
-#     grad_r = np.zeros((cutoff, cutoff), dtype=dtype)
-#     grad_phi = np.zeros((cutoff, cutoff), dtype=dtype)
+    Returns:
+        tuple[array[complex], array[complex]]: The gradient of the displacement gate with respect to r and phi
+    """
+    cutoff = T.shape[0]
+    dtype = T.dtype
+    ei = np.exp(1j * phi)
+    eic = np.exp(-1j * phi)
+    alpha = r * ei
+    alphac = r * eic
+    sqrt = np.sqrt(np.arange(cutoff, dtype=dtype))
+    grad_r = np.zeros((cutoff, cutoff), dtype=dtype)
+    grad_phi = np.zeros((cutoff, cutoff), dtype=dtype)
 
-#     for m in range(cutoff):
-#         for n in range(cutoff):
-#             grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
-#             grad_phi[m, n] = (
-#                 sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
-#             )
+    for m in range(cutoff):
+        for n in range(cutoff):
+            grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
+            grad_phi[m, n] = (
+                sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
+            )
 
-#     return grad_r, grad_phi
+    return grad_r, grad_phi
 
 
 @jit(nopython=True)
 def jacobian_displacement(D, alpha):  # pragma: no cover
-    r"""Calculates the jacobian of the displacement gate with respect to the complex displacement.
-    The jacobian in this case has the same shape as the array D, as the displacement is a scalar.
-    Note that for backprop purposes we return the jacobian with respect to the conjugate of alpha.
+    r"""Calculates the jacobian of the displacement gate with respect to the complex displacement
+    alpha and its conjugate. Both are needed for backprop, as the displacement gate is not a
+    holomorphic function, as the Fock amplitudes depend on both alpha and on its conjugate.
+    Each jacobian in this case has the same shape as the array D, as the displacement is a scalar.
 
     Args:
-        D (array[complex]): the D gate in fock representation. Batch dimensions are allowed.
-        alpha (complex): complex displacement
+        D (array[complex]): the D(alpha) gate in Fock representation. Batch dimensions are allowed.
+        alpha (complex): parameter of D(alpha)
 
     Returns:
-        array[complex]: The jacbian of the displacement gate with respect to alpha
+        2 array[complex]: The jacobian of the displacement gate with respect to alpha and alphaconj
     """
     shape = D.shape[-2:]
     alphac = np.conj(alpha)
@@ -174,6 +175,6 @@ def jacobian_displacement(D, alpha):  # pragma: no cover
     jac_alphac = np.zeros(D.shape, dtype=D.dtype)  # i.e. dD_dalphac for all m,n
     for m in range(shape[0]):
         for n in range(shape[1]):
-        jac_alpha[m,n] = -alphac * D[m,n] + sqrt[m] * D[m - 1,n]
-        jac_alphac[m,n] = -alpha * D[:, n] - sqrt[n] * D[:, n - 1]
+            jac_alpha[m, n] = -0.5 * alphac * D[m, n] + sqrt[m] * D[m - 1, n]
+            jac_alphac[m, n] = -0.5 * alpha * D[m, n] - sqrt[n] * D[m, n - 1]
     return jac_alpha, jac_alphac

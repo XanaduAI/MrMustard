@@ -349,7 +349,7 @@ class TestDisplacement:
         Dthetap = displacement((cutoff, cutoff), r, theta + dtheta)
         Dthetam = displacement((cutoff, cutoff), r, theta - dtheta)
         Drapprox = (Drp - Drm) / (2 * dr)
-        Dthetaapprox = (Dthetap - Dthetam) / (2 * dtheta)
+        Dthetaapprox = (Dthetap - Dthetam) / (2 * dtheta) * r
         assert np.allclose(Dr, Drapprox, atol=1e-5, rtol=0)
         assert np.allclose(Dtheta, Dthetaapprox, atol=1e-5, rtol=0)
 
