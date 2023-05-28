@@ -249,7 +249,6 @@ class Rgate(Parametrized, Transformation):
 
         Args:
             cutoffs (Sequence[int]): cutoff dimension for each mode
-                in the order (out_1, out_2,..., in_1, in_2,...)
             diag_only (bool): if True, only return the diagonal of the unitary matrix.
 
         Returns:
