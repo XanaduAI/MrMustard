@@ -35,15 +35,7 @@ from mrmustard.lab import (
     Vacuum,
 )
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
-from mrmustard.physics.fock import (
-    apply_choi_to_dm,
-    apply_choi_to_ket,
-    apply_kraus_to_dm,
-    apply_kraus_to_ket,
-    dm_to_ket,
-    ket_to_dm,
-    trace,
-)
+from mrmustard.physics import fock
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
@@ -179,23 +171,23 @@ def test_density_matrix(num_modes):
 def test_dm_to_ket(state):
     """Tests pure state density matrix conversion to ket"""
     dm = state.dm()
-    ket = dm_to_ket(dm)
+    ket = fock.dm_to_ket(dm)
     # check if ket is normalized
     assert np.allclose(np.linalg.norm(ket), 1, atol=1e-4)
     # check kets are equivalent
     assert np.allclose(ket, state.ket(), atol=1e-4)
 
-    dm_reconstructed = ket_to_dm(ket)
+    dm_reconstructed = fock.ket_to_dm(ket)
     # check ket leads to same dm
     assert np.allclose(dm, dm_reconstructed, atol=1e-15)
 
 
 def test_dm_to_ket_error():
-    """Test dm_to_ket raises an error when state is mixed"""
+    """Test fock.dm_to_ket raises an error when state is mixed"""
     state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
 
     with pytest.raises(ValueError):
-        dm_to_ket(state)
+        fock.dm_to_ket(state)
 
 
 def test_fock_trace_mode1_dm():
@@ -234,14 +226,14 @@ def test_fock_trace_function():
     """tests that the Fock state is correctly traced"""
     state = Vacuum(2) >> Ggate(2) >> Attenuator([0.1, 0.1])
     dm = state.dm([3, 20])
-    dm_traced = trace(dm, keep=[0])
+    dm_traced = fock.trace(dm, keep=[0])
     assert np.allclose(dm_traced, State(dm=dm).get_modes(0).dm(), atol=1e-5)
 
 
 def test_dm_choi():
     """tests that choi op is correctly applied to a dm"""
     circ = Ggate(1) >> Attenuator([0.1])
-    dm_out = apply_choi_to_dm(circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10]), [0], [0])
+    dm_out = fock.apply_choi_to_dm(circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10]), [0], [0])
     dm_expected = (Vacuum(1) >> circ).dm([10])
     assert np.allclose(dm_out, dm_expected, atol=1e-5)
 
@@ -256,7 +248,7 @@ def test_apply_kraus_to_ket_1mode():
     """Test that Kraus operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(2, 3, 4))
     kraus = np.random.normal(size=(5, 3))
-    ket_out = apply_kraus_to_ket(kraus, ket, [1], [1])
+    ket_out = fock.apply_kraus_to_ket(kraus, ket, [1], [1])
     assert ket_out.shape == (2, 5, 4)
 
 
@@ -264,7 +256,7 @@ def test_apply_kraus_to_ket_2mode():
     """Test that Kraus operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(2, 3, 4))
     kraus = np.random.normal(size=(5, 3, 4))
-    ket_out = apply_kraus_to_ket(kraus, ket, [1, 2], [1])
+    ket_out = fock.apply_kraus_to_ket(kraus, ket, [1, 2], [1])
     assert ket_out.shape == (2, 5)
 
 
@@ -272,7 +264,7 @@ def test_apply_kraus_to_ket_2mode_2():
     """Test that Kraus operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(2, 3))
     kraus = np.random.normal(size=(5, 4, 3))
-    ket_out = apply_kraus_to_ket(kraus, ket, [1], [1, 2])
+    ket_out = fock.apply_kraus_to_ket(kraus, ket, [1], [1, 2])
     assert ket_out.shape == (2, 5, 4)
 
 
@@ -280,7 +272,7 @@ def test_apply_kraus_to_dm_1mode():
     """Test that Kraus operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(2, 3, 2, 3))
     kraus = np.random.normal(size=(5, 3))
-    dm_out = apply_kraus_to_dm(kraus, dm, [1], [1])
+    dm_out = fock.apply_kraus_to_dm(kraus, dm, [1], [1])
     assert dm_out.shape == (2, 5, 2, 5)
 
 
@@ -288,7 +280,7 @@ def test_apply_kraus_to_dm_2mode():
     """Test that Kraus operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(2, 3, 4, 2, 3, 4))
     kraus = np.random.normal(size=(5, 3, 4))
-    dm_out = apply_kraus_to_dm(kraus, dm, [1, 2], [1])
+    dm_out = fock.apply_kraus_to_dm(kraus, dm, [1, 2], [1])
     assert dm_out.shape == (2, 5, 2, 5)
 
 
@@ -296,7 +288,7 @@ def test_apply_kraus_to_dm_2mode_2():
     """Test that Kraus operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(2, 3, 4, 2, 3, 4))
     kraus = np.random.normal(size=(5, 6, 3))
-    dm_out = apply_kraus_to_dm(kraus, dm, [1], [3, 1])
+    dm_out = fock.apply_kraus_to_dm(kraus, dm, [1], [3, 1])
     assert dm_out.shape == (2, 6, 4, 5, 2, 6, 4, 5)
 
 
@@ -304,7 +296,7 @@ def test_apply_choi_to_ket_1mode():
     """Test that choi operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(3, 5))
     choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
-    ket_out = apply_choi_to_ket(choi, ket, [0], [0])
+    ket_out = fock.apply_choi_to_ket(choi, ket, [0], [0])
     assert ket_out.shape == (4, 5, 4, 5)
 
 
@@ -312,7 +304,7 @@ def test_apply_choi_to_ket_2mode():
     """Test that choi operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(3, 5))
     choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l, in_l, out_r, in_r]
-    ket_out = apply_choi_to_ket(choi, ket, [0, 1], [0])
+    ket_out = fock.apply_choi_to_ket(choi, ket, [0, 1], [0])
     assert ket_out.shape == (2, 2)
 
 
@@ -320,7 +312,7 @@ def test_apply_choi_to_dm_1mode():
     """Test that choi operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(3, 5, 3, 5))
     choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
-    dm_out = apply_choi_to_dm(choi, dm, [0], [0])
+    dm_out = fock.apply_choi_to_dm(choi, dm, [0], [0])
     assert dm_out.shape == (4, 5, 4, 5)
 
 
@@ -328,7 +320,7 @@ def test_apply_choi_to_dm_2mode():
     """Test that choi operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(4, 5, 4, 5))
     choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l_1,2, in_l_1, out_r_1,2, in_r_1]
-    dm_out = apply_choi_to_dm(choi, dm, [1], [1, 2])
+    dm_out = fock.apply_choi_to_dm(choi, dm, [1], [1, 2])
     assert dm_out.shape == (4, 2, 3, 4, 2, 3)
 
 
@@ -399,3 +391,20 @@ def test_displacement_values():
     )
     D = displacement((cutoff, cutoff), alpha)
     assert np.allclose(D, expected, atol=1e-5, rtol=0)
+
+
+@given(x=st.floats(-1, 1), y=st.floats(-1, 1))
+def test_number_means(x, y):
+    assert np.allclose(State(ket=Coherent(x, y).ket([80])).number_means, x * x + y * y)
+    assert np.allclose(State(dm=Coherent(x, y).dm([80])).number_means, x * x + y * y)
+
+
+@given(x=st.floats(-1, 1), y=st.floats(-1, 1))
+def test_number_variances_coh(x, y):
+    assert np.allclose(fock.number_variances(Coherent(x, y).ket([80]), False)[0], x * x + y * y)
+    assert np.allclose(fock.number_variances(Coherent(x, y).dm([80]), True)[0], x * x + y * y)
+
+
+def test_number_variances_fock():
+    assert np.allclose(fock.number_variances(Fock(n=1).ket(), False), 0)
+    assert np.allclose(fock.number_variances(Fock(n=1).dm(), True), 0)
