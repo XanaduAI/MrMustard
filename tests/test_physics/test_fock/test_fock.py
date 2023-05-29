@@ -248,9 +248,8 @@ def test_dm_choi():
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
-    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))
-    assert np.allclose(s.dm([10])[:10, :10], SqueezedVacuum(1.0, np.pi / 2).dm([10]))
-    # NOTE: the [:10,:10] part is not necessary once PR #184 is merged
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))  # apply identity gate
+    assert np.allclose(s.dm([10]), SqueezedVacuum(1.0, np.pi / 2).dm([10]))
 
 
 def test_apply_kraus_to_ket_1mode():
