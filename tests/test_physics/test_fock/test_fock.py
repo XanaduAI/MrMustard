@@ -408,3 +408,8 @@ def test_number_variances_coh(x, y):
 def test_number_variances_fock():
     assert np.allclose(fock.number_variances(Fock(n=1).ket(), False), 0)
     assert np.allclose(fock.number_variances(Fock(n=1).dm(), True), 0)
+
+
+def test_normalize_dm():
+    dm = np.array([[0.2, 0], [0, 0.2]])
+    assert np.allclose(fock.normalize(dm, True), np.array([[0.5, 0], [0, 0.5]]))
