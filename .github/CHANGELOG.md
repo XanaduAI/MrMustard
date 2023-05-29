@@ -86,6 +86,9 @@
 * Fixed a bug that would make two progress bars appear during an optimization
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
+* The displacement of the dual of an operation had the wrong sign
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
 ### Documentation
 
 ### Contributors
