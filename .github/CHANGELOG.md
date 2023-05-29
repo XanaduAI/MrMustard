@@ -78,6 +78,9 @@
 * Faster implementation of the fock representation of `BSgate`, `Sgate` and `SqueezedVacuum`, ranging from 5x to 50x.
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
+* More robust implementation of cutoffs for States.
+[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
 ### Bug fixes
 
 * Fixed a bug that would make two progress bars appear during an optimization
