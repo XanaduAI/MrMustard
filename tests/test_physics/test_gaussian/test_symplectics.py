@@ -17,7 +17,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
-from mrmustard.lab.gates import (
+from mrmustard.lab import (
     Amplifier,
     Attenuator,
     BSgate,
