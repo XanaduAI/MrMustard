@@ -197,8 +197,8 @@ class Transformation:
         if (d := self.d_vector) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
-            return d
-        return math.matmul(Xdual, d)
+            return -d
+        return -math.matmul(Xdual, d)  # TODO: need minus sign?
 
     def XYd(
         self, allow_none: bool = True
@@ -309,7 +309,9 @@ class Transformation:
             return self.dual(other)
         if isinstance(other, Transformation):
             return self >> other  # so that the dual is self.dual(other.dual(x))
-        raise ValueError(f"{other} is not a valid state or transformation.")
+        raise ValueError(
+            f"{other} of type {other.__class__} is not a valid state or transformation."
+        )
 
     # pylint: disable=too-many-branches,too-many-return-statements
     def __eq__(self, other):
