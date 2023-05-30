@@ -20,9 +20,11 @@ from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
+__all__ = ["vanilla", "vanilla_jacobian", "vanilla_vjp"]
+
 
 @njit
-def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
+def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
     in ndindex order.
 
@@ -52,7 +54,9 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:
 
 
 @njit
-def vanilla_jacobian(G, A, b, c) -> tuple[ComplexTensor, ComplexTensor, ComplexTensor]:
+def vanilla_jacobian(
+    G, A, b, c
+) -> tuple[ComplexTensor, ComplexTensor, ComplexTensor]:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy gradient. Returns dG/dA, dG/db, dG/dc.
     Notice that G is a holomorphic function of A, b, c. This means that there is only
     one gradient to care about for each parameter (i.e. not dG/dA.conj() etc).
@@ -77,7 +81,7 @@ def vanilla_jacobian(G, A, b, c) -> tuple[ComplexTensor, ComplexTensor, ComplexT
 
 
 @njit
-def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:
+def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
 
     Args:

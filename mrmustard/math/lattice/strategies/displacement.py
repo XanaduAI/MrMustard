@@ -17,6 +17,8 @@
 import numpy as np
 from numba import jit
 
+__all__ = ["displacement", "laguerre", "grad_displacement", "jacobian_displacement"]
+
 
 @jit(nopython=True)
 def displacement(cutoffs, alpha, dtype=np.complex128):  # pragma: no cover

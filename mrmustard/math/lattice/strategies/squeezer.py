@@ -22,9 +22,13 @@ from mrmustard.typing import ComplexTensor
 
 SQRT = np.sqrt(np.arange(100000))
 
+__all__ = ["squeezer", "squeezer_vjp", "squeezed", "squeezed_vjp"]
+
 
 @njit
-def squeezer(cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128):
+def squeezer(
+    cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128
+):  # pragma: no cover
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
 
     Args:
@@ -64,7 +68,7 @@ def squeezer_vjp(
     dLdG: ComplexTensor,
     r: float,
     phi: float,
-) -> tuple[float, float]:
+) -> tuple[float, float]:  # pragma: no cover
     r"""Squeezing gradients with respect to r and theta.
     This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
     but it is more efficient to include this chain rule step in the numba function, since we can.
@@ -117,7 +121,7 @@ def squeezer_vjp(
 
 
 @njit
-def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):
+def squeezed(cutoff: int, r: float, theta: float, dtype=np.complex128):  # pragma: no cover
     r"""Calculates the matrix elements of the single-mode squeezed state using recurrence relations.
 
     Args:
@@ -145,7 +149,7 @@ def squeezed_vjp(
     dLdG: ComplexTensor,
     r: float,
     phi: float,
-) -> tuple[float, float]:
+) -> tuple[float, float]:  # pragma: no cover
     r"""Squeezed state gradients with respect to r and theta.
     This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
     but it is more efficient to include this chain rule step in the numba function, since we can.

@@ -24,6 +24,8 @@ from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
+__all__ = ["binomial", "binomial_dict", "binomial_numba"]
+
 
 def binomial(
     local_cutoffs: tuple[int, ...],
@@ -132,7 +134,7 @@ def binomial_numba(
     FP: dict[tuple[tuple[int, ...], int], list[tuple[int, ...]]],
     max_prob: float = 0.999,
     global_cutoff: Optional[int] = None,
-) -> ComplexTensor:
+) -> ComplexTensor:  # pragma: no cover
     r"""Binomial strategy (fill by weight), fully numba version."""
     if global_cutoff is None:
         global_cutoff = sum(local_cutoffs) - len(local_cutoffs)

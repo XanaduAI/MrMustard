@@ -30,11 +30,12 @@ from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
+__all__ = ["beamsplitter", "beamsplitter_vjp"]
 
 @njit
 def beamsplitter(
     shape: tuple[int, int, int, int], theta: float, phi: float, dtype=np.complex128
-) -> ComplexTensor:
+) -> ComplexTensor:  # pragma: no cover
     r"""Calculates the Fock representation of the beamsplitter.
     It takes advantage of input-output particle conservation (m+n=p+q)
     to avoid one for loop. Inspired from the original implementation in
@@ -91,7 +92,7 @@ def beamsplitter_vjp(
     dLdG: ComplexTensor,
     theta: float,
     phi: float,
-) -> tuple[ComplexMatrix, ComplexVector, complex]:
+) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
     r"""Beamsplitter gradients with respect to theta and phi.
     This function could return dL/dA, dL/db, dL/dc like its vanilla counterpart,
     but it is more efficient to include this chain rule step in the numba function,
