@@ -486,22 +486,29 @@ class Fock(Parametrized, State):
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).
 
-        E.g. ``ket << Fock(1, modes=[3])`` is equivalent to ``ket[:,:,:,1]`` if ``ket`` has 4 modes
-        E.g. ``dm << Fock(1, modes=[1])`` is equivalent to ``dm[:,1,:,1]`` if ``dm`` has 2 modes
+        E.g. ``ket << Fock([1], modes=[3])`` is equivalent to ``ket[:,:,:,1]`` if ``ket`` has 4 modes
+        E.g. ``dm << Fock([1], modes=[1])`` is equivalent to ``dm[:,1,:,1]`` if ``dm`` has 2 modes
 
         Args:
             other: the state to project onto this state
             mode_indices: the indices of the modes of other that we want to project onto self
         """
         getitem = []
+        cutoffs = []
         used = 0
         for i, _ in enumerate(other.modes):
             if i in mode_indices:
                 getitem.append(self._n[used])
+                cutoffs.append(self._n[used] + 1)
                 used += 1
             else:
                 getitem.append(slice(None))
-        output = other.fock[tuple(getitem)] if other.is_pure else other.fock[tuple(getitem) * 2]
+                cutoffs.append(other.cutoffs[i])
+        output = (
+            other.ket(cutoffs)[tuple(getitem)]
+            if other.is_pure
+            else other.dm(cutoffs)[tuple(getitem) * 2]
+        )
         if self._normalize:
             return fock.normalize(output, is_dm=other.is_mixed)
         return output

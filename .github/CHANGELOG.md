@@ -79,6 +79,9 @@
 
 ### Bug fixes
 
+* When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
+  [(#240)](https://github.com/XanaduAI/MrMustard/pull/240)
+
 ### Documentation
 
 ### Contributors
