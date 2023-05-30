@@ -23,6 +23,8 @@ from mrmustard import settings
 from mrmustard.math import Math
 
 try:
+    import torch
+
     torch_available = True
 except ImportError:
     torch_available = False
