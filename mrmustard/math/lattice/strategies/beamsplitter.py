@@ -32,6 +32,7 @@ SQRT = np.sqrt(np.arange(100000))
 
 __all__ = ["beamsplitter", "beamsplitter_vjp"]
 
+
 @njit
 def beamsplitter(
     shape: tuple[int, int, int, int], theta: float, phi: float, dtype=np.complex128
