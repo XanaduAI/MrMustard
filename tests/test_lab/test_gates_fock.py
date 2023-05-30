@@ -216,6 +216,7 @@ def test_choi_cutoffs():
 
 
 def test_measure_with_fock():
+    "tests that the autocutoff respects the fock projection cutoff"
     cov = np.array(
         [
             [1.08341848, 0.26536937, 0.0, 0.0],
