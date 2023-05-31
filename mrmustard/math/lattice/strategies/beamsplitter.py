@@ -43,7 +43,7 @@ def beamsplitter(
     the walrus by @ziofil. Here is how the parameters are used in the
     code (see eq. 73-75 in https://arxiv.org/abs/2004.11002):
 
-    X = [[0,V],[v^T,0]]   # BS symplectic matrix
+    A = [[0,V],[v^T,0]]   # BS bargmann matrix
     V = [[ct, -st expm],  # BS unitary
          [st exp, ct]]
 
