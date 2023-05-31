@@ -46,7 +46,7 @@ class Settings:
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         self.CIRCUIT_DECIMALS = 3
         # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
-        self.EQ_TRANSFORMATION_CUTOFF = 5
+        self.EQ_TRANSFORMATION_CUTOFF = 3  # 3 is enough to include a full step of the rec relations
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
         # for the detectors
