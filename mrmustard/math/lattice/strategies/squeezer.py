@@ -30,7 +30,7 @@ def squeezer(
     cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128
 ):  # pragma: no cover
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
-
+(See eq. 50-52 in https://arxiv.org/abs/2004.11002)
     Args:
         cutoffs (tuple[int, int]): Fock cutoffs for the output and input modes.
         r (float): squeezing magnitude
