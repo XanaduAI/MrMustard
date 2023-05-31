@@ -31,7 +31,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import DisplacedSqueezed, SqueezedVacuum, Vacuum
+from mrmustard.lab.states import DisplacedSqueezed, Gaussian, SqueezedVacuum, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -44,7 +44,7 @@ math = Math()
 @given(n=st.integers(0, 3))
 def test_S2gate_coincidence_prob(n):
     """Testing the optimal probability of obtaining |n,n> from a two mode squeezed vacuum"""
-    settings.SEED = 42
+    settings.SEED = 40
     S = S2gate(
         r=abs(settings.rng.normal(loc=1.0, scale=0.1)),
         r_trainable=True,
@@ -67,7 +67,7 @@ def test_S2gate_coincidence_prob(n):
     assert np.allclose(-cost_fn(), expected, atol=1e-5)
 
     cb_result = opt.callback_history.get("cb")
-    assert {res["num_trainables"] for res in cb_result} == {2}
+    assert {res["num_trainables"] for res in cb_result} == {1}
     assert {res["lr"] for res in cb_result} == {0.01}
     assert [res["cost"] for res in cb_result] == opt.opt_history[1:]
 
@@ -115,8 +115,8 @@ def test_learning_two_mode_squeezing():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=abs(settings.rng.normal(size=(2))),
-            phi=settings.rng.normal(size=(2)),
+            r=abs(settings.rng.normal(size=2)),
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -146,7 +146,7 @@ def test_learning_two_mode_Ggate():
     G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
-        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2])
+        amps = (Vacuum(2) >> G).ket(cutoffs=[2, 2], max_prob=0.9999)
         return -math.abs(amps[1, 1]) ** 2 + math.abs(amps[0, 1]) ** 2
 
     opt = Optimizer(symplectic_lr=0.5, euclidean_lr=0.01)
@@ -160,8 +160,8 @@ def test_learning_two_mode_Interferometer():
     settings.SEED = 42
     ops = [
         Sgate(
-            r=settings.rng.normal(size=(2)) ** 2,
-            phi=settings.rng.normal(size=(2)),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -185,8 +185,8 @@ def test_learning_two_mode_RealInterferometer():
     settings.SEED = 2
     ops = [
         Sgate(
-            r=settings.rng.normal(size=(2)) ** 2,
-            phi=settings.rng.normal(size=(2)),
+            r=settings.rng.normal(size=2) ** 2,
+            phi=settings.rng.normal(size=2),
             r_trainable=True,
             phi_trainable=True,
         ),
@@ -243,7 +243,7 @@ def test_learning_four_mode_Interferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    X = math.cast(perturbed.XYd[0], "complex128")
+    X = math.cast(perturbed.XYd()[0], "complex128")
     perturbed_U = X[:4, :4] + 1j * X[4:, :4]
 
     ops = [
@@ -283,7 +283,7 @@ def test_learning_four_mode_RealInterferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    perturbed_O = pertubed.XYd[0][:4, :4]
+    perturbed_O = pertubed.XYd()[0][:4, :4]
 
     ops = [
         Sgate(
@@ -406,12 +406,54 @@ def test_dgate_optimization():
     settings.SEED = 24
 
     dgate = Dgate(x_trainable=True, y_trainable=True)
-    target_state = DisplacedSqueezed(r=0.0, x=1.0, y=1.0)
+    target_state = DisplacedSqueezed(r=0.0, x=0.1, y=0.2).ket(cutoffs=[40])
 
     def cost_fn():
         state_out = Vacuum(1) >> dgate
-
-        return 1 - fidelity(state_out, target_state)
+        return -math.abs(math.sum(math.conj(state_out.ket([40])) * target_state)) ** 2
 
     opt = Optimizer()
     opt.minimize(cost_fn, by_optimizing=[dgate])
+
+    assert np.allclose(dgate.x.value, 0.1, atol=0.01)
+    assert np.allclose(dgate.y.value, 0.2, atol=0.01)
+
+
+def test_sgate_optimization():
+    """Test that Sgate is optimized correctly."""
+    settings.SEED = 25
+
+    sgate = Sgate(r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
+    target_state = SqueezedVacuum(r=0.1, phi=0.2).ket(cutoffs=[40])
+
+    def cost_fn():
+        state_out = Vacuum(1) >> sgate
+
+        return -math.abs(math.sum(math.conj(state_out.ket([40])) * target_state)) ** 2
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[sgate])
+
+    assert np.allclose(sgate.r.value, 0.1, atol=0.01)
+    assert np.allclose(sgate.phi.value, 0.2, atol=0.01)
+
+
+def test_bsgate_optimization():
+    """Test that Sgate is optimized correctly."""
+    settings.SEED = 25
+
+    G = Gaussian(2)
+
+    bsgate = BSgate(0.05, 0.1, theta_trainable=True, phi_trainable=True)
+    target_state = (G >> BSgate(0.1, 0.2)).ket(cutoffs=[40, 40])
+
+    def cost_fn():
+        state_out = G >> bsgate
+
+        return -math.abs(math.sum(math.conj(state_out.ket([40, 40])) * target_state)) ** 2
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[bsgate])
+
+    assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
+    assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)

@@ -35,10 +35,75 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
+* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
+  Use them to speed-up the filling of a ket array up to a certain probability or *total* photon number.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+  ```python
+  from mrmustard.lab import Gaussian
+
+  # Fills the ket array up to 99% probability or up to the |0,3>, |1,2>, |2,1>, |3,0> subspace, whichever is reached first.
+  # The array has the autocutoff shape, unless the cutoffs are specified explicitly.
+  ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
+  ```
+
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
   multiple callbacks to it.
+  [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
+
+* The `opt_history` attribute of `Optimizer` does not have the placeholder at the beginning anymore.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+### Improvements
+
+* The math module now has a submodule `lattice` for constructing recurrence relation strategies in the Fock lattice.
+  There are a few predefined strategies in `mrmustard.math.lattice.strategies`.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* Gradients in the Fock lattice are now computed using the vector-jacobian product.
+  This saves a lot of memory and speeds up the optimization process by roughly 4x.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* Tests of the compact_fock module now use hypothesis.
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* Faster implementation of the fock representation of `BSgate`, `Sgate` and `SqueezedVacuum`, ranging from 5x to 50x.
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
+* More robust implementation of cutoffs for States.
+[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
+### Bug fixes
+
+* Fixed a bug that would make two progress bars appear during an optimization
+  [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
+
+* The displacement of the dual of an operation had the wrong sign
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
+* When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
+  [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
+
+---
+
+# Release 0.4.1
+
+### New features
+
+### Breaking changes
 
 ### Improvements
 
@@ -58,9 +123,6 @@
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Sebastian Duque Mesa](https://github.com/sduquemesa)
-
-This release contains contributions from (in alphabetical order):
-[Zeyue Niu](https://github.com/zeyueN)
 
 ---
 

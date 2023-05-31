@@ -31,12 +31,14 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.typing import (
-    RealMatrix,
-    RealVector,
-    RealTensor,
+    ComplexMatrix,
     ComplexTensor,
+    ComplexVector,
+    RealMatrix,
+    RealTensor,
+    RealVector,
 )
 from mrmustard.utils import graphics
 
@@ -47,7 +49,7 @@ math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
-class State:
+class State:  # pylint: disable=too-many-public-methods
     r"""Base class for quantum states."""
 
     def __init__(
@@ -92,12 +94,15 @@ class State:
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(eigenvalues, 2.0 / settings.HBAR)
             self.num_modes = symplectic.shape[-1] // 2
         elif ket is not None or dm is not None:
             self.is_gaussian = False
+            self.is_hilbert_vector = ket is not None
             self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
             self._purity = 1.0 if ket is not None else None
         else:
@@ -148,7 +153,7 @@ class State:
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
+        return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[RealVector]:
@@ -172,14 +177,22 @@ class State:
 
     @property
     def cutoffs(self) -> List[int]:
-        r"""Returns the cutoff dimensions for each mode."""
-        if self._cutoffs is not None:
-            return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
-        if self._ket is None and self._dm is None:
-            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
-        return list(
-            self.fock.shape[: self.num_modes]
-        )  # NOTE: triggered only if the fock representation already exists
+        r"""Returns the Hilbert space dimension of each mode."""
+        if self._cutoffs is None:
+            if self._ket is None and self._dm is None:
+                self._cutoffs = fock.autocutoffs(
+                    self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
+                )
+            else:
+                self._cutoffs = [
+                    int(c)
+                    for c in (
+                        self._ket.shape
+                        if self._ket is not None
+                        else self._dm.shape[: self.num_modes]
+                    )
+                ]
+        return self._cutoffs
 
     @property
     def shape(self) -> List[int]:
@@ -189,14 +202,14 @@ class State:
         the first two moments of the number operator.
         """
         # NOTE: if we initialize State(dm=pure_dm), self.fock returns the dm, which does not have shape self.cutoffs
-        return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
+        return self.cutoffs if self.is_hilbert_vector else self.cutoffs + self.cutoffs
 
     @property
     def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
+                self.cov, self.means, shape=self.shape, return_dm=not self.is_hilbert_vector
             )
             if self.is_mixed:
                 self._dm = _fock
@@ -227,7 +240,7 @@ class State:
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        return fock.norm(self.fock, self._dm is not None)
+        return fock.norm(self.fock, not self.is_hilbert_vector)
 
     @property
     def probability(self) -> float:
@@ -237,12 +250,21 @@ class State:
             return norm**2
         return norm
 
-    def ket(self, cutoffs: List[int] = None) -> Optional[ComplexTensor]:
+    def ket(
+        self,
+        cutoffs: List[int] = None,
+        max_prob: float = 1.0,
+        max_photons: int = None,
+    ) -> Optional[ComplexTensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
         Args:
             cutoffs List[int or None]: The cutoff dimensions for each mode. If a mode cutoff is
                 ``None``, it's guessed automatically.
+            max_prob (float): The maximum probability of the state. Defaults to 1.0.
+                (used to stop the calculation of the amplitudes early)
+            max_photons (int): The maximum number of photons in the state, summing over all modes
+                (used to stop the calculation of the amplitudes early)
 
         Returns:
             Tensor: the ket
@@ -255,16 +277,22 @@ class State:
         else:
             cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
 
+        # TODO: shouldn't we check if trainable instead? that's when we want to recompute fock
         if self.is_gaussian:
             self._ket = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=cutoffs, return_dm=False
+                self.cov,
+                self.means,
+                shape=cutoffs,
+                return_dm=False,
+                max_prob=max_prob,
+                max_photons=max_photons,
             )
         else:  # only fock representation is available
             if self._ket is None:
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
                     self._ket = fock.dm_to_ket(self._dm)
-            current_cutoffs = list(self._ket.shape[: self.num_modes])
+            current_cutoffs = [int(s) for s in self._ket.shape]
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
@@ -295,7 +323,7 @@ class State:
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs * 2, return_dm=True
+                    self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
@@ -498,6 +526,17 @@ class State:
         self._modes = item
         return self
 
+    def bargmann(self) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+        r"""Returns the Bargmann representation of the state."""
+        if self.is_gaussian:
+            if self.is_pure:
+                A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
+            else:
+                A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
+        else:
+            return None
+        return A, B, C
+
     def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""
         if isinstance(item, int):
@@ -524,7 +563,7 @@ class State:
         return State(dm=fock_partitioned, modes=item)
 
     # TODO: refactor
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
         if self.num_modes != other.num_modes:
             return False
@@ -576,7 +615,9 @@ class State:
             warnings.warn(
                 "scalar multiplication forces conversion to fock representation", UserWarning
             )
-            return self.fock  # trigger creation of fock representation
+            if self.is_pure:
+                return State(ket=self.ket() * other)
+            return State(dm=self.dm() * other)
         if self._dm is not None:
             return State(dm=self.dm() * other, modes=self.modes)
         if self._ket is not None:
@@ -590,8 +631,9 @@ class State:
         """
         if self.is_gaussian:
             warnings.warn("scalar division forces conversion to fock representation", UserWarning)
-            return self.fock
-
+            if self.is_pure:
+                return State(ket=self.ket() / other)
+            return State(dm=self.dm() / other)
         if self._dm is not None:
             return State(dm=self.dm() / other, modes=self.modes)
         if self._ket is not None:
