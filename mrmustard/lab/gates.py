@@ -18,13 +18,14 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Union, Optional, List, Tuple, Sequence
-from mrmustard.typing import RealMatrix, ComplexMatrix
+from typing import List, Optional, Sequence, Tuple, Union
+
 from mrmustard import settings
 from mrmustard.lab.abstract import Transformation
 from mrmustard.math import Math
-from mrmustard.physics import gaussian, fock
+from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
+from mrmustard.typing import ComplexMatrix, RealMatrix
 
 math = Math()
 
@@ -94,28 +95,37 @@ class Dgate(Parametrized, Transformation):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
     def U(self, cutoffs: Sequence[int]):
-        """Returns the unitary representation of the Displacement gate using the Laguerre
-        polynomials."""
+        r"""Returns the unitary representation of the Displacement gate using
+        the Laguerre polynomials.
+
+        Arguments:
+            cutoffs (Sequence[int]): the Fock basis truncation for each index of U
+                in the order (out_1, out_2,..., in_1, in_2,...)
+
+        Returns:
+            array[complex]: the unitary matrix
+        """
 
         N = self.num_modes
         x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
         y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
-        r = math.sqrt(x * x + y * y)
-        phi = math.atan2(y, x)
 
-        # calculate displacement unitary for each mode and concatenate with outer product
-        Ud = None
-        for idx, cutoff in enumerate(cutoffs):
-            if Ud is None:
-                Ud = fock.displacement(r[idx], phi[idx], cutoff)
-            else:
-                U_next = fock.displacement(r[idx], phi[idx], cutoff)
-                Ud = math.outer(Ud, U_next)
+        if N > 1:
+            # calculate displacement unitary for each mode and concatenate with outer product
+            Ud = None
+            for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
+                if Ud is None:
+                    Ud = fock.displacement(x[idx], y[idx], out_in)
+                else:
+                    U_next = fock.displacement(x[idx], y[idx], out_in)
+                    Ud = math.outer(Ud, U_next)
 
-        return math.transpose(
-            Ud,
-            list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
-        )
+            return math.transpose(
+                Ud,
+                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+            )
+        else:
+            return fock.displacement(x[0], y[0], tuple(cutoffs))
 
 
 class Sgate(Parametrized, Transformation):
@@ -160,6 +170,37 @@ class Sgate(Parametrized, Transformation):
         self.is_gaussian = True
         self.short_name = "S"
 
+    def U(self, cutoffs: Sequence[int]):
+        r"""Returns the unitary representation of the Squeezing gate.
+        Args:
+            cutoffs (Sequence[int]): cutoff dimension for each mode
+                in the order (out_1, out_2,..., in_1, in_2,...)
+
+        Returns:
+            array[complex]: the unitary matrix
+
+        """
+        N = self.num_modes
+        # this works both or scalar r/phi and vector r/phi:
+        r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
+        phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
+
+        if N > 1:
+            # calculate squeezing unitary for each mode and concatenate with outer product
+            Us = None
+            for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
+                if Us is None:
+                    Us = fock.squeezer(r=r[idx], phi=phi[idx], cutoffs=out_in)
+                else:
+                    U_next = fock.squeezer(r=r[idx], phi=phi[idx], cutoffs=out_in)
+                    Us = math.outer(Us, U_next)
+            return math.transpose(
+                Us,
+                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+            )
+        else:
+            return fock.squeezer(r=r[0], phi=phi[0], cutoffs=tuple(cutoffs))
+
     @property
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
@@ -203,13 +244,24 @@ class Rgate(Parametrized, Transformation):
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle.value)
 
-    def U(self, cutoffs: Sequence[int]):
+    def U(self, cutoffs: Sequence[int], diag_only=False):
+        r"""Returns the unitary representation of the Rotation gate.
+
+        Args:
+            cutoffs (Sequence[int]): cutoff dimension for each mode
+            diag_only (bool): if True, only return the diagonal of the unitary matrix.
+
+        Returns:
+            array[complex]: the unitary matrix
+        """
+        if diag_only:
+            raise NotImplementedError("Rgate does not support diag_only=True yet")
+
         angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
-        num_modes = len(cutoffs)
 
         # calculate rotation unitary for each mode and concatenate with outer product
         Ur = None
-        for idx, cutoff in enumerate(cutoffs):
+        for idx, cutoff in enumerate(cutoffs[: self.num_modes]):
             theta = math.arange(cutoff) * angles[idx]
             if Ur is None:
                 Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
@@ -220,7 +272,7 @@ class Rgate(Parametrized, Transformation):
         # return total unitary with indexes reordered according to MM convention
         return math.transpose(
             Ur,
-            list(range(0, 2 * num_modes, 2)) + list(range(1, 2 * num_modes, 2)),
+            list(range(0, 2 * self.num_modes, 2)) + list(range(1, 2 * self.num_modes, 2)),
         )
 
 
@@ -368,6 +420,22 @@ class BSgate(Parametrized, Transformation):
         self._modes = modes
         self.is_gaussian = True
         self.short_name = "BS"
+
+    def U(self, cutoffs: Optional[List[int]]):
+        r"""Returns the symplectic transformation matrix for the beam splitter.
+
+        Args:
+            cutoffs (List[int]): the list of cutoff dimensions for each mode
+                in the order (out_0, out_1, in_0, in_1).
+
+        Returns:
+            array[complex]: the unitary tensor of the beamsplitter
+        """
+        return fock.beamsplitter(
+            self.theta.value,
+            self.phi.value,
+            tuple(cutoffs),
+        )
 
     @property
     def X_matrix(self):

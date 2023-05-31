@@ -16,9 +16,11 @@
 Unit tests for the :class:`Math`.
 """
 
+import numpy as np
 import pytest
-from mrmustard.math import Math
+
 from mrmustard import settings
+from mrmustard.math import Math
 
 try:
     import torch
@@ -50,7 +52,14 @@ def test_error_for_wrong_backend():
     backend = settings.BACKEND
     with pytest.raises(ValueError) as exception_info:
         settings.BACKEND = "unexisting_backend"
-        assert exception_info.value.args[0] == f"Backend must be either 'tensorflow' or 'torch'"
+        assert exception_info.value.args[0] == "Backend must be either 'tensorflow' or 'torch'"
 
     # set back to initial value to avoid side effects
     settings.BACKEND = backend
+
+
+def test_hash_tensor():
+    """Test hash of a tensor"""
+    math = Math()
+    tensor = math.astensor([1, 2, 3])
+    assert np.allclose(*[math.hash_tensor(tensor) for _ in range(3)])

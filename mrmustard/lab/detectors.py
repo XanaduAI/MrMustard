@@ -16,8 +16,7 @@
 This module implements the set of detector classes that perform measurements on quantum circuits.
 """
 
-from typing import List, Tuple, Union, Optional, Iterable
-
+from typing import Iterable, List, Optional, Tuple, Union
 
 from mrmustard import settings
 from mrmustard.math import Math

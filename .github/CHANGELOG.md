@@ -50,6 +50,9 @@
   ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
   ```
 
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
@@ -72,12 +75,22 @@
 * Tests of the compact_fock module now use hypothesis.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
+* Faster implementation of the fock representation of `BSgate`, `Sgate` and `SqueezedVacuum`, ranging from 5x to 50x.
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
+* More robust implementation of cutoffs for States.
+[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
 ### Bug fixes
 
 * Fixed a bug that would make two progress bars appear during an optimization
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
-### Bug fixes
+* The displacement of the dual of an operation had the wrong sign
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
+* When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
+  [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
 
 ### Documentation
 
