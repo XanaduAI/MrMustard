@@ -299,3 +299,21 @@ def test_raise_interferometer_error():
 def test_choi_cutoffs():
     output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
+
+
+def test_measure_with_fock():
+    "tests that the autocutoff respects the fock projection cutoff"
+    cov = np.array(
+        [
+            [1.08341848, 0.26536937, 0.0, 0.0],
+            [0.26536937, 1.05564949, 0.0, 0.0],
+            [0.0, 0.0, 0.98356475, -0.24724869],
+            [0.0, 0.0, -0.24724869, 1.00943755],
+        ]
+    )
+
+    state = State(means=np.zeros(4), cov=cov)
+
+    n_detect = 2
+    state_out = state << Fock([n_detect], modes=[1])
+    assert np.allclose(state_out.ket(), np.array([0.00757899, 0.0]))
