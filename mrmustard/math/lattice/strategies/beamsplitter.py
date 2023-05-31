@@ -41,7 +41,7 @@ def beamsplitter(
     It takes advantage of input-output particle conservation (m+n=p+q)
     to avoid one for loop. Inspired from the original implementation in
     the walrus by @ziofil. Here is how the parameters are used in the
-    code:
+    code (see eq. 73-75 in https://arxiv.org/abs/2004.11002):
 
     X = [[0,V],[v^T,0]]   # BS symplectic matrix
     V = [[ct, -st expm],  # BS unitary
