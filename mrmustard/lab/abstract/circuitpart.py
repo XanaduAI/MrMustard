@@ -17,65 +17,65 @@ from __future__ import annotations
 from abc import ABC
 from typing import Dict, Iterator, Optional
 
+from mrmustard import settings
 from mrmustard.utils.tagdispenser import TagDispenser
 
+# class Wire:
+#     r"""A tag of a CircuitPart. It corresponds to a tag going into or coming out of an
+#     object in the circuit picture. A tag corresponds to a single mode and it have one
+#     or two components (called L and R) depending on the nature of the gate/state that
+#     it's attached to. Wires are single when both ends are attached to pure states and/or to
+#     unitary transformations, and they are double otherwise.
 
-class Wire:
-    r"""A wire of a CircuitPart. It corresponds to a wire going into or coming out of an
-    object in the circuit picture. A wire corresponds to a single mode and it have one
-    or two components (called L and R) depending on the nature of the gate/state that
-    it's attached to. Wires are single when both ends are attached to pure states and/or to
-    unitary transformations, and they are double otherwise.
+#     Arguments:
+#         origin (Optional[CircuitPart]): the CircuitPart that the tag originates from
+#         end (Optional[CircuitPart]): the CircuitPart that the tag is connected to
+#         L (Optional[int]): the left tag of the tag (automatically generated if not specified)
+#         R (Optional[int]): the right tag of the tag
+#         cutoff (Optional[int]): the Fock cutoff of the tag (determined at runtime if not specified)
+#     """
 
-    Arguments:
-        origin (Optional[CircuitPart]): the CircuitPart that the wire originates from
-        end (Optional[CircuitPart]): the CircuitPart that the wire is connected to
-        L (Optional[int]): the left tag of the wire (automatically generated if not specified)
-        R (Optional[int]): the right tag of the wire
-        cutoff (Optional[int]): the Fock cutoff of the wire (determined at runtime if not specified)
-    """
+#     def __init__(
+#         self,
+#         origin: Optional[CircuitPart] = None,
+#         end: Optional[CircuitPart] = None,
+#         L: Optional[int] = None,
+#         R: Optional[int] = None,
+#         cutoff: Optional[int] = None,
+#     ):
+#         self.origin = origin
+#         self.end = end
+#         self.L = L or TagDispenser().get_tag()
+#         self.R = R
+#         self.cutoff = cutoff
 
-    def __init__(
-        self,
-        origin: Optional[CircuitPart] = None,
-        end: Optional[CircuitPart] = None,
-        L: Optional[int] = None,
-        R: Optional[int] = None,
-        cutoff: Optional[int] = None,
-    ):
-        self.origin = origin
-        self.end = end
-        self.L = L or TagDispenser().get_tag()
-        self.R = R
-        self.cutoff = cutoff
+#     @property
+#     def is_connected(self) -> bool:
+#         "checks if the tag is connected on both ends"
+#         return self.origin is not None and self.end is not None
 
-    @property
-    def is_connected(self) -> bool:
-        "checks if the wire is connected on both ends"
-        return self.origin is not None and self.end is not None
+#     def connect_to(self, end: CircuitPart):
+#         "connects the end of the tag to another CircuitPart"
+#         if self.end:
+#             raise ValueError("Wire already connected.")
+#         self.end = end
 
-    def connect_to(self, end: CircuitPart):
-        "connects the end of the wire to another CircuitPart"
-        if self.end:
-            raise ValueError("Wire already connected.")
-        self.end = end
+#     @property
+#     def dual_enabled(self):
+#         "whether the tag has a dual (R) part."
+#         return self.R is not None
 
-    @property
-    def has_dual(self):
-        "whether the wire has a dual (R) part."
-        return self.R is not None
+#     def enable_dual(self):
+#         "enables the dual (R) part of the tag."
+#         if not self.R:
+#             self.R = TagDispenser().get_tag()
 
-    def enable_dual(self):
-        "enables the dual (R) part of the wire."
-        if not self.R:
-            self.R = TagDispenser().get_tag()
-
-    def __repr__(self):
-        origin = self.origin.name if self.origin is not None else "..."
-        end = self.end.name if self.end is not None else "..."
-        tags = f"{self.L}," + (f"{self.R}" if self.R is not None else "-")
-        a = "==" if self.has_dual else "--"
-        return origin + f" {a}({tags}){a}> " + end
+#     def __repr__(self):
+#         origin = self.origin.name if self.origin is not None else "..."
+#         end = self.end.name if self.end is not None else "..."
+#         tags = f"{self.L}," + (f"{self.R}" if self.R is not None else "-")
+#         a = "==" if self.dual_enabled else "--"
+#         return origin + f" {a}({tags}){a}> " + end
 
 
 class CircuitPart(ABC):
@@ -84,47 +84,64 @@ class CircuitPart(ABC):
     its place in the circuit and how to connect to other CircuitParts.
     """
 
-    input_wire_at_mode: Dict[int, Wire]
-    output_wire_at_mode: Dict[int, Wire]
+    input_tag_at_mode: Dict[int, tuple[int, Optional[int]]]
+    output_tag_at_mode: Dict[int, tuple[int, Optional[int]]]
     name: str
-    has_dual: bool
+    dual_enabled: bool
 
     def enable_dual(self) -> None:
-        "Enables the dual (R) part of all the wires throughout this CircuitPart."
-        for wire in self.all_wires:
-            wire.R = TagDispenser().get_tag()
+        "Enables the dual (R) part of all the tags throughout this CircuitPart."
+        for tag_pair in self.all_tags:
+            tag_pair[1] = TagDispenser().get_tag()
 
-    @property  # NOTE: override this property in subclasses if the subclass has internal wires
-    def all_wires(self) -> Iterator[Wire]:
-        "Yields all wires of this CircuitPart (output and input)."
-        yield from (w for w in self.output_wire_at_mode.values())
-        yield from (w for w in self.input_wire_at_mode.values())
+    @property  # NOTE: override this property in subclasses if the subclass has internal tags
+    def all_tags(self) -> Iterator[tuple[int, Optional[int]]]:
+        "Yields all tag pairs of this CircuitPart (output and input)."
+        yield from (t for t in self.output_tag_at_mode.values())
+        yield from (t for t in self.input_tag_at_mode.values())
 
     @property
     def modes_in(self) -> set[int]:
         "Returns the set of input modes that are used by this CircuitPart."
-        return set(self.input_wire_at_mode.keys())
+        return set(self.input_tag_at_mode.keys())
 
     @property
     def modes_out(self) -> set[int]:
         "Returns the set of output modes that are used by this CircuitPart."
-        return set(self.output_wire_at_mode.keys())
+        return set(self.output_tag_at_mode.keys())
 
     @property
-    def connected(self) -> bool:
-        "Returns True if at least one wire of this CircuitPart is connected to other CircuitParts."
-        return any(w.is_connected for w in self.all_wires)
+    def tags_in(self) -> set[int]:
+        r"""Returns the set of input tags that are used by this CircuitPart
+        in the order [tag_L, tag_R]
+        """
+        return [t[0] for t in self.input_tag_at_mode.values()] + [
+            t[1] for t in self.input_tag_at_mode.values()
+        ]
 
     @property
-    def fully_connected(self) -> bool:
-        "Returns True if all wires of this CircuitPart are connected to other CircuitParts."
-        return all(w.is_connected for w in self.all_wires)
+    def tags_out(self) -> set[int]:
+        r"""Returns the set of output tags that are used by this CircuitPart
+        in the order [tag_L, tag_R]
+        """
+        return [t[0] for t in self.output_tag_at_mode.values()] + [
+            t[1] for t in self.output_tag_at_mode.values()
+        ]
 
-    def can_connect_output_mode(self, other: CircuitPart, mode: int) -> tuple[bool, str]:
-        r"""Checks whether this CircuitPart can plug into another one, at a given mode.
-        This is the case if the modes exist, if they are not already connected
-        and if there is no overlap between the output and input indices.
-        In other words, the operations can be plugged as in a circuit diagram.
+    # @property
+    # def connected(self) -> bool:
+    #     "Returns True if at least one tag of this CircuitPart is connected to other CircuitParts."
+    #     return any(t.is_connected for t in self.all_tags)
+
+    # @property
+    # def fully_connected(self) -> bool:
+    #     "Returns True if all tags of this CircuitPart are connected to other CircuitParts."
+    #     return all(t.is_connected for t in self.all_tags)
+
+    def can_connect_to(self, other: CircuitPart, mode: int) -> tuple[bool, str]:
+        r"""Checks whether this CircuitPart can plug its `mode_out=mode` into the `mode_in=mode` of `other`.
+        This is the case if the modes exist and if there is no overlap between the output and input modes.
+        In other words, if the operations can be plugged as one would in a circuit diagram.
 
         Arguments:
             other (CircuitPart): the other CircuitPart
@@ -139,20 +156,8 @@ class CircuitPart(ABC):
         if mode not in other.modes_in:
             return False, f"mode {mode} not an input of {other}."
 
-        if self.has_dual != other.has_dual:
-            return False, "dual wires mismatch"
-
-        if self.output_wire_at_mode[mode].end is not None:
-            return (
-                False,
-                f"output of {self} already connected to {self.output_wire_at_mode[mode].end}",
-            )
-
-        if other.input_wire_at_mode[mode].origin is not None:
-            return (
-                False,
-                f"input of {other} already connected to {other.input_wire_at_mode[mode].origin}",
-            )
+        if self.dual_enabled != other.dual_enabled:
+            return False, "dual tags mismatch"
 
         intersection = self.modes_out.intersection(other.modes_in)
         input_overlap = self.modes_in.intersection(other.modes_in) - intersection
@@ -166,11 +171,9 @@ class CircuitPart(ABC):
 
         return True, ""
 
-    def connect_output_mode(self, other: CircuitPart, mode: int) -> None:
-        "Forward-connect the wire at the given mode to the given CircuitPart."
-        can, fail_reason = self.can_connect_output_mode(other, mode)
+    def connect_to(self, other: CircuitPart, mode: int) -> tuple[int, Optional[int]]:
+        "Forward-connect self to other at the given mode. returns the common tag."
+        can, fail_reason = self.can_connect_to(other, mode)
         if not can:
             raise ValueError(fail_reason)
-        self.output_wire_at_mode[mode].end = other
-        # when connected the two CircuitParts share the same wire:
-        other.input_wire_at_mode[mode] = self.output_wire_at_mode[mode]
+        return self.output_tag_at_mode[mode]

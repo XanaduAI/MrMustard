@@ -44,7 +44,7 @@ class Measurement(Operation, ABC):
         self._outcome = outcome
         self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
         super().__init__(
-            modes_in=modes, modes_out=[], has_dual=not self.is_projective, name=name, **kwargs
+            modes_in=modes, modes_out=[], dual_enabled=not self.is_projective, name=name, **kwargs
         )
 
     @property

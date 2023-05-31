@@ -56,7 +56,7 @@ class Transformation(Operation):
         super().__init__(
             modes_in=modes_in,
             modes_out=modes_out,
-            has_dual=not self.is_unitary,
+            dual_enabled=not self.is_unitary,
             name=name,
             **kwargs,
         )

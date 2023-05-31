@@ -23,7 +23,7 @@ __all__ = ["Circuit"]
 from typing import Dict, Optional
 
 from mrmustard import settings
-from mrmustard.lab.abstract.operation import CircuitPart, Wire
+from mrmustard.lab.abstract.operation import CircuitPart  # , Wire
 from mrmustard.typing import Matrix, Tensor, Vector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
@@ -44,7 +44,7 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #         ops (Union[State, Transformation, Measurement], list[Circuit]): either a single operation
 #             or any number of Circuits
 #         name (str): name of the circuit
-#         dual_wires (bool): whether to include dual wires across the circuit
+#         dual_tags (bool): whether to include dual tags across the circuit
 #     """
 
 #     def __init__(
@@ -53,7 +53,7 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #         out_modes: List[int] = [],
 #         ops: Union[State, Transformation, Measurement, list[Circuit]] = [],
 #         name: str = "?",
-#         dual_wires: bool = False,
+#         dual_tags: bool = False,
 #     ):
 #         self.dispenser = TagDispenser()
 #         self._tags: Dict[str, List[int]] = None
@@ -61,11 +61,11 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 #         self.ops = ops
 #         self._compiled: bool = False
-#         if self.any_dual_wires():
-#             self.set_dual_wires_everywhere()
-#             self.dual_wires = True
+#         if self.any_dual_tags():
+#             self.set_dual_tags_everywhere()
+#             self.dual_tags = True
 #         else:
-#             self.dual_wires = dual_wires
+#             self.dual_tags = dual_tags
 #         self.connect_layers()
 #         super().__init__()
 
@@ -77,8 +77,8 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #             self._tags = {
 #                 "out_L": [self.dispenser.get_tag() for _ in range(OUT)],
 #                 "in_L": [self.dispenser.get_tag() for _ in range(IN)],
-#                 "out_R": [self.dispenser.get_tag() for _ in range(self.dual_wires * OUT)],
-#                 "in_R": [self.dispenser.get_tag() for _ in range(self.dual_wires * IN)],
+#                 "out_R": [self.dispenser.get_tag() for _ in range(self.dual_tags * OUT)],
+#                 "in_R": [self.dispenser.get_tag() for _ in range(self.dual_tags * IN)],
 #             }
 #         return self._tags
 
@@ -90,25 +90,25 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #             self._axes = {
 #                 "out_L": [i for i in range(OUT)],
 #                 "in_L": [i + OUT for i in range(IN)],
-#                 "out_R": [i + OUT + IN for i in range(self.dual_wires * OUT)],
-#                 "in_R": [i + 2 * OUT + IN for i in range(self.dual_wires * IN)],
+#                 "out_R": [i + OUT + IN for i in range(self.dual_tags * OUT)],
+#                 "in_R": [i + 2 * OUT + IN for i in range(self.dual_tags * IN)],
 #             }
 #         return self._axes
 
-#     def any_dual_wires(self) -> bool:
-#         "check that at least one op has dual wires"
+#     def any_dual_tags(self) -> bool:
+#         "check that at least one op has dual tags"
 #         for op in self.ops:
-#             if op.dual_wires:
+#             if op.dual_tags:
 #                 return True
 #         return False
 
-#     def set_dual_wires_everywhere(self):
+#     def set_dual_tags_everywhere(self):
 #         for op in self.ops:
-#             op.dual_wires = True
+#             op.dual_tags = True
 
 #     def connect_ops(self):
-#         "set wire connections for TN contractions or phase space products"
-#         # If dual_wires is True for one op, then it must be for all ops.
+#         "set tag connections for TN contractions or phase space products"
+#         # If dual_tags is True for one op, then it must be for all ops.
 #         # NOTE: revisit this at some point.
 #         for i, opi in enumerate(self.ops):
 #             for j, opj in enumerate(self.ops[i + 1 :]):
@@ -251,65 +251,55 @@ class Circuit(CircuitPart):
     The order matters for the Operations in the Circuit, as they are applied sequentially.
     """
 
-    def __init__(self, parts: Optional[list[CircuitPart]] = None, name: str = "Circuit"):
-        self.parts = parts or []
-        self.connect_all_parts()  # important: do before setting input and output wires
-        self.input_wire_at_mode: Dict[int, Wire] = {}
-        self.output_wire_at_mode: Dict[int, Wire] = {}
-
-        # check for duplicate input and output modes
-        for part in self.parts:
-            for mode, wire in part.input_wire_at_mode.items():
-                if not wire.is_connected:
-                    if mode in self.modes_in:
-                        raise ValueError(f"Duplicate input mode {mode}.")
-                    self.input_wire_at_mode[mode] = wire
-            for mode, wire in part.output_wire_at_mode.items():
-                if not wire.is_connected:
-                    if mode in self.modes_out:
-                        raise ValueError(f"Duplicate output mode {mode}.")
-                    self.output_wire_at_mode[mode] = wire
-
+    def __init__(self, parts: list[CircuitPart] = [], name: str = "Circuit"):
+        self.parts = parts
         self.name = name
+        self.tags: dict[int, tuple[int, Optional[int]]] = {}
 
-    @property
-    def has_dual(self) -> bool:
-        return any(part.has_dual for part in self.parts)
-
-    def connect_all_parts(self):
+    def _assign_tags(self) -> None:
         r"""Connects parts in the circuit according to their input and output modes."""
         for i, part1 in enumerate(self.parts):
             for mode in part1.modes_out:
                 for part2 in self.parts[i + 1 :]:
                     if part1.can_connect_output_mode(part2, mode)[0]:
-                        part1.connect_output_mode(part2, mode)
+                        self.tags[i] = part1.connect_to(part2, mode)
                         break
 
+        # # check for duplicate input and output modes and set input/output tags
+        # self.input_tag_at_mode: Dict[int, Wire] = {}
+        # self.output_tag_at_mode: Dict[int, Wire] = {}
+        # for part in self.parts:
+        #     for mode, tag in part.input_tag_at_mode.items():
+        #         if not tag.is_connected:
+        #             if mode in self.modes_in:
+        #                 raise ValueError(f"Duplicate input mode {mode}.")
+        #             self.input_tag_at_mode[mode] = tag
+        #     for mode, tag in part.output_tag_at_mode.items():
+        #         if not tag.is_connected:
+        #             if mode in self.modes_out:
+        #                 raise ValueError(f"Duplicate output mode {mode}.")
+        #             self.output_tag_at_mode[mode] = tag
+
+    @property
+    def dual_enabled(self) -> bool:
+        return any(part.dual_enabled for part in self.parts)
+
     def enable_dual(self) -> None:
-        "Enables the dual (R) part of all the wires throughout this Circuit."
+        "Enables the dual (R) part of all the tags throughout this Circuit."
         for part in self.parts:
             part.enable_dual()
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
-        if self.has_dual or other.has_dual:
-            self.enable_dual()
-            other.enable_dual()
-        return Circuit([self, other])
+        if isinstance(other, Circuit):
+            return Circuit(self.parts + other.parts)
+        else:
+            return Circuit(self.parts + [other])
 
-    def flatten(self) -> Circuit:
-        "Flattens and rewires the circuit."
-        return Circuit([op.disconnect() for op in self.ops])
-
-    def run(self):
-        op = self.ops[0]
-        if isinstance(op, Circuit):
-            op = op.run()
-        for next_op in self.ops[1:]:
+    def primal(self, op: CircuitPart) -> Circuit:
+        r"""We assume that we are used as in `state >> circuit` and we do immediate execution."""
+        for next_op in self.ops:
             op = next_op.primal(op)
         return op
-
-    def sample(self, shots: int) -> list:
-        pass
 
     # _repr_markdown_ = None
 
@@ -327,9 +317,14 @@ class Circuit(CircuitPart):
     def __repr__(self) -> str:
         return circuit_text(self.ops, decimals=settings.CIRCUIT_DECIMALS)
 
-    def TN_tensor_list(self) -> list[Tensor]:
+    def fock_tensors_and_tags(self) -> list[tuple[Tensor, tuple[int, ...]]]:
         "returns a list of tensors in the tensor network representation of the circuit"
-        return [op.TN_tensor for op in self.ops]
+        self._assign_tags()
+        return [(op.fock, op.tags) for op in self.ops]
+
+    def fock(self):  # maybe this should not be here...
+        "returns the fock representation of the circuit"
+        return math.einsum(*self.fock_tensors_and_tags(), optimize="optimal")
 
     # old methods that we keep for now:
 

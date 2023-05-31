@@ -116,7 +116,7 @@ class State(Operation):
         super().__init__(
             modes_in=[],
             modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above
-            has_dual=gaussian.purity(cov, settings.HBAR)
+            dual_enabled=gaussian.purity(cov, settings.HBAR)
             < 1.0 - 1e-6  # NOTE: will be replaced by not is_hilbert_vector
             if self.is_gaussian
             else dm is not None,
@@ -539,16 +539,13 @@ class State(Operation):
                 self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
             )
 
-    # def __rshift__(self, other: Transformation) -> State:
-    #     r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
-    #     if issubclass(other.__class__, State):
-    #         raise TypeError(
-    #             f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
-    #         )
-    #     return other.primal(self)
-
-    # def __rshift__(self, other: CircuitPart) -> Circuit:
-    #     return Circuit([self, other])
+    def __rshift__(self, other: Transformation) -> State:
+        r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
+        if issubclass(other.__class__, State):
+            raise TypeError(
+                f"Cannot apply {other.__class__.__qualname__} to a state. Are you looking for the << operator?"
+            )
+        return other.primal(self)
 
     def __lshift__(self, other: State):
         r"""Implements projection onto a state or the dual transformation applied on a state.
@@ -556,19 +553,6 @@ class State(Operation):
         E.g., ``self << other`` where other is a ``State`` and ``self`` is either a ``State`` or a ``Transformation``.
         """
         return other.primal(self)
-
-    # def __gt__(self, other: Transformation) -> Any:
-    #     r"""Concatenates current state to other, creating a 'new type' circuit if necessary."""
-    #     from mrmustard.lab.circuit import Circuit, Operation
-
-    #     op1 = Operation(self, [], self.modes, not self.is_pure)
-    #     if isinstance(other, Circuit):
-    #         op2 = other
-    #     elif hasattr(other, "is_unitary"):
-    #         op2 = Operation(other, other.modes, other.modes, has_dual=not other.is_unitary)
-    #     elif hasattr(other, "is_projective"):
-    #         op2 = Operation(other, other.modes, [], has_dual=not other.is_projective)
-    #     return Circuit([op1, op2])
 
     def __add__(self, other: State):
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
