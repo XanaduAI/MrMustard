@@ -89,6 +89,9 @@
 * The displacement of the dual of an operation had the wrong sign
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
+* When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
+  [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
+
 ### Documentation
 
 ### Contributors
