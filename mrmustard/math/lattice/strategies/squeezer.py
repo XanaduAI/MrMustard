@@ -30,15 +30,15 @@ def squeezer(
     cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128
 ):  # pragma: no cover
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
-(See eq. 50-52 in https://arxiv.org/abs/2004.11002)
-    Args:
-        cutoffs (tuple[int, int]): Fock cutoffs for the output and input modes.
-        r (float): squeezing magnitude
-        theta (float): squeezing angle
-        dtype (data type): data type used for the calculation.
+    (See eq. 50-52 in https://arxiv.org/abs/2004.11002)
+        Args:
+            cutoffs (tuple[int, int]): Fock cutoffs for the output and input modes.
+            r (float): squeezing magnitude
+            theta (float): squeezing angle
+            dtype (data type): data type used for the calculation.
 
-    Returns:
-        array (ComplexMatrix): matrix representing the squeezing gate.
+        Returns:
+            array (ComplexMatrix): matrix representing the squeezing gate.
     """
     M, N = cutoffs
     S = np.zeros(cutoffs, dtype=dtype)
