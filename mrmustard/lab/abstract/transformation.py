@@ -198,7 +198,7 @@ class Transformation:
             return None
         if (Xdual := self.X_matrix_dual) is None:
             return -d
-        return -math.matmul(Xdual, d)  # TODO: need minus sign?
+        return -math.matmul(Xdual, d)
 
     def XYd(
         self, allow_none: bool = True
