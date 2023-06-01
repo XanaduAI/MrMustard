@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations import Data
+from mrmustard.representations.data import Data
 
 class ArrayData(Data):
 

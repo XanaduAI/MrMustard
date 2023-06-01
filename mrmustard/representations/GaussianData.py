@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations import Data
+from mrmustard.representations.data import MatVecData
 
-class MatVecData(Data):
+class GaussianData(MatVecData):
 
-    def __init__(self) -> MatVecData:
-        def __init__(self) -> None:
+    def __init__(self) -> GaussianData:
         super().__init__()
