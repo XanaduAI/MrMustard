@@ -92,16 +92,24 @@ class State:  # pylint: disable=too-many-public-methods
         self._ket = ket
         self._dm = dm
         self._norm = _norm
+        self.representation = None
+        #IN PROGRESS: choose the right parameters to creat a representation object
+        #Case 1: give cov, means, ket or dm / # modes
         if cov is not None and means is not None:
-            self.is_gaussian = True
-            self.num_modes = cov.shape[-1] // 2
-        elif eigenvalues is not None and symplectic is not None:
-            self.is_gaussian = True
-            self.num_modes = symplectic.shape[-1] // 2
-        elif ket is not None or dm is not None:
-            self.is_gaussian = False
-            self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
-            self._purity = 1.0 if ket is not None else None
+            if flag_ket:
+                self.representation = WignerKet(cov, means)
+                self.num_modes = cov.shape[-1]
+            else:
+                self.representation = WignerDM(cov, means)
+                self.num_modes = cov.shape[-1] // 2
+        #Case 2: give ket or dm of Fock
+        elif ket is not None:
+            self.representation = FockKet(ket)
+            self.num_modes = len(ket.shape)
+            self._purity = 1.0
+        elif dm is not None:
+            self.representation = FockDM(dm)
+            self.num_modes = len(dm.shape) // 2
         #ADD THE ARGUS WITH WAVEFUNCTIONSß
         else:
             raise ValueError(
