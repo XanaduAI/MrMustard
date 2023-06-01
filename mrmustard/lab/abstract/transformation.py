@@ -31,7 +31,7 @@ from typing import (
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.lab.abstract.operation import Operation
+from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
@@ -42,7 +42,7 @@ from .state import State
 math = Math()
 
 
-class Transformation(Operation):
+class Transformation(CircuitPart):
     r"""Base class for all Transformations."""
     is_unitary: bool
 

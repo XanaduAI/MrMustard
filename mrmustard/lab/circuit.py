@@ -20,24 +20,13 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from typing import Dict, Optional
-
-from mrmustard import settings
-from mrmustard.lab.abstract.operation import CircuitPart  # , Wire
-from mrmustard.typing import Matrix, Tensor, Vector
-from mrmustard.utils.circdrawer import circuit_text
-from mrmustard.utils.xptensor import XPMatrix, XPVector
-
 # class Circuit(Parametrized):
 #     r"""Represents a quantum circuit: a wrapper around States, Transformations and Measurements
 #     which allows them to be placed in a circuit and connected together.
-
 #     A Circuit can include several operations and return a new Circuit when concatenated with another
 #     Circuit. The Circuit can be compiled to a TensorNetwork, which can be used to evaluate the
 #     circuit's free tensor indices.
-
 #     A Circuit can be run, sampled, compiled and composed.
-
 #     Args:
 #         in_modes (list[int]): list of input modes
 #         out_modes (list[int]): list of output modes
@@ -46,7 +35,6 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #         name (str): name of the circuit
 #         dual_tags (bool): whether to include dual tags across the circuit
 #     """
-
 #     def __init__(
 #         self,
 #         in_modes: List[int] = [],
@@ -58,8 +46,7 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #         self.dispenser = TagDispenser()
 #         self._tags: Dict[str, List[int]] = None
 #         self._axes: Dict[str, List[int]] = None
-
-#         self.ops = ops
+#         self._ops = ops
 #         self._compiled: bool = False
 #         if self.any_dual_tags():
 #             self.set_dual_tags_everywhere()
@@ -68,7 +55,6 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #             self.dual_tags = dual_tags
 #         self.connect_layers()
 #         super().__init__()
-
 #     @property
 #     def tags(self) -> dict[str, list[int]]:
 #         if self._tags is None:
@@ -81,7 +67,6 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #                 "in_R": [self.dispenser.get_tag() for _ in range(self.dual_tags * IN)],
 #             }
 #         return self._tags
-
 #     @property
 #     def axes(self) -> dict[str, list[int]]:
 #         OUT = len(self.out_modes)
@@ -94,24 +79,21 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #                 "in_R": [i + 2 * OUT + IN for i in range(self.dual_tags * IN)],
 #             }
 #         return self._axes
-
 #     def any_dual_tags(self) -> bool:
 #         "check that at least one op has dual tags"
-#         for op in self.ops:
+#         for op in self._ops:
 #             if op.dual_tags:
 #                 return True
 #         return False
-
 #     def set_dual_tags_everywhere(self):
-#         for op in self.ops:
+#         for op in self._ops:
 #             op.dual_tags = True
-
 #     def connect_ops(self):
 #         "set tag connections for TN contractions or phase space products"
 #         # If dual_tags is True for one op, then it must be for all ops.
 #         # NOTE: revisit this at some point.
-#         for i, opi in enumerate(self.ops):
-#             for j, opj in enumerate(self.ops[i + 1 :]):
+#         for i, opi in enumerate(self._ops):
+#             for j, opj in enumerate(self._ops[i + 1 :]):
 #                 for mode in set(opi.modes_out) & set(opj.modes_in):
 #                     axes1 = opi.mode_out_to_axes(mode)
 #                     axes2 = opj.mode_in_to_axes(mode)
@@ -122,12 +104,10 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #                         opj.tags[ax2] = min_tag
 #                         if max_tag != min_tag:
 #                             self.dispenser.give_back_tag(max_tag)
-
 #     # def shape_specs(self) -> tuple[dict[int, int], list[int]]:
 #     #     # Keep track of the shapes for each tag
 #     #     tag_shapes = {}
 #     #     fock_tags = []
-
 #     #     # Loop through the list of operations
 #     #     for op, tag_list in self.TN_connectivity():
 #     #         # Check if this operation is a projection onto Fock
@@ -139,7 +119,6 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #     #         else:
 #     #             # If not, get the default shape for this operation
 #     #             shape = [50 for _ in range(Operation(op).num_axes)]  # NOTE: just a placeholder
-
 #     #             # Loop through the tags for this operation
 #     #             for i, tag in enumerate(tag_list):
 #     #                 # If the tag has not been seen yet, set its shape
@@ -148,9 +127,7 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #     #                 else:
 #     #                     # If the tag has been seen, set its shape to the minimum of the current shape and the previous shape
 #     #                     tag_shapes[tag] = min(tag_shapes[tag], shape[i])
-
 #     #     return tag_shapes, fock_tags
-
 #     # def TN_tensor_list(self) -> list:
 #     #     tag_shapes, fock_tags = self.shape_specs()
 #     #     # Loop through the list of operations
@@ -176,29 +153,23 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #     #                     op = op.choi(shape)
 #     #             else:
 #     #                 raise ValueError("Unknown operation type")
-
 #     #             fock_tag_indices = [tag_list.index(tag) for tag in fock_tags if tag in tag_list]
 #     #             slice_spec = [slice(None)] * len(tag_list)
 #     #             for tag_pos in fock_tag_indices:
 #     #                 slice_spec[tag_pos] = -1
 #     #             op = op[tuple(slice_spec)]
 #     #             tag_list = [tag for tag in tag_list if tag not in fock_tags]
-
 #     #             # Add the tensor and its tags to the list
 #     #             tensors_and_tags.append((op, tag_list))
-
 #     #     return tensors_and_tags
-
 #     def __rshift__(self, other: Circuit) -> Circuit:
 #         r"connect the two circuits"
 #         if not isinstance(other, Circuit):
 #             raise TypeError("Can only connect Circuits to Circuits")
-#         return Circuit(self.ops + other.ops)
-
+#         return Circuit(self._ops + other.ops)
 #     def contract(self):
 #         opt_einsum_args = [item for pair in self.TN_tensor_list() for item in pair]
 #         return opt_einsum.contract(*opt_einsum_args, optimize=settings.OPT_EINSUM_OPTIMIZE)
-
 #     @property
 #     def XYd(
 #         self,
@@ -221,106 +192,79 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 #             Y = opX @ Y @ opX.T + opY
 #             d = opX @ d + opd
 #         return X.to_xxpp(), Y.to_xxpp(), d.to_xxpp()
-
 #     @property
 #     def is_gaussian(self):
 #         """Returns `true` if all operations in the circuit are Gaussian."""
 #         return all(op.is_gaussian for op in self._ops)
-
 #     @property
 #     def is_unitary(self):
 #         """Returns `true` if all operations in the circuit are unitary."""
 #         return all(op.is_unitary for op in self._ops)
-
 #     def __len__(self):
 #         return len(self._ops)
-
 #     _repr_markdown_ = None
-
 #     def __repr__(self) -> str:
 #         """String to display the object on the command line."""
 #         return circuit_text(self._ops, decimals=settings.CIRCUIT_DECIMALS)
-
 #     def __str__(self):
 #         """String representation of the circuit."""
 #         return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
+from collections import namedtuple
+from typing import Dict, Optional
+
+from mrmustard import settings
+from mrmustard.lab.abstract.operation import CircuitPart  # , Wire
+from mrmustard.typing import Matrix, Tensor, Vector
+from mrmustard.utils.circdrawer import circuit_text
+from mrmustard.utils.xptensor import XPMatrix, XPVector
+
+Tag = namedtuple("Tag", ["L", "R"])
 
 
-class Circuit(CircuitPart):
+class Circuit:
     r"""A collection of interconnected Operations that can be run as a quantum device.
     The order matters for the Operations in the Circuit, as they are applied sequentially.
     """
 
-    def __init__(self, parts: list[CircuitPart] = [], name: str = "Circuit"):
-        self.parts = parts
-        self.name = name
-        self.tags: dict[int, tuple[int, Optional[int]]] = {}
+    def __init__(self, ops: list[CircuitPart] = []):
+        self._ops: list[CircuitPart] = ops
 
-    def _assign_tags(self) -> None:
-        r"""Connects parts in the circuit according to their input and output modes."""
-        for i, part1 in enumerate(self.parts):
-            for mode in part1.modes_out:
-                for part2 in self.parts[i + 1 :]:
-                    if part1.can_connect_output_mode(part2, mode)[0]:
-                        self.tags[i] = part1.connect_to(part2, mode)
+    def _connect_ops(self, check: bool = True) -> None:
+        r"""Connects ops in the circuit according to their input and output modes."""
+        for i, op1 in enumerate(self._ops):
+            for mode in op1.modes_out:
+                for op2 in self._ops[i + 1 :]:
+                    # NOTE that we don't check for input/output mode overlap at the circuit level
+                    if op1.can_connect_to(op2, mode)[0]:
+                        op1.connect_to(op2, mode)
                         break
 
-        # # check for duplicate input and output modes and set input/output tags
-        # self.input_tag_at_mode: Dict[int, Wire] = {}
-        # self.output_tag_at_mode: Dict[int, Wire] = {}
-        # for part in self.parts:
-        #     for mode, tag in part.input_tag_at_mode.items():
-        #         if not tag.is_connected:
-        #             if mode in self.modes_in:
-        #                 raise ValueError(f"Duplicate input mode {mode}.")
-        #             self.input_tag_at_mode[mode] = tag
-        #     for mode, tag in part.output_tag_at_mode.items():
-        #         if not tag.is_connected:
-        #             if mode in self.modes_out:
-        #                 raise ValueError(f"Duplicate output mode {mode}.")
-        #             self.output_tag_at_mode[mode] = tag
-
-    @property
-    def dual_enabled(self) -> bool:
-        return any(part.dual_enabled for part in self.parts)
-
-    def enable_dual(self) -> None:
-        "Enables the dual (R) part of all the tags throughout this Circuit."
-        for part in self.parts:
-            part.enable_dual()
+    def _disconnect_ops(self) -> None:
+        r"""Disconnects ops in the circuit by resetting their tags."""
+        for op in self._ops:
+            op._reset_tags()
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
         if isinstance(other, Circuit):
-            return Circuit(self.parts + other.parts)
+            return Circuit(self._ops + other._ops)
+        elif isinstance(other, CircuitPart):
+            return Circuit(self._ops + [other])
         else:
-            return Circuit(self.parts + [other])
+            raise TypeError(f"Cannot add {type(other)} to Circuit.")
 
     def primal(self, op: CircuitPart) -> Circuit:
-        r"""We assume that we are used as in `state >> circuit` and we do immediate execution."""
-        for next_op in self.ops:
+        r"""We assume that self is used as in `state >> circuit` and we do immediate execution."""
+        for next_op in self._ops:
             op = next_op.primal(op)
         return op
 
-    # _repr_markdown_ = None
-
-    @property
-    def ops(self):
-        "searches recursively through the circuit and returns a list of operations"
-        ops = []
-        for part in self.parts:
-            if isinstance(part, Circuit):
-                ops += part.ops
-            else:  # assuming it's an Operation now
-                ops.append(part)
-        return ops
-
     def __repr__(self) -> str:
-        return circuit_text(self.ops, decimals=settings.CIRCUIT_DECIMALS)
+        return circuit_text(self._ops, decimals=settings.CIRCUIT_DECIMALS)
 
     def fock_tensors_and_tags(self) -> list[tuple[Tensor, tuple[int, ...]]]:
         "returns a list of tensors in the tensor network representation of the circuit"
-        self._assign_tags()
-        return [(op.fock, op.tags) for op in self.ops]
+        self._connect_ops()
+        return [(op.fock, op.tags) for op in self._ops]  # TODO: needs to account for unitary/choi
 
     def fock(self):  # maybe this should not be here...
         "returns the fock representation of the circuit"
@@ -354,11 +298,11 @@ class Circuit(CircuitPart):
     @property
     def is_gaussian(self):
         """Returns `true` if all operations in the circuit are Gaussian."""
-        return all(op.is_gaussian for op in self.ops)
+        return all(op.is_gaussian for op in self._ops)
 
     def __len__(self):
-        return len(self.ops)
+        return len(self._ops)
 
     def __str__(self):
         """String representation of the circuit."""
-        return f"< Circuit | {len(self.ops)} ops >"
+        return f"< Circuit | {len(self._ops)} ops >"

@@ -29,7 +29,7 @@ from typing import (
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.lab.abstract.operation import Operation
+from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.typing import (
@@ -49,7 +49,7 @@ math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
-class State(Operation):
+class State(CircuitPart):
     r"""Base class for quantum states."""
 
     def __init_symbolic__(self, *kwargs):
@@ -118,12 +118,7 @@ class State(Operation):
         super().__init__(
             modes_in=[],
             modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above
-            dual_enabled=gaussian.purity(cov, settings.HBAR)
-            < 1.0 - 1e-6  # NOTE: will be replaced by not is_hilbert_vector
-            if self.is_gaussian
-            else dm is not None,
             name=name,
-            **kwargs,
         )
 
     @property
