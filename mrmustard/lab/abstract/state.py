@@ -102,6 +102,7 @@ class State:  # pylint: disable=too-many-public-methods
             self.is_gaussian = False
             self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
             self._purity = 1.0 if ket is not None else None
+        #ADD THE ARGUS WITH WAVEFUNCTIONSß
         else:
             raise ValueError(
                 "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
