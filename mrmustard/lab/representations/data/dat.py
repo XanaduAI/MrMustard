@@ -18,3 +18,36 @@ class Representation(ABC):
 
     def __init__(self) -> None:
         super().__init__()
+
+
+    @abstractmethod
+    def __add__():
+        pass
+
+
+    @abstractmethod
+    def __sub__():
+        pass
+
+
+    @abstractmethod
+    def __truediv__():
+        pass
+
+
+    @abstractmethod
+    def __rmul__():
+        pass
+
+
+    @abstractmethod
+    def __and__():
+        pass
+
+
+    @abstractmethod
+    def __neg__():
+        pass
+
+
+    
