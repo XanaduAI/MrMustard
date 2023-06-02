@@ -24,7 +24,7 @@ math = Math()
 class FockKet(Representation):
     '''FockKet Class is the Fock representation of a ket state.'''
 
-    def __init__(self, ket) -> FockKet:
+    def __init__(self, ket):
         super().__init__()
         self.data = ArrayData(ket) 
 
@@ -73,16 +73,9 @@ class FockKet(Representation):
         raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
     
 
-    def number_stdev(self):
-
-
-
     def norm(self):
         r"""
-        Returns the norm of a ket.
-        Note that the "norm" is intended as the float number that is used to normalize the state,
-        and depends on the representation. Hence different numbers for different representations
-        of the same state (:math:`|amp|` for ``ket`` and :math:`|amp|^2` for ``dm``).
+        Returns the norm. (:math:`|amp|` for ``ket``)
         """
         return math.abs(math.norm(self.data.array))
     

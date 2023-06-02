@@ -23,7 +23,7 @@ math = Math()
 
 class FockDM(Representation):
 
-    def __init__(self, dm) -> FockDM:
+    def __init__(self, dm):
         super().__init__()
         self.data = ArrayData(dm)
 
@@ -78,10 +78,7 @@ class FockDM(Representation):
 
     def norm(self):
         r"""
-        Returns the norm.
-        Note that the "norm" is intended as the float number that is used to normalize the state,
-        and depends on the representation. Hence different numbers for different representations
-        of the same state (:math:`|amp|` for ``ket`` and :math:`|amp|^2` for ``dm``).
+        Returns the norm. (:math:`|amp|^2` for ``dm``)
         """
         return math.sum(math.all_diagonals(self.data.array, real = True))
 
