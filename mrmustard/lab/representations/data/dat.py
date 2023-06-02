@@ -19,6 +19,11 @@ class Data(ABC):
     def __init__(self) -> None:
         super().__init__()
 
+    
+    @abstractmethod
+    def __eq__():
+        pass
+
 
     @abstractmethod
     def __add__():
@@ -41,12 +46,17 @@ class Data(ABC):
 
 
     @abstractmethod
+    def __neg__():
+        pass
+
+
+    @abstractmethod
     def __and__():
         pass
 
 
     @abstractmethod
-    def __neg__():
+    def simplify():
         pass
 
 
