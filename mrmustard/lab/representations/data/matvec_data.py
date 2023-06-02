@@ -66,9 +66,24 @@ class MatVecData(Data):
         pass
 
 
-    @abstractmethod
-    def __and__():
-        pass
+    def __and__(self, other: MatVecData) -> MatVecData:
+        r"Tensor product"
+        mat = []
+        vec = []
+        coeff = []
+        for c1 in self.mat:
+            for c2 in other.mat:
+                mat.append(math.block_diag([c1, c2]))
+        for m1 in self.mean:
+            for m2 in other.mean:
+                vec.append(math.concat([m1, m2], axis=-1))
+        for c1 in self.coeff:
+            for c2 in other.coeff:
+                coeff.append(c1 * c2)
+        mat = math.astensor(mat)
+        vec = math.astensor(vec)
+        coeff = math.astensor(coeff)
+        return self.__class__(mat, vec, coeff)
 
 
     def simplify(self) -> None:
