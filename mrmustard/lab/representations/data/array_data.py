@@ -16,5 +16,7 @@ from mrmustard.representations.data import Data
 
 class ArrayData(Data):
 
-    def __init__(self) -> ArrayData:
+    def __init__(self, array):
         super().__init__()
+        self.array = array
+        self.cutoffs = array.shape
