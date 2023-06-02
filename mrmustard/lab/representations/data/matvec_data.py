@@ -62,7 +62,6 @@ class MatVecData(Data):
 
 
 
-    @abstractmethod
     def __sub__(self, other: MatVecData) -> MatVecData:
        
        if self.__class__ != other.__class__:
