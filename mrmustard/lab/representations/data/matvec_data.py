@@ -57,18 +57,30 @@ class MatVecData(Data):
             return MatVecData(
                 math.concat([self.mat, other.mat], axis=0),
                 math.concat([self.vec, other.vec], axis=0),
-                math.concat([self.coeff, other.coeff], axis=0),
+                math.concat([self.coeff, other.coeff], axis=0)
             )
 
 
 
     @abstractmethod
-    def __sub__():
-        pass
+    def __sub__(self, other: MatVecData) -> MatVecData:
+       
+       if self.__class__ != other.__class__:
+            raise ValueError(f"Cannot subtract {self.__class__} and {other.__class__}.")
+        
+        elif np.allclose(self.mat, other.mat) and np.allclose(self.vec, other.vec):
+            return MatVecData(self.mat, self.vec, self.coeff - other.coeff)
+        
+        else:
+            return MatVecData(
+                math.concat([self.mat, other.mat], axis=0),
+                math.concat([self.vec, other.vec], axis=0),
+                math.concat([self.coeff, other.coeff], axis=0)
+            )
 
 
-    @abstractmethod
-    def __neg__():
+    
+    def __neg__(): #TODO: implement
         pass
 
 
@@ -101,12 +113,12 @@ class MatVecData(Data):
             mat = math.astensor(mat)
             vec = math.astensor(vec)
             coeff = math.astensor(coeff)
-            
+
             return self.__class__(mat, vec, coeff)
 
 
 
-    def simplify(self) -> None:
+    def simplify(self) -> None: # TODO make this functional and return a new object?
         r"""Simplify the data by combining terms that are equal."""
 
         indices_to_check = set(range(self.batch_size)) # TODO switch to lists?
