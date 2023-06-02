@@ -128,7 +128,7 @@ class MatVecData(Data):
 
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
                     self.coeff[i] += self.coeff[j]
-                    indices_to_check.remove(j)
+                    indices_to_check.remove(j) #this because you don't want to iterate again over it
                     removed.add(j)
 
                 #else: do nothing
