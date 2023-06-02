@@ -87,6 +87,7 @@ class State(CircuitPart):
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
+        print("state called with kwargs: ", kwargs)
         self._purity = None
         self._fock_probabilities = None
         self._cutoffs = cutoffs
@@ -119,6 +120,7 @@ class State(CircuitPart):
             modes_in=[],
             modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above
             name=name,
+            **kwargs,
         )
 
     @property
@@ -227,6 +229,13 @@ class State(CircuitPart):
         if self.is_pure and self._ket is not None:
             return norm**2
         return norm
+
+    def fock_tensors_and_tags(self, cutoffs=None) -> list[tuple[ComplexTensor, set[int]]]:
+        cutoffs = cutoffs or self.cutoffs
+        if self.is_pure:
+            return [(self.ket(cutoffs), self.tags_out_L)]
+        else:
+            return [(self.dm(cutoffs), self.tags_out_L + self.tags_out_R)]
 
     def ket(
         self,

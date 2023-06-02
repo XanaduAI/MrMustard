@@ -209,16 +209,15 @@ __all__ = ["Circuit"]
 #     def __str__(self):
 #         """String representation of the circuit."""
 #         return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
-from collections import namedtuple
-from typing import Dict, Optional
 
 from mrmustard import settings
-from mrmustard.lab.abstract.operation import CircuitPart  # , Wire
+from mrmustard.lab.abstract.circuitpart import CircuitPart
+from mrmustard.math import Math
 from mrmustard.typing import Matrix, Tensor, Vector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
-Tag = namedtuple("Tag", ["L", "R"])
+math = Math()
 
 
 class Circuit:
@@ -261,14 +260,17 @@ class Circuit:
     def __repr__(self) -> str:
         return circuit_text(self._ops, decimals=settings.CIRCUIT_DECIMALS)
 
-    def fock_tensors_and_tags(self) -> list[tuple[Tensor, tuple[int, ...]]]:
-        "returns a list of tensors in the tensor network representation of the circuit"
+    def TN_data(self) -> list[tuple[Tensor, tuple[int, ...]]]:
+        "returns a list of tensors and index tags for the tensor network representation of the circuit"
         self._connect_ops()
-        return [(op.fock, op.tags) for op in self._ops]  # TODO: needs to account for unitary/choi
+        tt = []
+        for op in self._ops:
+            for tensor, tags in op.fock_tensors_and_tags:
+                tt.extend([tensor, tags])
 
     def fock(self):  # maybe this should not be here...
         "returns the fock representation of the circuit"
-        return math.einsum(*self.fock_tensors_and_tags(), optimize="optimal")
+        return math.einsum(*self.TN_data(), optimize="optimal")
 
     # old methods that we keep for now:
 

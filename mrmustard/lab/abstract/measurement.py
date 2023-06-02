@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from typing import Sequence, Union
 
 from mrmustard import settings
-from mrmustard.lab.abstract.operation import Operation
+from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.typing import Tensor
 
@@ -29,7 +29,7 @@ from .state import State
 math = Math()
 
 
-class Measurement(Operation, ABC):
+class Measurement(CircuitPart, ABC):
     """this is an abstract class holding the common methods and properties
     that any measurement should implement
 
@@ -43,9 +43,7 @@ class Measurement(Operation, ABC):
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._outcome = outcome
         self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
-        super().__init__(
-            modes_in=modes, modes_out=[], dual_enabled=not self.is_projective, name=name, **kwargs
-        )
+        super().__init__(modes_in=modes, modes_out=[], name=name, **kwargs)
 
     @property
     def num_modes(self):
@@ -54,7 +52,7 @@ class Measurement(Operation, ABC):
 
     @property
     def postselected(self):
-        r"""returns whether the measurement is postselected, i.e, a outcome has been provided"""
+        r"""returns whether the measurement is postselected, i.e, an outcome has been provided"""
         return self._is_postselected
 
     @property
@@ -71,6 +69,13 @@ class Measurement(Operation, ABC):
     @abstractmethod
     def _measure_gaussian(self, other: State) -> Union[State, float]:
         ...
+
+    def fock_tensors_and_tags(self, cutoffs=None):
+        cutoffs = cutoffs or self.cutoffs
+        if self.is_pure:
+            return self.ket(cutoffs), self.tags_out_L
+        else:
+            return self.dm(cutoffs), self.tags_out_L + self.tags_out_R
 
     def primal(self, other: State) -> Union[State, float]:
         r"""performs the measurement procedure according to the representation

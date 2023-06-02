@@ -35,7 +35,7 @@ from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training.parameter import Parameter
-from mrmustard.typing import RealMatrix, RealVector
+from mrmustard.typing import ComplexTensor, RealMatrix, RealVector
 
 from .state import State
 
@@ -56,9 +56,7 @@ class Transformation(CircuitPart):
         super().__init__(
             modes_in=modes_in,
             modes_out=modes_out,
-            dual_enabled=not self.is_unitary,
             name=name,
-            **kwargs,
         )
 
     def primal(self, state: State) -> State:
@@ -90,6 +88,18 @@ class Transformation(CircuitPart):
         else:
             new_state = self.transform_fock(state, dual=True)
         return new_state
+
+    def fock_tensors_and_tags(self, cutoffs=None) -> list[tuple[ComplexTensor, tuple[int, ...]]]:
+        cutoffs = cutoffs or self.cutoffs
+        if self.is_unitary:
+            U = self.U(cutoffs)
+            return [
+                (U, self.tags_out_L + self.tags_in_L),
+                (math.conj(U), self.tags_out_R + self.tags_in_R),
+            ]
+        else:
+            choi = self.choi(cutoffs)
+            return [(choi, self.tags_out_L + self.tags_out_R + self.tags_in_L + self.tags_in_R)]
 
     def transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.

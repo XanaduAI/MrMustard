@@ -48,6 +48,7 @@ class Parametrized:
     """
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
+        print("parametrized called with kwargs: ", kwargs)
         owner = f"{self.__class__.__qualname__}"
         self.param_names = []  # list of parameter names to preserve order
         remaining_params = {}

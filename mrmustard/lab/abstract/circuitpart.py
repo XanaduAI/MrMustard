@@ -37,6 +37,8 @@ class CircuitPart:
         modes_out: list[int] = [],
         name: str = None,
     ):
+        print("circuit part init with modes_in", modes_in, "modes_out", modes_out)
+        print("self is", self)
         self._reset_tags(modes_in, modes_out)
         self.name = name or self.__class__.__qualname__
 
@@ -83,34 +85,34 @@ class CircuitPart:
         yield from self.output_tag_at_mode.values()
 
     @property
-    def modes_in(self) -> set[int]:
-        "Returns the set of input modes that are used by this CircuitPart."
-        return set(self.input_tag_at_mode.keys())
+    def modes_in(self) -> tuple[int]:
+        "Returns the tuple of input modes that are used by this CircuitPart."
+        return tuple(self.input_tag_at_mode.keys())
 
     @property
-    def modes_out(self) -> set[int]:
-        "Returns the set of output modes that are used by this CircuitPart."
-        return set(self.output_tag_at_mode.keys())
+    def modes_out(self) -> tuple[int]:
+        "Returns the tuple of output modes that are used by this CircuitPart."
+        return tuple(self.output_tag_at_mode.keys())
 
     @property
-    def tags_in_L(self) -> set[int]:
-        r"""Returns the set of input tags of type L that are used by this CircuitPart"""
-        return set(t.L for t in self.tags_in)
+    def tags_in_L(self) -> tuple[int]:
+        r"""Returns the tuple of input tags of type L that are used by this CircuitPart"""
+        return tuple(t.L for t in self.tags_in)
 
     @property
-    def tags_in_R(self) -> set[int]:
-        r"""Returns the set of input tags of type R that are used by this CircuitPart"""
-        return set(t.R for t in self.tags_out)
+    def tags_in_R(self) -> tuple[int]:
+        r"""Returns the tuple of input tags of type R that are used by this CircuitPart"""
+        return tuple(t.R for t in self.tags_out)
 
     @property
-    def tags_out_L(self) -> set[int]:
-        r"""Returns the set of output tags of type L that are used by this CircuitPart"""
-        return set(t.L for t in self.tags_out)
+    def tags_out_L(self) -> tuple[int]:
+        r"""Returns the tuple of output tags of type L that are used by this CircuitPart"""
+        return tuple(t.L for t in self.tags_out)
 
     @property
-    def tags_out_R(self) -> set[int]:
-        r"""Returns the set of output tags of type R that are used by this CircuitPart"""
-        return set(t.R for t in self.tags_in)
+    def tags_out_R(self) -> tuple[int]:
+        r"""Returns the tuple of output tags of type R that are used by this CircuitPart"""
+        return tuple(t.R for t in self.tags_in)
 
     def can_connect_to(self, other: CircuitPart, mode: int) -> tuple[bool, str]:
         r"""Checks whether this CircuitPart can plug its `mode_out=mode` into the `mode_in=mode` of `other`.
