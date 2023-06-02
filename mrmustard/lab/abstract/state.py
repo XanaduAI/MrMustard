@@ -32,6 +32,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
+from mrmustard.representations import FockKet, FockDM, WignerKet, WignerDM
 from mrmustard.typing import (
     ComplexMatrix,
     ComplexTensor,
@@ -63,6 +64,7 @@ class State:  # pylint: disable=too-many-public-methods
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         _norm: float = 1.0,
+        flag_ket: bool = None,
     ):
         r"""Initializes the state.
 
