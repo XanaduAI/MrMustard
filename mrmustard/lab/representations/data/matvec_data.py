@@ -27,13 +27,16 @@ class MatVecData(Data):
         self.vec = math.atleast_2d(vec)
         self.coeff = math.atleast_1d(coeff)
 
+
     
     @property
     def batch_size(self) -> int:
         return self.coeff.shape[0]
 
 
+
     def __eq__(self, other: MatVecData) -> bool:
+
         return (
             np.allclose(self.mat, other.mat)
             and np.allclose(self.vec, other.vec)
@@ -41,7 +44,9 @@ class MatVecData(Data):
         )
 
 
+
     def __add__(self, other: MatVecData) -> MatVecData:
+
         if self.__class__ != other.__class__:
             raise ValueError(f"Cannot add {self.__class__} and {other.__class__}.")
         
@@ -56,6 +61,7 @@ class MatVecData(Data):
             )
 
 
+
     @abstractmethod
     def __sub__():
         pass
@@ -68,35 +74,56 @@ class MatVecData(Data):
 
     def __and__(self, other: MatVecData) -> MatVecData:
         r"Tensor product"
-        mat = []
-        vec = []
-        coeff = []
-        for c1 in self.mat:
-            for c2 in other.mat:
-                mat.append(math.block_diag([c1, c2]))
-        for m1 in self.mean:
-            for m2 in other.mean:
-                vec.append(math.concat([m1, m2], axis=-1))
-        for c1 in self.coeff:
-            for c2 in other.coeff:
-                coeff.append(c1 * c2)
-        mat = math.astensor(mat)
-        vec = math.astensor(vec)
-        coeff = math.astensor(coeff)
-        return self.__class__(mat, vec, coeff)
+
+        if self.__class__ != other.__class__:
+            raise ValueError(f"Cannot add {self.__class__} and {other.__class__}.")
+        
+        else:
+            mat = []
+            vec = []
+            coeff = []
+
+            for c1 in self.mat:
+
+                for c2 in other.mat:
+                    mat.append(math.block_diag([c1, c2]))
+
+            for m1 in self.mean:
+
+                for m2 in other.mean:
+                    vec.append(math.concat([m1, m2], axis=-1))
+
+            for c1 in self.coeff:
+
+                for c2 in other.coeff:
+                    coeff.append(c1 * c2)
+
+            mat = math.astensor(mat)
+            vec = math.astensor(vec)
+            coeff = math.astensor(coeff)
+            
+            return self.__class__(mat, vec, coeff)
+
 
 
     def simplify(self) -> None:
         r"""Simplify the data by combining terms that are equal."""
+
         indices_to_check = set(range(self.batch_size)) # TODO switch to lists?
         removed = set()
+
         while indices_to_check:
             i = indices_to_check.pop()
+
             for j in indices_to_check.copy():
+
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
                     self.coeff[i] += self.coeff[j]
                     indices_to_check.remove(j)
                     removed.add(j)
+
+                #else: do nothing
+
         to_keep = [i for i in range(self.batch_size) if i not in removed] # TODO replace by filter or set substraction?
         self.mat = self.mat[to_keep]
         self.vec = self.vec[to_keep]
