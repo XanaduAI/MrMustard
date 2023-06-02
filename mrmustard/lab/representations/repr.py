@@ -18,3 +18,68 @@ class Representation(ABC):
 
     def __init__(self) -> None:
         super().__init__()
+
+    
+    @abstractmethod
+    def number_means():
+        pass
+
+
+    @abstractmethod
+    def number_cov():
+        pass
+
+
+    @abstractmethod
+    @property
+    def purity():
+        pass
+
+
+    @abstractmethod
+    def number_stdev():
+        pass
+
+
+    @abstractmethod
+    @property
+    def norm():
+        pass
+
+
+    @abstractmethod
+    def probability():
+        pass
+
+
+    @abstractmethod
+    @property
+    def von_neumann_entropy():
+        pass
+
+
+    @abstractmethod
+    def __add__():
+        pass
+        
+
+    @abstractmethod
+    def __eq__():
+        pass
+
+
+    @abstractmethod
+    def __rmul__():
+        pass
+
+
+    @abstractmethod
+    def __truediv__():
+        pass
+
+
+    @abstractmethod
+    def _repr_markdown_():
+        pass
+
+     
