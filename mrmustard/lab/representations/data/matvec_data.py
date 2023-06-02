@@ -14,9 +14,7 @@
 
 from mrmustard.representations.data import Data
 from mrmustard.math import Math
-from mrmustard.types import Batched, Matrix, Number, Scalar, Vector
-
-from mrmustard.types
+from mrmustard.types import Batched, Matrix, Scalar, Vector
 
 math = Math()
 
@@ -117,10 +115,10 @@ class MatVecData(Data):
 
 
 
-    def simplify(self) -> None: # TODO make this functional and return a new object?
+    def simplify(self) -> None: # TODO make this functional and return a new object???
         r"""Simplify the data by combining terms that are equal."""
 
-        indices_to_check = set(range(self.batch_size)) # TODO switch to lists?
+        indices_to_check = set(range(self.batch_size)) # TODO switch to lists???
         removed = set()
 
         while indices_to_check:
