@@ -90,22 +90,6 @@ class FockDM(Fock):
         return math.all_diagonals(self.data.array, real = True)
     
 
-    def __eq__(self, other:Representation) -> bool:
-        r"""Compares two Representations (States) equal or not"""
-
-
-    def __rmul__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-
-
-    def __add__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-
-
-    def __truediv__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-
-
     def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
         r"""Applies a kraus operator to a density matrix.
         It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.

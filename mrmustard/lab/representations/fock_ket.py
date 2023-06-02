@@ -87,22 +87,6 @@ class FockKet(Fock):
         return math.abs(self.data.array)
     
 
-    def __eq__(self, other:Representation) -> bool:
-        r"""Compares two Representations (States) equal or not"""
-
-
-    def __rmul__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-
-
-    def __add__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-
-
-    def __truediv__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-
-
     def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
         r"""Applies a kraus operator to a ket.
         It assumes that the ket is indexed as left_1, ..., left_n.
