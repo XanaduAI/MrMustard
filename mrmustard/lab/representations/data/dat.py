@@ -14,7 +14,7 @@
 
 from abc import ABC
 
-class Representation(ABC):
+class Data(ABC):
 
     def __init__(self) -> None:
         super().__init__()
@@ -50,4 +50,3 @@ class Representation(ABC):
         pass
 
 
-    
