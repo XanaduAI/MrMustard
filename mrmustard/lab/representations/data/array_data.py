@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 from mrmustard.representations.data import Data
 
 class ArrayData(Data):
@@ -20,3 +21,51 @@ class ArrayData(Data):
         super().__init__()
         self.array = array
         self.cutoffs = array.shape
+
+
+
+    def __eq__():
+        raise NotImplementedError
+
+
+
+    @abstractmethod
+    def __add__():
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def __sub__():
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def __truediv__():
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def __mul__():
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def __neg__(): #implem ici
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def __and__():
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def simplify():
+        raise NotImplementedError() 
+    
