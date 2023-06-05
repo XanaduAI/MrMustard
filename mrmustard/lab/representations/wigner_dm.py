@@ -16,5 +16,5 @@ from mrmustard.representations import Representation
 
 class WignerDM(Representation):
 
-    def __init__(self) -> WignerDM:
+    def __init__(self):
         super().__init__()
