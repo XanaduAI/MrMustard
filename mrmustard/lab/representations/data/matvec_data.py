@@ -35,7 +35,6 @@ class MatVecData(Data): # Note : this class is abstract too!
 
 
 
-    @njit(parallel=True)
     def __eq__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> bool:
         # TODO : this could actually be implemented in parent class with a list of the things to compare
         return (
@@ -46,7 +45,6 @@ class MatVecData(Data): # Note : this class is abstract too!
 
 
 
-    @njit(parallel=True)
     def __add__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
 
         if self.__class__ != other.__class__:
@@ -65,7 +63,6 @@ class MatVecData(Data): # Note : this class is abstract too!
 
 
 
-    @njit(parallel=True)
     def __sub__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
        
        if self.__class__ != other.__class__:
