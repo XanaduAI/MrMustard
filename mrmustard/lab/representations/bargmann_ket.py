@@ -16,5 +16,5 @@ from mrmustard.representations import Representation
 
 class BargmannKet(Representation):
 
-    def __init__(self) -> BargmannKet:
+    def __init__(self):
         super().__init__()
