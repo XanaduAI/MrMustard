@@ -106,11 +106,11 @@ class GaussianData(MatVecData):
     @njit
     def __mul__(self, other: Union[Number, GaussianData]) -> GaussianData:
 
-        if isinstance(other, Number):
-            return GaussianData(self.cov, self.mean, self.coeff*math.cast(other, self.coeff.dtype))
+        if self.__class__ != other.__class__ and type(other) != Number:
+            raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
+            # TODO: change the error? not sure the way it's written supports anything... qualname?
         
-        elif isinstance(other, GaussianData):
-            # cov matrices: c1 (c1 + c2)^-1 c2 for each pair of cov mat in the batch
+        try:
             covs = []
 
             for c1 in self.cov:
@@ -139,9 +139,7 @@ class GaussianData(MatVecData):
                 self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeff, other.coeff
             ):
                 
-                coeffs.append(
-                    co1
-                    * co2
+                coeffs.append(co1 * co2
                     * math.exp(
                         0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
                         + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
@@ -150,8 +148,8 @@ class GaussianData(MatVecData):
                 )
 
             coeff = math.astensor(coeffs)
-
+            
             return GaussianData(cov, mean, coeff)
-        
-        else:
-            raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
+
+        except AttributeError: # we know it's a number
+            return GaussianData(self.cov, self.mean, self.coeff*math.cast(other, self.coeff.dtype))
