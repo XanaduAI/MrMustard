@@ -83,12 +83,14 @@ class QPolyData(MatVecData):
 
     def __mul__(self, other: Union[Number, QuadraticPolyData]) -> QuadraticPolyData:
 
-        if isinstance(other, Number):  # TODO: this seems to deal only with the case of self and other being a single gaussian ???
-            return QuadraticPolyData(self.A, self.b, self.c * other)
-        
-        elif isinstance(other, QuadraticPolyData): # TODO: invert decomposed covs instead
-            return QuadraticPolyData(self.A + other.A, self.b + other.b, self.c * other.c)  
+        if self.__class__ != other.__class__ and type(other) != Number:
+            raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
+            # TODO: change the error? not sure the way it's written supports anything... qualname?
         
         else:
-            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__.__qualname__}.")
+            try:
+                return QuadraticPolyData(self.A + other.A, self.b + other.b, self.c * other.c)
+            
+            except AttributeError:
+                return QuadraticPolyData(self.A, self.b, self.c * other)
 

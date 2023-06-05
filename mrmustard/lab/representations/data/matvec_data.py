@@ -71,7 +71,7 @@ class MatVecData(Data): # Note : this class is abstract too!
     def __sub__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
        
        if self.__class__ != other.__class__:
-            raise ValueError(f"Cannot subtract {self.__class__} and {other.__class__}.")
+            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.")
         
         elif (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
               and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):

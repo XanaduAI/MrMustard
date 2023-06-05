@@ -34,7 +34,7 @@ class SymplecticData(MatVecData):
 
 
 
-        @njit
+        @njit(parallel=True)
         def __mul__(self, other:Union[Number, Data]) -> SymplecticData:
 
             if self.__class__ != other.__class__ and type(other) != Number:
