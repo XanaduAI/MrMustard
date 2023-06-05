@@ -67,5 +67,5 @@ class GaussianData(MatVecData):
                 math.exp(0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)), poly.c.dtype
             )
 
-        else: # why else???
+        else: # why else, isn't this just part of the standard init???
             super().__init__(cov, mean, coeff)

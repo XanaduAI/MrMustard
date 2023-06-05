@@ -153,7 +153,7 @@ class MatVecData(Data):
 
             for j in range(i+1,N):
 
-                if mask[i] == 0 or i == j:
+                if mask[i] == 0 or i == j: #evaluated previously
                     continue
 
                 if ( np.allclose(self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True) 
