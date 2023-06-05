@@ -164,7 +164,7 @@ class MatVecData(Data): # Note : this class is abstract too!
 
     # TODO: decide which simplify we want to keep
     @njit(parallel=True)
-    def fast_simplify(self, rtol=1e-6, atol=1e-6) -> MatVecData:
+    def fast_simplify(self, rtolfloat=1e-6, atolfloat=1e-6) -> MatVecData:
         
         N = self.mat.shape[0]
         mask = np.ones(N, dtype=np.int8)
