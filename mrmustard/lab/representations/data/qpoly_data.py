@@ -12,9 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations.data import MatVecData
+from mrmustard.representations.data import MatVecData, GaussianData
 
 class QPolyData(MatVecData):
 
-    def __init__(self) -> MatVecData:
-        super().__init__()
+    def __init__(
+        self,
+        A: Batched[Matrix],
+        b: Batched[Vector],
+        c: Batched[Scalar],
+    ) -> QPolyData:
+        r"""
+        Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
+        Each of these has a batch dimension, and the batch dimension is the same for all of them.
+        They are the parameters of a Gaussian expressed as `c * exp(-x^T A x + x^T b)`.
+        Args:
+            A (batch, dim, dim): quadratic coefficients
+            b (batch, dim): linear coefficients
+            c (batch): constant
+        """
+        if isinstance(A, GaussianData): # isn't there a scope problem here ???
+                A = -math.inv(A.cov)
+                b = math.inv(A.cov) @ A.mean
+                c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
+
+        super().__init__(mat=A, vec=b, coeff=c)
+
+    @property
+    def A(self) -> Batched[Matrix]:
+        return self.mat
+
+    @A.setter
+    def A(self, value):
+        self.mat = value
+
+    @property
+    def b(self) -> Batched[Vector]:
+        return self.vec
+
+    @b.setter
+    def b(self, value):
+        self.vec = value
+
+    @property # isn't it confusing to have c then coeff? why not just coeff and leave it at that ???
+    def c(self) -> Batched[Scalar]:
+        return self.coeff
+
+    @c.setter
+    def c(self, value):
+        self.coeff = value
+
+
+
+    @abstractmethod
+    def __truediv__():
+        pass
+
+
+    def __mul__(self, other: Union[Number, QuadraticPolyData]) -> QuadraticPolyData:
+
+        if isinstance(other, Number):  # TODO: this seems to deal only with the case of self and other being a single gaussian ???
+            return QuadraticPolyData(self.A, self.b, self.c * other)
+        
+        elif isinstance(other, QuadraticPolyData): # TODO: invert decomposed covs instead
+            return QuadraticPolyData(self.A + other.A, self.b + other.b, self.c * other.c)  
+        
+        else:
+            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__.__qualname__}.")
+
