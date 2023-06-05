@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations.data import MatVecData
+import numpy as np
+from numba import njit
 from typing import Optional, Union
+from mrmustard.representations.data import MatVecData
 from mrmustard.types import Batched, Matrix, Scalar, Vector
 
 math = Math()
@@ -69,3 +71,81 @@ class GaussianData(MatVecData):
 
         else: # why else, isn't this just part of the standard init???
             super().__init__(cov, mean, coeff)
+
+
+        
+    @property
+    def cov(self) -> Batched[Matrix]:
+        return self.mat
+
+
+
+    @cov.setter
+    def cov(self, value):
+        self.mat = value
+
+
+
+    @property
+    def mean(self) -> Batched[Vector]:
+        return self.vec
+
+
+
+    @mean.setter
+    def mean(self, value):
+        self.vec = value
+
+
+    @njit
+    def __mul__(self, other: Union[Number, GaussianData]) -> GaussianData:
+
+        if isinstance(other, Number):
+            return GaussianData(self.cov, self.mean, self.coeff*math.cast(other, self.coeff.dtype))
+        
+        elif isinstance(other, GaussianData):
+            # cov matrices: c1 (c1 + c2)^-1 c2 for each pair of cov mat in the batch
+            covs = []
+
+            for c1 in self.cov:
+
+                for c2 in other.cov:
+
+                    covs.append(math.matmul(c1, math.solve(c1 + c2, c2)))
+
+            # means: c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 for each pair of cov mat in the batch
+            means = []
+
+            for c1, m1 in zip(self.cov, self.mean):
+
+                for c2, m2 in zip(other.cov, other.mean):
+
+                    means.append(
+                        math.matvec(c1, math.solve(c1 + c2, m2))
+                        + math.matvec(c2, math.solve(c1 + c2, m1))
+                    )
+
+            cov = math.astensor(covs)
+            mean = math.astensor(means)
+            coeffs = []
+
+            for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
+                self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeff, other.coeff
+            ):
+                
+                coeffs.append(
+                    co1
+                    * co2
+                    * math.exp(
+                        0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
+                        + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
+                        - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
+                    )
+                )
+
+            coeff = math.astensor(coeffs)
+
+            return GaussianData(cov, mean, coeff)
+        
+        else:
+            raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
