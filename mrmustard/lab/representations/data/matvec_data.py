@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import namba as nb
 import numpy as np
+from numba import njit
 from mrmustard.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.types import Batched, Matrix, Scalar, Vector
@@ -34,23 +34,25 @@ class MatVecData(Data):
         return self.coeff.shape[0]
 
 
-
-    def __eq__(self, other: MatVecData) -> bool:
+    @njit(parallel=True)
+    def __eq__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> bool:
 
         return (
-            np.allclose(self.mat, other.mat)
-            and np.allclose(self.vec, other.vec)
-            and np.allclose(self.coeff, other.coeff)
+            np.allclose(self.mat, other.mat, rtol=rtol, atol=atol)
+            and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)
+            and np.allclose(self.coeff, other.coeff, rtol=rtol, atol=atol)
         )
 
 
 
-    def __add__(self, other: MatVecData) -> MatVecData:
+    @njit(parallel=True)
+    def __add__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
 
         if self.__class__ != other.__class__:
             raise ValueError(f"Cannot add {self.__class__} and {other.__class__}.")
         
-        elif np.allclose(self.mat, other.mat) and np.allclose(self.vec, other.vec):
+        elif (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
+              and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):
             return MatVecData(self.mat, self.vec, self.coeff + other.coeff)
         
         else:
@@ -62,12 +64,14 @@ class MatVecData(Data):
 
 
 
-    def __sub__(self, other: MatVecData) -> MatVecData:
+    @njit(parallel=True)
+    def __sub__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
        
        if self.__class__ != other.__class__:
             raise ValueError(f"Cannot subtract {self.__class__} and {other.__class__}.")
         
-        elif np.allclose(self.mat, other.mat) and np.allclose(self.vec, other.vec):
+        elif (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
+              and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):
             return MatVecData(self.mat, self.vec, self.coeff - other.coeff)
         
         else:
@@ -78,6 +82,8 @@ class MatVecData(Data):
             )
 
 
+
+    @njit(parallel=True)
     def __and__(self, other: MatVecData) -> MatVecData:
         r"Tensor product"
 
@@ -112,6 +118,7 @@ class MatVecData(Data):
 
 
 
+    # TODO: decide which simplify we want to keep cf below
     def simplify(self) -> None: # TODO make this functional and return a new object???
         r"""Simplify the data by combining terms that are equal."""
 
@@ -138,7 +145,7 @@ class MatVecData(Data):
 
 
     # TODO: decide which simplify we want to keep
-    @nb.njit # this is parallelisable with nb.jit(parallel=True)
+    @njit(parallel=True)
     def fast_simplify(self, rtol=1e-6, atol=1e-6) -> None: # TODO make this functional and return a new object???
         
         N = self.mat.shape[0]
