@@ -220,7 +220,7 @@ from mrmustard.utils.xptensor import XPMatrix, XPVector
 math = Math()
 
 
-class Circuit:
+class Circuit(CircuitPart):
     r"""A collection of interconnected Operations that can be run as a quantum device.
     The order matters for the Operations in the Circuit, as they are applied sequentially.
     """
@@ -228,31 +228,30 @@ class Circuit:
     def __init__(self, ops: list[CircuitPart] = []):
         self._ops: list[CircuitPart] = ops
 
-    def _connect_ops(self, check: bool = True) -> None:
-        r"""Connects ops in the circuit according to their input and output modes."""
+    def _connect_ops(self) -> None:
+        r"""Connect ops in the circuit according to their input/output modes
+        and their position in the circuit.
+        """
         for i, op1 in enumerate(self._ops):
             for mode in op1.modes_out:
                 for op2 in self._ops[i + 1 :]:
-                    # NOTE that we don't check for input/output mode overlap at the circuit level
                     if op1.can_connect_to(op2, mode)[0]:
-                        op1.connect_to(op2, mode)
+                        op1.connect_to(op2, mode, check=False)
                         break
 
-    # def _disconnect_ops(self) -> None:
-    #     r"""Disconnects ops in the circuit by resetting their tags."""
-    #     for op in self._ops:
-    #         op._reset_tags()
+    def _disconnect_ops(self) -> None:
+        r"""Disconnects ops in the circuit by resetting their tags."""
+        for op in self._ops:
+            op._reset_tags()
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
-        if isinstance(other, Circuit):
-            return Circuit(self._ops + other._ops)
-        elif isinstance(other, CircuitPart):
+        if isinstance(other, CircuitPart):
             return Circuit(self._ops + [other])
         else:
-            raise TypeError(f"Cannot add {type(other)} to Circuit.")
+            raise TypeError(f"Circuit >> {other.__class__.__qualname__} is not supported.")
 
     def primal(self, op: CircuitPart) -> Circuit:
-        r"""We assume that self is used as in `state >> circuit` and we do immediate execution."""
+        r"""We assume that this circuit is used as in `state >> circuit` and we do immediate execution."""
         for next_op in self._ops:
             op = next_op.primal(op)
         return op
@@ -260,17 +259,25 @@ class Circuit:
     def __repr__(self) -> str:
         return circuit_text(self._ops, decimals=settings.CIRCUIT_DECIMALS)
 
-    def TN_data(self) -> list[tuple[Tensor, tuple[int, ...]]]:
-        "returns a list of tensors and index tags for the tensor network representation of the circuit"
-        self._connect_ops()
-        tt = []
-        for op in self._ops:
-            for tensor, tags in op.fock_tensors_and_tags:
-                tt.extend([tensor, tags])
+    def _TN_data(self) -> list[Tensor | tuple[int, ...]]:
+        r"""Returns a list of interleaved tensors and index tags for the tensor network
+        representation of the circuit. This is meant to be the input of opt_einsum."""
 
-    def fock(self):  # maybe this should not be here...
+        self._connect_ops()
+        tt: list(tuple(int, tuple(int, ...))) = []
+        for op in self._ops:
+            tt.append((op.fock, op.tags))
+        self._disconnect_ops()
+        # now we remap the tags so that they are unique and in order from 0 to N
+        all_tags = [t for pair in tt for t in pair[1]]
+        unique_tags = list(set(all_tags))
+        tag_map = {t: i for i, t in enumerate(unique_tags)}
+        tt = [(t[0], tuple(tag_map[t] for t in t[1])) for t in tt]
+        return [t for pair in tt for t in pair]  # flatten
+
+    def fock(self):
         "returns the fock representation of the circuit"
-        return math.einsum(*self.TN_data(), optimize="optimal")
+        return math.einsum(*self._TN_data(), optimize="optimal")
 
     # old methods that we keep for now:
 

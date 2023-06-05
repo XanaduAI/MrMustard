@@ -29,6 +29,7 @@ class CircuitPart:
     its place in the circuit and how to connect to other CircuitParts.
 
     A CircuitPart has tags (pairs of integers) assigned to its input and output modes.
+    Each mode has a tag pair assigned to it, which are used to label the
     """
 
     def __init__(
@@ -49,10 +50,10 @@ class CircuitPart:
     def _reset_tags(self, modes_in: Sequence[int] = None, modes_out: Sequence[int] = None):
         r"""Assigns new tags to the input and output modes of this CircuitPart."""
         TD = TagDispenser()
-        self.input_tag_at_mode: dict[int, Tag] = {
+        self._input_tag_at_mode: dict[int, Tag] = {
             m: Tag(TD.get_tag(), TD.get_tag()) for m in modes_in or self.modes_in
         }
-        self.output_tag_at_mode: dict[int, tuple[int, Optional[int]]] = {
+        self._output_tag_at_mode: dict[int, tuple[int, Optional[int]]] = {
             m: Tag(TD.get_tag(), TD.get_tag()) for m in modes_out or self.modes_out
         }
 
@@ -73,28 +74,28 @@ class CircuitPart:
     @property  # NOTE: override this property in subclasses if the subclass has internal tags
     def all_tags(self) -> Iterator[Tag]:
         "Yields all tag pairs of this CircuitPart (output and input)."
-        yield from self.output_tag_at_mode.values()
-        yield from self.input_tag_at_mode.values()
+        yield from self._output_tag_at_mode.values()
+        yield from self._input_tag_at_mode.values()
 
     @property
     def tags_in(self) -> Iterator[Tag]:
         "Yields all input tag pairs of this CircuitPart."
-        yield from self.input_tag_at_mode.values()
+        yield from self._input_tag_at_mode.values()
 
     @property
     def tags_out(self) -> Iterator[Tag]:
         "Yields all output tag pairs of this CircuitPart."
-        yield from self.output_tag_at_mode.values()
+        yield from self._output_tag_at_mode.values()
 
     @property
     def modes_in(self) -> tuple[int]:
         "Returns the tuple of input modes that are used by this CircuitPart."
-        return tuple(self.input_tag_at_mode.keys())
+        return tuple(self._input_tag_at_mode.keys())
 
     @property
     def modes_out(self) -> tuple[int]:
         "Returns the tuple of output modes that are used by this CircuitPart."
-        return tuple(self.output_tag_at_mode.keys())
+        return tuple(self._output_tag_at_mode.keys())
 
     @property
     def tags_in_L(self) -> tuple[int]:
@@ -155,4 +156,4 @@ class CircuitPart:
             can, fail_reason = self.can_connect_to(other, mode)
             if not can:
                 raise ValueError(fail_reason)
-        other.input_tag_at_mode[mode] = self.output_tag_at_mode[mode]
+        other._input_tag_at_mode[mode] = self._output_tag_at_mode[mode]
