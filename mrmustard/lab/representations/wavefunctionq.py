@@ -12,13 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.math import Math
 from mrmustard.representations import Representation
-from mrmustard.typing import Scalar, RealMatrix, RealVector
 
-math = Math()
-
-class Bargmann(Representation):
+class WaveFunctionQ(Representation):
 
     def __init__(self):
         super().__init__()

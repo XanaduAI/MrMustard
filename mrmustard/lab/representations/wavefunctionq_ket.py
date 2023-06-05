@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations import Representation
+from mrmustard.representations import WavefunctionQ
 
-class WaveFunctionQKet(Representation):
+class WaveFunctionQKet(WavefunctionQ):
 
-    def __init__(self) -> WaveFunctionQKet:
+    def __init__(self):
         super().__init__()
