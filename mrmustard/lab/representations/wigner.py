@@ -14,7 +14,7 @@
 
 from mrmustard.math import Math
 from mrmustard.representations import Representation
-from mrmustard.typing import Scalar, RealMatrix, RealVector, Any
+from mrmustard.typing import Scalar, RealMatrix, RealVector
 
 math = Math()
 
@@ -72,24 +72,26 @@ class Wigner(Representation):
         )
     
 
-    # def __eq__(self, other:Representation) -> bool:
-    #     r"""Compares two Representations (States) equal or not"""
-    #     return self.data.__eq__(other)
+    def __eq__(self, other:Representation) -> bool:
+        r"""Compares two Representations (States) equal or not"""
+        return self.data.__eq__(other)
 
 
-    # def __rmul__(self, other:Representation) -> Representation:
-    #     r"""Multiplies two Representations (States)"""
-    #     return self.data.__rmul__(other)
+    def __rmul__(self, other:Representation) -> Representation:
+        r"""Multiplies two Representations (States)"""
+        return self.data.__rmul__(other)
 
 
-    # def __add__(self, other:Representation) -> Representation:
-    #     r"""Adds two Representations (States)"""
-    #     return self.data.__add__(other)
+    def __add__(self, other:Representation) -> Representation:
+        r"""Adds two Representations (States)"""
+        return self.data.__add__(other)
 
 
-    # def __truediv__(self, other:Representation) -> Representation:
-    #     r"""Divides two Representations (States)"""
-    #     return self.data.__truediv__(other)
+    def __truediv__(self, other:Representation) -> Representation:
+        r"""Divides two Representations (States)"""
+        return self.data.__truediv__(other)
+    
+    
     def symplectic_eigenvals(cov: RealMatrix, hbar: float) -> list:
         r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
