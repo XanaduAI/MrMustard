@@ -48,7 +48,9 @@ class Parametrized:
     """
 
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
+        print("=" * 80)
         print("parametrized called with kwargs: ", kwargs)
+        print("=" * 80)
         owner = f"{self.__class__.__qualname__}"
         self.param_names = []  # list of parameter names to preserve order
         remaining_params = {}
@@ -68,6 +70,11 @@ class Parametrized:
             # dynamically assign parameter as attribute of the class
             self.__dict__[name] = param
             self.param_names.append(name)
+        print("=" * 80)
+        print(
+            f"parametrized of self={self.__class__} calling super ({super()}) with remaining_params={remaining_params}"
+        )
+        print("=" * 80)
         super().__init__(**remaining_params)
 
     def param_string(self, decimals: int) -> str:

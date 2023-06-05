@@ -238,10 +238,10 @@ class Circuit:
                         op1.connect_to(op2, mode)
                         break
 
-    def _disconnect_ops(self) -> None:
-        r"""Disconnects ops in the circuit by resetting their tags."""
-        for op in self._ops:
-            op._reset_tags()
+    # def _disconnect_ops(self) -> None:
+    #     r"""Disconnects ops in the circuit by resetting their tags."""
+    #     for op in self._ops:
+    #         op._reset_tags()
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
         if isinstance(other, Circuit):

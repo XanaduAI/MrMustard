@@ -37,8 +37,10 @@ class CircuitPart:
         modes_out: list[int] = [],
         name: str = None,
     ):
+        print("=" * 80)
         print("circuit part init with modes_in", modes_in, "modes_out", modes_out)
         print("self is", self)
+        print("=" * 80)
         self._reset_tags(modes_in, modes_out)
         self.name = name or self.__class__.__qualname__
 

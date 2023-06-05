@@ -87,7 +87,22 @@ class State(CircuitPart):
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
-        print("state called with kwargs: ", kwargs)
+        print("=" * 80)
+        print(
+            "state called with args: ",
+            cov,
+            means,
+            eigenvalues,
+            symplectic,
+            ket,
+            dm,
+            modes,
+            cutoffs,
+            _norm,
+            name,
+            kwargs,
+        )
+        print("=" * 80)
         self._purity = None
         self._fock_probabilities = None
         self._cutoffs = cutoffs
