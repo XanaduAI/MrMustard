@@ -78,16 +78,11 @@ class MatVecData(Data):
             )
 
 
-    
-    def __neg__(): #TODO: implement
-        pass
-
-
     def __and__(self, other: MatVecData) -> MatVecData:
         r"Tensor product"
 
         if self.__class__ != other.__class__:
-            raise ValueError(f"Cannot add {self.__class__} and {other.__class__}.")
+            raise TypeError(f"Cannot combine {self.__class__} and {other.__class__}.")
         
         else:
             mat = []

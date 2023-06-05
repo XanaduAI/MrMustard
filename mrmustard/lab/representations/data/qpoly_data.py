@@ -38,25 +38,37 @@ class QPolyData(MatVecData):
 
         super().__init__(mat=A, vec=b, coeff=c)
 
+
+
     @property
     def A(self) -> Batched[Matrix]:
         return self.mat
+
+
 
     @A.setter
     def A(self, value):
         self.mat = value
 
+
+
     @property
     def b(self) -> Batched[Vector]:
         return self.vec
+
+
 
     @b.setter
     def b(self, value):
         self.vec = value
 
+
+
     @property # isn't it confusing to have c then coeff? why not just coeff and leave it at that ???
     def c(self) -> Batched[Scalar]:
         return self.coeff
+
+
 
     @c.setter
     def c(self, value):
@@ -64,9 +76,9 @@ class QPolyData(MatVecData):
 
 
 
-    @abstractmethod
     def __truediv__():
-        pass
+       raise NotImplementedError() # TODO : implement!
+
 
 
     def __mul__(self, other: Union[Number, QuadraticPolyData]) -> QuadraticPolyData:
