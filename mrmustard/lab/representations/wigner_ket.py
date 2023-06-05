@@ -16,5 +16,5 @@ from mrmustard.representations import Representation
 
 class WignerKet(Representation):
 
-    def __init__(self) -> WignerKet:
+    def __init__(self):
         super().__init__()
