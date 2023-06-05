@@ -19,6 +19,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.typing import Tensor, RealVector, Sequence
+from typing import Optional
 from mrmustard.lab.representations import WignerKet, WignerDM, FockKet, FockDM, BargmannKet, BargmannDM, WavefunctionQKet, WavaefunctionQDM
 
 math = Math()
