@@ -32,6 +32,11 @@ class MatVecData(Data): # Note : this class is abstract too!
     @property
     def batch_size(self) -> int:
         return self.coeff.shape[0]
+    
+
+
+    def __neg__(self):
+        return MatVecData(mat=-self.mat, vec=-self.vec)
 
 
 

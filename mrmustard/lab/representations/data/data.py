@@ -21,12 +21,14 @@ class Data(ABC):
         super().__init__()
 
     
-
+    
+    @abstractmethod
     def __neg__(self): #implem here!
         raise NotImplementedError()
 
     
     
+    @abstractmethod
     def __eq__(self, other: List[Data], rtol=1e-6, atol=1e-6):
         raise NotImplementedError()
 

@@ -41,7 +41,7 @@ class GaussianData(MatVecData):
             mean  (batch, dim): means (real)
             coeff (batch): coefficients (complex)
         """
-
+        # TODO : fix scope issue ???
         if (cov or mean) is not None:
     
             if cov is None:
@@ -148,7 +148,7 @@ class GaussianData(MatVecData):
                 )
 
             coeff = math.astensor(coeffs)
-            
+
             return GaussianData(cov, mean, coeff)
 
         except AttributeError: # we know it's a number
