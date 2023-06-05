@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABC
+from typing import List
 
 class Data(ABC):
 
@@ -20,43 +21,49 @@ class Data(ABC):
         super().__init__()
 
     
-    @abstractmethod
-    def __eq__():
-        raise NotImplementedError
 
+    def __neg__(self): #implem here!
+        raise NotImplementedError()
 
-    @abstractmethod
-    def __add__():
+    
+    
+    def __eq__(self, other: List[Data], rtol=1e-6, atol=1e-6):
         raise NotImplementedError()
 
 
+
     @abstractmethod
-    def __sub__():
+    def __add__(self, other: Data, rtol=1e-6, atol=1e-6):
         raise NotImplementedError()
 
 
+
     @abstractmethod
-    def __truediv__():
+    def __sub__(self, other: Data, rtol=1e-6, atol=1e-6):
         raise NotImplementedError()
 
 
+
     @abstractmethod
-    def __mul__():
+    def __truediv__(self):
         raise NotImplementedError()
 
 
+
     @abstractmethod
-    def __neg__(): #implem ici
+    def __mul__(self, other:Union[Number, Data]):
         raise NotImplementedError()
 
 
+
     @abstractmethod
-    def __and__():
+    def __and__(self, other:Data):
         raise NotImplementedError()
 
 
+
     @abstractmethod
-    def simplify():
+    def simplify(self, rtol=1e-6, atol=1e-6):
         raise NotImplementedError()
 
 

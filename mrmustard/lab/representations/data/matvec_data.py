@@ -20,7 +20,7 @@ from mrmustard.types import Batched, Matrix, Scalar, Vector
 
 math = Math()
 
-class MatVecData(Data):
+class MatVecData(Data): # Note : this class is abstract too!
 
     def __init__(self, mat: Batched[Matrix], vec: Batched[Vector], coeff: Batched[Scalar]):
         self.mat = math.atleast_3d(mat)
@@ -34,9 +34,10 @@ class MatVecData(Data):
         return self.coeff.shape[0]
 
 
+
     @njit(parallel=True)
     def __eq__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> bool:
-
+        # TODO : this could actually be implemented in parent class with a list of the things to compare
         return (
             np.allclose(self.mat, other.mat, rtol=rtol, atol=atol)
             and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)

@@ -96,6 +96,12 @@ class GaussianData(MatVecData):
     def mean(self, value):
         self.vec = value
 
+    
+
+    def __truediv__():
+       raise NotImplementedError() # TODO : implement!
+
+
 
     @njit
     def __mul__(self, other: Union[Number, GaussianData]) -> GaussianData:
