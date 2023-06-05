@@ -16,73 +16,90 @@ import numpy as np
 from numba import njit
 from mrmustard.representations.data import Data
 from mrmustard.math import Math
-from mrmustard.types import Batched, Matrix, Scalar, Vector
+from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
 math = Math()
 
+__all__ = [MatVecData]
+
 class MatVecData(Data): # Note : this class is abstract too!
 
-    def __init__(self, mat: Batched[Matrix], vec: Batched[Vector], coeff: Batched[Scalar]):
+    def __init__(self, mat: Batched[Matrix], vec: Batched[Vector], coeffs: Batched[Scalar]):
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)
-        self.coeff = math.atleast_1d(coeff)
+        self.coeffs = math.atleast_1d(coeffs)
 
 
     
     @property
     def batch_size(self) -> int:
-        return self.coeff.shape[0]
+        return self.coeffs.shape[0]
     
 
 
-    def __neg__(self):
-        return MatVecData(mat=-self.mat, vec=-self.vec)
+    @njit
+    def __neg__(self) -> MatVecData:
+        return self.__class__(mat = -self.mat, vec = -self.vec)
 
 
 
-    def __eq__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> bool:
+    def __eq__(self, other: MatVecData, rtol:float=1e-6, atol:float=1e-6) -> bool:
         # TODO : this could actually be implemented in parent class with a list of the things to compare
-        return (
-            np.allclose(self.mat, other.mat, rtol=rtol, atol=atol)
-            and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)
-            and np.allclose(self.coeff, other.coeff, rtol=rtol, atol=atol)
-        )
-
-
-
-    def __add__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
-
-        if self.__class__ != other.__class__:
-            raise ValueError(f"Cannot add {self.__class__} and {other.__class__}.")
         
-        elif (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
-              and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):
-            return MatVecData(self.mat, self.vec, self.coeff + other.coeff)
-        
-        else:
-            return MatVecData(
-                math.concat([self.mat, other.mat], axis=0),
-                math.concat([self.vec, other.vec], axis=0),
-                math.concat([self.coeff, other.coeff], axis=0)
+        try:
+            return (
+                np.allclose(self.mat, other.mat, rtol=rtol, atol=atol)
+                and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)
+                and np.allclose(self.coeffs, other.coeffs, rtol=rtol, atol=atol)
             )
+    
+        except AttributeError as e:
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
 
-    def __sub__(self, other: MatVecData, rtol=1e-6, atol=1e-6) -> MatVecData:
+# TODO : find a smart way to do add/sub without repeating code and optimising for common case
+    @njit(parallel=True)
+    def __add__(self, other: MatVecData, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
+
+        try:
+
+            if (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
+                and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):
+
+                return self.__class__(self.mat, self.vec, self.coeff + other.coeff)
+            
+            else:
+                return self.__class__(
+                    math.concat([self.mat, other.mat], axis=0),
+                    math.concat([self.vec, other.vec], axis=0),
+                    math.concat([self.coeffs, other.coeffs], axis=0)
+                )
+            
+        except AttributeError as e:
+            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+
+
+
+    @njit(parallel=True)
+    def __sub__(self, other: MatVecData, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
        
-       if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.")
-        
-        elif (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
-              and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):
-            return MatVecData(self.mat, self.vec, self.coeff - other.coeff)
-        
-        else:
-            return MatVecData(
-                math.concat([self.mat, other.mat], axis=0),
-                math.concat([self.vec, other.vec], axis=0),
-                math.concat([self.coeff, other.coeff], axis=0)
-            )
+       try:
+
+            if (np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) 
+                and np.allclose(self.vec, other.vec, rtol=rtol, atol=atol)):
+
+                return self.__class__(self.mat, self.vec, self.coeffs - other.coeffs)
+            
+            else:
+                return self.__class__(
+                    mat = math.concat([self.mat, other.mat], axis=0),
+                    vec = math.concat([self.vec, other.vec], axis=0),
+                    coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+                )
+            
+       except AttributeError as e:
+           raise TypeError(f"Cannot substract {self.__class__} and {other.__class__}.") from e
 
 
 
@@ -90,39 +107,35 @@ class MatVecData(Data): # Note : this class is abstract too!
     def __and__(self, other: MatVecData) -> MatVecData:
         r"Tensor product"
 
-        if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot combine {self.__class__} and {other.__class__}.")
-        
-        else:
+        try:
+
             mat = []
             vec = []
-            coeff = []
+            coeffs = []
 
             for c1 in self.mat:
-
                 for c2 in other.mat:
                     mat.append(math.block_diag([c1, c2]))
 
-            for m1 in self.mean:
-
-                for m2 in other.mean:
+            for m1 in self.vec:
+                for m2 in other.vec:
                     vec.append(math.concat([m1, m2], axis=-1))
 
-            for c1 in self.coeff:
+            for c1 in self.coeffs:
+                for c2 in other.coeffs:
+                    coeffs.append(c1 * c2)
 
-                for c2 in other.coeff:
-                    coeff.append(c1 * c2)
-
-            mat = math.astensor(mat)
-            vec = math.astensor(vec)
-            coeff = math.astensor(coeff)
-
-            return self.__class__(mat, vec, coeff)
+            return self.__class__(mat = math.astensor(mat),
+                                  vec = math.astensor(vec),
+                                  coeffs = math.astensor(coeffs))
+        
+        except AttributeError as e:
+            raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
 
 
 
     # TODO: decide which simplify we want to keep cf below
-    def simplify(self) -> None: # TODO make this functional and return a new object???
+    def simplify(self) -> None: # TODO make this functional and return a new object
         r"""Simplify the data by combining terms that are equal."""
 
         indices_to_check = set(range(self.batch_size)) # TODO switch to lists???
@@ -138,9 +151,7 @@ class MatVecData(Data): # Note : this class is abstract too!
                     indices_to_check.remove(j)
                     removed.add(j)
 
-                #else: do nothing
-
-        to_keep = [i for i in range(self.batch_size) if i not in removed] # TODO replace by filter or set substraction?
+        to_keep = [i for i in range(self.batch_size) if i not in removed]
         self.mat = self.mat[to_keep]
         self.vec = self.vec[to_keep]
         self.coeff = self.coeff[to_keep]
@@ -149,7 +160,7 @@ class MatVecData(Data): # Note : this class is abstract too!
 
     # TODO: decide which simplify we want to keep
     @njit(parallel=True)
-    def fast_simplify(self, rtol=1e-6, atol=1e-6) -> None: # TODO make this functional and return a new object???
+    def fast_simplify(self, rtol=1e-6, atol=1e-6) -> MatVecData:
         
         N = self.mat.shape[0]
         mask = np.ones(N, dtype=np.int8)
@@ -163,13 +174,15 @@ class MatVecData(Data): # Note : this class is abstract too!
 
                 if ( np.allclose(self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True) 
                  and np.allclose(self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True)
-                 ):
+                   ):
                     self.coeff[i] += self.coeff[j]
                     mask[j] = 0
 
-        self.mat[mask == 1]
-        self.vec[mask == 1]
-        self.coeff[mask == 1]
+        return self.__class__(mat=self.mat[mask==1], vec=self.vec[mask==1], coeff=self.coeff[mask==1])
+
+        
+        
+        
 
 
     

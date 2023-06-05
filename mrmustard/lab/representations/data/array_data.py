@@ -14,93 +14,88 @@
 
 import numpy as np
 from numba import njit
+from typing import Union
 from mrmustard.representations.data import Data
+from mrmustard.typing import Scalar
+
+__all__ = [ArrayData]
 
 class ArrayData(Data):
 
     def __init__(self, array):
-        super().__init__()
+
         self.array = array
         self.cutoffs = array.shape
+        super().__init__()
+
+
+    @njit
+    def __neg__(self) -> ArrayData:
+        return self.__class__(array= -self.array) # Note : the almost invisible "-" sign
+        
+
+
+    def __eq__(self, other: ArrayData, rtol:float=1e-6, atol:float=1e-6) -> bool:
+
+        try:
+            return np.allclose(self.array, other.array, rtol=rtol, atol=atol)
+        
+        except AttributeError as e:
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+
+
+
+    @njit
+    def __add__(self, other:ArrayData) -> ArrayData:
+
+        try:
+            return self.__class__(array=self.array + other.array)
+        
+        except AttributeError as e:
+            raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+            
+
+
+    @njit
+    def __sub__(self, other: ArrayData) -> ArrayData:
+        self.__add__(-other)
 
 
 
     @njit(parallel=True)
-    def __eq__(self, other: ArrayData, rtol=1e-6, atol=1e-6) -> bool:
+    def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
 
-        if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.")
+        try:
+            return self.__class__(array=self.array * other.array)
         
-        else:
-            return np.allclose(self.array, other.array, rtol=rtol, atol=atol)
+        except AttributeError:
+            try: # if it's not an array, we try a Number
+                return self.__class__(array=self.array * other)
+            
+            except TypeError as e:
+                raise TypeError(f"Cannot multiply/divide {self.__class__} and {other.__class__}."
+                                ) from e
 
 
 
-    
-    def __add__(self, other:ArrayData) -> ArrayData:
-
-        if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.")
-        
-        else:
-            return ArrayData(array=self.array + other.array)
-
-
-
-    def __sub__(self, other: ArrayData) -> ArrayData:
-
-        if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.")
-        
-        else:
-            return ArrayData(array=self.array - other.array)
-
-
-
-    
-    def __truediv__(self, other: ArrayData) -> ArrayData:
-
-        if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot divide {self.__class__} and {other.__class__}.")
-        
-        else:
-            return ArrayData(array=np.true_divide(self.array, other.array))
-
-
-
-    @njit(parallel=Tru)
-    def __mul__(self, other: Union[Number, ArrayData]) -> ArrayData:
-
-        if self.__class__ != other.__class__ and type(other) != Number:
-            raise TypeError(f"Cannot perform multiplication here.")
-        
-        else:
-            try:
-                return ArrayData(array=self.array * other.array)
-
-            except AttributeError: # it is a Number
-                return ArrayData(array=self.array * other)
-
-
-
-    def __neg__(self): #implem here
-        return ArrayData(array=-self.array)
+    @njit
+    def __truediv__(self, Union[Scalar, ArrayData]) -> ArrayData:
+        self.__mul__(1/other)
 
 
 
     @njit(parallel=True)
     def __and__(self, other:ArrayData) -> ArrayData:
-         
-         if self.__class__ != other.__class__:
-            raise TypeError(f"Cannot do tensor product on {self.__class__} and {other.__class__}.")
-         
-         else:
-             return ArrayData(array=np.outer(self.array, other.array))
-             
+
+        try:
+            return self.__class__(array=np.outer(self.array, other.array))
+        
+        except AttributeError as e:
+         raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e             
 
 
 
-    @abstractmethod
-    def simplify(self): # TODO: implement
+    @njit(parallel=True)
+    def simplify(self) -> ArrayData: # TODO: implement
         raise NotImplementedError() 
     

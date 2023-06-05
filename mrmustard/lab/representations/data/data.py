@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC
-from typing import List
+from abc import ABC, abstractmethod
+from typing import List, Union
+from mrmustard.typing import Scalar
+
+__all__ = [Data]
 
 class Data(ABC):
 
@@ -29,31 +32,31 @@ class Data(ABC):
     
     
     @abstractmethod
-    def __eq__(self, other: List[Data], rtol=1e-6, atol=1e-6):
+    def __eq__(self, other: List[Data], rtol:float=1e-6, atol:float=1e-6):
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __add__(self, other: Data, rtol=1e-6, atol=1e-6):
+    def __add__(self, other: Data, rtol:float=1e-6, atol:float=1e-6):
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __sub__(self, other: Data, rtol=1e-6, atol=1e-6):
+    def __sub__(self, other: Data, rtol:float=1e-6, atol:float=1e-6):
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __truediv__(self):
+    def __truediv__(self, other:Union[Scalar, Data]):
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __mul__(self, other:Union[Number, Data]):
+    def __mul__(self, other:Union[Scalar, Data]):
         raise NotImplementedError()
 
 
@@ -65,7 +68,7 @@ class Data(ABC):
 
 
     @abstractmethod
-    def simplify(self, rtol=1e-6, atol=1e-6):
+    def simplify(self, rtol:float=1e-6, atol:float=1e-6):
         raise NotImplementedError()
 
 
