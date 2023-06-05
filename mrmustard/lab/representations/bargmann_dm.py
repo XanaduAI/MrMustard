@@ -16,5 +16,5 @@ from mrmustard.representations import Representation
 
 class BargmannDM(Representation):
 
-    def __init__(self) -> BargmannDM:
+    def __init__(self):
         super().__init__()

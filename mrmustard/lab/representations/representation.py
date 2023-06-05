@@ -16,7 +16,7 @@ from abc import ABC
 
 class Representation(ABC):
 
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
 
     
