@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import namba as nb
+import numpy as np
 from mrmustard.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.types import Batched, Matrix, Scalar, Vector
@@ -128,7 +130,7 @@ class MatVecData(Data):
 
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
                     self.coeff[i] += self.coeff[j]
-                    indices_to_check.remove(j) #this because you don't want to iterate again over it
+                    indices_to_check.remove(j)
                     removed.add(j)
 
                 #else: do nothing
@@ -137,6 +139,32 @@ class MatVecData(Data):
         self.mat = self.mat[to_keep]
         self.vec = self.vec[to_keep]
         self.coeff = self.coeff[to_keep]
+
+
+
+    # TODO: decide which simplify we want to keep
+    @nb.njit # this is parallelisable with nb.jit(parallel=True)
+    def fast_simplify(self, rtol=1e-6, atol=1e-6) -> None: # TODO make this functional and return a new object???
+        
+        N = self.mat.shape[0]
+        mask = np.ones(N, dtype=np.int8)
+
+        for i in range(N):
+
+            for j in range(i+1,N):
+
+                if mask[i] == 0 or i == j:
+                    continue
+
+                if ( np.allclose(self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True) 
+                 and np.allclose(self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True)
+                 ):
+                    self.coeff[i] += self.coeff[j]
+                    mask[j] = 0
+
+        self.mat[mask == 1]
+        self.vec[mask == 1]
+        self.coeff[mask == 1]
 
 
     
