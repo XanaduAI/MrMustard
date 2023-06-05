@@ -56,38 +56,21 @@ class Representation(ABC):
     @property
     def von_neumann_entropy():
         pass
-    # @abstractmethod
-    # def __add__():
-    #     pass
+
+
+    @abstractmethod
+    def __add__():
+        pass
         
 
-    # @abstractmethod
-    # def __eq__():
-    #     pass
+    @abstractmethod
+    def __eq__():
+        pass
 
 
-    # @abstractmethod
-    # def __rmul__():
-    #     pass
-
-        def __eq__(self, other:Representation) -> bool:
-        r"""Compares two Representations (States) equal or not"""
-        return self.data.__eq__(other)
-
-
-    def __rmul__(self, other:Representation) -> Representation:
-        r"""Multiplies two Representations (States)"""
-        return self.data.__rmul__(other)
-
-
-    def __add__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-        return self.data.__add__(other)
-
-
-    def __truediv__(self, other:Representation) -> Representation:
-        r"""Divides two Representations (States)"""
-        return self.data.__truediv__(other)
+    @abstractmethod
+    def __rmul__():
+        pass
 
 
     @abstractmethod
