@@ -16,5 +16,17 @@ from mrmustard.representations.data import MatVecData
 
 class SimplecticData(MatVecData):
 
-    def __init__(self) -> SimplecticData:
-        super().__init__()
+    def __init__(self, mat, mean, coeff) -> SimplecticData:
+        super().__init__(mat=mat, vec=mean, coeff=coeff)
+
+
+
+    @abstractmethod
+    def __truediv__(self):
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def __mul__(self, other:Union[Number, Data]):
+        raise NotImplementedError()
