@@ -22,41 +22,41 @@ class Data(ABC):
     
     @abstractmethod
     def __eq__():
-        pass
+        raise NotImplementedError
 
 
     @abstractmethod
     def __add__():
-        pass
+        raise NotImplementedError()
 
 
     @abstractmethod
     def __sub__():
-        pass
+        raise NotImplementedError()
 
 
     @abstractmethod
     def __truediv__():
-        pass
+        raise NotImplementedError()
 
 
     @abstractmethod
-    def __rmul__():
-        pass
+    def __mul__():
+        raise NotImplementedError()
 
 
     @abstractmethod
-    def __neg__():
-        pass
+    def __neg__(): #implem ici
+        raise NotImplementedError()
 
 
     @abstractmethod
     def __and__():
-        pass
+        raise NotImplementedError()
 
 
     @abstractmethod
     def simplify():
-        pass
+        raise NotImplementedError()
 
 
