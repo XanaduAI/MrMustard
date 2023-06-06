@@ -13,10 +13,11 @@
 # limitations under the License.
 
 from __future__ import annotations
-from numba import njit
+#from numba import njit
+import numpy as np
 from typing import Union
 from mrmustard.math import Math
-from mrmustard.representations.data import MatVecData, GaussianData
+from mrmustard.lab import MatVecData, GaussianData
 from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
 math = Math()
@@ -86,8 +87,8 @@ class QPolyData(MatVecData):
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
 
         if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
-            c = super().__scalar_mul(c=other)
-            return self.__class__(cov=self.A, mean=self.b, coeffs=c)
+            c = super().scalar_mul(c=other)
+            return self.__class__(A=self.A, b=self.b, c=c)
         
         else: # TODO : use MM's math module where possible
             raise NotImplementedError() # TODO : implement (is the below correct?)

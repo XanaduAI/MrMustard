@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 from typing import List
-from mrmustard.representations.data import Data
+from mrmustard.lab import Data
 from mrmustard.math import Math
 from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
@@ -34,10 +34,6 @@ class MatVecData(Data):  # Note : this class is abstract too!
     @property
     def batch_size(self) -> int:
         return self.coeffs.shape[0]
-    
-
-    def scalar_mul(self, c:Scalar) -> List[Scalar]:
-        return self.coeffs * math.cast(c, self.coeffs.dtype)
 
 
     #@njit
@@ -68,25 +64,23 @@ class MatVecData(Data):  # Note : this class is abstract too!
         atol: float = 1e-6,
         check_for_equality: bool = False,
         sub:bool = False # TODO : find a more elegant way to subtract! cf below
-    ) -> MatVecData:
+        ) -> MatVecData:
         
         if check_for_equality:
-            try:
-                if super().same(X=[self.mat, self.vec], 
-                                Y=[other.mat, other.vec],
-                                rtol=rtol, 
-                                atol=atol
-                                ):
-                    if sub: # TODO : find a more elegant way to subtract! cf above
-                        return self.__class__(self.mat, self.vec, self.coeff - other.coeff)
-                    else:
-                        return self.__class__(self.mat, self.vec, self.coeff + other.coeff)
 
-            except AttributeError:
-                break
+            if super().same(X=[self.mat, self.vec], 
+                            Y=[other.mat, other.vec],
+                            rtol=rtol, 
+                            atol=atol
+                            ):
+                if sub: # TODO : find a more elegant way to subtract! cf above
+                    return self.__class__(self.mat, self.vec, self.coeff - other.coeff)
+                else:
+                    return self.__class__(self.mat, self.vec, self.coeff + other.coeff)
+
 
         else:
-            try:
+            try: # TODO : make sure subtract is handled correctly in this case, nothing different?
                 return self.__class__(
                     math.concat([self.mat, other.mat], axis=0),
                     math.concat([self.vec, other.vec], axis=0),
@@ -99,7 +93,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
 
     #@njit(parallel=True)
-    def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> self.__class__:
+    def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> MatVecData:
         return self.__add__(other=other, atol=atol, rtol=rtol)
         
 
@@ -108,7 +102,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
     def __and__(self, other: MatVecData) -> MatVecData:
         r"Tensor product"
 
-        try:
+        try: # TODO : decide which code we keep, old commented or new?
             # mat = []
             # vec = []
             # coeffs = []
@@ -153,7 +147,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
                     self.vec[i], self.vec[j]
                 ):
-                    self.coeff[i] += self.coeff[j]
+                    self.coeffs[i] += self.coeffs[j]
                     indices_to_check.remove(j)
                     removed.add(j)
 

@@ -16,8 +16,8 @@ from __future__ import annotations
 import numpy as np
 #from numba import njit
 from typing import Optional, Union
+from mrmustard.lab import MatVecData
 from mrmustard.math import Math
-from mrmustard.representations.data import MatVecData
 from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
 math = Math()
@@ -32,7 +32,7 @@ class GaussianData(MatVecData):
         coeffs: Optional[Batched[Scalar]] = None,
     ) -> None:
         r"""
-        Gaussian data: covariance, mean, coeffsicient.
+        Gaussian data: covariance, mean, coefficient.
         Each of these has a batch dimension, and the length of the
         batch dimension is the same for all three.
         These are the parameters of a linear combination of Gaussians,
@@ -63,7 +63,7 @@ class GaussianData(MatVecData):
             batch_size = cov.shape[-3]
             coeffs = math.ones((batch_size), dtype=mean.dtype)
 
-        # what is this??? do we keep it ?
+        # TODO : decide on what this is, whether we keep it do we keep it ?
         if isinstance(cov, QuadraticPolyData):  # enables GaussianData(quadraticdata)
             poly = cov  # for readability
             inv_A = math.inv(poly.A)
@@ -109,8 +109,8 @@ class GaussianData(MatVecData):
     #@njit
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
 
-        if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
-            c = super().__scalar_mul(c=other)
+        if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
+            c = super().scalar_mul(c=other)
             return self.__class__(cov=self.cov, mean=self.mean, coeffs=c)
         
         else:

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import numpy as np
 from typing import List, Union
 from mrmustard.typing import Scalar
 
@@ -24,7 +25,7 @@ class Data(ABC):
 
         
     def same(self, X: List[Scalar], Y: List[Scalar], rtol:float=1e-6, atol:float=1e-6) -> bool:
-        return all([np.allclose(x, y) for x, y in zip(X, Y)])
+        return all([np.allclose(x, y, rtol=rtol, atol=atol) for x, y in zip(X, Y)])
 
     
     @abstractmethod

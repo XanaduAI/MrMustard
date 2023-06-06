@@ -13,11 +13,11 @@
 # limitations under the License.
 
 from __future__ import annotations
-import numpy as np
 #from numba import njit
+import numpy as np
 from typing import Union
+from mrmustard.lab import Data
 from mrmustard.math import Math
-from mrmustard.representations.data import Data
 from mrmustard.typing import Scalar
 
 math = Math()
@@ -33,7 +33,7 @@ class ArrayData(Data):
 
     #@njit
     def __neg__(self) -> Data:
-        return self.__class__(array= -self.array) # Note : the almost invisible "-" sign
+        return self.__class__(array= -self.array)
         
 
 
@@ -81,7 +81,7 @@ class ArrayData(Data):
 
 
     #@njit
-    def __truediv__(self, Union[Scalar, ArrayData]) -> ArrayData:
+    def __truediv__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
         self.__mul__(other = 1/other)
 
 
