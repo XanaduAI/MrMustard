@@ -40,7 +40,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
         return self.coeffs * math.cast(c, self.coeffs.dtype)
 
 
-    @njit
+    #@njit
     def __neg__(self) -> MatVecData:
         return self.__class__(mat=-self.mat, vec=-self.vec, coeffs=self.coeffs)
 
@@ -60,7 +60,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
                 f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def __add__(
         self,
         other: MatVecData,
@@ -98,13 +98,13 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
 
 
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> self.__class__:
         return self.__add__(other=other, atol=atol, rtol=rtol)
         
 
 
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def __and__(self, other: MatVecData) -> MatVecData:
         r"Tensor product"
 
@@ -164,7 +164,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
 
     # TODO: decide which simplify we want to keep
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def fast_simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
         N = self.mat.shape[0]
         mask = np.ones(N, dtype=np.int8)

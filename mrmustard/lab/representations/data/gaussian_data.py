@@ -106,7 +106,7 @@ class GaussianData(MatVecData):
        raise NotImplementedError() # TODO : implement!
 
 
-    @njit
+    #@njit
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
 
         if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!

@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 import numpy as np
-from numba import njit
+#from numba import njit
 from typing import Union
 from mrmustard.math import Math
 from mrmustard.representations.data import Data
@@ -31,7 +31,7 @@ class ArrayData(Data):
         super().__init__()
 
 
-    @njit
+    #@njit
     def __neg__(self) -> Data:
         return self.__class__(array= -self.array) # Note : the almost invisible "-" sign
         
@@ -47,7 +47,7 @@ class ArrayData(Data):
 
 
 
-    @njit
+    #@njit
     def __add__(self, other:ArrayData) -> ArrayData:
 
         try:
@@ -58,13 +58,13 @@ class ArrayData(Data):
             
 
 
-    @njit
+    #@njit
     def __sub__(self, other: ArrayData) -> ArrayData:
         self.__add__(-other)
 
 
 
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
 
         try:
@@ -80,13 +80,13 @@ class ArrayData(Data):
 
 
 
-    @njit
+    #@njit
     def __truediv__(self, Union[Scalar, ArrayData]) -> ArrayData:
         self.__mul__(other = 1/other)
 
 
 
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def __and__(self, other:ArrayData) -> ArrayData:
 
         try:
@@ -97,7 +97,7 @@ class ArrayData(Data):
 
 
 
-    @njit(parallel=True)
+    #@njit(parallel=True)
     def simplify(self) -> ArrayData: # TODO: implement
         raise NotImplementedError() 
     

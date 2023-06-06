@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import annotations
+from numba import njit
 from typing import Union
 from mrmustard.math import Math
 from mrmustard.representations.data import MatVecData, GaussianData
@@ -81,7 +82,7 @@ class QPolyData(MatVecData):
        raise NotImplementedError() # TODO : implement!
 
 
-
+    #@njit(parallel=True)
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
 
         if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
