@@ -38,7 +38,7 @@ class ArrayData(Data):
     def __eq__(self, other: ArrayData, rtol:float=1e-6, atol:float=1e-6) -> bool:
 
         try:
-            return np.allclose(self.array, other.array, rtol=rtol, atol=atol)
+            return super().same(X=[self.array], Y=[other.array], rtol=rtol, atol=atol)
         
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e

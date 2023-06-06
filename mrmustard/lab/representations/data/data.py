@@ -23,18 +23,19 @@ class Data(ABC):
     def __init__(self) -> None:
         super().__init__()
 
-    
+        
+    def same(self, X: List[Scalar], Y: List[Scalar], rtol:float=1e-6, atol:float=1e-6) -> bool:
+        return all([np.allclose(x, y) for x, y in zip(X, Y)])
+
     
     @abstractmethod
-    def __neg__(self): #implem here!
+    def __eq__(self):
         raise NotImplementedError()
 
     
-    
-    @abstractmethod
-    def __eq__(self, other: List[Data], rtol:float=1e-6, atol:float=1e-6):
+     @abstractmethod
+    def __neg__(self):
         raise NotImplementedError()
-
 
 
     @abstractmethod
