@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import numpy as np
 #from numba import njit
 from typing import Optional, Union
+from mrmustard.math import Math
 from mrmustard.representations.data import MatVecData
 from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
 math = Math()
 
-__all__ = [GaussianData]
 
 class GaussianData(MatVecData):
 
@@ -28,8 +29,8 @@ class GaussianData(MatVecData):
         self,
         cov: Optional[Batched[Matrix]] = None,
         mean: Optional[Batched[Vector]] = None,
-        coeffss: Optional[Batched[Scalar]] = None,
-    ) -> GaussianData: # variable scope???
+        coeffs: Optional[Batched[Scalar]] = None,
+    ) -> None:
         r"""
         Gaussian data: covariance, mean, coeffsicient.
         Each of these has a batch dimension, and the length of the
@@ -43,7 +44,7 @@ class GaussianData(MatVecData):
             mean  (batch, dim): means (real)
             coeffs (batch): coeffsicients (complex)
         """
-        # TODO : fix scope issue ???
+    
         if (cov or mean) is not None:
     
             if cov is None:
@@ -73,7 +74,7 @@ class GaussianData(MatVecData):
             )
 
         else: # why else, isn't this just part of the standard init???
-            super().__init__(cov, mean, coeffs)
+            super().__init__(mat=cov, vec=mean, coeffs=coeffs)
 
 
         
@@ -84,7 +85,7 @@ class GaussianData(MatVecData):
 
 
     @cov.setter
-    def cov(self, value):
+    def cov(self, value) -> None:
         self.mat = value
 
 
@@ -96,28 +97,21 @@ class GaussianData(MatVecData):
 
 
     @mean.setter
-    def mean(self, value):
+    def mean(self, value) -> None:
         self.vec = value
 
     
 
-    def __truediv__():
+    def __truediv__(self, other: GaussianData) -> GaussianData:
        raise NotImplementedError() # TODO : implement!
-
-
-    def __scalar_mul(self, c:Scalar) -> GaussianData:
-        return self.__class__(
-            cov = self.cov, 
-            mean = self.mean, 
-            coeffs = self.coeffs * math.cast(c, self.coeffs.dtype)
-            )
 
 
     @njit
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
 
         if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
-            return self.__scalar_mul(c=other)
+            c = super().__scalar_mul(c=other)
+            return self.__class__(cov=self.cov, mean=self.mean, coeffs=c)
         
         else:
             try:
@@ -138,7 +132,7 @@ class GaussianData(MatVecData):
                 # for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
                 #     self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeffs, other.coeffs
                 # ):   
-                #     coeffss.append(co1 * co2
+                #     coeffs.append(co1 * co2
                 #         * math.exp(
                 #             0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
                 #             + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)

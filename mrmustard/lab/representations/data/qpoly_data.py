@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+from typing import Union
+from mrmustard.math import Math
 from mrmustard.representations.data import MatVecData, GaussianData
+from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
+math = Math()
 class QPolyData(MatVecData):
 
     def __init__(
@@ -21,7 +26,7 @@ class QPolyData(MatVecData):
         A: Batched[Matrix],
         b: Batched[Vector],
         c: Batched[Scalar],
-    ) -> QPolyData:
+    ) -> None:
         r"""
         Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
         Each of these has a batch dimension, and the batch dimension is the same for all of them.
@@ -31,7 +36,8 @@ class QPolyData(MatVecData):
             b (batch, dim): linear coefficients
             c (batch): constant
         """
-        if isinstance(A, GaussianData): # isn't there a scope problem here ???
+
+        if isinstance(A, GaussianData):
                 A = -math.inv(A.cov)
                 b = math.inv(A.cov) @ A.mean
                 c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
@@ -45,11 +51,9 @@ class QPolyData(MatVecData):
         return self.mat
 
 
-
     @A.setter
-    def A(self, value):
+    def A(self, value) -> None:
         self.mat = value
-
 
 
     @property
@@ -57,40 +61,38 @@ class QPolyData(MatVecData):
         return self.vec
 
 
-
     @b.setter
-    def b(self, value):
+    def b(self, value) -> None:
         self.vec = value
 
 
-
-    @property # isn't it confusing to have c then coeff? why not just coeff and leave it at that ???
+    @property
     def c(self) -> Batched[Scalar]:
         return self.coeff
 
 
-
     @c.setter
-    def c(self, value):
+    def c(self, value) -> None:
         self.coeff = value
 
 
 
-    def __truediv__():
+    def __truediv__(self, other:QPolyData) -> QPolyData:
        raise NotImplementedError() # TODO : implement!
 
 
 
-    def __mul__(self, other: Union[Number, QuadraticPolyData]) -> QuadraticPolyData:
+    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
 
-        if self.__class__ != other.__class__ and type(other) != Number:
-            raise TypeError(f"Cannot multiply GaussianData with {other.__class__.__qualname__}")
-            # TODO: change the error? not sure the way it's written supports anything... qualname?
+        if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
+            c = super().__scalar_mul(c=other)
+            return self.__class__(cov=self.A, mean=self.b, coeffs=c)
         
-        else:
-            try:
-                return QuadraticPolyData(self.A + other.A, self.b + other.b, self.c * other.c)
+        else: # TODO : use MM's math module where possible
+            raise NotImplementedError() # TODO : implement (is the below correct?)
+            # try:
+            #     return self.__class__(self.A + other.A, self.b + other.b, self.c * other.c)
             
-            except AttributeError:
-                return QuadraticPolyData(self.A, self.b, self.c * other)
+            # except AttributeError:
+            #     return self.__class__(self.A, self.b, self.c * other)
 

@@ -12,17 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import numpy as np
 from numba import njit
 from typing import Union
+from mrmustard.math import Math
 from mrmustard.representations.data import Data
 from mrmustard.typing import Scalar
 
-__all__ = [ArrayData]
+math = Math()
 
 class ArrayData(Data):
 
-    def __init__(self, array):
+    def __init__(self, array) -> None:
 
         self.array = array
         self.cutoffs = array.shape
@@ -30,7 +32,7 @@ class ArrayData(Data):
 
 
     @njit
-    def __neg__(self) -> ArrayData:
+    def __neg__(self) -> Data:
         return self.__class__(array= -self.array) # Note : the almost invisible "-" sign
         
 
@@ -80,7 +82,7 @@ class ArrayData(Data):
 
     @njit
     def __truediv__(self, Union[Scalar, ArrayData]) -> ArrayData:
-        self.__mul__(1/other)
+        self.__mul__(other = 1/other)
 
 
 

@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import numpy as np
 from numba import njit
+from typing import List
 from mrmustard.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Batched, Matrix, Scalar, Vector
 
 math = Math()
 
-__all__ = [MatVecData]
-
 
 class MatVecData(Data):  # Note : this class is abstract too!
     def __init__(
         self, mat: Batched[Matrix], vec: Batched[Vector], coeffs: Batched[Scalar]
-    ):
+    ) -> None:
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)
         self.coeffs = math.atleast_1d(coeffs)
@@ -34,11 +34,15 @@ class MatVecData(Data):  # Note : this class is abstract too!
     @property
     def batch_size(self) -> int:
         return self.coeffs.shape[0]
+    
+
+    def scalar_mul(self, c:Scalar) -> List[Scalar]:
+        return self.coeffs * math.cast(c, self.coeffs.dtype)
 
 
     @njit
     def __neg__(self) -> MatVecData:
-        return self.__class__(mat=-self.mat, vec=-self.vec)
+        return self.__class__(mat=-self.mat, vec=-self.vec, coeffs=self.coeffs)
 
 
     def __eq__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> bool:
@@ -56,7 +60,6 @@ class MatVecData(Data):  # Note : this class is abstract too!
                 f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
-    # TODO : find a smart way to do add/sub without repeating code and optimising for common case
     @njit(parallel=True)
     def __add__(
         self,
@@ -91,13 +94,12 @@ class MatVecData(Data):  # Note : this class is abstract too!
                 )
 
             except AttributeError as e:
-                raise TypeError(
-                    f"Cannot add {self.__class__} and {other.__class__}."
-                ) from e
+                raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
+
 
 
     @njit(parallel=True)
-    def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> MatVecData:
+    def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> self.__class__:
         return self.__add__(other=other, atol=atol, rtol=rtol)
         
 
@@ -124,9 +126,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
             #         coeffs.append(c1 * c2)
 
             mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
-            vec = [
-                math.concat([v1, v2], axis=-1) for v1 in self.vec for v2 in other.vec
-            ]
+            vec = [math.concat([v1, v2], axis=-1) for v1 in self.vec for v2 in other.vec]
             coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
 
             return self.__class__(
@@ -136,16 +136,14 @@ class MatVecData(Data):  # Note : this class is abstract too!
             )
 
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot tensor {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
 
 
     # TODO: decide which simplify we want to keep cf below
     def simplify(self) -> None:  # TODO make this functional and return a new object
         r"""Simplify the data by combining terms that are equal."""
 
-        indices_to_check = set(range(self.batch_size))  # TODO switch to lists???
+        indices_to_check = set(range(self.batch_size))
         removed = set()
 
         while indices_to_check:
@@ -167,7 +165,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
     # TODO: decide which simplify we want to keep
     @njit(parallel=True)
-    def fast_simplify(self, rtolfloat=1e-6, atolfloat=1e-6) -> MatVecData:
+    def fast_simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
         N = self.mat.shape[0]
         mask = np.ones(N, dtype=np.int8)
 
@@ -187,5 +185,5 @@ class MatVecData(Data):  # Note : this class is abstract too!
         return self.__class__(
             mat=self.mat[mask == 1],
             vec=self.vec[mask == 1],
-            coeff=self.coeff[mask == 1],
-        )
+            coeffs=self.coeffs[mask == 1],
+            )

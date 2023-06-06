@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Union
 from mrmustard.typing import Scalar
-
-__all__ = [Data]
 
 class Data(ABC):
 
@@ -29,47 +28,47 @@ class Data(ABC):
 
     
     @abstractmethod
-    def __eq__(self):
+    def __eq__(self) -> bool:
         raise NotImplementedError()
 
     
      @abstractmethod
-    def __neg__(self):
+    def __neg__(self) -> Data:
         raise NotImplementedError()
 
 
     @abstractmethod
-    def __add__(self, other: Data, rtol:float=1e-6, atol:float=1e-6):
-        raise NotImplementedError()
-
-
-
-    @abstractmethod
-    def __sub__(self, other: Data, rtol:float=1e-6, atol:float=1e-6):
+    def __add__(self, other: Data, rtol:float=1e-6, atol:float=1e-6) -> Data:
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __truediv__(self, other:Union[Scalar, Data]):
+    def __sub__(self, other: Data, rtol:float=1e-6, atol:float=1e-6) -> Data:
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __mul__(self, other:Union[Scalar, Data]):
+    def __truediv__(self, other:Union[Scalar, Data]) -> Data:
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def __and__(self, other:Data):
+    def __mul__(self, other:Union[Scalar, Data]) -> Data:
         raise NotImplementedError()
 
 
 
     @abstractmethod
-    def simplify(self, rtol:float=1e-6, atol:float=1e-6):
+    def __and__(self, other:Data) -> Data:
+        raise NotImplementedError()
+
+
+
+    @abstractmethod
+    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
         raise NotImplementedError()
 
 

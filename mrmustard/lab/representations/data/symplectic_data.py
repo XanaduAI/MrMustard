@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
 import numpy as np
 from numba import njit
 from mrmustard.representations.data import MatVecData
@@ -19,7 +20,7 @@ from mrmustard.typing import Scalar
 
 class SymplecticData(MatVecData):
 
-    def __init__(self, mat, mean, coeff) -> SymplecticData:
+    def __init__(self, mat, mean, coeff) -> None:
         super().__init__(mat=mat, vec=mean, coeff=coeff)
 
 
@@ -28,7 +29,7 @@ class SymplecticData(MatVecData):
             return self.vec
 
 
-        def __truediv__(self): # TODO : implement
+        def __truediv__(self, other:SymplecticData) -> SymplecticData: # TODO : implement
             raise NotImplementedError()
 
 
@@ -40,10 +41,11 @@ class SymplecticData(MatVecData):
                 return self.__class__(cov=self.cov, mean=self.mean, coeffs=c)
             
             else: # TODO : use MM's math module where possible
-                try:
-                    return self.__class__(mat=np.matmul(self.mat, other.mat), 
-                                        mean=np.multiply(self.mean, other.mean),
-                                        coeff=np.multiply(self.coeff, other.coeff))
+                raise NotImplementedError() # TODO : implement (is the below correct?)
+                # try:
+                #     return self.__class__(mat=np.matmul(self.mat, other.mat), 
+                #                         mean=np.multiply(self.mean, other.mean),
+                #                         coeff=np.multiply(self.coeff, other.coeff))
                 
-                except AttributeError as e:
-                raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
+                # except AttributeError as e:
+                # raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
