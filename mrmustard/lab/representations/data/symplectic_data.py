@@ -15,6 +15,7 @@
 import numpy as np
 from numba import njit
 from mrmustard.representations.data import MatVecData
+from mrmustard.typing import Scalar
 
 class SymplecticData(MatVecData):
 
@@ -22,32 +23,27 @@ class SymplecticData(MatVecData):
         super().__init__(mat=mat, vec=mean, coeff=coeff)
 
 
-
         @property
         def mean(self) -> np.array:
             return self.vec
 
 
-        
         def __truediv__(self): # TODO : implement
             raise NotImplementedError()
 
 
-
         @njit(parallel=True)
-        def __mul__(self, other:Union[Number, Data]) -> SymplecticData:
+        def __mul__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData:
 
-            if self.__class__ != other.__class__ and type(other) != Number:
-                raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.")
+            if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
+                c = super().__scalar_mul(c=other)
+                return self.__class__(cov=self.cov, mean=self.mean, coeffs=c)
             
-            else:
-            
+            else: # TODO : use MM's math module where possible
                 try:
-                    return SymplecticData(mat=np.matmul(self.mat, other.mat), 
+                    return self.__class__(mat=np.matmul(self.mat, other.mat), 
                                         mean=np.multiply(self.mean, other.mean),
                                         coeff=np.multiply(self.coeff, other.coeff))
                 
-                except AttributeError:
-                    return SymplecticData(mat=self.mat * other, 
-                                          mean=self.mean*other, 
-                                          coeff=self.coeff*other)
+                except AttributeError as e:
+                raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
