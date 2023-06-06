@@ -18,16 +18,16 @@ import numpy as np
 from typing import Union
 from mrmustard.math import Math
 from mrmustard.lab import MatVecData, GaussianData
-from mrmustard.typing import Batched, Matrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()
 class QPolyData(MatVecData):
 
     def __init__(
         self,
-        A: Batched[Matrix],
-        b: Batched[Vector],
-        c: Batched[Scalar],
+        A: Batch[Matrix],
+        b: Batch[Vector],
+        c: Batch[Scalar],
     ) -> None:
         r"""
         Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
@@ -49,7 +49,7 @@ class QPolyData(MatVecData):
 
 
     @property
-    def A(self) -> Batched[Matrix]:
+    def A(self) -> Batch[Matrix]:
         return self.mat
 
 
@@ -59,7 +59,7 @@ class QPolyData(MatVecData):
 
 
     @property
-    def b(self) -> Batched[Vector]:
+    def b(self) -> Batch[Vector]:
         return self.vec
 
 
@@ -69,7 +69,7 @@ class QPolyData(MatVecData):
 
 
     @property
-    def c(self) -> Batched[Scalar]:
+    def c(self) -> Batch[Scalar]:
         return self.coeff
 
 

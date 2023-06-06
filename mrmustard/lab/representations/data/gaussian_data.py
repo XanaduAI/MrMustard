@@ -16,9 +16,9 @@ from __future__ import annotations
 import numpy as np
 #from numba import njit
 from typing import Optional, Union
-from mrmustard.lab import MatVecData
+from mrmustard.lab.representations.data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Batched, Matrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()
 
@@ -27,9 +27,9 @@ class GaussianData(MatVecData):
 
     def __init__(
         self,
-        cov: Optional[Batched[Matrix]] = None,
-        mean: Optional[Batched[Vector]] = None,
-        coeffs: Optional[Batched[Scalar]] = None,
+        cov: Optional[Batch[Matrix]] = None,
+        mean: Optional[Batch[Vector]] = None,
+        coeffs: Optional[Batch[Scalar]] = None,
     ) -> None:
         r"""
         Gaussian data: covariance, mean, coefficient.
@@ -79,7 +79,7 @@ class GaussianData(MatVecData):
 
         
     @property
-    def cov(self) -> Batched[Matrix]:
+    def cov(self) -> Batch[Matrix]:
         return self.mat
 
 
@@ -91,7 +91,7 @@ class GaussianData(MatVecData):
 
 
     @property
-    def mean(self) -> Batched[Vector]:
+    def mean(self) -> Batch[Vector]:
         return self.vec
 
 

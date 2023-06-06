@@ -18,14 +18,14 @@ from numba import njit
 from typing import List
 from mrmustard.lab import Data
 from mrmustard.math import Math
-from mrmustard.typing import Batched, Matrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()
 
 
 class MatVecData(Data):  # Note : this class is abstract too!
     def __init__(
-        self, mat: Batched[Matrix], vec: Batched[Vector], coeffs: Batched[Scalar]
+        self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]
     ) -> None:
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)

@@ -16,7 +16,7 @@ from __future__ import annotations
 #from numba import njit
 import numpy as np
 from typing import Union
-from mrmustard.lab import Data
+from mrmustard.lab.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
 
