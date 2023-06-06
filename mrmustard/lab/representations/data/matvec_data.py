@@ -64,17 +64,20 @@ class MatVecData(Data):  # Note : this class is abstract too!
         rtol: float = 1e-6,
         atol: float = 1e-6,
         check_for_equality: bool = False,
+        sub:bool = False # TODO : find a more elegant way to subtract! cf below
     ) -> MatVecData:
         
         if check_for_equality:
             try:
-                if super().same(
-                    X = [self.mat, self.vec], 
-                    Y = [other.mat, other.vec]
-                    rtol = rtol,
-                    atol = atol
-                    ):
-                    return self.__class__(self.mat, self.vec, self.coeff + other.coeff)
+                if super().same(X=[self.mat, self.vec], 
+                                Y=[other.mat, other.vec],
+                                rtol=rtol, 
+                                atol=atol
+                                ):
+                    if sub: # TODO : find a more elegant way to subtract! cf above
+                        return self.__class__(self.mat, self.vec, self.coeff - other.coeff)
+                    else:
+                        return self.__class__(self.mat, self.vec, self.coeff + other.coeff)
 
             except AttributeError:
                 break
@@ -94,26 +97,9 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
 
     @njit(parallel=True)
-    def __sub__(
-        self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6
-    ) -> MatVecData:
-        try:
-            if np.allclose(self.mat, other.mat, rtol=rtol, atol=atol) and np.allclose(
-                self.vec, other.vec, rtol=rtol, atol=atol
-            ):
-                return self.__class__(self.mat, self.vec, self.coeffs - other.coeffs)
-
-            else:
-                return self.__class__(
-                    mat=math.concat([self.mat, other.mat], axis=0),
-                    vec=math.concat([self.vec, other.vec], axis=0),
-                    coeffs=math.concat([self.coeffs, other.coeffs], axis=0),
-                )
-
-        except AttributeError as e:
-            raise TypeError(
-                f"Cannot substract {self.__class__} and {other.__class__}."
-            ) from e
+    def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> MatVecData:
+        return self.__add__(other=other, atol=atol, rtol=rtol)
+        
 
 
     @njit(parallel=True)
