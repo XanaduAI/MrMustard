@@ -15,7 +15,7 @@
 from __future__ import annotations
 #from numba import njit
 import numpy as np
-from typing import Union
+from typing import Tuple, Union
 from mrmustard.math import Math
 from mrmustard.lab import MatVecData, GaussianData
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
@@ -40,11 +40,18 @@ class QPolyData(MatVecData):
         """
 
         if isinstance(A, GaussianData):
-                A = -math.inv(A.cov)
-                b = math.inv(A.cov) @ A.mean
-                c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
-
+            A, b, c = self._from_GaussianData(A=A)
+        # TODO : make sure we're happy with this init. Nothing missing?
         super().__init__(mat=A, vec=b, coeff=c)
+
+
+
+    def _from_GaussianData(self, A:GaussianData
+                           ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
+        A = -math.inv(A.cov)
+        b = math.inv(A.cov) @ A.mean
+        c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
+        return A, b, c
 
 
 

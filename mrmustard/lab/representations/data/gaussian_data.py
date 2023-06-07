@@ -15,8 +15,8 @@
 from __future__ import annotations
 import numpy as np
 #from numba import njit
-from typing import Optional, Union
-from mrmustard.lab.representations.data import MatVecData
+from typing import Optional, Tuple, Union
+from mrmustard.lab.representations.data import MatVecData, QPolyData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
@@ -63,18 +63,23 @@ class GaussianData(MatVecData):
             batch_size = cov.shape[-3]
             coeffs = math.ones((batch_size), dtype=mean.dtype)
 
-        # TODO : decide on what this is, whether we keep it do we keep it ?
-        if isinstance(cov, QuadraticPolyData):  # enables GaussianData(quadraticdata)
-            poly = cov  # for readability
-            inv_A = math.inv(poly.A)
-            cov = 2 * inv_A
-            mean = 2 * math.solve(poly.A, poly.b)
-            coeffs = poly.c * math.cast(
-                math.exp(0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)), poly.c.dtype
-            )
+        if isinstance(cov, QPolyData):
+            cov, mean, coeffs = self._from_QPolyData(poly=cov)
 
-        else: # why else, isn't this just part of the standard init???
-            super().__init__(mat=cov, vec=mean, coeffs=coeffs)
+        super().__init__(mat=cov, vec=mean, coeffs=coeffs)
+
+    
+
+    def _from_QPolyData(self, poly:QPolyData
+                        ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
+        r" Allows the instantiation of a GaussianData object based on a QPolyData one."
+        inv_A = math.inv(poly.A)
+        cov = 2 * inv_A
+        mean = 2 * math.solve(poly.A, poly.b)
+        coeffs = poly.c * math.cast(
+            math.exp(0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)), poly.c.dtype
+        )
+        return (cov, mean, coeffs)
 
 
         
