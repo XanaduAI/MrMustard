@@ -158,6 +158,17 @@ class State:  # pylint: disable=too-many-public-methods
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
         return np.isclose(self.representation.purity(), 1.0, atol=1e-6)
+    
+
+    @property
+    def is_gaussian(self):
+        r'''Returns if the state is gaussian or not.'''
+        #TODO: now it is not enough\
+        if isinstance(self.representation, (WignerKet, WignerKet)):
+            return True
+        else:
+            raise NotImplementedError("Not implemented!")
+
 
     @property
     def means(self) -> Optional[RealVector]:
@@ -432,7 +443,7 @@ class State:  # pylint: disable=too-many-public-methods
         fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
         return State(dm=fock_partitioned, modes=item)
 
-    # TODO: refactor
+
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
         return self.representation.data.__eq__(other)
@@ -482,8 +493,8 @@ class State:  # pylint: disable=too-many-public-methods
             f"#### {self.__class__.__qualname__}\n\n"
             + "| Purity | Probability | Num modes | Bosonic size | Gaussian | Fock |\n"
             + "| :----: | :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.purity :.2e} | "
-            + self._format_probability(self.probability)
+            + f"| {self.representation.purity() :.2e} | "
+            + self._format_probability(self.representation.state_probability())
             + f" | {self.num_modes} | {'1' if self.is_gaussian else 'N/A'} | {'✅' if self.is_gaussian else '❌'} | {'✅' if self._ket is not None or self._dm is not None else '❌'} |"
         )
 
