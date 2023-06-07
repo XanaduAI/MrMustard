@@ -117,41 +117,37 @@ class State:  # pylint: disable=too-many-public-methods
             raise ValueError(
                 "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
             )
-        self._modes = modes
-        if modes is not None:
-            assert (
-                len(modes) == self.num_modes
-            ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+        # self._modes = modes
+        # if modes is not None:
+        #     assert (
+        #         len(modes) == self.num_modes
+        #     ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
 
     @property
     def modes(self):
         r"""Returns the modes of the state."""
         if self._modes is None:
-            return list(range(self.num_modes))
+            return list(range(self.representation.num_modes))
         return self._modes
 
-    def indices(self, modes) -> Union[Tuple[int], int]:
-        r"""Returns the indices of the given modes.
+    #TODO: Depends on the representation. Indices means something else.
+    # def indices(self, modes) -> Union[Tuple[int], int]:
+    #     r"""Returns the indices of the given modes.
 
-        Args:
-            modes (Sequence[int] or int): the modes or mode
+    #     Args:
+    #         modes (Sequence[int] or int): the modes or mode
 
-        Returns:
-            Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
-        """
-        if isinstance(modes, int):
-            return self.modes.index(modes)
-        return tuple(self.modes.index(m) for m in modes)
+    #     Returns:
+    #         Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
+    #     """
+    #     if isinstance(modes, int):
+    #         return self.modes.index(modes)
+    #     return tuple(self.modes.index(m) for m in modes)
 
     @property
     def purity(self) -> float:
         """Returns the purity of the state."""
-        if self._purity is None:
-            if self.is_gaussian:
-                self._purity = gaussian.purity(self.cov, settings.HBAR)
-            else:
-                self._purity = fock.purity(self._dm)
-        return self._purity
+        return self.representation.purity()
 
     @property
     def is_mixed(self):
@@ -161,94 +157,71 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
+        return np.isclose(self.representation.purity(), 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[RealVector]:
         r"""Returns the means vector of the state."""
-        return self._means
+        try:
+            return self.representation.means
+        except:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
 
     @property
     def cov(self) -> Optional[RealMatrix]:
         r"""Returns the covariance matrix of the state."""
-        return self._cov
+        try:
+            return self.representation.cov
+        except:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
 
     @property
     def number_stdev(self) -> RealVector:
         r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-        if self.is_gaussian:
-            return math.sqrt(math.diag_part(self.number_cov))
-
-        return math.sqrt(
-            fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
-        )
+        return self.representation.number_stdev()
 
     @property
     def cutoffs(self) -> List[int]:
         r"""Returns the cutoff dimensions for each mode."""
-        if self._cutoffs is not None:
-            return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
-        if self._ket is None and self._dm is None:
-            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
-        return list(
-            self.fock.shape[: self.num_modes]
-        )  # NOTE: triggered only if the fock representation already exists
+        try:
+            return self.representation.cutoffs
+        except:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
 
     @property
+    #TODO: Depends on the representation. Shape means something else.
     def shape(self) -> List[int]:
-        r"""Returns the shape of the state, accounting for ket/dm representation.
-
-        If the state is in Gaussian representation, the shape is inferred from
-        the first two moments of the number operator.
+        r"""Returns the shape of the state.
         """
-        # NOTE: if we initialize State(dm=pure_dm), self.fock returns the dm, which does not have shape self.cutoffs
         return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
 
     @property
     def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
-        if self._dm is None and self._ket is None:
-            _fock = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
-            )
-            if self.is_mixed:
-                self._dm = _fock
-                self._ket = None
-            else:
-                self._ket = _fock
-                self._dm = None
-        return self._ket if self._ket is not None else self._dm
+        if isinstance(self.representation, (FockKet, FockDM)):
+            return self.representation.data.array
+        #TODO: transfer to Fock from Wigner?
 
     @property
     def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
-        if self.is_gaussian:
-            return gaussian.number_means(self.cov, self.means, settings.HBAR)
-
-        return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
+        return self.representation.number_means()
 
     @property
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
-        if not self.is_gaussian:
-            raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
-
-        return gaussian.number_cov(self.cov, self.means, settings.HBAR)
+        return self.representation.number_cov()
 
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
-        if self.is_gaussian:
-            return self._norm
-        return fock.norm(self.fock, self._dm is not None)
+        return self.representation.norm()
 
     @property
-    def probability(self) -> float:
+    def state_probability(self) -> float:
         r"""Returns the probability of the state."""
-        norm = self.norm
-        if self.is_pure and self._ket is not None:
-            return norm**2
-        return norm
+        #TODO
+        return None
 
     def ket(
         self,
@@ -269,38 +242,10 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the ket
         """
-        if self.is_mixed:
-            return None
+        if isinstance(self.representation, FockKet):
+            return self.representation.data.array
+        #TODO: transfer from Wigner to Fock.
 
-        if cutoffs is None:
-            cutoffs = self.cutoffs
-        else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-
-        # TODO: shouldn't we check if trainable instead? that's when we want to recompute fock
-        if self.is_gaussian:
-            self._ket = fock.wigner_to_fock_state(
-                self.cov,
-                self.means,
-                shape=cutoffs,
-                return_dm=False,
-                max_prob=max_prob,
-                max_photons=max_photons,
-            )
-        else:  # only fock representation is available
-            if self._ket is None:
-                # if state is pure and has a density matrix, calculate the ket
-                if self.is_pure:
-                    self._ket = fock.dm_to_ket(self._dm)
-            current_cutoffs = list(self._ket.shape[: self.num_modes])
-            if cutoffs != current_cutoffs:
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-                if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._ket, paddings, mode="constant")
-                else:
-                    padded = self._ket
-                return padded[tuple(slice(s) for s in cutoffs)]
-        return self._ket[tuple(slice(s) for s in cutoffs)]
 
     def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
@@ -312,27 +257,10 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the density matrix
         """
-        if cutoffs is None:
-            cutoffs = self.cutoffs
-        else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-        if self.is_pure:
-            ket = self.ket(cutoffs=cutoffs)
-            if ket is not None:
-                return fock.ket_to_dm(ket)
-        else:
-            if self.is_gaussian:
-                self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs * 2, return_dm=True
-                )
-            elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-                if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
-                else:
-                    padded = self._dm
-                return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
-        return self._dm[tuple(slice(s) for s in cutoffs + cutoffs)]
+        if isinstance(self.representation, FockDM):
+            return self.representation.data.array
+        #TODO: transfer from Wigner to Fock.
+
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
@@ -346,14 +274,8 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the probabilities
         """
-        if self._fock_probabilities is None:
-            if self.is_mixed:
-                dm = self.dm(cutoffs=cutoffs)
-                self._fock_probabilities = fock.dm_to_probs(dm)
-            else:
-                ket = self.ket(cutoffs=cutoffs)
-                self._fock_probabilities = fock.ket_to_probs(ket)
-        return self._fock_probabilities
+        if isinstance(self.representation, (FockKet, FockDM)):
+            return self.representation.probabilities()
 
     def primal(self, other: Union[State, Transformation]) -> State:
         r"""Returns the post-measurement state after ``other`` is projected onto ``self``.
@@ -366,150 +288,108 @@ class State:  # pylint: disable=too-many-public-methods
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        # import pdb
+        # TODO
 
-        # pdb.set_trace()
-        if isinstance(other, State):
-            return self._project_onto_state(other)
-        try:
-            return other.dual(self)
-        except AttributeError as e:
-            raise TypeError(
-                f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
-            ) from e
+    # def _project_onto_state(self, other: State) -> Union[State, float]:
+    #     """If states are gaussian use generaldyne measurement, else use
+    #     the states' Fock representation."""
 
-    def _project_onto_state(self, other: State) -> Union[State, float]:
-        """If states are gaussian use generaldyne measurement, else use
-        the states' Fock representation."""
+    #     # if both states are gaussian
+    #     if self.is_gaussian and other.is_gaussian:
+    #         return self._project_onto_gaussian(other)
 
-        # if both states are gaussian
-        if self.is_gaussian and other.is_gaussian:
-            return self._project_onto_gaussian(other)
+    #     # either self or other is not gaussian
+    #     return self._project_onto_fock(other)
 
-        # either self or other is not gaussian
-        return self._project_onto_fock(other)
+    # def _project_onto_fock(self, other: State) -> Union[State, float]:
+    #     """Returns the post-measurement state of the projection between two non-Gaussian
+    #     states on the remaining modes or the probability of the result. When doing homodyne sampling,
+    #     returns the post-measurement state or the measument outcome if no modes remain.
 
-    def _project_onto_fock(self, other: State) -> Union[State, float]:
-        """Returns the post-measurement state of the projection between two non-Gaussian
-        states on the remaining modes or the probability of the result. When doing homodyne sampling,
-        returns the post-measurement state or the measument outcome if no modes remain.
+    #     Args:
+    #         other (State): state being projected onto self
 
-        Args:
-            other (State): state being projected onto self
+    #     Returns:
+    #         State or float: returns the conditional state on the remaining modes
+    #             or the probability.
+    #     """
+    #     remaining_modes = list(set(other.modes) - set(self.modes))
 
-        Returns:
-            State or float: returns the conditional state on the remaining modes
-                or the probability.
-        """
-        remaining_modes = list(set(other.modes) - set(self.modes))
+    #     out_fock = self._contract_with_other(other)
+    #     if len(remaining_modes) > 0:
+    #         return (
+    #             State(dm=out_fock, modes=remaining_modes)
+    #             if other.is_mixed or self.is_mixed
+    #             else State(ket=out_fock, modes=remaining_modes)
+    #         )
 
-        out_fock = self._contract_with_other(other)
-        if len(remaining_modes) > 0:
-            return (
-                State(dm=out_fock, modes=remaining_modes)
-                if other.is_mixed or self.is_mixed
-                else State(ket=out_fock, modes=remaining_modes)
-            )
+    #     # return the probability (norm) of the state when there are no modes left
+    #     return (
+    #         fock.math.abs(out_fock) ** 2
+    #         if other.is_pure and self.is_pure
+    #         else fock.math.abs(out_fock)
+    #     )
 
-        # return the probability (norm) of the state when there are no modes left
-        return (
-            fock.math.abs(out_fock) ** 2
-            if other.is_pure and self.is_pure
-            else fock.math.abs(out_fock)
-        )
+    # def _contract_with_other(self, other):
+    #     other_cutoffs = [
+    #         None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+    #     ]
+    #     if hasattr(self, "_preferred_projection"):
+    #         out_fock = self._preferred_projection(other, other.indices(self.modes))
+    #     else:
+    #         # matching other's cutoffs
+    #         self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+    #         out_fock = fock.contract_states(
+    #             stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+    #             stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+    #             a_is_dm=other.is_mixed,
+    #             b_is_dm=self.is_mixed,
+    #             modes=other.indices(self.modes),
+    #             normalize=self._normalize if hasattr(self, "_normalize") else False,
+    #         )
 
-    def _contract_with_other(self, other):
-        other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
-        ]
-        if hasattr(self, "_preferred_projection"):
-            out_fock = self._preferred_projection(other, other.indices(self.modes))
-        else:
-            # matching other's cutoffs
-            self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-            out_fock = fock.contract_states(
-                stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-                a_is_dm=other.is_mixed,
-                b_is_dm=self.is_mixed,
-                modes=other.indices(self.modes),
-                normalize=self._normalize if hasattr(self, "_normalize") else False,
-            )
+    #     return out_fock
 
-        return out_fock
+    # def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+    #     """Returns the result of a generaldyne measurement given that states ``self`` and
+    #     ``other`` are gaussian.
 
-    def _project_onto_gaussian(self, other: State) -> Union[State, float]:
-        """Returns the result of a generaldyne measurement given that states ``self`` and
-        ``other`` are gaussian.
+    #     Args:
+    #         other (State): gaussian state being projected onto self
 
-        Args:
-            other (State): gaussian state being projected onto self
+    #     Returns:
+    #         State or float: returns the output conditional state on the remaining modes
+    #             or the probability.
+    #     """
+    #     # here `self` is the measurement device state and `other` is the incoming state
+    #     # being projected onto the measurement state
+    #     remaining_modes = list(set(other.modes) - set(self.modes))
 
-        Returns:
-            State or float: returns the output conditional state on the remaining modes
-                or the probability.
-        """
-        # here `self` is the measurement device state and `other` is the incoming state
-        # being projected onto the measurement state
-        remaining_modes = list(set(other.modes) - set(self.modes))
+    #     _, probability, new_cov, new_means = gaussian.general_dyne(
+    #         other.cov,
+    #         other.means,
+    #         self.cov,
+    #         self.means,
+    #         self.modes,
+    #     )
 
-        _, probability, new_cov, new_means = gaussian.general_dyne(
-            other.cov,
-            other.means,
-            self.cov,
-            self.means,
-            self.modes,
-        )
+    #     if len(remaining_modes) > 0:
+    #         return State(
+    #             means=new_means,
+    #             cov=new_cov,
+    #             modes=remaining_modes,
+    #             _norm=probability if not getattr(self, "_normalize", False) else 1.0,
+    #         )
 
-        if len(remaining_modes) > 0:
-            return State(
-                means=new_means,
-                cov=new_cov,
-                modes=remaining_modes,
-                _norm=probability if not getattr(self, "_normalize", False) else 1.0,
-            )
+    #     return probability
 
-        return probability
-
-    def __iter__(self) -> Iterable[State]:
-        """Iterates over the modes and their corresponding tensors."""
-        return (self.get_modes(i) for i in range(self.num_modes))
+    # def __iter__(self) -> Iterable[State]:
+    #     """Iterates over the modes and their corresponding tensors."""
+    #     return (self.get_modes(i) for i in range(self.num_modes))
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
-        if not self.is_gaussian or not other.is_gaussian:  # convert all to fock now
-            # TODO: would be more efficient if we could keep pure states as kets
-            if self.is_mixed or other.is_mixed:
-                self_fock = self.dm()
-                other_fock = other.dm()
-                dm = fock.math.tensordot(self_fock, other_fock, [[], []])
-                # e.g. self has shape [1,3,1,3] and other has shape [2,2]
-                # we want self & other to have shape [1,3,2,1,3,2]
-                # before transposing shape is [1,3,1,3]+[2,2]
-                self_idx = list(range(len(self_fock.shape)))
-                other_idx = list(range(len(self_idx), len(self_idx) + len(other_fock.shape)))
-                return State(
-                    dm=math.transpose(
-                        dm,
-                        self_idx[: len(self_idx) // 2]
-                        + other_idx[: len(other_idx) // 2]
-                        + self_idx[len(self_idx) // 2 :]
-                        + other_idx[len(other_idx) // 2 :],
-                    ),
-                    modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
-                )
-            # else, all states are pure
-            self_fock = self.ket()
-            other_fock = other.ket()
-            return State(
-                ket=fock.math.tensordot(self_fock, other_fock, [[], []]),
-                modes=self.modes + [m + max(self.modes) + 1 for m in other.modes],
-            )
-        cov = gaussian.join_covs([self.cov, other.cov])
-        means = gaussian.join_means([self.means, other.means])
-        return State(
-            cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
-        )
+        return self.representation.data.__and__(other)
 
     def __getitem__(self, item) -> State:
         "setting the modes of a state (same API of `Transformation`)"
@@ -526,16 +406,6 @@ class State:  # pylint: disable=too-many-public-methods
         self._modes = item
         return self
 
-    def bargmann(self) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
-        r"""Returns the Bargmann representation of the state."""
-        if self.is_gaussian:
-            if self.is_pure:
-                A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
-            else:
-                A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
-        else:
-            return None
-        return A, B, C
 
     def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""
@@ -565,24 +435,7 @@ class State:  # pylint: disable=too-many-public-methods
     # TODO: refactor
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
-        if self.num_modes != other.num_modes:
-            return False
-        if not np.isclose(self.purity, other.purity, atol=1e-6):
-            return False
-        if self.is_gaussian and other.is_gaussian:
-            if not np.allclose(self.means, other.means, atol=1e-6):
-                return False
-            if not np.allclose(self.cov, other.cov, atol=1e-6):
-                return False
-            return True
-        try:
-            return np.allclose(
-                self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
-            )
-        except TypeError:
-            return np.allclose(
-                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
-            )
+        return self.representation.data.__eq__(other)
 
     def __rshift__(self, other: Transformation) -> State:
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
@@ -601,44 +454,21 @@ class State:  # pylint: disable=too-many-public-methods
 
     def __add__(self, other: State):
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
-        if not isinstance(other, State):
-            raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
-        warnings.warn("mixing states forces conversion to fock representation", UserWarning)
-        return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
+        return self.representation.data.__add__(other)
 
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
 
         E.g., ``0.5 * psi``.
         """
-        if self.is_gaussian:
-            warnings.warn(
-                "scalar multiplication forces conversion to fock representation", UserWarning
-            )
-            if self.is_pure:
-                return State(ket=self.ket() * other)
-            return State(dm=self.dm() * other)
-        if self._dm is not None:
-            return State(dm=self.dm() * other, modes=self.modes)
-        if self._ket is not None:
-            return State(ket=self.ket() * other, modes=self.modes)
-        raise ValueError("No fock representation available")
+        return self.representation.data.__rmul__(other)
 
     def __truediv__(self, other):
         r"""Implements division by a scalar from the left.
 
         E.g. ``psi / 0.5``
         """
-        if self.is_gaussian:
-            warnings.warn("scalar division forces conversion to fock representation", UserWarning)
-            if self.is_pure:
-                return State(ket=self.ket() / other)
-            return State(dm=self.dm() / other)
-        if self._dm is not None:
-            return State(dm=self.dm() / other, modes=self.modes)
-        if self._ket is not None:
-            return State(ket=self.ket() / other, modes=self.modes)
-        raise ValueError("No fock representation available")
+        return self.representation.data.__truediv__(other)
 
     @staticmethod
     def _format_probability(prob: float) -> str:
