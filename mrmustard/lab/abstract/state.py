@@ -299,104 +299,116 @@ class State:  # pylint: disable=too-many-public-methods
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
-        # TODO
+        # TODO: touch this primal when refactor measurement
+        # import pdb
 
-    # def _project_onto_state(self, other: State) -> Union[State, float]:
-    #     """If states are gaussian use generaldyne measurement, else use
-    #     the states' Fock representation."""
+        # pdb.set_trace()
+        if isinstance(other, State):
+            return self._project_onto_state(other)
+        try:
+            return other.dual(self)
+        except AttributeError as e:
+            raise TypeError(
+                f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
+            ) from e
+        
 
-    #     # if both states are gaussian
-    #     if self.is_gaussian and other.is_gaussian:
-    #         return self._project_onto_gaussian(other)
+    def _project_onto_state(self, other: State) -> Union[State, float]:
+        """If states are gaussian use generaldyne measurement, else use
+        the states' Fock representation."""
 
-    #     # either self or other is not gaussian
-    #     return self._project_onto_fock(other)
+        # if both states are gaussian
+        if self.is_gaussian and other.is_gaussian:
+            return self._project_onto_gaussian(other)
 
-    # def _project_onto_fock(self, other: State) -> Union[State, float]:
-    #     """Returns the post-measurement state of the projection between two non-Gaussian
-    #     states on the remaining modes or the probability of the result. When doing homodyne sampling,
-    #     returns the post-measurement state or the measument outcome if no modes remain.
+        # either self or other is not gaussian
+        return self._project_onto_fock(other)
 
-    #     Args:
-    #         other (State): state being projected onto self
+    def _project_onto_fock(self, other: State) -> Union[State, float]:
+        """Returns the post-measurement state of the projection between two non-Gaussian
+        states on the remaining modes or the probability of the result. When doing homodyne sampling,
+        returns the post-measurement state or the measument outcome if no modes remain.
 
-    #     Returns:
-    #         State or float: returns the conditional state on the remaining modes
-    #             or the probability.
-    #     """
-    #     remaining_modes = list(set(other.modes) - set(self.modes))
+        Args:
+            other (State): state being projected onto self
 
-    #     out_fock = self._contract_with_other(other)
-    #     if len(remaining_modes) > 0:
-    #         return (
-    #             State(dm=out_fock, modes=remaining_modes)
-    #             if other.is_mixed or self.is_mixed
-    #             else State(ket=out_fock, modes=remaining_modes)
-    #         )
+        Returns:
+            State or float: returns the conditional state on the remaining modes
+                or the probability.
+        """
+        remaining_modes = list(set(other.modes) - set(self.modes))
 
-    #     # return the probability (norm) of the state when there are no modes left
-    #     return (
-    #         fock.math.abs(out_fock) ** 2
-    #         if other.is_pure and self.is_pure
-    #         else fock.math.abs(out_fock)
-    #     )
+        out_fock = self._contract_with_other(other)
+        if len(remaining_modes) > 0:
+            return (
+                State(dm=out_fock, modes=remaining_modes)
+                if other.is_mixed or self.is_mixed
+                else State(ket=out_fock, modes=remaining_modes)
+            )
 
-    # def _contract_with_other(self, other):
-    #     other_cutoffs = [
-    #         None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
-    #     ]
-    #     if hasattr(self, "_preferred_projection"):
-    #         out_fock = self._preferred_projection(other, other.indices(self.modes))
-    #     else:
-    #         # matching other's cutoffs
-    #         self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
-    #         out_fock = fock.contract_states(
-    #             stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-    #             stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
-    #             a_is_dm=other.is_mixed,
-    #             b_is_dm=self.is_mixed,
-    #             modes=other.indices(self.modes),
-    #             normalize=self._normalize if hasattr(self, "_normalize") else False,
-    #         )
+        # return the probability (norm) of the state when there are no modes left
+        return (
+            fock.math.abs(out_fock) ** 2
+            if other.is_pure and self.is_pure
+            else fock.math.abs(out_fock)
+        )
 
-    #     return out_fock
+    def _contract_with_other(self, other):
+        other_cutoffs = [
+            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+        ]
+        if hasattr(self, "_preferred_projection"):
+            out_fock = self._preferred_projection(other, other.indices(self.modes))
+        else:
+            # matching other's cutoffs
+            self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+            out_fock = fock.contract_states(
+                stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                a_is_dm=other.is_mixed,
+                b_is_dm=self.is_mixed,
+                modes=other.indices(self.modes),
+                normalize=self._normalize if hasattr(self, "_normalize") else False,
+            )
 
-    # def _project_onto_gaussian(self, other: State) -> Union[State, float]:
-    #     """Returns the result of a generaldyne measurement given that states ``self`` and
-    #     ``other`` are gaussian.
+        return out_fock
 
-    #     Args:
-    #         other (State): gaussian state being projected onto self
+    def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+        """Returns the result of a generaldyne measurement given that states ``self`` and
+        ``other`` are gaussian.
 
-    #     Returns:
-    #         State or float: returns the output conditional state on the remaining modes
-    #             or the probability.
-    #     """
-    #     # here `self` is the measurement device state and `other` is the incoming state
-    #     # being projected onto the measurement state
-    #     remaining_modes = list(set(other.modes) - set(self.modes))
+        Args:
+            other (State): gaussian state being projected onto self
 
-    #     _, probability, new_cov, new_means = gaussian.general_dyne(
-    #         other.cov,
-    #         other.means,
-    #         self.cov,
-    #         self.means,
-    #         self.modes,
-    #     )
+        Returns:
+            State or float: returns the output conditional state on the remaining modes
+                or the probability.
+        """
+        # here `self` is the measurement device state and `other` is the incoming state
+        # being projected onto the measurement state
+        remaining_modes = list(set(other.modes) - set(self.modes))
 
-    #     if len(remaining_modes) > 0:
-    #         return State(
-    #             means=new_means,
-    #             cov=new_cov,
-    #             modes=remaining_modes,
-    #             _norm=probability if not getattr(self, "_normalize", False) else 1.0,
-    #         )
+        _, probability, new_cov, new_means = gaussian.general_dyne(
+            other.cov,
+            other.means,
+            self.cov,
+            self.means,
+            self.modes,
+        )
 
-    #     return probability
+        if len(remaining_modes) > 0:
+            return State(
+                means=new_means,
+                cov=new_cov,
+                modes=remaining_modes,
+                _norm=probability if not getattr(self, "_normalize", False) else 1.0,
+            )
 
-    # def __iter__(self) -> Iterable[State]:
-    #     """Iterates over the modes and their corresponding tensors."""
-    #     return (self.get_modes(i) for i in range(self.num_modes))
+        return probability
+
+    def __iter__(self) -> Iterable[State]:
+        """Iterates over the modes and their corresponding tensors."""
+        return (self.get_modes(i) for i in range(self.num_modes))
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
@@ -448,6 +460,7 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns whether the states are equal."""
         return self.representation.data.__eq__(other)
 
+
     def __rshift__(self, other: Transformation) -> State:
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
         if issubclass(other.__class__, State):
@@ -456,6 +469,7 @@ class State:  # pylint: disable=too-many-public-methods
             )
         return other.primal(self)
 
+
     def __lshift__(self, other: State):
         r"""Implements projection onto a state or the dual transformation applied on a state.
 
@@ -463,9 +477,11 @@ class State:  # pylint: disable=too-many-public-methods
         """
         return other.primal(self)
 
+
     def __add__(self, other: State):
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
         return self.representation.data.__add__(other)
+
 
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
@@ -474,6 +490,7 @@ class State:  # pylint: disable=too-many-public-methods
         """
         return self.representation.data.__rmul__(other)
 
+
     def __truediv__(self, other):
         r"""Implements division by a scalar from the left.
 
@@ -481,12 +498,14 @@ class State:  # pylint: disable=too-many-public-methods
         """
         return self.representation.data.__truediv__(other)
 
+
     @staticmethod
     def _format_probability(prob: float) -> str:
         if prob < 0.001:
             return f"{100*prob:.3e} %"
         else:
             return f"{prob:.3%}"
+
 
     def _repr_markdown_(self):
         table = (
