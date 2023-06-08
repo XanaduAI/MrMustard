@@ -66,7 +66,7 @@ class GaussianData(MatVecData):
         if isinstance(cov, QPolyData):
             cov, mean, coeffs = self._from_QPolyData(poly=cov)
 
-        super().__init__(mat=cov, vec=mean, coeffs=coeffs)
+        super().__init__(mat=cov, vec=mean, coeffs=coeffs, nb_modes=None) # TODO : how to def nb_modes?
 
     
 

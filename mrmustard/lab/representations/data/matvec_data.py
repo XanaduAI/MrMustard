@@ -25,11 +25,12 @@ math = Math()
 
 class MatVecData(Data):  # Note : this class is abstract too!
     def __init__(
-        self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]
+        self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar], nb_modes:int
     ) -> None:
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)
         self.coeffs = math.atleast_1d(coeffs)
+        self.nb_modes = nb_modes
 
     @property
     def batch_size(self) -> int:

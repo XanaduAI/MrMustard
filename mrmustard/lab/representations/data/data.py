@@ -24,8 +24,8 @@ class Data(ABC):
     and Representation.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, nb_modes) -> None:
+        super().__init__(nb_modes=nb_modes)
 
         
     def same(self, X: List[Union[List[Scalar],Scalar]], 
