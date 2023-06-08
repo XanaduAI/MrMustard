@@ -30,7 +30,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)
         self.coeffs = math.atleast_1d(coeffs)
-        self.nb_modes = nb_modes
+        super().__init__(nb_modes=nb_modes)
 
     @property
     def batch_size(self) -> int:
