@@ -28,41 +28,68 @@ math = Math()
 class Converter():
 
     def __init__(self) -> None:
-        self.g = nx.DiGraph()
+        r"""
+        Class for an object allowing conversion between a given source representation and a desired
+          destination one. It relies on the representation transition graph which we detail below.
         
-        #Wigner ---> Bargmann ---> Fock ---> WavefunctionQ
+        The transition graph describes transitions between representations. Nodes are the names 
+        -as strings- of the Representation object. Edges are functions corresponding to the 
+        transitions between two Representation objects
+        Note that this graph is:
+            - Finite
+            - Directed
+            - Disconnected, with 2 connected components
+            - Acyclic
+            - Unweighted
+            - Order : 8
+            - Size : 6
+            - Degree 1 for all nodes
+        Currently of the form: Wigner --> Bargmann --> Fock --> WavefunctionQ
+        """
+        ### DEFINE NODES - REPRESENTATION NAMES
 
-        # DEFINE NODES # TODO : use dataclass to ensure the names are exactly the class names?
         # Ket part of the graph
         b_K = "BargmannKet"
         f_K = "FockKet"
         wq_K = "WavefunctionQKet"
         w_K = "WignerKet"
+
         # DM component of the graph
         b_DM = "BargmannDM"
         f_DM = "FockDM"
         wq_DM = "WavefunctionQDM"
         w_DM = "WignerDM"
 
-        # DEFINE EDGES - CONNEXIONS
-        # Ket part of the graph
+
+        ### DEFINE EDGES - CONNEXIONS
+
+        # Ket component of the graph
         w2b_K = (w_K, b_K)
         w2f_K = (w_K, f_K)
         f2wq_K = (f_K, wq_K)
+
         # DM component of the graph
         w2b_DM = (w_DM, b_DM)
         w2f_DM = (w_DM, f_DM)
         f2wq_DM = (f_DM, wq_DM)
 
-        edges = [w2b_K, w2f_K, f2wq_K, w2b_DM, w2f_DM, f2wq_DM]
 
-        # DEFINE EDGE LABELS - AKA FORMULAS
+        ### DEFINE EDGE LABELS - FORMULAS
+
+        # Ket component of the graph
         f_w2b_K = self._wignerket_to_bargmannket
         f_w2f_K = self._wignerket_to_fockket
         f_f2wq_K = self._fockket_to_wavefunctionqket
+
+        # DM component of the graph
         f_w2b_DM = self._wignerdm_to_bargmanndm
         f_w2f_DM = self._wignerdm_to_fockdm
         f_f2wq_DM = self._fockdm_to_wavefunctionqdm
+
+
+        ### DEFINE GRAPH
+
+        edges = [w2b_K, w2f_K, f2wq_K, w2b_DM, w2f_DM, f2wq_DM]
 
         transition_formulas = {
             w2b_K: {"f": f_w2b_K},
@@ -73,12 +100,19 @@ class Converter():
             f2wq_DM: {"f": f_f2wq_DM}
         }
 
+        self.g = nx.DiGraph()
+        
         self.g.add_edges_from(edges)
-        nx.set_edge_attributes(g, transition_formulas)
 
-    
-    def convert(self, source:State, destination:str) -> Representation:
-        r"""
+        nx.set_edge_attributes(g, transition_formulas)
+        
+        
+
+    def convert(self, source:Representation, destination:str) -> Representation:
+        r""" 
+        Converts from a source Representation to target Representation, using the representations 
+        graph g.
+
         .. code-block::
             # assuming we have some State object s
             target_repr = "FockKet"
@@ -94,17 +128,18 @@ class Converter():
             The target representation
 
         """
-        # TODO : make it so that user can only choose a valid class name as target!
-        f = self.g[source.representation.__class__.__name__][destination]
-        return f(source)
+
+        try:
+            f = self.g[source.__class__.__name__][destination]
+            return f(source)
+        except KeyError as e:
+            raise ValueError(f"{destination} is not a valid target name") from e
+        
+
     
-
-    def add_edge(self) -> Converter:
+    def shortest_path(self, source:Representation, destination:Representation):
         pass # TODO : implement
 
-
-    def remove_edge(self) -> Converter:
-        pass # TODO : implement
 
 
     def show(self) -> None:
@@ -181,7 +216,7 @@ class Converter():
         for a Hilbert vector (i.e. for M modes, A has shape M x M and B has shape M).
         """
         N = wignerket.data.cov.shape[-1] // 2
-        bargmanndm = self._wignerdm_to_bargmanndm(wignerket.data.cov, wignerket.data.means)
+        bargmanndm = self._wignerdm_to_bargmanndm(wignerket.data.cov, wignerket.data.means) # TODO : solve issue here
         # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half rather than the second
         return BargmannKet(bargmanndm.data.A[:N, :N], bargmanndm.data.B[:N], math.sqrt(bargmanndm.data.C))
 
