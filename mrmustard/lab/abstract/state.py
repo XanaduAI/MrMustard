@@ -32,7 +32,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
-from mrmustard.representations import FockKet, FockDM, WignerKet, WignerDM
+from mrmustard.representations import FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
 from mrmustard.typing import (
     ComplexMatrix,
     ComplexTensor,
@@ -57,13 +57,10 @@ class State:  # pylint: disable=too-many-public-methods
         self,
         cov: RealMatrix = None,
         means: RealVector = None,
-        eigenvalues: RealVector = None,
-        symplectic: RealMatrix = None,
-        ket: ComplexTensor = None,
-        dm: ComplexTensor = None,
+        fock: ComplexTensor = None,
+        qs: RealVector = None,
+        wavefunctionq: RealVector = None,
         modes: Sequence[int] = None,
-        cutoffs: Sequence[int] = None,
-        _norm: float = 1.0,
         flag_ket: bool = None,
     ):
         r"""Initializes the state.
@@ -79,43 +76,38 @@ class State:  # pylint: disable=too-many-public-methods
             eigenvalues (Tensor): the eigenvalues of the covariance matrix
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Tensor): the Fock representation
-            modes (optional, Sequence[int]): the modes in which the state is defined
-            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
-            _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
-        self._purity = None
-        self._fock_probabilities = None
-        self._cutoffs = cutoffs
-        self._cov = cov
-        self._means = means
-        self._eigenvalues = eigenvalues
-        self._symplectic = symplectic
-        self._ket = ket
-        self._dm = dm
-        self._norm = _norm
         self.representation = None
+        #Given the modes for this State, if not, get the size of the input data and assign modes
+        if modes:
+            self.modes = modes
         #IN PROGRESS: choose the right parameters to creat a representation object
         #Case 1: give cov, means, ket or dm / # modes
-        if cov is not None and means is not None:
+        if cov is not None and means is not None and flag_ket is not None:
             if flag_ket:
                 self.representation = WignerKet(cov, means)
-                self.num_modes = cov.shape[-1]
+                # self.representation.data.num_modes = cov.shape[-1] . ->PUT IN DATA
             else:
                 self.representation = WignerDM(cov, means)
-                self.num_modes = cov.shape[-1] // 2
+                # self.representation.data.num_modes = cov.shape[-1] // 2
         #Case 2: give ket or dm of Fock
-        elif ket is not None:
-            self.representation = FockKet(ket)
-            self.num_modes = len(ket.shape)
-            self._purity = 1.0
-        elif dm is not None:
-            self.representation = FockDM(dm)
-            self.num_modes = len(dm.shape) // 2
-        #ADD THE ARGUS WITH WAVEFUNCTIONSß
+        elif fock is not None and flag_ket is not None:
+            if flag_ket:
+                self.representation = FockKet(fock)
+                # self.representation.data.num_modes = len(fock.shape)
+            else:
+                self.representation = FockDM(fock)
+                # self.representation.data.num_modes = len(fock.shape) // 2
+        #Case 3: give wavefunctionQ
+        elif qs is not None and wavefunctionq is not None and flag_ket is not None:
+            if flag_ket:
+                self.representation = WavefunctionQKet(qs, wavefunctionq)
+            else:
+                self.representation = WavefunctionQDM(qs, wavefunctionq)
         else:
             raise ValueError(
-                "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
+                "State must be initialized with either a covariance matrix and means vector, a fock representation, a point-wise wavefunction with its point values and the flag_ket"
             )
         # self._modes = modes
         # if modes is not None:
