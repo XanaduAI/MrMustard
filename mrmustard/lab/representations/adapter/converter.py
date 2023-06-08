@@ -548,8 +548,7 @@ class Converter():
         """
 
         # TODO : the object has no cutoffs, where do we get them from?
-        krausses = [
-            math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, self.cutoffs)]
+        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, self.cutoffs)]
 
         ket = fock_ket.data.array
 

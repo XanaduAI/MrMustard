@@ -25,7 +25,8 @@ class Data(ABC):
     """
 
     def __init__(self, nb_modes) -> None:
-        super().__init__(nb_modes=nb_modes)
+        self.nb_modes = nb_modes
+        super().__init__()
 
         
     def same(self, X: List[Union[List[Scalar],Scalar]], 
