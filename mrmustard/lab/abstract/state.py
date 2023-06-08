@@ -484,6 +484,38 @@ class State:  # pylint: disable=too-many-public-methods
             return f"{prob:.3%}"
 
 
+    def to_Bargmann(self):
+        r'''Converts the representation of the state to Bargmann Representation and returns a new State.'''
+        if "Ket" in self.representation.__class__.__name__:
+            return convert(self, "BargmannKet")
+        else:
+            return convert(self, "BargmannDM") 
+        
+
+    def to_Fock(self):
+        r'''Converts the representation of the state to Fock Representation and returns a new State.'''
+        if "Ket" in self.representation.__class__.__name__:
+            return convert(self, "FockKet")
+        else:
+            return convert(self, "FockDM")
+        
+
+    def to_WavefunctionQ(self):
+        r'''Converts the representation of the state to q-wavefunction Representation and returns a new State.'''
+        if "Ket" in self.representation.__class__.__name__:
+            return convert(self, "WavefunctionQKet")
+        else:
+            return convert(self, "WavefunctionQDM") 
+        
+
+    def to_Wigner(self):
+        r'''Converts the representation of the state to Wigner Representation and returns a new State.'''
+        if "Ket" in self.representation.__class__.__name__:
+            return convert(self, "WignerKet")
+        else:
+            return convert(self, "WignerDM") 
+
+
     def _repr_markdown_(self):
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
