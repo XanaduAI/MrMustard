@@ -33,6 +33,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.representations import FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
+from converter import convert
 from mrmustard.typing import (
     ComplexMatrix,
     ComplexTensor,
