@@ -76,6 +76,8 @@ class State:  # pylint: disable=too-many-public-methods
             eigenvalues (Tensor): the eigenvalues of the covariance matrix
             symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Tensor): the Fock representation
+            qs (Vector): the point value for corresponding q-wavefunction
+            wavefunctionq (Vector): the value of the point of the q-wavefunction
 
         """
         self.representation = None
