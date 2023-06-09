@@ -22,7 +22,6 @@ from __future__ import annotations
 from typing import (
     Callable,
     Iterable,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -153,7 +152,7 @@ class Transformation:
         return self._modes
 
     @modes.setter
-    def modes(self, modes: List[int]):
+    def modes(self, modes: list[int]):
         r"""Sets the modes on which the transformation acts."""
         self._validate_modes(modes)
         self._modes = modes
