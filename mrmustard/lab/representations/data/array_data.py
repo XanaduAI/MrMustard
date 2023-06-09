@@ -25,20 +25,35 @@ math = Math()
 class ArrayData(Data):
 
     def __init__(self, array) -> None:
-
         self.array = array
-        self.cutoffs = array.shape
-
-        super().__init__() # TODO : fix this with an actual value
+        super().__init__()
 
 
     #@njit
     def __neg__(self) -> Data:
+        r"""
+        Returns the negative of the object
+
+        Args:
+            NA
+
+        Returns:
+            The negative object
+        """
         return self.__class__(array= -self.array)
         
 
 
-    def __eq__(self, other: ArrayData) -> bool:
+    def __eq__(self, other:ArrayData) -> bool:
+        r"""
+        Compares two ArrayData objects
+
+        Args:
+            other (ArrayData) : the object being compared
+
+        Returns:
+            True if both objects are equal, False otherwise
+        """
 
         try:
             return super().same(X=[self.array], Y=[other.array])
@@ -50,6 +65,15 @@ class ArrayData(Data):
 
     #@njit
     def __add__(self, other:ArrayData) -> ArrayData:
+        r"""
+        Adds two ArrayData objects
+
+        Args:
+            other (ArrayData): the object to be added
+
+        Returns:
+            An array resulting form adding the two objects
+        """
 
         try:
             return self.__class__(array=self.array + other.array)
@@ -60,41 +84,90 @@ class ArrayData(Data):
 
 
     #@njit
-    def __sub__(self, other: ArrayData) -> ArrayData:
+    def __sub__(self, other:ArrayData) -> ArrayData:
+        r"""
+        Subtracts two Data objects
+
+        Args:
+            other (ArrayData): the object to be subtracted
+
+        Returns:
+            An array resulting form subtracting two objects
+        """
         self.__add__(-other)
 
+
+    def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
+        r"""
+        Divides two Data objects
+
+        Args:
+            other (Union[Scalar, ArrayData]): the object to be divided by
+
+        Returns:
+            An array resulting form dividing two objects
+        """
+        raise NotImplementedError()
 
 
     #@njit(parallel=True)
     def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
+        r"""
+        Multiplies two ArrayData objects or an ArrayData and a Scalar 
+
+        Args:
+            other (Union[Scalar, ArrayData]): the object to be multiplied with
+
+        Returns:
+            An object of the common child Data class resulting form multiplying two objects
+        """
 
         try:
             return self.__class__(array=self.array * other.array)
         
         except AttributeError:
+
             try: # if it's not an array, we try a Number
                 return self.__class__(array=self.array * other)
             
             except TypeError as e:
-                raise TypeError(f"Cannot multiply/divide {self.__class__} and {other.__class__}."
-                                ) from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
             
 
     
     #@njit(parallel=True)
     def __rmul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
+        r""" See __mul__, object have commutative multiplication."""
         return self.__mul__(other=other)
 
 
 
     #@njit
-    def __truediv__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        self.__mul__(other = 1/other)
+    def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
+        r"""
+        Divides two Data objects
+
+        Args:
+            other (Union[Scalar, ArrayData]): the object to be divided with
+
+        Returns:
+            An array resulting form dividing two objects or the object by a Scalar
+        """
+        raise NotImplementedError
 
 
 
     #@njit(parallel=True)
-    def __and__(self, other:ArrayData) -> ArrayData:
+    def __and__(self, other:ArrayData) -> ArrayData: # TODO : check this, it's an outer product, how can it return an Array?
+        r"""
+        Performs the tensor product between two Data objects
+
+        Args:
+            other (Data): the object to be tensor-producted with
+
+        Returns:
+            A matrix resulting form tensoring two objects
+        """
 
         try:
             return self.__class__(array=np.outer(self.array, other.array))
@@ -105,6 +178,16 @@ class ArrayData(Data):
 
 
     #@njit(parallel=True)
-    def simplify(self) -> ArrayData: # TODO: implement
-        raise NotImplementedError() 
+    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> ArrayData:
+        r"""
+        Performs the simplification of the object, using some data compression
+
+        Args:
+            rtol (float): the relative tolerance for numpy's `allclose`
+            atol (float): the absolute tolerance for numpy's `allclose`
+
+        Returns:
+            A simplified object
+        """
+        raise NotImplementedError() # TODO: implement
     

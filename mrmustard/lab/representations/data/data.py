@@ -32,37 +32,20 @@ class Data(ABC):
              X: List[Union[List[Vector],List[Scalar]]], 
              Y: List[Union[List[Vector],List[Scalar]]]) -> bool:
         r"""
-        Method to compare two lists of elements
+        Method to compare two sets of elements
 
         Args:
             X (List[Union[List[Scalar],Scalar]])    : list of elements to be compared with ys
             Y (List[Union[List[Scalar],Scalar]])    : list of elements to be compared with xs
-            rtol (float)                            : relative tolerance parameter for Numpy's 
-                                                      `all_close`
-            atol (float)                            : absolute tolerance parameter for Numpy's 
-                                                      `all_close`
 
         Returns:
             True if all the elements compared are same within rtol/atol bounds, False otherwise
         """
-        return all([np.allclose(x, y, rtol=rtol, atol=atol) for x, y in zip(X, Y)])
+        return all([np.allclose(x, y) for x, y in zip(X, Y)])
 
-    
+
+
     @abstractmethod
-    def __eq__(self, other:Data) -> bool:
-        r"""
-        Abstract method comparing two Data objects
-
-        Args:
-            other (Data)    : the object being compared
-
-        Returns:
-            True if both objects are equal, False otherwise
-        """
-        raise NotImplementedError()
-
-    
-     @abstractmethod
     def __neg__(self) -> Data:
         r"""
         Abstract method retruning the negative of the object
@@ -72,6 +55,21 @@ class Data(ABC):
 
         Returns:
             The negative object
+        """
+        raise NotImplementedError()
+    
+
+    
+    @abstractmethod
+    def __eq__(self, other:Data) -> bool:
+        r"""
+        Abstract method comparing two Data objects
+
+        Args:
+            other (Data) : the object being compared
+
+        Returns:
+            True if both objects are equal, False otherwise
         """
         raise NotImplementedError()
 
@@ -168,15 +166,14 @@ class Data(ABC):
     @abstractmethod
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
         r"""
-        Abstract method performing the tensor product between two Data objects
+        Abstract method performing the simplification of the object, using some data compression
 
         Args:
-            other (Data): the object to be tensor-producted with
             rtol (float): the relative tolerance for numpy's `allclose`
             atol (float): the absolute tolerance for numpy's `allclose`
 
         Returns:
-            An object of the common child Data class resulting form tensoring two objects
+            An object of the same child class, simplified
         """
         raise NotImplementedError()
 

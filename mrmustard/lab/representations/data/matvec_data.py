@@ -32,24 +32,38 @@ class MatVecData(Data):  # Note : this class is abstract too!
         self.coeffs = math.atleast_1d(coeffs)
         super().__init__()
 
+
     @property
     def batch_size(self) -> int:
         return self.coeffs.shape[0]
-    
-    @property
-    def nb_modes(self) -> int:
-        raise NotImplementedError # TODO : code this
+
 
 
     #@njit
     def __neg__(self) -> MatVecData:
-        return self.__class__(mat=self.mat, 
-                              vec=self.vec, 
-                              coeffs=-self.coeffs, 
-                              nb_modes= self.nb_modes)
+        r"""
+        Returns the negative of the object
+
+        Args:
+            NA
+
+        Returns:
+            The negative object
+        """
+        return self.__class__(mat=self.mat, vec=self.vec, coeffs=-self.coeffs)
+
 
 
     def __eq__(self, other: MatVecData) -> bool:
+        r"""
+        Compares two MatVecData objects
+
+        Args:
+            other (MatVecData) : the object being compared to
+
+        Returns:
+            True if both objects are equal, False otherwise
+        """
 
         try: 
             return super().same(
@@ -62,36 +76,63 @@ class MatVecData(Data):  # Note : this class is abstract too!
                 f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
+
     #@njit(parallel=True)
     def __add__(self,other: MatVecData) -> MatVecData:
+        r"""
+        Adds two MatVecData objects
+
+        Args:
+            other (MatVecData): the object to be added
+
+        Returns:
+            A MatVecData object resulting form adding two objects
+        """
         
         if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
-            return self.__class__(mat = self.mat,
-                                  vec = self.vec,
-                                  coeffs = self.coeff + other.coeff,
-                                  nb_modes= self.nb_modes)
+            return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeff + other.coeff)
         
         else:
+
             try:
                 return self.__class__(
                     mat = math.concat([self.mat, other.mat], axis=0),
                     vec = math.concat([self.vec, other.vec], axis=0),
-                    coeffs = math.concat([self.coeffs, other.coeffs], axis=0),
-                    nb_modes= self.nb_modes)
+                    coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+                    )
                 
             except AttributeError as e:
                 raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}."
                                 ) from e
 
 
+
     #@njit(parallel=True)
     def __sub__(self, other: MatVecData) -> MatVecData:
-        return self.__add__(other= -other)
+        r"""
+        Subtracts two MatVecData objects
+
+        Args:
+            other (MatVecData): the object to be subtracted
+
+        Returns:
+            A MatVecData object resulting form subtracting two objects
+        """
+        return self.__add__(other=-other)
         
+
 
     #@njit(parallel=True)
     def __and__(self, other: MatVecData) -> MatVecData:
-        r"Tensor product"
+        r"""
+        Tensors two MatVecData objects
+
+        Args:
+            other (MatVecData): the object to be tensor-producted with
+
+        Returns:
+            A Matvecdata object from tensoring two objects
+        """
 
         try: # TODO : decide which code we keep, old commented or new?
             # mat = []
@@ -117,16 +158,55 @@ class MatVecData(Data):  # Note : this class is abstract too!
             return self.__class__(
                 mat = math.astensor(mat),
                 vec = math.astensor(vec),
-                coeffs = math.astensor(coeffs),
-                nb_modes = self.nb_modes)
+                coeffs = math.astensor(coeffs)
+                )
             
         except AttributeError as e:
             raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
+        
+
+    # TODO: decide which simplify we want to keep
+    #@njit(parallel=True)
+    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
+        r"""
+        Simplifies the object, using some data compression
+
+        Args:
+            rtol (float): the relative tolerance for numpy's `allclose`
+            atol (float): the absolute tolerance for numpy's `allclose`
+
+        Returns:
+            A simplified MatVec object
+        """
+
+        N = self.mat.shape[0]
+        mask = np.ones(N, dtype=np.int8)
+
+        for i in range(N):
+
+            for j in range(i + 1, N):
+
+                if mask[i] == 0 or i == j:  # evaluated previously
+                    continue
+
+                if np.allclose(
+                    self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True
+                ) and np.allclose(
+                    self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True
+                ):
+                    self.coeffs[i] += self.coeffs[j]
+                    mask[j] = 0
+
+        return self.__class__(
+            mat = self.mat[mask == 1],
+            vec = self.vec[mask == 1],
+            coeffs = self.coeffs[mask == 1]
+            )
 
 
-    # TODO: decide which simplify we want to keep cf below
-    def simplify(self) -> None:  # TODO make this functional and return a new object
-        r"""Simplify the data by combining terms that are equal."""
+    # TODO: decide which simplify we want to keep
+    def old_simplify(self) -> None:
+        r""" Old simplify"""
 
         indices_to_check = set(range(self.batch_size))
         removed = set()
@@ -145,30 +225,4 @@ class MatVecData(Data):  # Note : this class is abstract too!
         to_keep = [i for i in range(self.batch_size) if i not in removed]
         self.mat = self.mat[to_keep]
         self.vec = self.vec[to_keep]
-        self.coeff = self.coeff[to_keep]
-
-
-    # TODO: decide which simplify we want to keep
-    #@njit(parallel=True)
-    def fast_simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
-        N = self.mat.shape[0]
-        mask = np.ones(N, dtype=np.int8)
-
-        for i in range(N):
-            for j in range(i + 1, N):
-                if mask[i] == 0 or i == j:  # evaluated previously
-                    continue
-
-                if np.allclose(
-                    self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True
-                ) and np.allclose(
-                    self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True
-                ):
-                    self.coeff[i] += self.coeff[j]
-                    mask[j] = 0
-
-        return self.__class__(
-            mat = self.mat[mask == 1],
-            vec = self.vec[mask == 1],
-            coeffs = self.coeffs[mask == 1],
-            nb_modes = self.nb_modes)
+        self.coeffs = self.coeffs[to_keep]
