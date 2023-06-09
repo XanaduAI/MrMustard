@@ -90,18 +90,14 @@ class State:  # pylint: disable=too-many-public-methods
             if cov is not None and means is not None and flag_ket is not None:
                 if flag_ket:
                     self.representation = WignerKet(cov, means)
-                    # self.representation.data.num_modes = cov.shape[-1] . ->PUT IN DATA
                 else:
                     self.representation = WignerDM(cov, means)
-                    # self.representation.data.num_modes = cov.shape[-1] // 2
             #Case 2: give ket or dm of Fock
             elif fock is not None and flag_ket is not None:
                 if flag_ket:
                     self.representation = FockKet(fock)
-                    # self.representation.data.num_modes = len(fock.shape)
                 else:
                     self.representation = FockDM(fock)
-                    # self.representation.data.num_modes = len(fock.shape) // 2
             #Case 3: give wavefunctionQ
             elif qs is not None and wavefunctionq is not None and flag_ket is not None:
                 if flag_ket:
@@ -403,7 +399,7 @@ class State:  # pylint: disable=too-many-public-methods
 
     def __iter__(self) -> Iterable[State]:
         """Iterates over the modes and their corresponding tensors."""
-        return (self.get_modes(i) for i in range(self.representation.data.num_modes))
+        return (self.get_modes(i) for i in range(self.representation.num_modes))
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
@@ -535,7 +531,7 @@ class State:  # pylint: disable=too-many-public-methods
             + "| :----: | :----: | :----: | :----: | :----: |\n"
             + f"| {self.representation.purity() :.2e} | "
             + self._format_probability(self.representation.state_probability())
-            + f" | {self.representation.data.num_modes} | {'1' if isinstance(self.representation, (WignerKet, WignerDM)) else 'N/A'} | {'✅' if isinstance(self.representation, (WignerKet, WignerDM)) else '❌'} | {'✅' if isinstance(self.representation, (FockKet, FockDM)) else '❌'} |"
+            + f" | {self.representation.num_modes} | {'1' if isinstance(self.representation, (WignerKet, WignerDM)) else 'N/A'} | {'✅' if isinstance(self.representation, (WignerKet, WignerDM)) else '❌'} | {'✅' if isinstance(self.representation, (FockKet, FockDM)) else '❌'} |"
         )
 
         if self.num_modes == 1:
