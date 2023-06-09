@@ -35,21 +35,26 @@ class MatVecData(Data):  # Note : this class is abstract too!
     @property
     def batch_size(self) -> int:
         return self.coeffs.shape[0]
+    
+    @property
+    def nb_modes(self) -> int:
+        raise NotImplementedError # TODO : code this
 
 
     #@njit
     def __neg__(self) -> MatVecData:
-        return self.__class__(mat=-self.mat, vec=-self.vec, coeffs=self.coeffs)
+        return self.__class__(mat=self.mat, 
+                              vec=self.vec, 
+                              coeffs=-self.coeffs, 
+                              nb_modes= self.nb_modes)
 
 
-    def __eq__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> bool:
+    def __eq__(self, other: MatVecData) -> bool:
 
         try: 
             return super().same(
                 X = [self.mat, self.vec, self.coeffs],
                 Y = [other.mat, other.vec, other.coeffs],
-                rtol = rtol,
-                atol = atol
                 ) 
 
         except AttributeError as e:
@@ -58,46 +63,31 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
 
     #@njit(parallel=True)
-    def __add__(
-        self,
-        other: MatVecData,
-        rtol: float = 1e-6,
-        atol: float = 1e-6,
-        check_for_equality: bool = False,
-        sub:bool = False # TODO : find a more elegant way to subtract! cf below
-        ) -> MatVecData:
+    def __add__(self,other: MatVecData) -> MatVecData:
         
-        if check_for_equality:
-
-            if super().same(X=[self.mat, self.vec], 
-                            Y=[other.mat, other.vec],
-                            rtol=rtol, 
-                            atol=atol
-                            ):
-                if sub: # TODO : find a more elegant way to subtract! cf above
-                    return self.__class__(self.mat, self.vec, self.coeff - other.coeff)
-                else:
-                    return self.__class__(self.mat, self.vec, self.coeff + other.coeff)
-
-
+        if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
+            return self.__class__(mat = self.mat,
+                                  vec = self.vec,
+                                  coeffs = self.coeff + other.coeff,
+                                  nb_modes= self.nb_modes)
+        
         else:
-            try: # TODO : make sure subtract is handled correctly in this case, nothing different?
+            try:
                 return self.__class__(
-                    math.concat([self.mat, other.mat], axis=0),
-                    math.concat([self.vec, other.vec], axis=0),
-                    math.concat([self.coeffs, other.coeffs], axis=0),
-                )
-
+                    mat = math.concat([self.mat, other.mat], axis=0),
+                    vec = math.concat([self.vec, other.vec], axis=0),
+                    coeffs = math.concat([self.coeffs, other.coeffs], axis=0),
+                    nb_modes= self.nb_modes)
+                
             except AttributeError as e:
-                raise TypeError(f"Cannot add {self.__class__} and {other.__class__}.") from e
-
+                raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}."
+                                ) from e
 
 
     #@njit(parallel=True)
-    def __sub__(self, other: MatVecData, rtol: float = 1e-6, atol: float = 1e-6) -> MatVecData:
-        return self.__add__(other=other, atol=atol, rtol=rtol)
+    def __sub__(self, other: MatVecData) -> MatVecData:
+        return self.__add__(other= -other)
         
-
 
     #@njit(parallel=True)
     def __and__(self, other: MatVecData) -> MatVecData:
@@ -125,11 +115,11 @@ class MatVecData(Data):  # Note : this class is abstract too!
             coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
 
             return self.__class__(
-                mat=math.astensor(mat),
-                vec=math.astensor(vec),
-                coeffs=math.astensor(coeffs),
-            )
-
+                mat = math.astensor(mat),
+                vec = math.astensor(vec),
+                coeffs = math.astensor(coeffs),
+                nb_modes = self.nb_modes)
+            
         except AttributeError as e:
             raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
 
@@ -178,7 +168,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
                     mask[j] = 0
 
         return self.__class__(
-            mat=self.mat[mask == 1],
-            vec=self.vec[mask == 1],
-            coeffs=self.coeffs[mask == 1],
-            )
+            mat = self.mat[mask == 1],
+            vec = self.vec[mask == 1],
+            coeffs = self.coeffs[mask == 1],
+            nb_modes = self.nb_modes)

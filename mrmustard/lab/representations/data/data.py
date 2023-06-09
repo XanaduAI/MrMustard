@@ -16,7 +16,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import List, Union
-from mrmustard.typing import Scalar
+from mrmustard.typing import Scalar, Vector
 
 class Data(ABC):
     r"""
@@ -29,9 +29,9 @@ class Data(ABC):
         super().__init__()
 
         
-    def same(self, X: List[Union[List[Scalar],Scalar]], 
-             Y: List[Union[List[Scalar],Scalar]], 
-             rtol:float=1e-6, atol:float=1e-6) -> bool:
+    def same(self,
+             X: List[Union[List[Vector],List[Scalar]]], 
+             Y: List[Union[List[Vector],List[Scalar]]]) -> bool:
         r"""
         Method to compare two lists of elements
 
