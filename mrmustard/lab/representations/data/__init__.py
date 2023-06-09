@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2021 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations import Wigner
+""" This package contains the modules implementing base classes for datas.
+"""
 
-class WignerKet(Wigner):
-
-    def __init__(self):
-        super().__init__()
-        self.num_modes = self.cov.shape[-1]
+from .data import Data
+from .matvec_data import MatVecData
+from .gaussian_data import GaussianData
+from .qpoly_data import QPolyData
+from .array_data import ArrayData
+from .symplectic_data import SymplecticData

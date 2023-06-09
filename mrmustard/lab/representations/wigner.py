@@ -14,14 +14,16 @@
 
 from mrmustard.math import Math
 from mrmustard.representations import Representation
+from mrmustard.representations.data import GaussianData
 from mrmustard.typing import Scalar, RealMatrix, RealVector
 
 math = Math()
 
 class Wigner(Representation):
 
-    def __init__(self):
+    def __init__(self, cov, means):
         super().__init__()
+        self.data = GaussianData(cov, means)
 
 
     def purity(cov: RealMatrix, hbar: float) -> Scalar:
@@ -70,26 +72,6 @@ class Wigner(Representation):
         return (
             CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
         )
-    
-
-    def __eq__(self, other:Representation) -> bool:
-        r"""Compares two Representations (States) equal or not"""
-        return self.data.__eq__(other)
-
-
-    def __rmul__(self, other:Representation) -> Representation:
-        r"""Multiplies two Representations (States)"""
-        return self.data.__rmul__(other)
-
-
-    def __add__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-        return self.data.__add__(other)
-
-
-    def __truediv__(self, other:Representation) -> Representation:
-        r"""Divides two Representations (States)"""
-        return self.data.__truediv__(other)
     
     
     def symplectic_eigenvals(cov: RealMatrix, hbar: float) -> list:

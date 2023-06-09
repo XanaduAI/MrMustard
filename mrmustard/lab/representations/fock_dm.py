@@ -26,7 +26,7 @@ class FockDM(Fock):
 
     def __init__(self, dm):
         super().__init__()
-        # self.data = ArrayData(dm)
+        self.num_modes = len(self.array.shape) // 2 #TODO: BATCH ISSUE?
 
 
     def purity(self):

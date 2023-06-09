@@ -25,9 +25,9 @@ math = Math()
 class FockKet(Fock):
     '''FockKet Class is the Fock representation of a ket state.'''
 
-    def __init__(self, ket):
+    def __init__(self):
         super().__init__()
-        # self.data = ArrayData(ket) 
+        self.num_modes = len(self.array.shape) #TODO: BATCH ISSUE?
 
 
     def purity(self) -> Scalar:

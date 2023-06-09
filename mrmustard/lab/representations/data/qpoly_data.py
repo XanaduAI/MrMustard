@@ -43,7 +43,7 @@ class QPolyData(MatVecData):
             A, b, c = self._from_GaussianData(A=A)
         # TODO : make sure we're happy with this init. Nothing missing?
 
-        super().__init__(mat=A, vec=b, coeff=c, nb_modes=None) # TODO : how to def nb_modes?
+        super().__init__(mat=A, vec=b, coeff=c)
 
 
 
