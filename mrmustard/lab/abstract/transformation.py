@@ -24,7 +24,6 @@ from typing import (
     Iterable,
     Optional,
     Sequence,
-    Tuple,
     Union,
 )
 
@@ -201,7 +200,7 @@ class Transformation:
 
     def XYd(
         self, allow_none: bool = True
-    ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    ) -> tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
@@ -215,7 +214,7 @@ class Transformation:
 
     def XYd_dual(
         self, allow_none: bool = True
-    ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    ) -> tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
         Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
