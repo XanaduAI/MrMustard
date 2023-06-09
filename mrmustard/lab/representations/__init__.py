@@ -36,4 +36,4 @@ from .data.qpoly_data import QPolyData
 from .data.array_data import ArrayData
 from .data.symplectic_data import SymplecticData
 
-from .adapter.converter import Converter
+from .converter import Converter
