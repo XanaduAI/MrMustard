@@ -18,3 +18,4 @@ class WignerKet(Wigner):
 
     def __init__(self):
         super().__init__()
+        self.num_modes = self.cov.shape[-1]

@@ -18,3 +18,4 @@ class BargmannDM(Representation):
 
     def __init__(self):
         super().__init__()
+        self.num_modes = self.A.shape[-1] // 2 # TODO: BATCH?
