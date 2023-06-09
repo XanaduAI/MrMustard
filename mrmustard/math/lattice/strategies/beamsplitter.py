@@ -24,9 +24,7 @@
 
 import numpy as np
 from numba import njit
-from scipy.linalg import expm
 
-from mrmustard import settings
 from mrmustard.math.lattice import steps
 from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
