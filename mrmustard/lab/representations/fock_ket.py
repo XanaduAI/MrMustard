@@ -34,46 +34,6 @@ class FockKet(Fock):
         return 1.0
 
 
-    # def number_means(self) -> Tensor:
-    #     r'''Returns the mean photon number in each mode.'''
-    #     ket = self.data.array
-    #     probs = math.abs(ket) ** 2
-    #     modes = list(range(len(probs.shape)))
-    #     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    #     return math.astensor(
-    #         [
-    #             math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
-    #             for marginal in marginals
-    #         ]
-    #     )
-    # 
-    # 
-    # def number_variances(self) -> Tensor:
-    #     r"""Returns the variance of the number operator in each mode."""
-    #     ket = self.data.array
-    #     probs = math.abs(ket) ** 2
-    #     modes = list(range(len(probs.shape)))
-    #     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    #     return math.astensor(
-    #         [
-    #             (
-    #                 math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-    #                 - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
-    #             )
-    #             for marginal in marginals
-    #         ]
-    #     )
-    
-    # def number_stdev(self) -> RealVector:
-    #     r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-    #     return math.sqrt(self.number_variances())
-
-
-
-    # def number_cov(self):
-    #     raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
-    
-
     def norm(self):
         r"""
         Returns the norm. (:math:`|amp|` for ``ket``)
@@ -81,11 +41,17 @@ class FockKet(Fock):
         return math.abs(math.norm(self.data.array))
     
 
-    def probability(self, cutoffs: Sequence[int] ) -> Tensor: 
+    def probability(self) -> Tensor: 
         r"""Maps a ket to probabilities.
+
+        Args:
+            ket: the ket
+
+        Returns:
+            Tensor: the probabilities vector
         """
         #TODO: cutoffs
-        return math.abs(self.data.array)[cutoffs]
+        return math.abs(self.data.array)
     
 
     def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):

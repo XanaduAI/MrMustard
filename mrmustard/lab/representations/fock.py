@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+ Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class Fock(Representation):
 
     def number_means(self) -> Tensor:
         r'''Returns the mean photon number in each mode.'''
-        probs = math.abs(self.data.array) ** 2
+        probs = self.probability()
         modes = list(range(len(probs.shape)))
         marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
         return math.astensor(
@@ -46,7 +46,7 @@ class Fock(Representation):
 
     def number_variances(self) -> Tensor:
         r"""Returns the variance of the number operator in each mode."""
-        probs = math.abs(self.data.array) ** 2
+        probs = self.probability()
         modes = list(range(len(probs.shape)))
         marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
         return math.astensor(
@@ -66,31 +66,6 @@ class Fock(Representation):
 
     def number_cov(self):
         raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
-    
-
-    # def __eq__(self, other:Representation) -> bool:
-    #     r"""Compares two Representations (States) equal or not"""
-    #     return self.data.__eq__(other)
-
-
-    # def __rmul__(self, other:Scalar) -> Representation:
-    #     r"""Multiplies State with a scalar"""
-    #     return ArrayData(self.data.__rmul__(other))
-    
-
-    # def __mul__(self, other:Representation) -> Representation:
-    #     r"""Multiplies two Representations (States)"""
-    #     return ArrayData(self.data.__rmul__(other))
-
-
-    # def __add__(self, other:Representation) -> Representation:
-    #     r"""Adds two Representations (States)"""
-    #     return ArrayData(self.data.__add__(other))
-
-
-    # def __truediv__(self, other:Representation) -> Representation:
-    #     r"""Divides two Representations (States)"""
-    #     return ArrayData(self.data.__truediv__(other))
 
 
     def von_neumann_entropy(cov: Matrix, hbar: float) -> float:

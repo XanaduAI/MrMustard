@@ -31,7 +31,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.physics import bargmann, fock, gaussian
+from mrmustard.physics import fock, gaussian
 from mrmustard.representations import Representation, FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
 from converter import convert
 from mrmustard.typing import (
@@ -304,6 +304,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the probabilities
         """
+        #TODO: deal with the cutoff issue here
         if isinstance(self.representation, (FockKet, FockDM)):
             return self.representation.probabilities(cutoffs)
 

@@ -89,85 +89,6 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
     return cutoffs
 
 
-def wigner_to_fock_state(
-    cov: Matrix,
-    means: Vector,
-    shape: Sequence[int],
-    max_prob: float = 1.0,
-    max_photons: Optional[int] = None,
-    return_dm: bool = True,
-) -> Tensor:
-    r"""Returns the Fock representation of a Gaussian state.
-    Use with caution: if the cov matrix is that of a mixed state,
-    setting return_dm to False will produce nonsense.
-    If return_dm=False, we can apply max_prob and max_photons to stop the
-    computation of the Fock representation early, when those conditions are met.
-
-    * If the state is pure it can return the state vector (ket) or the density matrix.
-        The index ordering is going to be [i's] in ket_i
-    * If the state is mixed it can return the density matrix.
-        The index order is going to be [i's,j's] in dm_ij
-
-    Args:
-        cov: the Wigner covariance matrix
-        means: the Wigner means vector
-        shape: the shape of the tensor
-        max_prob: the maximum probability of a the state (applies only if the ket is returned)
-        max_photons: the maximum number of photons in the state (applies only if the ket is returned)
-        return_dm: whether to return the density matrix (otherwise it returns the ket)
-
-    Returns:
-        Tensor: the fock representation
-    """
-    if return_dm:
-        A, B, C = wigner_to_bargmann_rho(cov, means)
-        return math.hermite_renormalized(A, B, C, shape=shape)
-    else:  # here we can apply max prob and max photons
-        A, B, C = wigner_to_bargmann_psi(cov, means)
-        if max_photons is None:
-            max_photons = sum(shape) - len(shape)
-        if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
-            return math.hermite_renormalized_binomial(
-                A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
-            )
-        return math.hermite_renormalized(A, B, C, shape=shape)
-
-
-def wigner_to_fock_U(X, d, shape):
-    r"""Returns the Fock representation of a Gaussian unitary transformation.
-    The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
-    or with the left indices of a density matrix.
-
-    Arguments:
-        X: the X matrix
-        d: the d vector
-        shape: the shape of the tensor
-
-    Returns:
-        Tensor: the fock representation of the unitary transformation
-    """
-    A, B, C = wigner_to_bargmann_U(X, d)
-    return math.hermite_renormalized(A, B, C, shape=shape)
-
-
-def wigner_to_fock_Choi(X, Y, d, shape):
-    r"""Returns the Fock representation of a Gaussian Choi matrix.
-    The order of choi indices is :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
-    where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of a density matrix.
-
-    Arguments:
-        X: the X matrix
-        Y: the Y matrix
-        d: the d vector
-        shape: the shape of the tensor
-
-    Returns:
-        Tensor: the fock representation of the Choi matrix
-    """
-    A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    return math.hermite_renormalized(A, B, C, shape=shape)
-
-
 def ket_to_dm(ket: Tensor) -> Tensor:
     r"""Maps a ket to a density matrix.
 
@@ -211,30 +132,6 @@ def dm_to_ket(dm: Tensor) -> Tensor:
     ket = math.reshape(ket, cutoffs)
 
     return ket
-
-
-def ket_to_probs(ket: Tensor) -> Tensor:
-    r"""Maps a ket to probabilities.
-
-    Args:
-        ket: the ket
-
-    Returns:
-        Tensor: the probabilities vector
-    """
-    return math.abs(ket) ** 2
-
-
-def dm_to_probs(dm: Tensor) -> Tensor:
-    r"""Extracts the diagonals of a density matrix.
-
-    Args:
-        dm: the density matrix
-
-    Returns:
-        Tensor: the probabilities vector
-    """
-    return math.all_diagonals(dm, real=True)
 
 
 def U_to_choi(U: Tensor) -> Tensor:
@@ -304,44 +201,6 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
             ** 2
         )
     )
-
-
-def number_means(tensor, is_dm: bool):
-    r"""Returns the mean of the number operator in each mode."""
-    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor(
-        [
-            math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
-            for marginal in marginals
-        ]
-    )
-
-
-def number_variances(tensor, is_dm: bool):
-    r"""Returns the variance of the number operator in each mode."""
-    probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
-    modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    return math.astensor(
-        [
-            (
-                math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-                - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
-            )
-            for marginal in marginals
-        ]
-    )
-
-
-def purity(dm: Tensor) -> Scalar:
-    r"""Returns the purity of a density matrix."""
-    cutoffs = dm.shape[: len(dm.shape) // 2]
-    d = int(np.prod(cutoffs))  # combined cutoffs in all modes
-    dm = math.reshape(dm, (d, d))
-    dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
-    return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
 def validate_contraction_indices(in_idx, out_idx, M, name):
@@ -608,24 +467,12 @@ def normalize(fock: Tensor, is_dm: bool):
     return fock / math.sum(math.norm(fock))
 
 
-def norm(state: Tensor, is_dm: bool):
-    r"""
-    Returns the norm of a ket or the trace of the density matrix.
-    Note that the "norm" is intended as the float number that is used to normalize the state,
-    and depends on the representation. Hence different numbers for different representations
-    of the same state (:math:`|amp|` for ``ket`` and :math:`|amp|^2` for ``dm``).
-    """
-    if is_dm:
-        return math.sum(math.all_diagonals(state, real=True))
-
-    return math.abs(math.norm(state))
-
-
-def is_mixed_dm(dm):
-    r"""Evaluates if a density matrix represents a mixed state."""
-    cutoffs = dm.shape[: len(dm.shape) // 2]
-    square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
-    return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
+#TODO: if that purity function is not enough?
+# def is_mixed_dm(dm):
+#     r"""Evaluates if a density matrix represents a mixed state."""
+#     cutoffs = dm.shape[: len(dm.shape) // 2]
+#     square = math.reshape(dm, (int(np.prod(cutoffs)), -1))
+#     return not np.isclose(math.sum(square * math.transpose(square)), 1.0)
 
 
 def trace(dm, keep: List[int]):
@@ -646,55 +493,6 @@ def trace(dm, keep: List[int]):
         + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)],
     )
     return dm.contract().tensor
-
-
-@tensor_int_cache
-def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
-    r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
-
-    Args:
-        q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
-        cutoff (int): maximum number of photons
-        hbar (optional): value of `\hbar`, defaults to Mr Mustard's internal value
-
-    Returns:
-        Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
-            with number of photons ``i`` evaluated at position ``q[j]``, i.e., `\psi_i(q_j)`.
-
-    .. details::
-
-        .. admonition:: Definition
-            :class: defn
-
-        The q-quadrature eigenstates are defined as
-
-        .. math::
-
-            \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
-                \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
-
-        where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
-    """
-    omega_over_hbar = math.cast(1 / settings.HBAR, "float64")
-    x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
-
-    # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
-
-    # Renormalized physicist hermite polys: Hn / sqrt(n!)
-    R = -np.array([[2 + 0j]])  # to get the physicist polys
-
-    def f_hermite_polys(xi):
-        poly = math.hermite_renormalized(
-            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
-        )
-        return math.cast(poly, "float64")
-
-    hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
-
-    # (real) wavefunction
-    psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
-    return psi
 
 
 @lru_cache

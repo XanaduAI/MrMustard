@@ -37,45 +37,7 @@ class FockDM(Fock):
         dm = math.reshape(dm, (d, d))
         dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
         return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
-    
-    # def number_means(self) -> Tensor:
-    #     r'''Returns the mean photon number in each mode.'''
-    #     dm = self.data.array
-    #     probs = math.all_diagonals(dm, real=True)
-    #     modes = list(range(len(probs.shape)))
-    #     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    #     return math.astensor(
-    #         [
-    #             math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
-    #             for marginal in marginals
-    #         ]
-    #     )
-    
 
-    # def number_variances(self) -> Tensor:
-    #     r"""Returns the variance of the number operator in each mode."""
-    #     dm = self.data.array
-    #     probs = math.all_diagonals(dm, real=True)
-    #     modes = list(range(len(probs.shape)))
-    #     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-    #     return math.astensor(
-    #         [
-    #             (
-    #                 math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-    #                 - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
-    #             )
-    #             for marginal in marginals
-    #         ]
-    #     )
-    
-    # def number_stdev(self) -> RealVector:
-    #     r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-    #     return math.sqrt(self.number_variances())
-    
-
-    # def number_cov(self):
-    #     raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
-    
 
     def norm(self):
         r"""
@@ -84,11 +46,17 @@ class FockDM(Fock):
         return math.sum(math.all_diagonals(self.data.array, real = True))
 
 
-    def probability(self, cutoffs: Sequence[int]) -> Tensor: 
-        r"""Maps a dm to probabilities.
+    def probability(self) -> Tensor: 
+        r"""Extracts the diagonals of a density matrix.
+
+        Args:
+            dm: the density matrix
+
+        Returns:
+            Tensor: the probabilities vector
         """
         #TODO: cutoffs adjust
-        return math.all_diagonals(self.data.array, real = True)[cutoffs]
+        return math.all_diagonals(self.data.array, real = True)
     
 
     def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
