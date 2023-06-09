@@ -114,7 +114,20 @@ class Converter():
 
 
     def _find_target_node_name(self, source:str, destination:str) -> str:
+        r""""
+
+        Args:
+            source (str)        : the class name of the source Representation, containing the 
+                                  Ket/DM suffix
+            destination (str)   : the name of the target Representation without the Ket/DM suffix
+
+        Returns:
+            The string of the target representation concatenated with eith ket or DM depending on 
+            the source.
+        """
+
         suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
+
         return destination + suffix
   
 
@@ -125,13 +138,13 @@ class Converter():
 
         .. code-block::
             # assuming we have some State object s
-            target_repr = "FockKet"
             c = Converter()
-            new_s = c.convert(source=s, destination=target_repr)
+            new_s = c.convert(source=s, destination="Fock")
 
         Args:
             source (State)      : the state which representation must be transformed
-            destination (str)   : the name of the target prepresentation
+            destination (str)   : the name of the target prepresentation, 
+                                this name must NOT include ket/DM
 
 
         Returns:
@@ -151,12 +164,16 @@ class Converter():
 
     
     def shortest_path(self, source:Representation, destination:Representation):
-        pass # TODO : implement
+        raise NotImplementedError # TODO : implement
+
+
+    def add_edge(self):
+        raise NotImplementedError # TODO : implement
 
 
 
     def show(self) -> None:
-        pass # TODO : implement
+        raise NotImplementedError # TODO : implement
     
 
          # TODO : for the whole following code double-check / add to the doc
