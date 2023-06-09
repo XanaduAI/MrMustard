@@ -30,12 +30,32 @@ class SymplecticData(MatVecData):
         return self.vec
 
 
-    def __truediv__(self, other:SymplecticData) -> SymplecticData: # TODO : implement
+    def __truediv__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData: # TODO : implement
+        r"""
+        Divides a SymplecticData object by either another Data object of the same class or 
+        by a scalar
+
+        Args:
+            other (Union[Scalar, SymplecticData]): the object or scalar to be divided by
+
+        Returns:
+            A SymplecticData object resulting form the division
+        """
         raise NotImplementedError()
+
 
 
     #@njit(parallel=True)
     def __mul__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData:
+        r"""
+        Multiplies two SymplecticData objects or a SymplecticData and a scalar
+
+        Args:
+            other (Union[Scalar, SymplecticData]): the object or scalar to multiply by
+
+        Returns:
+            An object of the common child Data class resulting form multiplying two objects
+        """
 
         if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
             c = super().scalar_mul(c=other)

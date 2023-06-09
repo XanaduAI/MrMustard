@@ -107,10 +107,11 @@ class Data(ABC):
     @abstractmethod
     def __truediv__(self, other:Union[Scalar, Data]) -> Data:
         r"""
-        Abstract method dividing two Data objects
+        Abstract method dividing a Data object by either another Data object of the same class or 
+        by a scalar
 
         Args:
-            other (Data): the object to be divided with
+            other (Union[Scalar, Data]): the object to be divided with
 
         Returns:
             An object of the common child Data class resulting form dividing two objects
@@ -122,10 +123,10 @@ class Data(ABC):
     @abstractmethod
     def __mul__(self, other:Union[Scalar, Data]) -> Data:
         r"""
-        Abstract method multiplying two Data objects or a Data and a Scalar object
+        Abstract method multiplying two Data objects or a Data and a scalar
 
         Args:
-            other (Data): the object to be multiplied with
+            other (Union[Scalar, Data]): the object to be multiplied with
 
         Returns:
             An object of the common child Data class resulting form multiplying two objects
@@ -133,18 +134,9 @@ class Data(ABC):
         raise NotImplementedError()
     
 
-    @abstractmethod
     def __rmul__(self, other:Union[Scalar, Data]) -> Data:
-        r"""
-        Abstract method multiplying two Data objects or a Data and a Scalar object
-
-        Args:
-            other (Data): the object to be multiplied with
-
-        Returns:
-            An object of the common child Data class resulting form multiplying two objects
-        """
-        raise NotImplementedError()
+        r""" See __mul__ of the class: we assume commutativity"""
+        return self.__mul__(other=other)
 
 
 

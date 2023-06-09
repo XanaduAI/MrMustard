@@ -66,40 +66,20 @@ class GaussianData(MatVecData):
         if isinstance(cov, QPolyData):
             cov, mean, coeffs = self._from_QPolyData(poly=cov)
 
-        super().__init__(mat=cov, vec=mean, coeffs=coeffs) # TODO : how to def nb_modes?
-
-    
-
-    def _from_QPolyData(self, poly:QPolyData
-                        ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-        r" Allows the instantiation of a GaussianData object based on a QPolyData one."
-        inv_A = math.inv(poly.A)
-        cov = 2 * inv_A
-        mean = 2 * math.solve(poly.A, poly.b)
-        coeffs = poly.c * math.cast(
-            math.exp(0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)), poly.c.dtype
-        )
-        return (cov, mean, coeffs)
+        super().__init__(mat=cov, vec=mean, coeffs=coeffs)
 
 
-        
     @property
     def cov(self) -> Batch[Matrix]:
         return self.mat
-
-
 
     @cov.setter
     def cov(self, value) -> None:
         self.mat = value
 
-
-
     @property
     def mean(self) -> Batch[Vector]:
         return self.vec
-
-
 
     @mean.setter
     def mean(self, value) -> None:
@@ -107,12 +87,55 @@ class GaussianData(MatVecData):
 
     
 
-    def __truediv__(self, other: GaussianData) -> GaussianData:
+    def _from_QPolyData(self, poly:QPolyData
+                        ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
+        r"""
+        Allows the instantiation of a GaussianData object based on a QPolyData one.
+
+        Args:
+            poly (QPolyData) : the quadratic polynomial data
+
+        Returns:
+            The necessary matrix vector and coefficients to build a GaussianData object
+        
+        """
+
+        inv_A = math.inv(poly.A)
+        cov = 2 * inv_A
+        mean = 2 * math.solve(poly.A, poly.b)
+        coeffs = poly.c * math.cast(
+            math.exp(0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)), poly.c.dtype
+        )
+
+        return (cov, mean, coeffs)
+
+    
+
+    def __truediv__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
+       r"""
+        Divides two GaussianData objects or a gaussianData object by a scalar
+
+        Args:
+            other (Union[Scalar, GaussianData]): the Gaussiandata object -or scalar- to be 
+                                                divided by
+
+        Returns:
+            A GaussianData object resulting form the division
+        """
        raise NotImplementedError() # TODO : implement!
 
 
     #@njit
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
+        r"""
+        Multiplies two gaussianData objects or a GaussianData and a scalar
+
+        Args:
+            other (GaussianData): the object to be multiplied with
+
+        Returns:
+            An object of the common child Data class resulting form multiplying two objects
+        """
 
         if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
             c = super().scalar_mul(c=other)
@@ -177,4 +200,10 @@ class GaussianData(MatVecData):
                 return self.__class__(cov=cov, mean=mean, coeffs=coeffs)
 
             except AttributeError as e:
-                raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+            
+    
+
+    def __rmul__(self, other:Union[Scalar, GaussianData]) -> GaussianData:
+        r""" See __mul__ : we assume commutativity"""
+        return self.__mul__(other=other)

@@ -45,31 +45,17 @@ class QPolyData(MatVecData):
 
         super().__init__(mat=A, vec=b, coeff=c)
 
-
-
-    def _from_GaussianData(self, A:GaussianData
-                           ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-        A = -math.inv(A.cov)
-        b = math.inv(A.cov) @ A.mean
-        c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
-        return A, b, c
-
-
-
     @property
     def A(self) -> Batch[Matrix]:
         return self.mat
-
 
     @A.setter
     def A(self, value) -> None:
         self.mat = value
 
-
     @property
     def b(self) -> Batch[Vector]:
         return self.vec
-
 
     @b.setter
     def b(self, value) -> None:
@@ -80,21 +66,54 @@ class QPolyData(MatVecData):
     def c(self) -> Batch[Scalar]:
         return self.coeff
 
-
     @c.setter
     def c(self, value) -> None:
         self.coeff = value
 
 
+    def _from_GaussianData(self, A:GaussianData
+                           ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
+        r"""
+        Args:
+            A (GaussianData) : the GaussianData representation of a state
 
-    def __truediv__(self, other:QPolyData) -> QPolyData:
+        Returns:
+            The necessary matrix, vector and coefficients to build a QPolyData object
+        """
+
+        A = -math.inv(A.cov)
+        b = math.inv(A.cov) @ A.mean
+        c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
+
+        return A, b, c
+
+
+    def __truediv__(self, other:Union[Scalar, QPolyData]) -> QPolyData:
+       r"""
+        Divides a QPolyData object by either another QPolyData object or by a scalar
+
+        Args:
+            other (Union[Scalar, Data]): the object or scalar to be divided by
+
+        Returns:
+            An object of the common child Data class resulting form dividing two objects
+        """
        raise NotImplementedError() # TODO : implement!
 
 
     #@njit(parallel=True)
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
+        r"""
+        Multiplies two QPolyData objects or a QPolyData and a scalar
 
-        if type(other) is Scalar: # WARNING: this means we have to be very logical with our typing!
+        Args:
+            other (Union[Scalar, QPolyData]): the object or scalar to be multiplied with
+
+        Returns:
+            The QPolyData representation of the resulting multiplied state
+        """
+
+        if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
             c = super().scalar_mul(c=other)
             return self.__class__(A=self.A, b=self.b, c=c)
         

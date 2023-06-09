@@ -15,7 +15,7 @@
 from __future__ import annotations
 #from numba import njit
 import numpy as np
-from typing import Union
+from typing import Union, List
 from mrmustard.lab.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
@@ -27,6 +27,11 @@ class ArrayData(Data):
     def __init__(self, array) -> None:
         self.array = array
         super().__init__()
+
+    
+    @property
+    def cutoffs(self) -> Union[int, List[int]]:
+        return self.array.shape
 
 
     #@njit
@@ -97,6 +102,7 @@ class ArrayData(Data):
         self.__add__(-other)
 
 
+    #@njit
     def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
         r"""
         Divides two Data objects
@@ -139,21 +145,6 @@ class ArrayData(Data):
     def __rmul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
         r""" See __mul__, object have commutative multiplication."""
         return self.__mul__(other=other)
-
-
-
-    #@njit
-    def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
-        r"""
-        Divides two Data objects
-
-        Args:
-            other (Union[Scalar, ArrayData]): the object to be divided with
-
-        Returns:
-            An array resulting form dividing two objects or the object by a Scalar
-        """
-        raise NotImplementedError
 
 
 

@@ -121,7 +121,6 @@ class MatVecData(Data):  # Note : this class is abstract too!
         return self.__add__(other=-other)
         
 
-
     #@njit(parallel=True)
     def __and__(self, other: MatVecData) -> MatVecData:
         r"""
