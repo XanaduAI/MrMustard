@@ -38,10 +38,10 @@ class ArrayData(Data):
         
 
 
-    def __eq__(self, other: ArrayData, rtol:float=1e-6, atol:float=1e-6) -> bool:
+    def __eq__(self, other: ArrayData) -> bool:
 
         try:
-            return super().same(X=[self.array], Y=[other.array], rtol=rtol, atol=atol)
+            return super().same(X=[self.array], Y=[other.array])
         
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
@@ -78,6 +78,12 @@ class ArrayData(Data):
             except TypeError as e:
                 raise TypeError(f"Cannot multiply/divide {self.__class__} and {other.__class__}."
                                 ) from e
+            
+
+    
+    #@njit(parallel=True)
+    def __rmul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
+        return self.__mul__(other=other)
 
 
 

@@ -65,19 +65,25 @@ class Data(ABC):
     
      @abstractmethod
     def __neg__(self) -> Data:
-        r""" Negative of the object """
+        r"""
+        Abstract method retruning the negative of the object
+
+        Args:
+            NA
+
+        Returns:
+            The negative object
+        """
         raise NotImplementedError()
 
 
     @abstractmethod
-    def __add__(self, other: Data, rtol:float=1e-6, atol:float=1e-6) -> Data:
+    def __add__(self, other: Data) -> Data:
         r"""
         Abstract method adding two Data objects
 
         Args:
             other (Data): the object to be added
-            rtol (float): relative tolerance parameter for Numpy's `all_close`
-            atol (float): absolute tolerance parameter for Numpy's `all_close`
 
         Returns:
             An object of the common child Data class resulting form adding two objects
@@ -87,14 +93,12 @@ class Data(ABC):
 
 
     @abstractmethod
-    def __sub__(self, other: Data, rtol:float=1e-6, atol:float=1e-6) -> Data:
+    def __sub__(self, other: Data) -> Data:
         r"""
         Abstract method subtracting two Data objects
 
         Args:
             other (Data): the object to be subtracted
-            rtol (float): relative tolerance parameter for Numpy's `all_close`
-            atol (float): absolute tolerance parameter for Numpy's `all_close`
 
         Returns:
             An object of the common child Data class resulting form subtracting two objects
@@ -110,25 +114,35 @@ class Data(ABC):
 
         Args:
             other (Data): the object to be divided with
-            rtol (float): relative tolerance parameter for Numpy's `all_close`
-            atol (float): absolute tolerance parameter for Numpy's `all_close`
 
         Returns:
             An object of the common child Data class resulting form dividing two objects
         """
         raise NotImplementedError()
-
+    
 
 
     @abstractmethod
     def __mul__(self, other:Union[Scalar, Data]) -> Data:
         r"""
-        Abstract method multiplying two Data objects
+        Abstract method multiplying two Data objects or a Data and a Scalar object
 
         Args:
             other (Data): the object to be multiplied with
-            rtol (float): relative tolerance parameter for Numpy's `all_close`
-            atol (float): absolute tolerance parameter for Numpy's `all_close`
+
+        Returns:
+            An object of the common child Data class resulting form multiplying two objects
+        """
+        raise NotImplementedError()
+    
+
+    @abstractmethod
+    def __rmul__(self, other:Union[Scalar, Data]) -> Data:
+        r"""
+        Abstract method multiplying two Data objects or a Data and a Scalar object
+
+        Args:
+            other (Data): the object to be multiplied with
 
         Returns:
             An object of the common child Data class resulting form multiplying two objects
@@ -144,8 +158,6 @@ class Data(ABC):
 
         Args:
             other (Data): the object to be tensor-producted with
-            rtol (float): relative tolerance parameter for Numpy's `all_close`
-            atol (float): absolute tolerance parameter for Numpy's `all_close`
 
         Returns:
             An object of the common child Data class resulting form tensoring two objects
@@ -156,7 +168,17 @@ class Data(ABC):
 
     @abstractmethod
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
-        r"""Optimises the representation of an object by performing some custom data compression"""
+        r"""
+        Abstract method performing the tensor product between two Data objects
+
+        Args:
+            other (Data): the object to be tensor-producted with
+            rtol (float): the relative tolerance for numpy's `allclose`
+            atol (float): the absolute tolerance for numpy's `allclose`
+
+        Returns:
+            An object of the common child Data class resulting form tensoring two objects
+        """
         raise NotImplementedError()
 
 
