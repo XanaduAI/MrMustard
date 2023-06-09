@@ -276,8 +276,8 @@ def test_fock_representation_rgate(cutoffs, angles, modes):
 
     # compare with the standard way of calculating
     # transformation unitaries using the Choi isomorphism
-    d = np.zeros(len(cutoffs))
-    expected_R = fock.wigner_to_fock_U(rgate.X_matrix, d, cutoffs)
+    d = np.zeros(len(cutoffs) * 2)
+    expected_R = fock.wigner_to_fock_U(rgate.X_matrix, d, tuple(cutoffs + cutoffs))
     assert np.allclose(R, expected_R, atol=1e-5)
 
 
