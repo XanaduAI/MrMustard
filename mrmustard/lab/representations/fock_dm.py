@@ -84,10 +84,11 @@ class FockDM(Fock):
         return math.sum(math.all_diagonals(self.data.array, real = True))
 
 
-    def probability(self) -> Tensor: 
+    def probability(self, cutoffs: Sequence[int]) -> Tensor: 
         r"""Maps a dm to probabilities.
         """
-        return math.all_diagonals(self.data.array, real = True)
+        #TODO: cutoffs adjust
+        return math.all_diagonals(self.data.array, real = True)[cutoffs]
     
 
     def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):

@@ -69,36 +69,37 @@ class State:  # pylint: disable=too-many-public-methods
 
         Supply either:
             * a covariance matrix and means vector
-            * an eigenvalues array and symplectic matrix
             * a fock representation (ket or dm)
+            * a quadrature variable vector and corresponding wavefunction samples
+        together with the flag_ket to indicate the nature of the state.
+        Or supply simply with the Representation Class.
 
         Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
-            eigenvalues (Tensor): the eigenvalues of the covariance matrix
-            symplectic (Matrix): the symplectic matrix mapping the thermal state with given eigenvalues to this state
             fock (Tensor): the Fock representation
             qs (Vector): the point value for corresponding q-wavefunction
             wavefunctionq (Vector): the value of the point of the q-wavefunction
-
+            flag_ket (boolean): whether this state is a ket (pure) or a density matrix (mixed)
+            representation (Representation): the Representation Class contains all information about the state
         """
-
+        #Case 0: All data of the state is wrapped inside one of the Representation classes
         if representation:
             self.representation = representation
         else:
-            #Case 1: give cov, means, ket or dm / # modes
+            #Case 1: Wigner representation
             if cov is not None and means is not None and flag_ket is not None:
                 if flag_ket:
                     self.representation = WignerKet(cov, means)
                 else:
                     self.representation = WignerDM(cov, means)
-            #Case 2: give ket or dm of Fock
+            #Case 2: Fock representation
             elif fock is not None and flag_ket is not None:
                 if flag_ket:
                     self.representation = FockKet(fock)
                 else:
                     self.representation = FockDM(fock)
-            #Case 3: give wavefunctionQ
+            #Case 3: q-Wavefunction representation
             elif qs is not None and wavefunctionq is not None and flag_ket is not None:
                 if flag_ket:
                     self.representation = WavefunctionQKet(qs, wavefunctionq)
@@ -106,7 +107,7 @@ class State:  # pylint: disable=too-many-public-methods
                     self.representation = WavefunctionQDM(qs, wavefunctionq)
             else:
                 raise ValueError(
-                    "State must be initialized with either a covariance matrix and means vector, a fock representation, a point-wise wavefunction with its point values and the flag_ket"
+                    "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a fock representation, a point-wise wavefunction with its point values and the flag_ket."
                 )
                 
         #TODO: this attribute modes is linked to the Circuit. Need to be modified afterwards.
@@ -119,7 +120,8 @@ class State:  # pylint: disable=too-many-public-methods
 
     @property
     def modes(self):
-        r"""Returns the modes of the state."""
+        r"""Returns the modes of the state.
+        """
         if self._modes is None:
             return list(range(self.representation.num_modes))
         return self._modes
@@ -226,30 +228,44 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def state_probability(self) -> float:
         r"""Returns the probability of the state."""
-        #TODO
-        return None
+        norm = self.norm
+        if isinstance(self, FockKet):
+            return norm**2
+        return norm
 
     def ket(
-        self
+        self,
+        cutoffs: List[int] = None,
     ) -> Optional[ComplexTensor]:
-        r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
+        r"""Returns the ket of the state if it is in Fock representation.
 
         Args:
             cutoffs List[int or None]: The cutoff dimensions for each mode. If a mode cutoff is
                 ``None``, it's guessed automatically.
-            max_prob (float): The maximum probability of the state. Defaults to 1.0.
-                (used to stop the calculation of the amplitudes early)
-            max_photons (int): The maximum number of photons in the state, summing over all modes
-                (used to stop the calculation of the amplitudes early)
 
         Returns:
             Tensor: the ket
         """
-        if isinstance(self.representation, FockKet):
-            return self.representation.data.array
+        if isinstance(self.representation, FockKet): #What if we have a FockDM but pure?
+            if cutoffs is None:
+                return self.representation.data.array
+            else:
+                cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
+            current_cutoffs = [int(s) for s in self.representation.data.array.shape]
+            if cutoffs != current_cutoffs:
+                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                if any(p != (0, 0) for p in paddings):
+                    padded = fock.math.pad(self.representation.data.array, paddings, mode="constant")
+                else:
+                    padded = self.representation.data.array
+                return padded[tuple(slice(s) for s in cutoffs)]
+            return self.representation.data.array[tuple(slice(s) for s in cutoffs)]
+        else:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
 
-    def dm(self) -> ComplexTensor:
+
+    def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
 
         Args:
@@ -260,10 +276,23 @@ class State:  # pylint: disable=too-many-public-methods
             Tensor: the density matrix
         """
         if isinstance(self.representation, FockDM):
-            return self.representation.data.array
+            if cutoffs is None:
+                return self.representation.data.array
+            else:
+                cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
+            if cutoffs != (current_cutoffs := list(self.representation.data.shape[: self.num_modes])):
+                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                if any(p != (0, 0) for p in paddings):
+                    padded = fock.math.pad(self.representation.data.array, paddings + paddings, mode="constant")
+                else:
+                    padded = self.representation.data.array
+                return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
+            return self.representation.data.array[tuple(slice(s) for s in cutoffs + cutoffs)]
+        else:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+            
 
-
-    def fock_probabilities(self) -> RealTensor:
+    def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
 
         If the state is pure, they are the absolute value squared of the ket amplitudes.
@@ -276,7 +305,7 @@ class State:  # pylint: disable=too-many-public-methods
             Tensor: the probabilities
         """
         if isinstance(self.representation, (FockKet, FockDM)):
-            return self.representation.probabilities()
+            return self.representation.probabilities(cutoffs)
 
 
     def primal(self, other: Union[State, Transformation]) -> State:
@@ -405,20 +434,20 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Concatenates two states."""
         return self.representation.data.__and__(other)
 
-    # def __getitem__(self, item) -> State:
-    #     "setting the modes of a state (same API of `Transformation`)"
-    #     if isinstance(item, int):
-    #         item = [item]
-    #     elif isinstance(item, Iterable):
-    #         item = list(item)
-    #     else:
-    #         raise TypeError("item must be int or iterable")
-    #     if len(item) != self.num_modes:
-    #         raise ValueError(
-    #             f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
-    #         )
-    #     self._modes = item
-    #     return self
+    def __getitem__(self, item) -> State:
+        "setting the modes of a state (same API of `Transformation`)"
+        if isinstance(item, int):
+            item = [item]
+        elif isinstance(item, Iterable):
+            item = list(item)
+        else:
+            raise TypeError("item must be int or iterable")
+        if len(item) != self.num_modes:
+            raise ValueError(
+                f"there are {self.num_modes} modes (item has {len(item)} elements, perhaps you're looking for .get_modes()?)"
+            )
+        self._modes = item
+        return self
 
 
     def get_modes(self, item) -> State:
@@ -505,26 +534,62 @@ class State:  # pylint: disable=too-many-public-methods
 
 
     def to_Bargmann(self):
-        r'''Converts the representation of the state to Bargmann Representation and returns a new State.'''
+        r'''Converts the representation of the state to Bargmann Representation and returns a new State.
+        Args:
+            source (State): the state itself
+            target (Srting): the target Bargmann representation of the state
+
+        Returns:
+            State: the converted state with the target Bargmann Representation
+        '''
         return convert(self, "Bargmann") 
         
 
-    def to_Fock(self):
-        r'''Converts the representation of the state to Fock Representation and returns a new State.'''
-        return convert(self, "Fock")
+    def to_Fock(self, max_prob: float = 1.0, max_photons: int = None):        
+        r"""Converts the representation of the state to Fock Representation and returns a new State.
+
+        Args:
+            source (State): the state itself
+            target (Srting): the target Fock representation of the state
+            max_prob (float): The maximum probability of the state. Defaults to 1.0.
+                (used to stop the calculation of the amplitudes early)
+            max_photons (int): The maximum number of photons in the state, summing over all modes
+                (used to stop the calculation of the amplitudes early)
+
+        Returns:
+            State: the converted state with the target Fock Representation
+        """
+        return convert(self, "Fock", max_prob, max_photons)
         
 
     def to_WavefunctionQ(self):
-        r'''Converts the representation of the state to q-wavefunction Representation and returns a new State.'''
+        r'''Converts the representation of the state to q-wavefunction Representation and returns a new State.
+
+        Args:
+            source (State): the state itself
+            target (Srting): the target q-Wavefunction representation of the state
+
+        Returns:
+            State: the converted state with the target q-Wavefunction Representation
+        '''
         return convert(self, "WavefunctionQ") 
         
 
     def to_Wigner(self):
-        r'''Converts the representation of the state to Wigner Representation and returns a new State.'''
+        r'''Converts the representation of the state to Wigner Representation and returns a new State.
+
+        Args:
+            source (State): the state itself
+            target (Srting): the target Wigner representation of the state
+
+        Returns:
+            State: the converted state with the target Wigner Representation
+        '''
         return convert(self, "Wigner") 
 
 
     def _repr_markdown_(self):
+        r"""Prints the table to show the properties of the state. """
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
             + "| Purity | Probability | Num modes | Bosonic size | Representation |\n"

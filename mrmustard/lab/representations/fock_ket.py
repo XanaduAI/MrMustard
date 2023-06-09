@@ -81,10 +81,11 @@ class FockKet(Fock):
         return math.abs(math.norm(self.data.array))
     
 
-    def probability(self) -> Tensor: 
+    def probability(self, cutoffs: Sequence[int] ) -> Tensor: 
         r"""Maps a ket to probabilities.
         """
-        return math.abs(self.data.array)
+        #TODO: cutoffs
+        return math.abs(self.data.array)[cutoffs]
     
 
     def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
