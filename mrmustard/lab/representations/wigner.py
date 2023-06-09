@@ -27,7 +27,15 @@ class Wigner(Representation):
 
 
     def purity(cov: RealMatrix, hbar: float) -> Scalar:
-        r"""Returns the purity of the state with the given covariance matrix."""
+        r"""Returns the purity of the state with the given covariance matrix.
+
+        Args:
+            cov (Matrix): the covariance matrix
+            hbat (float) ; the reduced Plank constant
+
+        Returns:
+            float: the purity
+        """
         return 1 / math.sqrt(math.det((2 / hbar) * cov))
     
 
@@ -114,62 +122,62 @@ class Wigner(Representation):
         return entropy
     
 
-def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
-    r"""Returns the covariances and means after discarding the specified modes.
+    def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
+        r"""Returns the covariances and means after discarding the specified modes.
 
-    Args:
-        cov (Matrix): covariance matrix
-        means (Vector): means vector
-        Bmodes (Sequence[int]): modes to discard
+        Args:
+            cov (Matrix): covariance matrix
+            means (Vector): means vector
+            Bmodes (Sequence[int]): modes to discard
 
-    Returns:
-        Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
-    """
-    N = len(cov) // 2
-    Aindices = math.astensor(
-        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
-    )
-    A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
-    A_means_vec = math.gather(means, Aindices)
-    return A_cov_block, A_means_vec   
-
-
-def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
-    r"""Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB coherence block.
-
-    Args:
-        cov (Matrix): the covariance matrix
-        Amodes (Sequence[int]): the modes of system ``A``
-
-    Returns:
-        Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
-    """
-    N = cov.shape[-1] // 2
-    Bindices = math.cast(
-        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
-        "int32",
-    )
-    Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
-    A_block = math.gather(math.gather(cov, Aindices, axis=1), Aindices, axis=0)
-    B_block = math.gather(math.gather(cov, Bindices, axis=1), Bindices, axis=0)
-    AB_block = math.gather(math.gather(cov, Bindices, axis=1), Aindices, axis=0)
-    return A_block, B_block, AB_block
+        Returns:
+            Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
+        """
+        N = len(cov) // 2
+        Aindices = math.astensor(
+            [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+        )
+        A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
+        A_means_vec = math.gather(means, Aindices)
+        return A_cov_block, A_means_vec   
 
 
-def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
-    r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
+    def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
+        r"""Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB coherence block.
 
-    Args:
-        means (Vector): the means vector
-        Amodes (Sequence[int]): the modes of system ``A``
+        Args:
+            cov (Matrix): the covariance matrix
+            Amodes (Sequence[int]): the modes of system ``A``
 
-    Returns:
-        Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
-    """
-    N = len(means) // 2
-    Bindices = math.cast(
-        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
-        "int32",
-    )
-    Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
-    return math.gather(means, Aindices), math.gather(means, Bindices)
+        Returns:
+            Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
+        """
+        N = cov.shape[-1] // 2
+        Bindices = math.cast(
+            [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+            "int32",
+        )
+        Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
+        A_block = math.gather(math.gather(cov, Aindices, axis=1), Aindices, axis=0)
+        B_block = math.gather(math.gather(cov, Bindices, axis=1), Bindices, axis=0)
+        AB_block = math.gather(math.gather(cov, Bindices, axis=1), Aindices, axis=0)
+        return A_block, B_block, AB_block
+
+
+    def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
+        r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
+
+        Args:
+            means (Vector): the means vector
+            Amodes (Sequence[int]): the modes of system ``A``
+
+        Returns:
+            Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
+        """
+        N = len(means) // 2
+        Bindices = math.cast(
+            [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+            "int32",
+        )
+        Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
+        return math.gather(means, Aindices), math.gather(means, Bindices)
