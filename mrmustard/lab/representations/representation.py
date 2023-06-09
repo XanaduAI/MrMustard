@@ -59,26 +59,6 @@ class Representation(ABC):
 
 
     @abstractmethod
-    def __add__():
-        pass
-        
-
-    @abstractmethod
-    def __eq__():
-        pass
-
-
-    @abstractmethod
-    def __rmul__():
-        pass
-
-
-    @abstractmethod
-    def __truediv__():
-        pass
-
-
-    @abstractmethod
     def _repr_markdown_():
         pass
 

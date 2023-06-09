@@ -32,26 +32,6 @@ class WaveFunctionQ(Representation):
         raise NotImplementedError("Get this of this state from other representations!")
     
 
-    def __eq__(self, other:Representation) -> bool:
-        r"""Compares two Representations (States) equal or not"""
-        return self.data.__eq__(other)
-
-
-    def __rmul__(self, other:Representation) -> Representation:
-        r"""Multiplies two Representations (States)"""
-        return self.data.__rmul__(other)
-
-
-    def __add__(self, other:Representation) -> Representation:
-        r"""Adds two Representations (States)"""
-        return self.data.__add__(other)
-
-
-    def __truediv__(self, other:Representation) -> Representation:
-        r"""Divides two Representations (States)"""
-        return self.data.__truediv__(other)
-    
-
     def norm(self):
         raise NotImplementedError("Get this of this state from other representations!")
 

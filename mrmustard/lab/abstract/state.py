@@ -32,7 +32,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
-from mrmustard.representations import FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
+from mrmustard.representations import Representation, FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
 from converter import convert
 from mrmustard.typing import (
     ComplexMatrix,
@@ -63,6 +63,7 @@ class State:  # pylint: disable=too-many-public-methods
         wavefunctionq: RealVector = None,
         modes: Sequence[int] = None,
         flag_ket: bool = None,
+        representation: Representation = None,
     ):
         r"""Initializes the state.
 
@@ -81,41 +82,44 @@ class State:  # pylint: disable=too-many-public-methods
             wavefunctionq (Vector): the value of the point of the q-wavefunction
 
         """
-        self.representation = None
-        #Given the modes for this State, if not, get the size of the input data and assign modes
-        if modes:
-            self.modes = modes
-        #Case 1: give cov, means, ket or dm / # modes
-        if cov is not None and means is not None and flag_ket is not None:
-            if flag_ket:
-                self.representation = WignerKet(cov, means)
-                # self.representation.data.num_modes = cov.shape[-1] . ->PUT IN DATA
-            else:
-                self.representation = WignerDM(cov, means)
-                # self.representation.data.num_modes = cov.shape[-1] // 2
-        #Case 2: give ket or dm of Fock
-        elif fock is not None and flag_ket is not None:
-            if flag_ket:
-                self.representation = FockKet(fock)
-                # self.representation.data.num_modes = len(fock.shape)
-            else:
-                self.representation = FockDM(fock)
-                # self.representation.data.num_modes = len(fock.shape) // 2
-        #Case 3: give wavefunctionQ
-        elif qs is not None and wavefunctionq is not None and flag_ket is not None:
-            if flag_ket:
-                self.representation = WavefunctionQKet(qs, wavefunctionq)
-            else:
-                self.representation = WavefunctionQDM(qs, wavefunctionq)
+
+        if representation:
+            self.representation = representation
         else:
-            raise ValueError(
-                "State must be initialized with either a covariance matrix and means vector, a fock representation, a point-wise wavefunction with its point values and the flag_ket"
-            )
-        # self._modes = modes
-        # if modes is not None:
-        #     assert (
-        #         len(modes) == self.num_modes
-        #     ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+            #Case 1: give cov, means, ket or dm / # modes
+            if cov is not None and means is not None and flag_ket is not None:
+                if flag_ket:
+                    self.representation = WignerKet(cov, means)
+                    # self.representation.data.num_modes = cov.shape[-1] . ->PUT IN DATA
+                else:
+                    self.representation = WignerDM(cov, means)
+                    # self.representation.data.num_modes = cov.shape[-1] // 2
+            #Case 2: give ket or dm of Fock
+            elif fock is not None and flag_ket is not None:
+                if flag_ket:
+                    self.representation = FockKet(fock)
+                    # self.representation.data.num_modes = len(fock.shape)
+                else:
+                    self.representation = FockDM(fock)
+                    # self.representation.data.num_modes = len(fock.shape) // 2
+            #Case 3: give wavefunctionQ
+            elif qs is not None and wavefunctionq is not None and flag_ket is not None:
+                if flag_ket:
+                    self.representation = WavefunctionQKet(qs, wavefunctionq)
+                else:
+                    self.representation = WavefunctionQDM(qs, wavefunctionq)
+            else:
+                raise ValueError(
+                    "State must be initialized with either a covariance matrix and means vector, a fock representation, a point-wise wavefunction with its point values and the flag_ket"
+                )
+                
+        #TODO: this attribute modes is linked to the Circuit. Need to be modified afterwards.
+        self.num_modes = self.representation.num_modes
+        if modes is not None:
+            self._modes = modes
+            assert (
+                len(modes) == self.num_modes
+            ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
 
     @property
     def modes(self):
@@ -123,7 +127,6 @@ class State:  # pylint: disable=too-many-public-methods
         if self._modes is None:
             return list(range(self.representation.num_modes))
         return self._modes
-
 
     @property
     def purity(self) -> float:
@@ -180,12 +183,12 @@ class State:  # pylint: disable=too-many-public-methods
         except:
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
 
-    @property
-    #TODO: Depends on the representation. Shape means something else.
-    def shape(self) -> List[int]:
-        r"""Returns the shape of the state.
-        """
-        return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
+    # @property
+    # #TODO: Depends on the representation. Shape means something else.
+    # def shape(self) -> List[int]:
+    #     r"""Returns the shape of the state.
+    #     """
+    #     return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
 
     @property
     def fock(self) -> ComplexTensor:
@@ -233,7 +236,6 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if isinstance(self.representation, FockKet):
             return self.representation.data.array
-        #TODO: transfer from Wigner to Fock.
 
 
     def dm(self) -> ComplexTensor:
@@ -248,7 +250,6 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if isinstance(self.representation, FockDM):
             return self.representation.data.array
-        #TODO: transfer from Wigner to Fock.
 
 
     def fock_probabilities(self) -> RealTensor:
@@ -265,6 +266,7 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if isinstance(self.representation, (FockKet, FockDM)):
             return self.representation.probabilities()
+
 
     def primal(self, other: Union[State, Transformation]) -> State:
         r"""Returns the post-measurement state after ``other`` is projected onto ``self``.
@@ -417,15 +419,15 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             raise TypeError("item must be int or iterable")
 
-        if item == self.modes:
+        if item == self._modes:
             return self
 
-        if not set(item) & set(self.modes):
+        if not set(item) & set(self._modes):
             raise ValueError(
-                f"Failed to request modes {item} for state {self} on modes {self.modes}."
+                f"Failed to request modes {item} for state {self} on modes {self._modes}."
             )
-        item_idx = [self.modes.index(m) for m in item]
-        if self.is_gaussian:
+        item_idx = [self._modes.index(m) for m in item]
+        if self.is_wigner:
             cov, _, _ = gaussian.partition_cov(self.cov, item_idx)
             means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
@@ -465,6 +467,12 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Implements multiplication by a scalar from the left.
 
         E.g., ``0.5 * psi``.
+        """
+        return self.representation.data.__rmul__(other)
+    
+
+    def __mul__(self, other: State):
+        r"""Implements multiplication of two objects.
         """
         return self.representation.data.__rmul__(other)
 
