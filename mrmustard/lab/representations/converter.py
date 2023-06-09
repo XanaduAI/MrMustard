@@ -15,6 +15,7 @@
 from __future__ import annotations
 import networkx as nx
 import numpy as np
+from re import sub
 from typing import List, Optional, Tuple, Union
 from mrmustard import settings
 from mrmustard.math import Math
@@ -110,7 +111,12 @@ class Converter():
 
         nx.set_edge_attributes(g, transition_formulas)
         
-        
+
+
+    def _find_target_node_name(self, source:str, destination:str) -> str:
+        suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
+        return destination + suffix
+  
 
     def convert(self, source:Representation, destination:str) -> Representation:
         r""" 
@@ -134,8 +140,11 @@ class Converter():
         """
 
         try:
-            f = self.g[source.__class__.__name__][destination]
+            s_name = source.__class__.__name__
+            d_name = self._find_target_node_name(source=source, destination=destination)
+            f = self.g[s_name][d_name]
             return f(source)
+        
         except KeyError as e:
             raise ValueError(f"{destination} is not a valid target name") from e
         
