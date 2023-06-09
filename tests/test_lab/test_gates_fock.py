@@ -161,14 +161,14 @@ def test_parallel_displacement(x1, x2, y1, y2):
 
 def test_squeezer_grad():
     """tests fock squeezer gradient against finite differences"""
-    cutoffs = [5, 5]
+    cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
     phi = math.new_variable(0.1, None, "phi")
     delta = 1e-6
     dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (2 * delta)
     dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (2 * delta)
     _, (gradr, gradphi) = math.value_and_gradients(
-        lambda: fock.squeezer(r, phi, cutoffs=cutoffs), [r, phi]
+        lambda: fock.squeezer(r, phi, shape=cutoffs), [r, phi]
     )
     assert np.allclose(gradr, 2 * np.real(np.sum(dUdr)))
     assert np.allclose(gradphi, 2 * np.real(np.sum(dUdphi)))
@@ -262,9 +262,9 @@ def test_fock_representation_mzgate(phi_a, phi_b):
 @pytest.mark.parametrize(
     "cutoffs,angles,modes",
     [
-        [[5, 4, 3, 5, 4, 3], [np.pi, np.pi / 2, np.pi / 4], None],
-        [[3, 4, 3, 4], [np.pi / 3, np.pi / 2], [0, 1]],
-        [[3, 3], np.pi / 6, [0]],
+        [[5, 4, 3], [np.pi, np.pi / 2, np.pi / 4], None],
+        [[3, 4], [np.pi / 3, np.pi / 2], [0, 1]],
+        [[3], np.pi / 6, [0]],
     ],
 )
 def test_fock_representation_rgate(cutoffs, angles, modes):
@@ -299,3 +299,30 @@ def test_raise_interferometer_error():
 def test_choi_cutoffs():
     output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
+
+
+def test_measure_with_fock():
+    "tests that the autocutoff respects the fock projection cutoff"
+    cov = np.array(
+        [
+            [1.08341848, 0.26536937, 0.0, 0.0],
+            [0.26536937, 1.05564949, 0.0, 0.0],
+            [0.0, 0.0, 0.98356475, -0.24724869],
+            [0.0, 0.0, -0.24724869, 1.00943755],
+        ]
+    )
+
+    state = State(means=np.zeros(4), cov=cov)
+
+    n_detect = 2
+    state_out = state << Fock([n_detect], modes=[1])
+    assert np.allclose(state_out.ket(), np.array([0.00757899, 0.0]))
+
+
+@given(theta=angle, phi=angle)
+def test_schwinger_bs_equals_vanilla_bs(theta, phi):
+    """Tests that the Schwinger boson BS gate is equivalent to the vanilla BS gate for low cutoffs."""
+    U_vanilla = BSgate(theta, phi).U([10, 10, 10, 10], method="vanilla")
+    U_schwinger = BSgate(theta, phi).U([10, 10, 10, 10], method="schwinger")
+
+    assert np.allclose(U_vanilla, U_schwinger, atol=1e-6)
