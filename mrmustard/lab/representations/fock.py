@@ -26,9 +26,9 @@ math = Math()
 class Fock(Representation):
     '''Fock Class is the Fock representation.'''
 
-    def __init__(self, data):
+    def __init__(self, array):
         super().__init__()
-        self.data = ArrayData(data) 
+        self.data = ArrayData(array) 
 
 
     def number_means(self) -> Tensor:

@@ -14,14 +14,16 @@
 
 from mrmustard.math import Math
 from mrmustard.representations import Representation
+from mrmustard.representations.data import GaussianData
 from mrmustard.typing import Scalar, RealMatrix, RealVector
 
 math = Math()
 
 class Wigner(Representation):
 
-    def __init__(self):
+    def __init__(self, cov, means):
         super().__init__()
+        self.data = GaussianData(cov, means)
 
 
     def purity(cov: RealMatrix, hbar: float) -> Scalar:

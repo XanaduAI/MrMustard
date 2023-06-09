@@ -13,12 +13,13 @@
 # limitations under the License.
 
 from mrmustard.representations import Representation
+from mrmustard.representations.data import ArrayData
 
 class WaveFunctionQ(Representation):
 
-    def __init__(self):
+    def __init__(self, qs, wavefunctionq):
         super().__init__()
-
+        self.data = ArrayData(qs, wavefunctionq)
 
     def purity(self):
         raise NotImplementedError("Get this of this state from other representations!")

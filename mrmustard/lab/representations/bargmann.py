@@ -14,14 +14,15 @@
 
 from mrmustard.math import Math
 from mrmustard.representations import Representation
-from mrmustard.typing import Scalar, RealMatrix, RealVector
+from mrmustard.representations.data import QpolyData
 
 math = Math()
 
 class Bargmann(Representation):
 
-    def __init__(self):
+    def __init__(self, A, B, C):
         super().__init__()
+        self.data = QpolyData(A, B, C)
 
 
     def purity(self):
