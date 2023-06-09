@@ -127,6 +127,22 @@ class State:  # pylint: disable=too-many-public-methods
         if self._modes is None:
             return list(range(self.representation.num_modes))
         return self._modes
+    
+    def indices(self, modes) -> Union[Tuple[int], int]:
+        r"""Returns the indices of the given modes. Only works for Fock.
+
+        Args:
+            modes (Sequence[int] or int): the modes or mode
+
+        Returns:
+            Tuple[int] or int: a tuple of indices of the given modes or the single index of a single mode
+        """
+        if isinstance(self.representation, (FockKet, FockDM)):
+            if isinstance(modes, int):
+                return self.modes.index(modes)
+            return tuple(self.modes.index(m) for m in modes)
+        else:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
     @property
     def purity(self) -> float:
@@ -146,13 +162,11 @@ class State:  # pylint: disable=too-many-public-methods
 
     @property
     def is_wigner(self):
-        r'''Returns if the state is in Wigner representation or not.'''
-        #TODO: now it is not enough\
+        r'''Returns if the state is in Wigner representation or not. (Notes: works as the previous is_gaussian function.)'''
         if isinstance(self.representation, (WignerKet, WignerDM)):
             return True
         else:
             return False
-
 
     @property
     def means(self) -> Optional[RealVector]:
@@ -160,7 +174,7 @@ class State:  # pylint: disable=too-many-public-methods
         try:
             return self.representation.means
         except:
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
     @property
     def cov(self) -> Optional[RealMatrix]:
@@ -168,7 +182,7 @@ class State:  # pylint: disable=too-many-public-methods
         try:
             return self.representation.cov
         except:
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
     @property
     def number_stdev(self) -> RealVector:
@@ -181,7 +195,7 @@ class State:  # pylint: disable=too-many-public-methods
         try:
             return self.representation.cutoffs
         except:
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Adapter please!")
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
     # @property
     # #TODO: Depends on the representation. Shape means something else.
@@ -195,7 +209,8 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the Fock representation of the state."""
         if isinstance(self.representation, (FockKet, FockDM)):
             return self.representation.data.array
-        #TODO: transfer to Fock from Wigner?
+        else:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
     @property
     def number_means(self) -> RealVector:
@@ -298,7 +313,7 @@ class State:  # pylint: disable=too-many-public-methods
         the states' Fock representation."""
 
         # if both states are gaussian
-        if self.is_gaussian and other.is_gaussian:
+        if self.is_wigner and other.is_wigner:
             return self._project_onto_gaussian(other)
 
         # either self or other is not gaussian
@@ -321,9 +336,9 @@ class State:  # pylint: disable=too-many-public-methods
         out_fock = self._contract_with_other(other)
         if len(remaining_modes) > 0:
             return (
-                State(dm=out_fock, modes=remaining_modes)
+                State(fock=out_fock, modes=remaining_modes, flag_ket=False)
                 if other.is_mixed or self.is_mixed
-                else State(ket=out_fock, modes=remaining_modes)
+                else State(fock=out_fock, modes=remaining_modes, flag_ket=True)
             )
 
         # return the probability (norm) of the state when there are no modes left
@@ -386,9 +401,9 @@ class State:  # pylint: disable=too-many-public-methods
 
         return probability
 
-    # def __iter__(self) -> Iterable[State]:
-    #     """Iterates over the modes and their corresponding tensors."""
-    #     return (self.get_modes(i) for i in range(self.num_modes))
+    def __iter__(self) -> Iterable[State]:
+        """Iterates over the modes and their corresponding tensors."""
+        return (self.get_modes(i) for i in range(self.representation.data.num_modes))
 
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""

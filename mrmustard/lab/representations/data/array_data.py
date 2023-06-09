@@ -29,7 +29,7 @@ class ArrayData(Data):
         self.array = array
         self.cutoffs = array.shape
 
-        super().__init__(nb_modes=None) # TODO : fix this with an actual value
+        super().__init__() # TODO : fix this with an actual value
 
 
     #@njit

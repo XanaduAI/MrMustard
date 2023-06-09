@@ -22,7 +22,7 @@ from mrmustard.typing import Scalar
 class SymplecticData(MatVecData):
 
     def __init__(self, mat, vec, coeffs) -> None:
-        super().__init__(mat=mat, vec=vec, coeffs=coeffs, nb_modes=None) # TODO : how to def nb_modes?
+        super().__init__(mat=mat, vec=vec, coeffs=coeffs)
 
 
     @property

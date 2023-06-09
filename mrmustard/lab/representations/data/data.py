@@ -24,8 +24,7 @@ class Data(ABC):
     and Representation.
     """
 
-    def __init__(self, nb_modes) -> None:
-        self.nb_modes = nb_modes
+    def __init__(self) -> None:
         super().__init__()
 
         
