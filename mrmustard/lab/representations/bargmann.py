@@ -13,8 +13,8 @@
 # limitations under the License.
 
 from mrmustard.math import Math
-from mrmustard.representations import Representation
-from mrmustard.representations.data import QpolyData
+from mrmustard.lab.representations import Representation
+from mrmustard.lab.representations.data import QpolyData
 
 math = Math()
 

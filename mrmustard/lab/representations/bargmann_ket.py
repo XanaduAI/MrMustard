@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations import Representation
+from mrmustard.lab.representations import Representation
 
 class BargmannKet(Representation):
 
