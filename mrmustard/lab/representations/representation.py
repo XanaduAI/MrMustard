@@ -40,14 +40,8 @@ class Representation(ABC):
         pass
 
 
-<<<<<<< HEAD
-    @abstractmethod
-    @property
-    def norm(self):
-=======
     @abstractproperty
-    def norm():
->>>>>>> a5ddef4 (abstractproperty)
+    def norm(self):
         pass
 
 
