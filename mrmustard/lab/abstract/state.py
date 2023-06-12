@@ -58,6 +58,7 @@ class State:  # pylint: disable=too-many-public-methods
         self,
         cov: RealMatrix = None,
         means: RealVector = None,
+        symplectic: RealMatrix = None,
         fock: ComplexTensor = None,
         qs: RealVector = None,
         wavefunctionq: RealVector = None,
@@ -89,10 +90,9 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             #Case 1: Wigner representation
             if cov is not None and means is not None and flag_ket is not None:
-                if flag_ket:
-                    self.representation = WignerKet(cov, means)
-                else:
-                    self.representation = WignerDM(cov, means)
+                self.representation = WignerDM(cov, means)
+            elif symplectic is not None and means is not None and flag_ket:
+                self.representation = WignerKet(symplectic, means)
             #Case 2: Fock representation
             elif fock is not None and flag_ket is not None:
                 if flag_ket:
