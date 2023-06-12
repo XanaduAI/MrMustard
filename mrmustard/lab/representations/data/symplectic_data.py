@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 #from numba import njit
 from typing import Union
-from mrmustard.lab.representations import MatVecData
+from mrmustard.lab.representations.data import MatVecData
 from mrmustard.typing import Scalar
 
 class SymplecticData(MatVecData):
