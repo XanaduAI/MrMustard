@@ -256,7 +256,7 @@ class State:  # pylint: disable=too-many-public-methods
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self.representation.data.array, paddings, mode="constant")
+                    padded = math.pad(self.representation.data.array, paddings, mode="constant")
                 else:
                     padded = self.representation.data.array
                 return padded[tuple(slice(s) for s in cutoffs)]
@@ -284,7 +284,7 @@ class State:  # pylint: disable=too-many-public-methods
             if cutoffs != (current_cutoffs := list(self.representation.data.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self.representation.data.array, paddings + paddings, mode="constant")
+                    padded = math.pad(self.representation.data.array, paddings + paddings, mode="constant")
                 else:
                     padded = self.representation.data.array
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
