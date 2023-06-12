@@ -47,7 +47,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        State.__init__(self, cov=cov, means=means)
+        State.__init__(self, cov=cov, means=means, flag_ket=True)
 
 
 class Coherent(Parametrized, State):
@@ -94,7 +94,6 @@ class Coherent(Parametrized, State):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
         Parametrized.__init__(
@@ -111,7 +110,7 @@ class Coherent(Parametrized, State):
 
         means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
+        State.__init__(self, cov=cov, means=means, modes=modes, flag_ket=True)
 
     @property
     def means(self):

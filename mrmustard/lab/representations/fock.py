@@ -1,4 +1,4 @@
- Copyright 2023 Xanadu Quantum Technologies Inc.
+#Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ from mrmustard.math import Math
 # from mrmustard import settings
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import ArrayData
-from mrmustard.typing import Scalar, Tensor, RealVector
+from mrmustard.typing import Scalar, Tensor, RealVector, Matrix
 # from mrmustard.math.caching import tensor_int_cache
 
 math = Math()

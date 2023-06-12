@@ -15,6 +15,7 @@
 import numpy as np
 
 from mrmustard.math import Math
+from math.mmtensor import MMTensor
 from mrmustard.lab.representations import Fock
 from mrmustard.lab.representations.data import ArrayData
 from mrmustard.typing import Scalar, Tensor, RealVector
