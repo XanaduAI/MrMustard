@@ -23,6 +23,9 @@ class Data(ABC):
       Representation.
     """
 
+    def __init__(self) -> None:
+        pass
+
 
     @staticmethod   
     def same(

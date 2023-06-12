@@ -15,7 +15,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Optional, Tuple, Union, TYPE_CHECKING
-from mrmustard.lab.representations.data import MatVecData
+from mrmustard.lab.representations import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
