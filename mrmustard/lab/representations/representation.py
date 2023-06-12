@@ -17,27 +17,27 @@ from abc import ABC
 class Representation(ABC):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(self)
 
     
     @abstractmethod
-    def number_means():
+    def number_means(self):
         pass
 
 
     @abstractmethod
-    def number_cov():
+    def number_cov(self):
         pass
 
 
     @abstractmethod
     @property
-    def purity():
+    def purity(self):
         pass
 
 
     @abstractmethod
-    def number_stdev():
+    def number_stdev(self):
         pass
 
 
@@ -48,18 +48,18 @@ class Representation(ABC):
 
 
     @abstractmethod
-    def probability():
+    def probability(self):
         pass
 
 
     @abstractmethod
     @property
-    def von_neumann_entropy():
+    def von_neumann_entropy(self):
         pass
 
 
     @abstractmethod
-    def _repr_markdown_():
+    def _repr_markdown_(self):
         pass
 
      
