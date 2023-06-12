@@ -14,43 +14,39 @@
 
 from __future__ import annotations
 import numpy as np
-#from numba import njit
 from typing import Optional, Tuple, Union, TYPE_CHECKING
 from mrmustard.lab.representations.data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
-
 
 if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
     from mrmustard.lab.representations.data import QPolyData
 
 math = Math()
 
-
 class GaussianData(MatVecData):
+    r""" Gaussian data for certain representation objects.
 
-    def __init__(
-        self,
+    Gaussian data is made of covariance, mean and coefficient. Each of these has a batch dimension, 
+    and the length of the batch dimension is the same for all three.
+    These are the parameters of a linear combination of Gaussians, which is Gaussian if there is 
+    only one contribution for each.
+    Each contribution parametrizes the Gaussian function:
+    `coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
+
+    Args:
+        cov: covariance matrices (real symmetric)
+        mean: means (real)
+        coeffs: coeffsicients (complex)
+    """
+
+    def __init__(self,
         cov: Optional[Batch[Matrix]] = None,
         mean: Optional[Batch[Vector]] = None,
-        coeffs: Optional[Batch[Scalar]] = None,
-    ) -> None:
-        r"""
-        Gaussian data: covariance, mean, coefficient.
-        Each of these has a batch dimension, and the length of the
-        batch dimension is the same for all three.
-        These are the parameters of a linear combination of Gaussians,
-        which is Gaussian if there is only one contribution for each.
-        Each contribution parametrizes the Gaussian function:
-        `coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
-        Args:
-            cov (batch, dim, dim): covariance matrices (real symmetric)
-            mean  (batch, dim): means (real)
-            coeffs (batch): coeffsicients (complex)
-        """
+        coeffs: Optional[Batch[Scalar]] = None
+        ) -> None:
         # Done here because of circular import with GaussianData<>QPolyData
         from mrmustard.lab.representations.data import QPolyData
-    
     
         if (cov or mean) is not None:
     
@@ -93,20 +89,17 @@ class GaussianData(MatVecData):
         self.vec = value
 
     
-
-    def _from_QPolyData(self, poly:QPolyData
+    @staticmethod
+    def _from_QPolyData(poly:QPolyData
                         ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-        r"""
-        Allows the instantiation of a GaussianData object based on a QPolyData one.
+        r""" Extracts necessary information from a QPolyData object to build a GaussianData one.
 
         Args:
-            poly (QPolyData) : the quadratic polynomial data
+            poly: the quadratic polynomial data
 
         Returns:
             The necessary matrix vector and coefficients to build a GaussianData object
-        
-        """
-
+        """ 
         inv_A = math.inv(poly.A)
         cov = 2 * inv_A
         mean = 2 * math.solve(poly.A, poly.b)
@@ -116,35 +109,13 @@ class GaussianData(MatVecData):
 
         return (cov, mean, coeffs)
 
-    
 
     def __truediv__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-       r"""
-        Divides two GaussianData objects or a gaussianData object by a scalar
-
-        Args:
-            other (Union[Scalar, GaussianData]): the Gaussiandata object -or scalar- to be 
-                                                divided by
-
-        Returns:
-            A GaussianData object resulting form the division
-        """
        raise NotImplementedError() # TODO : implement!
 
 
-    #@njit
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-        r"""
-        Multiplies two gaussianData objects or a GaussianData and a scalar
-
-        Args:
-            other (GaussianData): the object to be multiplied with
-
-        Returns:
-            An object of the common child Data class resulting form multiplying two objects
-        """
-
-        if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
+        if isinstance(other, Scalar):
             c = super().scalar_mul(c=other)
             return self.__class__(cov=self.cov, mean=self.mean, coeffs=c)
         
@@ -210,7 +181,5 @@ class GaussianData(MatVecData):
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
             
     
-
     def __rmul__(self, other:Union[Scalar, GaussianData]) -> GaussianData:
-        r""" See __mul__ : we assume commutativity"""
         return self.__mul__(other=other)

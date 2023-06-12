@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from __future__ import annotations
-#from numba import njit
 import numpy as np
 from typing import Tuple, Union, TYPE_CHECKING
 from mrmustard.math import Math
@@ -26,31 +25,26 @@ if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<
 
 math = Math()
 class QPolyData(MatVecData):
+    r""" Quadratic polynomial data for certain Representation objects.
 
-    def __init__(
-        self,
-        A: Batch[Matrix],
-        b: Batch[Vector],
-        c: Batch[Scalar],
-    ) -> None:
-        r"""
-        Quadratic Gaussian data: quadratic coefficients, linear coefficients, constant.
-        Each of these has a batch dimension, and the batch dimension is the same for all of them.
-        They are the parameters of a Gaussian expressed as `c * exp(-x^T A x + x^T b)`.
-        Args:
-            A (batch, dim, dim): quadratic coefficients
-            b (batch, dim): linear coefficients
-            c (batch): constant
-        """
+    Quadratic Gaussian data is made of: quadratic coefficients, linear coefficients, constant.
+    Each of these has a batch dimension, and the batch dimension is the same for all of them.
+    They are the parameters of a Gaussian expressed as `c * exp(-x^T A x + x^T b)`.
+
+    Args:
+        mat: quadratic coefficient
+        vec: linear coefficients
+        c: constant
+    """
+
+    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar]) -> None:
         # Done here because of circular import with GaussianData<>QPolyData
         from mrmustard.lab.representations.data import GaussianData
-        
 
         if isinstance(A, GaussianData):
-            A, b, c = self._from_GaussianData(A=A)
-        # TODO : make sure we're happy with this init. Nothing missing?
+            A, b, c = self._from_GaussianData(covmat=A)
 
-        super().__init__(mat=A, vec=b, coeff=c)
+        super().__init__(mat=A, vec=b, coeffs=c)
 
     @property
     def A(self) -> Batch[Matrix]:
@@ -68,7 +62,6 @@ class QPolyData(MatVecData):
     def b(self, value) -> None:
         self.vec = value
 
-
     @property
     def c(self) -> Batch[Scalar]:
         return self.coeff
@@ -78,47 +71,30 @@ class QPolyData(MatVecData):
         self.coeff = value
 
 
-    def _from_GaussianData(self, A:GaussianData
+    @staticmethod
+    def _from_GaussianData(covmat:GaussianData
                            ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-        r"""
+        r""" Extracts necessary information from a GaussianData object to build a QPolyData one.
+
         Args:
-            A (GaussianData) : the GaussianData representation of a state
+            A : the GaussianData representation of a state
 
         Returns:
             The necessary matrix, vector and coefficients to build a QPolyData object
         """
+        covmat = -math.inv(covmat.cov)
+        b = math.inv(covmat.cov) @ covmat.mean
+        c = (covmat.coeff 
+             * np.einsum("bca,bcd,bde->bae", covmat.mean, math.inv(covmat.cov), covmat.mean))
 
-        A = -math.inv(A.cov)
-        b = math.inv(A.cov) @ A.mean
-        c = A.coeff * np.einsum("bca,bcd,bde->bae", A.mean, math.inv(A.cov), A.mean)
-
-        return A, b, c
+        return covmat, b, c
 
 
     def __truediv__(self, other:Union[Scalar, QPolyData]) -> QPolyData:
-       r"""
-        Divides a QPolyData object by either another QPolyData object or by a scalar
-
-        Args:
-            other (Union[Scalar, Data]): the object or scalar to be divided by
-
-        Returns:
-            An object of the common child Data class resulting form dividing two objects
-        """
        raise NotImplementedError() # TODO : implement!
 
 
-    #@njit(parallel=True)
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
-        r"""
-        Multiplies two QPolyData objects or a QPolyData and a scalar
-
-        Args:
-            other (Union[Scalar, QPolyData]): the object or scalar to be multiplied with
-
-        Returns:
-            The QPolyData representation of the resulting multiplied state
-        """
 
         if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
             c = super().scalar_mul(c=other)
