@@ -22,9 +22,10 @@ from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.typing import Batch, Matrix, RealVector, Scalar, Tensor, Vector
 from mrmustard.lab.representations import (
+    Representation,
     BargmannKet, BargmannDM,
     FockKet, FockDM,
-    WavefunctionQKet, WavaefunctionQDM
+    WavefunctionQKet, WavefunctionQDM,
     WignerKet, WignerDM
 )   
 
@@ -595,7 +596,7 @@ class Converter():
     def _fockdm_to_wavefunctionqdm(self, 
                                    fock_dm: FockDM, 
                                    qs: Optional[Sequence[Sequence[float]]] = None
-                                   ) -> WavaefunctionQDM:
+                                   ) -> WavefunctionQDM:
         r"""
         Returns the position wavefunction of the Fock density matrix at a vector of positions.
 
