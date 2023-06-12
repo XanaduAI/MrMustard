@@ -15,48 +15,48 @@
 from abc import ABC, abstractmethod, abstractproperty
 
 class Representation(ABC):
-
-    def __init__(self):
-        super().__init__(self)
-
+    r""" Abstract parent class for the different Representation of quantum states. """
     
     @abstractmethod
-    def number_means(self):
-        pass
+    def number_means(self) -> int: # TODO : add doc
+        raise NotImplementedError()
 
 
     @abstractmethod
-    def number_cov(self):
-        pass
+    def number_cov(self) -> int: # TODO : add doc
+        raise NotImplementedError()
 
 
     @abstractproperty
-    def purity(self):
-        pass
+    def purity(self) -> float:
+        r""" The purity of the state. """
+        raise NotImplementedError()
 
 
     @abstractmethod
-    def number_stdev(self):
-        pass
+    def number_stdev(self) -> int: # TODO : add doc
+        raise NotImplementedError()
 
 
     @abstractproperty
-    def norm(self):
-        pass
+    def norm(self) -> float:
+        r""" The norm of the state. """
+        raise NotImplementedError()
 
 
     @abstractmethod
-    def probability(self):
-        pass
+    def probability(self) -> float: # TODO : add doc
+        raise NotImplementedError()
 
 
     @abstractproperty
-    def von_neumann_entropy(self):
-        pass
+    def von_neumann_entropy(self) -> float:
+        r""" The Von Neumann entropy of the state. """
+        raise NotImplementedError()
 
 
     @abstractmethod
-    def _repr_markdown_(self):
-        pass
+    def _repr_markdown_(self) -> str:
+        raise NotImplementedError()
 
      
