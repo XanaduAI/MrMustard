@@ -125,13 +125,17 @@ class Converter():
             The string of the target representation concatenated with eith ket or DM depending on 
             the source.
         """
+        #suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
 
-        suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
-
-        return destination + suffix
+        if source.endswith('Ket'):
+            return destination + 'Ket'
+        elif source.endswith('DM'):
+            return destination + 'DM'
+        else:
+            raise ValueError('Invalid input type: must contain Ket or DM')
   
 
-    def convert(self, source:Representation, destination:str) -> Representation:
+    def convert(self, source:Representation, destination:str, **kwargs) -> Representation:
         r""" 
         Converts from a source Representation to target Representation, using the representations 
         graph g.
@@ -149,8 +153,12 @@ class Converter():
 
         Returns:
             The target representation
-
         """
+        max_prob = kwargs.get('max_prob', 0.0)
+        max_photon = kwargs.get('max-photon', 0)
+        if False: #todo implement
+            pass
+
 
         try:
             s_name = source.__class__.__name__
