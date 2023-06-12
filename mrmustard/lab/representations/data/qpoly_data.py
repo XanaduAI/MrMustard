@@ -17,7 +17,8 @@ from __future__ import annotations
 import numpy as np
 from typing import Tuple, Union
 from mrmustard.math import Math
-from mrmustard.lab.representations.data import MatVecData, GaussianData
+from mrmustard.lab.representations.data.matvec_data import MatVecData
+from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()

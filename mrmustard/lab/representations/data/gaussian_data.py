@@ -16,7 +16,8 @@ from __future__ import annotations
 import numpy as np
 #from numba import njit
 from typing import Optional, Tuple, Union
-from mrmustard.lab.representations.data import MatVecData, QPolyData
+from mrmustard.lab.representations.data.qpoly_data import QPolyData
+from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
