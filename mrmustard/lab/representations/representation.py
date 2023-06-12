@@ -20,45 +20,45 @@ class Representation(ABC):
         super().__init__()
 
     
-    @abstractmethod
+    # @abstractmethod
     def number_means():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     def number_cov():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     @property
     def purity():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     def number_stdev():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     @property
     def norm():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     def probability():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     @property
     def von_neumann_entropy():
         pass
 
 
-    @abstractmethod
+    # @abstractmethod
     def _repr_markdown_():
         pass
 

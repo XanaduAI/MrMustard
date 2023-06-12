@@ -13,8 +13,8 @@
 # limitations under the License.
 
 from mrmustard.math import Math
-from mrmustard.representations import Representation
-from mrmustard.representations.data import GaussianData
+from mrmustard.lab.representations import Representation
+from mrmustard.lab.representations.data import GaussianData
 from mrmustard.typing import Scalar, RealMatrix, RealVector
 
 math = Math()

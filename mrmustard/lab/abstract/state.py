@@ -32,7 +32,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.representations import Representation, FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
+from mrmustard.lab.representations import Representation, FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
 from converter import convert
 from mrmustard.typing import (
     ComplexMatrix,
