@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 from typing import List
-from mrmustard.lab import Data
+from mrmustard.lab.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 

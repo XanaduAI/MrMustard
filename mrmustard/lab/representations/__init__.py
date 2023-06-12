@@ -29,11 +29,6 @@ from .wavefunctionq import WaveFunctionQ
 from .wavefunctionq_ket import WaveFunctionQKet
 from .wavefunctionq_dm import WaveFunctionQDM
 
-from .data.data import Data
-from .data.matvec_data import MatVecData
-from .data.gaussian_data import GaussianData
-from .data.qpoly_data import QPolyData
-from .data.array_data import ArrayData
-from .data.symplectic_data import SymplecticData
+from .data import *
 
 from .converter import Converter

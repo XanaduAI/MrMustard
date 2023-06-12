@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 class Representation(ABC):
 
@@ -30,8 +30,7 @@ class Representation(ABC):
         pass
 
 
-    @abstractmethod
-    @property
+    @abstractproperty
     def purity(self):
         pass
 
@@ -41,8 +40,7 @@ class Representation(ABC):
         pass
 
 
-    @abstractmethod
-    @property
+    @abstractproperty
     def norm(self):
         pass
 
@@ -52,8 +50,7 @@ class Representation(ABC):
         pass
 
 
-    @abstractmethod
-    @property
+    @abstractproperty
     def von_neumann_entropy(self):
         pass
 
