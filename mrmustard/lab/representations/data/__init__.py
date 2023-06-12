@@ -21,3 +21,4 @@ from .gaussian_data import GaussianData
 from .qpoly_data import QPolyData
 from .array_data import ArrayData
 from .symplectic_data import SymplecticData
+from .wavefunctionarray_data import WavefunctionArrayData
