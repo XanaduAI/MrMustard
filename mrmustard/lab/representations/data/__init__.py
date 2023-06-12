@@ -15,10 +15,4 @@
 """ This package contains the modules implementing base classes for datas.
 """
 
-from .data import Data
-from .matvec_data import MatVecData
-from .gaussian_data import GaussianData
-from .qpoly_data import QPolyData
-from .array_data import ArrayData
-from .symplectic_data import SymplecticData
-from .wavefunctionarray_data import WavefunctionArrayData
+__all__=['Data', 'MatVecData', 'GaussianData', 'QPolyData', 'ArrayData', 'SymplecticData', 'WavefunctionArrayData']

@@ -15,20 +15,5 @@
 """ This package contains the modules implementing base classes for representations, datas and converter.
 """
 
-from .representation import Representation
-from .wigner import Wigner
-from .wigner_ket import WignerKet
-from .wigner_dm import WignerDM
-from .fock import Fock
-from .fock_ket import FockKet
-from .fock_dm import FockDM
-from .bargmann import Bargmann
-from .bargmann_ket import BargmannKet
-from .bargmann_dm import BargmannDM
-from .wavefunctionq import WaveFunctionQ
-from .wavefunctionq_ket import WaveFunctionQKet
-from .wavefunctionq_dm import WaveFunctionQDM
+__all__=['Representation', 'Wigner', 'WignerKet', 'WignerDM', 'Fock', 'FockKet', 'FockDM', 'Bargmann', 'BargmannKet', 'BargmannDM', 'WaveFunctionQ', 'WaveFunctionQKet', 'WaveFunctionQDM']
 
-from .data import *
-
-from .converter import Converter

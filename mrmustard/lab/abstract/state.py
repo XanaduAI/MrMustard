@@ -32,8 +32,14 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.lab.representations import Representation, FockKet, FockDM, WignerKet, WignerDM, WavefunctionQKet, WavefunctionQDM
-from converter import convert
+from mrmustard.lab.representations.representation import Representation
+from mrmustard.lab.representations.fock_dm import FockDM
+from mrmustard.lab.representations.fock_ket import FockKet
+from mrmustard.lab.representations.wigner_ket import WignerKet
+from mrmustard.lab.representations.wigner_dm import WignerDM
+from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
+from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
+from mrmustard.lab.representations.converter import Converter
 from mrmustard.typing import (
     ComplexMatrix,
     ComplexTensor,
@@ -102,9 +108,9 @@ class State:  # pylint: disable=too-many-public-methods
             #Case 3: q-Wavefunction representation
             elif qs is not None and wavefunctionq is not None and flag_ket is not None:
                 if flag_ket:
-                    self.representation = WavefunctionQKet(qs, wavefunctionq)
+                    self.representation = WaveFunctionQKet(qs, wavefunctionq)
                 else:
-                    self.representation = WavefunctionQDM(qs, wavefunctionq)
+                    self.representation = WaveFunctionQDM(qs, wavefunctionq)
             else:
                 raise ValueError(
                     "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a fock representation, a point-wise wavefunction with its point values and the flag_ket."
@@ -550,7 +556,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Bargmann Representation
         '''
-        return convert(self, "Bargmann") 
+        return Converter(self, "Bargmann") 
         
 
     def to_Fock(self, max_prob: float = 1.0, max_photons: int = None):        
@@ -567,7 +573,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Fock Representation
         """
-        return convert(self, "Fock", max_prob, max_photons)
+        return Converter(self, "Fock", max_prob, max_photons)
         
 
     def to_WavefunctionQ(self):
@@ -580,7 +586,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target q-Wavefunction Representation
         '''
-        return convert(self, "WavefunctionQ") 
+        return Converter(self, "WavefunctionQ") 
         
 
     def to_Wigner(self):
@@ -593,7 +599,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Wigner Representation
         '''
-        return convert(self, "Wigner") 
+        return Converter(self, "Wigner") 
 
 
     def _repr_markdown_(self):

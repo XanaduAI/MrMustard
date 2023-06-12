@@ -15,9 +15,9 @@
 import numpy as np
 
 from mrmustard.math import Math
-from math.mmtensor import MMTensor
-from mrmustard.lab.representations import Fock
-from mrmustard.lab.representations.data import ArrayData
+# from math.mmtensor import MMTensor
+from mrmustard.lab.representations.fock import Fock
+from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.typing import Scalar, Tensor, RealVector
 from mrmustard.lab.representations.fock import validate_contraction_indices
 
@@ -25,8 +25,8 @@ math = Math()
 
 class FockDM(Fock):
 
-    def __init__(self, dm):
-        super().__init__()
+    def __init__(self, array):
+        super().__init__(array=array)
         self.num_modes = len(self.array.shape) // 2 #TODO: BATCH ISSUE?
 
 
