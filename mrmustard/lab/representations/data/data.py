@@ -19,153 +19,79 @@ from typing import List, Union
 from mrmustard.typing import Scalar, Vector
 
 class Data(ABC):
-    r"""
-    Abstract class, parent to the different types of data that can encode a quantum State 
-    and Representation.
+    r""" Abstract parent class to the different types of data that can encode a quantum State and
+      Representation.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
 
-        
-    def same(self,
-             X: List[Union[List[Vector],List[Scalar]]], 
-             Y: List[Union[List[Vector],List[Scalar]]]) -> bool:
-        r"""
-        Method to compare two sets of elements
+    @staticmethod   
+    def same(
+             X: List[Union[List[Vector],List[Scalar]]],
+             Y: List[Union[List[Vector],List[Scalar]]]
+             ) -> bool:
+        r""" Method to compare two sets of elements
 
         Args:
-            X (List[Union[List[Scalar],Scalar]])    : list of elements to be compared with ys
-            Y (List[Union[List[Scalar],Scalar]])    : list of elements to be compared with xs
+            X: list of elements to be compared with ys
+            Y: list of elements to be compared with xs
 
         Returns:
-            True if all the elements compared are same within rtol/atol bounds, False otherwise
+            True if all the elements compared are same within numpy's default rtol/atol, False 
+            otherwise.
         """
         return all([np.allclose(x, y) for x, y in zip(X, Y)])
 
 
-
     @abstractmethod
     def __neg__(self) -> Data:
-        r"""
-        Abstract method retruning the negative of the object
-
-        Args:
-            NA
-
-        Returns:
-            The negative object
-        """
         raise NotImplementedError()
     
 
-    
     @abstractmethod
     def __eq__(self, other:Data) -> bool:
-        r"""
-        Abstract method comparing two Data objects
-
-        Args:
-            other (Data) : the object being compared
-
-        Returns:
-            True if both objects are equal, False otherwise
-        """
         raise NotImplementedError()
 
 
     @abstractmethod
     def __add__(self, other: Data) -> Data:
-        r"""
-        Abstract method adding two Data objects
-
-        Args:
-            other (Data): the object to be added
-
-        Returns:
-            An object of the common child Data class resulting form adding two objects
-        """
         raise NotImplementedError()
-
 
 
     @abstractmethod
     def __sub__(self, other: Data) -> Data:
-        r"""
-        Abstract method subtracting two Data objects
-
-        Args:
-            other (Data): the object to be subtracted
-
-        Returns:
-            An object of the common child Data class resulting form subtracting two objects
-        """
         raise NotImplementedError()
-
 
 
     @abstractmethod
     def __truediv__(self, other:Union[Scalar, Data]) -> Data:
-        r"""
-        Abstract method dividing a Data object by either another Data object of the same class or 
-        by a scalar
-
-        Args:
-            other (Union[Scalar, Data]): the object to be divided with
-
-        Returns:
-            An object of the common child Data class resulting form dividing two objects
-        """
         raise NotImplementedError()
     
 
-
     @abstractmethod
     def __mul__(self, other:Union[Scalar, Data]) -> Data:
-        r"""
-        Abstract method multiplying two Data objects or a Data and a scalar
-
-        Args:
-            other (Union[Scalar, Data]): the object to be multiplied with
-
-        Returns:
-            An object of the common child Data class resulting form multiplying two objects
-        """
         raise NotImplementedError()
     
 
     def __rmul__(self, other:Union[Scalar, Data]) -> Data:
-        r""" See __mul__ of the class: we assume commutativity"""
         return self.__mul__(other=other)
-
 
 
     @abstractmethod
     def __and__(self, other:Data) -> Data:
-        r"""
-        Abstract method performing the tensor product between two Data objects
-
-        Args:
-            other (Data): the object to be tensor-producted with
-
-        Returns:
-            An object of the common child Data class resulting form tensoring two objects
-        """
+        r""" Performs the tensor product between the two objects. """
         raise NotImplementedError()
-
 
 
     @abstractmethod
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
-        r"""
-        Abstract method performing the simplification of the object, using some data compression
+        r""" Simplifies the object by performing some data compression.
 
         Args:
-            rtol (float): the relative tolerance for numpy's `allclose`
-            atol (float): the absolute tolerance for numpy's `allclose`
+            rtol: the relative tolerance for numpy's `allclose`
+            atol: the absolute tolerance for numpy's `allclose`
 
         Returns:
-            An object of the same child class, simplified
+            An object of the same input class, simplified
         """
         raise NotImplementedError()
 
