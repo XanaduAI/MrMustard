@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from __future__ import annotations
-#from numba import njit
 import numpy as np
 from typing import Union, List
 from mrmustard.lab.representations.data import ArrayData
@@ -23,174 +22,91 @@ from mrmustard.typing import Scalar
 math = Math()
 
 class WavefunctionArrayData(ArrayData):
+    r""" Encapsulates the q-variable points and correspodning values.
 
-    def __init__(self, qs, array) -> None:
-        r"""
-        Initializes the wavefunction with the q-variable points qs and the corresponding values in array
+    qs: q-variable points 
+    array: q-Wavefunction values correspoidng qs
+    """
 
-        Args:
-            qs (Array): q-variable points 
-            array (Array): q-Wavefunction values correspoidng qs
-        
-        Returns:
-            None
-        """
+    def __init__(self, qs:np.array, array:np.array) -> None:
         super().__init__(array=array)
         self.qs = qs
 
     
     @property
     def cutoffs(self) -> Union[int, List[int]]:
-        r"""
-        Returns the cutoffs of the q-Wavefunction
-        """
+        r""" Cutoffs of the q-Wavefunction. """
         return self.array.shape
+    
+
+    def _qs_is_same(self, other:WavefunctionArrayData) -> bool:
+        r""" Compares the qs of two WavefunctionArrayData objects. """
+        try:
+            return True if np.allclose(self.qs, other.qs) else False
+        except AttributeError as e:
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
-    #@njit
     def __neg__(self) -> WavefunctionArrayData:
-        r"""
-        Returns the negative of the object
-
-        Args:
-            NA
-
-        Returns:
-            The negative object
-        """
-        return self.__class__(array= -self.array)
+        return self.__class__(array= -self.array, qs=self.qs) # TODO
         
 
-
     def __eq__(self, other:ArrayData) -> bool:
-        r"""
-        Compares two ArrayData objects
-
-        Args:
-            other (ArrayData) : the object being compared
-
-        Returns:
-            True if both objects are equal, False otherwise
-        """
-
         try:
-            return super().same(X=[self.array], Y=[other.array]) and super.same(X=[self.qs], Y=[other.qs])
+            return (super().same(X=[self.array], Y=[other.array]) 
+                    and super.same(X=[self.qs], Y=[other.qs]))
         
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
-
-    #@njit
     def __add__(self, other:ArrayData) -> WavefunctionArrayData:
-        r"""
-        Adds two WavefunctionArrayData objects' array
+        if self._qs_is_same(other):
+            try:
+                return self.__class__(array=self.array + other.array, qs=self.qs) # TODO
 
-        Args:
-            other (ArrayData): the object to be added
-
-        Returns:
-            An array resulting form adding the two objects
-        """
-
-        try:
-            return self.__class__(array=self.array + other.array)
-        
-        except AttributeError as e:
-            raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+            except AttributeError as e:
+                raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}."
+                                ) from e
+        else:
+            raise ValueError ("The two wave functions must have the same qs. ")
             
 
-
-    #@njit
     def __sub__(self, other:ArrayData) -> WavefunctionArrayData:
-        r"""
-        Subtracts two Data objects
-
-        Args:
-            other (ArrayData): the object to be subtracted
-
-        Returns:
-            An array resulting form subtracting two objects
-        """
         self.__add__(-other)
 
 
-    #@njit
     def __truediv__(self, other:Union[Scalar, ArrayData]) -> WavefunctionArrayData:
-        r"""
-        Divides two Data objects
-
-        Args:
-            other (Union[Scalar, ArrayData]): the object to be divided by
-
-        Returns:
-            An array resulting form dividing two objects
-        """
         raise NotImplementedError()
 
 
-    #@njit(parallel=True)
     def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        r"""
-        Multiplies two ArrayData objects or an ArrayData and a Scalar 
+        if self._qs_is_same(other):
 
-        Args:
-            other (Union[Scalar, ArrayData]): the object to be multiplied with
-
-        Returns:
-            An object of the common child Data class resulting form multiplying two objects
-        """
-
-        try:
-            return self.__class__(array=self.array * other.array)
-        
-        except AttributeError:
-
-            try: # if it's not an array, we try a Number
-                return self.__class__(array=self.array * other)
+            try:
+                return self.__class__(array=self.array * other.array, qs=self.qs)
             
-            except TypeError as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+            except AttributeError:
+                try: # if it's not an array, we try a Number
+                    return self.__class__(array=self.array * other, qs=self.qs)
+                except TypeError as e:
+                    raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}."
+                                    ) from e
+        else:
+            raise ValueError ("The two wave functions must have the same qs. ")
             
 
-    
-    #@njit(parallel=True)
     def __rmul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        r""" See __mul__, object have commutative multiplication."""
         return self.__mul__(other=other)
 
 
-
-    #@njit(parallel=True)
-    def __and__(self, other:WavefunctionArrayData) -> WavefunctionArrayData: # TODO : check this, it's an outer product, how can it return an Array?
-        r"""
-        Performs the tensor product between two Data objects
-
-        Args:
-            other (Data): the object to be tensor-producted with
-
-        Returns:
-            A matrix resulting form tensoring two objects
-        """
-
-        if self.qs == other.qs:
-            return self.__class__(array=np.outer(self.array, other.array))
+    def __and__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
+        if self._qs_is_same(other):
+            return self.__class__(array=np.outer(self.array, other.array), qs=self.qs)
         else:
-            raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__} because the q-variable points are not the same.") from e             
+            raise ValueError ("The two wave functions must have the same qs. ")
 
 
-
-    #@njit(parallel=True)
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> WavefunctionArrayData:
-        r"""
-        Performs the simplification of the object, using some data compression
-
-        Args:
-            rtol (float): the relative tolerance for numpy's `allclose`
-            atol (float): the absolute tolerance for numpy's `allclose`
-
-        Returns:
-            A simplified object
-        """
         raise NotImplementedError() # TODO: implement
     
