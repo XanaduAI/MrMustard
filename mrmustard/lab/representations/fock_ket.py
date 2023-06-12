@@ -15,10 +15,10 @@
 import numpy as np
 
 from mrmustard.math import Math
-from mrmustard.representations import Fock
-from mrmustard.representations.data import ArrayData
+from mrmustard.lab.representations import Fock
+from mrmustard.lab.representations.data import ArrayData
 from mrmustard.typing import Scalar, Tensor, RealVector
-from mrmustard.representations.fock import validate_contraction_indices
+from mrmustard.lab.representations.fock import validate_contraction_indices
 
 math = Math()
 
