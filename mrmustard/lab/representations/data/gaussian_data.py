@@ -15,10 +15,14 @@
 from __future__ import annotations
 import numpy as np
 #from numba import njit
-from typing import Optional, Tuple, Union
-from mrmustard.lab.representations.data import MatVecData, QPolyData
+from typing import Optional, Tuple, Union, TYPE_CHECKING
+from mrmustard.lab.representations.data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
+
+
+if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
+    from mrmustard.lab.representations.data import QPolyData
 
 math = Math()
 
@@ -44,6 +48,9 @@ class GaussianData(MatVecData):
             mean  (batch, dim): means (real)
             coeffs (batch): coeffsicients (complex)
         """
+        # Done here because of circular import with GaussianData<>QPolyData
+        from mrmustard.lab.representations.data import QPolyData
+    
     
         if (cov or mean) is not None:
     
