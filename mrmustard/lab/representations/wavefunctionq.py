@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.representations import Representation
-from mrmustard.representations.data import WavefunctionArrayData
+from mrmustard.lab.representations import Representation
+from mrmustard.lab.representations.data import WavefunctionArrayData
 
 class WaveFunctionQ(Representation):
 

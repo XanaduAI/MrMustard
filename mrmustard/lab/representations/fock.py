@@ -16,8 +16,8 @@
 
 from mrmustard.math import Math
 # from mrmustard import settings
-from mrmustard.representations import Representation
-from mrmustard.representations.data import ArrayData
+from mrmustard.lab.representations import Representation
+from mrmustard.lab.representations.data import ArrayData
 from mrmustard.typing import Scalar, Tensor, RealVector
 # from mrmustard.math.caching import tensor_int_cache
 
