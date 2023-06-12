@@ -233,6 +233,7 @@ class State:  # pylint: disable=too-many-public-methods
             return norm**2
         return norm
 
+
     def ket(
         self,
         cutoffs: List[int] = None,
@@ -345,6 +346,7 @@ class State:  # pylint: disable=too-many-public-methods
         # either self or other is not gaussian
         return self._project_onto_fock(other)
 
+
     def _project_onto_fock(self, other: State) -> Union[State, float]:
         """Returns the post-measurement state of the projection between two non-Gaussian
         states on the remaining modes or the probability of the result. When doing homodyne sampling,
@@ -374,6 +376,7 @@ class State:  # pylint: disable=too-many-public-methods
             else fock.math.abs(out_fock)
         )
 
+
     def _contract_with_other(self, other):
         other_cutoffs = [
             None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
@@ -393,6 +396,7 @@ class State:  # pylint: disable=too-many-public-methods
             )
 
         return out_fock
+
 
     def _project_onto_gaussian(self, other: State) -> Union[State, float]:
         """Returns the result of a generaldyne measurement given that states ``self`` and
@@ -427,13 +431,16 @@ class State:  # pylint: disable=too-many-public-methods
 
         return probability
 
+
     def __iter__(self) -> Iterable[State]:
         """Iterates over the modes and their corresponding tensors."""
         return (self.get_modes(i) for i in range(self.representation.num_modes))
 
+
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
         return self.representation.data.__and__(other)
+
 
     def __getitem__(self, item) -> State:
         "setting the modes of a state (same API of `Transformation`)"
