@@ -26,12 +26,10 @@ class ArrayData(Data):
 
     Args:
         array : data to be contained in the class
-
     """
 
     def __init__(self, array:np.array) -> None:
         self.array = array
-        super().__init__()
 
     
     @property

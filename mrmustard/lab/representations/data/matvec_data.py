@@ -14,81 +14,48 @@
 
 from __future__ import annotations
 import numpy as np
-from numba import njit
-from typing import List
 from mrmustard.lab.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()
 
+class MatVecData(Data):  # Note: this class is abstract too!
+    r""" Contains matrix and vector -like data for certain Representation objects.
 
-class MatVecData(Data):  # Note : this class is abstract too!
-    def __init__(
-        self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]
-    ) -> None:
+    Args:
+        mat: the matrix-like data to be contained in the class
+        vec: the vector-like data to be contained in the class
+        coeffs: the coefficients 
+    """
+
+    def __init__(self, 
+                 mat: Batch[Matrix],
+                 vec: Batch[Vector],
+                 coeffs: Batch[Scalar]
+                 ) -> None:
         self.mat = math.atleast_3d(mat)
         self.vec = math.atleast_2d(vec)
         self.coeffs = math.atleast_1d(coeffs)
-        super().__init__()
 
 
-    @property
-    def batch_size(self) -> int:
-        return self.coeffs.shape[0]
-
-
-
-    #@njit
     def __neg__(self) -> MatVecData:
-        r"""
-        Returns the negative of the object
-
-        Args:
-            NA
-
-        Returns:
-            The negative object
-        """
         return self.__class__(mat=self.mat, vec=self.vec, coeffs=-self.coeffs)
 
 
-
     def __eq__(self, other: MatVecData) -> bool:
-        r"""
-        Compares two MatVecData objects
-
-        Args:
-            other (MatVecData) : the object being compared to
-
-        Returns:
-            True if both objects are equal, False otherwise
-        """
-
         try: 
             return super().same(
                 X = [self.mat, self.vec, self.coeffs],
                 Y = [other.mat, other.vec, other.coeffs],
-                ) 
-
+                )
+        
         except AttributeError as e:
             raise TypeError(
                 f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
-
-    #@njit(parallel=True)
     def __add__(self,other: MatVecData) -> MatVecData:
-        r"""
-        Adds two MatVecData objects
-
-        Args:
-            other (MatVecData): the object to be added
-
-        Returns:
-            A MatVecData object resulting form adding two objects
-        """
-        
         if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
             return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeff + other.coeff)
         
@@ -106,33 +73,11 @@ class MatVecData(Data):  # Note : this class is abstract too!
                                 ) from e
 
 
-
-    #@njit(parallel=True)
     def __sub__(self, other: MatVecData) -> MatVecData:
-        r"""
-        Subtracts two MatVecData objects
-
-        Args:
-            other (MatVecData): the object to be subtracted
-
-        Returns:
-            A MatVecData object resulting form subtracting two objects
-        """
         return self.__add__(other=-other)
         
 
-    #@njit(parallel=True)
     def __and__(self, other: MatVecData) -> MatVecData:
-        r"""
-        Tensors two MatVecData objects
-
-        Args:
-            other (MatVecData): the object to be tensor-producted with
-
-        Returns:
-            A Matvecdata object from tensoring two objects
-        """
-
         try: # TODO : decide which code we keep, old commented or new?
             # mat = []
             # vec = []
@@ -165,19 +110,7 @@ class MatVecData(Data):  # Note : this class is abstract too!
         
 
     # TODO: decide which simplify we want to keep
-    #@njit(parallel=True)
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
-        r"""
-        Simplifies the object, using some data compression
-
-        Args:
-            rtol (float): the relative tolerance for numpy's `allclose`
-            atol (float): the absolute tolerance for numpy's `allclose`
-
-        Returns:
-            A simplified MatVec object
-        """
-
         N = self.mat.shape[0]
         mask = np.ones(N, dtype=np.int8)
 
@@ -205,8 +138,6 @@ class MatVecData(Data):  # Note : this class is abstract too!
 
     # TODO: decide which simplify we want to keep
     def old_simplify(self) -> None:
-        r""" Old simplify"""
-
         indices_to_check = set(range(self.batch_size))
         removed = set()
 
