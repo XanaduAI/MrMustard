@@ -15,7 +15,7 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import GaussianData
-from mrmustard.typing import Scalar, RealMatrix, RealVector
+from mrmustard.typing import Scalar, RealMatrix, RealVector, Matrix
 
 math = Math()
 
