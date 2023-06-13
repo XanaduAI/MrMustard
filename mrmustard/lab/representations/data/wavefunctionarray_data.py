@@ -82,7 +82,6 @@ class WavefunctionArrayData(ArrayData):
 
     def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
         if self._qs_is_same(other):
-
             try:
                 return self.__class__(array=self.array * other.array, qs=self.qs)
             
