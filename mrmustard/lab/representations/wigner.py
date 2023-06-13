@@ -16,109 +16,79 @@ from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import GaussianData
 from mrmustard.typing import Scalar, RealMatrix, RealVector, Matrix, Vector, Tuple
-from typing import Sequence
+from typing import List, Sequence
+from mrmustard import settings
+
 
 math = Math()
 
 class Wigner(Representation):
 
     def __init__(self, cov, means):
-        super().__init__()
+
         self.data = GaussianData(cov, means)
+        super().__init__()
+        
 
-
-    def purity(cov: RealMatrix, hbar: float) -> Scalar:
-        r"""Returns the purity of the state with the given covariance matrix.
-
-        Args:
-            cov (Matrix): the covariance matrix
-            hbat (float) ; the reduced Plank constant
-
-        Returns:
-            float: the purity
-        """
-        return 1 / math.sqrt(math.det((2 / hbar) * cov))
+    @property
+    def purity(self) -> Scalar:
+        return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))
     
 
-    def number_means(cov: RealMatrix, means: RealVector, hbar: float) -> RealVector:
-        r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
-
-        Args:
-            cov: the Wigner covariance matrix
-            means: the Wigner means vector
-            hbar: the value of the Planck constant
-
-        Returns:
-            Vector: the photon number means vector
-        """
-        N = means.shape[-1] // 2
-        return (
-            means[:N] ** 2
-            + means[N:] ** 2
-            + math.diag_part(cov[:N, :N])
-            + math.diag_part(cov[N:, N:])
-            - hbar
-        ) / (2 * hbar)
+    @property
+    def number_means(self) -> RealVector:
+        N = self.data.means.shape[-1] // 2
+        result = (
+            self.data.means[:N] ** 2
+            + self.data.means[N:] ** 2
+            + math.diag_part(self.data.cov[:N, :N])
+            + math.diag_part(self.data.cov[N:, N:])
+            - settings.HBAR
+            ) 
+        return result / (2 * settings.HBAR)
     
 
-    def number_cov(cov: RealMatrix, means: RealVector, hbar: float) -> RealMatrix:
-        r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
+    #TODO : rename variables with actual names : apple
+    @property
+    def number_cov(self) -> RealMatrix:
 
-        Args:
-            cov: the Wigner covariance matrix
-            means: the Wigner means vector
-            hbar: the value of the Planck constant
+        N = self.data.means.shape[-1] // 2
 
-        Returns:
-            Matrix: the photon number covariance matrix
-        """
-        N = means.shape[-1] // 2
-        mCm = cov * means[:, None] * means[None, :]
-        dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-            2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
-        )
-        CC = (cov**2 + mCm) / (2 * hbar**2)
-        return (
-            CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
-        )
+        mCm = self.data.cov * self.data.means[:, None] * self.data.means[None, :]
+
+        diag = math.diag_part( mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N] )
+        diag_of_diag = math.diag( diag ) 
+              # TODO: sum(diag_part) is better than diag_part(sum)
+        dd = diag_of_diag / (2 * settings.HBAR**2)
+
+        CC = (self.data.cov**2 + mCm) / (2 * settings.HBAR**2)
+
+        apple  = CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] 
+
+        return apple + dd - (0.25 * math.eye(N, dtype=CC.dtype))
     
-    
-    def symplectic_eigenvals(cov: RealMatrix, hbar: float) -> list:
+
+    @property
+    def symplectic_eigenvals(self) -> List[Scalar]:
         r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
         For a pure state, we expect the sympletic eigenvalues to be 1.
 
-        Args:
-            cov (Matrix): the covariance matrix
-            hbar (float): the value of the Planck constant
-
         Returns:
             List[float]: the sympletic eigenvalues
         """
-        J = math.J(cov.shape[-1] // 2)  # create a sympletic form
-        M = math.matmul(1j * J, cov * (2 / hbar))
+        J = math.J(self.data.cov.shape[-1] // 2)  # create a sympletic form
+        M = math.matmul(1j * J, self.data.cov * (2 / settings.HBAR))
         vals = math.eigvals(M)  # compute the eigenspectrum
         return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
 
 
-    def von_neumann_entropy(cov: RealMatrix, hbar: float) -> float:
-        r"""Returns the Von Neumann entropy.
-
-        For a pure state, we expect the Von Neumann entropy to be 0.
-
-        Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.
-
-        Args:
-            cov (Matrix): the covariance matrix
-
-        Returns:
-            float: the Von Neumann entropy
-        """
-
+    @property
+    def von_neumann_entropy(self) -> float:
         def g(x):
             return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
 
-        symp_vals = symplectic_eigenvals(cov, hbar)
+        symp_vals = self.symplectic_eigenvals(self.data.cov, settings.HBAR)
         entropy = math.sum(g(symp_vals))
         return entropy
     
