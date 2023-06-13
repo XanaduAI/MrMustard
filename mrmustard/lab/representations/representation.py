@@ -13,23 +13,43 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod, abstractproperty
+from mrmustard.typing import RealMatrix, RealVector, Scalar
 
 class Representation(ABC):
     r""" Abstract parent class for the different Representation of quantum states. """
     
-    @abstractmethod
-    def number_means(self) -> int: # TODO : add doc
+    @abstractproperty
+    def purity(self) -> Scalar:
+        r""" The purity of the state. """
         raise NotImplementedError()
+    
 
+    @abstractproperty
+    def norm(self) -> float:
+        r""" The norm of the state. """
+        raise NotImplementedError()
+    
 
-    @abstractmethod
-    def number_cov(self) -> int: # TODO : add doc
+    @abstractproperty
+    def von_neumann_entropy(self) -> float:
+        r""" The Von Neumann entropy of the state. 
+        
+        For a pure state, we expect the Von Neumann entropy to be 0.
+
+        Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.        
+        """
+        raise NotImplementedError()
+    
+
+    @abstractproperty
+    def number_means(self) -> RealVector:
+        r""" The photon number means vector. """
         raise NotImplementedError()
 
 
     @abstractproperty
-    def purity(self) -> float:
-        r""" The purity of the state. """
+    def number_cov(self) -> RealMatrix:
+        r""" The photon number covariance matrix"""
         raise NotImplementedError()
 
 
@@ -38,25 +58,11 @@ class Representation(ABC):
         raise NotImplementedError()
 
 
-    @abstractproperty
-    def norm(self) -> float:
-        r""" The norm of the state. """
-        raise NotImplementedError()
-
-
     @abstractmethod
     def probability(self) -> float: # TODO : add doc
-        raise NotImplementedError()
-
-
-    @abstractproperty
-    def von_neumann_entropy(self) -> float:
-        r""" The Von Neumann entropy of the state. """
         raise NotImplementedError()
 
 
     @abstractmethod
     def _repr_markdown_(self) -> str:
         raise NotImplementedError()
-
-     
