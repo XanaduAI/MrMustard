@@ -46,59 +46,59 @@ class FockKet(Fock):
     def probability(self) -> Tensor: 
         return math.abs(self.data.array) #TODO: cutoffs
     
+    # NOTE : this is for transformations!
+    # def apply_kraus_to_ket(self, kr:np.array, ket:np.array, 
+    #                        kraus_in_idx:List[int], kraus_out_idx:Union[List[int], None]=None
+    #                        ) -> Tensor:
+    #     r"""Applies a kraus operator to a ket.
+    #     It assumes that the ket is indexed as left_1, ..., left_n.
 
-    def apply_kraus_to_ket(self, kr:np.array, ket:np.array, 
-                           kraus_in_idx:List[int], kraus_out_idx:Union[List[int], None]=None
-                           ) -> Tensor:
-        r"""Applies a kraus operator to a ket.
-        It assumes that the ket is indexed as left_1, ..., left_n.
+    #     The kraus op has indices that contract with the ket (kraus_in_idx) and indices that are 
+    #     left over (kraus_out_idx).
+    #     The final index order will be sorted (note that an index appearing in both kraus_in_idx and
+    #       kraus_out_idx will replace the original index).
 
-        The kraus op has indices that contract with the ket (kraus_in_idx) and indices that are 
-        left over (kraus_out_idx).
-        The final index order will be sorted (note that an index appearing in both kraus_in_idx and
-          kraus_out_idx will replace the original index).
+    #     Args:
+    #         kr: the kraus operator to be applied
+    #         ket: the ket to which the operator is applied
+    #         kraus_in_idx: the indices (counting from 0) of the kraus operator that contract with 
+    #                       the ket
+    #         kraus_out_idx: the indices (counting from 0) of the kraus operator that are leftover
 
-        Args:
-            kr: the kraus operator to be applied
-            ket: the ket to which the operator is applied
-            kraus_in_idx: the indices (counting from 0) of the kraus operator that contract with 
-                          the ket
-            kraus_out_idx: the indices (counting from 0) of the kraus operator that are leftover
+    #     Returns:
+    #         array: the resulting ket with indices as kraus_out_idx + uncontracted ket indices
 
-        Returns:
-            array: the resulting ket with indices as kraus_out_idx + uncontracted ket indices
+    #     Raises:
+    #         ValueError: if the indices used for the contraction are incorrect  
+    #     """
+    #     if kraus_out_idx is None:
+    #         kraus_out_idx = kraus_in_idx
 
-        Raises:
-            ValueError: if the indices used for the contraction are incorrect  
-        """
-        if kraus_out_idx is None:
-            kraus_out_idx = kraus_in_idx
+    #     if not set(kraus_in_idx).issubset(range(ket.ndim)):
+    #         raise ValueError("kraus_in_idx should be a subset of the ket indices.")
 
-        if not set(kraus_in_idx).issubset(range(ket.ndim)):
-            raise ValueError("kraus_in_idx should be a subset of the ket indices.")
+    #     ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
 
-        ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
+    #     # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+    #     try:
+    #         self.validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
 
-        # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
-        try:
-            self.validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
+    #         kraus = MMTensor(
+    #             kr,
+    #             axis_labels=(
+    #             [f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx]
+    #             )
+    #         )
 
-            kraus = MMTensor(
-                kr,
-                axis_labels=(
-                [f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx]
-                )
-            )
+    #         # contract the operator with the ket.
+    #         # now the leftover indices are in the order kraus_out_idx + uncontracted ket indices
+    #         kraus_ket = kraus @ ket
 
-            # contract the operator with the ket.
-            # now the leftover indices are in the order kraus_out_idx + uncontracted ket indices
-            kraus_ket = kraus @ ket
+    #         # sort kraus_ket.axis_labels by the int at the end of each label.
+    #         # Each label is guaranteed to have a unique int at the end.
+    #         new_axis_labels = sorted(kraus_ket.axis_labels, key=lambda x: int(x.split("_")[-1]))
 
-            # sort kraus_ket.axis_labels by the int at the end of each label.
-            # Each label is guaranteed to have a unique int at the end.
-            new_axis_labels = sorted(kraus_ket.axis_labels, key=lambda x: int(x.split("_")[-1]))
-
-            return kraus_ket.transpose(new_axis_labels).tensor
+    #         return kraus_ket.transpose(new_axis_labels).tensor
         
-        except ValueError as e:
-            raise e
+    #     except ValueError as e:
+    #         raise e
