@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import numpy as np
-
+import numpy as np
+from typing import List
 from mrmustard.math import Math
-# from mrmustard import settings
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import ArrayData
 from mrmustard.typing import Scalar, Tensor, RealVector, Matrix
@@ -24,9 +23,14 @@ from mrmustard.typing import Scalar, Tensor, RealVector, Matrix
 math = Math()
 
 class Fock(Representation):
-    r"""Fock Class is the Fock representation."""
+    r""" Parent abstract class for the FokKet and FockDM representations.
+    
+    Args:
+        data: the data used to represent the state to be encoded as Fock representation, it will be
+         fed to an ArrayData object
+    """
 
-    def __init__(self, array):
+    def __init__(self, array:np.array):
         super().__init__()
         self.data = ArrayData(array) 
 
@@ -107,16 +111,28 @@ class Fock(Representation):
         #     # (real) wavefunction
         #     psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
         #     return psi
-        
 
-        # def validate_contraction_indices(in_idx, out_idx, M, name):
-        #     r"""Validates the indices used for the contraction of a tensor."""
-        #     if len(set(in_idx)) != len(in_idx):
-        #         raise ValueError(f"{name}_in_idx should not contain repeated indices.")
-        #     if len(set(out_idx)) != len(out_idx):
-        #         raise ValueError(f"{name}_out_idx should not contain repeated indices.")
-        #     if not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
-        #         wrong_indices = set(range(M)).intersection(out_idx) - set(in_idx)
-        #         raise ValueError(
-        #             f"Indices {wrong_indices} in {name}_out_idx are trying to replace uncontracted indices."
-        #         )
+    @staticmethod
+    def validate_contraction_indices(in_idx:List[int], out_idx:List[int], M:int) -> bool:
+        r""" Validates the indices used for the contraction of a tensor.
+
+        Args:
+            in_idx: the indices (counting from 0) of the kraus operator that contract with the ket
+            out_idx: the indices (counting from 0) of the kraus operator that are leftover
+            M: dimension of the ket
+
+        Returns:
+            True if all went well and the indices are not problematic
+
+        Raises:
+            ValueError: if the indices used for the contraction are incorrect        
+        """
+        if (len(set(in_idx)) != len(in_idx)) or (len(set(out_idx)) != len(out_idx)):
+            raise ValueError("Should not contain repeated indices.")
+        
+        elif not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
+            wrong = set(range(M)).intersection(out_idx) - set(in_idx)
+            raise ValueError(f"Indices {wrong} are trying to replace uncontracted indices.")
+        
+        else:
+            return True

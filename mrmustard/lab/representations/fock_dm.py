@@ -31,7 +31,6 @@ class FockDM(Fock):
 
 
     def purity(self):
-        r"""Returns the purity of a density matrix."""
         dm = self.data.array
         cutoffs = self.data.cutoffs
         d = int(np.prod(cutoffs))  # combined cutoffs in all modes
@@ -41,9 +40,7 @@ class FockDM(Fock):
 
 
     def norm(self):
-        r"""
-        Returns the norm. (:math:`|amp|^2` for ``dm``)
-        """
+        r""" The norm. (:math:`|amp|^2` for ``dm``). """
         return math.sum(math.all_diagonals(self.data.array, real = True))
 
 
