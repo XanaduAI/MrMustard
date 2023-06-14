@@ -24,53 +24,45 @@ from mrmustard.typing import Scalar, Tensor, RealVector, Matrix
 math = Math()
 
 class Fock(Representation):
-    '''Fock Class is the Fock representation.'''
+    r"""Fock Class is the Fock representation."""
 
     def __init__(self, array):
         super().__init__()
         self.data = ArrayData(array) 
 
 
+    @property
     def number_means(self) -> Tensor:
-        r'''Returns the mean photon number in each mode.'''
         probs = self.probability()
-        modes = list(range(len(probs.shape)))
-        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-        return math.astensor(
-            [
-                math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
-                for marginal in marginals
-            ]
-        )
+        nb_modes = range(len(probs.shape))
+        modes = list(nb_modes) # NOTE : there is probably a more optimized way of doing this
+        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in nb_modes]
+        result = [math.sum(m * math.arange(len(m), dtype=m.dtype)) for m in marginals]
+        return math.astensor(result)
     
 
-    def number_variances(self) -> Tensor:
-        r"""Returns the variance of the number operator in each mode."""
-        probs = self.probability()
-        modes = list(range(len(probs.shape)))
-        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
-        return math.astensor(
-            [
-                (
-                    math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-                    - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
-                )
-                for marginal in marginals
-            ]
-        )
-    
-    def number_stdev(self) -> RealVector:
-        r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-        return math.sqrt(self.number_variances())
-
-
+    @property
     def number_cov(self):
         raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
+    
+
+    @property
+    def number_variances(self) -> Tensor:
+        probs = self.probability()
+        modes = list(range(len(probs.shape)))
+        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+        t = marginals[0].dtype
+        result = [
+                (math.sum(m * math.arange(m.shape[0], dtype=t) ** 2)
+                 - math.sum(m * math.arange(m.shape[0], dtype=t)) ** 2) 
+                 for m in marginals
+                 ]
+        return math.astensor(result)
 
 
-    def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
-        r"""Returns the Von Neumann entropy."""
-        raise NotImplementedError("von_neumann_entropy not yet implemented for Fock representation") 
+    @property
+    def von_neumann_entropy(self) -> float:
+        raise NotImplementedError("von_neumann_entropy not implemented for Fock representation") 
         # # @tensor_int_cache
         # def oscillator_eigenstates(q: RealVector, cutoff: int) -> Tensor:
         #     r"""Harmonic oscillator eigenstate wavefunctions `\psi_n(q) = <q|n>` for n = 0, 1, 2, ..., cutoff-1.

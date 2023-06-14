@@ -49,13 +49,20 @@ class Representation(ABC):
 
     @abstractproperty
     def number_cov(self) -> RealMatrix:
-        r""" The photon number covariance matrix"""
+        r""" Valid for Fock: the photon number covariance matrix. """
+        raise NotImplementedError()
+    
+
+    @abstractproperty
+    def number_variances(self) -> int:
+        r""" Valid for Fock : variance of the number operator in each mode. """
         raise NotImplementedError()
 
 
-    @abstractmethod
-    def number_stdev(self) -> int: # TODO : add doc
-        raise NotImplementedError()
+    def number_stdev(self) -> int:
+        r""" Valid for Fock: square root of the photon number variances (standard deviation) 
+        in each mode. """
+        return math.sqrt(self.number_variances())
 
 
     @abstractmethod
