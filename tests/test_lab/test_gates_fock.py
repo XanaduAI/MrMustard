@@ -159,7 +159,7 @@ def test_parallel_displacement(x1, x2, y1, y2):
     assert np.allclose(U12, np.transpose(np.tensordot(U1, U2, [[], []]), [0, 2, 1, 3]))
 
 
-def test_squeezer_grad():
+def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
