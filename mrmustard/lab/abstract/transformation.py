@@ -151,7 +151,7 @@ class Transformation:
         return self._modes
 
     @modes.setter
-    def modes(self, modes: list[int]):
+    def modes(self, modes: List[int]):
         r"""Sets the modes on which the transformation acts."""
         self._validate_modes(modes)
         self._modes = modes
