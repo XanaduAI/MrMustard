@@ -320,7 +320,7 @@ def test_measure_with_fock():
 
 
 @given(theta=angle, phi=angle)
-def test_schwinger_bs_equals_vanilla_bs(theta, phi):
+def test_schwinger_bs_equals_vanilla_bs_for_small_cutoffs(theta, phi):
     """Tests that the Schwinger boson BS gate is equivalent to the vanilla BS gate for low cutoffs."""
     U_vanilla = BSgate(theta, phi).U([10, 10, 10, 10], method="vanilla")
     U_schwinger = BSgate(theta, phi).U([10, 10, 10, 10], method="schwinger")
