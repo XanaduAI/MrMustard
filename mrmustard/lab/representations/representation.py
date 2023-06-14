@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod, abstractproperty
-from mrmustard.typing import RealMatrix, RealVector, Scalar
+from mrmustard.typing import RealMatrix, RealVector, Scalar, Tensor
 
 class Representation(ABC):
     r""" Abstract parent class for the different Representation of quantum states. """
@@ -58,18 +58,14 @@ class Representation(ABC):
         r""" Valid for Fock : variance of the number operator in each mode. """
         raise NotImplementedError()
 
-
+    @abstractproperty
     def number_stdev(self) -> int:
         r""" Valid for Fock: square root of the photon number variances (standard deviation) 
         in each mode. """
         return math.sqrt(self.number_variances())
 
 
-    @abstractmethod
-    def probability(self) -> float: # TODO : add doc
-        raise NotImplementedError()
-
-
-    @abstractmethod
-    def _repr_markdown_(self) -> str:
+    @abstractproperty
+    def probability(self) -> Tensor: # TODO : add doc
+        r""" Probability vector, either extracted from a DM or from a Ket"""
         raise NotImplementedError()
