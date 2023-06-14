@@ -882,7 +882,7 @@ def displacement(x, y, shape, tol=1e-15):
 def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
     r"""Creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy.
 
-    Arguments:
+    Args:
         theta (float): transmittivity angle of the beamsplitter
         phi (float): phase angle of the beamsplitter
         cutoffs (int,int): cutoff dimensions of the two modes
