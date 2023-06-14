@@ -200,7 +200,7 @@ class Transformation:
 
     def XYd(
         self, allow_none: bool = True
-    ) -> tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+      -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
