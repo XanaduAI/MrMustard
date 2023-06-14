@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import numpy as np
+from typing import List, Union
 
 from mrmustard.math import Math
-# from math.mmtensor import MMTensor
+from math.mmtensor import MMTensor
 from mrmustard.lab.representations.fock import Fock
 from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.typing import Scalar, Tensor, RealVector
-from mrmustard.lab.representations.fock import validate_contraction_indices
+
 
 math = Math()
 
@@ -44,34 +45,34 @@ class FockDM(Fock):
         return math.sum(math.all_diagonals(self.data.array, real = True))
 
 
-    def probability(self) -> Tensor: 
-        r"""Extracts the diagonals of a density matrix.
-
-        Args:
-            dm: the density matrix
-
-        Returns:
-            Tensor: the probabilities vector
-        """
-        #TODO: cutoffs adjust
-        return math.all_diagonals(self.data.array, real = True)
+    def probability(self) -> Tensor:
+        return math.all_diagonals(self.data.array, real = True) #TODO: cutoffs adjust
     
 
-    def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
-        r"""Applies a kraus operator to a density matrix.
-        It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
+    def apply_kraus_to_dm(kr:np.array, dm:np.array, 
+                          kraus_in_idx:List[int], kraus_out_idx:Union[List[int], None]=None
+                          ) -> Tensor:
+        r""" Applies a kraus operator to a density matrix.
+        
+        Assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
-        The kraus operator has indices that contract with the density matrix (kraus_in_idx) and indices that are leftover (kraus_out_idx).
-        `kraus` will contract from the left and from the right with the density matrix. For right contraction the kraus op is conjugated.
+        The kraus operator has indices that contract with the density matrix (kraus_in_idx) and 
+        indices that are leftover (kraus_out_idx).
+        `kraus` will contract from the left and from the right with the density matrix. For right 
+        contraction the kraus op is conjugated.
 
         Args:
-            kraus (array): the operator to be applied
-            dm (array): the density matrix to which the operator is applied
-            kraus_in_idx (list of ints): the indices (counting from 0) of the kraus operator that contract with the density matrix
-            kraus_out_idx (list of ints): the indices (counting from 0) of the kraus operator that are leftover (default None, in which case kraus_out_idx = kraus_in_idx)
+            kr: the operator to be applied
+            dm: the density matrix to which the operator is applied
+            kraus_in_idx: the indices (counting from 0) of the kraus operator that contract with 
+                          the density matrix
+            kraus_out_idx: the indices (counting from 0) of the kraus operator that are leftover
 
         Returns:
-            array: the resulting density matrix
+            The resulting density matrix
+
+        Raises:
+            ValueError: if the indices used for the contraction are incorrect 
         """
         if kraus_out_idx is None:
             kraus_out_idx = kraus_in_idx
@@ -79,18 +80,21 @@ class FockDM(Fock):
         if not set(kraus_in_idx).issubset(range(dm.ndim // 2)):
             raise ValueError("kraus_in_idx should be a subset of the density matrix indices.")
 
-        # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
-        validate_contraction_indices(kraus_in_idx, kraus_out_idx, dm.ndim // 2, "kraus")
-
         dm = MMTensor(
-            dm,
-            axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
-            + [f"right_{i}" for i in range(dm.ndim // 2)],
-        )
+                dm,
+                axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
+                + [f"right_{i}" for i in range(dm.ndim // 2)],
+            )
+
+        # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+        self.validate_contraction_indices(kraus_in_idx, kraus_out_idx, dm.ndim // 2)
+
         kraus = MMTensor(
-            kraus,
-            axis_labels=[f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx],
-        )
+            kr,
+            axis_labels=(
+            [f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx]
+            )
+            )
         kraus_conj = MMTensor(
             math.conj(kraus.tensor),
             axis_labels=[f"out_right_{i}" for i in kraus_out_idx]

@@ -47,7 +47,7 @@ class FockKet(Fock):
         return math.abs(self.data.array) #TODO: cutoffs
     
 
-    def apply_kraus_to_ket(self, kraus:np.array, ket:np.array, 
+    def apply_kraus_to_ket(self, kr:np.array, ket:np.array, 
                            kraus_in_idx:List[int], kraus_out_idx:Union[List[int], None]=None
                            ) -> Tensor:
         r"""Applies a kraus operator to a ket.
@@ -59,7 +59,7 @@ class FockKet(Fock):
           kraus_out_idx will replace the original index).
 
         Args:
-            kraus: the kraus operator to be applied
+            kr: the kraus operator to be applied
             ket: the ket to which the operator is applied
             kraus_in_idx: the indices (counting from 0) of the kraus operator that contract with 
                           the ket
@@ -84,7 +84,7 @@ class FockKet(Fock):
             self.validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
 
             kraus = MMTensor(
-                kraus,
+                kr,
                 axis_labels=(
                 [f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx]
                 )
