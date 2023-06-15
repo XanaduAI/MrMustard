@@ -17,20 +17,20 @@ from typing import List
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import ArrayData
-from mrmustard.typing import Scalar, Tensor, RealVector, Matrix
+from mrmustard.typing import Scalar, Tensor, RealMatrix, RealVector, Matrix
 # from mrmustard.math.caching import tensor_int_cache
 
 math = Math()
 
 class Fock(Representation):
-    r""" Parent abstract class for the FokKet and FockDM representations.
+    r""" Fock representation of a state.
     
     Args:
         data: the data used to represent the state to be encoded as Fock representation, it will be
-         fed to an ArrayData object
+              fed to an ArrayData object
     """
 
-    def __init__(self, array:np.array):
+    def __init__(self, array:np.array) -> None:
         super().__init__()
         self.data = ArrayData(array) 
 
@@ -46,7 +46,7 @@ class Fock(Representation):
     
 
     @property
-    def number_cov(self):
+    def number_cov(self) -> RealMatrix:
         raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
     
 

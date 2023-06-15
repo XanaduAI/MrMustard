@@ -15,6 +15,8 @@
 from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.typing import RealMatrix, RealVector, Scalar, Tensor
 
+math = Math()
+
 class Representation(ABC):
     r""" Abstract parent class for the different Representation of quantum states. """
     
