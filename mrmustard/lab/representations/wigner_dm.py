@@ -12,10 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
 from mrmustard.lab.representations import Wigner
+from mrmustard.typing import Batch, Matrix, Vector
 
 class WignerDM(Wigner):
 
-    def __init__(self):
-        super().__init__()
+    r""" Wigner representation of a mixed state.
+    
+    Args:
+        cov: covariance matrices (real symmetric)
+        mean: means (real)
+        coeffs: coefficients (complex) 
+    """
+
+    def __init__(self,
+                 cov:Optional[Batch[Matrix]], 
+                 means:Optional[Batch[Vector]], 
+                 coeffs:Optional[Batch[Matrix]]
+                 ) -> None:
+        
+        super().__init__(cov=cov, means=means, coeffs=coeffs)
         self.num_modes = self.cov.shape[-1] // 2
