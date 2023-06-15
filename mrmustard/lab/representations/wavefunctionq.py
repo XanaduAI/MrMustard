@@ -12,24 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import WavefunctionArrayData
 
 class WaveFunctionQ(Representation):
+    r""" Wavefunction representation of a state.
 
-    def __init__(self, qs, wavefunctionq):
-        super().__init__()
-        self.data = WavefunctionArrayData(qs, wavefunctionq)
+    Args:
+        qs: q-variable points 
+        array: q-Wavefunction values correspoidng qs
+    """
+
+    def __init__(self, qs:np.array, wavefunctionq:np.array) -> None:
+        self.data = WavefunctionArrayData(qs=qs, array=wavefunctionq)
+
 
     def purity(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    def number_means(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-    
-    def number_cov(self):
         raise NotImplementedError("Get this of this state from other representations!")
     
 
@@ -39,3 +38,11 @@ class WaveFunctionQ(Representation):
 
     def von_neumann_entropy(self):
         raise NotImplementedError("Get this of this state from other representations!") 
+    
+
+    def number_means(self):
+        raise NotImplementedError("Get this of this state from other representations!")
+    
+    
+    def number_cov(self):
+        raise NotImplementedError("Get this of this state from other representations!")

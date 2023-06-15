@@ -24,8 +24,9 @@ math = Math()
 class WavefunctionArrayData(ArrayData):
     r""" Encapsulates the q-variable points and correspodning values.
 
-    qs: q-variable points 
-    array: q-Wavefunction values correspoidng qs
+    Args:
+        qs: q-variable points 
+        array: q-Wavefunction values correspoidng qs
     """
 
     def __init__(self, qs:np.array, array:np.array) -> None:
@@ -38,14 +39,6 @@ class WavefunctionArrayData(ArrayData):
         r""" Cutoffs of the q-Wavefunction. """
         return self.array.shape
     
-
-    def _qs_is_same(self, other:WavefunctionArrayData) -> bool:
-        r""" Compares the qs of two WavefunctionArrayData objects. """
-        try:
-            return True if np.allclose(self.qs, other.qs) else False
-        except AttributeError as e:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
-
 
     def __neg__(self) -> WavefunctionArrayData:
         return self.__class__(array= -self.array, qs=self.qs) # TODO
@@ -108,4 +101,13 @@ class WavefunctionArrayData(ArrayData):
 
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> WavefunctionArrayData:
         raise NotImplementedError() # TODO: implement
+    
+
+    def _qs_is_same(self, other:WavefunctionArrayData) -> bool:
+        r""" Compares the qs of two WavefunctionArrayData objects. """
+        try:
+            return True if np.allclose(self.qs, other.qs) else False
+        except AttributeError as e:
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+
     

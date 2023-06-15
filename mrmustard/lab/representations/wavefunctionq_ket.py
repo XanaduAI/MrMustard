@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 from mrmustard.lab.representations import WavefunctionQ
 
 class WaveFunctionQKet(WavefunctionQ):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, qs:np.array, wavefunctionq:np.array):
+        super().__init__(qs=qs, wavefunctionq=wavefunctionq)
