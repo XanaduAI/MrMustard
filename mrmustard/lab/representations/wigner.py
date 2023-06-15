@@ -15,8 +15,8 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import GaussianData
-from mrmustard.typing import Batch, Scalar, RealMatrix, RealVector, Matrix, Vector, Tuple
-from typing import List, Optional,  Sequence
+from mrmustard.typing import Batch, Scalar, RealMatrix, RealVector, Matrix, Vector, Tensor
+from typing import List, Optional, Sequence, Tuple
 from mrmustard import settings
 
 
@@ -43,6 +43,11 @@ class Wigner(Representation):
     @property
     def purity(self) -> Scalar:
         return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))
+    
+
+    @property
+    def norm(self) -> float:
+        raise NotImplementedError()
     
 
     @property
@@ -92,6 +97,16 @@ class Wigner(Representation):
         covariances = apple + (diag_of_diag / (2 * settings.HBAR**2)) - banana
 
         return covariances
+    
+
+    @property
+    def number_variances(self) -> int:
+        raise NotImplementedError()
+    
+
+    @property
+    def probability(self) -> Tensor:
+        raise NotImplementedError()
     
 
     @property
@@ -180,7 +195,7 @@ class Wigner(Representation):
 
         return math.gather(self.data.means, Aindices), math.gather(self.data.means, Bindices)
     
-    
+
     @staticmethod
     def _g(x:List[Scalar]): #TODO : add return type to signature
         r""" Used exclusively to compute the Wigner Von neumann entropy.
