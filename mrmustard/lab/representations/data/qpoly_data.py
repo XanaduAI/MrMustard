@@ -16,11 +16,11 @@ from __future__ import annotations
 import numpy as np
 from typing import Tuple, Union, TYPE_CHECKING
 from mrmustard.math import Math
-from mrmustard.lab.representations.data import MatVecData
+from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
-    from mrmustard.lab.representations.data import GaussianData
+    from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
 
 math = Math()
@@ -39,7 +39,7 @@ class QPolyData(MatVecData):
 
     def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar]) -> None:
         # Done here because of circular import with GaussianData<>QPolyData
-        from mrmustard.lab.representations.data import GaussianData
+        from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
         if isinstance(A, GaussianData):
             A, b, c = self._from_GaussianData(covmat=A)
@@ -90,21 +90,18 @@ class QPolyData(MatVecData):
         return covmat, b, c
 
 
-    def __truediv__(self, other:Union[Scalar, QPolyData]) -> QPolyData:
-       raise NotImplementedError() # TODO : implement!
+    def __truediv__(self, other:Scalar) -> QPolyData:
+       return self.__class__(A=self.A, b=self.b, c=self.c / other)
 
 
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
 
         if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
-            c = super().scalar_mul(c=other)
-            return self.__class__(A=self.A, b=self.b, c=c)
-        
-        else: # TODO : use MM's math module where possible
-            raise NotImplementedError() # TODO : implement (is the below correct?)
-            # try:
-            #     return self.__class__(self.A + other.A, self.b + other.b, self.c * other.c)
+            return self.__class__(A=self.A, b=self.b, c=self.c*other)
+        else:
+            try:
+                return self.__class__(self.A + other.A, self.b + other.b, self.c * other.c)
             
-            # except AttributeError:
-            #     return self.__class__(self.A, self.b, self.c * other)
+            except AttributeError:
+                return self.__class__(self.A, self.b, self.c * other)
 

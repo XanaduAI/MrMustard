@@ -74,27 +74,11 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
 
     def __sub__(self, other: MatVecData) -> MatVecData:
-        return self.__add__(other=-other)
+        return self.__add__(other=other.__neg__)
         
 
     def __and__(self, other: MatVecData) -> MatVecData:
-        try: # TODO : decide which code we keep, old commented or new?
-            # mat = []
-            # vec = []
-            # coeffs = []
-
-            # for c1 in self.mat:
-            #     for c2 in other.mat:
-            #         mat.append(math.block_diag([c1, c2]))
-
-            # for m1 in self.vec:
-            #     for m2 in other.vec:
-            #         vec.append(math.concat([m1, m2], axis=-1))
-
-            # for c1 in self.coeffs:
-            #     for c2 in other.coeffs:
-            #         coeffs.append(c1 * c2)
-
+        try: #TODO: ORDER OF ALL MATRICESA!
             mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
             vec = [math.concat([v1, v2], axis=-1) for v1 in self.vec for v2 in other.vec]
             coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]

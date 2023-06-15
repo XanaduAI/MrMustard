@@ -15,7 +15,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union, List
-from mrmustard.lab.representations.data import ArrayData
+from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
 
@@ -32,16 +32,6 @@ class WavefunctionArrayData(ArrayData):
     def __init__(self, qs:np.array, array:np.array) -> None:
         super().__init__(array=array)
         self.qs = qs
-
-    
-    @property
-    def cutoffs(self) -> Union[int, List[int]]:
-        r""" Cutoffs of the q-Wavefunction. """
-        return self.array.shape
-    
-
-    def __neg__(self) -> WavefunctionArrayData:
-        return self.__class__(array= -self.array, qs=self.qs) # TODO
         
 
     def __eq__(self, other:ArrayData) -> bool:
@@ -65,31 +55,18 @@ class WavefunctionArrayData(ArrayData):
             raise ValueError ("The two wave functions must have the same qs. ")
             
 
-    def __sub__(self, other:ArrayData) -> WavefunctionArrayData:
-        self.__add__(-other)
+    def __sub__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
+        self.__add__(other.__neg__)
 
 
-    def __truediv__(self, other:Union[Scalar, ArrayData]) -> WavefunctionArrayData:
-        raise NotImplementedError()
-
-
-    def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        if self._qs_is_same(other):
-            try:
-                return self.__class__(array=self.array * other.array, qs=self.qs)
-            
-            except AttributeError:
-                try: # if it's not an array, we try a Number
-                    return self.__class__(array=self.array * other, qs=self.qs)
-                except TypeError as e:
-                    raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}."
-                                    ) from e
+    def __mul__(self, other: Union[Scalar, WavefunctionArrayData]) -> WavefunctionArrayData:
+        if isinstance(other, Scalar):
+            return self.__class__(array=self.array * other, qs=self.qs) 
         else:
-            raise ValueError ("The two wave functions must have the same qs. ")
-            
-
-    def __rmul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        return self.__mul__(other=other)
+            if self._qs_is_same(other):
+                return self.__class__(array=self.array * other.array, qs=self.qs)
+            else:
+                raise ValueError ("The two wave functions must have the same qs. ")
 
 
     def __and__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:

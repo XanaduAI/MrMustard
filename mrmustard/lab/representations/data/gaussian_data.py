@@ -15,7 +15,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Optional, Tuple, Union, TYPE_CHECKING
-from mrmustard.lab.representations import MatVecData
+from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
@@ -110,14 +110,13 @@ class GaussianData(MatVecData):
         return (cov, mean, coeffs)
 
 
-    def __truediv__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-       raise NotImplementedError() # TODO : implement!
+    def __truediv__(self, other: Scalar) -> GaussianData:
+        return self.__class__(cov=self.cov, mean=self.mean, coeffs=self.coeffs/other)
 
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
         if isinstance(other, Scalar):
-            c = super().scalar_mul(c=other)
-            return self.__class__(cov=self.cov, mean=self.mean, coeffs=c)
+            return self.__class__(cov=self.cov, mean=self.mean, coeffs=self.coeffs*other)
         
         else:
             try:
@@ -179,7 +178,3 @@ class GaussianData(MatVecData):
 
             except AttributeError as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-            
-    
-    def __rmul__(self, other:Union[Scalar, GaussianData]) -> GaussianData:
-        return self.__mul__(other=other)

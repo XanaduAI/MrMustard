@@ -15,7 +15,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union
-from mrmustard.lab.representations.data import MatVecData
+from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Scalar
 
 class SymplecticData(MatVecData):
@@ -27,30 +27,26 @@ class SymplecticData(MatVecData):
         coeffs:
     """
 
-    def __init__(self, mat, vec, coeffs) -> None:
-        super().__init__(mat=mat, vec=vec, coeffs=coeffs)
+    def __init__(self, S, d, coeffs) -> None:
+        super().__init__(S=S, d=d, coeffs=coeffs)
 
 
     @property
-    def mean(self) -> np.array:
-        return self.vec
+    def symplectic_matrix(self) -> np.array:
+        return self.S
+    
+    @property
+    def displacement(self) -> np.array:
+        return self.d
 
 
-    # TODO : implement
     def __truediv__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData:
-        raise NotImplementedError()
+        return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs/other)
 
 
     def __mul__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData:
         if isinstance(other, Scalar):
-            return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs)
-        
-        else: # TODO : use MM's math module where possible
-            raise NotImplementedError() # TODO : implement (is the below correct?)
-            # try:
-            #     return self.__class__(mat=np.matmul(self.mat, other.mat), 
-            #                         mean=np.multiply(self.mean, other.mean),
-            #                         coeff=np.multiply(self.coeff, other.coeff))
-            
-            # except AttributeError as e:
-            # raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
+            return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs*other)
+        else: 
+            raise AttributeError("The multiplication between two SymplecticData is not possible.") 
+

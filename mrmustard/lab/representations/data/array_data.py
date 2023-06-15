@@ -15,7 +15,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import List, Union
-from mrmustard.lab.representations.data import Data
+from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
 
@@ -57,25 +57,18 @@ class ArrayData(Data):
             
 
     def __sub__(self, other:ArrayData) -> ArrayData:
-        self.__add__(-other)
+        self.__add__(other.__neg__)
 
 
-    def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
-        raise NotImplementedError()
+    def __truediv__(self, other:Scalar) -> ArrayData:
+        return self.__class__(array=self.array/other)
 
 
     def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        try:
-            return self.__class__(array=self.array * other.array)
-        except AttributeError:
-            try: # if it's not an array, we try a Number
-                return self.__class__(array=self.array * other)
-            except TypeError as e:
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-            
-    
-    def __rmul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        return self.__mul__(other=other) # ok because ourmultiplication is commutative 
+        if isinstance(other, Scalar):
+            return self.__class__(array=self.array * other)
+        else:
+            raise AttributeError("The multiplication between two ArrayData is not possible.") 
 
 
     def __and__(self, other:ArrayData) -> ArrayData:
