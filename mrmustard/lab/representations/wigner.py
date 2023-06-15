@@ -61,24 +61,30 @@ class Wigner(Representation):
         return (means + covariance - settings.HBAR) / (2 * settings.HBAR)
     
 
-    #TODO : rename variables with actual names (apple)
+    #TODO : rename variables with actual names (apple, banana)
     @property
     def number_cov(self) -> RealMatrix:
 
         n = self.data.means.shape[-1] // 2
 
-        mCm = self.data.cov * self.data.means[:, none] * self.data.means[none, :]
+        extended_means_horizontal = self.data.means[:, None]
+        extended_means_vertical = self.data.means[None, :]
+
+        mCm = self.data.cov * extended_means_horizontal * extended_means_vertical
 
         # TODO: sum(diag_part) is better than diag_part(sum)
-        diag = math.diag_part( mCm[:n, :n] + mCm[n:, n:] + mCm[:n, n:] + mCm[n:, :n] )
-        diag_of_diag = math.diag( diag ) 
-        dd = diag_of_diag / (2 * settings.HBAR**2)
+        diagonal = math.diag_part( mCm[:n, :n] + mCm[n:, n:] + mCm[:n, n:] + mCm[n:, :n] )
+        diag_of_diag = math.diag( diagonal )
 
         CC = (self.data.cov**2 + mCm) / (2 * settings.HBAR**2)
 
-        apple  = CC[:n, :n] + CC[n:, n:] + CC[:n, n:] + CC[n:, :n] 
+        apple  = CC[:n, :n] + CC[n:, n:] + CC[:n, n:] + CC[n:, :n]
 
-        return apple + dd - (0.25 * math.eye(n, dtype=CC.dtype))
+        banana = (0.25 * math.eye(n, dtype=CC.dtype))
+
+        covariances = apple + (diag_of_diag / (2 * settings.HBAR**2)) - banana
+
+        return covariances
     
 
     @property
