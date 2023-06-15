@@ -35,7 +35,7 @@ class Wigner(Representation):
                  cov:Optional[Batch[Matrix]], 
                  means:Optional[Batch[Vector]], 
                  coeffs:Optional[Batch[Matrix]]
-                 ) -> none:
+                 ) -> None:
 
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
         
@@ -43,6 +43,13 @@ class Wigner(Representation):
     @property
     def purity(self) -> Scalar:
         return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))
+    
+
+    @property
+    def von_neumann_entropy(self) -> float:
+        symplectic_eigvals = self.symplectic_eigenvals(self.data.cov, settings.HBAR)
+        entropy = math.sum(self._g(symplectic_eigvals))
+        return entropy
     
 
     @property
@@ -88,86 +95,103 @@ class Wigner(Representation):
     
 
     @property
-    def symplectic_eigenvals(self) -> List[Scalar]:
-        r"""Returns the sympletic eigenspectrum of a covariance matrix.
+    def symplectic_eigenvals(self) -> List[Scalar]: #TODO: is it used outside class? make private?
+        r""" Computes the sympletic eigenspectrum of a covariance matrix.
 
-        note that for a pure state, we expect the sympletic eigenvalues to be 1.
+        Note that for a pure state, we expect the sympletic eigenvalues to be 1.
 
         Returns:
-            The sympletic eigenvalues
+            The sympletic (even) eigenvalues
         """
+
         J = math.J(self.data.cov.shape[-1] // 2)  # create a sympletic form
         M = math.matmul(1j * J, self.data.cov * (2 / settings.HBAR))
-        vals = math.eigvals(M)  # compute the eigenspectrum
-        return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
+
+        eigenspectrum = math.eigvals(M)
+
+        return math.abs(eigenspectrum[::2]) # TODO: sort?
 
 
-    @property
-    def von_neumann_entropy(self) -> float:
-        def g(x):
-            return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
-
-        symp_vals = self.symplectic_eigenvals(self.data.cov, settings.HBAR)
-        entropy = math.sum(g(symp_vals))
-        return entropy
-    
-
-    def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
-        r"""Returns the covariances and means after discarding the specified modes.
+    def trace(self, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
+        r""" Returns the covariances and means after discarding the specified modes.
 
         Args:
-            cov (Matrix): covariance matrix
-            means (Vector): means vector
-            Bmodes (Sequence[int]): modes to discard
+            Bmodes: modes to discard
 
         Returns:
-            Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
+            The covariance matrix and the means vector after discarding the specified modes
         """
-        n = len(cov) // 2
-        Aindices = math.astensor(
-            [i for i in range(n) if i not in Bmodes] + [i + n for i in range(n) if i not in Bmodes]
-        )
-        A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
-        A_means_vec = math.gather(means, Aindices)
+        n = len(self.data.cov) // 2
+
+        idx = [i for i in range(n) if i not in Bmodes]
+        idx_plus_n = [i + n for i in range(n) if i not in Bmodes]
+        Aindices = math.astensor(idx + idx_plus_n)
+
+        A_cov_block = math.gather(math.gather(self.data.cov, Aindices, axis=0), Aindices, axis=1)
+        A_means_vec = math.gather(self.data.means, Aindices)
+
         return A_cov_block, A_means_vec   
 
 
-    def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
-        r"""Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB coherence block.
+    def partition_cov(self, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
+        r""" Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB 
+        coherence block.
 
         Args:
-            cov (Matrix): the covariance matrix
             Amodes (Sequence[int]): the modes of system ``A``
 
         Returns:
             Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
         """
-        n = cov.shape[-1] // 2
-        Bindices = math.cast(
-            [i for i in range(n) if i not in Amodes] + [i + n for i in range(n) if i not in Amodes],
-            "int32",
-        )
+        n = self.data.cov.shape[-1] // 2
+
+        idx = [i for i in range(n) if i not in Amodes]
+        idx_plus_n = [i + n for i in range(n) if i not in Amodes]
+
+        Bindices = math.cast(idx + idx_plus_n, "int32")
+        B_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Bindices, axis=0)
+
         Aindices = math.cast(Amodes + [i + n for i in Amodes], "int32")
-        A_block = math.gather(math.gather(cov, Aindices, axis=1), Aindices, axis=0)
-        B_block = math.gather(math.gather(cov, Bindices, axis=1), Bindices, axis=0)
-        AB_block = math.gather(math.gather(cov, Bindices, axis=1), Aindices, axis=0)
+        A_block = math.gather(math.gather(self.data.cov, Aindices, axis=1), Aindices, axis=0)
+        
+        AB_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Aindices, axis=0)
+
         return A_block, B_block, AB_block
 
 
-    def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
+    def partition_means(self, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
         r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
 
         Args:
-            means (Vector): the means vector
             Amodes (Sequence[int]): the modes of system ``A``
 
         Returns:
             Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
         """
-        n = len(means) // 2
-        Bindices = math.cast(
-            [i for i in range(n) if i not in Amodes] + [i + n for i in range(n) if i not in Amodes],
-            "int32",
-        )
-        Aindices = math.cast(Amodes + [i + n for i in Amodes], "int32")
-        return math.gather(means, Aindices), math.gather(means, Bindices)
+        n = len(self.data.means) // 2
+
+        idx = [i for i in range(n) if i not in Amodes]
+        idx_plus_n = [i + n for i in range(n) if i not in Amodes]
+
+        Bindices = math.cast(idx + idx_plus_n,"int32")
+
+        a_idx = list(map(lambda x: x+n, Amodes))
+        Aindices = math.cast(Amodes + a_idx, "int32")
+
+        return math.gather(self.data.means, Aindices), math.gather(self.data.means, Bindices)
+    
+    
+    @staticmethod
+    def _g(x:List[Scalar]): #TODO : add return type to signature
+        r""" Used exclusively to compute the Wigner Von neumann entropy.
+
+        Args:
+            x: the symplectic eigenvalues 
+
+        References:
+
+
+        Returns:
+                    
+        """
+        return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
