@@ -4,32 +4,42 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICEnSE-2.0
 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT WARRAnTIES OR COnDITIOnS OF AnY KInD, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import GaussianData
-from mrmustard.typing import Scalar, RealMatrix, RealVector, Matrix, Vector, Tuple
-from typing import List, Sequence
+from mrmustard.typing import Batch, Scalar, RealMatrix, RealVector, Matrix, Vector, Tuple
+from typing import List, Optional,  Sequence
 from mrmustard import settings
 
 
 math = Math()
 
 class Wigner(Representation):
+    r""" Parent abstract class for the WignerKet and WignerDM representations.
+    
+    Args:
+        cov: covariance matrices (real symmetric)
+        mean: means (real)
+        coeffs: coefficients (complex) 
+    """
 
-    def __init__(self, cov, means):
+    def __init__(self,
+                 cov:Optional[Batch[Matrix]], 
+                 means:Optional[Batch[Vector]], 
+                 coeffs:Optional[Batch[Matrix]]
+                 ) -> none:
 
-        self.data = GaussianData(cov, means)
-        super().__init__()
+        self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
         
-
+    
     @property
     def purity(self) -> Scalar:
         return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))
@@ -37,45 +47,48 @@ class Wigner(Representation):
 
     @property
     def number_means(self) -> RealVector:
-        N = self.data.means.shape[-1] // 2
-        result = (
-            self.data.means[:N] ** 2
-            + self.data.means[N:] ** 2
-            + math.diag_part(self.data.cov[:N, :N])
-            + math.diag_part(self.data.cov[N:, N:])
-            - settings.HBAR
-            ) 
-        return result / (2 * settings.HBAR)
+
+        n = self.data.means.shape[-1] // 2
+
+        cov_top_left = math.diag_part(self.data.cov[:n, :n])
+        cov_bottom_right = math.diag_part(self.data.cov[n:, n:])
+        covariance = cov_top_left + cov_bottom_right
+
+        means_first_half = self.data.means[:n]
+        means_second_half = self.data.means[n:]
+        means = means_first_half **2 + means_second_half **2
+
+        return (means + covariance - settings.HBAR) / (2 * settings.HBAR)
     
 
-    #TODO : rename variables with actual names : apple
+    #TODO : rename variables with actual names (apple)
     @property
     def number_cov(self) -> RealMatrix:
 
-        N = self.data.means.shape[-1] // 2
+        n = self.data.means.shape[-1] // 2
 
-        mCm = self.data.cov * self.data.means[:, None] * self.data.means[None, :]
+        mCm = self.data.cov * self.data.means[:, none] * self.data.means[none, :]
 
-        diag = math.diag_part( mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N] )
+        # TODO: sum(diag_part) is better than diag_part(sum)
+        diag = math.diag_part( mCm[:n, :n] + mCm[n:, n:] + mCm[:n, n:] + mCm[n:, :n] )
         diag_of_diag = math.diag( diag ) 
-              # TODO: sum(diag_part) is better than diag_part(sum)
         dd = diag_of_diag / (2 * settings.HBAR**2)
 
         CC = (self.data.cov**2 + mCm) / (2 * settings.HBAR**2)
 
-        apple  = CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] 
+        apple  = CC[:n, :n] + CC[n:, n:] + CC[:n, n:] + CC[n:, :n] 
 
-        return apple + dd - (0.25 * math.eye(N, dtype=CC.dtype))
+        return apple + dd - (0.25 * math.eye(n, dtype=CC.dtype))
     
 
     @property
     def symplectic_eigenvals(self) -> List[Scalar]:
         r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
-        For a pure state, we expect the sympletic eigenvalues to be 1.
+        note that for a pure state, we expect the sympletic eigenvalues to be 1.
 
         Returns:
-            List[float]: the sympletic eigenvalues
+            The sympletic eigenvalues
         """
         J = math.J(self.data.cov.shape[-1] // 2)  # create a sympletic form
         M = math.matmul(1j * J, self.data.cov * (2 / settings.HBAR))
@@ -104,9 +117,9 @@ class Wigner(Representation):
         Returns:
             Tuple[Matrix, Vector]: the covariance matrix and the means vector after discarding the specified modes
         """
-        N = len(cov) // 2
+        n = len(cov) // 2
         Aindices = math.astensor(
-            [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+            [i for i in range(n) if i not in Bmodes] + [i + n for i in range(n) if i not in Bmodes]
         )
         A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
         A_means_vec = math.gather(means, Aindices)
@@ -123,12 +136,12 @@ class Wigner(Representation):
         Returns:
             Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
         """
-        N = cov.shape[-1] // 2
+        n = cov.shape[-1] // 2
         Bindices = math.cast(
-            [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+            [i for i in range(n) if i not in Amodes] + [i + n for i in range(n) if i not in Amodes],
             "int32",
         )
-        Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
+        Aindices = math.cast(Amodes + [i + n for i in Amodes], "int32")
         A_block = math.gather(math.gather(cov, Aindices, axis=1), Aindices, axis=0)
         B_block = math.gather(math.gather(cov, Bindices, axis=1), Bindices, axis=0)
         AB_block = math.gather(math.gather(cov, Bindices, axis=1), Aindices, axis=0)
@@ -145,10 +158,10 @@ class Wigner(Representation):
         Returns:
             Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
         """
-        N = len(means) // 2
+        n = len(means) // 2
         Bindices = math.cast(
-            [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
+            [i for i in range(n) if i not in Amodes] + [i + n for i in range(n) if i not in Amodes],
             "int32",
         )
-        Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
+        Aindices = math.cast(Amodes + [i + n for i in Amodes], "int32")
         return math.gather(means, Aindices), math.gather(means, Bindices)
