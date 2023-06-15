@@ -37,7 +37,7 @@ class GaussianData(MatVecData):
     Args:
         cov: covariance matrices (real symmetric)
         mean: means (real)
-        coeffs: coeffsicients (complex)
+        coeffs: coefficients (complex)
     """
 
     def __init__(self,
