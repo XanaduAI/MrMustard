@@ -15,31 +15,58 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import QpolyData
+from mrmustard.typing import Batch, Matrix, RealVector, RealMatrix, Scalar, Tensor, Vector
 
 math = Math()
 
 class Bargmann(Representation):
+    r""" Fock representation of a state.
+    
+    Args:
+        A: quadratic coefficients
+        b: linear coefficients
+        c: constants
+    """
 
-    def __init__(self, A, B, C):
-        super().__init__()
-        self.data = QpolyData(A, B, C)
+    def __init__(self, A:Batch[Matrix], b:Batch[Vector], c:Batch[Scalar]) -> None:
+        self.data = QpolyData(A=A, b=b, c=c)
 
 
-    def purity(self):
+    @property
+    def purity(self) -> Scalar:
         raise NotImplementedError("Get this of this state from other representations!")
     
 
-    def number_means(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-    
-    def number_cov(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    def norm(self):
+    @property    
+    def norm(self) -> float:
         raise NotImplementedError("Get this of this state from other representations!")
 
 
-    def von_neumann_entropy(self):
-        raise NotImplementedError("Get this of this state from other representations!") 
+    @property
+    def von_neumann_entropy(self) -> float:
+        raise NotImplementedError("Get this of this state from other representations!")
+    
+
+    @property
+    def number_means(self) -> RealVector:
+        raise NotImplementedError("Get this of this state from other representations!")
+    
+
+    @property
+    def number_cov(self) -> RealMatrix:
+        raise NotImplementedError("Get this of this state from other representations!")
+    
+
+    @property
+    def number_variances(self) -> int:
+        raise NotImplementedError("Get this of this state from other representations!")
+    
+
+    @property
+    def number_stdev(self) -> int:
+        raise NotImplementedError("Get this of this state from other representations!")
+
+
+    @property
+    def probability(self) -> Tensor:
+        raise NotImplementedError("Get this of this state from other representations!")
