@@ -255,34 +255,25 @@ class State:  # pylint: disable=too-many-public-methods
                 ``None``, it's guessed automatically.
 
         Returns:
-            Tensor: the ket
+            Tensor: the ket 
         """
+        if cutoffs is None:
+            cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
         if self.is_pure:
             if self.representation.__class__.__name__.endswith('Ket'):
                 if isinstance(self.representation, FockKet):
-                    if cutoffs is None:
-                        return self.representation.data.array
-                    else:
-                        cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
-                    current_cutoffs = [int(s) for s in self.representation.data.array.shape]
-                    if cutoffs != current_cutoffs:
-                        paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-                        if any(p != (0, 0) for p in paddings):
-                            padded = math.pad(self.representation.data.array, paddings, mode="constant")
-                        else:
-                            padded = self.representation.data.array
-                        return padded[tuple(slice(s) for s in cutoffs)]
-                    return self.representation.data.array[tuple(slice(s) for s in cutoffs)]
+                    cutoffs = fock.setcutoffs(cutoffs, self.representation.data.shape)
+                    return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
                 elif isinstance(self.representation, WignerKet):
                     #transform internally from Wigner to Fock and return it
                     self_copy = copy.deepcopy(self)
-                    return self_copy.to_Fock(cutoffs).ket()
+                    return self_copy.to_Fock(cutoffs=cutoffs).ket()
                 else:
                     raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
             else:
-                raise AttributeError("We do not support to decompo the density matrix to ket now!")
+                raise AttributeError("We do not support to decompose the density matrix to ket now!")
         else:
-            raise AttributeError("The state is mixed and we can not extract its ket amplitudes.")
+            raise AttributeError("The mixed state can not be extracted its ket amplitudes.")
 
 
 
@@ -296,32 +287,26 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the density matrix
         """
+        if cutoffs is None:
+            cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
         if self.representation.__class__.__name__.endswith('Ket'):
             if isinstance(self.representation, FockKet):
-                if cutoffs is None:
-                    cutoffs = self.cutoffs
-                else:
-                    cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
-                return fock.ket_to_dm(self.ket(cutoffs=cutoffs))
-            if isinstance(self.representation, WignerKet):
+                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.shape)
+                return fock.ket_to_dm(fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs))
+            elif isinstance(self.representation, WignerKet):
                 self_copy = copy.deepcopy(self)
                 self_copy.to_Fock(cutoffs)
                 return fock.ket_to_dm(self_copy.ket(cutoffs=cutoffs))
+            else:
+                raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
         else:
             if isinstance(self.representation, FockDM):
-                if cutoffs is None:
-                    return self.representation.data.array
-                else:
-                    cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
-                current_cutoffs = [int(s) for s in self.representation.data.array.shape]
-                if cutoffs != (current_cutoffs := list(self.representation.data.shape[: self.num_modes])):
-                    paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-                    if any(p != (0, 0) for p in paddings):
-                        padded = math.pad(self.representation.data.array, paddings + paddings, mode="constant")
-                    else:
-                        padded = self.representation.data.array
-                    return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
-                return self.representation.data.array[tuple(slice(s) for s in cutoffs + cutoffs)]
+                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.shape)
+                return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
+            if isinstance(self.representation, WignerDM):
+                self_copy = copy.deepcopy(self)
+                self_copy.to_Fock(cutoffs)
+                return fock.ket_to_dm(self_copy.ket(cutoffs=cutoffs))
             else:
                 raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
             
