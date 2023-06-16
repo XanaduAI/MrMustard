@@ -17,7 +17,7 @@ import numpy as np
 from typing import List, Union
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
-from mrmustard.typing import Scalar
+from mrmustard.typing import Scalar, Vector
 
 math = Math()
 
@@ -28,7 +28,7 @@ class ArrayData(Data):
         array : data to be contained in the class
     """
 
-    def __init__(self, array:np.array) -> None:
+    def __init__(self, array:Vector) -> None:
         self.array = array
 
     
@@ -51,7 +51,7 @@ class ArrayData(Data):
 
     def __add__(self, other:ArrayData) -> ArrayData:
         try:
-            return self.__class__(array=self.array + other.array)
+            return self.__class__(array = self.array + other.array)
         except AttributeError as e:
             raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
             
@@ -60,13 +60,13 @@ class ArrayData(Data):
         self.__add__(other.__neg__)
 
 
-    def __truediv__(self, other:Scalar) -> ArrayData:
+    def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
         return self.__class__(array=self.array/other)
 
 
     def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
         if isinstance(other, Scalar):
-            return self.__class__(array=self.array * other)
+            return self.__class__(array= self.array * other)
         else:
             raise AttributeError("The multiplication between two ArrayData is not possible.") 
 
@@ -74,7 +74,6 @@ class ArrayData(Data):
     def __and__(self, other:ArrayData) -> ArrayData:
         try:
             return self.__class__(array=np.outer(self.array, other.array))
-        
         except AttributeError as e:
          raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e             
 

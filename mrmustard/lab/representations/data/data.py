@@ -29,8 +29,8 @@ class Data(ABC):
 
     @staticmethod   
     def same(
-             X: List[Union[List[Vector],List[Scalar]]],
-             Y: List[Union[List[Vector],List[Scalar]]]
+             X: List[Union[List[Vector], List[Scalar]]],
+             Y: List[Union[List[Vector], List[Scalar]]]
              ) -> bool:
         r""" Method to compare two sets of elements
 
@@ -40,7 +40,7 @@ class Data(ABC):
 
         Returns:
             True if all the elements compared are same within numpy's default rtol/atol, False 
-            otherwise.
+            otherwise
         """
         return all([np.allclose(x, y) for x, y in zip(X, Y)])
 
