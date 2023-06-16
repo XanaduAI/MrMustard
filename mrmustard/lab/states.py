@@ -42,16 +42,22 @@ __all__ = [
 
 
 class Vacuum(State):
-    r"""The N-mode vacuum state."""
+    r"""The N-mode vacuum state.
+        WignerDM by default and flag_ket = True goes for WignerKet.
+    """
 
-    def __init__(self, num_modes: int):
+    def __init__(self, num_modes: int, flag_ket: bool = False):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, flag_ket=True)
+        if flag_ket is not True:
+            State.__init__(self, cov=cov, means=means, flag_ket=False)
+        else:
+            State.__init__(self, symplectic=cov, displacement=means, flag_ket=True)
 
 
 class Coherent(Parametrized, State):
     r"""The N-mode coherent state.
+        WignerKet by default and flag_ket = False goes for WignerDM.
 
     Equivalent to applying a displacement to the vacuum state:
 
@@ -95,6 +101,7 @@ class Coherent(Parametrized, State):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
         normalize: bool = False,
+        flag_ket: bool = True,
     ):
         Parametrized.__init__(
             self,
@@ -108,9 +115,14 @@ class Coherent(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-        cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, modes=modes, flag_ket=True)
+        if flag_ket:
+            d = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+            S = gaussian.vacuum_cov(d.shape[-1] // 2, settings.HBAR)
+            State.__init__(self, symplectic=S, displacement=d, modes=modes, flag_ket=True)
+        else:
+            means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+            cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
+            State.__init__(self, cov=cov, means=means, modes=modes, flag_ket=False)
 
     @property
     def means(self):
@@ -160,7 +172,6 @@ class SqueezedVacuum(Parametrized, State):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
         Parametrized.__init__(
@@ -175,12 +186,12 @@ class SqueezedVacuum(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        S = gaussian.squeezing_symplectic(self.r.value, self.phi.value, settings.HBAR)
+        d = gaussian.vacuum_means(S.shape[-1] // 2, settings.HBAR)
+        State.__init__(self, symplectic=S, displacement=d)
 
     @property
-    def cov(self):
+    def symplectic(self):
         return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
 
 
@@ -230,13 +241,13 @@ class TMSV(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
-        means = gaussian.vacuum_means(2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        S = gaussian.two_mode_squeezing_symplectic(self.r.value, self.phi.value)
+        d = gaussian.vacuum_means(2, settings.HBAR)
+        State.__init__(self, symplectic=S, displacement=d)
 
     @property
-    def cov(self):
-        return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+    def symplectic(self):
+        return gaussian.two_mode_squeezing_symplectic(self.r.value, self.phi.value)
 
 
 class Thermal(Parametrized, State):
@@ -370,16 +381,16 @@ class DisplacedSqueezed(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
-        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
+        S = gaussian.squeezing_symplectic(self.r.value, self.phi.value)
+        d = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        State.__init__(self, symplectic=S, displacement=d, modes=modes)
 
     @property
-    def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+    def symplectic(self):
+        return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
 
     @property
-    def means(self):
+    def displacement(self):
         return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
 
 
@@ -475,7 +486,7 @@ class Fock(Parametrized, State):
         cutoffs: Sequence[int] = None,
         normalize: bool = False,
     ):
-        State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
+        State.__init__(self, fock=fock.fock_state(n), cutoffs=cutoffs, flag_ket=True)
         Parametrized.__init__(self)
 
         self._n = [n] if isinstance(n, int) else n

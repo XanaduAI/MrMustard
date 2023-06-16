@@ -65,6 +65,7 @@ class State:  # pylint: disable=too-many-public-methods
         cov: RealMatrix = None,
         means: RealVector = None,
         symplectic: RealMatrix = None,
+        displacement: RealVector = None,
         fock: ComplexTensor = None,
         qs: RealVector = None,
         wavefunctionq: RealVector = None,
@@ -84,6 +85,8 @@ class State:  # pylint: disable=too-many-public-methods
         Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
+            symplectic (Matrix): the symplectic matrix
+            displacement (Vector): the displacement vector
             fock (Tensor): the Fock representation
             qs (Vector): the point value for corresponding q-wavefunction
             wavefunctionq (Vector): the value of the point of the q-wavefunction
@@ -97,8 +100,8 @@ class State:  # pylint: disable=too-many-public-methods
             #Case 1: Wigner representation
             if cov is not None and means is not None and flag_ket is not None:
                 self.representation = WignerDM(cov, means)
-            elif symplectic is not None and means is not None and flag_ket:
-                self.representation = WignerKet(symplectic, means)
+            elif symplectic is not None and displacement is not None and flag_ket:
+                self.representation = WignerKet(symplectic, displacement)
             #Case 2: Fock representation
             elif fock is not None and flag_ket is not None:
                 if flag_ket:
