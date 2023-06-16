@@ -138,9 +138,9 @@ class Wigner(Representation):
         """
         n = len(self.data.cov) // 2
 
-        idx = [i for i in range(n) if i not in Bmodes]
-        idx_plus_n = [i + n for i in range(n) if i not in Bmodes]
-        Aindices = math.astensor(idx + idx_plus_n)
+        good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Bmodes)
+
+        Aindices = math.astensor(good_modes + good_modes_plus_n)
 
         A_cov_block = math.gather(math.gather(self.data.cov, Aindices, axis=0), Aindices, axis=1)
         A_means_vec = math.gather(self.data.means, Aindices)
@@ -160,13 +160,13 @@ class Wigner(Representation):
         """
         n = self.data.cov.shape[-1] // 2
 
-        idx = [i for i in range(n) if i not in Amodes]
-        idx_plus_n = [i + n for i in range(n) if i not in Amodes]
+        good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Amodes)
 
-        Bindices = math.cast(idx + idx_plus_n, "int32")
+        Bindices = math.cast(good_modes + good_modes_plus_n, "int32")
         B_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Bindices, axis=0)
 
-        Aindices = math.cast(Amodes + [i + n for i in Amodes], "int32")
+        amodes_plus_n = self._add_element_wise_n(n=n, l=Amodes)
+        Aindices = math.cast(Amodes + amodes_plus_n, "int32")
         A_block = math.gather(math.gather(self.data.cov, Aindices, axis=1), Aindices, axis=0)
         
         AB_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Aindices, axis=0)
@@ -185,13 +185,12 @@ class Wigner(Representation):
         """
         n = len(self.data.means) // 2
 
-        idx = [i for i in range(n) if i not in Amodes]
-        idx_plus_n = [i + n for i in range(n) if i not in Amodes]
+        good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Amodes)
 
-        Bindices = math.cast(idx + idx_plus_n,"int32")
+        Bindices = math.cast(good_modes + good_modes_plus_n,"int32")
 
-        a_idx = list(map(lambda x: x+n, Amodes))
-        Aindices = math.cast(Amodes + a_idx, "int32")
+        amodes_plus_n = self._add_element_wise_n(n=n, l=Amodes)
+        Aindices = math.cast(Amodes + amodes_plus_n, "int32")
 
         return math.gather(self.data.means, Aindices), math.gather(self.data.means, Bindices)
     
@@ -210,3 +209,26 @@ class Wigner(Representation):
                     
         """
         return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+    
+
+    def _yield_correct_modes(self, n:int, bad_modes:Sequence[int]) -> Tuple(List[int]):
+        r""" Helper function to select only desired modes based on a list of undesired ones.
+
+        Args:
+            n: the total range of the number of modes
+            bad_modes: the modes we wish to discard
+
+        Returns:
+            A tuple containing the list of desired modes on the left and the list of desired modes 
+            plus n on the right.
+        """
+        good_modes = list(set(range(n)).difference(bad_modes))
+        good_modes_plus_n =  self._add_element_wise_n(n=n, l=good_modes)
+        return (good_modes, good_modes_plus_n)
+    
+
+    @staticmethod
+    def _add_element_wise_n(n:int, l:List[int]) -> List[int]:
+        r""" Helper function to map a +n to all elements. """
+        return list(map( lambda x: x+n , l))
+
