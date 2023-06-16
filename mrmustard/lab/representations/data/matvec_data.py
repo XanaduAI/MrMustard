@@ -40,7 +40,7 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
 
     def __neg__(self) -> MatVecData:
-        return self.__class__(mat=self.mat, vec=self.vec, coeffs=-self.coeffs)
+        return self.__class__(mat=self.mat, vec=self.vec, coeffs= -self.coeffs)
 
 
     def __eq__(self, other: MatVecData) -> bool:
@@ -57,7 +57,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
     def __add__(self,other: MatVecData) -> MatVecData:
         if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
-            return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeff + other.coeff)
+            combined_coeffs = self.coeff + other.coeff
+            return self.__class__(mat=self.mat, vec=self.vec, coeffs=combined_coeffs)
         
         else:
 
@@ -74,13 +75,13 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
 
     def __sub__(self, other: MatVecData) -> MatVecData:
-        return self.__add__(other=other.__neg__)
+        return self.__add__(other = other.__neg__)
         
 
     def __and__(self, other: MatVecData) -> MatVecData:
         try: #TODO: ORDER OF ALL MATRICESA!
             mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
-            vec = [math.concat([v1, v2], axis=-1) for v1 in self.vec for v2 in other.vec]
+            vec = [math.concat([v1, v2], axis= -1) for v1 in self.vec for v2 in other.vec]
             coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
 
             return self.__class__(

@@ -50,27 +50,37 @@ class QPolyData(MatVecData):
     def A(self) -> Batch[Matrix]:
         return self.mat
 
-    @A.setter
-    def A(self, value) -> None:
-        self.mat = value
 
     @property
     def b(self) -> Batch[Vector]:
         return self.vec
 
-    @b.setter
-    def b(self, value) -> None:
-        self.vec = value
 
     @property
     def c(self) -> Batch[Scalar]:
         return self.coeff
+    
 
-    @c.setter
-    def c(self, value) -> None:
-        self.coeff = value
+    def __truediv__(self, other:Scalar) -> QPolyData:
+       return self.__class__(A=self.A, b=self.b, c=self.c / other)
 
 
+    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
+
+        if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
+            combined_coeffs = self.c*other
+            return self.__class__(A=self.A, b=self.b, c=combined_coeffs)
+        else:
+            try:
+                return self.__class__(A = self.A + other.A, 
+                                      b = self.b + other.b, 
+                                      c = self.c * other.c
+                                      )
+            
+            except AttributeError:
+                return self.__class__(self.A, self.b, self.c * other)
+            
+    
     @staticmethod
     def _from_GaussianData(covmat:GaussianData
                            ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
@@ -84,24 +94,8 @@ class QPolyData(MatVecData):
         """
         covmat = -math.inv(covmat.cov)
         b = math.inv(covmat.cov) @ covmat.mean
-        c = (covmat.coeff 
-             * np.einsum("bca,bcd,bde->bae", covmat.mean, math.inv(covmat.cov), covmat.mean))
+        pre_coeffs = np.einsum("bca,bcd,bde->bae", covmat.mean, math.inv(covmat.cov), covmat.mean)
+        new_coeffs = covmat.coeff * pre_coeffs
 
-        return covmat, b, c
-
-
-    def __truediv__(self, other:Scalar) -> QPolyData:
-       return self.__class__(A=self.A, b=self.b, c=self.c / other)
-
-
-    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
-
-        if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
-            return self.__class__(A=self.A, b=self.b, c=self.c*other)
-        else:
-            try:
-                return self.__class__(self.A + other.A, self.b + other.b, self.c * other.c)
-            
-            except AttributeError:
-                return self.__class__(self.A, self.b, self.c * other)
+        return (covmat, b, new_coeffs)
 
