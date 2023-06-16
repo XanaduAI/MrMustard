@@ -46,7 +46,7 @@ class Representation(ABC):
 
     @abstractproperty
     def number_means(self) -> RealVector:
-        r""" The photon number means vector. """
+        r""" Valid for Fock: the photon number means vector. """
         raise NotImplementedError()
 
 
@@ -70,5 +70,5 @@ class Representation(ABC):
 
     @abstractproperty
     def probability(self) -> Tensor: # TODO : add doc
-        r""" Probability vector, either extracted from a DM or from a Ket"""
+        r""" Valid for Fock: Probability vector, either extracted from a DM or from a Ket"""
         raise NotImplementedError()

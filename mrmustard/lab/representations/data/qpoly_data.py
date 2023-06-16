@@ -39,10 +39,10 @@ class QPolyData(MatVecData):
 
     def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar]) -> None:
         # Done here because of circular import with GaussianData<>QPolyData
-        from mrmustard.lab.representations.data.gaussian_data import GaussianData
+        # from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
-        if isinstance(A, GaussianData):
-            A, b, c = self._from_GaussianData(covmat=A)
+        # if isinstance(A, GaussianData):
+        #     A, b, c = self._from_GaussianData(covmat=A)
 
         super().__init__(mat=A, vec=b, coeffs=c)
 
@@ -81,21 +81,21 @@ class QPolyData(MatVecData):
                 return self.__class__(self.A, self.b, self.c * other)
             
     
-    @staticmethod
-    def _from_GaussianData(covmat:GaussianData
-                           ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-        r""" Extracts necessary information from a GaussianData object to build a QPolyData one.
+    # @staticmethod
+    # def _from_GaussianData(covmat:GaussianData
+    #                        ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
+    #     r""" Extracts necessary information from a GaussianData object to build a QPolyData one.
 
-        Args:
-            A : the GaussianData representation of a state
+    #     Args:
+    #         A : the GaussianData representation of a state
 
-        Returns:
-            The necessary matrix, vector and coefficients to build a QPolyData object
-        """
-        covmat = -math.inv(covmat.cov)
-        b = math.inv(covmat.cov) @ covmat.mean
-        pre_coeffs = np.einsum("bca,bcd,bde->bae", covmat.mean, math.inv(covmat.cov), covmat.mean)
-        new_coeffs = covmat.coeff * pre_coeffs
+    #     Returns:
+    #         The necessary matrix, vector and coefficients to build a QPolyData object
+    #     """
+    #     covmat = -math.inv(covmat.cov)
+    #     b = math.inv(covmat.cov) @ covmat.mean
+    #     pre_coeffs = np.einsum("bca,bcd,bde->bae", covmat.mean, math.inv(covmat.cov), covmat.mean)
+    #     new_coeffs = covmat.coeff * pre_coeffs
 
-        return (covmat, b, new_coeffs)
+    #     return (covmat, b, new_coeffs)
 

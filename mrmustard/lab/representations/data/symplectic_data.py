@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 from typing import Union
 from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import Scalar
+from mrmustard.typing import R, Scalar
 
 class SymplecticData(MatVecData):
     """ Symplectic matrix-like data for certain Representation objects.
@@ -27,26 +27,24 @@ class SymplecticData(MatVecData):
         coeffs:
     """
 
-    def __init__(self, S, d, coeffs) -> None:
-        super().__init__(S=S, d=d, coeffs=coeffs)
+    def __init__(self, symplectic, displacement:R, coeffs) -> None:
+        # TODO : if no coeff given, they are all 1, and change args! coeff is optional
+        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
+        # TODO : ensure mat is symplectic! 
 
 
     @property
-    def symplectic_matrix(self) -> np.array:
-        return self.S
+    def symplectic(self) -> np.array:
+        return self.mat
     
     @property
     def displacement(self) -> np.array:
-        return self.d
+        return self.vec
 
 
-    def __truediv__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData:
-        return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs/other)
+    def __truediv__(self, other:Scalar) -> SymplecticData:
+        return self.__class__(symplectic=self.mat, displacement=self.vec, coeffs=self.coeffs/other)
 
 
-    def __mul__(self, other:Union[Scalar, SymplecticData]) -> SymplecticData:
-        if isinstance(other, Scalar):
-            return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs*other)
-        else: 
-            raise AttributeError("The multiplication between two SymplecticData is not possible.") 
-
+    def __mul__(self, other:Scalar) -> SymplecticData:
+        return self.__class__(symplectic=self.mat, displacement=self.vec, coeffs=self.coeffs*other)

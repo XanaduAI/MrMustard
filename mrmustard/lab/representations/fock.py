@@ -17,7 +17,7 @@ from typing import List
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import ArrayData
-from mrmustard.typing import Scalar, Tensor, RealVector, Matrix
+from mrmustard.typing import Scalar, Tensor, RealMatrix, RealVector, Matrix
 # from mrmustard.math.caching import tensor_int_cache
 
 math = Math()
@@ -32,7 +32,7 @@ class Fock(Representation):
 
     def __init__(self, array:np.array) -> None:
         super().__init__()
-        self.data = ArrayData(array) 
+        self.data = ArrayData(array=array) 
 
 
     @property

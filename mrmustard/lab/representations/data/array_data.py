@@ -60,7 +60,7 @@ class ArrayData(Data):
         self.__add__(other.__neg__)
 
 
-    def __truediv__(self, other:Union[Scalar, ArrayData]) -> ArrayData:
+    def __truediv__(self, other:Scalar) -> ArrayData: # TODO : check that all data classes only support Truediv for Scalars
         return self.__class__(array=self.array/other)
 
 

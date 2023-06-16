@@ -28,15 +28,15 @@ class MatVecData(Data):  # Note: this class is abstract too!
         vec: the vector-like data to be contained in the class
         coeffs: the coefficients 
     """
-
+#TODO : remove Batch everywhere/!
     def __init__(self, 
-                 mat: Batch[Matrix],
-                 vec: Batch[Vector],
-                 coeffs: Batch[Scalar]
+                 mat: Matrix,
+                 vec: Vector,
+                 coeffs: Scalar
                  ) -> None:
-        self.mat = math.atleast_3d(mat)
-        self.vec = math.atleast_2d(vec)
-        self.coeffs = math.atleast_1d(coeffs)
+        self.mat = mat #math.atleast_3d(mat)
+        self.vec = vec #math.atleast_2d(vec)
+        self.coeffs = coeffs #math.atleast_1d(coeffs)
 
 
     def __neg__(self) -> MatVecData:
@@ -94,50 +94,50 @@ class MatVecData(Data):  # Note: this class is abstract too!
             raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
         
 
-    # TODO: decide which simplify we want to keep
-    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
-        N = self.mat.shape[0]
-        mask = np.ones(N, dtype=np.int8)
+    # # TODO: decide which simplify we want to keep
+    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
+    #     N = self.mat.shape[0]
+    #     mask = np.ones(N, dtype=np.int8)
 
-        for i in range(N):
+    #     for i in range(N):
 
-            for j in range(i + 1, N):
+    #         for j in range(i + 1, N):
 
-                if mask[i] == 0 or i == j:  # evaluated previously
-                    continue
+    #             if mask[i] == 0 or i == j:  # evaluated previously
+    #                 continue
 
-                if np.allclose(
-                    self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True
-                ) and np.allclose(
-                    self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True
-                ):
-                    self.coeffs[i] += self.coeffs[j]
-                    mask[j] = 0
+    #             if np.allclose(
+    #                 self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True
+    #             ) and np.allclose(
+    #                 self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True
+    #             ):
+    #                 self.coeffs[i] += self.coeffs[j]
+    #                 mask[j] = 0
 
-        return self.__class__(
-            mat = self.mat[mask == 1],
-            vec = self.vec[mask == 1],
-            coeffs = self.coeffs[mask == 1]
-            )
+    #     return self.__class__(
+    #         mat = self.mat[mask == 1],
+    #         vec = self.vec[mask == 1],
+    #         coeffs = self.coeffs[mask == 1]
+    #         )
 
 
-    # TODO: decide which simplify we want to keep
-    def old_simplify(self) -> None:
-        indices_to_check = set(range(self.batch_size))
-        removed = set()
+    # # TODO: decide which simplify we want to keep
+    # def old_simplify(self) -> None:
+    #     indices_to_check = set(range(self.batch_size))
+    #     removed = set()
 
-        while indices_to_check:
-            i = indices_to_check.pop()
+    #     while indices_to_check:
+    #         i = indices_to_check.pop()
 
-            for j in indices_to_check.copy():
-                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
-                    self.vec[i], self.vec[j]
-                ):
-                    self.coeffs[i] += self.coeffs[j]
-                    indices_to_check.remove(j)
-                    removed.add(j)
+    #         for j in indices_to_check.copy():
+    #             if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
+    #                 self.vec[i], self.vec[j]
+    #             ):
+    #                 self.coeffs[i] += self.coeffs[j]
+    #                 indices_to_check.remove(j)
+    #                 removed.add(j)
 
-        to_keep = [i for i in range(self.batch_size) if i not in removed]
-        self.mat = self.mat[to_keep]
-        self.vec = self.vec[to_keep]
-        self.coeffs = self.coeffs[to_keep]
+    #     to_keep = [i for i in range(self.batch_size) if i not in removed]
+    #     self.mat = self.mat[to_keep]
+    #     self.vec = self.vec[to_keep]
+    #     self.coeffs = self.coeffs[to_keep]

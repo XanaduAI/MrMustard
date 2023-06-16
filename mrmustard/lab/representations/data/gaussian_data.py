@@ -50,7 +50,7 @@ class GaussianData(MatVecData):
         coeffs: Optional[Batch[Scalar]] = None
         ) -> None:
         # Done here because of circular import with GaussianData<>QPolyData
-        from mrmustard.lab.representations.data import QPolyData
+        # from mrmustard.lab.representations.data import QPolyData
     
         if (cov or mean): # at least one is defined -or both-
     
@@ -70,8 +70,8 @@ class GaussianData(MatVecData):
             batch_size = cov.shape[-3]
             coeffs = math.ones((batch_size), dtype=mean.dtype)
 
-        if isinstance(cov, QPolyData):
-            cov, mean, coeffs = self._from_QPolyData(poly=cov)
+        # if isinstance(cov, QPolyData):
+        #     cov, mean, coeffs = self._from_QPolyData(poly=cov)
 
         super().__init__(mat=cov, vec=mean, coeffs=coeffs)
 
@@ -163,28 +163,28 @@ class GaussianData(MatVecData):
         return math.astensor(combined_means)
 
 
-    @staticmethod
-    def _from_QPolyData(poly:QPolyData
-                        ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-        r""" Extracts necessary information from a QPolyData object to build a GaussianData one.
+    # @staticmethod
+    # def _from_QPolyData(poly:QPolyData
+    #                     ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
+    #     r""" Extracts necessary information from a QPolyData object to build a GaussianData one.
 
-        Args:
-            poly: the quadratic polynomial data
+    #     Args:
+    #         poly: the quadratic polynomial data
 
-        Returns:
-            The necessary matrix vector and coefficients to build a GaussianData object
-        """ 
-        inv_A = math.inv(poly.A)
-        cov = 2 * inv_A
+    #     Returns:
+    #         The necessary matrix vector and coefficients to build a GaussianData object
+    #     """ 
+    #     inv_A = math.inv(poly.A)
+    #     cov = 2 * inv_A
 
-        mean = 2 * math.solve(poly.A, poly.b)
+    #     mean = 2 * math.solve(poly.A, poly.b)
 
-        pre_coeffs = math.cast( math.exp( 0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)),
-                                dtype=poly.c.dtype
-                                )
-        coeffs = poly.c * pre_coeffs
+    #     pre_coeffs = math.cast( math.exp( 0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)),
+    #                             dtype=poly.c.dtype
+    #                             )
+    #     coeffs = poly.c * pre_coeffs
 
-        return (cov, mean, coeffs)
+    #     return (cov, mean, coeffs)
     
 
     #old code for mul TODO: do we keep?

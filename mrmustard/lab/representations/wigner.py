@@ -30,7 +30,7 @@ class Wigner(Representation):
         mean: means (real)
         coeffs: coefficients (complex) 
     """
-
+#TODO: remove Batch and Optional!
     def __init__(self,
                  cov:Optional[Batch[Matrix]], 
                  means:Optional[Batch[Vector]], 
@@ -110,7 +110,7 @@ class Wigner(Representation):
     
 
     @property
-    def symplectic_eigenvals(self) -> List[Scalar]: #TODO: is it used outside class? make private?
+    def symplectic_eigenvals(self) -> List[Scalar]:
         r""" Computes the sympletic eigenspectrum of a covariance matrix.
 
         Note that for a pure state, we expect the sympletic eigenvalues to be 1.
@@ -127,7 +127,7 @@ class Wigner(Representation):
         return math.abs(eigenspectrum[::2]) # TODO: sort?
 
 
-    def trace(self, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]:
+    def trace(self, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]: #NOTE: move to physics after MVP
         r""" Returns the covariances and means after discarding the specified modes.
 
         Args:
@@ -148,12 +148,12 @@ class Wigner(Representation):
         return A_cov_block, A_means_vec   
 
 
-    def partition_cov(self, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]:
+    def partition_cov(self, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]: #NOTE: move to physics after MVP
         r""" Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB 
         coherence block.
 
         Args:
-            Amodes (Sequence[int]): the modes of system ``A``
+            Amodes: the modes of system ``A``
 
         Returns:
             Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
@@ -174,7 +174,7 @@ class Wigner(Representation):
         return A_block, B_block, AB_block
 
 
-    def partition_means(self, Amodes: Sequence[int]) -> Tuple[Vector, Vector]:
+    def partition_means(self, Amodes: Sequence[int]) -> Tuple[Vector, Vector]: #NOTE: move to physics after MVP
         r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
 
         Args:
@@ -196,7 +196,7 @@ class Wigner(Representation):
     
 
     @staticmethod
-    def _g(x:List[Scalar]): #TODO : add return type to signature
+    def _g(x:List[Scalar]) -> List[Scalar]:  #NOTE: move to physics after MVP
         r""" Used exclusively to compute the Wigner Von neumann entropy.
 
         Args:
@@ -211,7 +211,7 @@ class Wigner(Representation):
         return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     
 
-    def _yield_correct_modes(self, n:int, bad_modes:Sequence[int]) -> Tuple(List[int]):
+    def _yield_correct_modes(self, n:int, bad_modes:Sequence[int]) -> Tuple(List[int]): #NOTE: move to physics after MVP
         r""" Helper function to select only desired modes based on a list of undesired ones.
 
         Args:
@@ -228,7 +228,7 @@ class Wigner(Representation):
     
 
     @staticmethod
-    def _add_element_wise_n(n:int, l:List[int]) -> List[int]:
+    def _add_element_wise_n(n:int, l:List[int]) -> List[int]: #NOTE: move to physics after MVP
         r""" Helper function to map a +n to all elements. """
         return list(map( lambda x: x+n , l))
 

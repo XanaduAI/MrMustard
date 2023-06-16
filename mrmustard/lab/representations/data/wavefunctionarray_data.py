@@ -56,7 +56,11 @@ class WavefunctionArrayData(ArrayData):
             
 
     def __sub__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
-        self.__add__(other.__neg__)
+        #TODO :M verif qs same
+        self.__add__(other.array.__neg__)
+
+
+    # truediv is in parent
 
 
     def __mul__(self, other: Union[Scalar, WavefunctionArrayData]) -> WavefunctionArrayData:
