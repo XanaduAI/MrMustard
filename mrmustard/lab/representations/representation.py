@@ -14,6 +14,7 @@
 
 from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.typing import RealMatrix, RealVector, Scalar, Tensor
+from mrmustard.math import Math
 
 math = Math()
 
