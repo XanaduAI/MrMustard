@@ -28,6 +28,7 @@ from typing import (
 )
 
 import numpy as np
+import copy
 
 from mrmustard import settings
 from mrmustard.math import Math
@@ -256,22 +257,32 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the ket
         """
-        if isinstance(self.representation, FockKet): #What if we have a FockDM but pure?
-            if cutoffs is None:
-                return self.representation.data.array
-            else:
-                cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
-            current_cutoffs = [int(s) for s in self.representation.data.array.shape]
-            if cutoffs != current_cutoffs:
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-                if any(p != (0, 0) for p in paddings):
-                    padded = math.pad(self.representation.data.array, paddings, mode="constant")
+        if self.is_pure:
+            if self.representation.__class__.__name__.endswith('Ket'):
+                if isinstance(self.representation, FockKet):
+                    if cutoffs is None:
+                        return self.representation.data.array
+                    else:
+                        cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
+                    current_cutoffs = [int(s) for s in self.representation.data.array.shape]
+                    if cutoffs != current_cutoffs:
+                        paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                        if any(p != (0, 0) for p in paddings):
+                            padded = math.pad(self.representation.data.array, paddings, mode="constant")
+                        else:
+                            padded = self.representation.data.array
+                        return padded[tuple(slice(s) for s in cutoffs)]
+                    return self.representation.data.array[tuple(slice(s) for s in cutoffs)]
+                elif isinstance(self.representation, WignerKet):
+                    #transform internally from Wigner to Fock and return it
+                    self_copy = copy.deepcopy(self)
+                    return self_copy.to_Fock(cutoffs).ket()
                 else:
-                    padded = self.representation.data.array
-                return padded[tuple(slice(s) for s in cutoffs)]
-            return self.representation.data.array[tuple(slice(s) for s in cutoffs)]
+                    raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+            else:
+                raise AttributeError("We do not support to decompo the density matrix to ket now!")
         else:
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+            raise AttributeError("The state is mixed and we can not extract its ket amplitudes.")
 
 
 
@@ -285,21 +296,34 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the density matrix
         """
-        if isinstance(self.representation, FockDM):
-            if cutoffs is None:
-                return self.representation.data.array
-            else:
-                cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
-            if cutoffs != (current_cutoffs := list(self.representation.data.shape[: self.num_modes])):
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-                if any(p != (0, 0) for p in paddings):
-                    padded = math.pad(self.representation.data.array, paddings + paddings, mode="constant")
+        if self.representation.__class__.__name__.endswith('Ket'):
+            if isinstance(self.representation, FockKet):
+                if cutoffs is None:
+                    cutoffs = self.cutoffs
                 else:
-                    padded = self.representation.data.array
-                return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
-            return self.representation.data.array[tuple(slice(s) for s in cutoffs + cutoffs)]
+                    cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+                return fock.ket_to_dm(self.ket(cutoffs=cutoffs))
+            if isinstance(self.representation, WignerKet):
+                self_copy = copy.deepcopy(self)
+                self_copy.to_Fock(cutoffs)
+                return fock.ket_to_dm(self_copy.ket(cutoffs=cutoffs))
         else:
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+            if isinstance(self.representation, FockDM):
+                if cutoffs is None:
+                    return self.representation.data.array
+                else:
+                    cutoffs = [c if c is not None else self.representation.data.cutoffs[i] for i, c in enumerate(cutoffs)]
+                current_cutoffs = [int(s) for s in self.representation.data.array.shape]
+                if cutoffs != (current_cutoffs := list(self.representation.data.shape[: self.num_modes])):
+                    paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                    if any(p != (0, 0) for p in paddings):
+                        padded = math.pad(self.representation.data.array, paddings + paddings, mode="constant")
+                    else:
+                        padded = self.representation.data.array
+                    return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
+                return self.representation.data.array[tuple(slice(s) for s in cutoffs + cutoffs)]
+            else:
+                raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
             
 
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
