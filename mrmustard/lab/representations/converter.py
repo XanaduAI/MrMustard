@@ -162,7 +162,11 @@ class Converter():
             if s_name == "WignerKet" and d_name == "FockKet":
                 max_prob = kwargs.get('max_prob', 0.0)
                 max_photon = kwargs.get('max-photon', 0)
-                return f(source, max_prob=max_prob, max_photon=max_photon)
+                cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
+                return f(source, cutoffs=cutoffs, max_prob=max_prob, max_photon=max_photon)
+            if s_name == "WignerDM" and d_name == "FockDM":
+                cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
+                return f(source, cutoffs=cutoffs)
             else:
                 return f(source)
         
@@ -403,6 +407,7 @@ class Converter():
 
     def _wignerket_to_fockket(self,
         wignerket: WignerKet,
+        cutoffs: List[int] = None,
         max_prob: float = 1.0,
         max_photons: Optional[int] = None,
     ) -> FockKet:
@@ -411,6 +416,7 @@ class Converter():
 
         Args:
             wignerket (WignerKet)       : the WignerKet object. 
+            cutoffs (List[int]) .       : the shape of the desired Fock tensor
             max_prob (float)            : the maximum probability of a the state (applies only if 
                                           the ket is returned)
             max_photons (Optional[int]) : the maximum number of photons in the state (applies only 
@@ -423,26 +429,25 @@ class Converter():
         A, B, C = self._wignerket_to_bargmannket(wignerket)
 
         if max_photons is None:
-            max_photons = sum(wignerket.data.shape) - len(wignerket.data.shape)
+            max_photons = sum(cutoffs.shape) - len(cutoffs.shape)
 
-        if max_prob < 1.0 or max_photons < sum(wignerket.data.shape) - len(wignerket.data.shape):
+        if max_prob < 1.0 or max_photons < sum(cutoffs.shape) - len(cutoffs.shape):
             return math.hermite_renormalized_binomial(
-                A, B, C, shape=wignerket.data.shape, max_l2=max_prob, global_cutoff=max_photons + 1
+                A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photons + 1
             )
         
         else:
-            return math.hermite_renormalized(A, B, C, shape=tuple(wignerket.data.shape))
+            return math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape))
 
 
-    # TODO : fix function, signature, code and doc don't match: which is correct?
-    def _wignerdm_to_fockdm(self, wignerdm: WignerDM) -> FockDM:
+
+    def _wignerdm_to_fockdm(self, wignerdm: WignerDM, cutoffs: List[int] = None,) -> FockDM:
         r"""
         Returns the Fock representation of a Gaussian state in density matrix form.
 
         Args:
             wignerdm (WignerDM): the WignerDM object. 
-            max_prob: the maximum probability of a the state (applies only if the ket is returned)
-            max_photons: the maximum number of photons in the state (applies only if the ket is returned)
+            cutoffs (List[int]): the shape of the desired Fock tensor
 
         Returns:
             Tensor: the fock representation
@@ -450,7 +455,7 @@ class Converter():
 
         A, B, C = self._wignerdm_to_bargmanndm(wignerdm)
 
-        return math.hermite_renormalized(A, B, C, shape=wignerdm.data.shape)
+        return math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape))
 
 
 
