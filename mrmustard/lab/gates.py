@@ -102,7 +102,8 @@ class Dgate(Parametrized, Transformation):
             cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
 
         Returns:
-            array[complex]: the unitary matrix
+           Raises:
+               ValueError: if the length of the cutoffs array is different from N and 2N
         """
 
         N = self.num_modes
