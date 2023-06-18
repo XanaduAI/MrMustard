@@ -19,13 +19,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Iterable,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -200,7 +194,7 @@ class Transformation:
 
     def XYd(
         self, allow_none: bool = True
-      -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
