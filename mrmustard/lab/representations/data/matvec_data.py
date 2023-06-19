@@ -17,6 +17,7 @@ import numpy as np
 from mrmustard.lab.representations.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
 
 math = Math()
 
@@ -63,9 +64,14 @@ class MatVecData(Data):  # Note: this class is abstract too!
         else:
 
             try:
+                mat = math.concat([self.mat, other.mat], axis=0)
+                vec = math.concat([self.vec, other.vec], axis=0)
+                reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
+                mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
+                vec = math.matvec(reorder_matrix, vec)
                 return self.__class__(
-                    mat = math.concat([self.mat, other.mat], axis=0),
-                    vec = math.concat([self.vec, other.vec], axis=0),
+                    mat = mat,
+                    vec = vec,
                     coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
                     )
                 
