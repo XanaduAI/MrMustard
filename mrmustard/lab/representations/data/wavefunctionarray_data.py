@@ -56,11 +56,10 @@ class WavefunctionArrayData(ArrayData):
             
 
     def __sub__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
-        #TODO :M verif qs same
-        self.__add__(other.array.__neg__)
-
-
-    # truediv is in parent
+        if self._qs_is_same(other):
+            self.__add__(other.array.__neg__)
+        else:
+            raise ValueError ("The two wave functions must have the same qs. ")
 
 
     def __mul__(self, other: Union[Scalar, WavefunctionArrayData]) -> WavefunctionArrayData:
@@ -74,10 +73,7 @@ class WavefunctionArrayData(ArrayData):
 
 
     def __and__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
-        if self._qs_is_same(other):
-            return self.__class__(array=np.outer(self.array, other.array), qs=self.qs)
-        else:
-            raise ValueError ("The two wave functions must have the same qs. ")
+        return self.__class__(array=np.outer(self.array, other.array), qs=np.outer(self.qs, other.qs))
 
 
     def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> WavefunctionArrayData:
