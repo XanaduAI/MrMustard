@@ -67,7 +67,7 @@ class GaussianData(MatVecData):
                 if cov + 1j*sympmat(self.num_modes, dtype=cov.dtype) >= 0:
                     mean = math.zeros(self.num_modes, dtype=cov.dtype)
                 else:
-                    raise AttributeError("The covariance matrix is not valid. cov + i\Omega < 0.")
+                    raise ValueError("The covariance matrix is not valid. cov + i\Omega < 0.")
                 # batch_size = cov.shape[-3]
                 # mean = math.zeros( (batch_size, dim), dtype=cov.dtype )
         else:

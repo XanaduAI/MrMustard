@@ -41,7 +41,7 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
 
     def __neg__(self) -> MatVecData:
-        return self.__class__(mat=self.mat, vec=self.vec, coeffs= -self.coeffs)
+        return self.__class__(mat= self.mat, vec= self.vec, coeffs= -self.coeffs)
 
 
     def __eq__(self, other: MatVecData) -> bool:
@@ -56,7 +56,7 @@ class MatVecData(Data):  # Note: this class is abstract too!
                 f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
-    def __add__(self,other: MatVecData) -> MatVecData:
+    def __add__(self, other: MatVecData) -> MatVecData:
         if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
             combined_coeffs = self.coeff + other.coeff
             return self.__class__(mat=self.mat, vec=self.vec, coeffs=combined_coeffs)
@@ -100,8 +100,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
             raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
         
 
-    def __truediv__(self, other:Scalar) -> MatVecData:
-        return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs/other)
+    def __truediv__(self, x:Scalar) -> MatVecData:
+        return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs/x)
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
     #     N = self.mat.shape[0]
