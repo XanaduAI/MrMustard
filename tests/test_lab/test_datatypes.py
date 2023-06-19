@@ -21,9 +21,9 @@ from hypothesis.extra.numpy import arrays
 
 class TestArrayDataAlgebra():
 
-    ##################################################
+    
     #########   Common to different methods  #########
-    ##################################################
+    
     def test_new_object_created_by_method_has_same_shape_as_old_object():
         # neg, add, sub, truediv, mul, simplify
         pass
@@ -37,9 +37,7 @@ class TestArrayDataAlgebra():
         pass
 
 
-    ##################################################
     ####################  Init  ######################
-    ##################################################
     
     def test_array_given_as_init_param_is_same_as_attribute():
         pass
@@ -48,16 +46,13 @@ class TestArrayDataAlgebra():
         pass
 
 
-    ##################################################
     ##################  Negative  ####################
-    ##################################################
 
     def test_negative_returns_new_object_with_element_wise_negative_of_array():
         pass
 
-    ##################################################
+    
     ##################  Equality  ####################
-    ##################################################
 
     def test_eq_with_same_arrays_returns_true_for_2D_to_4D():
         # test for at least 2-3-4 dimensional arrays
@@ -67,58 +62,134 @@ class TestArrayDataAlgebra():
         # test for at least 2-3-4 dimensional arrays
         pass
 
-    ##################################################
+    
     ##################  Addition  ####################
-    ##################################################
 
     def test_add_returns_new_object_with_element_wise_addition_performed():
         pass
 
-    ##################################################
+
     ################  Subtraction  ###################
-    ##################################################
 
     def test_sub_returns_new_object_with_element_wise_subtraction_performed():
         pass
+    
 
-
-    ##################################################
     #############  Scalar division  ##################
-    ##################################################
 
     def test_truediv_returns_new_object_with_element_wise_division_performed():
         pass
 
-    ##################################################
+
     ###########  Scalar multiplication  ##############
-    ##################################################
 
     def test_mul_returns_new_object_with_element_wise_multiplication_performed():
         pass
 
-    ##################################################
-    ###############  Outer product  ##################
-    ##################################################
 
+    ###############  Outer product  ##################
+    
     #TODO : write tests for and
+
+
+
+class TestWavefunctionArrayData(TestArrayDataAlgebra):
+
+    #########   Common to different methods  #########
+
+    def test_ValueError_is_raised_if_qs_are_different():
+        # test on add, sub, mul, and
+        pass
+
+    def test_qs_for_new_objects_are_same_as_initial_qs():
+        # test on add, sub, 
+        pass
+
+
+    ####################  Init  ######################
+
+    def test_qs_attribute_is_same_as_given_in_arguments():
+        pass
+    
+    ##################  Equality  ####################
+
+    def test_eq_returns_false_if_array_same_but_qs_different():
+        pass
+
+    ###########  Object multiplication  ##############
+
+    def test_mul_returns_new_object_with_array_being_element_wise_mul_of_the_two_objects():
+        pass
+
+    ###############  Outer product  ##################
+
+    # TODO : test and
+    
+    #################### Other #######################
+
+    def test_qs_is_same_returns_true_when_same_qs():
+        pass
+
+    def test_qs_is_same_returns_false_when_different_qs():
+        pass
+
+    def test_qs_is_same_raises_Typeerror_if_other_has_no_qs():
+        pass
+    
 
 
     
 
 class TestMatVecDataAlgebra():
-    pass
+    
+    #########   Common to different methods  #########
+    ####################  Init  ######################
+    ##################  Negative  ####################
+    ##################  Equality  ####################
+    ##################  Addition  ####################
+    ################  Subtraction  ###################
+    #############  Scalar division  ##################
+    ###########  Scalar multiplication  ##############
+    ###############  Outer product  ##################
 
-class TestWavefunctionArrayData(TestArrayDataAlgebra):
-    pass
 
 class TestGaussianDataAlgebra(TestMatVecDataAlgebra):
-    pass
+
+    #########   Common to different methods  #########
+    ####################  Init  ######################
+    ##################  Negative  ####################
+    ##################  Equality  ####################
+    ##################  Addition  ####################
+    ################  Subtraction  ###################
+    #############  Scalar division  ##################
+    ###########  Scalar multiplication  ##############
+    ###############  Outer product  ##################
+
 
 class TestQPolyDataAlgebra(TestMatVecDataAlgebra):
-    pass
+    
+    #########   Common to different methods  #########
+    ####################  Init  ######################
+    ##################  Negative  ####################
+    ##################  Equality  ####################
+    ##################  Addition  ####################
+    ################  Subtraction  ###################
+    #############  Scalar division  ##################
+    ###########  Scalar multiplication  ##############
+    ###############  Outer product  ##################
+
 
 class TestSymplecticdata(TestMatVecDataAlgebra):
-    pass
+    
+    #########   Common to different methods  #########
+    ####################  Init  ######################
+    ##################  Negative  ####################
+    ##################  Equality  ####################
+    ##################  Addition  ####################
+    ################  Subtraction  ###################
+    #############  Scalar division  ##################
+    ###########  Scalar multiplication  ##############
+    ###############  Outer product  ##################
 
 
 
