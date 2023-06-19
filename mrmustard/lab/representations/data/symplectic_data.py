@@ -16,34 +16,40 @@ from __future__ import annotations
 import numpy as np
 from typing import Union
 from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import R, Scalar
+from mrmustard.typing import RealMatrix, Scalar, RealVector
+from typing import Optional
+from thewalrus.symplectic import is_symplectic
 
 class SymplecticData(MatVecData):
     """ Symplectic matrix-like data for certain Representation objects.
 
     Args:
-        mat:
-        vec:
-        coeffs:
+        symplectic (Matrix): symplectic matrix with qqpp-ordering
+        displacement (Vector): the real displacement vector :math:`\bm{d} = \sqrt{2\hbar}[\Re(\alpha), \Im(\alpha)]`
+        coeffs (Scalar) : default to be 1.
     """
 
-    def __init__(self, symplectic, displacement:R, coeffs) -> None:
-        # TODO : if no coeff given, they are all 1, and change args! coeff is optional
-        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
-        # TODO : ensure mat is symplectic! 
+    def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0) -> None:
+        #Check if it is a symplectic matrix
+        if is_symplectic(symplectic):
+            super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
+        else:
+            raise AttributeError("The matrix given is not symplectic.")
 
 
     @property
     def symplectic(self) -> np.array:
         return self.mat
     
+
     @property
     def displacement(self) -> np.array:
         return self.vec
+    
 
-
-    def __truediv__(self, other:Scalar) -> SymplecticData:
-        return self.__class__(symplectic=self.mat, displacement=self.vec, coeffs=self.coeffs/other)
+    @property
+    def coeffs(self) -> Optional[Scalar]:
+        return self.coeffs
 
 
     def __mul__(self, other:Scalar) -> SymplecticData:

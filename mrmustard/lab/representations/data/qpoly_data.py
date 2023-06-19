@@ -17,10 +17,11 @@ import numpy as np
 from typing import Tuple, Union, TYPE_CHECKING
 from mrmustard.math import Math
 from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import Batch, Matrix, Scalar, Vector
+from mrmustard.typing import Batch, RealMatrix, Scalar, Vector
+from typing import Optional
 
-if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
-    from mrmustard.lab.representations.data.gaussian_data import GaussianData
+# if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
+#     from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
 
 math = Math()
@@ -37,32 +38,32 @@ class QPolyData(MatVecData):
         c: constant
     """
 
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar]) -> None:
+    def __init__(self, A: RealMatrix, b: Vector, c: Scalar = 1.0) -> None:
         # Done here because of circular import with GaussianData<>QPolyData
         # from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
         # if isinstance(A, GaussianData):
         #     A, b, c = self._from_GaussianData(covmat=A)
 
-        super().__init__(mat=A, vec=b, coeffs=c)
+        #Check if matrix A is real and symmetric
+        if A == np.transpose(A):
+            super().__init__(mat=A, vec=b, coeffs=c)
+        else:
+            raise ArithmeticError("The matrix A is not real symmetric.")
 
     @property
-    def A(self) -> Batch[Matrix]:
+    def A(self) -> Optional[RealMatrix]:
         return self.mat
 
 
     @property
-    def b(self) -> Batch[Vector]:
+    def b(self) -> Optional[Vector]:
         return self.vec
 
 
     @property
-    def c(self) -> Batch[Scalar]:
-        return self.coeff
-    
-
-    def __truediv__(self, other:Scalar) -> QPolyData:
-       return self.__class__(A=self.A, b=self.b, c=self.c / other)
+    def c(self) -> Optional[Scalar]:
+        return self.coeffs
 
 
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:

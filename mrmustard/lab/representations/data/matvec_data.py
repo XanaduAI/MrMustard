@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 from mrmustard.lab.representations.data import Data
 from mrmustard.math import Math
-from mrmustard.typing import Batch, Matrix, Scalar, Vector
+from mrmustard.typing import Matrix, Scalar, Vector
 
 math = Math()
 
@@ -32,7 +32,7 @@ class MatVecData(Data):  # Note: this class is abstract too!
     def __init__(self, 
                  mat: Matrix,
                  vec: Vector,
-                 coeffs: Scalar
+                 coeffs: Scalar = 1.0
                  ) -> None:
         self.mat = mat #math.atleast_3d(mat)
         self.vec = vec #math.atleast_2d(vec)
@@ -94,6 +94,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
             raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
         
 
+    def __truediv__(self, other:Scalar) -> MatVecData:
+        return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs/other)
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
     #     N = self.mat.shape[0]

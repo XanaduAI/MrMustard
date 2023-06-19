@@ -19,9 +19,11 @@ from typing import Optional, Tuple, Union, TYPE_CHECKING
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
+from typing import Optional
+from thewalrus.symplectic import sympmat
 
 if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
-    from mrmustard.lab.representations.data import QPolyData
+    from mrmustard.lab.representations.data.qpoly_data import QPolyData
 
 math = Math()
 
@@ -37,7 +39,7 @@ class GaussianData(MatVecData):
 
     Args:
         cov: covariance matrices (real symmetric)
-        mean: means (real)
+        mean: mean vector of the state (real)
         coeffs: coefficients (complex)
 
     Raises:
@@ -45,30 +47,36 @@ class GaussianData(MatVecData):
     """
 
     def __init__(self,
-        cov: Optional[Batch[Matrix]] = None,
-        mean: Optional[Batch[Vector]] = None,
-        coeffs: Optional[Batch[Scalar]] = None
+        cov: Optional[Matrix] = None,
+        mean: Optional[Vector] = None,
+        coeffs: Optional[Scalar] = 1.0
         ) -> None:
-        # Done here because of circular import with GaussianData<>QPolyData
-        # from mrmustard.lab.representations.data import QPolyData
     
+        #TODO: BATCH
         if (cov or mean): # at least one is defined -or both-
     
             if cov is None:
-                dim = mean.shape[-1]
-                batch_size = mean.shape[-2]
-                cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
+                self.num_modes = mean.shape
+                cov = math.eye(2 * self.num_modes, dtype=mean.dtype)
+                # batch_size = mean.shape[-2]
+                # cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
 
             else: # we know mean is None here
-                dim = cov.shape[-1]
-                batch_size = cov.shape[-3]
-                mean = math.zeros( (batch_size, dim), dtype=cov.dtype )
+                self.num_modes = cov.shape[-1]
+                #Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
+                if cov + 1j*sympmat(self.num_modes, dtype=cov.dtype) >= 0:
+                    mean = math.zeros(self.num_modes, dtype=cov.dtype)
+                else:
+                    raise AttributeError("The covariance matrix is not valid. cov + i\Omega < 0.")
+                # batch_size = cov.shape[-3]
+                # mean = math.zeros( (batch_size, dim), dtype=cov.dtype )
         else:
             raise ValueError("You need to define at one: covariance or mean")
 
         if coeffs is None:
-            batch_size = cov.shape[-3]
-            coeffs = math.ones((batch_size), dtype=mean.dtype)
+            coeffs = 1.0
+            # batch_size = cov.shape[-3]
+            # coeffs = math.ones((batch_size), dtype=mean.dtype)
 
         # if isinstance(cov, QPolyData):
         #     cov, mean, coeffs = self._from_QPolyData(poly=cov)
@@ -77,17 +85,18 @@ class GaussianData(MatVecData):
 
 
     @property
-    def cov(self) -> Batch[Matrix]:
+    def cov(self) -> Optional[Matrix]:
         return self.mat
     
 
     @property
-    def mean(self) -> Batch[Vector]:
+    def mean(self) -> Optional[Vector]:
         return self.vec
-    
 
-    def __truediv__(self, other: Scalar) -> GaussianData:
-        return self.__class__(cov=self.cov, mean=self.mean, coeffs=self.coeffs/other)
+
+    @property
+    def c(self) -> Optional[Scalar]:
+        return self.coeffs
 
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
