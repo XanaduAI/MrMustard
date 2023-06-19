@@ -61,20 +61,23 @@ class ArrayData(Data):
         self.__add__(other.__neg__)
 
 
-    def __truediv__(self, other:Scalar) -> ArrayData: # TODO : check that all data classes only support Truediv for Scalars
-        return self.__class__(array=self.array/other)
-
-
-    def __mul__(self, other: Union[Scalar, ArrayData]) -> ArrayData:
-        if isinstance(other, Scalar):
-            return self.__class__(array= self.array * other)
+    def __truediv__(self, x:Scalar) -> ArrayData: # TODO : check that all data classes only support Truediv for Scalars
+        if isinstance(x, Scalar):
+            return self.__class__(array= self.array / x)
         else:
-            raise AttributeError("The multiplication between two ArrayData is not possible.") 
+            raise TypeError("The multiplication between two ArrayData is not possible.") 
+        
+
+    def __mul__(self, x: Scalar) -> ArrayData:
+        if isinstance(x, Scalar):
+            return self.__class__(array= self.array * x)
+        else:
+            raise TypeError("The multiplication between two ArrayData is not possible.") 
 
 
     def __and__(self, other:ArrayData) -> ArrayData:
         try:
-            return self.__class__(array=np.outer(self.array, other.array))
+            return self.__class__(array= np.outer(self.array, other.array))
         except AttributeError as e:
          raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e             
 

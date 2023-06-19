@@ -15,6 +15,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union, List
+from mrmustard.lab.representations.data.data import Data
 from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
@@ -32,6 +33,9 @@ class WavefunctionArrayData(ArrayData):
     def __init__(self, qs:np.array, array:np.array) -> None:
         super().__init__(array=array)
         self.qs = qs
+
+    def __neg__(self) -> Data:
+        return self.__class__(array= -self.array, qs=self.qs)
         
 
     def __eq__(self, other:ArrayData) -> bool:
