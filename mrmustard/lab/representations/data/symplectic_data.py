@@ -45,11 +45,7 @@ class SymplecticData(MatVecData):
     @property
     def displacements(self) -> np.array:
         return self.vec
-    
 
-    @property
-    def coeffs(self) -> Optional[Scalar]:
-        return self.coeffs
 
 
     def __mul__(self, other:Scalar) -> SymplecticData:

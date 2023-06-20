@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from .transformation import Transformation
 
 math = Math()
+converter = Converter()
 
 
 # pylint: disable=too-many-instance-attributes
@@ -155,7 +156,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def purity(self) -> float:
         """Returns the purity of the state."""
-        return self.representation.purity()
+        return self.representation.purity
 
     @property
     def is_mixed(self):
@@ -165,7 +166,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return np.isclose(self.representation.purity(), 1.0, atol=1e-6)
+        return np.isclose(self.representation.purity, 1.0, atol=1e-6)
     
 
     @property
@@ -195,7 +196,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def number_stdev(self) -> RealVector:
         r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-        return self.representation.number_stdev()
+        return self.representation.number_stdev
 
     @property
     def cutoffs(self) -> List[int]:
@@ -223,17 +224,17 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
-        return self.representation.number_means()
+        return self.representation.number_means
 
     @property
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
-        return self.representation.number_cov()
+        return self.representation.number_cov
 
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
-        return self.representation.norm()
+        return self.representation.norm
 
     @property
     def state_probability(self) -> float:
@@ -568,7 +569,8 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Bargmann Representation
         '''
-        return Converter(self, "Bargmann") 
+        self.representation = converter.convert(self.representation, "Bargmann") 
+        return self
         
 
     def to_Fock(self, max_prob: float = 1.0, max_photons: int = None):        
@@ -585,7 +587,8 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Fock Representation
         """
-        return Converter(self, "Fock", max_prob, max_photons)
+        self.representation = converter.convert(self.representation, "Fock", max_prob, max_photons)
+        return self
         
 
     def to_WavefunctionQ(self):
@@ -598,7 +601,8 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target q-Wavefunction Representation
         '''
-        return Converter(self, "WavefunctionQ") 
+        self.representation = converter.convert(self.representation, "WavefunctionQ") 
+        return self
         
 
     def to_Wigner(self):
@@ -611,7 +615,8 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Wigner Representation
         '''
-        return Converter(self, "Wigner") 
+        self.representation = converter.convert(self.representation, "Wigner") 
+        return self
 
 
     def _repr_markdown_(self):
