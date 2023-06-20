@@ -20,7 +20,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics.fock import apply_kraus_to_ket, apply_kraus_to_dm
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.typing import Batch, Matrix, RealVector, Tensor, Vector
+from mrmustard.typing import Matrix, RealVector, Tensor, Vector
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.bargmann_ket import BargmannKet
 from mrmustard.lab.representations.bargmann_dm import BargmannDM
