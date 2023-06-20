@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from mrmustard.math import Math
-from mrmustard.lab.representations import Representation
-from mrmustard.lab.representations.data import GaussianData
-from mrmustard.typing import Batch, Scalar, RealMatrix, RealVector, Matrix, Vector, Tensor
-from typing import List, Optional, Sequence, Tuple
+from mrmustard.lab.representations.representation import Representation
+from mrmustard.lab.representations.data.matvec_data import MatVecData
+from mrmustard.typing import Scalar, RealMatrix, RealVector, Matrix, Vector, Tensor
+from typing import List
 from mrmustard import settings
 
 
@@ -26,27 +26,28 @@ class Wigner(Representation):
     r""" Parent abstract class for the WignerKet and WignerDM representations.
     
     Args:
-        cov: covariance matrices (real symmetric)
-        mean: means (real)
+        cov: covariance matricx of the state (real symmetric) TODO: support only Gaussian state. If not Gaussian, cov can be complex.
+        mean: mean vector of the state (real)
         coeffs: coefficients (complex) 
     """
-#TODO: remove Batch and Optional!
+
     def __init__(self,
-                 cov:Optional[Batch[Matrix]], 
-                 means:Optional[Batch[Vector]], 
-                 coeffs:Optional[Batch[Matrix]]
+                 cov: Matrix, 
+                 means: Vector, 
+                 coeffs: Scalar = 1.0
                  ) -> None:
 
-        self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
+        self.data = MatVecData(cov=cov, means=means, coeffs=coeffs)
         
     
     @property
-    def purity(self) -> Scalar:
+    def purity(self) -> float:
         return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))
     
 
     @property
     def norm(self) -> float:
+        #TODO: get the norm from other representation
         raise NotImplementedError()
     
 
@@ -127,108 +128,108 @@ class Wigner(Representation):
         return math.abs(eigenspectrum[::2]) # TODO: sort?
 
 
-    def trace(self, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]: #NOTE: move to physics after MVP
-        r""" Returns the covariances and means after discarding the specified modes.
+    # def trace(self, Bmodes: Sequence[int]) -> Tuple[Matrix, Vector]: #NOTE: move to physics after MVP
+    #     r""" Returns the covariances and means after discarding the specified modes.
 
-        Args:
-            Bmodes: modes to discard
+    #     Args:
+    #         Bmodes: modes to discard
 
-        Returns:
-            The covariance matrix and the means vector after discarding the specified modes
-        """
-        n = len(self.data.cov) // 2
+    #     Returns:
+    #         The covariance matrix and the means vector after discarding the specified modes
+    #     """
+    #     n = len(self.data.cov) // 2
 
-        good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Bmodes)
+    #     good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Bmodes)
 
-        Aindices = math.astensor(good_modes + good_modes_plus_n)
+    #     Aindices = math.astensor(good_modes + good_modes_plus_n)
 
-        A_cov_block = math.gather(math.gather(self.data.cov, Aindices, axis=0), Aindices, axis=1)
-        A_means_vec = math.gather(self.data.means, Aindices)
+    #     A_cov_block = math.gather(math.gather(self.data.cov, Aindices, axis=0), Aindices, axis=1)
+    #     A_means_vec = math.gather(self.data.means, Aindices)
 
-        return A_cov_block, A_means_vec   
+    #     return A_cov_block, A_means_vec   
 
 
-    def partition_cov(self, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]: #NOTE: move to physics after MVP
-        r""" Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB 
-        coherence block.
+    # def partition_cov(self, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, Matrix]: #NOTE: move to physics after MVP
+    #     r""" Partitions the covariance matrix into the ``A`` and ``B`` subsystems and the AB 
+    #     coherence block.
 
-        Args:
-            Amodes: the modes of system ``A``
+    #     Args:
+    #         Amodes: the modes of system ``A``
 
-        Returns:
-            Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
-        """
-        n = self.data.cov.shape[-1] // 2
+    #     Returns:
+    #         Tuple[Matrix, Matrix, Matrix]: the cov of ``A``, the cov of ``B`` and the AB block
+    #     """
+    #     n = self.data.cov.shape[-1] // 2
 
-        good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Amodes)
+    #     good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Amodes)
 
-        Bindices = math.cast(good_modes + good_modes_plus_n, "int32")
-        B_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Bindices, axis=0)
+    #     Bindices = math.cast(good_modes + good_modes_plus_n, "int32")
+    #     B_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Bindices, axis=0)
 
-        amodes_plus_n = self._add_element_wise_n(n=n, l=Amodes)
-        Aindices = math.cast(Amodes + amodes_plus_n, "int32")
-        A_block = math.gather(math.gather(self.data.cov, Aindices, axis=1), Aindices, axis=0)
+    #     amodes_plus_n = self._add_element_wise_n(n=n, l=Amodes)
+    #     Aindices = math.cast(Amodes + amodes_plus_n, "int32")
+    #     A_block = math.gather(math.gather(self.data.cov, Aindices, axis=1), Aindices, axis=0)
         
-        AB_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Aindices, axis=0)
+    #     AB_block = math.gather(math.gather(self.data.cov, Bindices, axis=1), Aindices, axis=0)
 
-        return A_block, B_block, AB_block
+    #     return A_block, B_block, AB_block
 
 
-    def partition_means(self, Amodes: Sequence[int]) -> Tuple[Vector, Vector]: #NOTE: move to physics after MVP
-        r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
+    # def partition_means(self, Amodes: Sequence[int]) -> Tuple[Vector, Vector]: #NOTE: move to physics after MVP
+    #     r"""Partitions the means vector into the ``A`` and ``B`` subsystems.
 
-        Args:
-            Amodes (Sequence[int]): the modes of system ``A``
+    #     Args:
+    #         Amodes (Sequence[int]): the modes of system ``A``
 
-        Returns:
-            Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
-        """
-        n = len(self.data.means) // 2
+    #     Returns:
+    #         Tuple[Vector, Vector]: the means of ``A`` and the means of ``B``
+    #     """
+    #     n = len(self.data.means) // 2
 
-        good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Amodes)
+    #     good_modes, good_modes_plus_n = self._yield_correct_modes(n=n, bad_modes=Amodes)
 
-        Bindices = math.cast(good_modes + good_modes_plus_n,"int32")
+    #     Bindices = math.cast(good_modes + good_modes_plus_n,"int32")
 
-        amodes_plus_n = self._add_element_wise_n(n=n, l=Amodes)
-        Aindices = math.cast(Amodes + amodes_plus_n, "int32")
+    #     amodes_plus_n = self._add_element_wise_n(n=n, l=Amodes)
+    #     Aindices = math.cast(Amodes + amodes_plus_n, "int32")
 
-        return math.gather(self.data.means, Aindices), math.gather(self.data.means, Bindices)
+    #     return math.gather(self.data.means, Aindices), math.gather(self.data.means, Bindices)
     
 
-    @staticmethod
-    def _g(x:List[Scalar]) -> List[Scalar]:  #NOTE: move to physics after MVP
-        r""" Used exclusively to compute the Wigner Von neumann entropy.
+    # @staticmethod
+    # def _g(x:List[Scalar]) -> List[Scalar]:  #NOTE: move to physics after MVP
+    #     r""" Used exclusively to compute the Wigner Von neumann entropy.
 
-        Args:
-            x: the symplectic eigenvalues 
+    #     Args:
+    #         x: the symplectic eigenvalues 
 
-        References:
+    #     References:
 
 
-        Returns:
+    #     Returns:
                     
-        """
-        return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
+    #     """
+    #     return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
     
 
-    def _yield_correct_modes(self, n:int, bad_modes:Sequence[int]) -> Tuple(List[int]): #NOTE: move to physics after MVP
-        r""" Helper function to select only desired modes based on a list of undesired ones.
+    # def _yield_correct_modes(self, n:int, bad_modes:Sequence[int]) -> Tuple(List[int]): #NOTE: move to physics after MVP
+    #     r""" Helper function to select only desired modes based on a list of undesired ones.
 
-        Args:
-            n: the total range of the number of modes
-            bad_modes: the modes we wish to discard
+    #     Args:
+    #         n: the total range of the number of modes
+    #         bad_modes: the modes we wish to discard
 
-        Returns:
-            A tuple containing the list of desired modes on the left and the list of desired modes 
-            plus n on the right.
-        """
-        good_modes = list(set(range(n)).difference(bad_modes))
-        good_modes_plus_n =  self._add_element_wise_n(n=n, l=good_modes)
-        return (good_modes, good_modes_plus_n)
+    #     Returns:
+    #         A tuple containing the list of desired modes on the left and the list of desired modes 
+    #         plus n on the right.
+    #     """
+    #     good_modes = list(set(range(n)).difference(bad_modes))
+    #     good_modes_plus_n =  self._add_element_wise_n(n=n, l=good_modes)
+    #     return (good_modes, good_modes_plus_n)
     
 
-    @staticmethod
-    def _add_element_wise_n(n:int, l:List[int]) -> List[int]: #NOTE: move to physics after MVP
-        r""" Helper function to map a +n to all elements. """
-        return list(map( lambda x: x+n , l))
+    # @staticmethod
+    # def _add_element_wise_n(n:int, l:List[int]) -> List[int]: #NOTE: move to physics after MVP
+    #     r""" Helper function to map a +n to all elements. """
+    #     return list(map( lambda x: x+n , l))
 

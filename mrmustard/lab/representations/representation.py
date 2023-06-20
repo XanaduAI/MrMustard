@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractproperty
 from mrmustard.typing import RealMatrix, RealVector, Scalar, Tensor
 from mrmustard.math import Math
 
@@ -35,12 +35,7 @@ class Representation(ABC):
 
     @abstractproperty
     def von_neumann_entropy(self) -> float:
-        r""" The Von Neumann entropy of the state. 
-        
-        For a pure state, we expect the Von Neumann entropy to be 0.
-
-        Reference: (https://arxiv.org/pdf/1110.3234.pdf), Equations 46-47.        
-        """
+        r""" The Von Neumann entropy of the state. """
         raise NotImplementedError()
     
 
@@ -61,7 +56,7 @@ class Representation(ABC):
         r""" Valid for Fock : variance of the number operator in each mode. """
         raise NotImplementedError()
 
-    @abstractproperty
+
     def number_stdev(self) -> int:
         r""" Valid for Fock: square root of the photon number variances (standard deviation) 
         in each mode. """
@@ -70,5 +65,5 @@ class Representation(ABC):
 
     @abstractproperty
     def probability(self) -> Tensor: # TODO : add doc
-        r""" Valid for Fock: Probability vector, either extracted from a DM or from a Ket"""
+        r""" Valid for Fock: Probability tensor, either extracted from a DM or from a Ket"""
         raise NotImplementedError()

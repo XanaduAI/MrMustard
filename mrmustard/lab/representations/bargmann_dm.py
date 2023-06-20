@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.lab.representations import Representation
-from mrmustard.typing import Batch, Matrix, Scalar, Vector
+from mrmustard.lab.representations.representation import Representation
+from mrmustard.typing import Matrix, Scalar, Vector
 
 class BargmannDM(Representation):
 
-    def __init__(self, A:Batch[Matrix], b:Batch[Vector], c:Batch[Scalar]) -> None:
+    def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         super().__init__(A=A, b=b, c=c)
-        self.num_modes = self.A.shape[-1] // 2 # TODO: BATCH?
+        self.num_modes = self.A.shape[-1] // 2

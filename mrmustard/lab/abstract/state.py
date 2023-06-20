@@ -98,7 +98,7 @@ class State:  # pylint: disable=too-many-public-methods
         if representation:
             self.representation = representation
         else:
-            #Case 1: Wigner representation
+            #Case 1: Wigner representation #TODO: add coeff?
             if cov is not None and means is not None and flag_ket is not None:
                 self.representation = WignerDM(cov, means)
             elif symplectic is not None and displacement is not None and flag_ket:

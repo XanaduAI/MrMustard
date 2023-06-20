@@ -13,13 +13,10 @@
 # limitations under the License.
 
 import numpy as np
-from typing import List, Union
 
 from mrmustard.math import Math
-from math.mmtensor import MMTensor
 from mrmustard.lab.representations.fock import Fock
-from mrmustard.lab.representations.data.array_data import ArrayData
-from mrmustard.typing import Scalar, Tensor, RealVector
+from mrmustard.typing import Tensor
 
 
 math = Math()
@@ -28,10 +25,11 @@ class FockDM(Fock):
 
     def __init__(self, array):
         super().__init__(array=array)
-        self.num_modes = len(self.array.shape) // 2 #TODO: BATCH ISSUE?
+        self.num_modes = len(self.array.shape) // 2
+        self.cutoffs = self.array.shape
 
 
-    def purity(self):
+    def purity(self) -> float:
         dm = self.data.array
         cutoffs = self.data.cutoffs
         d = int(np.prod(cutoffs))  # combined cutoffs in all modes
@@ -40,7 +38,7 @@ class FockDM(Fock):
         return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
-    def norm(self):
+    def norm(self) -> float:
         r""" The norm. (:math:`|amp|^2` for ``dm``). """
         return math.sum(math.all_diagonals(self.data.array, real = True))
 

@@ -82,6 +82,6 @@ class ArrayData(Data):
          raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e             
 
 
-    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> ArrayData:
-        raise NotImplementedError() # TODO: implement
+    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> ArrayData:
+    #     raise NotImplementedError() # TODO: implement
     

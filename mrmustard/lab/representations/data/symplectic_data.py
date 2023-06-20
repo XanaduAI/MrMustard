@@ -31,8 +31,8 @@ class SymplecticData(MatVecData):
 
     def __init__(self, symplectic: RealMatrix, displacements: RealVector, coeffs: Scalar = 1.0) -> None:
         #Check if it is a symplectic matrix
-        if is_symplectic(symplectic):
-            super().__init__(mat=symplectic, vec=displacements, coeffs=coeffs)
+        if is_symplectic(symplectic.numpy()):
+            super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
         else:
             raise ValueError("The matrix given is not symplectic.")
 

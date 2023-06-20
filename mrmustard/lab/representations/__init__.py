@@ -15,5 +15,5 @@
 """ This package contains the modules implementing base classes for representations, datas and converter.
 """
 
-__all__=['Representation', 'Wigner', 'WignerKet', 'WignerDM', 'Fock', 'FockKet', 'FockDM', 'Bargmann', 'BargmannKet', 'BargmannDM', 'WaveFunctionQ', 'WaveFunctionQKet', 'WaveFunctionQDM']
+__all__=['WignerKet', 'WignerDM', 'Fock', 'FockKet', 'FockDM', 'Bargmann', 'BargmannKet', 'BargmannDM', 'WaveFunctionQKet', 'WaveFunctionQDM']
 

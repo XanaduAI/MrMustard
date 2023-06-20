@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 import numpy as np
-from mrmustard.lab.representations.data import Data
+from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
@@ -29,11 +29,11 @@ class MatVecData(Data):  # Note: this class is abstract too!
         vec: the vector-like data to be contained in the class
         coeffs: the coefficients 
     """
-#TODO : remove Batch everywhere/!
+
     def __init__(self, 
                  mat: Matrix,
                  vec: Vector,
-                 coeffs: Scalar = 1.0
+                 coeffs: Scalar
                  ) -> None:
         self.mat = mat #math.atleast_3d(mat)
         self.vec = vec #math.atleast_2d(vec)

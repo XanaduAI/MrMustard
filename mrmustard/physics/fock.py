@@ -59,6 +59,22 @@ def fock_state(n: Sequence[int]) -> Tensor:
     return psi
 
 
+def fock_state(n: Sequence[int], cutoffs: List[int]) -> Tensor:
+    r"""Returns a pure or mixed Fock state.
+
+    Args:
+        n: a list of photon numbers
+
+    Returns:
+        the Fock state up to cutoffs ``n+1``
+    """
+    cutoffs_current = np.array(n) + np.ones_like(n)
+    cutoffs = setcutoffs(cutoffs_current=cutoffs_current, cutoffs_input=cutoffs)
+    psi = np.zeros(cutoffs, dtype=np.complex128)
+    psi[tuple(np.atleast_1d(n))] = 1
+    return psi
+
+
 def autocutoffs(cov: Matrix, means: Vector, probability: float):
     r"""Returns the cutoffs of a Gaussian state by computing the 1-mode marginals until
     the probability of the marginal is less than ``probability``.

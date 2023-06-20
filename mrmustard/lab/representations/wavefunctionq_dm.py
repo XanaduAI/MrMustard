@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import numpy as np
-from mrmustard.lab.representations import WavefunctionQ
+from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
 
-class WaveFunctionQDM(WavefunctionQ):
+class WaveFunctionQDM(WaveFunctionQ):
 
     def __init__(self, qs:np.array, wavefunctionq:np.array):
         super().__init__(qs=qs, wavefunctionq=wavefunctionq)
