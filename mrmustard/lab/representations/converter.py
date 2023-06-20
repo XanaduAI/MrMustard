@@ -15,19 +15,21 @@
 from __future__ import annotations
 import networkx as nx
 import numpy as np
-from re import sub
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Sequence
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.physics.fock import apply_kraus_to_ket, apply_kraus_to_dm
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.typing import Batch, Matrix, RealVector, Scalar, Tensor, Vector
-from mrmustard.lab.representations import (
-    Representation,
-    BargmannKet, BargmannDM,
-    FockKet, FockDM,
-    WavefunctionQKet, WavefunctionQDM,
-    WignerKet, WignerDM
-)   
+from mrmustard.typing import Batch, Matrix, RealVector, Tensor, Vector
+from mrmustard.lab.representations.representation import Representation
+from mrmustard.lab.representations.bargmann_ket import BargmannKet
+from mrmustard.lab.representations.bargmann_dm import BargmannDM
+from mrmustard.lab.representations.fock_ket import FockKet
+from mrmustard.lab.representations.fock_dm import FockDM
+from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
+from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
+from mrmustard.lab.representations.wigner_ket import WignerKet
+from mrmustard.lab.representations.wigner_dm import WignerDM
 
 math = Math()
 
@@ -50,7 +52,6 @@ class Converter():
             - Order : 8
             - Size : 6
             - Degree 1 for all nodes
-        Currently of the form: Wigner --> Bargmann --> Fock --> WavefunctionQ
         """
         ### DEFINE NODES - REPRESENTATION NAMES
 
@@ -110,7 +111,7 @@ class Converter():
         
         self.g.add_edges_from(edges)
 
-        nx.set_edge_attributes(g, transition_formulas)
+        nx.set_edge_attributes(self.g, transition_formulas)
         
 
 
@@ -193,13 +194,12 @@ class Converter():
     ########################################################################
     ###                    From Wigner to Husimi                         ###
     ########################################################################
-    def _pq_to_aadag(self, X:Union[Batch[Matrix], Batch[Vector]]
-                     ) -> Union[Batch[Matrix], Batch[Vector]]:
+    def _pq_to_aadag(self, X:Union[Matrix, Vector]) -> Union[Matrix, Vector]:
         r"""
         Maps a matrix or vector from the q/p basis to the a/adagger basis
 
         Args:
-            X (Union[Batch[Matrix], Batch[Vector]]) : A matrix or vector in the Q/P basis
+            X (Union[Matrix, Vector]) : A matrix or vector in the Q/P basis
 
         Returns:
             The input matrix/vector in the A/A^\dagger basis
@@ -218,14 +218,13 @@ class Converter():
             raise ValueError("Input to complexify must be a matrix or vector")
 
 
-    def _wigner_to_husimi(self, cov:Batch[Matrix], means:Batch[Vector]
-                          ) -> Tuple[Batch[Matrix], Batch[Vector]]:
+    def _wigner_to_husimi(self, cov: Matrix, means: Vector) -> Tuple[Matrix, Vector]:
         r"""
-        Converts from a Wigner covariance and means matrix to Husimi ones.
+        Converts from a Wigner Representation (covariance and mean vector) to Husimi Representation.
 
         Args:
-            cov (Batch[Matrix])     :
-            means (Batch[Vector])   :
+            cov (Matrix)     : covariance matrix of the state
+            means (Vector)   : mean vector of the state
 
         Returns:
             The Husimi representation's complex covariance and means vector
@@ -320,85 +319,7 @@ class Converter():
         return BargmannKet(bargmann_dm.data.A[:N, :N], 
                            bargmann_dm.data.B[:N], 
                            math.sqrt(bargmann_dm.data.C))
-
-
-    #DO NOT TOUCH FOR NOW, THIS IS FOR TRANSFORMATION.
-    def _wigner_to_bargmann_Choi(self, X, Y, d):
-        r"""
-        Converts the wigner representation in terms of covariance matrix and mean vector into 
-        the Bargmann `A,B,C` triple for a channel (i.e. for M modes, A has shape 4M x 4M and B has 
-        shape 4M).
-        We have freedom to choose the order of the indices of the Choi matrix by rearranging the 
-        `MxM` blocks of A and the M-subvectors of B.
-        Here we choose the order `[out_l, in_l out_r, in_r]` (`in_l` and `in_r` to be contracted 
-        with the left and right indices of the density matrix) so that after the contraction the 
-        result has the right order `[out_l, out_r]`.
-
-        Args:
-            X ()    :
-            Y ()    :
-            d ()    :
-
-        Returns:
-            The Bargmann Abc triplet for a quantum channel
-        """
-
-        N = X.shape[-1] // 2
-        I2 = math.eye(2 * N, dtype=X.dtype)
-        XT = math.transpose(X)
-        xi = 0.5 * (I2 + math.matmul(X, XT) + 2 * Y / settings.HBAR)
-        xi_inv = math.inv(xi)
-
-        A = math.block(
-            [
-                [I2 - xi_inv, math.matmul(xi_inv, X)],
-                [math.matmul(XT, xi_inv), I2 - math.matmul(math.matmul(XT, xi_inv), X)],
-            ]
-        )
-
-        I = math.eye(N, dtype="complex128")
-        o = math.zeros_like(I)
-
-        R = math.block(
-            [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
-        ) / np.sqrt(2)
-
-        A = math.matmul(math.matmul(R, A), math.dagger(R))
-        A = math.matmul(A, math.Xmat(2 * N))  # yes: X on the right
-        b = math.matvec(xi_inv, d)
-
-        B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)
-                        ) / math.sqrt(settings.HBAR, dtype=R.dtype
-        )
-
-        B = math.concat([B[2 * N :], B[: 2 * N]], axis=-1)  # yes: opposite order
-        C = math.exp(-0.5 * math.sum(d*b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
-        # now A and B have order [out_l, in_l out_r, in_r].
-
-        return A, B, math.cast(C, "complex128")
-
-
-    #DO NOT TOUCH FOR NOW, THIS IS FOR TRANSFORMATION.
-    def _wigner_to_bargmann_U(self, X, d):
-        r"""
-        Converts the wigner representation in terms of covariance matrix and mean vector into the 
-        Bargmann `A,B,C` triple for a unitary (i.e. for `M` modes, `A` has shape `2M x 2M` and `B` 
-        has shape `2M`).
-
-        Args:
-            X ()    :
-            d ()    :
-
-        Returns:
-            The Bargmann Abc triplet for a unitary transformation
-        """
-
-        N = X.shape[-1] // 2
-        A, B, C = self._wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-        # NOTE: with A_Choi and B_Choi defined with inverted blocks, we now keep the first half 
-        # rather than the second
-
-        return A[: 2 * N, : 2 * N], B[: 2 * N], math.sqrt(C)
+    
 
 
     ########################################################################
@@ -456,61 +377,6 @@ class Converter():
         A, B, C = self._wignerdm_to_bargmanndm(wignerdm)
 
         return math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape))
-
-
-
-    #DO NOT TOUCH FOR NOW, THIS IS FOR TRANSFORMATION.
-    def _wigner_to_fock_U(self, X:Batch[Matrix], d:Batch[Vector], shape):
-        r"""
-        Returns the Fock representation of a Gaussian unitary transformation.
-        The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
-        or with the left indices of a density matrix.
-
-        Args:
-            X (Batch[Matrix])   : the X matrix
-            d (Batch[Vector])   : the d vector
-            shape ()            : the shape of the tensor
-
-        Returns:
-            Tensor: the fock representation of the unitary transformation
-        """
-
-        A, B, C = self._wigner_to_bargmann_U(X, d)
-
-        return math.hermite_renormalized(A, B, C, shape=tuple(shape))
-
-
-    #DO NOT TOUCH FOR NOW, THIS IS FOR TRANSFORMATION.
-    def _wigner_to_fock_Choi(self, X:Batch[Matrix], Y:Batch[Matrix], d:Batch[Vector], shape):
-        r"""
-        Returns the Fock representation of a Gaussian Choi matrix.
-        The order of choi indices is 
-        :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
-        where 
-        :math:`\mathrm{in}_l` 
-        and 
-        :math:`\mathrm{in}_r` 
-        are to be contracted with the left and right indices of a density matrix.
-
-        Arguments:
-            X: the X matrix
-            Y: the Y matrix
-            d: the d vector
-            shape: the shape of the tensor
-
-        Returns:
-            Tensor: the fock representation of the Choi matrix
-        """
-
-        A, B, C = self._wigner_to_bargmann_Choi(X, Y, d)
-
-        return math.hermite_renormalized(A, B, C, shape=tuple(shape))
-
-
-    ########################################################################
-    ###                     From Bargmann to Fock                        ###
-    ########################################################################
-    ###!!! Just the math.hermite_renormalized
 
 
     ########################################################################
@@ -572,7 +438,7 @@ class Converter():
     def _fockket_to_wavefunctionqket(self, 
                                      fock_ket:FockKet, 
                                      qs:Optional[Sequence[Sequence[float]]] = None
-                                     ) -> WavefunctionQKet:
+                                     ) -> WaveFunctionQKet:
         r"""
         Returns the position wavefunction of the Fock ket state at a vector of positions.
 
@@ -586,13 +452,12 @@ class Converter():
             :class:`~.ComplexFunctionND` object.
         """
 
-        # TODO : the object has no cutoffs, where do we get them from?
-        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, self.cutoffs)]
+        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, fock_ket.data.cutoffs)]
 
         ket = fock_ket.data.array
 
         for i, h_n in enumerate(krausses):
-            ket = fock_ket.apply_kraus_to_ket(h_n, ket, [i])
+            ket = apply_kraus_to_ket(h_n, ket, [i])
 
         return ket  # now in q basis
 
@@ -600,7 +465,7 @@ class Converter():
     def _fockdm_to_wavefunctionqdm(self, 
                                    fock_dm: FockDM, 
                                    qs: Optional[Sequence[Sequence[float]]] = None
-                                   ) -> WavefunctionQDM:
+                                   ) -> WaveFunctionQDM:
         r"""
         Returns the position wavefunction of the Fock density matrix at a vector of positions.
 
@@ -613,10 +478,10 @@ class Converter():
             ComplexFunctionND: the wavefunction at the given positions wrapped in a
             :class:`~.ComplexFunctionND` object.
         """
-        # TODO : the object has no cutoffs, where do we get them from?
-        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, self.cutoffs)]
+
+        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, fock_dm.data.cutoffs)]
 
         dm = fock_dm.data.array
         for i, h_n in enumerate(krausses):
-            dm = fock_dm.apply_kraus_to_dm(h_n, dm, [i])
+            dm = apply_kraus_to_dm(h_n, dm, [i])
         return dm
