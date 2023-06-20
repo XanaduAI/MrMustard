@@ -25,10 +25,10 @@ class TestData():
     #########   Common to different methods  #########
 
     def test_TypeError_is_raised_if_other_is_not_scalar():
-        # truediv, rmul
+        # truediv
         pass
 
-    def test_TypeError_is_raised_if_other_object_doesnt_have_same_attributes_attribute():
+    def test_TypeError_is_raised_if_other_object_doesnt_have_same_attributes():
         # eq, add, sub, mul, and
         pass
 
@@ -45,5 +45,7 @@ class TestData():
 
 
     ##################  Equality  ####################
-     def test_when_all_attributes_are_objects_are_equal():
+     def test_when_all_attributes_are_equal_objects_are_equal():
+        # NOTE : see https://stackoverflow.com/questions/11637293/iterate-over-object-attributes-in-python
+        # to iterate over attributes 
         pass

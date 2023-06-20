@@ -33,13 +33,10 @@ class TestMatVecDataAlgebra(TestData):
 
     ##################  Negative  ####################
 
-    def test_negative_returns_new_object_with_same_matrix():
+    def test_negative_returns_new_object_with_same_matrix_and_vector():
         pass
 
-    def test_negative_returns_new_object_with_same_vector():
-        pass
-
-    def test_negative_returns_new_object_withnew_coeffs_with_element_wise_neg():
+    def test_negative_returns_new_object_with_with_element_wise_neg_on_coeffs():
         pass
 
 
@@ -60,57 +57,169 @@ class TestMatVecDataAlgebra(TestData):
 
 
     ################  Subtraction  ###################
-    # NOTE : indirectly via add and neg
+    # NOTE : tested via add and neg
 
     #############  Scalar division  ##################
 
-    def test_truediv__returns_new_object_which_leaves_mat_and_vec_untouched():
+    def test_truediv_returns_new_object_with_same_mat_and_vec():
         pass
 
     def test_truediv_returns_new_object_with_coeffs_element_wise_divided():
         pass
 
-    ###########  Scalar multiplication  ##############
-    # NOTE : part of mul, tested in children classes
+
+    ###############  Multiplication  ##################
+
+    def test_new_object_resulting_from_mul_has_same_shape():
+        pass
+
+    def test_object_mul_when_matrix_and_vector_are_same_coeffs_get_multiplied():
+        pass
+
+    def test_object_mul_when_matrix_and_vector_are_same_only_coeffs_get_multiplied():
+        pass
+
+    def test_scalar_mul_multiplies_coeffs():
+        pass
+
+    def test_scalar_mul_only_multiplies_coeffs():
+        pass
+
 
     ###############  Outer product  ##################
     # TODO: write tests
 
 
+
+
 class TestGaussianDataAlgebra(TestMatVecDataAlgebra):
 
-    #########   Common to different methods  #########
     ####################  Init  ######################
+
+    def test_defining_neither_cov_nor_mean_raises_ValueError():
+        pass
+
+    def test_if_coeffs_is_undefined_it_is_equal_to_1():
+        pass
+
+    def test_if_cov_is_none_then_initialized_at_npeye_of_correct_shape():
+        pass
+
+    def test_non_symplectic_covariance_raises_ValueError():
+        pass
+
+    #NOTE : these do not test edge cases where someone feeds just [0] as means, it only guarantees
+    #  means is not empty. Do we want to secure edge cases?
+
     ##################  Negative  ####################
+    # NOTE : tested in parent class
+
     ##################  Equality  ####################
+    # NOTE : tested in parent class
+
     ##################  Addition  ####################
+    # NOTE : tested in parent class
+
     ################  Subtraction  ###################
+    # NOTE : tested in parent class
+
     #############  Scalar division  ##################
-    ###########  Scalar multiplication  ##############
+    # NOTE : tested in parent class
+
+    ##############  Multiplication  ##################
+
+    def test_if_given_scalar_mul_multiplies_coeffs():
+        pass
+
+    def test_if_given_scalar_mul_does_not_multiply_anything_else_than_coeffs():
+        pass
+
+    # TODO : test compute_mul_covs
+    # TODO : test compute_mul_coeffs
+    # TODO : test compute_mul_means
+
     ###############  Outer product  ##################
+    # NOTE : not implemented so no test
+
+    
+
 
 
 class TestQPolyDataAlgebra(TestMatVecDataAlgebra):
     
-    #########   Common to different methods  #########
     ####################  Init  ######################
+
+    def test_non_symmetric_matrix_raises_ValueError():
+        pass
+
+    def non_real_matrix_raises_ValueError():
+        pass
+
     ##################  Negative  ####################
+    # NOTE : tested in parent class
+
     ##################  Equality  ####################
+    # NOTE : tested in parent class
+
     ##################  Addition  ####################
+    # NOTE : tested in parent class
+
     ################  Subtraction  ###################
+    # NOTE : tested in parent class
+
     #############  Scalar division  ##################
-    ###########  Scalar multiplication  ##############
+    # NOTE : tested in parent class
+
+    ###############  Multiplication  #################
+
+    def test_object_mul_adds_matrices_element_wise():
+        pass
+
+    def test_object_mul_adds_vectors_element_wise():
+        pass
+
     ###############  Outer product  ##################
+    # NOTE : not implemented so no test
+
+
+
 
 
 class TestSymplecticdata(TestMatVecDataAlgebra):
     
-    #########   Common to different methods  #########
     ####################  Init  ######################
+
+    def test_init_without_coeffs_has_coeffs_equal_to_1():
+        pass
+
+    def test_init_with_a_non_symplectic_matrix_raises_ValueError():
+        pass
+
     ##################  Negative  ####################
+    # NOTE : tested in parent class
+
     ##################  Equality  ####################
+    # NOTE : tested in parent class
+
     ##################  Addition  ####################
+    # NOTE : tested in parent class
+
     ################  Subtraction  ###################
+    # NOTE : tested in parent class
+
     #############  Scalar division  ##################
-    ###########  Scalar multiplication  ##############
+    # NOTE : tested in parent class
+
+    ###############  Multiplication  #################
+    
+    def test_mul_raises_TypeError_with_object():
+        pass
+
+    def test_mul_with_scalar_multiplies_coeffs():
+        pass
+
+    def test_mul_with_scalar_only_multiplies_coeffs():
+        pass
+
     ###############  Outer product  ##################
+    # NOTE : not implemented so no test

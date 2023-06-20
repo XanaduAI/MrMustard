@@ -23,24 +23,17 @@ from tests.test_lab.test_representations.test_data.test_data import TestData
 
 class TestArrayDataAlgebra(TestData):
 
-    
-    #########   Common to different methods  #########
-
-
     ####################  Init  ######################
 
     def test_cutoffs_are_correct_for_array_dimensions_2D_to_4D():
         pass
-
 
     ##################  Negative  ####################
 
     def test_negative_returns_new_object_with_element_wise_negative_of_array():
         pass
 
-    
     ##################  Equality  ####################
-
     # NOTE: tested in parent class
 
     
@@ -49,28 +42,24 @@ class TestArrayDataAlgebra(TestData):
     def test_add_returns_new_object_with_element_wise_addition_performed():
         pass
 
-
     ################  Subtraction  ###################
 
     def test_sub_returns_new_object_with_element_wise_subtraction_performed():
         pass
     
-
     #############  Scalar division  ##################
 
     def test_truediv_returns_new_object_with_element_wise_division_performed():
         pass
 
-
-    ###########  Scalar multiplication  ##############
+    ##############  Multiplication  ##################
 
     def test_mul_returns_new_object_with_element_wise_multiplication_performed():
         pass
 
-
     ###############  Outer product  ##################
-    
-    #TODO : write tests for and
+    #TODO : write tests
+
 
 
 
@@ -85,7 +74,6 @@ class TestWavefunctionArrayData(TestArrayDataAlgebra):
     def test_qs_for_new_objects_are_same_as_initial_qs():
         # test on add, sub, 
         pass
-
 
     ####################  Init  ######################
 
@@ -103,7 +91,6 @@ class TestWavefunctionArrayData(TestArrayDataAlgebra):
         pass
 
     ###############  Outer product  ##################
-
     # TODO : test and
     
     #################### Other #######################
@@ -114,5 +101,5 @@ class TestWavefunctionArrayData(TestArrayDataAlgebra):
     def test_qs_is_same_returns_false_when_different_qs():
         pass
 
-    def test_qs_is_same_raises_Typeerror_if_other_has_no_qs():
+    def test_qs_is_same_raises_TypeError_if_other_has_no_qs():
         pass
