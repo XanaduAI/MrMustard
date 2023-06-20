@@ -879,9 +879,24 @@ def displacement(x, y, shape, tol=1e-15):
 
 
 @math.custom_gradient
-def beamsplitter(theta: float, phi: float, cutoffs: Sequence[int]):
-    r"""creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy"""
-    bs_unitary = strategies.beamsplitter(tuple(cutoffs), math.asnumpy(theta), math.asnumpy(phi))
+def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
+    r"""Creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy.
+
+    Args:
+        theta (float): transmittivity angle of the beamsplitter
+        phi (float): phase angle of the beamsplitter
+        cutoffs (int,int): cutoff dimensions of the two modes
+    """
+    if method == "vanilla":
+        bs_unitary = strategies.beamsplitter(shape, math.asnumpy(theta), math.asnumpy(phi))
+    elif method == "schwinger":
+        bs_unitary = strategies.beamsplitter_schwinger(
+            shape, math.asnumpy(theta), math.asnumpy(phi)
+        )
+    else:
+        raise ValueError(
+            f"Unknown beamsplitter method {method}. Options are 'vanilla' and 'schwinger'."
+        )
 
     def vjp(dLdGc):
         return strategies.beamsplitter_vjp(
@@ -895,9 +910,9 @@ def beamsplitter(theta: float, phi: float, cutoffs: Sequence[int]):
 
 
 @math.custom_gradient
-def squeezer(r, phi, cutoffs):
+def squeezer(r, phi, shape):
     r"""creates a single mode squeezer matrix using a numba-based fock lattice strategy"""
-    sq_unitary = strategies.squeezer(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
+    sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
 
     def vjp(dLdGc):
         dr, dphi = strategies.squeezer_vjp(
@@ -912,9 +927,9 @@ def squeezer(r, phi, cutoffs):
 
 
 @math.custom_gradient
-def squeezed(r, phi, cutoffs):
+def squeezed(r, phi, shape):
     r"""creates a single mode squeezed state using a numba-based fock lattice strategy"""
-    sq_ket = strategies.squeezed(tuple(cutoffs), math.asnumpy(r), math.asnumpy(phi))
+    sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
 
     def vjp(dLdGc):
         return strategies.squeezed_vjp(
