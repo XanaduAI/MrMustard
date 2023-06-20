@@ -441,16 +441,16 @@ class BSgate(Parametrized, Transformation):
         self.is_gaussian = True
         self.short_name = "BS"
 
-    def U(self, cutoffs: Optional[List[int]], method="vanilla"):
+    def U(self, cutoffs: Optional[List[int]], method=None):
         r"""Returns the symplectic transformation matrix for the beam splitter.
 
         Args:
             cutoffs (List[int]): the list of cutoff dimensions for each mode
                 in the order (out_0, out_1, in_0, in_1).
             method (str): the method used to compute the unitary matrix. Options are:
-                * 'vanilla' (default): uses the standard method
+                * 'vanilla': uses the standard method
                 * 'schwinger': slower, but numerically stable
-
+            default is set in settings.DEFAULT_BS_METHOD (with 'vanilla' by default)
 
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
