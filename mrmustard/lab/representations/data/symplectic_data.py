@@ -29,7 +29,7 @@ class SymplecticData(MatVecData):
         coeffs (Scalar) : default to be 1.
     """
 
-    def __init__(self, symplectic: RealMatrix, displacements: RealVector, coeffs: Scalar = 1.0) -> None:
+    def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0) -> None:
         #Check if it is a symplectic matrix
         if is_symplectic(symplectic.numpy()):
             super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
@@ -43,7 +43,7 @@ class SymplecticData(MatVecData):
     
 
     @property
-    def displacements(self) -> np.array:
+    def displacement(self) -> np.array:
         return self.vec
 
 
