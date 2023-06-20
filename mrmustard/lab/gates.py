@@ -465,7 +465,7 @@ class BSgate(Parametrized, Transformation):
             self.theta.value,
             self.phi.value,
             shape,
-            method=method,
+            method=method or settings.DEFAULT_BS_METHOD,
         )
 
     @property
