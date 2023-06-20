@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mrmustard.lab.representations import Wigner
+from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.typing import Matrix, Vector
 
 class WignerKet(Wigner):
