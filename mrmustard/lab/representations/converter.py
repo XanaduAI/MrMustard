@@ -148,8 +148,8 @@ class Converter():
             new_s = c.convert(source=s, destination="Fock")
 
         Args:
-            source (State)      : the state which representation must be transformed
-            destination (str)   : the name of the target prepresentation, 
+            source      : the state which representation must be transformed
+            destination : the name of the target prepresentation, 
                                 this name must NOT include ket/DM
 
 
@@ -158,7 +158,7 @@ class Converter():
         """
         try:
             s_name = source.__class__.__name__
-            d_name = self._find_target_node_name(source=source, destination=destination)
+            d_name = self._find_target_node_name(source=s_name, destination=destination)
             f = self.g[s_name][d_name]
             if s_name == "WignerKet" and d_name == "FockKet":
                 max_prob = kwargs.get('max_prob', 0.0)
