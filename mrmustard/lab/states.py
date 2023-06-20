@@ -42,22 +42,30 @@ __all__ = [
 
 
 class Vacuum(State):
-    r"""The N-mode vacuum state.
-        WignerDM by default and flag_ket = True goes for WignerKet.
+    r"""The N-mode vacuum state. WignerKet representation with a symplectic matrix and a displacement.
     """
 
-    def __init__(self, num_modes: int, flag_ket: bool = False):
-        cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
-        means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        if flag_ket is not True:
-            State.__init__(self, cov=cov, means=means, flag_ket=False)
-        else:
-            State.__init__(self, symplectic=cov, displacement=means, flag_ket=True)
+    def __init__(self, num_modes: int, hbar: float = settings.HBAR):
+        self.hbar = hbar
+        symplectic = math.eye(num_modes * 2, dtype=math.float64)
+        displacement = gaussian.displacement(
+        math.zeros(num_modes, dtype="float64"),
+        math.zeros(num_modes, dtype="float64"),
+        hbar,
+        )
+        State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
 
+    @property
+    def cov(self):
+        return self.hbar / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
+    
+    @property
+    def means(self):
+        return self.representation.data.displacement
 
 class Coherent(Parametrized, State):
     r"""The N-mode coherent state.
-        WignerKet by default and flag_ket = False goes for WignerDM.
+        WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a displacement to the vacuum state:
 
@@ -87,7 +95,6 @@ class Coherent(Parametrized, State):
         x_bounds (float or None, float or None): The bounds of the x-displacement.
         y_bounds (float or None, float or None): The bounds of the y-displacement.
         modes (optional List[int]): The modes of the coherent state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Coherent``
     """
 
@@ -101,7 +108,6 @@ class Coherent(Parametrized, State):
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
         normalize: bool = False,
-        flag_ket: bool = True,
     ):
         Parametrized.__init__(
             self,
@@ -115,22 +121,22 @@ class Coherent(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        if flag_ket:
-            d = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-            S = gaussian.vacuum_cov(d.shape[-1] // 2, settings.HBAR)
-            State.__init__(self, symplectic=S, displacement=d, modes=modes, flag_ket=True)
-        else:
-            means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-            cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
-            State.__init__(self, cov=cov, means=means, modes=modes, flag_ket=False)
-
+        displacement = gaussian.displacement(x.value, y.value, settings.HBAR)
+        symplectic =  math.eye(len(modes) * 2, dtype=math.float64)
+        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
+    
+    
+    @property
+    def cov(self):
+        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
+        
     @property
     def means(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return self.representation.data.displacement
 
 
 class SqueezedVacuum(Parametrized, State):
-    r"""The N-mode squeezed vacuum state.
+    r"""The N-mode squeezed vacuum state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a squeezing gate to the vacuum state:
 
@@ -159,7 +165,6 @@ class SqueezedVacuum(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the squeezed vacuum state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``SqueezedVacuum``,
     """
 
@@ -186,17 +191,27 @@ class SqueezedVacuum(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        S = gaussian.squeezing_symplectic(self.r.value, self.phi.value, settings.HBAR)
-        d = gaussian.vacuum_means(S.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, symplectic=S, displacement=d)
+        symplectic = gaussian.squeezing_symplectic(r.value, phi.value, settings.HBAR)
+        displacement = gaussian.displacement(
+        math.zeros(len(r), dtype="float64"),
+        math.zeros(len(r), dtype="float64"),
+        settings.HBAR,
+        )
+        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
+
 
     @property
-    def symplectic(self):
-        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+    def cov(self):
+        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
+    
+
+    @property
+    def means(self):
+        return self.representation.data.displacement
 
 
 class TMSV(Parametrized, State):
-    r"""The 2-mode squeezed vacuum state.
+    r"""The 2-mode squeezed vacuum state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
 
@@ -213,7 +228,6 @@ class TMSV(Parametrized, State):
         r_bounds (tuple): The bounds of the squeezing magnitude.
         phi_bounds (tuple): The bounds of the squeezing phase.
         modes (list): The modes of the two-mode squeezed vacuum state. Must be of length 2.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``TMSV``
     """
 
@@ -226,7 +240,6 @@ class TMSV(Parametrized, State):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = (0, 1),
-        cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
         Parametrized.__init__(
@@ -241,17 +254,26 @@ class TMSV(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        S = gaussian.two_mode_squeezing_symplectic(self.r.value, self.phi.value)
-        d = gaussian.vacuum_means(2, settings.HBAR)
-        State.__init__(self, symplectic=S, displacement=d)
+        symplectic = gaussian.two_mode_squeezing_symplectic(r.value, phi.value)
+        displacement = gaussian.displacement(
+        math.zeros(len(r), dtype="float64"),
+        math.zeros(len(r), dtype="float64"),
+        settings.HBAR,
+        )
+        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
     @property
-    def symplectic(self):
-        return gaussian.two_mode_squeezing_symplectic(self.r.value, self.phi.value)
+    def cov(self):
+        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
+    
+
+    @property
+    def means(self):
+        return self.representation.data.displacement
 
 
 class Thermal(Parametrized, State):
-    r"""The N-mode thermal state.
+    r"""The N-mode thermal state. WignerDM representation with a density matrix and a mean vector.
 
     Equivalent to applying additive noise to the vacuum:
 
@@ -272,7 +294,6 @@ class Thermal(Parametrized, State):
         nbar_trainable (bool): whether the ``nbar`` is trainable
         nbar_bounds (tuple): the bounds of the ``nbar``
         modes (list): the modes of the thermal state
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``Thermal``
     """
 
@@ -282,7 +303,6 @@ class Thermal(Parametrized, State):
         nbar_trainable: bool = False,
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0, None),
         modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
         Parametrized.__init__(
@@ -296,15 +316,20 @@ class Thermal(Parametrized, State):
 
         cov = gaussian.thermal_cov(self.nbar.value, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        State.__init__(self, cov=cov, means=means, flag_ket=False)
 
     @property
     def cov(self):
-        return gaussian.thermal_cov(self.nbar.value, settings.HBAR)
+        return self.representation.data.cov
+    
+
+    @property
+    def means(self):
+        return self.representation.data.means
 
 
 class DisplacedSqueezed(Parametrized, State):
-    r"""The N-mode displaced squeezed state.
+    r"""The N-mode displaced squeezed state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a displacement to the squeezed vacuum state:
 
@@ -341,7 +366,6 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds (tuple): the bounds of the displacement in the x direction
         y_bounds (tuple): the bounds of the displacement in the y direction
         modes (list): the modes of the displaced squeezed state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto ``DisplacedSqueezed``
     """
 
@@ -360,7 +384,6 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
         Parametrized.__init__(
@@ -381,21 +404,23 @@ class DisplacedSqueezed(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        S = gaussian.squeezing_symplectic(self.r.value, self.phi.value)
-        d = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-        State.__init__(self, symplectic=S, displacement=d, modes=modes)
+        symplectic = gaussian.squeezing_symplectic(r.value, phi.value)
+        displacement = gaussian.displacement(x.value, y.value, settings.HBAR)
+        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
     @property
-    def symplectic(self):
-        return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
+    def cov(self):
+        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
+    
 
     @property
-    def displacement(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+    def means(self):
+        return self.representation.data.displacement
 
 
 class Gaussian(Parametrized, State):
-    r"""The N-mode Gaussian state parametrized by a symplectic matrix and N symplectic eigenvalues.
+    r"""The N-mode Gaussian state parametrized by a symplectic matrix and N symplectic eigenvalues. 
+        WignerDM representation with a density matrix and a mean vector.
 
     The (mixed) Gaussian state is equivalent to applying a Gaussian symplectic transformation to a Thermal state:
 
@@ -420,7 +445,6 @@ class Gaussian(Parametrized, State):
         symplectic_trainable (bool): whether the symplectic matrix is trainable
         eigenvalues_bounds (tuple): the bounds of the eigenvalues
         modes (optional, List[int]): the modes of the Gaussian state.
-        cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
         normalize (bool, default False): whether to normalize the leftover state when projecting onto Gaussian
     """
 
@@ -433,13 +457,12 @@ class Gaussian(Parametrized, State):
         eigenvalues_trainable: bool = False,
         eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (settings.HBAR / 2, None),
         modes: List[int] = None,
-        cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
         if symplectic is None:
             symplectic = math.random_symplectic(num_modes=num_modes)
         if eigenvalues is None:
-            eigenvalues = gaussian.math.ones(num_modes) * settings.HBAR / 2
+            eigenvalues = math.ones(num_modes) * settings.HBAR / 2
         if math.any(math.atleast_1d(eigenvalues) < settings.HBAR / 2):
             raise ValueError(
                 f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2 = {settings.HBAR/2}"
@@ -456,21 +479,30 @@ class Gaussian(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        cov = gaussian.gaussian_cov(symplectic.value, eigenvalues.value)
+        means = gaussian.displacement(
+        math.zeros(cov.shape[-1]//2, dtype="float64"),
+        math.zeros(cov.shape[-1]//2, dtype="float64"),
+        settings.HBAR,
+        )
+        State.__init__(self, cov=cov, means=means, flag_ket=False)
 
     @property
     def cov(self):
-        return gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
+        return self.representation.data.cov
+    
+
+    @property
+    def means(self):
+        return self.representation.data.means
 
     @property
     def is_mixed(self):
-        return any(self.eigenvalues.value > settings.HBAR / 2)
+        return self.is_mixed
 
 
 class Fock(Parametrized, State):
-    r"""The N-mode Fock state.
+    r"""The N-mode Fock state. FockrKet representation with an array.
 
     Args:
         n (int or List[int]): the number of photons in each mode
@@ -486,7 +518,7 @@ class Fock(Parametrized, State):
         cutoffs: Sequence[int] = None,
         normalize: bool = False,
     ):
-        State.__init__(self, fock=fock.fock_state(n), cutoffs=cutoffs, flag_ket=True)
+        State.__init__(self, fock=fock.fock_state(n, cutoffs=cutoffs), modes=modes, flag_ket=True)
         Parametrized.__init__(self)
 
         self._n = [n] if isinstance(n, int) else n
