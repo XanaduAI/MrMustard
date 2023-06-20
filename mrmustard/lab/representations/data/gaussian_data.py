@@ -85,17 +85,17 @@ class GaussianData(MatVecData):
 
 
     @property
-    def cov(self) -> Optional[Matrix]:
+    def cov(self) -> Matrix:
         return self.mat
     
 
     @property
-    def mean(self) -> Optional[Vector]:
+    def mean(self) -> Vector:
         return self.vec
 
 
     @property
-    def c(self) -> Optional[Scalar]:
+    def c(self) -> Scalar:
         return self.coeffs
 
 

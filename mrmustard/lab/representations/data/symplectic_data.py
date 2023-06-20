@@ -29,12 +29,12 @@ class SymplecticData(MatVecData):
         coeffs (Scalar) : default to be 1.
     """
 
-    def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0) -> None:
+    def __init__(self, symplectic: RealMatrix, displacements: RealVector, coeffs: Scalar = 1.0) -> None:
         #Check if it is a symplectic matrix
         if is_symplectic(symplectic):
-            super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
+            super().__init__(mat=symplectic, vec=displacements, coeffs=coeffs)
         else:
-            raise AttributeError("The matrix given is not symplectic.")
+            raise ValueError("The matrix given is not symplectic.")
 
 
     @property
@@ -43,7 +43,7 @@ class SymplecticData(MatVecData):
     
 
     @property
-    def displacement(self) -> np.array:
+    def displacements(self) -> np.array:
         return self.vec
     
 
@@ -53,4 +53,9 @@ class SymplecticData(MatVecData):
 
 
     def __mul__(self, other:Scalar) -> SymplecticData:
-        return self.__class__(symplectic=self.mat, displacement=self.vec, coeffs=self.coeffs*other)
+        if isinstance(other, SymplecticData):
+            raise TypeError("Symplectic can only be multiplied by a scalar")
+        else:
+            new_coeffs = self.coeffs * other
+            return self.__class__(symplectic= self.symplectic, displacements= self.displacements, 
+                                  coeffs= new_coeffs)

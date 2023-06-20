@@ -45,7 +45,7 @@ class QPolyData(MatVecData):
         # if isinstance(A, GaussianData):
         #     A, b, c = self._from_GaussianData(covmat=A)
 
-        if np.allclose(A, np.transpose(A)): #Check taht matrix A is real and symmetric
+        if np.allclose(A, np.transpose(A)): #Check that matrix A is real and symmetric
             super().__init__(mat=A, vec=b, coeffs=c)
         else:
             raise ValueError("The matrix A is not real symmetric.")
@@ -66,20 +66,15 @@ class QPolyData(MatVecData):
 
 
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
-
-        if isinstance(other, Scalar): # WARNING: this means we have to be very logical with our typing!
-            combined_coeffs = self.c*other
-            return self.__class__(A=self.A, b=self.b, c=combined_coeffs)
-        else:
-            try:
-                return self.__class__(A = self.A + other.A, 
-                                      b = self.b + other.b, 
-                                      c = self.c * other.c
-                                      )
-            
-            except AttributeError:
-                return self.__class__(self.A, self.b, self.c * other)
-            
+        try: # Object case
+            return self.__class__(A = self.A + other.A, 
+                                    b = self.b + other.b, 
+                                    c = self.c * other.c
+                                    )
+        
+        except AttributeError: # Scalar case
+            return self.__class__(self.A, self.b, self.c * other)
+        
     
     # @staticmethod
     # def _from_GaussianData(covmat:GaussianData
