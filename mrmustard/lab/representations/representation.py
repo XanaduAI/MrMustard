@@ -56,7 +56,7 @@ class Representation(ABC):
         r""" Valid for Fock : variance of the number operator in each mode. """
         raise NotImplementedError()
 
-    @abstractproperty
+
     def number_stdev(self) -> int:
         r""" Valid for Fock: square root of the photon number variances (standard deviation) 
         in each mode. """

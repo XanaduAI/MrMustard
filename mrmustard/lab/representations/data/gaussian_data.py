@@ -30,7 +30,7 @@ math = Math()
 class GaussianData(MatVecData):
     r""" Gaussian data for certain representation objects.
 
-    Gaussian data is made of covariance, mean and coefficient. Each of these has a batch dimension, 
+    Gaussian data is made of covariance, mean vector and coefficient. Each of these has a batch dimension, 
     and the length of the batch dimension is the same for all three.
     These are the parameters of a linear combination of Gaussians, which is Gaussian if there is 
     only one contribution for each.
@@ -39,7 +39,7 @@ class GaussianData(MatVecData):
 
     Args:
         cov: covariance matrices (real symmetric)
-        mean: mean vector of the state (real)
+        means: mean vector of the state (real)
         coeffs: coefficients (complex)
 
     Raises:
@@ -48,24 +48,24 @@ class GaussianData(MatVecData):
 
     def __init__(self,
         cov: Optional[Matrix] = None,
-        mean: Optional[Vector] = None,
+        means: Optional[Vector] = None,
         coeffs: Optional[Scalar] = 1.0
         ) -> None:
     
         #TODO: BATCH
-        if (cov or mean): # at least one is defined -or both-
+        if cov is not None or means is not None: # at least one is defined -or both-
     
             if cov is None:
-                self.num_modes = mean.shape
-                cov = math.eye(2 * self.num_modes, dtype=mean.dtype)
+                self.num_modes = means.shape
+                cov = math.eye(2 * self.num_modes, dtype=means.dtype)
                 # batch_size = mean.shape[-2]
                 # cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
 
-            else: # we know mean is None here
+            else: # we know means is None here
                 self.num_modes = cov.shape[-1]
                 #Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
                 if cov + 1j*sympmat(self.num_modes, dtype=cov.dtype) >= 0:
-                    mean = math.zeros(self.num_modes, dtype=cov.dtype)
+                    means = math.zeros(self.num_modes, dtype=cov.dtype)
                 else:
                     raise ValueError("The covariance matrix is not valid. cov + i\Omega < 0.")
                 # batch_size = cov.shape[-3]
@@ -73,15 +73,15 @@ class GaussianData(MatVecData):
         else:
             raise ValueError("You need to define at one: covariance or mean")
 
-        if coeffs is None:
-            coeffs = 1.0
+        # if coeffs is None:
+        #     coeffs = 1.0
             # batch_size = cov.shape[-3]
             # coeffs = math.ones((batch_size), dtype=mean.dtype)
 
         # if isinstance(cov, QPolyData):
         #     cov, mean, coeffs = self._from_QPolyData(poly=cov)
 
-        super().__init__(mat=cov, vec=mean, coeffs=coeffs)
+        super().__init__(mat=cov, vec=means, coeffs=coeffs)
 
 
     @property
@@ -90,18 +90,18 @@ class GaussianData(MatVecData):
     
 
     @property
-    def mean(self) -> Optional[Vector]:
+    def means(self) -> Optional[Vector]:
         return self.vec
 
 
     @property
-    def c(self) -> Optional[Scalar]:
+    def coeffs(self) -> Optional[Scalar]:
         return self.coeffs
 
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
         if isinstance(other, Scalar):
-            return self.__class__(cov=self.cov, mean=self.mean, coeffs=self.coeffs*other)
+            return self.__class__(cov=self.cov, means=self.means, coeffs=self.coeffs*other)
         
         else:
 
@@ -114,7 +114,7 @@ class GaussianData(MatVecData):
                                                         joint_covs=joint_covs,
                                                         joint_means=joint_means)
 
-                return self.__class__(cov=joint_covs, mean=joint_means, coeffs=joint_coeffs)
+                return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
 
             except AttributeError as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
@@ -145,8 +145,8 @@ class GaussianData(MatVecData):
                                 - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
                             )
                            for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
-                                                                    self.cov, self.mean, 
-                                                                    other.cov, other.mean, 
+                                                                    self.cov, self.means, 
+                                                                    other.cov, other.means, 
                                                                     joint_covs, joint_means, 
                                                                     self.coeffs, other.coeffs
                                                                     ) 
@@ -166,8 +166,8 @@ class GaussianData(MatVecData):
         """
         combined_means = [ math.matvec(c1, math.solve(c1 + c2, m2)) 
                           + math.matvec(c2, math.solve(c1 + c2, m1)) 
-                          for c1, m1 in zip(self.cov, self.mean) 
-                          for c2, m2 in zip(other.cov, other.mean)
+                          for c1, m1 in zip(self.cov, self.means) 
+                          for c2, m2 in zip(other.cov, other.means)
                           ]
         return math.astensor(combined_means)
 

@@ -80,8 +80,8 @@ class WavefunctionArrayData(ArrayData):
         return self.__class__(array=np.outer(self.array, other.array), qs=np.outer(self.qs, other.qs))
 
 
-    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> WavefunctionArrayData:
-        raise NotImplementedError() # TODO: implement
+    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> WavefunctionArrayData:
+    #     raise NotImplementedError() # TODO: implement
     
 
     def _qs_is_same(self, other:WavefunctionArrayData) -> bool:

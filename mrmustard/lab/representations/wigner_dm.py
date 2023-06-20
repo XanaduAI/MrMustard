@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from mrmustard.lab.representations.wigner import Wigner
-from mrmustard.typing import Matrix, Vector
+from mrmustard.typing import Matrix, Vector, Scalar
 
 class WignerDM(Wigner):
 
@@ -28,7 +28,7 @@ class WignerDM(Wigner):
     def __init__(self,
                  cov: Matrix, 
                  means: Vector, 
-                 coeffs: Matrix
+                 coeffs: Scalar = 1.0
                  ) -> None:
         
         super().__init__(cov=cov, means=means, coeffs=coeffs)

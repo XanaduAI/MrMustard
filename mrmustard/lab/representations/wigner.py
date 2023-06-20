@@ -34,7 +34,7 @@ class Wigner(Representation):
     def __init__(self,
                  cov: Matrix, 
                  means: Vector, 
-                 coeffs: Matrix
+                 coeffs: Scalar = 1.0
                  ) -> None:
 
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)

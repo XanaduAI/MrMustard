@@ -85,17 +85,17 @@ class Data(ABC):
         raise NotImplementedError()
 
 
-    @abstractmethod
-    def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
-        r""" Simplifies the object by performing some data compression.
+    # @abstractmethod
+    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
+    #     r""" Simplifies the object by performing some data compression.
 
-        Args:
-            rtol: the relative tolerance for numpy's `allclose`
-            atol: the absolute tolerance for numpy's `allclose`
+    #     Args:
+    #         rtol: the relative tolerance for numpy's `allclose`
+    #         atol: the absolute tolerance for numpy's `allclose`
 
-        Returns:
-            An object of the same input class, simplified
-        """
-        raise NotImplementedError()
+    #     Returns:
+    #         An object of the same input class, simplified
+    #     """
+    #     raise NotImplementedError()
 
 
