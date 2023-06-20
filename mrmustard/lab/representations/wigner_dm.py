@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
 from mrmustard.lab.representations import Wigner
-from mrmustard.typing import Batch, Matrix, Vector
+from mrmustard.typing import Matrix, Vector
 
 class WignerDM(Wigner):
 
@@ -27,9 +26,9 @@ class WignerDM(Wigner):
     """
 
     def __init__(self,
-                 cov:Optional[Batch[Matrix]], 
-                 means:Optional[Batch[Vector]], 
-                 coeffs:Optional[Batch[Matrix]]
+                 cov: Matrix, 
+                 means: Vector, 
+                 coeffs: Matrix
                  ) -> None:
         
         super().__init__(cov=cov, means=means, coeffs=coeffs)

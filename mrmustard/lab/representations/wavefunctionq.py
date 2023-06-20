@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import numpy as np
-from mrmustard.lab.representations import Representation
-from mrmustard.lab.representations.data import WavefunctionArrayData
+from mrmustard.lab.representations.representation import Representation
+from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
 
 class WaveFunctionQ(Representation):
     r""" Wavefunction representation of a state.

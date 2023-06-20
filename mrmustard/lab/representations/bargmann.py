@@ -15,7 +15,7 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations import Representation
 from mrmustard.lab.representations.data import QpolyData
-from mrmustard.typing import Batch, Matrix, RealVector, RealMatrix, Scalar, Tensor, Vector
+from mrmustard.typing import Matrix, RealVector, RealMatrix, Scalar, Tensor, Vector
 
 math = Math()
 
@@ -28,7 +28,7 @@ class Bargmann(Representation):
         c: constants
     """
 
-    def __init__(self, A:Batch[Matrix], b:Batch[Vector], c:Batch[Scalar]) -> None:
+    def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         self.data = QpolyData(A=A, b=b, c=c)
 
 

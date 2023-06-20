@@ -13,13 +13,9 @@
 # limitations under the License.
 
 import numpy as np
-from typing import List, Union
 from mrmustard.math import Math
-from math.mmtensor import MMTensor
-from mrmustard.lab.representations import Fock
-from mrmustard.lab.representations.data import ArrayData
-from mrmustard.typing import Scalar, Tensor, RealVector
-from mrmustard.lab.representations.fock import validate_contraction_indices
+from mrmustard.lab.representations.fock import Fock
+from mrmustard.typing import Tensor
 
 math = Math()
 
@@ -32,10 +28,11 @@ class FockKet(Fock):
 
     def __init__(self, array:np.array):
         super().__init__(array=array)
-        self.num_modes = len(self.array.shape) #TODO: BATCH ISSUE?
+        self.num_modes = len(self.array.shape)
+        self.cutoffs = self.array.shape
 
 
-    def purity(self) -> Scalar:
+    def purity(self) -> float:
         return 1.0
 
 
