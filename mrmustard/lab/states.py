@@ -16,6 +16,7 @@
 This module implements the quantum states upon which a quantum circuits acts on.
 """
 
+import numpy as np
 from typing import List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
@@ -118,12 +119,14 @@ class Coherent(Parametrized, State):
             x_bounds=x_bounds,
             y_bounds=y_bounds,
         )
-        self._modes = modes
+        if modes is not None:
+            self._modes = modes
         self._normalize = normalize
 
-        displacement = gaussian.displacement(x.value, y.value, settings.HBAR)
-        symplectic =  math.eye(len(modes) * 2, dtype=math.float64)
-        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
+        displacement = gaussian.displacement(x, y, settings.HBAR)
+        if isinstance(x, float):
+            symplectic =  math.eye(2, dtype=math.float64)
+        State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
     
     
     @property
@@ -191,12 +194,13 @@ class SqueezedVacuum(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        symplectic = gaussian.squeezing_symplectic(r.value, phi.value, settings.HBAR)
-        displacement = gaussian.displacement(
-        math.zeros(len(r), dtype="float64"),
-        math.zeros(len(r), dtype="float64"),
-        settings.HBAR,
-        )
+        symplectic = gaussian.squeezing_symplectic(r, phi)
+        if isinstance(r, float):
+            displacement = gaussian.displacement(
+            math.zeros(1, dtype="float64"),
+            math.zeros(1, dtype="float64"),
+            settings.HBAR,
+            )
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
 
