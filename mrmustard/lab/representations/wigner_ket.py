@@ -13,22 +13,23 @@
 # limitations under the License.
 
 from mrmustard.lab.representations.wigner import Wigner
+from mrmustard.lab.representations.data.symplectic_data import SymplecticData
 from mrmustard.typing import Matrix, Vector, Scalar
 
 class WignerKet(Wigner):
     r""" Wigner representation of a Ket state.
     
     Args:
-        cov: covariance matrices (real symmetric)
-        mean: means (real)
+        symplectic: symplectic matrix
+        displacement: dispalcement vector
         coeffs: coefficients (complex) 
     """
 
     def __init__(self,
-                 cov: Matrix, 
-                 means: Vector, 
+                 symplectic: Matrix, 
+                 displacement: Vector, 
                  coeffs: Scalar = 1.0
                  ) -> None:
         
-        super().__init__(cov=cov, means=means, coeffs=coeffs)
+        self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
         self.num_modes = self.cov.shape[-1]

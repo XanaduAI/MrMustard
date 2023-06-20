@@ -14,7 +14,7 @@
 
 from mrmustard.math import Math
 from mrmustard.lab.representations.representation import Representation
-from mrmustard.lab.representations.data.gaussian_data import GaussianData
+from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Scalar, RealMatrix, RealVector, Matrix, Vector, Tensor
 from typing import List
 from mrmustard import settings
@@ -37,7 +37,7 @@ class Wigner(Representation):
                  coeffs: Scalar = 1.0
                  ) -> None:
 
-        self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
+        self.data = MatVecData(cov=cov, means=means, coeffs=coeffs)
         
     
     @property

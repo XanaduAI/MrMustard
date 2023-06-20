@@ -64,7 +64,7 @@ class GaussianData(MatVecData):
             else: # we know means is None here
                 self.num_modes = cov.shape[-1]
                 #Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
-                if cov + 1j*sympmat(self.num_modes, dtype=cov.dtype) >= 0:
+                if cov + 1j*sympmat(self.num_modes) >= 0:
                     means = math.zeros(self.num_modes, dtype=cov.dtype)
                 else:
                     raise ValueError("The covariance matrix is not valid. cov + i\Omega < 0.")

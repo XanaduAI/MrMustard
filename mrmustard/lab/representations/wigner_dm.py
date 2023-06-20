@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from mrmustard.lab.representations.wigner import Wigner
+from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Vector, Scalar
 
 class WignerDM(Wigner):
@@ -31,5 +32,5 @@ class WignerDM(Wigner):
                  coeffs: Scalar = 1.0
                  ) -> None:
         
-        super().__init__(cov=cov, means=means, coeffs=coeffs)
+        self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
         self.num_modes = self.cov.shape[-1] // 2
