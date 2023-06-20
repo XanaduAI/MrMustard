@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 import numpy as np
-from mrmustard.lab.representations.data import Data
+from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
