@@ -163,11 +163,11 @@ class Converter():
             if s_name == "WignerKet" and d_name == "FockKet":
                 max_prob = kwargs.get('max_prob', 0.0)
                 max_photon = kwargs.get('max-photon', 0)
-                cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
-                return f(source, cutoffs=cutoffs, max_prob=max_prob, max_photon=max_photon)
-            if s_name == "WignerDM" and d_name == "FockDM":
-                cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
-                return f(source, cutoffs=cutoffs)
+                # cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
+                return f(source, max_prob=max_prob, max_photon=max_photon)
+            # if s_name == "WignerDM" and d_name == "FockDM":
+                # cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
+                # return f(source, cutoffs=cutoffs)
             else:
                 return f(source)
         
