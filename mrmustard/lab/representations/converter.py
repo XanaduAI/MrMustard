@@ -159,7 +159,7 @@ class Converter():
         try:
             s_name = source.__class__.__name__
             d_name = self._find_target_node_name(source=s_name, destination=destination)
-            f = self.g[s_name][d_name]
+            f = self.g[s_name][d_name]["f"]
             if s_name == "WignerKet" and d_name == "FockKet":
                 max_prob = kwargs.get('max_prob', 0.0)
                 max_photon = kwargs.get('max-photon', 0)
