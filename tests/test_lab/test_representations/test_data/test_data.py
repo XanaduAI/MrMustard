@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+import operator as op
 import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
@@ -25,14 +26,18 @@ DATA = MockData()
 class TestData():
 
     #########   Common to different methods  #########
-    @given(x=everything_except( (int, float, complex) ))
-    def test_truediv_raises_TypeError_if_other_is_not_scalar(self, x):
+    @given(x = everything_except( (int, float, complex) ))
+    def test_truediv_raises_TypeError_if_divisor_is_not_scalar(self, x):
         with pytest.raises(TypeError):
             DATA / x
 
-    def test_TypeError_is_raised_if_other_object_doesnt_have_same_attributes(self):
-        # eq, add, sub, mul, and
-        pass
+    @given(other = st.from_type(MockNoCommonAttributeObject))
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.div, op.eq, op.and_])
+    def test_algebraic_ops_raises_TypeError_if_other_object_has_different_attributes(self, 
+                                                                                     other,
+                                                                                     operator):
+        with pytest.raises(TypeError):
+            operator(DATA, other) # op must be the series of operators aka  == &
 
     def test_new_object_created_by_method_has_same_attribute_shapes_as_old_object(self):
         # neg, add, sub, truediv, rmul, mul, simplify
@@ -51,3 +56,6 @@ class TestData():
         # NOTE : see https://stackoverflow.com/questions/11637293/iterate-over-object-attributes-in-python
         # to iterate over attributes 
         pass
+
+
+    
