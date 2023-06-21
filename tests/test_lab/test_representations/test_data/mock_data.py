@@ -48,7 +48,32 @@ class MockData():
 
 
 class MockNoCommonAttributeObject():
+    r""" Mock placeholder class for an object which has different attributes but same methods. """
     def __init__(self) -> None:
         self.apple = None
         self.pear = None
         self.banana = None
+
+    def __neg__(self):
+        pass
+
+    def __eq__(self):
+        pass
+
+    def __add__(self):
+        pass
+
+    def __sub__(self):
+        pass
+
+    def __truediv__(self):
+        pass
+
+    def __mul__(self):
+        pass
+
+    def __rmul__(self):
+        pass
+
+    def __and__(self):
+        pass

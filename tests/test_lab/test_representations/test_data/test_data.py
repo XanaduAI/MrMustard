@@ -32,7 +32,7 @@ class TestData():
             DATA / x
 
     @given(other = st.from_type(MockNoCommonAttributeObject))
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.div, op.eq, op.and_])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
     def test_algebraic_ops_raises_TypeError_if_other_object_has_different_attributes(self, 
                                                                                      other,
                                                                                      operator):
