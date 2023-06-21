@@ -32,12 +32,6 @@ class ArrayData(Data):
         self.array = array
         self.cutoffs = self.array.shape
 
-    
-    @property
-    def cutoffs(self) -> Union[int, List[int]]:
-        """ The cutoffs for the Fock representation. """
-        return self.array.shape()
-
 
     def __neg__(self) -> Data:
         return self.__class__(array= -self.array)
