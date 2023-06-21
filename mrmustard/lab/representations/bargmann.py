@@ -34,7 +34,7 @@ class Bargmann(Representation):
 
     @property
     def purity(self) -> Scalar:
-        raise NotImplementedError("Get this of this state from other representations!")
+        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
     
 
     @property    
