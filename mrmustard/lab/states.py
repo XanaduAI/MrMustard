@@ -123,9 +123,19 @@ class Coherent(Parametrized, State):
             self._modes = modes
         self._normalize = normalize
 
+        #Make sure the size of the x and y is the same if they are both List
+        if isinstance(x, List) and isinstance(y, List):
+            num_modes = len(x)
+            if len(x) != len(y):
+                raise AttributeError("Both parameters x and y don't have the same size!")
+        elif isinstance(x, float) and isinstance(y, float):
+            num_modes = 1
+        else:
+            #One List and another float is also not acceptable
+            raise AttributeError("Both parameters x and y don't have the same size!")
+
         displacement = gaussian.displacement(x, y, settings.HBAR)
-        if isinstance(x, float):
-            symplectic =  math.eye(2, dtype=math.float64)
+        symplectic =  math.eye(2 * num_modes, dtype=math.float64)
         State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
     
     
@@ -194,11 +204,21 @@ class SqueezedVacuum(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
+        #Make sure the size of the r and phi is the same if they are both List
+        if isinstance(r, List) and isinstance(phi, List):
+            num_modes = len(r)
+            if len(r) != len(phi):
+                raise AttributeError("Both parameters r and phi don't have the same size!")
+        elif isinstance(r, float) and isinstance(phi, float):
+            num_modes = 1
+        else:
+            #One List and another float is also not acceptable
+            raise AttributeError("Both parameters r and phi don't have the same size!")
+
         symplectic = gaussian.squeezing_symplectic(r, phi)
-        if isinstance(r, float):
-            displacement = gaussian.displacement(
-            math.zeros(1, dtype="float64"),
-            math.zeros(1, dtype="float64"),
+        displacement = gaussian.displacement(
+            math.zeros(num_modes, dtype="float64"),
+            math.zeros(num_modes, dtype="float64"),
             settings.HBAR,
             )
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
@@ -215,6 +235,7 @@ class SqueezedVacuum(Parametrized, State):
 
 
 class TMSV(Parametrized, State):
+    #TODO: without batch can not touch this!
     r"""The 2-mode squeezed vacuum state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
@@ -258,12 +279,23 @@ class TMSV(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        symplectic = gaussian.two_mode_squeezing_symplectic(r.value, phi.value)
+        #Make sure the size of the r and phi is the same if they are both List
+        if isinstance(r, List) and isinstance(phi, List):
+            num_modes = len(r)
+            if len(r) != len(phi):
+                raise AttributeError("Both parameters r and phi don't have the same size!")
+        elif isinstance(r, float) and isinstance(phi, float):
+            num_modes = 1
+        else:
+            #One List and another float is also not acceptable
+            raise AttributeError("Both parameters r and phi don't have the same size!")
+
+        symplectic = gaussian.two_mode_squeezing_symplectic(r, phi)
         displacement = gaussian.displacement(
-        math.zeros(len(r), dtype="float64"),
-        math.zeros(len(r), dtype="float64"),
-        settings.HBAR,
-        )
+            math.zeros(num_modes, dtype="float64"),
+            math.zeros(num_modes, dtype="float64"),
+            settings.HBAR,
+            )
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
     @property
@@ -318,7 +350,7 @@ class Thermal(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.thermal_cov(self.nbar.value, settings.HBAR)
+        cov = gaussian.thermal_cov(nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
         State.__init__(self, cov=cov, means=means, flag_ket=False)
 
@@ -408,8 +440,29 @@ class DisplacedSqueezed(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        symplectic = gaussian.squeezing_symplectic(r.value, phi.value)
-        displacement = gaussian.displacement(x.value, y.value, settings.HBAR)
+        #Make sure the size of the x and y is the same if they are both List
+        if isinstance(x, List) and isinstance(y, List):
+            if len(x) != len(y):
+                raise AttributeError("Both parameters x and y don't have the same size!")
+        elif isinstance(x, float) and isinstance(y, float):
+            pass
+        else:
+            #One List and another float is also not acceptable
+            raise AttributeError("Both parameters x and y don't have the same size!")
+        
+        #Make sure the size of the r and phi is the same if they are both List
+        if isinstance(r, List) and isinstance(phi, List):
+            if len(r) != len(phi):
+                raise AttributeError("Both parameters r and phi don't have the same size!")
+        elif isinstance(r, float) and isinstance(phi, float):
+            pass
+        else:
+            #One List and another float is also not acceptable
+            raise AttributeError("Both parameters r and phi don't have the same size!")
+
+
+        symplectic = gaussian.squeezing_symplectic(r, phi)
+        displacement = gaussian.displacement(x, y, settings.HBAR)
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
     @property
@@ -483,7 +536,7 @@ class Gaussian(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.gaussian_cov(symplectic.value, eigenvalues.value)
+        cov = gaussian.gaussian_cov(symplectic, eigenvalues)
         means = gaussian.displacement(
         math.zeros(cov.shape[-1]//2, dtype="float64"),
         math.zeros(cov.shape[-1]//2, dtype="float64"),
@@ -522,7 +575,9 @@ class Fock(Parametrized, State):
         cutoffs: Sequence[int] = None,
         normalize: bool = False,
     ):
-        State.__init__(self, fock=fock.fock_state(n, cutoffs=cutoffs), modes=modes, flag_ket=True)
+        if not cutoffs:
+            cutoffs = settings.AUTOCUTOFF_MAX_CUTOFF
+        State.__init__(self, fock=fock.fock_state(n), modes=modes, flag_ket=True)
         Parametrized.__init__(self)
 
         self._n = [n] if isinstance(n, int) else n
