@@ -45,18 +45,18 @@ SQRT = np.sqrt(np.arange(1e6))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def fock_state(n: Sequence[int]) -> Tensor:
-    r"""Returns a pure or mixed Fock state.
+# def fock_state(n: Sequence[int]) -> Tensor:
+#     r"""Returns a pure or mixed Fock state.
 
-    Args:
-        n: a list of photon numbers
+#     Args:
+#         n: a list of photon numbers
 
-    Returns:
-        the Fock state up to cutoffs ``n+1``
-    """
-    psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
-    psi[tuple(np.atleast_1d(n))] = 1
-    return psi
+#     Returns:
+#         the Fock state up to cutoffs ``n+1``
+#     """
+#     psi = np.zeros(np.array(n) + np.ones_like(n), dtype=np.complex128)
+#     psi[tuple(np.atleast_1d(n))] = 1
+#     return psi
 
 
 def fock_state(n: Sequence[int], cutoffs: List[int]) -> Tensor:
@@ -64,12 +64,22 @@ def fock_state(n: Sequence[int], cutoffs: List[int]) -> Tensor:
 
     Args:
         n: a list of photon numbers
+        cutoffs: desired shape of the output tensor
 
     Returns:
-        the Fock state up to cutoffs ``n+1``
+        the Fock state up to the given cutoffs
     """
-    cutoffs_current = np.array(n) + np.ones_like(n)
-    cutoffs = setcutoffs(cutoffs_current=cutoffs_current, cutoffs_input=cutoffs)
+    if cutoffs is None:
+        cutoffs = (np.array(n) + np.ones_like(n))
+    else:
+        cutoffs_nplus1 = (np.array(n) + np.ones_like(n))
+        if isinstance(cutoffs, int):
+            cutoffs = cutoffs if cutoffs > cutoffs_nplus1 else cutoffs_nplus1
+        else:
+            #build a new cutoffs with the highest cutoffs on each index
+            for i,ab in enumerate(zip(cutoffs, cutoffs_nplus1)):
+                if ab[0] < ab[1]:
+                    cutoffs[i] = cutoffs_nplus1[i]
     psi = np.zeros(cutoffs, dtype=np.complex128)
     psi[tuple(np.atleast_1d(n))] = 1
     return psi
