@@ -14,13 +14,15 @@ from tests.random import n_mode_mixed_state
 
 math = Math()  # use methods in math if you want them to be differentiable
 
+
 def allowed_cutoffs(max_cutoffs):
-    r'''Generate all cutoffs from (1,)*M to max_cutoffs'''
+    r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
     res = []
     for idx in np.ndindex(max_cutoffs):
-        cutoffs = np.array(idx)+1
+        cutoffs = np.array(idx) + 1
         res.append(tuple(cutoffs))
     return res
+
 
 @st.composite
 def random_ABC(draw, M):
@@ -51,14 +53,16 @@ def test_compactFock_diagonal(A_B_G0):
             ref_diag[inds] = G_ref[tuple(inds_expanded)]
 
         # New MM
-        G_diag = math.hermite_renormalized_diagonal(math.conj(-A), math.conj(B), math.conj(G0), cutoffs)
+        G_diag = math.hermite_renormalized_diagonal(
+            math.conj(-A), math.conj(B), math.conj(G0), cutoffs
+        )
         assert np.allclose(ref_diag, G_diag)
 
 
 @given(random_ABC(M=3))
 def test_compactFock_1leftover(A_B_G0):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
-    for cutoffs in allowed_cutoffs((7,7,7)):
+    for cutoffs in allowed_cutoffs((7, 7, 7)):
         A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
         # New algorithm
