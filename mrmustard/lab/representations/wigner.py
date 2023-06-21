@@ -38,11 +38,6 @@ class Wigner(Representation):
                  ) -> None:
 
         self.data = MatVecData(cov=cov, means=means, coeffs=coeffs)
-        
-    
-    @property
-    def purity(self) -> float:
-        return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))
     
 
     @property

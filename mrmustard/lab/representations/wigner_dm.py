@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mrmustard.math import Math
 from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Vector, Scalar
+from mrmustard import settings
+
+math = Math()
 
 class WignerDM(Wigner):
 
@@ -33,4 +37,9 @@ class WignerDM(Wigner):
                  ) -> None:
         
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
-        self.num_modes = self.cov.shape[-1] // 2
+        self.num_modes = cov.shape[-1] // 2
+
+
+    @property
+    def purity(self) -> float:
+        return 1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov))

@@ -20,7 +20,7 @@ from mrmustard.typing import Matrix, RealVector, RealMatrix, Scalar, Tensor, Vec
 math = Math()
 
 class Bargmann(Representation):
-    r""" Fock representation of a state.
+    r""" Fock-Bargmann representation of a state.
     
     Args:
         A: quadratic coefficients
@@ -34,7 +34,7 @@ class Bargmann(Representation):
 
     @property
     def purity(self) -> Scalar:
-        raise NotImplementedError("Get this of this state from other representations!")
+        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
     
 
     @property    

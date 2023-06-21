@@ -32,4 +32,9 @@ class WignerKet(Wigner):
                  ) -> None:
         
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
-        self.num_modes = self.cov.shape[-1]
+        self.num_modes = symplectic.shape[-1]
+
+
+    @property
+    def purity(self) -> float:
+        return 1.0
