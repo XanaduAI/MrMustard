@@ -20,7 +20,7 @@ from mrmustard.typing import Matrix, RealVector, RealMatrix, Scalar, Tensor, Vec
 math = Math()
 
 class Bargmann(Representation):
-    r""" Fock representation of a state.
+    r""" Fock-Bargmann representation of a state.
     
     Args:
         A: quadratic coefficients
