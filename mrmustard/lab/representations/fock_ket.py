@@ -28,8 +28,8 @@ class FockKet(Fock):
 
     def __init__(self, array:np.array):
         super().__init__(array=array)
-        self.num_modes = len(self.array.shape)
-        self.cutoffs = self.array.shape
+        self.num_modes = len(self.data.array.shape)
+        self.cutoffs = self.data.array.shape
 
 
     def purity(self) -> float:

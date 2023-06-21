@@ -25,8 +25,8 @@ class FockDM(Fock):
 
     def __init__(self, array):
         super().__init__(array=array)
-        self.num_modes = len(self.array.shape) // 2
-        self.cutoffs = self.array.shape
+        self.num_modes = len(self.data.array.shape) // 2
+        self.cutoffs = self.data.array.shape
 
 
     def purity(self) -> float:

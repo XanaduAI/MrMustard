@@ -575,9 +575,7 @@ class Fock(Parametrized, State):
         cutoffs: Sequence[int] = None,
         normalize: bool = False,
     ):
-        if not cutoffs:
-            cutoffs = settings.AUTOCUTOFF_MAX_CUTOFF
-        State.__init__(self, fock=fock.fock_state(n), modes=modes, flag_ket=True)
+        State.__init__(self, fock=fock.fock_state(n, cutoffs=cutoffs), modes=modes, flag_ket=True)
         Parametrized.__init__(self)
 
         self._n = [n] if isinstance(n, int) else n
