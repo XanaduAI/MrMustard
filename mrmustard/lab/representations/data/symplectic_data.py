@@ -53,5 +53,5 @@ class SymplecticData(MatVecData):
             raise TypeError("Symplectic can only be multiplied by a scalar")
         else:
             new_coeffs = self.coeffs * other
-            return self.__class__(symplectic= self.symplectic, displacements= self.displacements, 
+            return self.__class__(symplectic= self.symplectic, displacement= self.displacement, 
                                   coeffs= new_coeffs)
