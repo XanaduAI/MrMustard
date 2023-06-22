@@ -18,7 +18,9 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
-from tests.test_lab.test_representations.test_data.mock_data import MockData, MockNoCommonAttributeObject
+from tests.test_lab.test_representations.test_data.mock_data import (MockData, 
+                                                                     MockCommonAttributesObject,
+                                                                     MockNoCommonAttributesObject)
 from tools_for_tests import everything_except
 
 DATA = MockData()
@@ -26,23 +28,40 @@ DATA = MockData()
 class TestData():
 
     #########   Common to different methods  #########
-    @given(x = everything_except( (int, float, complex) ))
-    def test_truediv_raises_TypeError_if_divisor_is_not_scalar(self, x):
+    @given(other = everything_except( (int, float, complex) ))
+    def test_truediv_raises_TypeError_if_divisor_is_not_scalar(self, other):
         with pytest.raises(TypeError):
-            DATA / x
+            DATA / other
 
-    @given(other = st.from_type(MockNoCommonAttributeObject))
+
+    @given(other = st.from_type(MockNoCommonAttributesObject))
     @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
-    def test_algebraic_ops_raises_TypeError_if_other_object_has_different_attributes(self, 
+    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, 
                                                                                      other,
                                                                                      operator):
         with pytest.raises(TypeError):
-            operator(DATA, other) # op must be the series of operators aka  == &
+            operator(DATA, other)
 
-    def test_new_object_created_by_method_has_same_attribute_shapes_as_old_object(self):
-        # neg, add, sub, truediv, rmul, mul, simplify
-        # for each object checked, check all its attributes and check that the other has the same ones
+
+    def test_data_object_is_left_untouched_after_applying_operation(self):
         pass
+
+
+    @given(other = st.from_type(MockCommonAttributesObject))
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv])
+    def test_new_object_created_by_method_has_same_attribute_shapes_as_old_object(self,
+                                                                                  other,
+                                                                                  operator):
+        # NOTE: are we ok with try/except blocks in tests?
+        # NOTE: are we ok with for loops in tests?
+        for k in DATA.__dict__.keys():
+            new_data = operator(DATA, other)
+            try: # works for all numpy array attributes
+                assert getattr(DATA, k).shape == getattr(new_data, k).shape
+            except AttributeError: # works for scalar attributes
+                assert getattr(DATA, k) == getattr(new_data, k)           
+
+    
 
 
     ####################  Init  ######################

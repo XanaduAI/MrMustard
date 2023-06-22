@@ -12,7 +12,91 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+mock_scalar = (int, float, complex)
 class MockData():
+    r""" Mock class for Data objects and any child of Data that is still abstract. """
+
+    def __init__(self) -> None:
+        self.mat = None
+        self.vec = None
+        self.coeffs = None
+        self.array = None
+        self.cutoffs = None
+
+    def raise_error_if_different_type_and_not_scalar(self, other):
+        if not isinstance(other, self.__class__) and not isinstance(other, mock_scalar):
+            raise TypeError()
+
+    def __neg__(self):
+        return self
+
+    def __eq__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+    def __add__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+    def __sub__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+    def __truediv__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+    def __mul__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+    def __rmul__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+    def __and__(self, other):
+        self.raise_error_if_different_type_and_not_scalar(other)
+        return self
+
+
+
+
+
+class MockNoCommonAttributesObject():
+    r""" Mock placeholder class for an object which has different attributes but same methods. """
+    def __init__(self) -> None:
+        self.apple = None
+        self.pear = None
+        self.banana = None
+
+    def __neg__(self):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __add__(self, other):
+        pass
+
+    def __sub__(self, other):
+        pass
+
+    def __truediv__(self, other):
+        pass
+
+    def __mul__(self, other):
+        pass
+
+    def __rmul__(self, other):
+        pass
+
+    def __and__(self, other):
+        pass
+
+
+
+
+class MockCommonAttributesObject():
     r""" Mock class for Data objects and any child of Data that is still abstract. """
 
     def __init__(self) -> None:
@@ -25,55 +109,23 @@ class MockData():
     def __neg__(self):
         pass
 
-    def __eq__(self):
+    def __eq__(self, other):
         pass
 
-    def __add__(self):
+    def __add__(self, other):
         pass
 
-    def __sub__(self):
+    def __sub__(self, other):
         pass
 
-    def __truediv__(self):
+    def __truediv__(self, other):
         pass
 
-    def __mul__(self):
+    def __mul__(self, other):
         pass
 
-    def __rmul__(self):
+    def __rmul__(self, other):
         pass
 
-    def __and__(self):
-        pass
-
-
-class MockNoCommonAttributeObject():
-    r""" Mock placeholder class for an object which has different attributes but same methods. """
-    def __init__(self) -> None:
-        self.apple = None
-        self.pear = None
-        self.banana = None
-
-    def __neg__(self):
-        pass
-
-    def __eq__(self):
-        pass
-
-    def __add__(self):
-        pass
-
-    def __sub__(self):
-        pass
-
-    def __truediv__(self):
-        pass
-
-    def __mul__(self):
-        pass
-
-    def __rmul__(self):
-        pass
-
-    def __and__(self):
+    def __and__(self, other):
         pass
