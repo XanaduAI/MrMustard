@@ -75,7 +75,7 @@ class Data(ABC):
         raise NotImplementedError()
     
 
-    def __rmul__(self, other:Union[Scalar, Data]) -> Data:
+    def __rmul__(self, other:Scalar) -> Data:
         return self.__mul__(other=other)
 
 

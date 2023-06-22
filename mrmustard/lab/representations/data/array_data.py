@@ -30,7 +30,11 @@ class ArrayData(Data):
 
     def __init__(self, array:Vector) -> None:
         self.array = array
-        self.cutoffs = self.array.shape
+
+
+    @property
+    def cutoffs(self):
+        return self.array.shape
 
 
     def __neg__(self) -> Data:
