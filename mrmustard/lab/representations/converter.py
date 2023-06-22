@@ -116,31 +116,32 @@ class Converter():
 
 
     def _find_target_node_name(self, source:str, destination:str) -> str:
-        r""""
+        r"""" Given source and destination names, returns the name of the target node in the graph.
 
         Args:
-            source (str)        : the class name of the source Representation, containing the 
-                                  Ket/DM suffix
-            destination (str)   : the name of the target Representation without the Ket/DM suffix
+            source:         the class name of the source Representation, containing the Ket/DM 
+                            suffix
+            destination:    the name of the target Representation without the 'Ket'/'DM' suffix
+
+        Raises:
+            ValueError:     if the source name doesn't contain the desired 'Ket' or "DM' suffix   
 
         Returns:
-            The string of the target representation concatenated with eith ket or DM depending on 
-            the source.
+            The string of the target representation concatenated with either 'Ket' or 'DM' 
+            depending on the source.
         """
         #suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
-
+    
         if source.endswith('Ket'):
             return destination + 'Ket'
         elif source.endswith('DM'):
             return destination + 'DM'
         else:
-            raise ValueError('Invalid input type: must contain Ket or DM')
+            raise ValueError("Invalid input: source name must contain 'Ket' or 'DM'.")
   
 
     def convert(self, source:Representation, destination:str, **kwargs) -> Representation:
-        r""" 
-        Converts from a source Representation to target Representation, using the representations 
-        graph g.
+        r""" Converts from a source Representation to target Representation.
 
         .. code-block::
             # assuming we have some State object s
@@ -148,10 +149,13 @@ class Converter():
             new_s = c.convert(source=s, destination="Fock")
 
         Args:
-            source      : the state which representation must be transformed
-            destination : the name of the target prepresentation, 
-                                this name must NOT include ket/DM
+            source:         the state which representation must be transformed
+            destination:    the name of the target prepresentation, this name must NOT include 
+                            'Ket'/'DM'
 
+        Raises:
+            ValueError:     if the destination or the source names are not supported, aka either 
+                            not in the graph or the source contains neither 'Ket' nor 'DM'.
 
         Returns:
             The target representation
@@ -160,19 +164,25 @@ class Converter():
             s_name = source.__class__.__name__
             d_name = self._find_target_node_name(source=s_name, destination=destination)
             f = self.g[s_name][d_name]["f"]
+
             if s_name == "WignerKet" and d_name == "FockKet":
-                max_prob = kwargs['max_prob']
-                max_photon = kwargs['max_photon']
-                cutoffs = kwargs['cutoffs']
-                return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
-            if s_name == "WignerDM" and d_name == "FockDM":
+                max_prob = kwargs.get('max_prob')
+                max_photon = kwargs.get('max_photon')
                 cutoffs = kwargs.get('cutoffs') 
+                return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
+            
+            elif s_name == "WignerDM" and d_name == "FockDM":
+                cutoffs = kwargs.get('cutoffs')
                 return f(source, cutoffs=cutoffs)
-            # else:
-            return f(source)
+            
+            else:
+                return f(source)
+            
+        except (ValueError, KeyError) as e:
+            raise ValueError(f"Either {s_name} or {destination} is not a valid representation name"
+                             ) from e
         
-        except KeyError as e:
-            raise ValueError(f"{destination} is not a valid target name") from e
+        
         
 
     
