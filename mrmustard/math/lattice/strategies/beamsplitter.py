@@ -30,7 +30,7 @@ from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
-__all__ = ["beamsplitter", "beamsplitter_vjp"]
+__all__ = ["beamsplitter", "beamsplitter_vjp", "beamsplitter_schwinger"]
 
 
 @njit
@@ -154,3 +154,51 @@ def beamsplitter_vjp(
     dLdphi = 2 * np.real(1j * st * em * dLdA[0, 3] + 1j * st * e * dLdA[1, 2])
 
     return dLdtheta, dLdphi
+
+
+def beamsplitter_schwinger(shape, theta, phi, max_N=None):
+    r"""Returns the Fock representation of the beamsplitter up to
+    the given cutoff for each of the two modes.
+
+    This implementation is in pure python (so it's slower than the numba version),
+    but it's numerically stable up to arbitrary cutoffs.
+
+    In this implementation we split the two-mode Fock basis into finite subsets spanned
+    by |m,n> with m+n=const, i.e. {|0,0>}, {|1,0>,|0,1>}, {|2,0>, |1,1>, |0,2>}, etc...
+    A beamsplitter acts unitariliy in each of these subspaces without mixing them with each other,
+    i.e. in this basis the beamsplitter would be a block-diagonal matrix.
+    This means we can construct the BS matrix by first calculating the BS unitaries
+    in each of these subspaces.
+    This can be done using the matrix exponential, which is numerically stable.
+    We couldn't do this in the original basis because it was infinite-dimensional
+    and we had to truncate it at some point.
+
+    Arguments:
+        shape (int, int, int, int): The shape of the output tensor. Only shapes of the form (i,k,i,k) are supported.
+        theta (float): The angle of the beamsplitter.
+        phi (float): The phase of the beamsplitter.
+        max_N (int): The maximum total photon number to include in the calculation.
+
+    Returns:
+        np.ndarray: The beamsplitter in the Fock basis.
+    """
+    c1, c2, c3, c4 = shape
+    if c1 != c3 or c2 != c4:
+        raise ValueError("The Schwinger method only supports shapes of the form (i,k,i,k).")
+    # create output tensor
+    U = np.zeros(shape, dtype="complex128")
+
+    # loop over subspaces of constant photon number N up to max_N
+    if max_N is None or max_N > c1 + c2 - 2:
+        max_N = c1 + c2 - 2
+    for N in range(max_N + 1):
+        # construct the N+1 x N+1 unitary for this subspace
+        diag = np.exp(1j * phi) * np.sqrt(np.arange(N, 0, -1) * np.arange(1, N + 1, 1))
+        iJy = np.diag(diag, k=-1) - np.diag(np.conj(diag), k=1)
+        E, V = np.linalg.eig(theta * iJy)
+        block = V @ np.diag(np.exp(E)) @ np.conj(V.T)
+        # insert the elements of the block into the output tensor
+        for i in range(max(0, N + 1 - c1), min(N + 1, c1)):
+            for j in range(max(0, N + 1 - c1), min(N + 1, c2)):
+                U[N - i, i, N - j, j] = block[i, j]
+    return U

@@ -19,15 +19,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -216,7 +208,7 @@ class Transformation:
 
     def XYd_dual(
         self, allow_none: bool = True
-    ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    ) -> tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
         Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
@@ -233,16 +225,34 @@ class Transformation:
         if not self.is_unitary:
             return None
         X, _, d = self.XYd(allow_none=False)
-        return fock.wigner_to_fock_U(X, d, shape=tuple(cutoffs))
+        if len(cutoffs) == self.num_modes:
+            shape = tuple(cutoffs) * 2
+        elif len(cutoffs) == 2 * self.num_modes:
+            shape = tuple(cutoffs)
+
+        else:
+            raise ValueError(
+                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {2*self.num_modes})"
+            )
+        return fock.wigner_to_fock_U(X, d, shape=shape)
 
     def choi(self, cutoffs: Sequence[int]):
         r"""Returns the Choi representation of the transformation."""
+        if len(cutoffs) == self.num_modes:
+            shape = tuple(cutoffs) * 4
+        elif len(cutoffs) == 4 * self.num_modes:
+            shape = tuple(cutoffs)
+        else:
+            raise ValueError(
+                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {4*self.num_modes})"
+            )
         if self.is_unitary:
-            U = self.U(cutoffs[: self.num_modes])
-            Udual = self.U(cutoffs[self.num_modes :])
+            U = self.U(shape[: self.num_modes])
+            Udual = self.U(shape[self.num_modes :])
             return fock.U_to_choi(U, Udual)
         X, Y, d = self.XYd(allow_none=False)
-        return fock.wigner_to_fock_Choi(X, Y, d, shape=cutoffs)
+
+        return fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.

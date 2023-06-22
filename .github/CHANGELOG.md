@@ -53,6 +53,9 @@
 * Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
+* BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
+  [(#248)](https://github.com/XanaduAI/MrMustard/pull/248)
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
