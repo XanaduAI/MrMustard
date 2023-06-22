@@ -235,7 +235,6 @@ class SqueezedVacuum(Parametrized, State):
 
 
 class TMSV(Parametrized, State):
-    #TODO: without batch can not touch this!
     r"""The 2-mode squeezed vacuum state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
@@ -279,24 +278,13 @@ class TMSV(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        #Make sure the size of the r and phi is the same if they are both List
-        if isinstance(r, List) and isinstance(phi, List):
-            num_modes = len(r)
-            if len(r) != len(phi):
-                raise AttributeError("Both parameters r and phi don't have the same size!")
-        elif isinstance(r, float) and isinstance(phi, float):
-            num_modes = 1
-        else:
-            #One List and another float is also not acceptable
-            raise AttributeError("Both parameters r and phi don't have the same size!")
-
         symplectic = gaussian.two_mode_squeezing_symplectic(r, phi)
         displacement = gaussian.displacement(
-            math.zeros(num_modes, dtype="float64"),
-            math.zeros(num_modes, dtype="float64"),
+            math.zeros(2, dtype="float64"),
+            math.zeros(2, dtype="float64"),
             settings.HBAR,
             )
-        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
+        State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
 
     @property
     def cov(self):
