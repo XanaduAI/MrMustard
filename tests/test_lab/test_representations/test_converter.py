@@ -39,8 +39,7 @@ class TestConverter():
         displacement = np.array([0,0])
         wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
         bargmann_ket = converter.convert(source=wigner_ket, destination="Bargmann")
-        if not isinstance(bargmann_ket, BargmannKet):
-            raise ValueError("The conversion is not correct!")
+        assert isinstance(bargmann_ket, BargmannKet), "The conversion is not correct!"
 
     def test_convert_from_wignerdm_to_bargmanndm(self):
         pass

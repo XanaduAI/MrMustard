@@ -36,62 +36,130 @@ from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
 
 math = Math()
 
+####################TestInit###########################################
+class TestStatesinit():
+
+    #######################Test Coherent######################
+    #With different Init parameters
+    def test_init_Coherent_False_with_single_parameter(self):
+        pass
+
+    def test_init_Coherent_with_list_of_correct_parameters(self):
+        pass
+
+    def test_init_Coherent_False_with_parameters_of_different_sizes(self):
+        pass
+
+    # @given(x=medium_float, y=medium_float)
+    # def test_coherent_state_single(x, y):
+    #     state = Coherent(x, y)
+    #     assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
+    #     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
+    # @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
+    # def test_coherent_state_list(hbar, x, y):
+    #     assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
+    # @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
+    # def test_coherent_state_array(hbar, x, y):
+    #     assert np.allclose(
+    #         gp.displacement(np.array([x]), np.array([y]), hbar),
+    #         np.array([x, y]) * np.sqrt(2 * hbar),
+    #     )
+    # @given(xy=xy_arrays())
+    # def test_coherent_state_multiple(xy):
+    #     x, y = xy
+    #     state = Coherent(x, y)
+    #     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
+    #     assert len(x) == len(y)
+    #     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
+
+    def test_init_Coherent_get_property_covariance_matrix(self):
+        pass
+    
+    def test_init_Coherent_get_property_mean_vector(self):
+        pass
+
+    # @given(xy=xy_arrays())
+    # def test_coh_state(xy):
+    #     """Test coherent state preparation."""
+    #     x, y = xy
+    #     assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
+
+
+    # @given(r=r, phi=angle)
+    # def test_sq_state(r, phi):
+    #     """Test squeezed vacuum preparation."""
+    #     assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
+
+
+    # @given(
+    #     x=medium_float,
+    #     y=medium_float,
+    #     r=r,
+    #     phi=angle,
+    # )
+    # def test_dispsq_state(x, y, r, phi):
+    #     """Test displaced squeezed state."""
+    #     assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
+
+
+    #######################Test Vacuum######################
+    # @given(nmodes, st.floats(0.1, 5.0))
+    # def test_vacuum_state(nmodes, hbar):
+    #     cov, disp = gp.vacuum_cov(nmodes, hbar), gp.vacuum_means(nmodes, hbar)
+    #     assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
+    #     assert np.allclose(disp, np.zeros_like(disp))
+    #######################Test Fock######################
+    #######################Test SqueezedVacuum######################
+    #######################Test Gaussian######################
+    #######################Test Thermal######################
+    #######################Test DisplacedSqueezed######################
+
+
+class TestStatesFunctions():
+
+    def test_the_purity_of_a_Ket_state_tobe_1(self):
+        pass
+
+    def test_the_purity_of_a_Density_Matrix(self):
+        pass
+
+    def test_ket_probability(self):
+        pass
+
+    def test_density_matrix_probability(self):
+        pass
+
+    # @given(state=n_mode_pure_state(num_modes=1))
+    # def test_the_purity_of_a_pure_state(state):
+    #     purity = gp.purity(state.cov, settings.HBAR)
+    #     expected = 1.0
+    #     assert np.isclose(purity, expected)
+
+
+    # @given(nbar=st.floats(0.0, 3.0))
+    # def test_the_purity_of_a_mixed_state(nbar):
+    #     state = Thermal(nbar)
+    #     purity = gp.purity(state.cov, settings.HBAR)
+    #     expected = 1 / (2 * nbar + 1)
+    #     assert np.isclose(purity, expected)
+
+
+    # def test_ket_probability():
+    #     "Test that the probability of a ket is calculated correctly."
+    #     state = State(ket=np.array([0.5, 0.5]))
+    #     assert np.isclose(state.probability, 2 * 0.5**2)
+
+
+    # def test_dm_probability():
+    #     "Test that the probability of a density matrix is calculated correctly."
+    #     state = State(dm=np.array([[0.4, 0.1], [0.1, 0.4]]))
+    #     assert np.isclose(state.probability, 0.8)
 
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
     return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
-
-@given(nmodes, st.floats(0.1, 5.0))
-def test_vacuum_state(nmodes, hbar):
-    cov, disp = gp.vacuum_cov(nmodes, hbar), gp.vacuum_means(nmodes, hbar)
-    assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
-    assert np.allclose(disp, np.zeros_like(disp))
-
-
-@given(x=medium_float, y=medium_float)
-def test_coherent_state_single(x, y):
-    state = Coherent(x, y)
-    assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
-    assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
-
-
-@given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
-def test_coherent_state_list(hbar, x, y):
-    assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
-
-
-@given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
-def test_coherent_state_array(hbar, x, y):
-    assert np.allclose(
-        gp.displacement(np.array([x]), np.array([y]), hbar),
-        np.array([x, y]) * np.sqrt(2 * hbar),
-    )
-
-
-@given(xy=xy_arrays())
-def test_coherent_state_multiple(xy):
-    x, y = xy
-    state = Coherent(x, y)
-    assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
-    assert len(x) == len(y)
-    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
-
-
-@given(state=n_mode_pure_state(num_modes=1))
-def test_the_purity_of_a_pure_state(state):
-    purity = gp.purity(state.cov, settings.HBAR)
-    expected = 1.0
-    assert np.isclose(purity, expected)
-
-
-@given(nbar=st.floats(0.0, 3.0))
-def test_the_purity_of_a_mixed_state(nbar):
-    state = Thermal(nbar)
-    purity = gp.purity(state.cov, settings.HBAR)
-    expected = 1 / (2 * nbar + 1)
-    assert np.isclose(purity, expected)
 
 
 @given(r1=r, phi1=angle, r2=r, phi2=angle)
@@ -111,30 +179,6 @@ def test_join_three_states(r1, phi1, r2, phi2, r3, phi3):
     S3 = Vacuum(1) >> Sgate(r=r3, phi=phi3)
     S123 = Vacuum(3) >> Sgate(r=[r1, r2, r3], phi=[phi1, phi2, phi3])
     assert S123 == S1 & S2 & S3
-
-
-@given(xy=xy_arrays())
-def test_coh_state(xy):
-    """Test coherent state preparation."""
-    x, y = xy
-    assert Vacuum(len(x)) >> Dgate(x, y) == Coherent(x, y)
-
-
-@given(r=r, phi=angle)
-def test_sq_state(r, phi):
-    """Test squeezed vacuum preparation."""
-    assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
-
-
-@given(
-    x=medium_float,
-    y=medium_float,
-    r=r,
-    phi=angle,
-)
-def test_dispsq_state(x, y, r, phi):
-    """Test displaced squeezed state."""
-    assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
 
 
 def test_get_modes():
@@ -264,16 +308,6 @@ def test_ket_from_pure_dm_new_cutoffs():
     assert state.ket(cutoffs=[5]).shape.as_list() == [5]  # shape should be [5]
 
 
-def test_ket_probability():
-    "Test that the probability of a ket is calculated correctly."
-    state = State(ket=np.array([0.5, 0.5]))
-    assert np.isclose(state.probability, 2 * 0.5**2)
-
-
-def test_dm_probability():
-    "Test that the probability of a density matrix is calculated correctly."
-    state = State(dm=np.array([[0.4, 0.1], [0.1, 0.4]]))
-    assert np.isclose(state.probability, 0.8)
 
 
 def test_padding_ket():
