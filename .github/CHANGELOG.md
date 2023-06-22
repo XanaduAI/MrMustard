@@ -101,7 +101,8 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
+[Robbe De Prins](https://github.com/rdprins)
 
 ---
 
