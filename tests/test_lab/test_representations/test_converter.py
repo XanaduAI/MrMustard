@@ -12,7 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+
 from mrmustard.lab.representations.converter import Converter
+from mrmustard.lab.representations.fock_ket import FockKet
+from mrmustard.lab.representations.fock_dm import FockDM
+from mrmustard.lab.representations.bargmann_ket import BargmannKet
+from mrmustard.lab.representations.bargmann_dm import BargmannDM
+from mrmustard.lab.representations.wigner_ket import WignerKet
+from mrmustard.lab.representations.wigner_dm import WignerDM
+from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
+from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
 
 class TestConverter():
     ######################Test Init#################################
@@ -24,7 +34,13 @@ class TestConverter():
     #######################Test Conversion###########################
     #Wigner -> Bargmann
     def test_convert_from_wignerket_to_bargmannket(self):
-        pass
+        converter = Converter()
+        symplectic = np.array([[0,1],[-1,0]])
+        displacement = np.array([0,0])
+        wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
+        bargmann_ket = converter.convert(source=wigner_ket, destination="Bargmann")
+        if not isinstance(bargmann_ket, BargmannKet):
+            raise ValueError("The conversion is not correct!")
 
     def test_convert_from_wignerdm_to_bargmanndm(self):
         pass
