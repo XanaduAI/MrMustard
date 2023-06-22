@@ -224,22 +224,23 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
-        return self.representation.number_means
+        return self.representation.number_means()
 
     @property
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
-        return self.representation.number_cov
+        return self.representation.number_cov()
 
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
-        return self.representation.norm
+        return self.representation.norm()
 
     @property
     def state_probability(self) -> float:
         r"""Returns the probability of the state."""
         norm = self.norm
+        print(norm)
         if isinstance(self, FockKet):
             return norm**2
         return norm
@@ -263,7 +264,7 @@ class State:  # pylint: disable=too-many-public-methods
         if self.is_pure:
             if self.representation.__class__.__name__.endswith('Ket'):
                 if isinstance(self.representation, FockKet):
-                    cutoffs = fock.setcutoffs(cutoffs, self.representation.data.shape)
+                    cutoffs = fock.setcutoffs(cutoffs, self.representation.data.cutoffs)
                     return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
                 elif isinstance(self.representation, WignerKet):
                     #transform internally from Wigner to Fock and return it
@@ -292,7 +293,7 @@ class State:  # pylint: disable=too-many-public-methods
             cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
         if self.representation.__class__.__name__.endswith('Ket'):
             if isinstance(self.representation, FockKet):
-                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.shape)
+                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.cutoffs)
                 return fock.ket_to_dm(fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs))
             elif isinstance(self.representation, WignerKet):
                 self_copy = copy.deepcopy(self)
@@ -302,7 +303,7 @@ class State:  # pylint: disable=too-many-public-methods
                 raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
         else:
             if isinstance(self.representation, FockDM):
-                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.shape)
+                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.cutoffs)
                 return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
             if isinstance(self.representation, WignerDM):
                 self_copy = copy.deepcopy(self)
@@ -499,7 +500,7 @@ class State:  # pylint: disable=too-many-public-methods
             means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
-        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx)
+        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx) #TODO: this self.cutoffs is not correct now with the new structure
         return State(dm=fock_partitioned, modes=item)
 
 
@@ -620,23 +621,23 @@ class State:  # pylint: disable=too-many-public-methods
         return self
 
 
-    # def _repr_markdown_(self):
-    #     r"""Prints the table to show the properties of the state. """
-    #     table = (
-    #         f"#### {self.__class__.__qualname__}\n\n"
-    #         + "| Purity | Probability | Num modes | Bosonic size | Representation |\n"
-    #         + "| :----: | :----: | :----: | :----: | :----: |\n"
-    #         + f"| {self.representation.purity :.2e} | "
-    #         + self._format_probability(self.state_probability())
-    #         + f" | {self.representation.num_modes} | {'1' if isinstance(self.representation, (WignerKet, WignerDM)) else 'N/A'} | {'✅' if isinstance(self.representation, (WignerKet, WignerDM)) else '❌'} | {'✅' if isinstance(self.representation, (FockKet, FockDM)) else '❌'} |"
-    #     )
+    def _repr_markdown_(self):
+        r"""Prints the table to show the properties of the state. """
+        table = (
+            f"#### {self.__class__.__qualname__}\n\n"
+            + "| Purity | Probability | Num modes | Bosonic size | Representation |\n"
+            + "| :----: | :----: | :----: | :----: | :----: |\n"
+            + f"| {self.purity :.2e} | "
+            + self._format_probability(self.state_probability) if self.norm else 'N/A'
+            + f" | {self.representation.num_modes} | {'1' if isinstance(self.representation, (WignerKet, WignerDM)) else 'N/A'} | {'✅' if isinstance(self.representation, (WignerKet, WignerDM)) else '❌'} | {'✅' if isinstance(self.representation, (FockKet, FockDM)) else '❌'} |"
+        )
 
-    #     if self.num_modes == 1:
-    #         graphics.mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
+        if self.num_modes == 1:
+            graphics.mikkel_plot(math.asnumpy(self.dm(cutoffs=self.representation.data.cutoffs)))
 
-    #     #TODO:
-    #     # if settings.DEBUG:
-    #     #     detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-    #     #     return f"{table}\n{detailed_info}"
+        #TODO:
+        # if settings.DEBUG:
+        #     detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+        #     return f"{table}\n{detailed_info}"
 
-    #     return table
+        return table
