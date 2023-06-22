@@ -15,7 +15,7 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.data.qpoly_data import QPolyData
-from mrmustard.typing import Matrix, RealVector, RealMatrix, Scalar, Tensor, Vector
+from mrmustard.typing import Matrix, Scalar, Vector
 
 math = Math()
 
@@ -29,44 +29,6 @@ class Bargmann(Representation):
     """
 
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
+        super().__init__()
         self.data = QPolyData(A=A, b=b, c=c)
 
-
-    @property
-    def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property    
-    def norm(self) -> float:
-        raise NotImplementedError("Get this of this state from other representations!")
-
-
-    @property
-    def von_neumann_entropy(self) -> float:
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    @property
-    def number_means(self) -> RealVector:
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    @property
-    def number_cov(self) -> RealMatrix:
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    @property
-    def number_variances(self) -> int:
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    @property
-    def number_stdev(self) -> int:
-        raise NotImplementedError("Get this of this state from other representations!")
-
-
-    @property
-    def probability(self) -> Tensor:
-        raise NotImplementedError("Get this of this state from other representations!")

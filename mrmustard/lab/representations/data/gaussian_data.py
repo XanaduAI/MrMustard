@@ -61,15 +61,14 @@ class GaussianData(MatVecData):
                 # batch_size = mean.shape[-2]
                 # cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
 
-            else: # we know means is None here
+            elif means is None: # we know means is None here
                 self.num_modes = cov.shape[-1] // 2
-                #Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
-                if (cov + 1j*sympmat(self.num_modes)).numpy().all() >= 0:
-                    means = math.zeros(self.num_modes, dtype=cov.dtype)
-                else:
-                    raise ValueError("The covariance matrix is not valid. cov + i\Omega < 0.")
+                means = math.zeros(2*self.num_modes, dtype=cov.dtype)
+            
                 # batch_size = cov.shape[-3]
                 # mean = math.zeros( (batch_size, dim), dtype=cov.dtype )
+            else:
+                self.num_modes = cov.shape[-1] // 2
         else:
             raise ValueError("You need to define at one: covariance or mean")
 
@@ -80,7 +79,9 @@ class GaussianData(MatVecData):
 
         # if isinstance(cov, QPolyData):
         #     cov, mean, coeffs = self._from_QPolyData(poly=cov)
-
+        #Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
+        # if (cov + 1j*sympmat(self.num_modes)).numpy().all() >= 0:
+        #     raise ValueError("The covariance matrix is not valid. cov + i\Omega < 0.")
         super().__init__(mat=cov, vec=means, coeffs=coeffs)
 
 

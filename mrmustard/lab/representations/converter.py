@@ -285,7 +285,7 @@ class Converter():
             The BargmannDM representation of the input state
 
         """
-        N = wigner_dm.data.cov.shape[-1] // 2
+        N = wigner_dm.num_modes
 
         A = math.matmul(
             self._cayley(self._pq_to_aadag(wigner_dm.data.cov), c=0.5), math.Xmat(N)
@@ -295,7 +295,7 @@ class Converter():
         B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
         C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
 
-        return BargmannDM(A, B, C)
+        return BargmannDM(A=A, b=B, c=C)
 
 
     def _wignerket_to_bargmannket(self, wigner_ket: WignerKet) -> BargmannKet:
@@ -311,14 +311,17 @@ class Converter():
             The Bargmann representation of the input state
         """
 
-        N = wigner_ket.data.cov.shape[-1] // 2
-        bargmann_dm = self._wignerdm_to_bargmanndm(wigner_ket.data.cov, wigner_ket.data.means) 
+        N = wigner_ket.num_modes
+        cov = settings.HBAR / 2 * math.matmul(wigner_ket.data.symplectic, math.transpose(wigner_ket.data.symplectic))
+        means = wigner_ket.data.displacement
+        wigner_dm = WignerDM(cov=cov, means=means)
+        bargmann_dm = self._wignerdm_to_bargmanndm(wigner_dm=wigner_dm)
         # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half 
         # rather than the second
         
         return BargmannKet(bargmann_dm.data.A[:N, :N], 
-                           bargmann_dm.data.B[:N], 
-                           math.sqrt(bargmann_dm.data.C))
+                           bargmann_dm.data.b[:N], 
+                           math.sqrt(bargmann_dm.data.c))
     
 
 
