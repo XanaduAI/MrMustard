@@ -573,7 +573,7 @@ class State:  # pylint: disable=too-many-public-methods
         return self
         
 
-    def to_Fock(self, max_prob: float = 1.0, max_photons: int = None):        
+    def to_Fock(self, max_prob: float = 1.0, max_photon: int = None, cutoffs: Union(List[int], int) = None):        
         r"""Converts the representation of the state to Fock Representation and returns a new State.
 
         Args:
@@ -583,15 +583,16 @@ class State:  # pylint: disable=too-many-public-methods
                 (used to stop the calculation of the amplitudes early)
             max_photons (int): The maximum number of photons in the state, summing over all modes
                 (used to stop the calculation of the amplitudes early)
+            cutoffs (List or int): The cutoffs of the desired Fock tensor
 
         Returns:
             State: the converted state with the target Fock Representation
         """
-        self.representation = converter.convert(self.representation, "Fock", max_prob, max_photons)
+        self.representation = converter.convert(self.representation, "Fock", max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
         return self
         
 
-    def to_WavefunctionQ(self):
+    def to_WaveFunctionQ(self):
         r'''Converts the representation of the state to q-wavefunction Representation and returns a new State.
 
         Args:
@@ -601,7 +602,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target q-Wavefunction Representation
         '''
-        self.representation = converter.convert(self.representation, "WavefunctionQ") 
+        self.representation = converter.convert(self.representation, "WaveFunctionQ") 
         return self
         
 
@@ -619,23 +620,23 @@ class State:  # pylint: disable=too-many-public-methods
         return self
 
 
-    def _repr_markdown_(self):
-        r"""Prints the table to show the properties of the state. """
-        table = (
-            f"#### {self.__class__.__qualname__}\n\n"
-            + "| Purity | Probability | Num modes | Bosonic size | Representation |\n"
-            + "| :----: | :----: | :----: | :----: | :----: |\n"
-            + f"| {self.representation.purity() :.2e} | "
-            + self._format_probability(self.representation.state_probability())
-            + f" | {self.representation.num_modes} | {'1' if isinstance(self.representation, (WignerKet, WignerDM)) else 'N/A'} | {'✅' if isinstance(self.representation, (WignerKet, WignerDM)) else '❌'} | {'✅' if isinstance(self.representation, (FockKet, FockDM)) else '❌'} |"
-        )
+    # def _repr_markdown_(self):
+    #     r"""Prints the table to show the properties of the state. """
+    #     table = (
+    #         f"#### {self.__class__.__qualname__}\n\n"
+    #         + "| Purity | Probability | Num modes | Bosonic size | Representation |\n"
+    #         + "| :----: | :----: | :----: | :----: | :----: |\n"
+    #         + f"| {self.representation.purity :.2e} | "
+    #         + self._format_probability(self.state_probability())
+    #         + f" | {self.representation.num_modes} | {'1' if isinstance(self.representation, (WignerKet, WignerDM)) else 'N/A'} | {'✅' if isinstance(self.representation, (WignerKet, WignerDM)) else '❌'} | {'✅' if isinstance(self.representation, (FockKet, FockDM)) else '❌'} |"
+    #     )
 
-        if self.num_modes == 1:
-            graphics.mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
+    #     if self.num_modes == 1:
+    #         graphics.mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
 
-        #TODO:
-        # if settings.DEBUG:
-        #     detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-        #     return f"{table}\n{detailed_info}"
+    #     #TODO:
+    #     # if settings.DEBUG:
+    #     #     detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
+    #     #     return f"{table}\n{detailed_info}"
 
-        return table
+    #     return table

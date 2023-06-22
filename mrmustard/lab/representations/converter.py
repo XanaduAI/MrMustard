@@ -58,13 +58,13 @@ class Converter():
         # Ket part of the graph
         b_K = "BargmannKet"
         f_K = "FockKet"
-        wq_K = "WavefunctionQKet"
+        wq_K = "WaveFunctionQKet"
         w_K = "WignerKet"
 
         # DM component of the graph
         b_DM = "BargmannDM"
         f_DM = "FockDM"
-        wq_DM = "WavefunctionQDM"
+        wq_DM = "WaveFunctionQDM"
         w_DM = "WignerDM"
 
 
@@ -161,15 +161,15 @@ class Converter():
             d_name = self._find_target_node_name(source=s_name, destination=destination)
             f = self.g[s_name][d_name]["f"]
             if s_name == "WignerKet" and d_name == "FockKet":
-                max_prob = kwargs.get('max_prob', 0.0)
-                max_photon = kwargs.get('max-photon', 0)
-                # cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
-                return f(source, max_prob=max_prob, max_photon=max_photon)
-            # if s_name == "WignerDM" and d_name == "FockDM":
-                # cutoffs = kwargs.get('cutoffs', ) #TODO: TYPE OF CUTOFFS LIST[INT]
-                # return f(source, cutoffs=cutoffs)
-            else:
-                return f(source)
+                max_prob = kwargs['max_prob']
+                max_photon = kwargs['max_photon']
+                cutoffs = kwargs['cutoffs']
+                return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
+            if s_name == "WignerDM" and d_name == "FockDM":
+                cutoffs = kwargs.get('cutoffs') 
+                return f(source, cutoffs=cutoffs)
+            # else:
+            return f(source)
         
         except KeyError as e:
             raise ValueError(f"{destination} is not a valid target name") from e
@@ -331,9 +331,9 @@ class Converter():
 
     def _wignerket_to_fockket(self,
         wignerket: WignerKet,
-        cutoffs: List[int] = None,
         max_prob: float = 1.0,
-        max_photons: Optional[int] = None,
+        max_photon: Optional[int] = None,
+        cutoffs: List[int] = None,
     ) -> FockKet:
         r"""
         Returns the Fock representation of a Gaussian state in ket form.
@@ -343,25 +343,31 @@ class Converter():
             cutoffs (List[int]) .       : the shape of the desired Fock tensor
             max_prob (float)            : the maximum probability of a the state (applies only if 
                                           the ket is returned)
-            max_photons (Optional[int]) : the maximum number of photons in the state (applies only 
+            max_photon (Optional[int]) : the maximum number of photons in the state (applies only 
                                           if the ket is returned)
 
         Returns:
             FockKet: the fock representation of the ket.
         """
 
-        A, B, C = self._wignerket_to_bargmannket(wignerket)
+        bargmann_ket = self._wignerket_to_bargmannket(wignerket)
+        A = bargmann_ket.data.A
+        B = bargmann_ket.data.b
+        C = bargmann_ket.data.c
 
-        if max_photons is None:
-            max_photons = sum(cutoffs.shape) - len(cutoffs.shape)
+        if cutoffs is None:
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerket.num_modes)
 
-        if max_prob < 1.0 or max_photons < sum(cutoffs.shape) - len(cutoffs.shape):
-            return math.hermite_renormalized_binomial(
-                A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photons + 1
-            )
+        if max_photon is None:
+            max_photon = sum(cutoffs.shape) - len(cutoffs.shape)
+
+        if max_prob < 1.0 or max_photon < sum(cutoffs.shape) - len(cutoffs.shape):
+            return FockKet(array=math.hermite_renormalized_binomial(
+                A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photon + 1
+            ))
         
         else:
-            return math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape))
+            return FockKet(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape)))
 
 
 
@@ -377,6 +383,8 @@ class Converter():
             Tensor: the fock representation
         """
 
+        if cutoffs is None:
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.num_modes)
         A, B, C = self._wignerdm_to_bargmanndm(wignerdm)
 
         return math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape))
