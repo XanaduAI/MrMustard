@@ -43,11 +43,23 @@ class TestData():
             operator(DATA, other)
 
 
-    def test_data_object_is_left_untouched_after_applying_operation(self):
-        pass
+    @given(other = st.from_type(MockData))
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
+    def test_data_object_is_left_untouched_after_applying_operation_of_arity_two(self, 
+                                                                                 other, 
+                                                                                 operator):
+        
+        _ = operator(DATA, other)
+        assert DATA == DATA
+
+    
+    @pytest.mark.parametrize("operator", [op.neg])
+    def test_data_object_is_left_untouched_after_applying_negation(self, operator):
+        _ = operator(DATA)
+        assert DATA == DATA
 
 
-    @given(other = st.from_type(MockCommonAttributesObject))
+    @given(other = st.from_type(MockData))
     @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv])
     def test_new_object_created_by_method_has_same_attribute_shapes_as_old_object(self,
                                                                                   other,
@@ -75,6 +87,3 @@ class TestData():
         # NOTE : see https://stackoverflow.com/questions/11637293/iterate-over-object-attributes-in-python
         # to iterate over attributes 
         pass
-
-
-    

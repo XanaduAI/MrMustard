@@ -24,7 +24,7 @@ class MockData():
         self.cutoffs = None
 
     def raise_error_if_different_type_and_not_scalar(self, other):
-        if not isinstance(other, self.__class__) and not isinstance(other, mock_scalar):
+        if (not isinstance(other, self.__class__)) and (not isinstance(other, mock_scalar)):
             raise TypeError()
 
     def __neg__(self):
