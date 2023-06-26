@@ -31,7 +31,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import DisplacedSqueezed, Gaussian, SqueezedVacuum, Vacuum
+from mrmustard.lab.states import DisplacedSqueezed, Fock, Gaussian, SqueezedVacuum, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -457,3 +457,14 @@ def test_bsgate_optimization():
 
     assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
     assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)
+
+
+def test_squeezing_grad_from_fock():
+    """Test that the gradient of a squeezing gate is computed from the fock representation."""
+    squeezing = Sgate(r=1, r_trainable=True)
+
+    def cost_fn():
+        return -(Fock(2) >> squeezing << Vacuum(1))
+
+    opt = Optimizer(euclidean_lr=0.05)
+    opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
