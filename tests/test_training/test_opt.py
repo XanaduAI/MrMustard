@@ -468,3 +468,25 @@ def test_squeezing_grad_from_fock():
 
     opt = Optimizer(euclidean_lr=0.05)
     opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
+
+
+def test_displacement_grad_from_fock():
+    """Test that the gradient of a displacement gate is computed from the fock representation."""
+    disp = Dgate(x=1.0, y=1.0, x_trainable=True, y_trainable=True)
+
+    def cost_fn():
+        return -(Fock(2) >> disp << Vacuum(1))
+
+    opt = Optimizer(euclidean_lr=0.05)
+    opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
+
+
+def test_bsgate_grad_from_fock():
+    """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
+    sq = SqueezedVacuum(r=1.0, r_trainable=True)
+
+    def cost_fn():
+        return -((sq & Fock(1)) >> BSgate(0.5) << (Vacuum(1) & Fock(1)))
+
+    opt = Optimizer(euclidean_lr=0.05)
+    opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
