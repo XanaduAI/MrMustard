@@ -7,5 +7,7 @@ def everything_except(excluded_types):
         .filter(lambda x: not isinstance(x, excluded_types))
     )
 
+
 def factory(cls, *args, **kwargs):
     return cls(*args, **kwargs)
+
