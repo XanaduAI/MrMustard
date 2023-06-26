@@ -166,7 +166,10 @@ class Converter():
             f = self.g[s_name][d_name]["f"]
 
             if s_name == "WignerKet" and d_name == "FockKet":
-                max_prob = kwargs.get('max_prob')
+                if kwargs.get('max_prob'):
+                    max_prob = kwargs.get('max_prob')
+                else:
+                    max_prob = 1.0
                 max_photon = kwargs.get('max_photon')
                 cutoffs = kwargs.get('cutoffs') 
                 return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
@@ -371,7 +374,7 @@ class Converter():
         if max_photon is None:
             max_photon = sum(cutoffs.shape) - len(cutoffs.shape)
 
-        if max_prob < 1.0 or max_photon < sum(cutoffs.shape) - len(cutoffs.shape):
+        if max_prob < 1.0:# or max_photon < sum(cutoffs.shape) - len(cutoffs.shape):
             return FockKet(array=math.hermite_renormalized_binomial(
                 A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photon + 1
             ))
@@ -395,9 +398,12 @@ class Converter():
 
         if cutoffs is None:
             cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.num_modes)
-        A, B, C = self._wignerdm_to_bargmanndm(wignerdm)
+        bargmann_dm = self._wignerdm_to_bargmanndm(wignerdm)
+        A = bargmann_dm.data.A
+        B = bargmann_dm.data.b
+        C = bargmann_dm.data.c
 
-        return math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape))
+        return FockDM(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape)))
 
 
     ########################################################################
