@@ -870,7 +870,7 @@ def displacement(x, y, shape, tol=1e-15):
 
     def grad(dL_dDc):
         dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
-        dL_dac = np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da)
+        dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
         dLdx = 2 * np.real(dL_dac)
         dLdy = 2 * np.imag(dL_dac)
         return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
