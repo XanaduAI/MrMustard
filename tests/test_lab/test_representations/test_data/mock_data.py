@@ -26,6 +26,10 @@ class MockData():
     def raise_error_if_different_type_and_not_scalar(self, other):
         if (not isinstance(other, self.__class__)) and (not isinstance(other, mock_scalar)):
             raise TypeError()
+        
+    def raise_error_if_not_scalar(self, other):
+        if (not isinstance(other, mock_scalar)):
+            raise TypeError()
 
     def __neg__(self):
         return self
@@ -43,7 +47,7 @@ class MockData():
         return self
 
     def __truediv__(self, other):
-        self.raise_error_if_different_type_and_not_scalar(other)
+        self.raise_error_if_not_scalar(other)
         return self
 
     def __mul__(self, other):
