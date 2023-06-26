@@ -99,21 +99,29 @@ class Dgate(Parametrized, Transformation):
         the Laguerre polynomials.
 
         Arguments:
-            cutoffs (Sequence[int]): the Fock basis truncation for each index of U
-                in the order (out_1, out_2,..., in_1, in_2,...)
+            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
 
         Returns:
-            array[complex]: the unitary matrix
+           Raises:
+               ValueError: if the length of the cutoffs array is different from N and 2N
         """
 
         N = self.num_modes
         x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
         y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
+        if len(cutoffs) == N:
+            shape = tuple(cutoffs) * 2
+        elif len(cutoffs) == 2 * N:
+            shape = tuple(cutoffs)
+        else:
+            raise ValueError(
+                "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
+            )
 
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product
             Ud = None
-            for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
+            for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
                 if Ud is None:
                     Ud = fock.displacement(x[idx], y[idx], out_in)
                 else:
@@ -125,7 +133,7 @@ class Dgate(Parametrized, Transformation):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.displacement(x[0], y[0], tuple(cutoffs))
+            return fock.displacement(x[0], y[0], shape)
 
 
 class Sgate(Parametrized, Transformation):
@@ -173,14 +181,20 @@ class Sgate(Parametrized, Transformation):
     def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the Squeezing gate.
         Args:
-            cutoffs (Sequence[int]): cutoff dimension for each mode
-                in the order (out_1, out_2,..., in_1, in_2,...)
+            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
 
         Returns:
             array[complex]: the unitary matrix
-
         """
         N = self.num_modes
+        if len(cutoffs) == N:
+            shape = tuple(cutoffs) * 2
+        elif len(cutoffs) == 2 * N:
+            shape = tuple(cutoffs)
+        else:
+            raise ValueError(
+                "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
+            )
         # this works both or scalar r/phi and vector r/phi:
         r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
         phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
@@ -188,18 +202,18 @@ class Sgate(Parametrized, Transformation):
         if N > 1:
             # calculate squeezing unitary for each mode and concatenate with outer product
             Us = None
-            for idx, out_in in enumerate(zip(cutoffs[:N], cutoffs[N:])):
+            for idx, single_shape in enumerate(zip(shape[:N], shape[N:])):
                 if Us is None:
-                    Us = fock.squeezer(r=r[idx], phi=phi[idx], cutoffs=out_in)
+                    Us = fock.squeezer(r=r[idx], phi=phi[idx], shape=single_shape)
                 else:
-                    U_next = fock.squeezer(r=r[idx], phi=phi[idx], cutoffs=out_in)
+                    U_next = fock.squeezer(r=r[idx], phi=phi[idx], shape=single_shape)
                     Us = math.outer(Us, U_next)
             return math.transpose(
                 Us,
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.squeezer(r=r[0], phi=phi[0], cutoffs=tuple(cutoffs))
+            return fock.squeezer(r=r[0], phi=phi[0], shape=shape)
 
     @property
     def X_matrix(self):
@@ -248,7 +262,7 @@ class Rgate(Parametrized, Transformation):
         r"""Returns the unitary representation of the Rotation gate.
 
         Args:
-            cutoffs (Sequence[int]): cutoff dimension for each mode
+            cutoffs (Sequence[int]): cutoff dimension for each mode.
             diag_only (bool): if True, only return the diagonal of the unitary matrix.
 
         Returns:
@@ -256,12 +270,20 @@ class Rgate(Parametrized, Transformation):
         """
         if diag_only:
             raise NotImplementedError("Rgate does not support diag_only=True yet")
-
+        N = self.num_modes
+        if len(cutoffs) == N:
+            shape = tuple(cutoffs) * 2
+        elif len(cutoffs) == 2 * N:
+            shape = tuple(cutoffs)
+        else:
+            raise ValueError(
+                "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
+            )
         angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
 
         # calculate rotation unitary for each mode and concatenate with outer product
         Ur = None
-        for idx, cutoff in enumerate(cutoffs[: self.num_modes]):
+        for idx, cutoff in enumerate(shape[: self.num_modes]):
             theta = math.arange(cutoff) * angles[idx]
             if Ur is None:
                 Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
@@ -421,20 +443,31 @@ class BSgate(Parametrized, Transformation):
         self.is_gaussian = True
         self.short_name = "BS"
 
-    def U(self, cutoffs: Optional[List[int]]):
+    def U(self, cutoffs: Optional[List[int]], method=None):
         r"""Returns the symplectic transformation matrix for the beam splitter.
 
         Args:
             cutoffs (List[int]): the list of cutoff dimensions for each mode
                 in the order (out_0, out_1, in_0, in_1).
+            method (str): the method used to compute the unitary matrix. Options are:
+                * 'vanilla': uses the standard method
+                * 'schwinger': slower, but numerically stable
+            default is set in settings.DEFAULT_BS_METHOD (with 'vanilla' by default)
 
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
+        if len(cutoffs) == 4:
+            shape = tuple(cutoffs)
+        elif len(cutoffs) == 2:
+            shape = tuple(cutoffs) + tuple(cutoffs)
+        else:
+            raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
-            tuple(cutoffs),
+            shape,
+            method=method or settings.DEFAULT_BS_METHOD,
         )
 
     @property

@@ -53,6 +53,9 @@
 * Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
+* BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
+  [(#248)](https://github.com/XanaduAI/MrMustard/pull/248)
+
 ### Breaking Changes
 
 * The previous `callback` argument to `Optimizer.minimize` is now `callbacks` since we can now pass
@@ -92,12 +95,16 @@
 * When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
   [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
 
+* Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
+cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
+
 ### Documentation
 
 * BSgate and MZgate conventions clarified in their docstrings
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN)
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
+[Robbe De Prins](https://github.com/rdprins)
 
 ---
 

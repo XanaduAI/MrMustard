@@ -27,12 +27,12 @@ __all__ = ["squeezer", "squeezer_vjp", "squeezed", "squeezed_vjp"]
 
 @njit
 def squeezer(
-    cutoffs: tuple[int, int], r: float, theta: float, dtype=np.complex128
+    shape: tuple[int, int], r: float, theta: float, dtype=np.complex128
 ):  # pragma: no cover
     r"""Calculates the matrix elements of the squeezing gate using a recurrence relation.
     (See eq. 50-52 in https://arxiv.org/abs/2004.11002)
         Args:
-            cutoffs (tuple[int, int]): Fock cutoffs for the output and input modes.
+            shape (tuple[int, int]): Fock cutoffs for the output and input indices.
             r (float): squeezing magnitude
             theta (float): squeezing angle
             dtype (data type): data type used for the calculation.
@@ -40,8 +40,8 @@ def squeezer(
         Returns:
             array (ComplexMatrix): matrix representing the squeezing gate.
     """
-    M, N = cutoffs
-    S = np.zeros(cutoffs, dtype=dtype)
+    M, N = shape
+    S = np.zeros(shape, dtype=dtype)
 
     eitheta_tanhr = np.exp(1j * theta) * np.tanh(r)
     eitheta_tanhr_conj = np.conj(eitheta_tanhr)
