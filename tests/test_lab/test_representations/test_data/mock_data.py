@@ -16,12 +16,12 @@ mock_scalar = (int, float, complex)
 class MockData():
     r""" Mock class for Data objects and any child of Data that is still abstract. """
 
-    def __init__(self) -> None:
-        self.mat = None
-        self.vec = None
-        self.coeffs = None
-        self.array = None
-        self.cutoffs = None
+    def __init__(self, mat=None, vec=None, coeffs=None, array=None, cutoffs=None) -> None:
+        self.mat = mat
+        self.vec = vec
+        self.coeffs = coeffs
+        self.array = array
+        self.cutoffs = cutoffs
 
     def raise_error_if_different_type_and_not_scalar(self, other):
         if (not isinstance(other, self.__class__)) and (not isinstance(other, mock_scalar)):
