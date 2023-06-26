@@ -6,3 +6,6 @@ def everything_except(excluded_types):
         .flatmap(from_type)
         .filter(lambda x: not isinstance(x, excluded_types))
     )
+
+def factory(cls, *args, **kwargs):
+    return cls(*args, **kwargs)
