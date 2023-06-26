@@ -39,3 +39,15 @@ def test_wigner_to_bargmann_choi():
     X, Y, d = G.XYd(allow_none=False)
     for x, y in zip(G.bargmann(), wigner_to_bargmann_Choi(X, Y, d)):
         assert np.allclose(x, y)
+
+
+def test_bargmann_numpy_state():
+    """Tests that the numpy option of the bargmann method of State works correctly"""
+    state = Gaussian(1)
+    assert all(isinstance(thing, np.ndarray) for thing in state.bargmann(numpy=True))
+
+
+def test_bargmann_numpy_transformation():
+    """Tests that the numpy option of the bargmann method of State works correctly"""
+    transformation = Ggate(1)
+    assert all(isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True))
