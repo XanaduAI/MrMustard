@@ -873,9 +873,9 @@ def displacement(x, y, shape, tol=1e-15):
         dL_dac = np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da)
         dLdx = 2 * np.real(dL_dac)
         dLdy = 2 * np.imag(dL_dac)
-        return dLdx, dLdy
+        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-    return gate, grad
+    return math.astensor(gate, dtype=gate.dtype.name), grad
 
 
 @math.custom_gradient
@@ -899,14 +899,15 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         )
 
     def vjp(dLdGc):
-        return strategies.beamsplitter_vjp(
+        dtheta, dphi = strategies.beamsplitter_vjp(
             math.asnumpy(bs_unitary),
             math.asnumpy(math.conj(dLdGc)),
             math.asnumpy(theta),
             math.asnumpy(phi),
         )
+        return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
 
-    return bs_unitary, vjp
+    return math.astensor(bs_unitary, dtype=bs_unitary.dtype.name), vjp
 
 
 @math.custom_gradient
@@ -921,9 +922,9 @@ def squeezer(r, phi, shape):
             math.asnumpy(r),
             math.asnumpy(phi),
         )
-        return dr, dphi
+        return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
-    return sq_unitary, vjp
+    return math.astensor(sq_unitary, dtype=sq_unitary.dtype.name), vjp
 
 
 @math.custom_gradient
@@ -932,11 +933,12 @@ def squeezed(r, phi, shape):
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
 
     def vjp(dLdGc):
-        return strategies.squeezed_vjp(
+        dr, dphi = strategies.squeezed_vjp(
             math.asnumpy(sq_ket),
             math.asnumpy(math.conj(dLdGc)),
             math.asnumpy(r),
             math.asnumpy(phi),
         )
+        return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
-    return sq_ket, vjp
+    return math.astensor(sq_ket, dtype=sq_ket.dtype.name), vjp
