@@ -9,5 +9,6 @@ def everything_except(excluded_types):
 
 
 def factory(cls, *args, **kwargs):
+    r""" Factory method which generates an instance of cls parameterized by the given arguments."""
     return cls(*args, **kwargs)
 

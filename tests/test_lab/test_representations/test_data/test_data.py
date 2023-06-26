@@ -45,6 +45,11 @@ def DATA(PARAMS) -> MockData:
     return factory(MockData, **PARAMS)
 
 
+@pytest.fixture()
+def OTHER(cls):
+    return factory(cls)
+
+
 
 class TestData():
 
@@ -115,7 +120,9 @@ class TestData():
 
 
     ##################  Equality  ####################
-    # @pytest.mark.parametrize("other", [deepcopy(DATA)])
-    # def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, other):
-    #     for k in DATA.__dict__.keys():
-    #         assert getattr(DATA, k) == getattr(other, k)
+    #@pytest.mark.parametrize("other", [deepcopy(DATA)])
+    def test_when_all_attributes_are_equal_objects_are_equal(self, DATA):
+        other = deepcopy(DATA) # TODO: why this needs to be inside and not in parameterize?!?
+        for k in DATA.__dict__.keys():
+            getattr(other, k)
+            #assert getattr(DATA, k) == getattr(other, k)
