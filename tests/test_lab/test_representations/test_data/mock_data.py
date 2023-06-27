@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
+
 mock_scalar = (int, float, complex)
 class MockData():
     r""" Mock class for Data objects and any child of Data that is still abstract. """
 
-    def __init__(self, mat=None, vec=None, coeffs=None, array=None, cutoffs=None) -> None:
+    def __init__(self, mat=None, vec=None, coeffs=None, array=np.ones(10), cutoffs=None) -> None:
         self.mat = mat
         self.vec = vec
         self.coeffs = coeffs
@@ -32,7 +34,7 @@ class MockData():
             raise TypeError()
 
     def __neg__(self):
-        return self
+        return self.__class__(array= -self.array)
 
     def __eq__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
@@ -40,15 +42,15 @@ class MockData():
 
     def __add__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
-        return self
+        return self.__class__(array = self.array + other.array)
 
     def __sub__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
-        return self
+        return self.__class__(array = self.array - other.array)
 
-    def __truediv__(self, other):
-        self.raise_error_if_not_scalar(other)
-        return self
+    def __truediv__(self, x):
+        self.raise_error_if_not_scalar(x)
+        return self.__class__(array = self.array / x)
 
     def __mul__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
