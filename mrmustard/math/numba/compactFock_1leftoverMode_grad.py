@@ -655,7 +655,7 @@ def fock_representation_1leftoverMode_grad_NUMBA(
     for sum_params in range(sum(cutoffs_tail)):
         for params in dict_params[sum_params]:
             # diagonal pivots: aa,bb,cc,dd,...
-            if params[0] < cutoffs_tail[0] - 1:
+            if (cutoffs_tail[0] == 1) or (params[0] < cutoffs_tail[0] - 1):
                 arr1_dA, arr1_dB = use_diag_pivot_grad(
                     A,
                     B,

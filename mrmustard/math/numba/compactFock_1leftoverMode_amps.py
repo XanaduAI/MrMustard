@@ -261,7 +261,7 @@ def fock_representation_1leftoverMode_amps_NUMBA(
     for sum_params in range(sum(cutoffs_tail)):
         for params in dict_params[sum_params]:
             # diagonal pivots: aa,bb,cc,dd,...
-            if params[0] < cutoffs_tail[0] - 1:
+            if (cutoffs_tail[0] == 1) or (params[0] < cutoffs_tail[0] - 1):
                 arr1 = use_diag_pivot(
                     A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1
                 )

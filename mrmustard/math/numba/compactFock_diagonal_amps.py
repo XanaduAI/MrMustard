@@ -142,7 +142,7 @@ def fock_representation_diagonal_amps_NUMBA(
     for sum_params in range(sum(cutoffs)):
         for params in dict_params[sum_params]:
             # diagonal pivots: aa,bb,cc,dd,...
-            if params[0] < cutoffs[0] - 1:
+            if (cutoffs[0] == 1) or (params[0] < cutoffs[0] - 1):
                 arr1 = use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1)
             # off-diagonal pivots: d=0: (a+1)a,bb,cc,dd,... | d=1: 00,(b+1)b,cc,dd | 00,00,(c+1)c,dd | ...
             for d in range(M):
