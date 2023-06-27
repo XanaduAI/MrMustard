@@ -32,7 +32,7 @@ from mrmustard.lab.states import (
 )
 from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
-from tests.random import angle, medium_float, n_mode_pure_state, nmodes
+from tests.random import angle, medium_float, nmodes, r
 
 math = Math()
 
@@ -69,7 +69,7 @@ class TestStatesinit():
     #     assert len(x) == len(y)
     #     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
-
+    #TODO: This test is used when we refactor the transformations with representation project.
     # @given(xy=xy_arrays())
     # def test_coh_state(xy):
     #     """Test coherent state preparation."""
@@ -78,22 +78,96 @@ class TestStatesinit():
 
 
     #######################Test Vacuum######################
+    @given(nmodes=nmodes)
+    @pytest.mark.parametrize("hbar", (1,2))
     def test_init_vacuum_state_with_different_nmodes_and_hbar(self, nmodes, hbar):
         vac = Vacuum(num_modes=nmodes, hbar=hbar)
-        cov = vac.representation.data.symplectic
-        disp = vac.representation.data.displacement
-        assert np.allclose(cov, np.eye(2 * nmodes) * np.sqrt(hbar / 2))
-        assert np.allclose(disp, np.zeros_like(disp) * np.sqrt(hbar / 2))
+        cov = vac.cov
+        disp = vac.means
+        assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
+        assert np.allclose(disp, np.zeros_like(disp))
 
     #######################Test Fock######################
+    @pytest.mark.parametrize("n", (2,3,4,5))
+    def test_init_fock_state_single_mode(self, n):
+        fock1 = Fock(n=n)
+        assert fock1.representation.data.array[n] == 1
+        assert fock1.representation.data.array[n-1] == 0
+
+    
+    def test_init_fock_state_multimode_without_cutoffs(self):
+        fock1 = Fock(n=[1,2,3])
+        assert fock1.representation.data.array[1,2,3] == 1
+
+
+    @pytest.mark.parametrize("n", (2,3,4,5))
+    @pytest.mark.parametrize("cutoffs", (6,7))
+    def test_init_fock_state_single_mode_with_cutoffs(self, n, cutoffs):
+        fock1 = Fock(n=n, cutoffs=cutoffs)
+        assert fock1.representation.data.array.shape[0] == cutoffs
+
+
+    def test_init_fock_state_multimode_with_larger_cutoffs(self):
+        fock1 = Fock(n=[3,4], cutoffs=[7,8])
+        assert fock1.representation.data.array.shape == (7,8,)
+
+    
+    def test_init_fock_state_multimode_with_smaller_cutoffs(self):
+        fock1 = Fock(n=[2,5], cutoffs=[1,1])
+        assert fock1.representation.data.array.shape == (2+1,5+1,)
+
+    
+    def test_init_fock_state_multimode_with_different_cutoffs(self):
+        fock1 = Fock(n=[2,5], cutoffs=[1,10])
+        assert fock1.representation.data.array.shape == (2+1,10,)
+
+
     #######################Test SqueezedVacuum######################
+    @pytest.mark.parametrize("r", (0.2,0.5,0.3))
+    @pytest.mark.parametrize("phi", (0.2,0.1))
+    def test_init_sq_state(self, r, phi):
+        sq = SqueezedVacuum(r, phi)
+        assert np.allclose(sq.representation.data.symplectic, gp.squeezing_symplectic(r=r, phi=phi))
+        assert np.allclose(sq.means, np.zeros_like(sq.means))
+
+
+    @pytest.mark.parametrize("r,phi", [([0.1],[0.5]),([0.8,0.7],[-0.2,-0.1])])
+    def test_init_sq_state_with_a_list_of_parameters(self, r, phi):
+        sq = SqueezedVacuum(r, phi)
+        assert np.allclose(sq.representation.data.symplectic, gp.squeezing_symplectic(r=r, phi=phi))
+        assert np.allclose(sq.means, np.zeros_like(sq.means))
+
+
+    #With different Init parameters
+    @pytest.mark.parametrize("r, phi",[([0.1,0.2], [-0.1]), (0.5, [-0.1]), (None,medium_float)])
+    def test_init_sq_state_with_paramters_failed(self, r, phi):
+        with pytest.raises(AttributeError):
+            SqueezedVacuum(r=r,phi=phi)
+
+    #TODO: This test is used when we refactor the transformations with representation project.
     # @given(r=r, phi=angle)
     # def test_sq_state(r, phi):
     #     """Test squeezed vacuum preparation."""
     #     assert Vacuum(1) >> Sgate(r, phi) == SqueezedVacuum(r, phi)
     #######################Test Gaussian######################
+
+    @given(nmodes=nmodes)
+    def test_init_gaussian_states(self, nmodes):
+        g = Gaussian(num_modes=nmodes)
+        assert True
+
+
     #######################Test Thermal######################
+
+    def test_init_thermal_state(self):
+        pass
+
     #######################Test DisplacedSqueezed######################
+
+    def test_init_dsplacedsqueezed_state(self):
+        pass
+
+
     #TODO: This test is used when we refactor the transformations with representation project.
     # @given(
     #     x=medium_float,
@@ -289,6 +363,7 @@ class TestStatesinit():
 
 
 
+# This part should be
 # class TestStatesOthers():
 
 #     @given(r1=r, phi1=angle, r2=r, phi2=angle)

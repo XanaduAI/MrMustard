@@ -221,6 +221,7 @@ class SqueezedVacuum(Parametrized, State):
             math.zeros(num_modes, dtype="float64"),
             settings.HBAR,
             )
+        
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
 
