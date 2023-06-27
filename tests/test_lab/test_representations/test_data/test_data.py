@@ -45,12 +45,6 @@ def DATA(PARAMS) -> MockData:
     return factory(MockData, **PARAMS)
 
 
-@pytest.fixture()
-def OTHER(cls):
-    return factory(cls)
-
-
-
 class TestData():
 
     #########   Common to different methods  #########
