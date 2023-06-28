@@ -131,7 +131,7 @@ class Coherent(Parametrized, State):
         elif isinstance(x, float) and isinstance(y, float):
             num_modes = 1
         else:
-            #One List and another float is also not acceptable
+            #One List and another float is also not acceptable, or one of them is None
             raise AttributeError("Both parameters x and y don't have the same size!")
 
         displacement = gaussian.displacement(x, y, settings.HBAR)
@@ -221,6 +221,7 @@ class SqueezedVacuum(Parametrized, State):
             math.zeros(num_modes, dtype="float64"),
             settings.HBAR,
             )
+        
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
 
 
