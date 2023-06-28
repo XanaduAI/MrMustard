@@ -41,7 +41,7 @@ class WavefunctionArrayData(ArrayData):
     def __eq__(self, other:ArrayData) -> bool:
         try:
             return (super().same(X=[self.array], Y=[other.array]) 
-                    and super.same(X=[self.qs], Y=[other.qs]))
+                    and super().same(X=[self.qs], Y=[other.qs]))
         
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
@@ -61,7 +61,7 @@ class WavefunctionArrayData(ArrayData):
 
     def __sub__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
         if self._qs_is_same(other):
-            self.__add__(-other)
+            return self.__add__(-other)
         else:
             raise ValueError ("The two wave functions must have the same qs. ")
 
