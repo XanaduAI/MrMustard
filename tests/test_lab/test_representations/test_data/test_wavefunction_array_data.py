@@ -18,6 +18,7 @@ import operator as op
 import pytest
 from copy import deepcopy
 from tools_for_tests import factory
+from mock_data import MockNoCommonAttributesObject
 
 #from tests.test_lab.test_representations.test_data.test_array_data import TestArrayData
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
@@ -40,39 +41,73 @@ def DATA(PARAMS) -> WavefunctionArrayData:
 class TestWavefunctionArrayData():
 
     #########   Common to different methods  #########
+    @pytest.mark.parametrize('other', [
+        WavefunctionArrayData(qs=np.zeros(10), array=np.ones(10)),
+        WavefunctionArrayData(qs=np.zeros(10), array=np.zeros(10)),
+        WavefunctionArrayData(qs=np.zeros(9), array=np.ones(10)),
+        WavefunctionArrayData(qs=np.zeros(8), array=np.zeros(10)),
+        WavefunctionArrayData(qs=np.eye(8), array=np.zeros(10))
+                            ])
     @pytest.mark.parametrize('operator', [op.add, op.sub, op.mul])
-    @pytest.mark.parametrize('other', [WavefunctionArrayData(qs=np.zeros(10), array=np.ones(10))])
-    def test_different_qs_raises_ValueError(self, DATA, other, operator):
+    def test_different_value_or_shape_of_qs_raises_ValueError(self, DATA, other, operator):
         with pytest.raises(ValueError):
-            _ = operator(DATA, other)
+            operator(DATA, other)
 
+
+    @pytest.mark.parametrize('other', [WavefunctionArrayData(qs=np.ones(10), array=np.ones(10))])
+    @pytest.mark.parametrize('operator', [op.add, op.sub, op.mul, op.and_])
+    def test_qs_for_new_objects_are_same_as_initial_qs_after_arity2_operation(self, 
+                                                                              DATA, 
+                                                                              other, 
+                                                                              operator):
+        new_obj = operator(DATA, other)
+        assert np.allclose(DATA.qs, new_obj.qs)
+
+
+    @pytest.mark.parametrize('operator', [op.neg])
+    def test_qs_for_new_objects_are_same_as_initial_qs_after_arity1_operation(self,
+                                                                              DATA,
+                                                                              operator):
+        new_obj = operator(DATA)
+        assert np.allclose(DATA.qs, new_obj.qs)
         
-
-    def test_qs_for_new_objects_are_same_as_initial_qs(self):
-        # test on add, sub, 
-        pass
 
     ####################  Init  ######################
     # NOTE : tested in parent
     
-    ##################  Equality  ####################
 
-    def test_eq_returns_false_if_array_same_but_qs_different(self):
-        pass
+    ##################  Equality  ####################
+    @pytest.mark.parametrize('other, truth_val', [
+        (WavefunctionArrayData(qs=np.zeros(10), array=np.ones(10)), False),
+        (WavefunctionArrayData(qs=np.zeros(10), array=np.zeros(10)), False)
+    ])
+    def test_eq_returns_false_if_qs_different_irrespective_of_array(self, DATA, other, truth_val):
+        assert (DATA == other) == truth_val
+
 
     ###########  Object multiplication  ##############
     # NOTE : done in parent
 
+
     ###############  Outer product  ##################
     # TODO : test and
     
+
     #################### Other #######################
+    @pytest.mark.parametrize('other, truth_val', [
+        (WavefunctionArrayData(qs=np.ones(10), array=np.zeros(10)), True), 
+        (WavefunctionArrayData(qs=np.ones(10), array=np.ones(10)), True),
+        (WavefunctionArrayData(qs=np.zeros(10), array=np.zeros(10)), False), 
+        (WavefunctionArrayData(qs=np.zeros(10), array=np.ones(10)), False)
+                            ])
+    def test_qs_is_same_returns_true_when_same_qs_and_false_when_diff_qs_irrespective_of_array(self,
+                                                                        DATA,
+                                                                        other,
+                                                                        truth_val):
+        assert DATA._qs_is_same(other) == truth_val
 
-    def test_qs_is_same_returns_true_when_same_qs(self):
-        pass
 
-    def test_qs_is_same_returns_false_when_different_qs(self):
-        pass
-
-    def test_qs_is_same_raises_TypeError_if_other_has_no_qs(self):
-        pass
+    @pytest.mark.parametrize('other', [MockNoCommonAttributesObject()])
+    def test_qs_is_same_raises_TypeError_if_other_has_no_qs(self, DATA, other):
+        with pytest.raises(TypeError):
+            DATA._qs_is_same(other)
