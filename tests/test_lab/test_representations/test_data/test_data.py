@@ -48,18 +48,19 @@ def DATA(PARAMS) -> MockData:
 class TestData():
 
     #########   Common to different methods  #########
-    @pytest.mark.parametrize("operator", [op.neg])
-    def test_data_object_is_left_untouched_after_applying_negation(self, DATA, operator):
+    def test_original_data_object_is_left_untouched_after_applying_negation(self, DATA):
         pre_op_data = deepcopy(DATA)
-        _ = operator(pre_op_data)
+        _ = - DATA
+        #iterate over all elements in the 
         assert DATA == pre_op_data
 
 
     @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
     @pytest.mark.parametrize("other", [MockData()])
-    def test_data_object_is_left_untouched_after_applying_operation_of_arity_two(self, DATA,
-                                                                                 other, 
-                                                                                 operator):
+    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
+                                                                                          DATA,
+                                                                                          other, 
+                                                                                          operator):
         pre_op_data = deepcopy(DATA)
         _ = operator(pre_op_data, other)
         assert DATA == DATA
@@ -119,4 +120,4 @@ class TestData():
         other = deepcopy(DATA) # TODO: why this needs to be inside and not in parameterize?!?
         for k in DATA.__dict__.keys():
             getattr(other, k)
-            #assert getattr(DATA, k) == getattr(other, k)
+            assert getattr(DATA, k) == getattr(other, k)

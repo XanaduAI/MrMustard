@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.10
 
 # Configure apt for setup
 ENV DEBIAN_FRONTEND=noninteractive

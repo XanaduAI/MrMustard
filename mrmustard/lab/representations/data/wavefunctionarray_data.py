@@ -61,19 +61,20 @@ class WavefunctionArrayData(ArrayData):
 
     def __sub__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
         if self._qs_is_same(other):
-            self.__add__(other.array.__neg__)
+            self.__add__(-other)
         else:
             raise ValueError ("The two wave functions must have the same qs. ")
 
 
     def __mul__(self, other: Union[Scalar, WavefunctionArrayData]) -> WavefunctionArrayData:
-        if isinstance(other, Scalar):
-            return self.__class__(array=self.array * other, qs=self.qs) 
-        else:
+        if isinstance(other, WavefunctionArrayData):
             if self._qs_is_same(other):
                 return self.__class__(array=self.array * other.array, qs=self.qs)
             else:
                 raise ValueError ("The two wave functions must have the same qs. ")
+        else: # scalar case
+            return self.__class__(array=self.array * other, qs=self.qs) 
+            
 
 
     def __and__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:

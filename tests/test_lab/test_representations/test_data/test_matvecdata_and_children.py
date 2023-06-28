@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import numpy as np
+import operator as op
 import pytest
-from hypothesis import assume, given
-from hypothesis import strategies as st
-from hypothesis.extra.numpy import arrays
-from tests.test_lab.test_representations.test_data.test_data import TestData
+from copy import deepcopy
+from tests.test_lab.test_representations.test_data.mock_data import (MockData, 
+                                                                     MockCommonAttributesObject,
+                                                                     MockNoCommonAttributesObject)
+from tools_for_tests import factory
 
 
 
