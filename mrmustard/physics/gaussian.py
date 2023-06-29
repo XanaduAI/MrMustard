@@ -128,7 +128,7 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
 
-    return math.matmul(
+    return settings.HBAR/2*math.matmul(
         math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
         math.transpose(symplectic),
     )
