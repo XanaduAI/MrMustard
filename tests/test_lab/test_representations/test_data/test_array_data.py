@@ -20,6 +20,7 @@ from tests.test_lab.test_representations.test_data.mock_data import (MockData,
                                                                      MockCommonAttributesObject,
                                                                      MockNoCommonAttributesObject)
 from tests.test_lab.test_representations.test_data.test_data import TestData
+from mrmustard.lab.representations.data.array_data import ArrayData
 from tools_for_tests import factory
 
 
@@ -27,25 +28,21 @@ from tools_for_tests import factory
 
 @pytest.fixture
 def PARAMS() -> dict:
-    r""" Parameters for the class instance which is created.
-
-    Returns:
-        A dict with the parameter names as keys and their associated values.
-    
-    """
-    params_list = ['mat', 'vec', 'coeffs', 'cutoffs']
-    params_dict = dict.fromkeys(params_list)
-    params_dict['array'] = np.ones(10)
+    r""" Parameters for the class instance which is created. """
+    params_dict = {'array' : np.ones(10)}
     return params_dict
 
 
 @pytest.fixture()
-def DATA(PARAMS) -> MockData:
-    r""" Instance of the class that must be tested.
-    
-    Note that this fixture must be modified to match each child class in the subsequent tests.
-    """
-    return factory(MockData, **PARAMS)
+def DATA(PARAMS) -> ArrayData:
+    r""" Instance of the class that must be tested. """
+    return factory(ArrayData, **PARAMS)
+
+
+@pytest.fixture()
+def OTHER(DATA) -> ArrayData:
+    r""" Another instance of the class that must be tested. """
+    return deepcopy(DATA)
 
 
 
@@ -78,7 +75,7 @@ class TestArrayData(TestData):
     ################  Subtraction  ###################
     # NOTE: tested above
     
-    #############  Scalar division  ##################
+    # #############  Scalar division  ##################
     @pytest.mark.parametrize("x", [2])
     def test_truediv_returns_new_object_with_element_wise_division_performed(self, DATA, x):
         res_from_object_op = DATA / x
