@@ -11,6 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Note: Let C be the class we are testing, 'other' fixtures can not be used to generate these objects
+in parent classes as these types would not get overridden by the actual type of interest in the 
+child classes, unless done manually. To avoid having to change multiple parts of the test code, any
+object of the same type as C is instantiated inside the test through a deepcopy. This allows the 
+'other' object to be of the same type as the DATA fixture.
+"""
 
 import numpy as np
 import operator as op
@@ -49,10 +56,10 @@ class TestData():
 
     #########   Common to different methods  #########
     def test_original_data_object_is_left_untouched_after_applying_negation(self, DATA):
-        pre_op_data = deepcopy(DATA)
+        pre_op_data_control = deepcopy(DATA)
         _ = - DATA
-        #iterate over all elements in the 
-        assert DATA == pre_op_data
+        assert DATA == pre_op_data_control
+        
 
 
     @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
@@ -60,8 +67,8 @@ class TestData():
                                                                                           DATA,
                                                                                           operator):
         pre_op_data_control = deepcopy(DATA)
-        pre_op_data_act = deepcopy(DATA)
-        _ = operator(DATA, pre_op_data_act)
+        other = deepcopy(DATA)
+        _ = operator(DATA, other)
         assert DATA == pre_op_data_control
 
 
@@ -81,19 +88,18 @@ class TestData():
             operator(DATA, other)
 
 
-    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
-    # @pytest.mark.parametrize("other", [MockData()])
-    # def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA,
-    #                                                                               other,
-    #                                                                               operator):
-    #     # NOTE: are we ok with try/except blocks in tests?
-    #     # NOTE: are we ok with for loops in tests?
-    #     for k in DATA.__dict__.keys():
-    #         new_data = operator(DATA, other)
-    #         try: # works for all numpy array attributes
-    #             assert getattr(DATA, k).shape == getattr(new_data, k).shape
-    #         except AttributeError: # works for scalar attributes
-    #             pass
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
+    def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA,
+                                                                                  operator):
+        other = deepcopy(DATA)
+        # NOTE: are we ok with try/except blocks in tests?
+        # NOTE: are we ok with for loops in tests?
+        for k in DATA.__dict__.keys():
+            new_data = operator(DATA, other)
+            try: # works for all numpy array attributes
+                assert getattr(DATA, k).shape == getattr(new_data, k).shape
+            except AttributeError: # works for scalar attributes
+                pass
 
 
     @pytest.mark.parametrize("operator", [op.neg])
