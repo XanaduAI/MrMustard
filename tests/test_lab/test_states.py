@@ -32,16 +32,10 @@ from mrmustard.lab.states import (
 )
 from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
-from tests.random import angle, medium_float, nmodes, r
+from tests.random import angle, medium_float, nmodes, r, angle
 
 math = Math()
 
-###################TestPreparationData#################################
-
-@st.composite
-def xy_arrays(draw):
-    length = draw(st.integers(2, 10))
-    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 ####################TestInit###########################################
 class TestStatesinit():
@@ -61,16 +55,7 @@ class TestStatesinit():
         assert np.allclose(coh.representation.data.displacement, np.sqrt(2*settings.HBAR)*math.concat([xs,ys], axis=0))
 
 
-    # @given(xy=xy_arrays())
-    # def test_coherent_state_multiple(self, xy):
-    #     x, y = xy
-    #     state = Coherent(x, y)
-    #     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
-    #     assert len(x) == len(y)
-    #     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
-
     #TODO: This test is used when we refactor the transformations with representation project.
-    # @given(xy=xy_arrays())
     # def test_coh_state(xy):
     #     """Test coherent state preparation."""
     #     x, y = xy
@@ -152,21 +137,61 @@ class TestStatesinit():
     #######################Test Gaussian######################
 
     @given(nmodes=nmodes)
-    def test_init_gaussian_states(self, nmodes):
-        g = Gaussian(num_modes=nmodes)
-        assert True
+    def test_init_gaussian_states_singlemode(self, nmodes):
+        symplectic = math.random_symplectic(num_modes=nmodes)
+        eigenvalues = math.ones(nmodes) * settings.HBAR / 2
+        g = Gaussian(num_modes=nmodes, symplectic=symplectic, eigenvalues=eigenvalues)
+        assert np.allclose(g.cov, settings.HBAR/2*math.matmul( math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))), math.transpose(symplectic)))
+        assert np.allclose(g.means, math.zeros(2*nmodes))
+
+
+    @given(nmodes=nmodes)
+    def test_init_gaussian_states_multimode(self, nmodes):
+        symplectic = math.random_symplectic(num_modes=nmodes)
+        eigenvalues = math.ones(nmodes) * settings.HBAR / 2
+        g = Gaussian(num_modes=nmodes, symplectic=symplectic, eigenvalues=eigenvalues)
+        assert np.allclose(g.cov, settings.HBAR/2*math.matmul( math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))), math.transpose(symplectic)))
+        assert np.allclose(g.means, math.zeros(2*nmodes))
 
 
     #######################Test Thermal######################
 
-    def test_init_thermal_state(self):
-        pass
+    @given(nbar = r)
+    def test_init_thermal_state_singlemode(self, nbar):
+        th = Thermal(nbar=nbar)
+        g = (2 * math.atleast_1d(nbar) + 1) * settings.HBAR / 2
+        assert np.allclose(th.cov, math.diag(math.concat([g, g], axis=-1)))
+
+    @pytest.mark.parametrize("nbar", ([1, 0.5], [0,1.2,-0.3]))
+    def test_init_thermal_state_multimode(self, nbar):
+        th = Thermal(nbar=nbar)
+        g = (2 * math.atleast_1d(nbar) + 1) * settings.HBAR / 2
+        assert np.allclose(th.cov, math.diag(math.concat([g, g], axis=-1)))
+        assert np.allclose(th.means, math.zeros(2*len(nbar)))
 
     #######################Test DisplacedSqueezed######################
+    @pytest.mark.parametrize("r", (0.2,0.3))
+    @pytest.mark.parametrize("phi", (0.2,0.1))
+    @pytest.mark.parametrize("x", (0.2,-0.8))
+    @pytest.mark.parametrize("y", (0.2,0.1))
+    def test_init_displacedsqueezed_state(self, x, y, r, phi):
+        dssq = DisplacedSqueezed(x=x, y=y, r=r, phi=phi)
+        assert np.allclose(dssq.representation.data.symplectic, gp.squeezing_symplectic(r=r, phi=phi))
+        assert np.allclose(dssq.representation.data.displacement, np.sqrt(2*settings.HBAR)*math.concat([x,y], axis=0))
 
-    def test_init_dsplacedsqueezed_state(self):
-        pass
+#With different Init parameters
+    @pytest.mark.parametrize("x, y, r, phi",[([0.1,0.2], [-0.1], None, None), (0.5, None, [-0.1], 0.1), (None,medium_float, None, medium_float)])
+    def test_init_dispalcedsqueezed_paramters_failed(self, x, y, r, phi):
+        with pytest.raises(AttributeError):
+            DisplacedSqueezed(x=x, y=y, r=r, phi=phi)
 
+
+    @pytest.mark.parametrize("xs, ys, rs, phis", [([0.1, 0.9, 0.2, 0.1], [0.5, 0.0, 0.0, 0.1], [-0.2, 1.0, -0.3, -0.5], [0.1, 0.2, 0.2, -0.1]), ([0.1, 0.2], [0.3, 0.4], [0.2, -0.4], [0.1, - 0.2])])
+    def test_init_displacedsqueezed_with_list_of_correct_parameters(self, xs, ys, rs, phis):
+        print(xs, ys, rs, phis, "here")
+        dssq = DisplacedSqueezed(x=xs, y=ys, r=rs, phi=phis)
+        assert np.allclose(dssq.representation.data.symplectic, gp.squeezing_symplectic(r=rs, phi=phis))
+        assert np.allclose(dssq.representation.data.displacement, np.sqrt(2*settings.HBAR)*math.concat([xs,ys], axis=0))
 
     #TODO: This test is used when we refactor the transformations with representation project.
     # @given(
@@ -178,6 +203,7 @@ class TestStatesinit():
     # def test_dispsq_state(self, x, y, r, phi):
     #     """Test displaced squeezed state."""
     #     assert Vacuum(1) >> Sgate(r, phi) >> Dgate(x, y) == DisplacedSqueezed(r, phi, x, y)
+
 
 # class TestStatesProperties():
 

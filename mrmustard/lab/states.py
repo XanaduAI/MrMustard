@@ -449,7 +449,6 @@ class DisplacedSqueezed(Parametrized, State):
             #One List and another float is also not acceptable
             raise AttributeError("Both parameters r and phi don't have the same size!")
 
-
         symplectic = gaussian.squeezing_symplectic(r, phi)
         displacement = gaussian.displacement(x, y, settings.HBAR)
         State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)

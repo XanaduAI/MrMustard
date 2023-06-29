@@ -18,7 +18,7 @@ from typing import Union
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import RealMatrix, Scalar, RealVector
 from typing import Optional
-from thewalrus.symplectic import is_symplectic
+from thewalrus.quantum.gaussian_checks import is_symplectic
 
 class SymplecticData(MatVecData):
     """ Symplectic matrix-like data for certain Representation objects.
