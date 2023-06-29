@@ -19,6 +19,7 @@ from mrmustard.lab.representations.data.data import Data
 from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
+from mrmustard.utils.misc_tools import duck_type_checker
 
 math = Math()
 
@@ -67,7 +68,7 @@ class WavefunctionArrayData(ArrayData):
 
 
     def __mul__(self, other: Union[Scalar, WavefunctionArrayData]) -> WavefunctionArrayData:
-        if isinstance(other, WavefunctionArrayData):
+        if duck_type_checker(self, other): #same type
             if self._qs_is_same(other):
                 return self.__class__(array=self.array * other.array, qs=self.qs)
             else:
