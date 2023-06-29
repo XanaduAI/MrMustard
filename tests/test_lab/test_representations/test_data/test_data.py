@@ -11,12 +11,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Note: Let C be the class we are testing, 'other' fixtures can not be used to generate these objects
-in parent classes as these types would not get overridden by the actual type of interest in the 
-child classes, unless done manually. To avoid having to change multiple parts of the test code, any
-object of the same type as C is instantiated inside the test through a deepcopy. This allows the 
-'other' object to be of the same type as the DATA fixture.
+""" This class corresponds to the abstract parent class for all Data objects.
+
+This file is *NOT* meant to be run on its own with pytest but meant to be inherited by children 
+test classes which will be run with pytest.
+
+Test inheritance - why?
+- - - - - - - - - - - -
+Just like standard inheritance, test inheritance allows us to test for properties that are common 
+throughout generations without having to use parameterization over types.
+It reinforces the *Single responsibility* principle from SOLID by allowing one test to be in charge
+ of testing a single behaviour/state element and not behave as a factory at the same time.
+It promotes the Open-Closed principle from SOLID by making the implementation of new testing 
+classes seamless. When creating a new Data class NewData which inherits from Data, then the
+correspodning test class TestNewData will inherit from TestData and guarantee that everything which
+held true for the parents holds true for the child.
+Fianlly, Test Driven development (TDD) benefits from test inheritance as a test class can easily be
+created for any new class.
+
+Test inheritance - how?
+- - - - - - - - - - - -
+In order to allow for test class inheritance, a few adjustments are necessary:
+
+1) The PARAMS, DATA and OTHER fixtures must be redefined in each child test file and adapted to 
+match the specific class of the child.
+
+2) We must accept that the instance created by OTHER is by default a deepcopy of the instance
+created by the DATA fixture.
+
 """
 
 import numpy as np
@@ -52,6 +74,11 @@ def DATA(PARAMS) -> MockData:
     return factory(MockData, **PARAMS)
 
 
+@pytest.fixture()
+def OTHER(DATA) -> MockData:
+    return deepcopy(DATA)
+
+
 class TestData():
 
     #########   Common to different methods  #########
@@ -65,10 +92,10 @@ class TestData():
     @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
     def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
                                                                                           DATA,
+                                                                                          OTHER,
                                                                                           operator):
         pre_op_data_control = deepcopy(DATA)
-        other = deepcopy(DATA)
-        _ = operator(DATA, other)
+        _ = operator(DATA, OTHER)
         assert DATA == pre_op_data_control
 
 
@@ -78,7 +105,7 @@ class TestData():
             DATA / other
 
 
-    #TODO : mul!!!
+    #TODO : test mul!!!
     @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
     @pytest.mark.parametrize("operator", [op.add, op.sub,  op.truediv, op.eq, op.and_])
     def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
@@ -115,13 +142,14 @@ class TestData():
 
     
     ####################  Init  ######################
-
     def test_when_arguments_given_attribute_values_match_them(self):
         pass #TODO : code this
 
 
     ##################  Equality  ####################
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA):
+        # NOTE: are we ok with try/except blocks in tests?
+        # NOTE: are we ok with for loops in tests?
         other = deepcopy(DATA)
         for k in DATA.__dict__.keys():
             getattr(other, k)

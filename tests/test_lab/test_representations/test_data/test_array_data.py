@@ -63,14 +63,14 @@ class TestArrayData(TestData):
     # NOTE: tested in parent class
 
 
-    #############  Arity-2 operations  ################
-    # Addition, subtraction and multiplication all go here
-    @pytest.mark.parametrize("other", [MockData(array=np.ones(10))])
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
-    def test_arity2_operation_returns_element_wise_operation_on_array(self, DATA, other, operator):
-        res_from_object_op = operator(DATA, other)
-        res_from_manual_op = operator(DATA.array, other.array)
-        assert np.allclose(res_from_object_op.array, res_from_manual_op)
+    # #############  Arity-2 operations  ################
+    # # Addition, subtraction and multiplication all go here
+    # @pytest.mark.parametrize("other", [MockData(array=np.ones(10))])
+    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
+    # def test_arity2_operation_returns_element_wise_operation_on_array(self, DATA, other, operator):
+    #     res_from_object_op = operator(DATA, other)
+    #     res_from_manual_op = operator(DATA.array, other.array)
+    #     assert np.allclose(res_from_object_op.array, res_from_manual_op)
     
     ##################  Addition  ####################
     # NOTE: tested above

@@ -11,6 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" This class corresponds to test child class for the WaveFunctionArrayData class.
+
+Unlike some of its -abstract- parent test classes, this class is meant to be run with pytest.
+
+Check parents test classes for more details on the 
+rationale.
+
+The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class we are testing, here
+WavefunctionArrayData. 
+
+"""
 
 from __future__ import annotations
 import numpy as np
@@ -20,7 +31,7 @@ from copy import deepcopy
 from tools_for_tests import factory
 from mock_data import MockNoCommonAttributesObject
 
-from tests.test_lab.test_representations.test_data.test_data import TestData
+from tests.test_lab.test_representations.test_data.test_array_data import TestArrayData
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
 
 #########   Instantiating class to test  #########
@@ -37,8 +48,13 @@ def DATA(PARAMS) -> WavefunctionArrayData:
     return factory(WavefunctionArrayData, **PARAMS)
 
 
+@pytest.fixture()
+def OTHER(DATA) -> WavefunctionArrayData:
+    return deepcopy(DATA)
 
-class TestWavefunctionArrayData():
+
+
+class TestWavefunctionArrayData(TestArrayData):
 
     #########   Common to different methods  #########
     @pytest.mark.parametrize('other', [
