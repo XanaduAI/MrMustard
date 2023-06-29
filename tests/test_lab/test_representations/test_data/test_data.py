@@ -89,7 +89,7 @@ class TestData():
         
 
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
     def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
                                                                                           DATA,
                                                                                           OTHER,
@@ -105,9 +105,8 @@ class TestData():
             DATA / other
 
 
-    #TODO : test mul!!!
     @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize("operator", [op.add, op.sub,  op.truediv, op.eq, op.and_])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
     def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
                                                                                      other,
                                                                                      operator):
@@ -115,7 +114,7 @@ class TestData():
             operator(DATA, other)
 
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA,
                                                                                   operator):
         other = deepcopy(DATA)

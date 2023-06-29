@@ -76,30 +76,6 @@ class MockNoCommonAttributesObject():
         self.pear = None
         self.banana = None
 
-    def __neg__(self):
-        pass
-
-    def __eq__(self, other):
-        pass
-
-    def __add__(self, other):
-        pass
-
-    def __sub__(self, other):
-        pass
-
-    def __truediv__(self, other):
-        pass
-
-    def __mul__(self, other):
-        pass
-
-    def __rmul__(self, other):
-        pass
-
-    def __and__(self, other):
-        pass
-
 
 
 
@@ -128,11 +104,11 @@ class MockCommonAttributesObject():
     def __truediv__(self, other):
         pass
 
-    def __mul__(self, other):
-        pass
+    # def __mul__(self, other):
+    #     pass
 
-    def __rmul__(self, other):
-        pass
+    # def __rmul__(self, other):
+    #     pass
 
     def __and__(self, other):
         pass

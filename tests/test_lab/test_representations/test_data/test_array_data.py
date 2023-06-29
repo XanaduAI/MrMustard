@@ -11,14 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" This class corresponds to test child class for the ArrayData class.
+
+Unlike some of its -abstract- parent test classes, this class is meant to be run with pytest.
+
+Check parents test classes for more details on the rationale.
+
+The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class we are testing, here
+ArrayData.
+"""
 
 import numpy as np
 import operator as op
 import pytest
 from copy import deepcopy
-from tests.test_lab.test_representations.test_data.mock_data import (MockData, 
-                                                                     MockCommonAttributesObject,
-                                                                     MockNoCommonAttributesObject)
 from tests.test_lab.test_representations.test_data.test_data import TestData
 from mrmustard.lab.representations.data.array_data import ArrayData
 from tools_for_tests import factory
@@ -57,23 +63,20 @@ class TestArrayData(TestData):
 
 
     ##################  Equality  ####################
-    # NOTE: tested in parent class
-
+    # NOTE: tested in parent
 
     # #############  Arity-2 operations  ################
-    # # Addition, subtraction and multiplication all go here
-    # @pytest.mark.parametrize("other", [MockData(array=np.ones(10))])
-    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
-    # def test_arity2_operation_returns_element_wise_operation_on_array(self, DATA, other, operator):
-    #     res_from_object_op = operator(DATA, other)
-    #     res_from_manual_op = operator(DATA.array, other.array)
-    #     assert np.allclose(res_from_object_op.array, res_from_manual_op)
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
+    def test_arity2_operation_returns_element_wise_operation_on_array(self, DATA, OTHER, operator):
+        res_from_object_op = operator(DATA, OTHER)
+        res_from_manual_op = operator(DATA.array, OTHER.array)
+        assert np.allclose(res_from_object_op.array, res_from_manual_op)
     
     ##################  Addition  ####################
-    # NOTE: tested above
+    # NOTE: tested in parent
 
     ################  Subtraction  ###################
-    # NOTE: tested above
+    # NOTE: tested in parent
     
     # #############  Scalar division  ##################
     @pytest.mark.parametrize("x", [2])

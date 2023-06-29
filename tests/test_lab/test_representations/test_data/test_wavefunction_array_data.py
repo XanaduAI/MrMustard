@@ -19,8 +19,7 @@ Check parents test classes for more details on the
 rationale.
 
 The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class we are testing, here
-WavefunctionArrayData. 
-
+WavefunctionArrayData.
 """
 
 from __future__ import annotations
@@ -102,11 +101,11 @@ class TestWavefunctionArrayData(TestArrayData):
 
 
     ###########  Object multiplication  ##############
-    # NOTE : done in parent
+    # NOTE : tested in parent
 
 
     ###############  Outer product  ##################
-    # TODO : test and
+    # TODO : test tensor prod
     
 
     #################### Other #######################
