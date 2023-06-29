@@ -21,7 +21,7 @@ def duck_type_checker(obj_a:object, obj_b:object) -> bool:
 
     This function performs type-checking from a duck-type perspective, testing whether both given
     objects share the same set of attributes. If they do, no matter their 'type' -as obtained by
-    a call to `isinstance`-, they will be considered to be of the same duck type.
+    a call to `isinstance`-, they will be considered to be of the same duck-type.
 
     Note that we here look at the symmetric difference, hence the exact question we ask is better
     phrased as 'Are both objects of the same type?' than as 'Is object a of the same type as object
