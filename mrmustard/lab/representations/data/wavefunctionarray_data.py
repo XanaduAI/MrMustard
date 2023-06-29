@@ -46,6 +46,12 @@ class WavefunctionArrayData(ArrayData):
         
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+        
+    def __truediv__(self, x: Scalar) -> ArrayData:
+        try:
+            return self.__class__(array= self.array/x, qs=self.qs)
+        except (AttributeError, TypeError) as e:
+                raise TypeError(f"Cannot divide {self.__class__} by {x}.") from e
 
 
     def __add__(self, other:ArrayData) -> WavefunctionArrayData:
@@ -73,13 +79,23 @@ class WavefunctionArrayData(ArrayData):
                 return self.__class__(array=self.array * other.array, qs=self.qs)
             else:
                 raise ValueError ("The two wave functions must have the same qs. ")
-        else: # scalar case
-            return self.__class__(array=self.array * other, qs=self.qs) 
+        else: # assuming it's a scalar 
+            try:
+                return self.__class__(array=self.array * other, qs=self.qs)
+            except TypeError as e:
+                raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}."
+                                ) from e
+
+           
             
-
-
     def __and__(self, other:WavefunctionArrayData) -> WavefunctionArrayData:
-        return self.__class__(array=np.outer(self.array, other.array), qs=np.outer(self.qs, other.qs))
+        try:
+            return self.__class__(array=np.outer(self.array, other.array), 
+                                  qs=np.outer(self.qs, other.qs)
+                                  )
+        except AttributeError as e:
+            raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}."
+                                ) from e
 
 
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> WavefunctionArrayData:

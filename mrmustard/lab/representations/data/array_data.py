@@ -60,17 +60,17 @@ class ArrayData(Data):
 
 
     def __truediv__(self, x:Scalar) -> ArrayData: # TODO : check that all data classes only support Truediv for Scalars
-        if isinstance(x, Scalar):
-            return self.__class__(array= self.array / x)
-        else:
-            raise TypeError("The multiplication between two ArrayData is not possible.") 
+        try:
+            return self.__class__(array = self.array / x)
+        except TypeError as e:
+            raise TypeError("Can only divide by a scalar.") from e
         
 
     def __mul__(self, x: Scalar) -> ArrayData:
-        if isinstance(x, Scalar):
-            return self.__class__(array= self.array * x)
-        else:
-            raise TypeError("The multiplication between two ArrayData is not possible.") 
+        try:
+            return self.__class__(array = self.array * x)
+        except TypeError as e:
+            raise TypeError("Can only multiply by a scalar.") from e
 
 
     def __and__(self, other:ArrayData) -> ArrayData:
