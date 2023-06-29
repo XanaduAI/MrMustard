@@ -52,11 +52,15 @@ class ArrayData(Data):
         try:
             return self.__class__(array = self.array + other.array)
         except AttributeError as e:
-            raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+            raise TypeError(f"XXCannot add/subtract {self.__class__} and {other.__class__}."
+                            ) from e
             
 
     def __sub__(self, other:ArrayData) -> ArrayData:
-        self.__add__(other.__neg__)
+        try:
+            return self.__add__(other.__neg__)
+        except AttributeError as e:
+            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
 
     def __truediv__(self, x:Scalar) -> ArrayData: # TODO : check that all data classes only support Truediv for Scalars

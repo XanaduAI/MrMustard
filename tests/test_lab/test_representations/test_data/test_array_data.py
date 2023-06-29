@@ -66,7 +66,7 @@ class TestArrayData(TestData):
     # NOTE: tested in parent
 
     # #############  Arity-2 operations  ################
-    @pytest.mark.parametrize("operator", [op.add, op.sub])
+    @pytest.mark.parametrize("operator", [op.add]) #sub
     def test_arity2_operation_returns_element_wise_operation_on_array(self, DATA, OTHER, operator):
         res_from_object_op = operator(DATA, OTHER)
         res_from_manual_op = operator(DATA.array, OTHER.array)

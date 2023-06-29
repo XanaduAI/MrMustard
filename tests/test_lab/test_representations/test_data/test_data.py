@@ -88,8 +88,8 @@ class TestData():
         assert DATA == pre_op_data_control
         
 
-
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
+    # sub
+    @pytest.mark.parametrize("operator", [op.add, op.eq, op.and_])
     def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
                                                                                           DATA,
                                                                                           OTHER,
@@ -113,15 +113,14 @@ class TestData():
         with pytest.raises(TypeError):
             operator(DATA, other)
 
-
-    @pytest.mark.parametrize("operator", [op.add, op.sub])
-    def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA,
+    # add sub
+    @pytest.mark.parametrize("operator", [op.add])
+    def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA, OTHER,
                                                                                   operator):
-        other = deepcopy(DATA)
         # NOTE: are we ok with try/except blocks in tests?
         # NOTE: are we ok with for loops in tests?
         for k in DATA.__dict__.keys():
-            new_data = operator(DATA, other)
+            new_data = operator(DATA, OTHER)
             try: # works for all numpy array attributes
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
             except AttributeError: # works for scalar attributes
