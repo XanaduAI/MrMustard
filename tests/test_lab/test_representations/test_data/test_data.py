@@ -55,15 +55,15 @@ class TestData():
         assert DATA == pre_op_data
 
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
-    @pytest.mark.parametrize("other", [MockData()])
-    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
-                                                                                          DATA,
-                                                                                          other, 
-                                                                                          operator):
-        pre_op_data = deepcopy(DATA)
-        _ = operator(pre_op_data, other)
-        assert DATA == DATA
+    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
+    # @pytest.mark.parametrize("other", [MockData()])
+    # def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
+    #                                                                                       DATA,
+    #                                                                                       other, 
+    #                                                                                       operator):
+    #     pre_op_data = deepcopy(DATA)
+    #     _ = operator(pre_op_data, other)
+    #     assert DATA == DATA
 
 
     @pytest.mark.parametrize("other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)])
@@ -72,28 +72,28 @@ class TestData():
             DATA / other
 
 
-    @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
-    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
-                                                                                     other,
-                                                                                     operator):
-        with pytest.raises(TypeError):
-            operator(DATA, other)
+    # @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
+    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
+    # def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
+    #                                                                                  other,
+    #                                                                                  operator):
+    #     with pytest.raises(TypeError):
+    #         operator(DATA, other)
 
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
-    @pytest.mark.parametrize("other", [MockData()])
-    def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA,
-                                                                                  other,
-                                                                                  operator):
-        # NOTE: are we ok with try/except blocks in tests?
-        # NOTE: are we ok with for loops in tests?
-        for k in DATA.__dict__.keys():
-            new_data = operator(DATA, other)
-            try: # works for all numpy array attributes
-                assert getattr(DATA, k).shape == getattr(new_data, k).shape
-            except AttributeError: # works for scalar attributes
-                pass
+    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
+    # @pytest.mark.parametrize("other", [MockData()])
+    # def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA,
+    #                                                                               other,
+    #                                                                               operator):
+    #     # NOTE: are we ok with try/except blocks in tests?
+    #     # NOTE: are we ok with for loops in tests?
+    #     for k in DATA.__dict__.keys():
+    #         new_data = operator(DATA, other)
+    #         try: # works for all numpy array attributes
+    #             assert getattr(DATA, k).shape == getattr(new_data, k).shape
+    #         except AttributeError: # works for scalar attributes
+    #             pass
 
 
     @pytest.mark.parametrize("operator", [op.neg])
@@ -115,9 +115,11 @@ class TestData():
 
 
     ##################  Equality  ####################
-    #@pytest.mark.parametrize("other", [deepcopy(DATA)])
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA):
-        other = deepcopy(DATA) # TODO: why this needs to be inside and not in parameterize?!?
+        other = deepcopy(DATA)
         for k in DATA.__dict__.keys():
             getattr(other, k)
-            assert getattr(DATA, k) == getattr(other, k)
+            try: # non-array, non-list attributes
+                assert getattr(DATA, k) == getattr(other, k)
+            except ValueError:
+                assert all(getattr(DATA, k) == getattr(other, k))

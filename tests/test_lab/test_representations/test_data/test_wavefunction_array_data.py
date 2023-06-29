@@ -20,7 +20,7 @@ from copy import deepcopy
 from tools_for_tests import factory
 from mock_data import MockNoCommonAttributesObject
 
-#from tests.test_lab.test_representations.test_data.test_array_data import TestArrayData
+from tests.test_lab.test_representations.test_data.test_data import TestData
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
 
 #########   Instantiating class to test  #########
