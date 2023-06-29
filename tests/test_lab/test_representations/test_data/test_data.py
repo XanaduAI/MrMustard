@@ -55,15 +55,14 @@ class TestData():
         assert DATA == pre_op_data
 
 
-    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
-    # @pytest.mark.parametrize("other", [MockData()])
-    # def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
-    #                                                                                       DATA,
-    #                                                                                       other, 
-    #                                                                                       operator):
-    #     pre_op_data = deepcopy(DATA)
-    #     _ = operator(pre_op_data, other)
-    #     assert DATA == DATA
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.eq, op.and_])
+    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
+                                                                                          DATA,
+                                                                                          operator):
+        pre_op_data_control = deepcopy(DATA)
+        pre_op_data_act = deepcopy(DATA)
+        _ = operator(DATA, pre_op_data_act)
+        assert DATA == pre_op_data_control
 
 
     @pytest.mark.parametrize("other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)])
@@ -72,13 +71,14 @@ class TestData():
             DATA / other
 
 
-    # @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
-    # def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
-    #                                                                                  other,
-    #                                                                                  operator):
-    #     with pytest.raises(TypeError):
-    #         operator(DATA, other)
+    #TODO : mul!!!
+    @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
+    @pytest.mark.parametrize("operator", [op.add, op.sub,  op.truediv, op.eq, op.and_])
+    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
+                                                                                     other,
+                                                                                     operator):
+        with pytest.raises(TypeError):
+            operator(DATA, other)
 
 
     # @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
@@ -123,3 +123,4 @@ class TestData():
                 assert getattr(DATA, k) == getattr(other, k)
             except ValueError:
                 assert all(getattr(DATA, k) == getattr(other, k))
+        assert DATA == other
