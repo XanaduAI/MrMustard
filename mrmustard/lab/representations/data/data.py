@@ -13,77 +13,69 @@
 # limitations under the License.
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
+
 import numpy as np
+
+from abc import ABC, abstractmethod
 from typing import List, Union
+
 from mrmustard.typing import Scalar, Vector
 
+
 class Data(ABC):
-    r""" Abstract parent class to the different types of data that can encode a quantum State and
-      Representation.
-    """
+    r"""Abstract parent class for types of data encoding a quantum state's representation."""
 
     def __init__(self) -> None:
         pass
 
-
-    @staticmethod   
+    @staticmethod
     def same(
-             X: List[Union[List[Vector], List[Scalar]]],
-             Y: List[Union[List[Vector], List[Scalar]]]
-             ) -> bool:
-        r""" Method to compare two sets of elements
+        X: List[Union[List[Vector], List[Scalar]]],
+        Y: List[Union[List[Vector], List[Scalar]]],
+    ) -> bool:
+        r"""Method to compare two sets of elements
 
         Args:
             X: list of elements to be compared with ys
             Y: list of elements to be compared with xs
 
         Returns:
-            True if all the elements compared are same within numpy's default rtol/atol, False 
+            True if all the elements compared are same within numpy's default rtol/atol, False
             otherwise
         """
         return all([np.allclose(x, y) for x, y in zip(X, Y)])
 
-
     @abstractmethod
     def __neg__(self) -> Data:
         raise NotImplementedError()
-    
 
     @abstractmethod
-    def __eq__(self, other:Data) -> bool:
+    def __eq__(self, other: Data) -> bool:
         raise NotImplementedError()
-
 
     @abstractmethod
     def __add__(self, other: Data) -> Data:
         raise NotImplementedError()
 
-
     @abstractmethod
     def __sub__(self, other: Data) -> Data:
         raise NotImplementedError()
 
+    @abstractmethod
+    def __truediv__(self, other: Union[Scalar, Data]) -> Data:
+        raise NotImplementedError()
 
     @abstractmethod
-    def __truediv__(self, other:Union[Scalar, Data]) -> Data:
+    def __mul__(self, other: Union[Scalar, Data]) -> Data:
         raise NotImplementedError()
-    
 
-    @abstractmethod
-    def __mul__(self, other:Union[Scalar, Data]) -> Data:
-        raise NotImplementedError()
-    
-
-    def __rmul__(self, other:Scalar) -> Data:
+    def __rmul__(self, other: Scalar) -> Data:
         return self.__mul__(other=other)
 
-
     @abstractmethod
-    def __and__(self, other:Data) -> Data:
-        r""" Performs the tensor product between the two objects. """
+    def __and__(self, other: Data) -> Data:
+        r"""Performs a tensor product between the two objects."""
         raise NotImplementedError()
-
 
     # @abstractmethod
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
@@ -97,5 +89,3 @@ class Data(ABC):
     #         An object of the same input class, simplified
     #     """
     #     raise NotImplementedError()
-
-
