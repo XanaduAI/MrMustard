@@ -50,95 +50,97 @@ import pytest
 from copy import deepcopy
 
 from mrmustard.utils.misc_tools import general_factory
-from tests.test_lab.test_representations.test_data.mock_data import (MockData, 
-                                                                     MockCommonAttributesObject,
-                                                                     MockNoCommonAttributesObject)
-
+from tests.test_lab.test_representations.test_data.mock_data import (
+    MockData,
+    MockCommonAttributesObject,
+    MockNoCommonAttributesObject,
+)
 
 
 #########   Instantiating class to test  #########
 
+
 @pytest.fixture
 def PARAMS() -> dict:
-    r""" Parameters for the class instance which is created, here all are None. """
-    params_list = ['mat', 'vec', 'coeffs', 'array', 'cutoffs']
+    r"""Parameters for the class instance which is created, here all are None."""
+    params_list = ["mat", "vec", "coeffs", "array", "cutoffs"]
     return dict.fromkeys(params_list)
 
 
 @pytest.fixture()
 def DATA(PARAMS) -> MockData:
-    r""" Instance of the class that must be tested, here the class is a Mock."""
+    r"""Instance of the class that must be tested, here the class is a Mock."""
     return general_factory(MockData, **PARAMS)
 
 
 @pytest.fixture()
 def OTHER(DATA) -> MockData:
-    r""" Another instance of the class that must be tested, here again, the class is a Mock."""
+    r"""Another instance of the class that must be tested, here again, the class is a Mock."""
     return deepcopy(DATA)
 
 
-class TestData():
-    r""" Parent class for testing all children of the Data class. 
-    
+class TestData:
+    r"""Parent class for testing all children of the Data class.
+
     Here only the behaviours common to all children are tested.
     """
 
     #########   Common to different methods  #########
     def test_original_data_object_is_left_untouched_after_applying_negation(self, DATA):
         pre_op_data_control = deepcopy(DATA)
-        _ = - DATA
+        _ = -DATA
         assert DATA == pre_op_data_control
-        
 
     @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
-    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
-                                                                                          DATA,
-                                                                                          OTHER,
-                                                                                          operator):
+    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
+        self, DATA, OTHER, operator
+    ):
         pre_op_data_control = deepcopy(DATA)
         _ = operator(DATA, OTHER)
         assert DATA == pre_op_data_control
 
-
-    @pytest.mark.parametrize("other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)])
+    @pytest.mark.parametrize(
+        "other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)]
+    )
     def test_truediv_raises_TypeError_if_divisor_is_not_scalar(self, DATA, other):
         with pytest.raises(TypeError):
             DATA / other
 
-
     @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_])
-    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(self, DATA, 
-                                                                                     other,
-                                                                                     operator):
+    @pytest.mark.parametrize(
+        "operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_]
+    )
+    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
+        self, DATA, other, operator
+    ):
         with pytest.raises(TypeError):
             operator(DATA, other)
 
-    
     @pytest.mark.parametrize("operator", [op.add, op.sub])
-    def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA, OTHER,
-                                                                                  operator):
+    def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(
+        self, DATA, OTHER, operator
+    ):
         # NOTE: are we ok with try/except blocks in tests?
         # NOTE: are we ok with for loops in tests?
         for k in DATA.__dict__.keys():
             new_data = operator(DATA, OTHER)
-            try: # works for all numpy array attributes
+            try:  # works for all numpy array attributes
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
-            except AttributeError: # works for scalar attributes
+            except AttributeError:  # works for scalar attributes
                 pass
 
-
     @pytest.mark.parametrize("operator", [op.neg])
-    def test_new_object_created_by_negation_has_same_attribute_shapes_as_old_object(self, DATA, operator):
+    def test_new_object_created_by_negation_has_same_attribute_shapes_as_old_object(
+        self, DATA, operator
+    ):
         # NOTE: are we ok with try/except blocks in tests?
         # NOTE: are we ok with for loops in tests?
         for k in DATA.__dict__.keys():
             new_data = operator(DATA)
-            try: # numpy array attributes
+            try:  # numpy array attributes
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
-            except AttributeError: # scalar attributes
-                pass               
-            
+            except AttributeError:  # scalar attributes
+                pass
 
     ##################  Equality  ####################
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA):
@@ -147,7 +149,7 @@ class TestData():
         other = deepcopy(DATA)
         for k in DATA.__dict__.keys():
             getattr(other, k)
-            try: # non-array, non-list attributes
+            try:  # non-array, non-list attributes
                 assert getattr(DATA, k) == getattr(other, k)
             except ValueError:
                 assert all(getattr(DATA, k) == getattr(other, k))
