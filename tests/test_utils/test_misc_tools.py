@@ -58,11 +58,21 @@ def test_dtc_raises_TypeError_when_given_objects_without_dicts(x,y):
 
 
 ##########################   general_factory   ##############################
-def test_gfactory_returns_instance_of_correct_class():
-    pass
+@pytest.mark.parametrize('cls, args, kwargs', [(MockAnimal, (1954, False), {'colour':'red'}),
+                                         (MockFruit, (), {}),
+                                         (MockNoDefaultParams, (), {'a':1954, 'b':'no'}),
+                                         (MockNoDefaultParams, (1954, 'yes'), {})
+                                         ])
+def test_gfactory_returns_instance_of_correct_class(cls, args, kwargs):
+    assert isinstance(general_factory(cls, *args, **kwargs), cls) == True
+    
 
-def test_gfactory_raises_error_when_insufficient_arguments_given_to_instantiate_class():
-    pass
-
-def test_gfactory_raises_error_when_too_many_arguments_given_to_instantiate_class():
-    pass
+@pytest.mark.parametrize('cls, args, kwargs', [
+                                        (MockAnimal, (1954, False, 'red', 'extra_arg'), {}),
+                                        (MockNoDefaultParams, (), {'a':1954, 'b':'no', 'c':False}),
+                                        (MockNoDefaultParams, (1954, 'yes', True), {}),
+                                        (MockNoDefaultParams, (), {}),
+                                        ])
+def test_gfactory_raises_TypeError_when_unexpected_number_or_wrong_args_given(cls, args, kwargs):
+    with pytest.raises(TypeError):
+        general_factory(cls, *args, **kwargs)

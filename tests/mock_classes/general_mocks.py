@@ -15,13 +15,13 @@
 This module provides general mock classes.
 """
 
-all = [ 'MockAnimal', 'MockFruit']
+all = [ 'MockAnimal', 'MockFruit', 'MockNoDefaultParams']
 
 class MockAnimal():
-    def __init__(self) -> None:
-        self.age = 42
-        self.alive = True
-        self.colour = 'blue'
+    def __init__(self, age:int=42, alive:bool=True, colour:str='blue') -> None:
+        self.age = age
+        self.alive = alive
+        self.colour = colour
 
 
 class MockFruit():
@@ -29,3 +29,9 @@ class MockFruit():
         self.creation_date = 1954
         self.at_war = False
         self.flag_colour = 'blue'
+
+
+class MockNoDefaultParams():
+    def __init__(self, a, b) -> None:
+        self.a = a
+        self.b = b
