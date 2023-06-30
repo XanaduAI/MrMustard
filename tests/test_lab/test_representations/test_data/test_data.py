@@ -37,49 +37,51 @@ In order to allow for test class inheritance, a few adjustments are necessary:
 match the specific class of the child.
 
 2) We must accept that the instance created by OTHER is by default a deepcopy of the instance
-created by the DATA fixture.
-
+created by the DATA fixture. Developpers are welcome to code their own versions of the OTHER 
+fixture and we encourage them to do so whenever the need arises.
+We however advocate against using the `mark.parametrize` fixture for instances of `other` since it 
+breaks when inheriting the test. With `mark.parametrize`, the class instance will be of the type
+defined in the file where the test was written, blocking resolution sequence.
 """
 
-import numpy as np
 import operator as op
 import pytest
+
 from copy import deepcopy
+
+from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.mock_data import (MockData, 
                                                                      MockCommonAttributesObject,
                                                                      MockNoCommonAttributesObject)
-from tools_for_tests import factory
+
 
 
 #########   Instantiating class to test  #########
 
 @pytest.fixture
 def PARAMS() -> dict:
-    r""" Parameters for the class instance which is created.
-
-    Returns:
-        A dict with the parameter names as keys and their associated values.
-    
-    """
+    r""" Parameters for the class instance which is created, here all are None. """
     params_list = ['mat', 'vec', 'coeffs', 'array', 'cutoffs']
     return dict.fromkeys(params_list)
 
 
 @pytest.fixture()
 def DATA(PARAMS) -> MockData:
-    r""" Instance of the class that must be tested.
-    
-    Note that this fixture must be modified to match each child class in the subsequent tests.
-    """
-    return factory(MockData, **PARAMS)
+    r""" Instance of the class that must be tested, here the class is a Mock."""
+    return general_factory(MockData, **PARAMS)
 
 
 @pytest.fixture()
 def OTHER(DATA) -> MockData:
+    r""" Another instance of the class that must be tested, here again, the class is a Mock."""
     return deepcopy(DATA)
 
 
 class TestData():
+    r""" Parent class for testing all children of the Data class. 
+    
+    Here only the behaviours common to all children are tested.
+    """
 
     #########   Common to different methods  #########
     def test_original_data_object_is_left_untouched_after_applying_negation(self, DATA):
@@ -88,8 +90,7 @@ class TestData():
         assert DATA == pre_op_data_control
         
 
-    # sub
-    @pytest.mark.parametrize("operator", [op.add, op.eq, op.and_])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
     def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(self,
                                                                                           DATA,
                                                                                           OTHER,
@@ -113,8 +114,8 @@ class TestData():
         with pytest.raises(TypeError):
             operator(DATA, other)
 
-    # add sub
-    @pytest.mark.parametrize("operator", [op.add])
+    
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(self, DATA, OTHER,
                                                                                   operator):
         # NOTE: are we ok with try/except blocks in tests?
@@ -137,12 +138,7 @@ class TestData():
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
             except AttributeError: # scalar attributes
                 pass               
-
-    
-    ####################  Init  ######################
-    def test_when_arguments_given_attribute_values_match_them(self):
-        pass #TODO : code this
-
+            
 
     ##################  Equality  ####################
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA):

@@ -24,10 +24,13 @@ ArrayData.
 import numpy as np
 import operator as op
 import pytest
+
 from copy import deepcopy
-from tests.test_lab.test_representations.test_data.test_data import TestData
+
 from mrmustard.lab.representations.data.array_data import ArrayData
-from tools_for_tests import factory
+from mrmustard.utils.misc_tools import general_factory
+from tests.test_lab.test_representations.test_data.test_data import TestData
+
 
 
 #########   Instantiating class to test  #########
@@ -42,7 +45,7 @@ def PARAMS() -> dict:
 @pytest.fixture()
 def DATA(PARAMS) -> ArrayData:
     r""" Instance of the class that must be tested. """
-    return factory(ArrayData, **PARAMS)
+    return general_factory(ArrayData, **PARAMS)
 
 
 @pytest.fixture()
@@ -52,7 +55,8 @@ def OTHER(DATA) -> ArrayData:
 
 
 
-class TestArrayData(TestData):      
+class TestArrayData(TestData):
+    r""" test class for the ArrayData objects, inherits from parent tests."""  
 
     ##################  Negative  ####################
     def test_negative_returns_new_object_with_element_wise_negative_of_array(self, DATA):

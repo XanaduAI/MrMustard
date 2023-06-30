@@ -22,16 +22,18 @@ The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class we
 WavefunctionArrayData.
 """
 
-from __future__ import annotations
 import numpy as np
 import operator as op
 import pytest
-from copy import deepcopy
-from tools_for_tests import factory
-from mock_data import MockNoCommonAttributesObject
 
-from tests.test_lab.test_representations.test_data.test_array_data import TestArrayData
+from copy import deepcopy
+
+from mock_data import MockNoCommonAttributesObject
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
+from mrmustard.utils.misc_tools import general_factory
+from tests.test_lab.test_representations.test_data.test_array_data import TestArrayData
+
+
 
 #########   Instantiating class to test  #########
 @pytest.fixture
@@ -44,16 +46,19 @@ def PARAMS() -> dict:
 @pytest.fixture()
 def DATA(PARAMS) -> WavefunctionArrayData:
     r""" Instance of the class that must be tested. """
-    return factory(WavefunctionArrayData, **PARAMS)
+    return general_factory(WavefunctionArrayData, **PARAMS)
 
 
 @pytest.fixture()
 def OTHER(DATA) -> WavefunctionArrayData:
+    r""" Alternative instance of the class to be tested. """
     return deepcopy(DATA)
 
 
 
 class TestWavefunctionArrayData(TestArrayData):
+    r""" Class for tests of the WavefunctionArrayData class, inherits from parent tests.
+    """
 
     #########   Common to different methods  #########
     @pytest.mark.parametrize('other', [
