@@ -16,22 +16,22 @@ This module contains miscellaneous functions which are used accross the code bas
 They can be used as is in any of the classes.
 """
 
-all = ['duck_type_checker', 
-       'general_factory']
+all = ["duck_type_checker", "general_factory"]
 
-def duck_type_checker(obj_a:object, obj_b:object) -> bool:
-    r""" *If it walks like a duck and it quacks like a duck, then it must be a duck.*
+
+def duck_type_checker(obj_a: object, obj_b: object) -> bool:
+    r"""*If it walks like a duck and it quacks like a duck, then it must be a duck.*
 
     This function performs type-checking from a duck-type perspective, testing whether both given
     objects share the same set of attributes. If they do, no matter their *type* -as obtained by
     a call to ``isinstance``-, they will be considered to be of the same duck-type.
 
     Note that we here look at the symmetric difference, hence the exact question we ask is better
-    phrased as "*Are both objects of the same type?*" than as "*Is object a of the same type as 
+    phrased as "*Are both objects of the same type?*" than as "*Is object a of the same type as
     object b?*".
 
-    Note also that this checks for the exact match between types -via attributes-, this system is 
-    **not** meant to work with subclasses since there is a high probability that they might have 
+    Note also that this checks for the exact match between types -via attributes-, this system is
+    **not** meant to work with subclasses since there is a high probability that they might have
     different attributes.
 
     Args:
@@ -42,24 +42,23 @@ def duck_type_checker(obj_a:object, obj_b:object) -> bool:
         True if both objects have exactly the same attributes, False otherwise.
 
     Raises:
-        TypeError:  If at least one of the objects given can't be compared via duck-typing, i.e. 
-        lack attributes. A typical example would be python basic types such as ``int``, ``float``, 
-        ``bool``, etc. 
-     """
+        TypeError:  If at least one of the objects given can't be compared via duck-typing, i.e.
+        lack attributes. A typical example would be python basic types such as ``int``, ``float``,
+        ``bool``, etc.
+    """
     try:
         set_a = set(obj_a.__dict__.keys())
         set_b = set(obj_b.__dict__.keys())
         return set_a.symmetric_difference(set_b) == set()
-    
+
     except AttributeError as e:
         raise TypeError(
             f"Objects of types {type(obj_a), type(obj_b)} can't be compared via duck-type"
-            ) from e
-
+        ) from e
 
 
 def general_factory(cls, *args, **kwargs) -> object:
-    r""" Factory method which generates an instance of cls parameterized by the given arguments.
+    r"""Factory method which generates an instance of cls parameterized by the given arguments.
 
     Args:
         args:   non-keyword ordered arguments used to parameterize the class instance
