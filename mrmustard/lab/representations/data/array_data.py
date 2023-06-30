@@ -53,7 +53,7 @@ class ArrayData(Data):
             return self.__class__(array=self.array + other.array)
         except AttributeError as e:
             raise TypeError(
-                f"XXCannot add/subtract {self.__class__} and {other.__class__}."
+                f"Cannot add/subtract {self.__class__} and {other.__class__}."
             ) from e
 
     def __sub__(self, other: ArrayData) -> ArrayData:
