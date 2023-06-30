@@ -13,77 +13,73 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 import numpy as np
-from typing import List, Union
+
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar, Vector
 
 math = Math()
 
+
 class ArrayData(Data):
-    """ Contains array-like data for certain Representation objects.
+    """Contains array-like data for certain Representation objects.
 
     Args:
         array : data to be contained in the class
     """
 
-    def __init__(self, array:Vector) -> None:
+    def __init__(self, array: Vector) -> None:
         self.array = array
-
 
     @property
     def cutoffs(self):
         return self.array.shape
 
-
     def __neg__(self) -> Data:
-        return self.__class__(array= -self.array)
-        
+        return self.__class__(array=-self.array)
 
-    def __eq__(self, other:ArrayData) -> bool:
+    def __eq__(self, other: ArrayData) -> bool:
         try:
             return super().same(X=[self.array], Y=[other.array])
         except AttributeError as e:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+            raise TypeError(
+                f"Cannot compare {self.__class__} and {other.__class__}."
+            ) from e
 
-
-    def __add__(self, other:ArrayData) -> ArrayData:
+    def __add__(self, other: ArrayData) -> ArrayData:
         try:
-            return self.__class__(array = self.array + other.array)
+            return self.__class__(array=self.array + other.array)
         except AttributeError as e:
-            raise TypeError(f"XXCannot add/subtract {self.__class__} and {other.__class__}."
-                            ) from e
-            
+            raise TypeError(
+                f"XXCannot add/subtract {self.__class__} and {other.__class__}."
+            ) from e
 
-    def __sub__(self, other:ArrayData) -> ArrayData:
+    def __sub__(self, other: ArrayData) -> ArrayData:
         try:
-            return self.__add__(other.__neg__)
+            return self.__add__(-other)
         except AttributeError as e:
-            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
+            raise TypeError(
+                f"Cannot subtract {self.__class__} and {other.__class__}."
+            ) from e
 
-
-    def __truediv__(self, x:Scalar) -> ArrayData: # TODO : check that all data classes only support Truediv for Scalars
+    def __truediv__(self, x: Scalar) -> ArrayData:
         try:
-            return self.__class__(array = self.array / x)
+            return self.__class__(array=self.array / x)
         except TypeError as e:
             raise TypeError("Can only divide by a scalar.") from e
-        
 
     def __mul__(self, x: Scalar) -> ArrayData:
         try:
-            return self.__class__(array = self.array * x)
+            return self.__class__(array=self.array * x)
         except TypeError as e:
             raise TypeError("Can only multiply by a scalar.") from e
 
-
-    def __and__(self, other:ArrayData) -> ArrayData:
+    def __and__(self, other: ArrayData) -> ArrayData:
         try:
-            return self.__class__(array= np.outer(self.array, other.array))
+            return self.__class__(array=np.outer(self.array, other.array))
         except AttributeError as e:
-         raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e             
-
-
-    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> ArrayData:
-    #     raise NotImplementedError() # TODO: implement
-    
+            raise TypeError(
+                f"Cannot tensor product {self.__class__} and {other.__class__}."
+            ) from e
