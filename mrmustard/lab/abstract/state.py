@@ -156,7 +156,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def purity(self) -> float:
         """Returns the purity of the state."""
-        return self.representation.purity()
+        return self.representation.purity
 
     @property
     def is_mixed(self):
@@ -166,7 +166,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return np.isclose(self.representation.purity(), 1.0, atol=1e-6)
+        return np.isclose(self.purity, 1.0, atol=1e-6)
     
 
     @property
