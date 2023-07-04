@@ -234,14 +234,13 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
-        return self.representation.norm()
+        return self.representation.norm
 
     @property
     def state_probability(self) -> float:
         r"""Returns the probability of the state."""
         norm = self.norm
-        print(norm)
-        if isinstance(self, FockKet):
+        if isinstance(self.representation, FockKet):
             return norm**2
         return norm
 

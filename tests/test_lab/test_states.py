@@ -242,7 +242,8 @@ class TestFockCutoffs():
         #     assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
         #     assert tuple(int(c) for c in state._dm.shape) == (20, 20)  # pylint: disable=protected-access
 
-# This part should be
+
+ #TODO: This set of test is used when we refactor the transformations with representation project.
 # class TestStatesOthers():
 
 #     @given(r1=r, phi1=angle, r2=r, phi2=angle)
