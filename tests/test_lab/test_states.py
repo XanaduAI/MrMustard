@@ -206,6 +206,7 @@ class TestStatesinit():
 
 
 class TestFockCutoffs():
+    """Test if the padding works alongwith Fock representations in different cutoffs."""
 
     # #TODO: This test is used when we refactor the transformations with representation project.
     # def test_ket_from_pure_dm_new_cutoffs():
@@ -216,18 +217,30 @@ class TestFockCutoffs():
 
     def test_padding_ket(self):
         "Test that padding a ket works correctly."
-        state = State(ket=SqueezedVacuum(r=1.0).ket(cutoffs=[20]))
+        state = State(fock=SqueezedVacuum(r=1.0).ket(cutoffs=[20]), flag_ket=True)
         assert len(state.ket(cutoffs=[10])) == 10
-        assert len(state._ket) == 20  # pylint: disable=protected-access
+        assert len(state.ket(cutoffs=[50])) == 50
+
+    def test_padding_dm(self):
+        "Test that padding a density matrix works correctly."
+        state = State(fock = np.random.random([20,20]), flag_ket=False)
+        assert state.dm(cutoffs=[30,30]).shape == (30,30,)
+        assert state.dm(cutoffs=[10,30]).shape == (10,30,)
+
+    def test_padding_from_ket_to_dm(self):
+        "Test that padding a state from ket to dm correctly."
+        state = State(fock=SqueezedVacuum(r=1.0).ket(cutoffs=[20]), flag_ket=True)
+        assert state.dm().shape == (20,20,)
+        assert state.dm(cutoffs=[30,30]).shape == (30,30,)
+        assert state.dm(cutoffs=[10,30]).shape == (10,30,)
 
 
+    #TODO: This test is used when we refactor the transformations with representation project.
     # def test_padding_dm(self):
-    #     "Test that padding a density matrix works correctly."
-    #     state = State(dm=(SqueezedVacuum(r=1.0) >> Attenuator(0.6)).dm(cutoffs=[20]))
-    #     assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
-    #     assert tuple(int(c) for c in state._dm.shape) == (20, 20)  # pylint: disable=protected-access
-
-
+        #     "Test that padding a density matrix works correctly."
+        #     state = State(dm=(SqueezedVacuum(r=1.0) >> Attenuator(0.6)).dm(cutoffs=[20]))
+        #     assert tuple(int(c) for c in state.dm(cutoffs=[10]).shape) == (10, 10)
+        #     assert tuple(int(c) for c in state._dm.shape) == (20, 20)  # pylint: disable=protected-access
 
 # This part should be
 # class TestStatesOthers():

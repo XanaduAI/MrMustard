@@ -259,15 +259,18 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the ket 
         """
-        if cutoffs is None:
-            cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
+        
         if self.is_pure:
             if self.representation.__class__.__name__.endswith('Ket'):
                 if isinstance(self.representation, FockKet):
-                    cutoffs = fock.setcutoffs(cutoffs, self.representation.data.cutoffs)
-                    return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
+                    if cutoffs is None:
+                        return self.representation.data.array
+                    else:
+                        return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
                 elif isinstance(self.representation, WignerKet):
                     #transform internally from Wigner to Fock and return it
+                    if cutoffs is None:
+                        cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
                     self_copy = copy.deepcopy(self)
                     return self_copy.to_Fock(cutoffs=cutoffs).ket()
                 else:
@@ -289,26 +292,30 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the density matrix
         """
-        if cutoffs is None:
-            cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
+        
         if self.representation.__class__.__name__.endswith('Ket'):
             if isinstance(self.representation, FockKet):
-                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.cutoffs)
-                return fock.ket_to_dm(fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs))
+                if cutoffs is None:
+                    return fock.ket_to_dm(self.representation.data.array)
+                else:
+                    return fock.pad_array_with_cutoffs(fock.ket_to_dm(self.representation.data.array), cutoffs)
             elif isinstance(self.representation, WignerKet):
+                if cutoffs is None:
+                    cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(self.num_modes)]
                 self_copy = copy.deepcopy(self)
-                self_copy.to_Fock(cutoffs)
-                return fock.ket_to_dm(self_copy.ket(cutoffs=cutoffs))
+                self_copy.to_Fock()
+                return fock.pad_array_with_cutoffs(fock.ket_to_dm(self_copy.ket()), cutoffs)
             else:
                 raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
         else:
             if isinstance(self.representation, FockDM):
-                cutoffs = fock.setcutoffs(cutoffs, self.representation.data.cutoffs)
+                if cutoffs is None:
+                    cutoffs = [settings.AUTOCUTOFF_MAX_CUTOFF for _ in range(2 * self.num_modes)]
                 return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
-            if isinstance(self.representation, WignerDM):
+            elif isinstance(self.representation, WignerDM):
                 self_copy = copy.deepcopy(self)
-                self_copy.to_Fock(cutoffs)
-                return fock.ket_to_dm(self_copy.ket(cutoffs=cutoffs))
+                self_copy.to_Fock(cutoffs=cutoffs)
+                return self_copy.representation.data.array
             else:
                 raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
             

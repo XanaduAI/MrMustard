@@ -386,7 +386,7 @@ class Converter():
             ))
         
         else:
-            return FockKet(array=math.hermite_renormalized(A, B, C, shape=tuple(np.shape(cutoffs))))
+            return FockKet(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs)))
 
 
 

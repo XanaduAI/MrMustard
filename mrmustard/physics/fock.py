@@ -951,41 +951,17 @@ def squeezed(r, phi, cutoffs):
         )
 
     return sq_ket, vjp
-
-
-
-def setcutoffs(cutoffs_input: List[int], cutoffs_current: List[int] = None):
-    r"""Calculate the cutoffs by comparing the desired cutoffs as input and the current cutoffs the state has.
-        If one has cutoffs_intput without cutoffs_current, just use the cutoffs_input.
-        If one have them both, needs to identify it in different cases:
-            if they have the same size, pick the max element of each index.
-            if they have different size, set the shorter one with 0's and pick the max element of each index.
-
-        Cutoffs_input can not be None.
-    """
-    if cutoffs_current is None:
-        return cutoffs_input
-    elif cutoffs_current:
-        if cutoffs_input == cutoffs_current:
-            return cutoffs_input
-        else:
-            #fill the short cutoffs list up
-            if len(cutoffs_current) < len(cutoffs_input):
-                cutoffs_current = cutoffs_current + [0]*(len(cutoffs_input) - len(cutoffs_current))
-            elif len(cutoffs_current) > len(cutoffs_input):
-                cutoffs_input = cutoffs_input + [0]*(len(cutoffs_current) - len(cutoffs_input))
-            #pick the max element on each index for the cutoffs
-            return [i if i>j else j for (i,j) in zip(cutoffs_input, cutoffs_current)]
-
-                
+    
 
 def pad_array_with_cutoffs(array: np.array, cutoffs: List[int]):
+    "pads the array with a larger cutoffs and return it with the right size of the input cutoffs."
     current_cutoffs = array.shape
     if current_cutoffs == cutoffs:
         return array
     else:
-        paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
-        if any(p != (0, 0) for p in paddings):
+        difference = [new - old for new, old in zip(cutoffs, current_cutoffs)]
+        if any(x > 0 for x in difference):
+            paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
             padded = math.pad(array, paddings, mode="constant")
         else:
             padded = array
