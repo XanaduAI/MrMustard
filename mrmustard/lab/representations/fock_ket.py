@@ -32,14 +32,17 @@ class FockKet(Fock):
         self.cutoffs = self.data.array.shape
 
 
+    @property
     def purity(self) -> float:
         return 1.0
 
 
+    @property
     def norm(self) -> float:
         return math.abs(math.norm(self.data.array))
     
 
+    @property
     def probability(self) -> Tensor: 
         return math.abs(self.data.array) #TODO: cutoffs
     
