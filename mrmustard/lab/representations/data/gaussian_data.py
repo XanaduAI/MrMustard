@@ -21,6 +21,8 @@ from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
 from typing import Optional
 from thewalrus.symplectic import sympmat
+from mrmustard.utils.misc_tools import duck_type_checker
+
 
 if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
     from mrmustard.lab.representations.data.qpoly_data import QPolyData
@@ -39,7 +41,7 @@ class GaussianData(MatVecData):
 
     Args:
         cov: covariance matrices (real symmetric)
-        means: mean vector of the state (real)
+        means: mean vector of the state (real), note that the dimension must be even
         coeffs: coefficients (complex)
 
     Raises:
@@ -56,19 +58,17 @@ class GaussianData(MatVecData):
         if cov is not None or means is not None: # at least one is defined -or both-
     
             if cov is None:
-                self.num_modes = means.shape[0]
-                cov = math.eye(self.num_modes, dtype=means.dtype)
+                self.num_modes = means.shape[0] // 2
+                cov = math.eye( 2 * self.num_modes, dtype=means.dtype)
                 # batch_size = mean.shape[-2]
                 # cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
 
-            elif means is None: # we know means is None here
+            elif means is None: # we know cov is not None here
                 self.num_modes = cov.shape[-1] // 2
                 means = math.zeros(2*self.num_modes, dtype=cov.dtype)
             
                 # batch_size = cov.shape[-3]
                 # mean = math.zeros( (batch_size, dim), dtype=cov.dtype )
-            else:
-                self.num_modes = cov.shape[-1] // 2
         else:
             raise ValueError("You need to define at one: covariance or mean")
 
@@ -101,23 +101,21 @@ class GaussianData(MatVecData):
 
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-        if isinstance(other, Scalar):
-            return self.__class__(cov=self.cov, means=self.means, coeffs=self.coeffs*other)
-        
-        else:
-
-            try:
+        try:
+            if duck_type_checker(other, self):
                 joint_covs = self._compute_mul_covs(other=other)
-                
+                    
                 joint_means = self._compute_mul_means(other=other)
 
                 joint_coeffs = self._compute_mul_coeffs(other=other,
                                                         joint_covs=joint_covs,
                                                         joint_means=joint_means)
-
                 return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
-
-            except AttributeError as e:
+        except TypeError as e: #raised by the duck_type_checker because it's a native python type
+            try: # we assume it's a scalar
+                new_coeffs = self.coeffs * other
+                return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
+            except TypeError as e:  # ... and it wasn't a scalar!
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
             
 

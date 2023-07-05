@@ -71,22 +71,35 @@ class TestGaussianData(): #TODO, first import TestData, later TestMatVecData
         with pytest.raises(ValueError):
             _ = GaussianData(coeffs=COEFFS)
 
+
     def test_if_coeffs_is_undefined_it_is_equal_to_1(self, COV, MEANS):
         gaussian_data = GaussianData(cov=COV, means=MEANS)
         assert gaussian_data.coeffs == 1
 
-    @pytest.mark.parametrize('x', [3])
-    def test_if_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, MEANS, COEFFS, x):
-        comparison_mat = np.eye(x)
+
+    @pytest.mark.parametrize('x', [0, 2, 10, 250])
+    def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
+        comparison_covariance = np.eye(x)
         means = np.ones(x)
         gaussian_data = GaussianData(means=means, coeffs=COEFFS)
-        assert np.allclose(gaussian_data.cov, comparison_mat) == True
+        assert np.allclose(gaussian_data.cov, comparison_covariance) == True
+
+
+    @pytest.mark.parametrize('x', [0, 2, 10, 250])
+    def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
+        covariance = np.eye(x)
+        comparison_means = np.zeros(x)
+        gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
+        assert np.allclose(gaussian_data.means, comparison_means) == True
+
+
+    def test_if_neither_means_nor_cov_is_defined_raises_ValueError(self, COEFFS):
+        with pytest.raises(ValueError):
+            GaussianData(coeffs=COEFFS)
+
 
     def test_non_symplectic_covariance_raises_ValueError(self):
         pass
-
-    #NOTE : these do not test edge cases where someone feeds just [0] as means, it only guarantees
-    #  means is not empty. Do we want to secure edge cases?
 
     ##################  Negative  ####################
     # NOTE : tested in parent class
@@ -105,11 +118,13 @@ class TestGaussianData(): #TODO, first import TestData, later TestMatVecData
 
     ##############  Multiplication  ##################
 
-    def test_if_given_scalar_mul_multiplies_coeffs(self):
-        pass
-
-    def test_if_given_scalar_mul_does_not_multiply_anything_else_than_coeffs(self):
-        pass
+    @pytest.mark.parametrize('x', [3])
+    def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, x):
+        pre_op_data = deepcopy(DATA)
+        multiplied_data = DATA * x
+        assert multiplied_data.c == (pre_op_data.coeffs * x) #coeffs are multiplied
+        assert np.allclose(multiplied_data.cov, pre_op_data.cov) # unaltered
+        assert np.allclose(multiplied_data.means, pre_op_data.means) # unaltered
 
     # TODO : test compute_mul_covs
     # TODO : test compute_mul_coeffs
