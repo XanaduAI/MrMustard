@@ -56,8 +56,8 @@ class GaussianData(MatVecData):
         if cov is not None or means is not None: # at least one is defined -or both-
     
             if cov is None:
-                self.num_modes = means.shape
-                cov = math.eye(2 * self.num_modes, dtype=means.dtype)
+                self.num_modes = means.shape[0]
+                cov = math.eye(self.num_modes, dtype=means.dtype)
                 # batch_size = mean.shape[-2]
                 # cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
 
