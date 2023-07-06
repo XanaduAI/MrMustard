@@ -98,6 +98,8 @@
 * Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
 cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
 
+* math.lattice.neighbours now checks whether the pivot is zero along some axis before lowering the corresponding index.
+This bug lead to incorrect results of math.lattice.strategies.vanilla.
 ### Documentation
 
 ### Contributors
