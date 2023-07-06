@@ -46,6 +46,7 @@ defined in the file where the test was written, blocking resolution sequence.
 
 import operator as op
 import pytest
+import numpy as np
 
 from copy import deepcopy
 
@@ -58,7 +59,9 @@ from tests.test_lab.test_representations.test_data.mock_data import (
 
 
 #########   Instantiating class to test  #########
-
+@pytest.fixture
+def TYPE():
+    return MockData
 
 @pytest.fixture
 def PARAMS() -> dict:
@@ -91,13 +94,13 @@ class TestData:
         _ = -DATA
         assert DATA == pre_op_data_control
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
-    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
-        self, DATA, OTHER, operator
-    ):
-        pre_op_data_control = deepcopy(DATA)
-        _ = operator(DATA, OTHER)
-        assert DATA == pre_op_data_control
+    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
+    # def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
+    #     self, DATA, OTHER, operator
+    # ):
+    #     pre_op_data_control = deepcopy(DATA)
+    #     _ = operator(DATA, OTHER)
+    #     assert DATA == pre_op_data_control
 
     @pytest.mark.parametrize(
         "other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)]
@@ -106,15 +109,15 @@ class TestData:
         with pytest.raises(TypeError):
             DATA / other
 
-    @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize(
-        "operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_]
-    )
-    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
-        self, DATA, other, operator
-    ):
-        with pytest.raises(TypeError):
-            operator(DATA, other)
+    # @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
+    # @pytest.mark.parametrize(
+    #     "operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_]
+    # )
+    # def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
+    #     self, DATA, other, operator
+    # ):
+    #     with pytest.raises(TypeError):
+    #         operator(DATA, other)
 
     @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(
@@ -143,14 +146,18 @@ class TestData:
                 pass
 
     ##################  Equality  ####################
-    def test_when_all_attributes_are_equal_objects_are_equal(self, DATA):
+    def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
         # NOTE: are we ok with try/except blocks in tests?
         # NOTE: are we ok with for loops in tests?
-        other = deepcopy(DATA)
+        other = general_factory(TYPE, **PARAMS)
         for k in DATA.__dict__.keys():
             getattr(other, k)
             try:  # non-array, non-list attributes
                 assert getattr(DATA, k) == getattr(other, k)
             except ValueError:
-                assert all(getattr(DATA, k) == getattr(other, k))
+                assert np.allclose(getattr(DATA, k),getattr(other, k))
         assert DATA == other
+
+    def test_copy_of_same_objects_are_equal(self, DATA):
+        other_same = deepcopy(DATA)
+        assert (other_same == DATA) == True

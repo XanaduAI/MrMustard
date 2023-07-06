@@ -27,12 +27,18 @@ import pytest
 
 from copy import deepcopy
 
+from mrmustard.lab.representations.data.data import Data
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from mrmustard.lab.representations.data.matvec_data import MatVecData
+from tests.test_lab.test_representations.test_data.test_data import TestData
 
 
-#########   Instantiating class to test  #########
+
+##################   FIXTURES  ###################
+@pytest.fixture
+def TYPE():
+    return MatVecData
 
 @pytest.fixture
 def MAT() -> Matrix:
@@ -47,11 +53,7 @@ def COEFFS() -> Scalar:
     return 42
 
 @pytest.fixture
-def TYPE():
-    return MatVecData
-
-@pytest.fixture
-def PARAMS(COV, MEANS, COEFFS) -> dict:
+def PARAMS(MAT, VEC, COEFFS) -> dict:
     r"""Parameters for the class instance which is created."""
     params_dict = {'mat': MAT, 'vec': VEC, 'coeffs':COEFFS}
     return params_dict
@@ -70,17 +72,16 @@ def OTHER(DATA) -> MatVecData:
 
 
 
-class TestMatVecData(): #TODO: import parent!
+class TestMatVecData(TestData): #TODO: import parent!
     
     #########   Common to different methods  #########
-
 
     ####################  Init  ######################
 
     def if_coeffs_not_given_they_are_equal_to_1(self, TYPE, PARAMS):
         params_without_coeffs = deepcopy(PARAMS)
         del params_without_coeffs['coeffs']
-        new_data = general_factory(TYPE, params_without_coeffs)
+        new_data = general_factory(TYPE, **params_without_coeffs)
         assert new_data.c == 1
         
 
@@ -98,8 +99,7 @@ class TestMatVecData(): #TODO: import parent!
     ##################  Equality  ####################
     # TODO test?
 
-  
-    ##################  Addition  ####################
+    ###########  Addition / subtraction  #############
     #TODO: more complex tests of the general concat case!
     @pytest.mark.parametrize("operator", [op.add, op.sub]) # op.sub
     def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
@@ -109,54 +109,47 @@ class TestMatVecData(): #TODO: import parent!
         assert np.allclose(DATA.mat, pre_op_data.mat)
         assert np.allclose(DATA.means, pre_op_data.means)
 
-
-    ################  Subtraction  ###################
-    # NOTE : tested via add and neg
-
-    #############  Scalar division  ##################
+    #######  Scalar division / multiplication ########
     @pytest.mark.parametrize("operator", [op.truediv, op.mul])
     @pytest.mark.parametrize('x', [2])
-    def test_scalar_operation_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
+    def test_scalar_mul_or_div_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
         pre_op_data = deepcopy(DATA)
         divided_data = operator(DATA,x)
-        self._helper_mat_vec_are_same_computed_coeffs_are_correct(divided_data, 
+        self._helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, 
                                                                   pre_op_data, 
                                                                   operator, 
                                                                   x)
-
-        
 
     ###############  Multiplication  ##################
 
     def test_new_object_resulting_from_mul_has_same_shape(self):
         pass
 
-    def test_object_mul_when_matrix_and_vector_are_same_coeffs_get_multiplied(self):
-        pass
-
-    def test_object_mul_when_matrix_and_vector_are_same_only_coeffs_get_multiplied(self):
-        pass
-
-    def test_scalar_mul_multiplies_coeffs(self):
-        pass
-
-    def test_scalar_mul_only_multiplies_coeffs(self):
-        pass
 
 
     ###############  Outer product  ##################
     # TODO: write tests
 
 
-    ###############  Outer product  ##################
-
-    
+    ##############  Helper functions  ################
     def _helper_coeffs_are_computed_correctly(self, new_data_object, old_data_object, operator, x
                                               ) -> None:
+        r""" Helper assert function which ensures the coefficients are computed correctly.
+
+        Based on the given operator and a scalar, this test ensures that the coefficients are 
+        applied the element-wise operation.
+
+        Args:
+            new_data_object:
+            old_data_object:
+            operator:
+            x:
+        
+        """
         manually_computed_coeffs = operator(old_data_object.coeffs, x)
         assert np.allclose(new_data_object.coeffs, manually_computed_coeffs)
 
-    def _helper_mat_vec_are_same_computed_coeffs_are_correct(self, new_data_object, old_data_object, operator, x
+    def _helper_mat_vec_unchanged_computed_coeffs_are_correct(self, new_data_object, old_data_object, operator, x
                                              ) -> None:
         self._helper_coeffs_are_computed_correctly(new_data_object, old_data_object, operator, x)
         assert np.allclose(new_data_object.mat, old_data_object.mat)
