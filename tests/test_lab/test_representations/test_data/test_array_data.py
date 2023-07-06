@@ -15,9 +15,9 @@
 
 Unlike some of its -abstract- parent test classes, this class is meant to be run with pytest.
 
-Check parents test classes for more details on the rationale.
+Check parents test classe-s for more details on the rationale.
 
-The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class we are testing, here
+The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class being tested, here
 ArrayData.
 """
 

@@ -98,24 +98,25 @@ class TestMatVecData(): #TODO: import parent!
     ##################  Equality  ####################
     # TODO test?
 
+  
     ##################  Addition  ####################
-    # TODO: more complex tests of the general concat case!
-    # @pytest.mark.parametrize("operator", [op.add, op.mul]) # op.truediv, op.mul
-    # def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
-    #     pre_op_data = deepcopy(DATA)
-    #     processed_data = operator(DATA,OTHER)
-    #     assert operator(DATA.coeffs, OTHER.coeffs) == processed_data.coeffs
-    #     assert np.allclose(DATA.mat, pre_op_data.mat)
-    #     assert np.allclose(DATA.means, pre_op_data.means)
+    #TODO: more complex tests of the general concat case!
+    @pytest.mark.parametrize("operator", [op.add, op.sub]) # op.sub
+    def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
+        pre_op_data = deepcopy(DATA)
+        processed_data = operator(DATA,OTHER)
+        assert operator(DATA.coeffs, OTHER.coeffs) == processed_data.coeffs
+        assert np.allclose(DATA.mat, pre_op_data.mat)
+        assert np.allclose(DATA.means, pre_op_data.means)
 
 
     ################  Subtraction  ###################
     # NOTE : tested via add and neg
 
     #############  Scalar division  ##################
-    @pytest.mark.parametrize("operator", [op.truediv]) # op.truediv, op.mul
+    @pytest.mark.parametrize("operator", [op.truediv, op.mul])
     @pytest.mark.parametrize('x', [2])
-    def test_truediv_divides_coeffs_leaves_all_else_unaltered(self, DATA, operator, x):
+    def test_scalar_operation_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
         pre_op_data = deepcopy(DATA)
         divided_data = operator(DATA,x)
         self._helper_mat_vec_are_same_computed_coeffs_are_correct(divided_data, 

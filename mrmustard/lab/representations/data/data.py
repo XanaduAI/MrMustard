@@ -57,9 +57,11 @@ class Data(ABC):
     def __add__(self, other: Data) -> Data:
         raise NotImplementedError()
 
-    @abstractmethod
     def __sub__(self, other: Data) -> Data:
-        raise NotImplementedError()
+        try:
+            return self.__add__(-other)
+        except AttributeError as e:
+            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
     def __truediv__(self, other: Union[Scalar, Data]) -> Data:

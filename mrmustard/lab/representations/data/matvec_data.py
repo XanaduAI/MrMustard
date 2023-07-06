@@ -76,10 +76,6 @@ class MatVecData(Data):  # Note: this class is abstract too!
             except AttributeError as e:
                 raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}."
                                 ) from e
-
-
-    def __sub__(self, other: MatVecData) -> MatVecData:
-        return self.__add__(other = other.__neg__)
         
 
     def __and__(self, other: MatVecData) -> MatVecData:

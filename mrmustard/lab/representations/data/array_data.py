@@ -56,14 +56,6 @@ class ArrayData(Data):
                 f"Cannot add/subtract {self.__class__} and {other.__class__}."
             ) from e
 
-    def __sub__(self, other: ArrayData) -> ArrayData:
-        try:
-            return self.__add__(-other)
-        except AttributeError as e:
-            raise TypeError(
-                f"Cannot subtract {self.__class__} and {other.__class__}."
-            ) from e
-
     def __truediv__(self, x: Scalar) -> ArrayData:
         try:
             return self.__class__(array=self.array / x)
