@@ -30,7 +30,13 @@ from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 
+from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
+
+
 #########   Instantiating class to test  #########
+@pytest.fixture
+def TYPE():
+    return GaussianData
 
 @pytest.fixture
 def COV() -> Matrix:
@@ -52,9 +58,9 @@ def PARAMS(COV, MEANS, COEFFS) -> dict:
 
 
 @pytest.fixture()
-def DATA(PARAMS) -> GaussianData:
+def DATA(TYPE, PARAMS) -> GaussianData:
     r"""Instance of the class that must be tested."""
-    return general_factory(GaussianData, **PARAMS)
+    return general_factory(TYPE, **PARAMS)
 
 
 @pytest.fixture()
@@ -63,7 +69,7 @@ def OTHER(DATA) -> GaussianData:
     return deepcopy(DATA)
 
 
-class TestGaussianData(): #TODO, first import TestData, later TestMatVecData
+class TestGaussianData(TestMatVecData): #TODO, first import TestData, later TestMatVecData
 
     ####################  Init  ######################
 
@@ -131,4 +137,4 @@ class TestGaussianData(): #TODO, first import TestData, later TestMatVecData
     # TODO : test compute_mul_means
 
     ###############  Outer product  ##################
-    # NOTE : not implemented so no test
+    # NOTE : not implemented

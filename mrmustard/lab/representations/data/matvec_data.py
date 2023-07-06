@@ -41,7 +41,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
 
     def __neg__(self) -> MatVecData:
-        return self.__class__(mat= self.mat, vec= self.vec, coeffs= -self.coeffs)
+        new_coeffs = - self.coeffs
+        return self.__class__(self.mat, self.vec, new_coeffs)
 
 
     def __eq__(self, other: MatVecData) -> bool:
@@ -58,8 +59,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
 
     def __add__(self, other: MatVecData) -> MatVecData:
         if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
-            combined_coeffs = self.coeff + other.coeff
-            return self.__class__(mat=self.mat, vec=self.vec, coeffs=combined_coeffs)
+            combined_coeffs = self.coeffs + other.coeffs
+            return self.__class__(self.mat, self.vec, combined_coeffs)
         
         else:
 
@@ -69,11 +70,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
                 reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
                 mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
                 vec = math.matvec(reorder_matrix, vec)
-                return self.__class__(
-                    mat = mat,
-                    vec = vec,
-                    coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-                    )
+                combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+                return self.__class__(mat, vec, combined_coeffs)
                 
             except AttributeError as e:
                 raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}."
@@ -101,7 +99,8 @@ class MatVecData(Data):  # Note: this class is abstract too!
         
 
     def __truediv__(self, x:Scalar) -> MatVecData:
-        return self.__class__(mat=self.mat, vec=self.vec, coeffs=self.coeffs/x)
+        new_coeffs = self.coeffs/x
+        return self.__class__(self.mat, self.vec, new_coeffs)
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
     #     N = self.mat.shape[0]
