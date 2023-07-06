@@ -29,7 +29,8 @@ from numba.cpython.unsafe.tuple import tuple_setitem
 def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of all the neighbours of the given index."""
     for j in range(len(pivot)):  # pylint: disable=consider-using-enumerate
-        yield j, tuple_setitem(pivot, j, pivot[j] - 1)
+        if pivot[j] - 1 >= 0:
+            yield j, tuple_setitem(pivot, j, pivot[j] - 1)
         yield j, tuple_setitem(pivot, j, pivot[j] + 1)
 
 
@@ -42,7 +43,8 @@ def all_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]
 def lower_neighbors(pivot: tuple[int, ...]) -> Iterator[tuple[int, tuple[int, ...]]]:
     r"""yields the indices of the lower neighbours of the given index."""
     for j in range(len(pivot)):  # pylint: disable=consider-using-enumerate
-        yield j, tuple_setitem(pivot, j, pivot[j] - 1)
+        if pivot[j] - 1 >=0:
+            yield j, tuple_setitem(pivot, j, pivot[j] - 1)
 
 
 ####################################################################################
@@ -69,6 +71,7 @@ def bitstring_neighbors(
     r"yields the indices of the bitstring neighbours of the given index"
     for i, b in enumerate(bitstring):
         if b:  # b == 1 -> lower
-            yield i, tuple_setitem(pivot, i, pivot[i] - 1)
+            if pivot[i] - 1 >= 0:
+                yield i, tuple_setitem(pivot, i, pivot[i] - 1)
         else:  # b == 0 -> upper
             yield i, tuple_setitem(pivot, i, pivot[i] + 1)

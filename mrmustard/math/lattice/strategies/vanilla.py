@@ -68,7 +68,7 @@ def vanilla_jacobian(
     dGdc = G / c
 
     # initialize path iterator
-    path = paths.ndindex_path(G.shape)
+    path = np.ndindex(G.shape)
 
     # skip first index
     next(path)
