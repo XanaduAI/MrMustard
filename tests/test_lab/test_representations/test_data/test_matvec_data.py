@@ -74,8 +74,6 @@ def OTHER(DATA) -> MatVecData:
 
 class TestMatVecData(TestData): #TODO: import parent!
     
-    #########   Common to different methods  #########
-
     ####################  Init  ######################
 
     def if_coeffs_not_given_they_are_equal_to_1(self, TYPE, PARAMS):
@@ -111,7 +109,7 @@ class TestMatVecData(TestData): #TODO: import parent!
 
     #######  Scalar division / multiplication ########
     @pytest.mark.parametrize("operator", [op.truediv, op.mul])
-    @pytest.mark.parametrize('x', [2])
+    @pytest.mark.parametrize('x', [0.00001, 7, 100])
     def test_scalar_mul_or_div_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
         pre_op_data = deepcopy(DATA)
         divided_data = operator(DATA,x)

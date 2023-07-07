@@ -123,8 +123,6 @@ class TestData:
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(
         self, DATA, OTHER, operator
     ):
-        # NOTE: are we ok with try/except blocks in tests?
-        # NOTE: are we ok with for loops in tests?
         for k in DATA.__dict__.keys():
             new_data = operator(DATA, OTHER)
             try:  # numpy array attributes
@@ -145,8 +143,6 @@ class TestData:
     
     ##################  Equality  ####################
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
-        # NOTE: are we ok with try/except blocks in tests?
-        # NOTE: are we ok with for loops in tests?
         other = general_factory(TYPE, **PARAMS)
         for k in DATA.__dict__.keys():
             getattr(other, k)
