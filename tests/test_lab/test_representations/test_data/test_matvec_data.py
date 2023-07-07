@@ -121,14 +121,12 @@ class TestMatVecData(TestData): #TODO: import parent!
                                                                   x)
 
     ###############  Multiplication  ##################
-
-    def test_new_object_resulting_from_mul_has_same_shape(self):
-        pass
+    # #TODO : write more tests (other than the generic ones from the parents)
 
 
 
     ###############  Outer product  ##################
-    # TODO: write tests
+    # NOTE: not implented yet so no tests
 
 
     ##############  Helper functions  ################

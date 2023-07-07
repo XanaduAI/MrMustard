@@ -119,7 +119,7 @@ class TestData:
         with pytest.raises(TypeError):
             operator(DATA, other)
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(
         self, DATA, OTHER, operator
     ):
@@ -127,17 +127,15 @@ class TestData:
         # NOTE: are we ok with for loops in tests?
         for k in DATA.__dict__.keys():
             new_data = operator(DATA, OTHER)
-            try:  # works for all numpy array attributes
+            try:  # numpy array attributes
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
-            except AttributeError:  # works for scalar attributes
+            except AttributeError:  # scalar attributes
                 pass
 
     @pytest.mark.parametrize("operator", [op.neg])
     def test_new_object_created_by_negation_has_same_attribute_shapes_as_old_object(
         self, DATA, operator
     ):
-        # NOTE: are we ok with try/except blocks in tests?
-        # NOTE: are we ok with for loops in tests?
         for k in DATA.__dict__.keys():
             new_data = operator(DATA)
             try:  # numpy array attributes
