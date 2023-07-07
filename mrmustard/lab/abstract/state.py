@@ -181,7 +181,7 @@ class State:  # pylint: disable=too-many-public-methods
     def means(self) -> Optional[RealVector]:
         r"""Returns the means vector of the state."""
         try:
-            return self.representation.means
+            return self.representation.data.means
         except:
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
@@ -189,7 +189,7 @@ class State:  # pylint: disable=too-many-public-methods
     def cov(self) -> Optional[RealMatrix]:
         r"""Returns the covariance matrix of the state."""
         try:
-            return self.representation.cov
+            return self.representation.data.cov
         except:
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
