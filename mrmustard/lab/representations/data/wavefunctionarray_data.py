@@ -89,12 +89,14 @@ class WavefunctionArrayData(ArrayData):
     ) -> WavefunctionArrayData:
         if duck_type_checker(self, other):  # same type
             if self._qs_is_same(other):
-                return self.__class__(array=self.array * other.array, qs=self.qs)
+                new_array = self.array * other.array
+                return self.__class__(array=new_array, qs=self.qs)
             else:
                 raise ValueError("The two wave functions must have the same qs. ")
         else:  # assuming it's a scalar...
             try:
-                return self.__class__(array=self.array * other, qs=self.qs)
+                new_array = self.array * other
+                return self.__class__(array=new_array, qs=self.qs)
             except TypeError as e:  # ... and it wasn't a scalar!
                 raise TypeError(
                     f"Cannot add/subtract {self.__class__} and {other.__class__}."

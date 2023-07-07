@@ -80,7 +80,7 @@ class TestWavefunctionArrayData(TestArrayData):
     @pytest.mark.parametrize(
         "other", [WavefunctionArrayData(qs=np.ones(10), array=np.ones(10))]
     )
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.and_])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul]) #op.and_
     def test_qs_for_new_objects_are_same_as_initial_qs_after_arity2_operation(
         self, DATA, other, operator
     ):

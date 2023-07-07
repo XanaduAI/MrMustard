@@ -78,20 +78,16 @@ class MatVecData(Data):  # Note: this class is abstract too!
                                 ) from e
         
 
-    def __and__(self, other: MatVecData) -> MatVecData:
-        try: #TODO: ORDER OF ALL MATRICESA!
-            mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
-            vec = [math.concat([v1, v2], axis= -1) for v1 in self.vec for v2 in other.vec]
-            coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
+    # def __and__(self, other: MatVecData) -> MatVecData:
+    #     try: #TODO: ORDER OF ALL MATRICESA!
+    #         mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
+    #         vec = [math.concat([v1, v2], axis= -1) for v1 in self.vec for v2 in other.vec]
+    #         coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
 
-            return self.__class__(
-                mat = math.astensor(mat),
-                vec = math.astensor(vec),
-                coeffs = math.astensor(coeffs)
-                )
-            
-        except AttributeError as e:
-            raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
+    #         return self.__class__(math.astensor(mat), math.astensor(vec), math.astensor(coeffs))
+
+    #     except AttributeError as e:
+    #         raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
         
 
     def __truediv__(self, x:Scalar) -> MatVecData:

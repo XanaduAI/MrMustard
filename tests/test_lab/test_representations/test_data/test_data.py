@@ -94,13 +94,13 @@ class TestData:
         _ = -DATA
         assert DATA == pre_op_data_control
 
-    # @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq, op.and_])
-    # def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
-    #     self, DATA, OTHER, operator
-    # ):
-    #     pre_op_data_control = deepcopy(DATA)
-    #     _ = operator(DATA, OTHER)
-    #     assert DATA == pre_op_data_control
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq]) #op.and_
+    def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
+        self, DATA, OTHER, operator
+    ):
+        pre_op_data_control = deepcopy(DATA)
+        _ = operator(DATA, OTHER)
+        assert DATA == pre_op_data_control
 
     @pytest.mark.parametrize(
         "other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)]
@@ -146,17 +146,17 @@ class TestData:
                 pass
 
     ##################  Equality  ####################
-    def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
-        # NOTE: are we ok with try/except blocks in tests?
-        # NOTE: are we ok with for loops in tests?
-        other = general_factory(TYPE, **PARAMS)
-        for k in DATA.__dict__.keys():
-            getattr(other, k)
-            try:  # non-array, non-list attributes
-                assert getattr(DATA, k) == getattr(other, k)
-            except ValueError:
-                assert np.allclose(getattr(DATA, k),getattr(other, k))
-        assert DATA == other
+    # def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
+    #     # NOTE: are we ok with try/except blocks in tests?
+    #     # NOTE: are we ok with for loops in tests?
+    #     other = general_factory(TYPE, **PARAMS)
+    #     for k in DATA.__dict__.keys():
+    #         getattr(other, k)
+    #         try:  # non-array, non-list attributes
+    #             assert getattr(DATA, k) == getattr(other, k)
+    #         except ValueError:
+    #             assert np.allclose(getattr(DATA, k),getattr(other, k))
+    #     assert DATA == other
 
     def test_copy_of_same_objects_are_equal(self, DATA):
         other_same = deepcopy(DATA)

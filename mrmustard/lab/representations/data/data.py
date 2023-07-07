@@ -74,10 +74,10 @@ class Data(ABC):
     def __rmul__(self, other: Scalar) -> Data:
         return self.__mul__(other=other)
 
-    @abstractmethod
-    def __and__(self, other: Data) -> Data:
-        r"""Performs a tensor product between the two objects."""
-        raise NotImplementedError()
+    # @abstractmethod
+    # def __and__(self, other: Data) -> Data:
+    #     r"""Performs a tensor product between the two objects."""
+    #     raise NotImplementedError()
 
     # @abstractmethod
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:

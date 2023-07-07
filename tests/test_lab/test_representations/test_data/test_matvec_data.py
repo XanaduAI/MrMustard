@@ -101,7 +101,7 @@ class TestMatVecData(TestData): #TODO: import parent!
 
     ###########  Addition / subtraction  #############
     #TODO: more complex tests of the general concat case!
-    @pytest.mark.parametrize("operator", [op.add, op.sub]) # op.sub
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
         pre_op_data = deepcopy(DATA)
         processed_data = operator(DATA,OTHER)

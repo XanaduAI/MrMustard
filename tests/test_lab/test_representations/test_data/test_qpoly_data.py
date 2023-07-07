@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 
-class TestQPolyDataAlgebra(TestMatVecDataAlgebra):
+class TestQPolyData(TestMatVecData):
     
     ####################  Init  ######################
 
-    def test_non_symmetric_matrix_raises_ValueError():
+    def test_non_symmetric_matrix_raises_ValueError(self):
         pass
 
-    def non_real_matrix_raises_ValueError():
+    def non_real_matrix_raises_ValueError(self):
         pass
 
     ##################  Negative  ####################
@@ -40,11 +41,11 @@ class TestQPolyDataAlgebra(TestMatVecDataAlgebra):
 
     ###############  Multiplication  #################
 
-    def test_object_mul_adds_matrices_element_wise():
+    def test_object_mul_adds_matrices_element_wise(self):
         pass
 
-    def test_object_mul_adds_vectors_element_wise():
+    def test_object_mul_adds_vectors_element_wise(self):
         pass
 
     ###############  Outer product  ##################
-    # NOTE : not implemented so no test
+    # NOTE : not implemented, no test so far
