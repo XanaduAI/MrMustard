@@ -38,6 +38,10 @@ from tests.test_lab.test_representations.test_data.test_array_data import TestAr
 
 #########   Instantiating class to test  #########
 @pytest.fixture
+def TYPE():
+    return WavefunctionArrayData
+
+@pytest.fixture
 def PARAMS() -> dict:
     r"""Parameters for the class instance which is created."""
     params = {"qs": np.ones(10), "array": np.ones(10)}
@@ -114,7 +118,7 @@ class TestWavefunctionArrayData(TestArrayData):
     # NOTE : tested in parent
 
     ###############  Outer product  ##################
-    # TODO : test tensor prod
+    # NOTE : not implemented so not tested so far
 
     #################### Other #######################
     @pytest.mark.parametrize(

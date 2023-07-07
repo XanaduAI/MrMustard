@@ -89,26 +89,26 @@ class MockCommonAttributesObject():
         self.array = None
         self.cutoffs = None
 
-    def __neg__(self):
-        pass
-
-    def __eq__(self, other):
-        pass
-
-    def __add__(self, other):
-        pass
-
-    def __sub__(self, other):
-        pass
-
-    def __truediv__(self, other):
-        pass
-
-    # def __mul__(self, other):
+    # def __neg__(self):
     #     pass
 
-    # def __rmul__(self, other):
+    # def __eq__(self, other):
     #     pass
 
-    def __and__(self, other):
-        pass
+    # def __add__(self, other):
+    #     pass
+
+    # def __sub__(self, other):
+    #     pass
+
+    # def __truediv__(self, other):
+    #     pass
+
+    # # def __mul__(self, other):
+    # #     pass
+
+    # # def __rmul__(self, other):
+    # #     pass
+
+    # def __and__(self, other):
+    #     pass

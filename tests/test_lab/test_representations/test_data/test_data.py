@@ -109,15 +109,15 @@ class TestData:
         with pytest.raises(TypeError):
             DATA / other
 
-    # @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    # @pytest.mark.parametrize(
-    #     "operator", [op.add, op.sub, op.mul, op.truediv, op.eq, op.and_]
-    # )
-    # def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
-    #     self, DATA, other, operator
-    # ):
-    #     with pytest.raises(TypeError):
-    #         operator(DATA, other)
+    @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
+    @pytest.mark.parametrize(
+        "operator", [op.add, op.sub, op.mul, op.truediv, op.eq] #op.and_ 
+    )
+    def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
+        self, DATA, other, operator
+    ):
+        with pytest.raises(TypeError):
+            operator(DATA, other)
 
     @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(
@@ -144,20 +144,23 @@ class TestData:
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
             except AttributeError:  # scalar attributes
                 pass
-
+    
     ##################  Equality  ####################
-    # def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
-    #     # NOTE: are we ok with try/except blocks in tests?
-    #     # NOTE: are we ok with for loops in tests?
-    #     other = general_factory(TYPE, **PARAMS)
-    #     for k in DATA.__dict__.keys():
-    #         getattr(other, k)
-    #         try:  # non-array, non-list attributes
-    #             assert getattr(DATA, k) == getattr(other, k)
-    #         except ValueError:
-    #             assert np.allclose(getattr(DATA, k),getattr(other, k))
-    #     assert DATA == other
+    def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
+        # NOTE: are we ok with try/except blocks in tests?
+        # NOTE: are we ok with for loops in tests?
+        other = general_factory(TYPE, **PARAMS)
+        for k in DATA.__dict__.keys():
+            getattr(other, k)
+            try:  # non-array, non-list attributes
+                assert getattr(DATA, k) == getattr(other, k)
+            except ValueError:
+                assert np.allclose(getattr(DATA, k),getattr(other, k))
+        assert DATA == other
 
     def test_copy_of_same_objects_are_equal(self, DATA):
         other_same = deepcopy(DATA)
         assert (other_same == DATA) == True
+
+    ###############  Outer product  ##################
+    # NOTE : not implemented so not tested so far

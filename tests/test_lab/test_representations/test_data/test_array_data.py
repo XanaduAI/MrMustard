@@ -33,6 +33,9 @@ from tests.test_lab.test_representations.test_data.test_data import TestData
 
 
 #########   Instantiating class to test  #########
+@pytest.fixture
+def TYPE():
+    return ArrayData
 
 
 @pytest.fixture
@@ -94,4 +97,4 @@ class TestArrayData(TestData):
         assert np.allclose(res_from_object_op.array, res_from_manual_op)
 
     ###############  Outer product  ##################
-    # TODO : write tests
+    # NOTE : not implemented so not tested so far

@@ -101,22 +101,27 @@ class GaussianData(MatVecData):
 
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-        try:
-            if duck_type_checker(other, self):
-                joint_covs = self._compute_mul_covs(other=other)
-                    
-                joint_means = self._compute_mul_means(other=other)
-
-                joint_coeffs = self._compute_mul_coeffs(other=other,
-                                                        joint_covs=joint_covs,
-                                                        joint_means=joint_means)
-                return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
-        except TypeError as e: #raised by the duck_type_checker because it's a native python type
-            try: # we assume it's a scalar
+            try: # we first assume it's a scalar...
                 new_coeffs = self.coeffs * other
                 return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
-            except TypeError as e:  # ... and it wasn't a scalar!
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+            
+            except TypeError as e: #... if that fails, then we check whether it's the same class
+                if duck_type_checker(other, self):
+                    joint_covs = self._compute_mul_covs(other=other)
+                        
+                    joint_means = self._compute_mul_means(other=other)
+
+                    joint_coeffs = self._compute_mul_coeffs(other=other,
+                                                            joint_covs=joint_covs,
+                                                            joint_means=joint_means)
+                    return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
+            
+                else: # since it's neither a scalar nor the same class, we can't be bothered
+                    raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}."
+                                    ) from e
+
+                
+                
             
 
     def _compute_mul_covs(self, other:GaussianData) -> Tensor:
