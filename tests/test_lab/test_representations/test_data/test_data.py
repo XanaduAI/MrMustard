@@ -162,5 +162,12 @@ class TestData:
         other_same = deepcopy(DATA)
         assert (other_same == DATA) == True
 
+    def test_two_objects_of_same_class_with_only_one_difference_are_not_equal(self, TYPE, DATA, PARAMS):
+        k = list(PARAMS.keys())[0]
+        different_params = PARAMS
+        different_params[k] = 1954
+        different_obj = general_factory(TYPE, **different_params)
+        assert (different_obj == DATA) == False
+
     ###############  Outer product  ##################
     # NOTE : not implemented so not tested so far
