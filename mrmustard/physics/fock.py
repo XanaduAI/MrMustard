@@ -122,7 +122,7 @@ def wigner_to_fock_state(
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
         #NOTE: change the order of the index in AB
-        Xmat = math.Xmat(A.shape[-1])
+        Xmat = math.Xmat(A.shape[-1]//2)
         A = math.matmul(math.matmul(Xmat, A), Xmat)
         B = math.matvec(Xmat, B)
         return math.hermite_renormalized(A, B, C, shape=shape)
