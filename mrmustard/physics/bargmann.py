@@ -46,17 +46,14 @@ def wigner_to_bargmann_rho(cov, means):
     for a density matrix (i.e. for `M` modes, `A` has shape `2M x 2M` and `B` has shape `2M`).
     The order of the rows/columns of A and B corresponds to a density matrix with the usual ordering of the indices.
 
-    Note that here A and B are defined with inverted blocks with respect to the literature,
-    otherwise the density matrix would have the left and the right indices swapped once we convert to Fock.
-    By inverted blocks we mean that if A is normally defined as `A = [[A_00, A_01], [A_10, A_11]]`,
-    here we define it as `A = [[A_11, A_10], [A_01, A_00]]`. For `B` we have `B = [B_0, B_1] -> B = [B_1, B_0]`.
+    Note that here A and B are defined with respect to the literature.
     """
     N = cov.shape[-1] // 2
     A = math.matmul(
-        cayley(pq_to_aadag(cov), c=0.5), math.Xmat(N)
-    )  # X on the right, so the index order will be rho_{left,right}:
+        math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5)
+    )
     Q, beta = wigner_to_husimi(cov, means)
-    B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
+    B = math.matvec(math.Xmat(N), math.solve(Q, beta))
     C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
     return A, B, C
 
@@ -67,8 +64,7 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half rather than the second
-    return A[:N, :N], B[:N], math.sqrt(C)
+    return A[N:,N:], B[N:], math.sqrt(C) #TODO: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):
