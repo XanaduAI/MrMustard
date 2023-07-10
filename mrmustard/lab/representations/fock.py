@@ -65,29 +65,3 @@ class Fock(Representation):
     @property
     def von_neumann_entropy(self) -> float:
         raise NotImplementedError("von_neumann_entropy not implemented for Fock representation") 
-
-
-    # NOTE : this is for transformations!
-    # def validate_contraction_indices(in_idx:List[int], out_idx:List[int], M:int) -> bool:
-    #     r""" Validates the indices used for the contraction of a tensor.
-
-    #     Args:
-    #         in_idx: the indices (counting from 0) of the kraus operator that contract with the ket
-    #         out_idx: the indices (counting from 0) of the kraus operator that are leftover
-    #         M: dimension of the ket
-
-    #     Returns:
-    #         True if all went well and the indices are not problematic
-
-    #     Raises:
-    #         ValueError: if the indices used for the contraction are incorrect        
-    #     """
-    #     if (len(set(in_idx)) != len(in_idx)) or (len(set(out_idx)) != len(out_idx)):
-    #         raise ValueError("Should not contain repeated indices.")
-        
-    #     elif not set(range(M)).intersection(out_idx).issubset(set(in_idx)):
-    #         wrong = set(range(M)).intersection(out_idx) - set(in_idx)
-    #         raise ValueError(f"Indices {wrong} are trying to replace uncontracted indices.")
-        
-    #     else:
-    #         return True

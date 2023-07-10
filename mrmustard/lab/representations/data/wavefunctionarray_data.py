@@ -73,16 +73,6 @@ class WavefunctionArrayData(ArrayData):
         else:
             raise ValueError("The two wave functions must have the same qs. ")
 
-    def __sub__(self, other: WavefunctionArrayData) -> WavefunctionArrayData:
-        try:
-            if self._qs_is_same(other):
-                return self.__add__(-other)
-            else:
-                raise ValueError("The two wave functions must have the same qs. ")
-        except (TypeError, AttributeError) as e:
-            raise TypeError(
-                f"Cannot subtract {self.__class__} and {other.__class__}."
-            ) from e
 
     def __mul__(
         self, other: Union[Scalar, WavefunctionArrayData]
