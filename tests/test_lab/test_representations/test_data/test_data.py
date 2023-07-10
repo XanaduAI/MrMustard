@@ -164,4 +164,4 @@ class TestData:
         assert (different_obj == DATA) == False
 
     ###############  Outer product  ##################
-    # NOTE : not implemented so not tested so far
+    # NOTE : not implemented => not tested

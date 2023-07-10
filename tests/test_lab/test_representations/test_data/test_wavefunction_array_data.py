@@ -118,7 +118,7 @@ class TestWavefunctionArrayData(TestArrayData):
     # NOTE : tested in parent
 
     ###############  Outer product  ##################
-    # NOTE : not implemented so not tested so far
+    # NOTE : not implemented => not tested
 
     #################### Other #######################
     @pytest.mark.parametrize(

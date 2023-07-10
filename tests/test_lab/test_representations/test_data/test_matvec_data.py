@@ -145,8 +145,12 @@ class TestMatVecData(TestData): #TODO: import parent!
         manually_computed_coeffs = operator(old_data_object.coeffs, x)
         assert np.allclose(new_data_object.coeffs, manually_computed_coeffs)
 
-    def _helper_mat_vec_unchanged_computed_coeffs_are_correct(self, new_data_object, old_data_object, operator, x
-                                             ) -> None:
+    def _helper_mat_vec_unchanged_computed_coeffs_are_correct(self,
+                                                              new_data_object, 
+                                                              old_data_object, 
+                                                              operator,
+                                                              x
+                                                              ) -> None:
         self._helper_coeffs_are_computed_correctly(new_data_object, old_data_object, operator, x)
         assert np.allclose(new_data_object.mat, old_data_object.mat)
         assert np.allclose(new_data_object.means, old_data_object.means)

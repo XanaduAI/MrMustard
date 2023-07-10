@@ -48,4 +48,4 @@ class TestQPolyData(TestMatVecData):
         pass
 
     ###############  Outer product  ##################
-    # NOTE : not implemented, no test so far
+    # NOTE : not implemented => not tested

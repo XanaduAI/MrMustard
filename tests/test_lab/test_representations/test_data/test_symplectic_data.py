@@ -49,4 +49,4 @@ class TestSymplecticData(TestMatVecData):
         pass
 
     ###############  Outer product  ##################
-    # NOTE : not implemented so no test
+    # NOTE : not implemented => not tested

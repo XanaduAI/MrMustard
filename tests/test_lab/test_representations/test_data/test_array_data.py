@@ -97,4 +97,4 @@ class TestArrayData(TestData):
         assert np.allclose(res_from_object_op.array, res_from_manual_op)
 
     ###############  Outer product  ##################
-    # NOTE : not implemented so not tested so far
+    # NOTE : not implemented => not tested

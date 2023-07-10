@@ -137,4 +137,4 @@ class TestGaussianData(TestMatVecData): #TODO, first import TestData, later Test
     # TODO : test compute_mul_means
 
     ###############  Outer product  ##################
-    # NOTE : not implemented
+    # NOTE : not implemented => not tested
