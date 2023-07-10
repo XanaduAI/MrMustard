@@ -26,9 +26,7 @@ def test_dtc_returns_true_when_given_same_object(cls_instance):
     assert duck_type_checker(cls_instance, other_instance) == True
 
 
-@pytest.mark.parametrize(
-    "obj_a, obj_b", [(MockAnimal(), MockAnimal()), (MockFruit(), MockFruit())]
-)
+@pytest.mark.parametrize("obj_a, obj_b", [(MockAnimal(), MockAnimal()), (MockFruit(), MockFruit())])
 def test_dtc_returns_true_when_given_different_object_of_same_type(obj_a, obj_b):
     assert duck_type_checker(obj_a, obj_b)
 
@@ -37,9 +35,7 @@ def test_dtc_returns_true_when_given_different_object_of_same_type(obj_a, obj_b)
     "obj_type_a, obj_type_b", [(MockAnimal(), MockFruit()), (MockFruit(), MockAnimal())]
 )
 def test_dtc_returns_same_bool_irrelevant_of_object_order(obj_type_a, obj_type_b):
-    assert duck_type_checker(obj_type_a, obj_type_b) == duck_type_checker(
-        obj_type_b, obj_type_a
-    )
+    assert duck_type_checker(obj_type_a, obj_type_b) == duck_type_checker(obj_type_b, obj_type_a)
 
 
 @pytest.mark.parametrize(
@@ -57,9 +53,7 @@ def test_dtc_returns_correct_bool_with_objects_of_different_or_same_type(
     assert duck_type_checker(obj_type_a, obj_type_b) == truth_val
 
 
-@pytest.mark.parametrize(
-    "x, y", [(1, 1.0), (1.0, "s"), ("s", 2.0), (True, 1.0), (MockAnimal(), 1)]
-)
+@pytest.mark.parametrize("x, y", [(1, 1.0), (1.0, "s"), ("s", 2.0), (True, 1.0), (MockAnimal(), 1)])
 def test_dtc_raises_TypeError_when_given_objects_without_dicts(x, y):
     with pytest.raises(TypeError):
         duck_type_checker(x, y)
@@ -88,8 +82,6 @@ def test_gfactory_returns_instance_of_correct_class(cls, args, kwargs):
         (MockNoDefaultParams, (), {}),
     ],
 )
-def test_gfactory_raises_TypeError_when_unexpected_number_or_wrong_args_given(
-    cls, args, kwargs
-):
+def test_gfactory_raises_TypeError_when_unexpected_number_or_wrong_args_given(cls, args, kwargs):
     with pytest.raises(TypeError):
         general_factory(cls, *args, **kwargs)
