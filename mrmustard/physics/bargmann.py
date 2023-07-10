@@ -69,10 +69,7 @@ def wigner_to_bargmann_psi(cov, means):
 
 def wigner_to_bargmann_Choi(X, Y, d):
     r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann `A,B,C` triple
-    for a channel (i.e. for M modes, A has shape 4M x 4M and B has shape 4M).
-    We have freedom to choose the order of the indices of the Choi matrix by rearranging the `MxM` blocks of A and the M-subvectors of B.
-    Here we choose the order `[out_l, in_l out_r, in_r]` (`in_l` and `in_r` to be contracted with the left and right indices of the density matrix)
-    so that after the contraction the result has the right order `[out_l, out_r]`."""
+    for a channel (i.e. for M modes, A has shape 4M x 4M and B has shape 4M)."""
     N = X.shape[-1] // 2
     I2 = math.eye(2 * N, dtype=X.dtype)
     XT = math.transpose(X)
@@ -90,14 +87,14 @@ def wigner_to_bargmann_Choi(X, Y, d):
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
     ) / np.sqrt(2)
     A = math.matmul(math.matmul(R, A), math.dagger(R))
-    A = math.matmul(A, math.Xmat(2 * N))  # yes: X on the right
+    A = math.matmul(math.Xmat(2 * N), A)
     b = math.matvec(xi_inv, d)
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
-    B = math.concat([B[2 * N :], B[: 2 * N]], axis=-1)  # yes: opposite order
+    B = math.concat([B[: 2 * N], B[2 * N: ]], axis=-1)
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
-    # now A and B have order [out_l, in_l out_r, in_r].
+    # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
 
 
@@ -107,5 +104,4 @@ def wigner_to_bargmann_U(X, d):
     """
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-    # NOTE: with A_Choi and B_Choi defined with inverted blocks, we now keep the first half rather than the second
-    return A[: 2 * N, : 2 * N], B[: 2 * N], math.sqrt(C)
+    return A[2 * N:, 2 * N:], B[2 * N:], math.sqrt(C)
