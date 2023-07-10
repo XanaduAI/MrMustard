@@ -15,6 +15,7 @@
 """
 This module contains functions for performing calculations on Gaussian states.
 """
+import numpy as np
 
 from typing import Any, Optional, Sequence, Tuple, Union
 
@@ -127,7 +128,7 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
 
-    return math.matmul(
+    return settings.HBAR/2*math.matmul(
         math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
         math.transpose(symplectic),
     )
@@ -941,3 +942,17 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     if d is not None:
         d_dual = math.matvec(X_dual, d) if X_dual is not None else d
     return X_dual, Y_dual, d_dual
+
+
+
+def reorder_matrix_from_qpqp_to_qqpp(N: int):
+    r"""Returns the reordered matrix from qpqp ordering variables to qqpp ordering."""
+    list1 = [i for i in range(N,)]
+    list2 = [j for j in range(N,2*N)]
+    reorder_list = [None]*(len(list1)+len(list2))
+    reorder_list[::2] = list1
+    reorder_list[1::2] = list2
+    matrix = np.zeros((2*N,2*N))
+    for i,n in enumerate(reorder_list):
+        matrix[i,n] = 1
+    return matrix
