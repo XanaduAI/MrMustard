@@ -90,30 +90,18 @@ class TestQPolyData(): #TestMatVecData
     # NOTE : tested in parent class
 
     ###############  Multiplication  #################
-    # @pytest.mark.parametrize('x', [2])
-    # def test_object_mul_adds_matrices_element_wise_and_multiplies_coeffs(self, DATA, A, B, C, TYPE, x):
-    #     other_a = deepcopy(A) * x
-    #     other_b = deepcopy(B) * x
-    #     other_c = deepcopy(C) * x
-    #     other_params = {'A': other_a, 'b': other_b, 'c': other_c}
-    #     other_data = general_factory(TYPE, **other_params)
-    #     result_data_object = DATA * other_data
+    @pytest.mark.parametrize('x', [2, 7, 100])
+    def test_object_mul_adds_matrices_and_vectors_element_wise_and_multiplies_coeffs(self, DATA, A, B, C, TYPE, x):
+        other_a = deepcopy(A) * x
+        other_b = deepcopy(B) * x
+        other_c = deepcopy(C) * x
+        other_params = {'A': other_a, 'b': other_b, 'c': other_c}
+        other_data = general_factory(TYPE, **other_params)
+        result_data_object = DATA * other_data
 
-    #     assert (np.allclose(other_a + DATA.A, result_data_object))
-
-        # manual_result_a = other_a + DATA.A
-        # manual_result_b = other_b + DATA.b
-        # manual_result_c = other_c + DATA.c
-        # results_params = {'A': manual_result_a, 'b': manual_result_b, 'c': manual_result_c}
-        # manually_created_result_object = general_factory(TYPE, **results_params)
-
-        # object_computation_result = DATA * other_data
-        
-        # assert manually_created_result_object == object_computation_result
-
-
-    def test_object_mul_adds_vectors_element_wise(self):
-        pass
+        assert np.allclose(other_a + DATA.A, result_data_object.A)
+        assert np.allclose(other_b + DATA.b, result_data_object.b)
+        assert np.allclose(other_c * DATA.c, result_data_object.c)
 
     ###############  Outer product  ##################
     # NOTE : not implemented => not tested
