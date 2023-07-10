@@ -45,10 +45,10 @@ class QPolyData(MatVecData):
         # if isinstance(A, GaussianData):
         #     A, b, c = self._from_GaussianData(covmat=A)
 
-        if np.allclose(A, np.transpose(A)): #Check that matrix A is real and symmetric
+        if self._helper_check_is_real_symmetric(A):
             super().__init__(mat=A, vec=b, coeffs=c)
         else:
-            raise ValueError("The matrix A is not real symmetric.")
+            raise ValueError("Matrix A is not real symmetric.")
 
     @property
     def A(self) -> Optional[RealMatrix]:
@@ -93,4 +93,8 @@ class QPolyData(MatVecData):
     #     new_coeffs = covmat.coeff * pre_coeffs
 
     #     return (covmat, b, new_coeffs)
+
+    def _helper_check_is_real_symmetric(self, A) -> bool:
+        r""" Checks that the matrix given is both real and symmetric. """
+        return np.allclose(A, np.transpose(A))
 
