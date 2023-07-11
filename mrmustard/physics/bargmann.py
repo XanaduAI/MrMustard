@@ -52,7 +52,8 @@ def wigner_to_bargmann_rho(cov, means):
     A = math.matmul(math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5))
     Q, beta = wigner_to_husimi(cov, means)
     b = math.solve(Q, beta)
-    B = math.matvec(math.Xmat(N), b)
+    # B = math.matvec(math.Xmat(N), b)
+    B = math.conjugate(b)
     C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
     return A, B, C
 
