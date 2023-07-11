@@ -53,7 +53,7 @@ def wigner_to_bargmann_rho(cov, means):
     Q, beta = wigner_to_husimi(cov, means)
     b = math.solve(Q, beta)
     # B = math.matvec(math.Xmat(N), b)
-    B = math.conjugate(b)
+    B = math.conj(b)
     C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
     return A, B, C
 
