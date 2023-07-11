@@ -49,14 +49,15 @@ def wigner_to_bargmann_rho(cov, means):
     Note that here A and B are defined with respect to the literature.
     """
     N = cov.shape[-1] // 2
-    A = math.matmul(
-        cayley(pq_to_aadag(cov), c=0.5), math.Xmat(N)
-    )  # X on the right, so the index order will be rho_{left,right}:
-    # A = math.matmul(math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5))
+    # A = math.matmul(
+    #     cayley(pq_to_aadag(cov), c=0.5), math.Xmat(N)
+    # )  # X on the right, so the index order will be rho_{left,right}:
+    A = math.matmul(math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5))
     Q, beta = wigner_to_husimi(cov, means)
-    # B = math.matvec(math.Xmat(N), math.solve(Q, beta))
-    B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
-    C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
+    b = math.solve(Q, beta)
+    B = math.matvec(math.Xmat(N), b)
+    # B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
+    C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
     return A, B, C
 
 
@@ -66,12 +67,12 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    return A[:N, :N], B[:N], math.sqrt(C)
-    # return (
-    #     A[N:, N:],
-    #     B[N:],
-    #     math.sqrt(C),
-    # )  # TODO: c for th psi is to calculated from the global phase formula.
+    # return A[:N, :N], B[:N], math.sqrt(C)
+    return (
+        A[N:, N:],
+        B[N:],
+        math.sqrt(C),
+    )  # TODO: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):
