@@ -49,9 +49,7 @@ def wigner_to_bargmann_rho(cov, means):
     Note that here A and B are defined with respect to the literature.
     """
     N = cov.shape[-1] // 2
-    A = math.matmul(
-        math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5)
-    )
+    A = math.matmul(math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5))
     Q, beta = wigner_to_husimi(cov, means)
     B = math.matvec(math.Xmat(N), math.solve(Q, beta))
     C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
@@ -64,7 +62,11 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    return A[N:,N:], B[N:], math.sqrt(C) #TODO: c for th psi is to calculated from the global phase formula.
+    return (
+        A[N:, N:],
+        B[N:],
+        math.sqrt(C),
+    )  # TODO: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):
@@ -92,7 +94,6 @@ def wigner_to_bargmann_Choi(X, Y, d):
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
-    B = math.concat([B[: 2 * N], B[2 * N: ]], axis=-1)
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
@@ -104,4 +105,4 @@ def wigner_to_bargmann_U(X, d):
     """
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-    return A[2 * N:, 2 * N:], B[2 * N:], math.sqrt(C)
+    return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
