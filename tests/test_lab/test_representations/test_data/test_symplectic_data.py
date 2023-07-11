@@ -20,6 +20,7 @@ from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct)
+from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 
 import operator as op
 
@@ -62,7 +63,7 @@ def DATA(TYPE, PARAMS) -> SymplecticData:
 def OTHER(DATA) -> SymplecticData:
     r"""Another instance of the class that must be tested."""
     return deepcopy(DATA)
-class TestSymplecticData():
+class TestSymplecticData(TestMatVecData):
     
     ####################  Init  ######################
 

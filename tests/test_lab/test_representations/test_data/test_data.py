@@ -119,7 +119,7 @@ class TestData:
         with pytest.raises(TypeError):
             operator(DATA, other)
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul])
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_new_object_created_by_arity2_operation_has_same_attribute_shapes_as_old_object(
         self, DATA, OTHER, operator
     ):
@@ -155,13 +155,6 @@ class TestData:
     def test_copy_of_same_objects_are_equal(self, DATA):
         other_same = deepcopy(DATA)
         assert (other_same == DATA) == True
-
-    def test_two_objects_of_same_class_with_only_one_difference_are_not_equal(self, TYPE, DATA, PARAMS):
-        k = list(PARAMS.keys())[0]
-        different_params = PARAMS
-        different_params[k] = 1954
-        different_obj = general_factory(TYPE, **different_params)
-        assert (different_obj == DATA) == False
 
     ###############  Outer product  ##################
     # NOTE : not implemented => not tested

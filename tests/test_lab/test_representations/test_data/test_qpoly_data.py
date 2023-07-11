@@ -19,7 +19,9 @@ from mrmustard.lab.representations.data.qpoly_data import QPolyData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 
-#from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
+from tests.test_lab.test_representations.test_data.test_data import TestData
+
+from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 
 #########   Instantiating class to test  #########
 @pytest.fixture
@@ -56,7 +58,7 @@ def OTHER(DATA) -> QPolyData:
     r"""Another instance of the class that must be tested."""
     return deepcopy(DATA)
 
-class TestQPolyData(): #TestMatVecData
+class TestQPolyData(TestMatVecData):
     
     ####################  Init  ######################
     def test_non_symmetric_matrix_raises_ValueError(self, B, C):
@@ -91,7 +93,11 @@ class TestQPolyData(): #TestMatVecData
 
     ###############  Multiplication  #################
     @pytest.mark.parametrize('x', [2, 7, 100])
-    def test_object_mul_adds_matrices_and_vectors_element_wise_and_multiplies_coeffs(self, DATA, A, B, C, TYPE, x):
+    def test_object_mul_adds_matrices_and_vectors_element_wise_and_multiplies_coeffs(self, 
+                                                                                     DATA, 
+                                                                                     A, B, C, 
+                                                                                     TYPE, 
+                                                                                     x):
         other_a = deepcopy(A) * x
         other_b = deepcopy(B) * x
         other_c = deepcopy(C) * x
