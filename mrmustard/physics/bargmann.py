@@ -90,13 +90,12 @@ def wigner_to_bargmann_Choi(X, Y, d):
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
     ) / np.sqrt(2)
     A = math.matmul(math.matmul(R, A), math.dagger(R))
-    # A = math.matmul(A, math.Xmat(2 * N))  # yes: X on the right
     A = math.matmul(math.Xmat(2 * N), A)
     b = math.matvec(xi_inv, d)
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
-    B = math.concat([B[2 * N :], B[: 2 * N]], axis=-1)  # yes: opposite order
+    B = math.concat([B[:2 * N], B[2 * N:]], axis=-1)  # yes: opposite order
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
@@ -108,5 +107,4 @@ def wigner_to_bargmann_U(X, d):
     """
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-    return A[: 2 * N, : 2 * N], B[: 2 * N], math.sqrt(C)
-    # return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
+    return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
