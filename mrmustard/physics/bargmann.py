@@ -95,6 +95,7 @@ def wigner_to_bargmann_Choi(X, Y, d):
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
+    B = math.concat([B[: 2 * N], B[2 * N:]], axis=-1)  # yes: opposite order
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
