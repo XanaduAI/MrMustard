@@ -172,7 +172,8 @@ def wigner_to_fock_Choi(X, Y, d, shape):
     # NOTE: change the order of the index in AB
     Xmat = math.Xmat(A.shape[-1] // 2)
     A = math.matmul(math.matmul(Xmat, A), Xmat)
-    B = math.matmul(Xmat, B)
+    N = B.shape[-1]//2
+    B = math.concat([B[N:], B[:N]], axis=-1)
     return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
 
