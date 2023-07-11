@@ -15,10 +15,14 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union
+from mrmustard.math import Math
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import RealMatrix, Scalar, RealVector
 from typing import Optional
 from thewalrus.quantum.gaussian_checks import is_symplectic
+
+math = Math()
+
 
 class SymplecticData(MatVecData):
     """ Symplectic matrix-like data for certain Representation objects.
@@ -31,7 +35,7 @@ class SymplecticData(MatVecData):
 
     def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0) -> None:
         #Check if it is a symplectic matrix
-        if is_symplectic(symplectic.numpy()):
+        if is_symplectic(math.asnumpy(symplectic)):
             super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
         else:
             raise ValueError("The matrix given is not symplectic.")

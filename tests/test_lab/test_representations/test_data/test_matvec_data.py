@@ -33,6 +33,9 @@ from mrmustard.utils.misc_tools import general_factory
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from tests.test_lab.test_representations.test_data.test_data import TestData
 
+from tests.test_lab.test_representations.test_data.tools_for_tests import (
+    helper_mat_vec_unchanged_computed_coeffs_are_correct)
+
 
 
 ##################   FIXTURES  ###################
@@ -105,7 +108,7 @@ class TestMatVecData(TestData): #TODO: import parent!
         processed_data = operator(DATA,OTHER)
         assert operator(DATA.coeffs, OTHER.coeffs) == processed_data.coeffs
         assert np.allclose(DATA.mat, pre_op_data.mat)
-        assert np.allclose(DATA.means, pre_op_data.means)
+        assert np.allclose(DATA.vec, pre_op_data.vec)
 
     #######  Scalar division / multiplication ########
     @pytest.mark.parametrize("operator", [op.truediv, op.mul])
@@ -113,7 +116,7 @@ class TestMatVecData(TestData): #TODO: import parent!
     def test_scalar_mul_or_div_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
         pre_op_data = deepcopy(DATA)
         divided_data = operator(DATA,x)
-        self._helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, 
+        helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, 
                                                                   pre_op_data, 
                                                                   operator, 
                                                                   x)
@@ -128,29 +131,4 @@ class TestMatVecData(TestData): #TODO: import parent!
 
 
     ##############  Helper functions  ################
-    def _helper_coeffs_are_computed_correctly(self, new_data_object, old_data_object, operator, x
-                                              ) -> None:
-        r""" Helper assert function which ensures the coefficients are computed correctly.
-
-        Based on the given operator and a scalar, this test ensures that the coefficients are 
-        applied the element-wise operation.
-
-        Args:
-            new_data_object:
-            old_data_object:
-            operator:
-            x:
-        
-        """
-        manually_computed_coeffs = operator(old_data_object.coeffs, x)
-        assert np.allclose(new_data_object.coeffs, manually_computed_coeffs)
-
-    def _helper_mat_vec_unchanged_computed_coeffs_are_correct(self,
-                                                              new_data_object, 
-                                                              old_data_object, 
-                                                              operator,
-                                                              x
-                                                              ) -> None:
-        self._helper_coeffs_are_computed_correctly(new_data_object, old_data_object, operator, x)
-        assert np.allclose(new_data_object.mat, old_data_object.mat)
-        assert np.allclose(new_data_object.means, old_data_object.means)
+    
