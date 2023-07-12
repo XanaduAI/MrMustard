@@ -15,10 +15,14 @@
 import numpy as np
 
 mock_scalar = (int, float, complex)
-class MockData():
-    r""" Mock class for Data objects and any child of Data that is still abstract. """
 
-    def __init__(self, mat=None, vec=None, coeffs=None, array=np.ones(10), cutoffs=None, qs=None) -> None:
+
+class MockData:
+    r"""Mock class for Data objects and any child of Data that is still abstract."""
+
+    def __init__(
+        self, mat=None, vec=None, coeffs=None, array=np.ones(10), cutoffs=None, qs=None
+    ) -> None:
         self.mat = mat
         self.vec = vec
         self.coeffs = coeffs
@@ -29,13 +33,13 @@ class MockData():
     def raise_error_if_different_type_and_not_scalar(self, other):
         if (not isinstance(other, self.__class__)) and (not isinstance(other, mock_scalar)):
             raise TypeError()
-        
+
     def raise_error_if_not_scalar(self, other):
-        if (not isinstance(other, mock_scalar)):
+        if not isinstance(other, mock_scalar):
             raise TypeError()
 
     def __neg__(self):
-        return self.__class__(array= -self.array)
+        return self.__class__(array=-self.array)
 
     def __eq__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
@@ -43,15 +47,15 @@ class MockData():
 
     def __add__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
-        return self.__class__(array = self.array + other.array)
+        return self.__class__(array=self.array + other.array)
 
     def __sub__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
-        return self.__class__(array = self.array - other.array)
+        return self.__class__(array=self.array - other.array)
 
     def __truediv__(self, x):
         self.raise_error_if_not_scalar(x)
-        return self.__class__(array = self.array / x)
+        return self.__class__(array=self.array / x)
 
     def __mul__(self, other):
         self.raise_error_if_different_type_and_not_scalar(other)
@@ -66,21 +70,17 @@ class MockData():
         return self
 
 
+class MockNoCommonAttributesObject:
+    r"""Mock placeholder class for an object which has different attributes but same methods."""
 
-
-
-class MockNoCommonAttributesObject():
-    r""" Mock placeholder class for an object which has different attributes but same methods. """
     def __init__(self) -> None:
         self.apple = None
         self.pear = None
         self.banana = None
 
 
-
-
-class MockCommonAttributesObject():
-    r""" Mock class for Data objects and any child of Data that is still abstract. """
+class MockCommonAttributesObject:
+    r"""Mock class for Data objects and any child of Data that is still abstract."""
 
     def __init__(self) -> None:
         self.mat = None

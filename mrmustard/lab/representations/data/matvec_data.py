@@ -23,65 +23,59 @@ from mrmustard.typing import Matrix, Scalar, Vector
 
 math = Math()
 
+
 class MatVecData(Data):  # Note: this class is abstract!
-    r""" Contains matrix and vector -like data for certain Representation objects.
+    r"""Contains matrix and vector -like data for certain Representation objects.
 
     Args:
         mat: the matrix-like data to be contained in the class
         vec: the vector-like data to be contained in the class
-        coeffs: the coefficients 
+        coeffs: the coefficients
     """
 
-    def __init__(self, mat: Matrix,vec: Vector,coeffs: Scalar) -> None:
-        self.mat = mat #math.atleast_3d(mat)
-        self.vec = vec #math.atleast_2d(vec)
-        self.coeffs = coeffs #math.atleast_1d(coeffs)
-
+    def __init__(self, mat: Matrix, vec: Vector, coeffs: Scalar) -> None:
+        self.mat = mat  # math.atleast_3d(mat)
+        self.vec = vec  # math.atleast_2d(vec)
+        self.coeffs = coeffs  # math.atleast_1d(coeffs)
 
     def __neg__(self) -> MatVecData:
-        new_coeffs = - self.coeffs
+        new_coeffs = -self.coeffs
         return self.__class__(self.mat, self.vec, new_coeffs)
 
-
     def __eq__(self, other: MatVecData) -> bool:
-        try: 
+        try:
             return super().same(
-                X = [self.mat, self.vec, self.coeffs],
-                Y = [other.mat, other.vec, other.coeffs]
-                )
-        
+                X=[self.mat, self.vec, self.coeffs], Y=[other.mat, other.vec, other.coeffs]
+            )
+
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
-
 
     def __add__(self, other: MatVecData) -> MatVecData:
         try:
             if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
                 combined_coeffs = self.coeffs + other.coeffs
                 return self.__class__(self.mat, self.vec, combined_coeffs)
-            
+
             else:
-                    mat = math.concat([self.mat, other.mat], axis=0)
-                    vec = math.concat([self.vec, other.vec], axis=0)
-                    reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
-                    mat = math.matmul(math.matmul(reorder_matrix, mat), 
-                                      math.transpose(reorder_matrix))
-                    vec = math.matvec(reorder_matrix, vec)
-                    combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-                    return self.__class__(mat, vec, combined_coeffs)
-                
+                mat = math.concat([self.mat, other.mat], axis=0)
+                vec = math.concat([self.vec, other.vec], axis=0)
+                reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
+                mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
+                vec = math.matvec(reorder_matrix, vec)
+                combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+                return self.__class__(mat, vec, combined_coeffs)
+
         except AttributeError as e:
             raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
-        
-    def __truediv__(self, x:Scalar) -> MatVecData:
-        new_coeffs = self.coeffs/x
+
+    def __truediv__(self, x: Scalar) -> MatVecData:
+        new_coeffs = self.coeffs / x
         return self.__class__(self.mat, self.vec, new_coeffs)
-    
-    
+
     def helper_check_is_real_symmetric(self, A) -> bool:
-        r""" Checks that the matrix given is both real and symmetric. """
+        r"""Checks that the matrix given is both real and symmetric."""
         return np.allclose(A, np.transpose(A))
-        
 
     # def __and__(self, other: MatVecData) -> MatVecData:
     #     try: #TODO: ORDER OF ALL MATRICESA!
@@ -93,9 +87,7 @@ class MatVecData(Data):  # Note: this class is abstract!
 
     #     except AttributeError as e:
     #         raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
-        
 
- 
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
     #     N = self.mat.shape[0]
@@ -121,7 +113,6 @@ class MatVecData(Data):  # Note: this class is abstract!
     #         vec = self.vec[mask == 1],
     #         coeffs = self.coeffs[mask == 1]
     #         )
-
 
     # # TODO: decide which simplify we want to keep
     # def old_simplify(self) -> None:

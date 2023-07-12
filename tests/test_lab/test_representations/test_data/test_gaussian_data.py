@@ -38,25 +38,29 @@ def TYPE():
     r"""Type of the object under test."""
     return GaussianData
 
+
 @pytest.fixture
 def COV() -> Matrix:
     r"""Some matrix for the object's parameterization."""
     return np.eye(10) * 42
+
 
 @pytest.fixture
 def MEANS() -> Vector:
     r"""Some vector for the object's parameterization."""
     return np.ones(10) * 42
 
+
 @pytest.fixture
 def COEFFS() -> Scalar:
     r"""Some scalar for the object's parameterization."""
     return 42
 
+
 @pytest.fixture
 def PARAMS(COV, MEANS, COEFFS) -> dict:
     r"""Parameters for the class instance which is created."""
-    params_dict = {'cov': COV, 'means': MEANS, 'coeffs':COEFFS}
+    params_dict = {"cov": COV, "means": MEANS, "coeffs": COEFFS}
     return params_dict
 
 
@@ -73,34 +77,29 @@ def OTHER(DATA) -> GaussianData:
 
 
 class TestGaussianData(TestMatVecData):
-
     ####################  Init  ######################
 
     def test_defining_neither_cov_nor_mean_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
             GaussianData(coeffs=COEFFS)
 
-
     def test_if_coeffs_is_undefined_it_is_equal_to_1(self, COV, MEANS):
         gaussian_data = GaussianData(cov=COV, means=MEANS)
         assert gaussian_data.coeffs == 1
 
-
-    @pytest.mark.parametrize('x', [0, 2, 10, 250])
+    @pytest.mark.parametrize("x", [0, 2, 10, 250])
     def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
         comparison_covariance = np.eye(x)
         means = np.ones(x)
         gaussian_data = GaussianData(means=means, coeffs=COEFFS)
         assert np.allclose(gaussian_data.cov, comparison_covariance)
 
-
-    @pytest.mark.parametrize('x', [0, 2, 10, 250])
+    @pytest.mark.parametrize("x", [0, 2, 10, 250])
     def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
         covariance = np.eye(x)
         comparison_means = np.zeros(x)
         gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
         assert np.allclose(gaussian_data.means, comparison_means)
-
 
     def test_if_neither_means_nor_cov_is_defined_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
@@ -130,13 +129,13 @@ class TestGaussianData(TestMatVecData):
 
     ##############  Multiplication  ##################
 
-    @pytest.mark.parametrize('x', [2, 7, 200])
+    @pytest.mark.parametrize("x", [2, 7, 200])
     def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         multiplied_data = DATA * x
-        assert multiplied_data.c == (pre_op_data.coeffs * x) #coeffs are multiplied
-        assert np.allclose(multiplied_data.cov, pre_op_data.cov) # unaltered
-        assert np.allclose(multiplied_data.means, pre_op_data.means) # unaltered
+        assert multiplied_data.c == (pre_op_data.coeffs * x)  # coeffs are multiplied
+        assert np.allclose(multiplied_data.cov, pre_op_data.cov)  # unaltered
+        assert np.allclose(multiplied_data.means, pre_op_data.means)  # unaltered
 
     # TODO : test compute_mul_covs
     # TODO : test compute_mul_coeffs

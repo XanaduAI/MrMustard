@@ -16,13 +16,16 @@
 
 import numpy as np
 
-all = [ 'helper_coeffs_are_computed_correctly',
-       'helper_mat_vec_unchanged_computed_coeffs_are_correct']
+all = [
+    "helper_coeffs_are_computed_correctly",
+    "helper_mat_vec_unchanged_computed_coeffs_are_correct",
+]
+
 
 def helper_coeffs_are_computed_correctly(new_data_object, old_data_object, operator, x) -> None:
     r"""Helper assert function which ensures the coefficients are computed correctly.
 
-    Based on the given operator and a scalar, this test ensures that the coefficients are 
+    Based on the given operator and a scalar, this test ensures that the coefficients are
     applied the element-wise operation.
 
     Args:
@@ -37,11 +40,10 @@ def helper_coeffs_are_computed_correctly(new_data_object, old_data_object, opera
     manually_computed_coeffs = operator(old_data_object.coeffs, x)
     assert np.allclose(new_data_object.coeffs, manually_computed_coeffs)
 
-def helper_mat_vec_unchanged_computed_coeffs_are_correct(new_data_object, 
-                                                        old_data_object, 
-                                                        operator,
-                                                        x
-                                                        ) -> None:
+
+def helper_mat_vec_unchanged_computed_coeffs_are_correct(
+    new_data_object, old_data_object, operator, x
+) -> None:
     r"""Ensures the matrix and vector remain unchanged while the coefficients are updated.
 
     Args:
@@ -49,17 +51,10 @@ def helper_mat_vec_unchanged_computed_coeffs_are_correct(new_data_object,
         old_data_object: the initial data object before operation
         operator:        the operator which should be applied, either + or *
         x:               the item by which to multiply or add the coefficients
-    
+
     Returns:
         None (performs the assert)
     """
     helper_coeffs_are_computed_correctly(new_data_object, old_data_object, operator, x)
     assert np.allclose(new_data_object.mat, old_data_object.mat)
     assert np.allclose(new_data_object.vec, old_data_object.vec)
-
-
-
-
-
-
-

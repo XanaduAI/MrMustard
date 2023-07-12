@@ -62,6 +62,7 @@ def TYPE():
     r"""Type of the object under test."""
     return MockData
 
+
 @pytest.fixture
 def PARAMS() -> dict:
     r"""Parameters for the class instance which is created, here all are None."""
@@ -81,7 +82,7 @@ def OTHER(DATA) -> MockData:
     return deepcopy(DATA)
 
 
-class TestData():
+class TestData:
     r"""Parent class for testing all children of the Data class.
 
     Here only the behaviours common to all children are tested.
@@ -93,7 +94,7 @@ class TestData():
         _ = -DATA
         assert DATA == pre_op_data_control
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq]) #op.and_
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.eq])  # op.and_
     def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
         self, DATA, OTHER, operator
     ):
@@ -101,17 +102,13 @@ class TestData():
         _ = operator(DATA, OTHER)
         assert DATA == pre_op_data_control
 
-    @pytest.mark.parametrize(
-        "other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)]
-    )
+    @pytest.mark.parametrize("other", [MockData(), MockCommonAttributesObject(), deepcopy(DATA)])
     def test_truediv_raises_TypeError_if_divisor_is_not_scalar(self, DATA, other):
         with pytest.raises(TypeError):
             DATA / other
 
     @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize(
-        "operator", [op.add, op.sub, op.mul, op.truediv, op.eq] #op.and_ 
-    )
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq])  # op.and_
     def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
         self, DATA, other, operator
     ):
@@ -139,7 +136,7 @@ class TestData():
                 assert getattr(DATA, k).shape == getattr(new_data, k).shape
             except AttributeError:  # scalar attributes
                 pass
-    
+
     ##################  Equality  ####################
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
         other = general_factory(TYPE, **PARAMS)
@@ -148,7 +145,7 @@ class TestData():
             try:  # non-array, non-list attributes
                 assert getattr(DATA, k) == getattr(other, k)
             except ValueError:
-                assert np.allclose(getattr(DATA, k),getattr(other, k))
+                assert np.allclose(getattr(DATA, k), getattr(other, k))
         assert DATA == other
 
     def test_copy_of_same_objects_are_equal(self, DATA):

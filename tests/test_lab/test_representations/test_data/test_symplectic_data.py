@@ -31,7 +31,8 @@ from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
-    helper_mat_vec_unchanged_computed_coeffs_are_correct)
+    helper_mat_vec_unchanged_computed_coeffs_are_correct,
+)
 
 
 #########   Instantiating class to test  #########
@@ -40,31 +41,39 @@ def TYPE():
     r"""Type of the object under test."""
     return SymplecticData
 
+
 @pytest.fixture
 def SYMPLECTIC() -> Matrix:
     r"""A symplectic matrix used for object parameterization.
     Taken from https://mathworld.wolfram.com/SymplecticGroup.html
     """
-    symp_mat = np.array([[1, 0, 0, 1], 
-                         [0, 1, 1, 0],
-                         [0, 0, 1, 0],
-                         [0, 0, 0, 1],])
+    symp_mat = np.array(
+        [
+            [1, 0, 0, 1],
+            [0, 1, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ]
+    )
     return symp_mat
+
 
 @pytest.fixture
 def DISPLACEMENT() -> Vector:
     r"""Some vector for the object's parameterization."""
     return np.ones(10) * 42
 
+
 @pytest.fixture
 def COEFFS() -> Scalar:
     r"""Some scalar for the object's parameterization."""
     return 42
 
+
 @pytest.fixture
 def PARAMS(SYMPLECTIC, DISPLACEMENT, COEFFS) -> dict:
     r"""Parameters for the class instance which is created."""
-    params_dict = {'symplectic': SYMPLECTIC, 'displacement': DISPLACEMENT, 'coeffs':COEFFS}
+    params_dict = {"symplectic": SYMPLECTIC, "displacement": DISPLACEMENT, "coeffs": COEFFS}
     return params_dict
 
 
@@ -78,8 +87,9 @@ def DATA(TYPE, PARAMS) -> SymplecticData:
 def OTHER(DATA) -> SymplecticData:
     r"""Another instance of the class that must be tested."""
     return deepcopy(DATA)
+
+
 class TestSymplecticData(TestMatVecData):
-    
     ####################  Init  ######################
 
     def test_init_without_coeffs_has_coeffs_equal_to_1(self, SYMPLECTIC, DISPLACEMENT):
@@ -87,7 +97,7 @@ class TestSymplecticData(TestMatVecData):
         assert symplectic_data.coeffs == 1
 
     def test_init_with_a_non_symplectic_matrix_raises_ValueError(self, DISPLACEMENT, COEFFS):
-        non_symplectic_mat = np.eye(10) #TODO factory method for this
+        non_symplectic_mat = np.eye(10)  # TODO factory method for this
         non_symplectic_mat[0] += np.array(range(10))
         with pytest.raises(ValueError):
             SymplecticData(non_symplectic_mat, DISPLACEMENT, COEFFS)
@@ -108,17 +118,16 @@ class TestSymplecticData(TestMatVecData):
     # NOTE : tested in parent class
 
     ###############  Multiplication  #################
-    
+
     def test_mul_raises_TypeError_with_object(self, DATA, OTHER):
         with pytest.raises(TypeError):
             OTHER * DATA
 
-    @pytest.mark.parametrize('x', [0, 2, 10, 250])
+    @pytest.mark.parametrize("x", [0, 2, 10, 250])
     def test_mul_with_scalar_multiplies_coeffs_and_leaves_mat_and_vec_unaltered(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         post_op_data = DATA * x
         helper_mat_vec_unchanged_computed_coeffs_are_correct(post_op_data, pre_op_data, op.mul, x)
-
 
     ###############  Outer product  ##################
     # NOTE : not implemented => not tested

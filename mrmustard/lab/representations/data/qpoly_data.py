@@ -27,8 +27,10 @@ from mrmustard.typing import RealMatrix, Scalar, Vector
 
 
 math = Math()
+
+
 class QPolyData(MatVecData):
-    r""" Quadratic polynomial data for certain Representation objects.
+    r"""Quadratic polynomial data for certain Representation objects.
 
     Quadratic Gaussian data is made of: quadratic coefficients, linear coefficients, constant.
     Each of these has a batch dimension, and the batch dimension is the same for all of them.
@@ -56,30 +58,28 @@ class QPolyData(MatVecData):
     def A(self) -> RealMatrix:
         return self.mat
 
-
     @property
     def b(self) -> Vector:
         return self.vec
-
 
     @property
     def c(self) -> Scalar:
         return self.coeffs
 
-
-    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData: #TODO: proof it against other objects
-        try: # Object case
+    def __mul__(
+        self, other: Union[Scalar, QPolyData]
+    ) -> QPolyData:  # TODO: proof it against other objects
+        try:  # Object case
             new_a = self.A + other.A
             new_b = self.b + other.b
             new_coeffs = self.c * other.c
-            return self.__class__(A = new_a, b = new_b, c = new_coeffs)
-        
-        except AttributeError: # Scalar case
+            return self.__class__(A=new_a, b=new_b, c=new_coeffs)
+
+        except AttributeError:  # Scalar case
             return self.__class__(self.A, self.b, self.c * other)
-        except TypeError as e: #Neither same object type nor a scalar case
-             raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-        
-    
+        except TypeError as e:  # Neither same object type nor a scalar case
+            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
     # @staticmethod
     # def _from_GaussianData(covmat:GaussianData
     #                        ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
@@ -97,4 +97,3 @@ class QPolyData(MatVecData):
     #     new_coeffs = covmat.coeff * pre_coeffs
 
     #     return (covmat, b, new_coeffs)
-

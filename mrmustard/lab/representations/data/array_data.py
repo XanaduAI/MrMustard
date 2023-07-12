@@ -22,6 +22,7 @@ from mrmustard.typing import Scalar, Vector
 
 math = Math()
 
+
 class ArrayData(Data):
     """Contains array-like data for certain Representation objects.
 
