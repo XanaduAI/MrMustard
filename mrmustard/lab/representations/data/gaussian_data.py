@@ -118,8 +118,8 @@ class GaussianData(MatVecData):
         Returns:
             The tensor of combined covariances
         """
-        combined_covs = [
-            math.matmul(c1, math.solve(c1 + c2, c2)) for c1 in self.cov for c2 in other.cov
+        combined_covs = [ #note the [] around cs are just there until we support the batch dimension
+            math.matmul([c1], math.solve([c1] + [c2], [c2])) for c1 in self.cov for c2 in other.cov
         ]
         return math.astensor(combined_covs)
 
