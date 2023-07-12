@@ -2406,6 +2406,44 @@ typing-extensions = ">=3.6.6"
 wrapt = ">=1.11.0"
 
 [[package]]
+name = "tensorflow-cpu-aws"
+version = "2.10.0"
+description = "TensorFlow is an open source machine learning framework for everyone."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tensorflow_cpu_aws-2.10.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b11a7004e078b17d1a472cd5a091a0efd14672294d98ab76b851ddc15faee92c"},
+    {file = "tensorflow_cpu_aws-2.10.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8c8e76c48e75d0b353239fcb039c3abbfa8ee6fe2660badb6b094c59e222714e"},
+    {file = "tensorflow_cpu_aws-2.10.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2fe56d8506dae3891af6b62f26f16597e8416f9c6b788fe5dd98b602136f6cf6"},
+    {file = "tensorflow_cpu_aws-2.10.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:112fa013271dc3282f7c821b138126f2504892703d85d5686198eb348fa6f6d2"},
+]
+
+[package.dependencies]
+absl-py = ">=1.0.0"
+astunparse = ">=1.6.0"
+flatbuffers = ">=2.0"
+gast = ">=0.2.1,<=0.4.0"
+google-pasta = ">=0.1.1"
+grpcio = ">=1.24.3,<2.0"
+h5py = ">=2.9.0"
+keras = ">=2.10.0,<2.11"
+keras-preprocessing = ">=1.1.1"
+libclang = ">=13.0.0"
+numpy = ">=1.20"
+opt-einsum = ">=2.3.2"
+packaging = "*"
+protobuf = ">=3.9.2,<3.20"
+setuptools = "*"
+six = ">=1.12.0"
+tensorboard = ">=2.10,<2.11"
+tensorflow-estimator = ">=2.10.0,<2.11"
+tensorflow-io-gcs-filesystem = ">=0.23.1"
+termcolor = ">=1.1.0"
+typing-extensions = ">=3.6.6"
+wrapt = ">=1.11.0"
+
+[[package]]
 name = "tensorflow-estimator"
 version = "2.10.0"
 description = "TensorFlow Estimator."
@@ -2446,45 +2484,6 @@ tensorflow-aarch64 = ["tensorflow-aarch64 (>=2.12.0,<2.13.0)"]
 tensorflow-cpu = ["tensorflow-cpu (>=2.12.0,<2.13.0)"]
 tensorflow-gpu = ["tensorflow-gpu (>=2.12.0,<2.13.0)"]
 tensorflow-rocm = ["tensorflow-rocm (>=2.12.0,<2.13.0)"]
-
-[[package]]
-name = "tensorflow-macos"
-version = "2.10.0"
-description = "TensorFlow is an open source machine learning framework for everyone."
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "tensorflow_macos-2.10.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:dfd1dd478b3ae01e8d578c38083bef68bc838ceaa05a813b6788fe9e6ec19140"},
-    {file = "tensorflow_macos-2.10.0-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:aa074b5442d3411e5416c5112531d8b78a8c469ca92fa41c0e0cf14428608bf3"},
-    {file = "tensorflow_macos-2.10.0-cp38-cp38-macosx_12_0_arm64.whl", hash = "sha256:e15ab56f39f3d2e7c07a72a5969f025e259b1d3fcb9c3f7217f17b62581c33a8"},
-    {file = "tensorflow_macos-2.10.0-cp38-cp38-macosx_12_0_x86_64.whl", hash = "sha256:00be07ffcf8b6288fa3dd9a27a3b6dd0f6c85af5c3109451a1b7e720bb817d14"},
-    {file = "tensorflow_macos-2.10.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:f2ec603c5496c25fb1bcda8eb4166423bf023bfb7ae6cbdec0be8796ca67e866"},
-    {file = "tensorflow_macos-2.10.0-cp39-cp39-macosx_12_0_x86_64.whl", hash = "sha256:3177a8a97149f78748eeb20009aa3dc27ae2c112ab6380886ec8620bbcb70f19"},
-]
-
-[package.dependencies]
-absl-py = ">=1.0.0"
-astunparse = ">=1.6.0"
-flatbuffers = ">=2.0"
-gast = ">=0.2.1,<=0.4.0"
-google-pasta = ">=0.1.1"
-grpcio = ">=1.24.3,<2.0"
-h5py = ">=2.9.0"
-keras = ">=2.10.0,<2.11"
-keras-preprocessing = ">=1.1.1"
-libclang = ">=13.0.0"
-numpy = ">=1.20"
-opt-einsum = ">=2.3.2"
-packaging = "*"
-protobuf = ">=3.9.2,<3.20"
-setuptools = "*"
-six = ">=1.12.0"
-tensorboard = ">=2.10,<2.11"
-tensorflow-estimator = ">=2.10.0,<2.11"
-termcolor = ">=1.1.0"
-typing-extensions = ">=3.6.6"
-wrapt = ">=1.11.0"
 
 [[package]]
 name = "tensorflow-probability"
@@ -2714,4 +2713,4 @@ ray = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<=3.10"
-content-hash = "61418d1c9779d64d8d256d953edd5daa860f7dab603570a83904811c4374898c"
+content-hash = "6964bf1984aed375130f73e3100b3fa3c0cc77399a171f9cca4c98be2aba2fb9"
