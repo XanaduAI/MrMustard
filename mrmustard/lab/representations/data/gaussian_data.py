@@ -13,15 +13,12 @@
 # limitations under the License.
 
 from __future__ import annotations
-import numpy as np
-from itertools import repeat
-from typing import Optional, Tuple, Union, TYPE_CHECKING
+
+from typing import Optional, TYPE_CHECKING, Union
+
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
-from typing import Optional
-from thewalrus.symplectic import sympmat
-from mrmustard.utils.misc_tools import duck_type_checker
+from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
 
 if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
@@ -32,16 +29,16 @@ math = Math()
 class GaussianData(MatVecData):
     r""" Gaussian data for certain representation objects.
 
-    Gaussian data is made of covariance, mean vector and coefficient. Each of these has a batch dimension, 
-    and the length of the batch dimension is the same for all three.
+    Gaussian data is made of covariance, mean vector and coefficient. Each of these has a batch 
+    dimension, and the length of the batch dimension is the same for all three.
     These are the parameters of a linear combination of Gaussians, which is Gaussian if there is 
     only one contribution for each.
     Each contribution parametrizes the Gaussian function:
     `coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
 
     Args:
-        cov: covariance matrices (real symmetric)
-        means: mean vector of the state (real), note that the dimension must be even
+        cov:    covariance matrices (real symmetric)
+        means:  mean vector of the state (real), note that the dimension must be even
         coeffs: coefficients (complex)
 
     Raises:
@@ -77,7 +74,7 @@ class GaussianData(MatVecData):
             # batch_size = cov.shape[-3]
             # coeffs = math.ones((batch_size), dtype=mean.dtype)
 
-        # if isinstance(cov, QPolyData):
+        # if isinstance(cov, QPolyData): #NOTE: what do we do about this? support or not?
         #     cov, mean, coeffs = self._from_QPolyData(poly=cov)
         #Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
         # if (cov + 1j*sympmat(self.num_modes)).numpy().all() >= 0:
@@ -101,43 +98,46 @@ class GaussianData(MatVecData):
 
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-            try: # we first assume it's a scalar...
+            try:
+                joint_covs = self._compute_mul_covs(other=other)
+                        
+                joint_means = self._compute_mul_means(other=other)
+
+                joint_coeffs = self._compute_mul_coeffs(other=other,
+                                                        joint_covs=joint_covs,
+                                                        joint_means=joint_means)
+                return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
+            except AttributeError:
                 new_coeffs = self.coeffs * other
                 return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
-            
-            except TypeError as e: #... if that fails, then we check whether it's the same class
-                if duck_type_checker(other, self):
-                    joint_covs = self._compute_mul_covs(other=other)
-                        
-                    joint_means = self._compute_mul_means(other=other)
+            except TypeError as e:
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+                    
 
-                    joint_coeffs = self._compute_mul_coeffs(other=other,
-                                                            joint_covs=joint_covs,
-                                                            joint_means=joint_means)
-                    return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
-            
-                else: # since it's neither a scalar nor the same class, we can't be bothered
-                    raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}."
-                                    ) from e
-
-                
-                
-            
 
     def _compute_mul_covs(self, other:GaussianData) -> Tensor:
         r""" Computes the combined covariances when multiplying Gaussian-represented states.
+
+        Args:
+            other: another GaussianData object which covariance will be multiplied
         
         Returns:
             The tensor of combined covariances
         """
         combined_covs = [math.matmul(c1, math.solve(c1 + c2, c2)) 
-                         for c1 in self.cov for c2 in other.cov]
+                         for c1 in self.cov 
+                         for c2 in other.cov]
         return math.astensor(combined_covs)
             
     
     def _compute_mul_coeffs(self, other:GaussianData, joint_covs:Tensor, joint_means:Tensor
                             ) -> Tensor:
         r""" Computes the combined coefficients when multiplying Gaussian-represented states.
+
+        Args:
+            other:          another GaussianData object which coeffs will be multiplied
+            joint_covs:     the combined covariances of the two objects
+            joint_means:    the combined means of the two objects
         
         Returns:
             The tensor of multiplied coefficients
@@ -162,8 +162,11 @@ class GaussianData(MatVecData):
     def _compute_mul_means(self, other:GaussianData) -> Tensor:
         r""" Computes the combined means when multiplying Gaussian-represented states. 
 
-        Formula correpsonds to : c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 
-        for each pair of cov mat in batch.
+        Formula correpsonds to : c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 for each pair of cov mat 
+        in batch.
+
+        Args:
+            other:  another GaussianData object which means will be multiplied
 
         Returns:
             The tensor of combined multiplied means

@@ -13,12 +13,14 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 import numpy as np
-from typing import Tuple, Union, TYPE_CHECKING
-from mrmustard.math import Math
+
+from typing import Optional, TYPE_CHECKING, Union
+
 from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import Batch, RealMatrix, Scalar, Vector
-from typing import Optional
+from mrmustard.math import Math
+from mrmustard.typing import RealMatrix, Scalar, Vector
 
 # if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
 #     from mrmustard.lab.representations.data.gaussian_data import GaussianData
@@ -33,9 +35,9 @@ class QPolyData(MatVecData):
     They are the parameters of a Gaussian expressed as `c * exp(-x^T A x + x^T b)`.
 
     Args:
-        mat: quadratic coefficient
-        vec: linear coefficients
-        c: constant
+        mat:    quadratic coefficient
+        vec:    linear coefficients
+        c:      constant
     """
 
     def __init__(self, A: RealMatrix, b: Vector, c: Scalar = 1.0) -> None:
@@ -45,27 +47,27 @@ class QPolyData(MatVecData):
         # if isinstance(A, GaussianData):
         #     A, b, c = self._from_GaussianData(covmat=A)
 
-        if self._helper_check_is_real_symmetric(A):
+        if self.helper_check_is_real_symmetric(A):
             super().__init__(mat=A, vec=b, coeffs=c)
         else:
             raise ValueError("Matrix A is not real symmetric.")
 
     @property
-    def A(self) -> Optional[RealMatrix]:
+    def A(self) -> RealMatrix:
         return self.mat
 
 
     @property
-    def b(self) -> Optional[Vector]:
+    def b(self) -> Vector:
         return self.vec
 
 
     @property
-    def c(self) -> Optional[Scalar]:
+    def c(self) -> Scalar:
         return self.coeffs
 
 
-    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
+    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData: #TODO: proof it against other objects
         try: # Object case
             new_a = self.A + other.A
             new_b = self.b + other.b
@@ -74,6 +76,8 @@ class QPolyData(MatVecData):
         
         except AttributeError: # Scalar case
             return self.__class__(self.A, self.b, self.c * other)
+        except TypeError as e: #Neither same object type nor a scalar case
+             raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
         
     
     # @staticmethod
@@ -93,8 +97,4 @@ class QPolyData(MatVecData):
     #     new_coeffs = covmat.coeff * pre_coeffs
 
     #     return (covmat, b, new_coeffs)
-
-    def _helper_check_is_real_symmetric(self, A) -> bool:
-        r""" Checks that the matrix given is both real and symmetric. """
-        return np.allclose(A, np.transpose(A))
 

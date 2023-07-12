@@ -13,15 +13,17 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 import numpy as np
+
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
-from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
+from mrmustard.typing import Matrix, Scalar, Vector
 
 math = Math()
 
-class MatVecData(Data):  # Note: this class is abstract too!
+class MatVecData(Data):  # Note: this class is abstract!
     r""" Contains matrix and vector -like data for certain Representation objects.
 
     Args:
@@ -30,11 +32,7 @@ class MatVecData(Data):  # Note: this class is abstract too!
         coeffs: the coefficients 
     """
 
-    def __init__(self, 
-                 mat: Matrix,
-                 vec: Vector,
-                 coeffs: Scalar
-                 ) -> None:
+    def __init__(self, mat: Matrix,vec: Vector,coeffs: Scalar) -> None:
         self.mat = mat #math.atleast_3d(mat)
         self.vec = vec #math.atleast_2d(vec)
         self.coeffs = coeffs #math.atleast_1d(coeffs)
@@ -49,12 +47,11 @@ class MatVecData(Data):  # Note: this class is abstract too!
         try: 
             return super().same(
                 X = [self.mat, self.vec, self.coeffs],
-                Y = [other.mat, other.vec, other.coeffs],
+                Y = [other.mat, other.vec, other.coeffs]
                 )
         
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot compare {self.__class__} and {other.__class__}.") from e
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
 
     def __add__(self, other: MatVecData) -> MatVecData:
@@ -67,13 +64,23 @@ class MatVecData(Data):  # Note: this class is abstract too!
                     mat = math.concat([self.mat, other.mat], axis=0)
                     vec = math.concat([self.vec, other.vec], axis=0)
                     reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
-                    mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
+                    mat = math.matmul(math.matmul(reorder_matrix, mat), 
+                                      math.transpose(reorder_matrix))
                     vec = math.matvec(reorder_matrix, vec)
                     combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
                     return self.__class__(mat, vec, combined_coeffs)
                 
         except AttributeError as e:
             raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+        
+    def __truediv__(self, x:Scalar) -> MatVecData:
+        new_coeffs = self.coeffs/x
+        return self.__class__(self.mat, self.vec, new_coeffs)
+    
+    
+    def helper_check_is_real_symmetric(self, A) -> bool:
+        r""" Checks that the matrix given is both real and symmetric. """
+        return np.allclose(A, np.transpose(A))
         
 
     # def __and__(self, other: MatVecData) -> MatVecData:
@@ -88,9 +95,7 @@ class MatVecData(Data):  # Note: this class is abstract too!
     #         raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
         
 
-    def __truediv__(self, x:Scalar) -> MatVecData:
-        new_coeffs = self.coeffs/x
-        return self.__class__(self.mat, self.vec, new_coeffs)
+ 
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
     #     N = self.mat.shape[0]

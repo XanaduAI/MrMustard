@@ -20,33 +20,31 @@ Test inheritance - why?
 - - - - - - - - - - - -
 Just like standard inheritance, test inheritance allows us to test for properties that are common 
 throughout generations without having to use parameterization over types.
-It reinforces the *Single responsibility* principle from SOLID by allowing one test to be in charge
- of testing a single behaviour/state element and not behave as a factory at the same time.
 It promotes the Open-Closed principle from SOLID by making the implementation of new testing 
 classes seamless. When creating a new Data class NewData which inherits from Data, then the
 correspodning test class TestNewData will inherit from TestData and guarantee that everything which
 held true for the parents holds true for the child.
-Fianlly, Test Driven development (TDD) benefits from test inheritance as a test class can easily be
+Moreover, Test Driven development (TDD) benefits from test inheritance as a test class can easily be
 created for any new class.
 
 Test inheritance - how?
 - - - - - - - - - - - -
 In order to allow for test class inheritance, a few adjustments are necessary:
 
-1) The PARAMS, DATA and OTHER fixtures must be redefined in each child test file and adapted to 
-match the specific class of the child.
+1) A couple of pytest fixtures must be redefined in each child test file and adapted to match the 
+specific class of the child.
 
 2) We must accept that the instance created by OTHER is by default a deepcopy of the instance
 created by the DATA fixture. Developpers are welcome to code their own versions of the OTHER 
 fixture and we encourage them to do so whenever the need arises.
 We however advocate against using the `mark.parametrize` fixture for instances of `other` since it 
-breaks when inheriting the test. With `mark.parametrize`, the class instance will be of the type
+will break when inheriting the test. With `mark.parametrize`, the class instance will be of the type
 defined in the file where the test was written, blocking resolution sequence.
 """
 
+import numpy as np
 import operator as op
 import pytest
-import numpy as np
 
 from copy import deepcopy
 
@@ -61,6 +59,7 @@ from tests.test_lab.test_representations.test_data.mock_data import (
 #########   Instantiating class to test  #########
 @pytest.fixture
 def TYPE():
+    r"""Type of the object under test."""
     return MockData
 
 @pytest.fixture
@@ -82,7 +81,7 @@ def OTHER(DATA) -> MockData:
     return deepcopy(DATA)
 
 
-class TestData:
+class TestData():
     r"""Parent class for testing all children of the Data class.
 
     Here only the behaviours common to all children are tested.
@@ -154,7 +153,7 @@ class TestData:
 
     def test_copy_of_same_objects_are_equal(self, DATA):
         other_same = deepcopy(DATA)
-        assert (other_same == DATA) == True
+        assert DATA == other_same
 
     ###############  Outer product  ##################
     # NOTE : not implemented => not tested

@@ -17,11 +17,11 @@ Unlike some of its -abstract- parent test classes, this class is meant to be run
 
 Check parents test classe-s for more details on the rationale.
 
-The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class being tested, here
-GaussianData.
-"""
+The fixtures must correspond to the concrete class being tested, here GaussianData.
 
+"""
 import numpy as np
+import operator as op
 import pytest
 
 from copy import deepcopy
@@ -29,25 +29,28 @@ from copy import deepcopy
 from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
-
 from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 
 
 #########   Instantiating class to test  #########
 @pytest.fixture
 def TYPE():
+    r"""Type of the object under test."""
     return GaussianData
 
 @pytest.fixture
 def COV() -> Matrix:
+    r"""Some matrix for the object's parameterization."""
     return np.eye(10) * 42
 
 @pytest.fixture
 def MEANS() -> Vector:
+    r"""Some vector for the object's parameterization."""
     return np.ones(10) * 42
 
 @pytest.fixture
 def COEFFS() -> Scalar:
+    r"""Some scalar for the object's parameterization."""
     return 42
 
 @pytest.fixture
@@ -69,13 +72,13 @@ def OTHER(DATA) -> GaussianData:
     return deepcopy(DATA)
 
 
-class TestGaussianData(TestMatVecData): #TODO, first import TestData, later TestMatVecData
+class TestGaussianData(TestMatVecData):
 
     ####################  Init  ######################
 
     def test_defining_neither_cov_nor_mean_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
-            _ = GaussianData(coeffs=COEFFS)
+            GaussianData(coeffs=COEFFS)
 
 
     def test_if_coeffs_is_undefined_it_is_equal_to_1(self, COV, MEANS):
@@ -88,7 +91,7 @@ class TestGaussianData(TestMatVecData): #TODO, first import TestData, later Test
         comparison_covariance = np.eye(x)
         means = np.ones(x)
         gaussian_data = GaussianData(means=means, coeffs=COEFFS)
-        assert np.allclose(gaussian_data.cov, comparison_covariance) == True
+        assert np.allclose(gaussian_data.cov, comparison_covariance)
 
 
     @pytest.mark.parametrize('x', [0, 2, 10, 250])
@@ -96,16 +99,19 @@ class TestGaussianData(TestMatVecData): #TODO, first import TestData, later Test
         covariance = np.eye(x)
         comparison_means = np.zeros(x)
         gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
-        assert np.allclose(gaussian_data.means, comparison_means) == True
+        assert np.allclose(gaussian_data.means, comparison_means)
 
 
     def test_if_neither_means_nor_cov_is_defined_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
             GaussianData(coeffs=COEFFS)
 
-
-    def test_non_symplectic_covariance_raises_ValueError(self):
-        pass
+    @pytest.mark.skip(reason="Currently not implemented")
+    def test_non_symmetric_covariance_raises_ValueError(self, MEAN):
+        with pytest.raises(ValueError):
+            non_symmetric_mat = np.eye(10)
+            non_symmetric_mat[0] += np.array(range(10))
+            GaussianData(cov=non_symmetric_mat, means=MEAN)
 
     ##################  Negative  ####################
     # NOTE : tested in parent class
@@ -124,7 +130,7 @@ class TestGaussianData(TestMatVecData): #TODO, first import TestData, later Test
 
     ##############  Multiplication  ##################
 
-    @pytest.mark.parametrize('x', [3])
+    @pytest.mark.parametrize('x', [2, 7, 200])
     def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         multiplied_data = DATA * x

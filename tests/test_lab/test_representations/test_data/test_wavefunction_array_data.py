@@ -11,15 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" This class corresponds to test child class for the WaveFunctionArrayData class.
+""" This class corresponds to test child class for the MatVecData class.
 
 Unlike some of its -abstract- parent test classes, this class is meant to be run with pytest.
 
-Check parents test classes for more details on the 
-rationale.
+Check parents test classe-s for more details on the rationale.
 
-The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class we are testing, here
-WavefunctionArrayData.
+The fixtures must correspond to the concrete class being tested, here WavefunctionArrayData.
 """
 
 import numpy as np
@@ -39,6 +37,7 @@ from tests.test_lab.test_representations.test_data.test_array_data import TestAr
 #########   Instantiating class to test  #########
 @pytest.fixture
 def TYPE():
+    r"""Type of the object under test."""
     return WavefunctionArrayData
 
 @pytest.fixture
@@ -91,11 +90,8 @@ class TestWavefunctionArrayData(TestArrayData):
         new_obj = operator(DATA, other)
         assert np.allclose(DATA.qs, new_obj.qs)
 
-    @pytest.mark.parametrize("operator", [op.neg])
-    def test_qs_for_new_objects_are_same_as_initial_qs_after_arity1_operation(
-        self, DATA, operator
-    ):
-        new_obj = operator(DATA)
+    def test_qs_for_new_objects_are_same_as_initial_qs_after_negation(self, DATA):
+        new_obj = -DATA
         assert np.allclose(DATA.qs, new_obj.qs)
 
     ####################  Init  ######################

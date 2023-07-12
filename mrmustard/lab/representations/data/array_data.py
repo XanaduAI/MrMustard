@@ -22,7 +22,6 @@ from mrmustard.typing import Scalar, Vector
 
 math = Math()
 
-
 class ArrayData(Data):
     """Contains array-like data for certain Representation objects.
 
@@ -44,17 +43,13 @@ class ArrayData(Data):
         try:
             return super().same(X=[self.array], Y=[other.array])
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot compare {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
     def __add__(self, other: ArrayData) -> ArrayData:
         try:
             return self.__class__(array=self.array + other.array)
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot add/subtract {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, other: Scalar) -> ArrayData:
         try:
@@ -72,6 +67,4 @@ class ArrayData(Data):
         try:
             return self.__class__(array=np.outer(self.array, other.array))
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot tensor product {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e

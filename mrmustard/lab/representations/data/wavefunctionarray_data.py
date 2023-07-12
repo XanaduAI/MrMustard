@@ -22,7 +22,6 @@ from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar
-from mrmustard.utils.misc_tools import duck_type_checker
 
 math = Math()
 
@@ -40,7 +39,7 @@ class WavefunctionArrayData(ArrayData):
         self.qs = qs
 
     def __neg__(self) -> Data:
-        return self.__class__(array=-self.array, qs=self.qs)
+        return self.__class__(array= -self.array, qs=self.qs)
 
     def __eq__(self, other: ArrayData) -> bool:
         try:
@@ -49,9 +48,7 @@ class WavefunctionArrayData(ArrayData):
             )
 
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot compare {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, x: Scalar) -> ArrayData:
         try:
@@ -62,14 +59,11 @@ class WavefunctionArrayData(ArrayData):
     def __add__(self, other: ArrayData) -> WavefunctionArrayData:
         if self._qs_is_same(other):
             try:
-                return self.__class__(
-                    array=self.array + other.array, qs=self.qs
-                )  # TODO
+                return self.__class__(array=self.array + other.array, qs=self.qs)
 
             except AttributeError as e:
                 raise TypeError(
-                    f"Cannot add/subtract {self.__class__} and {other.__class__}."
-                ) from e
+                    f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
         else:
             raise ValueError("The two wave functions must have the same qs. ")
 
@@ -77,36 +71,31 @@ class WavefunctionArrayData(ArrayData):
     def __mul__(
         self, other: Union[Scalar, WavefunctionArrayData]
     ) -> WavefunctionArrayData:
-        if duck_type_checker(self, other):  # same type
+        try: #assuming its the same object type
             if self._qs_is_same(other):
                 new_array = self.array * other.array
                 return self.__class__(array=new_array, qs=self.qs)
             else:
                 raise ValueError("The two wave functions must have the same qs. ")
-        else:  # assuming it's a scalar...
-            try:
-                new_array = self.array * other
-                return self.__class__(array=new_array, qs=self.qs)
-            except TypeError as e:  # ... and it wasn't a scalar!
-                raise TypeError(
-                    f"Cannot add/subtract {self.__class__} and {other.__class__}."
-                ) from e
+        except AttributeError: # trying to see if it's a scalar
+            new_array = self.array * other
+            return self.__class__(array=new_array, qs=self.qs)
+        except TypeError as e: # it's neither the same object type nor a scalar
+            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+                
 
     def __and__(self, other: WavefunctionArrayData) -> WavefunctionArrayData:
         try:
-            return self.__class__(
-                array=np.outer(self.array, other.array), qs=np.outer(self.qs, other.qs)
-            )
+            new_array = np.outer(self.array, other.array)
+            new_qs = np.outer(self.qs, other.qs)
+            return self.__class__(array=new_array, qs=new_qs)
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot tensor {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
 
     def _qs_is_same(self, other: WavefunctionArrayData) -> bool:
         r"""Compares the qs of two WavefunctionArrayData objects."""
         try:
             return True if np.allclose(self.qs, other.qs) else False
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot compare {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e

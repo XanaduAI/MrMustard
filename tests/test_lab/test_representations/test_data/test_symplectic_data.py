@@ -11,27 +11,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import pytest
+""" This class corresponds to test child class for the MatVecData class.
+
+Unlike some of its -abstract- parent test classes, this class is meant to be run with pytest.
+
+Check parents test classe-s for more details on the rationale.
+
+The fixtures must correspond to the concrete class being tested, here SymplecticData.
+"""
+
 import numpy as np
+import operator as op
+import pytest
+
 from copy import deepcopy
 
 from mrmustard.lab.representations.data.symplectic_data import SymplecticData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
+from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct)
-from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
-
-import operator as op
 
 
 #########   Instantiating class to test  #########
 @pytest.fixture
 def TYPE():
+    r"""Type of the object under test."""
     return SymplecticData
 
 @pytest.fixture
-def SYMPLECTIC() -> Matrix: #example taken from https://mathworld.wolfram.com/SymplecticGroup.html
+def SYMPLECTIC() -> Matrix:
+    r"""A symplectic matrix used for object parameterization.
+    Taken from https://mathworld.wolfram.com/SymplecticGroup.html
+    """
     symp_mat = np.array([[1, 0, 0, 1], 
                          [0, 1, 1, 0],
                          [0, 0, 1, 0],
@@ -40,10 +53,12 @@ def SYMPLECTIC() -> Matrix: #example taken from https://mathworld.wolfram.com/Sy
 
 @pytest.fixture
 def DISPLACEMENT() -> Vector:
+    r"""Some vector for the object's parameterization."""
     return np.ones(10) * 42
 
 @pytest.fixture
 def COEFFS() -> Scalar:
+    r"""Some scalar for the object's parameterization."""
     return 42
 
 @pytest.fixture

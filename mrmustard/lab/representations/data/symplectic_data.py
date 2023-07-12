@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 import numpy as np
-from typing import Union
-from mrmustard.math import Math
+
 from mrmustard.lab.representations.data.matvec_data import MatVecData
+from mrmustard.math import Math
 from mrmustard.typing import RealMatrix, Scalar, RealVector
-from typing import Optional
 from thewalrus.quantum.gaussian_checks import is_symplectic
 
 math = Math()
@@ -27,13 +27,17 @@ math = Math()
 class SymplecticData(MatVecData):
     """ Symplectic matrix-like data for certain Representation objects.
 
+    Here the displacement vector is defined as:
+    :math:`\bm{d} = \sqrt{2\hbar}[\Re(\alpha), \Im(\alpha)]`
+
     Args:
-        symplectic (Matrix): symplectic matrix with qqpp-ordering
-        displacement (Vector): the real displacement vector :math:`\bm{d} = \sqrt{2\hbar}[\Re(\alpha), \Im(\alpha)]`
-        coeffs (Scalar) : default to be 1.
+        symplectic:     symplectic matrix with qqpp-ordering
+        displacement:   the real displacement vector 
+        coeffs:         default to be 1.
     """
 
-    def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0) -> None:
+    def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0
+                 ) -> None:
         #Check if it is a symplectic matrix
         if is_symplectic(math.asnumpy(symplectic)):
             super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)

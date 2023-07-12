@@ -17,8 +17,7 @@ Unlike some of its -abstract- parent test classes, this class is meant to be run
 
 Check parents test classe-s for more details on the rationale.
 
-The fixtures for PARAMS, DATA and OTHER must correspond to the concrete class being tested, here
-MatVecData.
+The fixtures must correspond to the concrete class being tested, here MatVecData.
 """
 
 import numpy as np
@@ -27,12 +26,10 @@ import pytest
 
 from copy import deepcopy
 
-from mrmustard.lab.representations.data.data import Data
+from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
-from mrmustard.lab.representations.data.matvec_data import MatVecData
 from tests.test_lab.test_representations.test_data.test_data import TestData
-
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct)
 
@@ -41,18 +38,22 @@ from tests.test_lab.test_representations.test_data.tools_for_tests import (
 ##################   FIXTURES  ###################
 @pytest.fixture
 def TYPE():
+    r"""Type of the object under test."""
     return MatVecData
 
 @pytest.fixture
 def MAT() -> Matrix:
+    r"""Some matrix for the object's parameterization."""
     return np.eye(10) * 42
 
 @pytest.fixture
 def VEC() -> Vector:
+    r"""Some vector for the object's parameterization."""
     return np.ones(10) * 42
 
 @pytest.fixture
 def COEFFS() -> Scalar:
+    r"""Some scalar for the object's parameterization."""
     return 42
 
 @pytest.fixture
@@ -75,7 +76,7 @@ def OTHER(DATA) -> MatVecData:
 
 
 
-class TestMatVecData(TestData): #TODO: import parent!
+class TestMatVecData(TestData):
     
     ####################  Init  ######################
 
@@ -87,7 +88,6 @@ class TestMatVecData(TestData): #TODO: import parent!
         
 
     ##################  Negative  ####################
-
     def test_negative_returns_new_object_with_neg_coeffs_and_unaltered_mat_and_vec(self, DATA):
         pre_op_data = deepcopy(DATA)
         neg_data = - DATA
@@ -98,7 +98,7 @@ class TestMatVecData(TestData): #TODO: import parent!
 
 
     ##################  Equality  ####################
-    # TODO test?
+    # NOTE: tested in parent
 
     ###########  Addition / subtraction  #############
     #TODO: more complex tests of the general concat case!
@@ -117,9 +117,9 @@ class TestMatVecData(TestData): #TODO: import parent!
         pre_op_data = deepcopy(DATA)
         divided_data = operator(DATA,x)
         helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, 
-                                                                  pre_op_data, 
-                                                                  operator, 
-                                                                  x)
+                                                            pre_op_data, 
+                                                            operator, 
+                                                            x)
 
     ###############  Multiplication  ##################
     # #TODO : write more tests (other than the generic ones from the parents)
@@ -127,8 +127,4 @@ class TestMatVecData(TestData): #TODO: import parent!
 
 
     ###############  Outer product  ##################
-    # NOTE: not implented yet so no tests
-
-
-    ##############  Helper functions  ################
-    
+    # NOTE: not implented yet so no tests    
