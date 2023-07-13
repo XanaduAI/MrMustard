@@ -3441,5 +3441,5 @@ ray = ["ray", "scikit-optimize"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9,<=3.10"
-content-hash = "735c78c4648dffaffe73ebaffd40b946c8e75aad578deec7ec13cb6e71a35a7b"
+python-versions = ">=3.9,<3.11"
+content-hash = "4bc682389a785eeb023c5eae11a3800b7e79cc3405421797fcf1bc5d6b19ef89"
