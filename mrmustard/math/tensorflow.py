@@ -382,7 +382,7 @@ class TFMath(MathInterface):
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
-            return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
+            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
 
@@ -425,7 +425,7 @@ class TFMath(MathInterface):
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
-            return np.conj(dLdA), np.conj(dLdB), np.conj(dLdC)
+            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
 
@@ -573,9 +573,9 @@ class TFMath(MathInterface):
         return tf.boolean_mask(tensor, mask)
 
     @staticmethod
-    def custom_gradient(func):
+    def custom_gradient(func, *args, **kwargs):
         """Decorator to define a function with a custom gradient."""
-        return tf.custom_gradient(func)
+        return tf.custom_gradient(func, *args, **kwargs)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)

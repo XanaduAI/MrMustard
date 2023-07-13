@@ -526,8 +526,10 @@ class State:  # pylint: disable=too-many-public-methods
         self._modes = item
         return self
 
-    def bargmann(self) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
-        r"""Returns the Bargmann representation of the state."""
+    def bargmann(self, numpy=False) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+        r"""Returns the Bargmann representation of the state.
+        If numpy=True, returns the numpy arrays instead of the backend arrays.
+        """
         if self.is_gaussian:
             if self.is_pure:
                 A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
@@ -535,6 +537,8 @@ class State:  # pylint: disable=too-many-public-methods
                 A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
         else:
             return None
+        if numpy:
+            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
 
     def get_modes(self, item) -> State:

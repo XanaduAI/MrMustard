@@ -123,9 +123,9 @@ class Dgate(Parametrized, Transformation):
             Ud = None
             for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
                 if Ud is None:
-                    Ud = fock.displacement(x[idx], y[idx], out_in)
+                    Ud = fock.displacement(x[idx], y[idx], shape=out_in)
                 else:
-                    U_next = fock.displacement(x[idx], y[idx], out_in)
+                    U_next = fock.displacement(x[idx], y[idx], shape=out_in)
                     Ud = math.outer(Ud, U_next)
 
             return math.transpose(
@@ -133,7 +133,7 @@ class Dgate(Parametrized, Transformation):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.displacement(x[0], y[0], shape)
+            return fock.displacement(x[0], y[0], shape=shape)
 
 
 class Sgate(Parametrized, Transformation):
@@ -204,16 +204,16 @@ class Sgate(Parametrized, Transformation):
             Us = None
             for idx, single_shape in enumerate(zip(shape[:N], shape[N:])):
                 if Us is None:
-                    Us = fock.squeezer(r=r[idx], phi=phi[idx], shape=single_shape)
+                    Us = fock.squeezer(r[idx], phi[idx], shape=single_shape)
                 else:
-                    U_next = fock.squeezer(r=r[idx], phi=phi[idx], shape=single_shape)
+                    U_next = fock.squeezer(r[idx], phi[idx], shape=single_shape)
                     Us = math.outer(Us, U_next)
             return math.transpose(
                 Us,
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return fock.squeezer(r=r[0], phi=phi[0], shape=shape)
+            return fock.squeezer(r[0], phi[0], shape=shape)
 
     @property
     def X_matrix(self):
@@ -466,7 +466,7 @@ class BSgate(Parametrized, Transformation):
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
-            shape,
+            shape=shape,
             method=method or settings.DEFAULT_BS_METHOD,
         )
 
