@@ -10,15 +10,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
     env:
       HYPOTHESIS_PROFILE: ci
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.9', '3.10']
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.python-version }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout repo
