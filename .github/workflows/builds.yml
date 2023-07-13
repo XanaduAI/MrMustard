@@ -35,7 +35,7 @@ jobs:
           poetry build
           pip install dist/mrmustard*.whl
 
-      - name: Install test dependencies
+      - name: Install only test dependencies
         run: poetry install --no-root --with dev
 
       - name: Run tests
