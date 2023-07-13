@@ -137,11 +137,11 @@ class TFMath(MathInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
-    def einsum(self, string: str, *tensors) -> tf.Tensor:
+    def einsum(self, string: str, *tensors, **kwargs) -> tf.Tensor:
         if type(string) is str:
-            return tf.einsum(string, *tensors)
+            return tf.einsum(string, *tensors, **kwargs)
         else:
-            return contract(string, *tensors)
+            return contract(string, *tensors, **kwargs)
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)

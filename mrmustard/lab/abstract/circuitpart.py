@@ -15,51 +15,101 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Iterator, Optional, Sequence
+from typing import Iterator, Optional, Sequence, Tuple, List, Dict
 
 from mrmustard import settings
 from mrmustard.utils.tagdispenser import TagDispenser
 
-Tag = namedtuple("Tag", ["L", "R"])
+Tags = namedtuple("Tags", ["outL", "inL", "outR", "inR"])
 
 
 class CircuitPart:
     r"""CircuitPart supplies functionality for constructing circuits out of components.
-    A CircuitPart does not know about its physical nature, it only knows about
+    A CircuitPart does not know about its physical role; it only knows about
     its place in the circuit and how to connect to other CircuitParts.
 
-    A CircuitPart has tags (pairs of integers) assigned to its input and output modes.
-    Each mode has a tag pair assigned to it, which are used to label the
+    Effectively it wraps around Kraus operators constructed out of circuit operations.
+
+    A CircuitPart assigns a pair of integers (L,R) which we call a "tag" to each Fock index.
+    In the circuit picture each input and output wire of an element is associated with a tag.
+
+    A CircuitPart provides the following functionality:
+        - it can check whether it can be connected to another CircuitPart at a given mode
+        - it can be connected to another CircuitPart at a given mode
+        - it can assign new tags to its input and output modes (disconnect)
+        - it can return its input and output modes
+        - it can return all its tags
+        - it can return its input and output tags
+        - it can return its input and output tags of type L
+        - it can return its input and output tags of type R
+
+    Arguments:
+        modes_in (list[int]): the input modes of this CircuitPart
+        modes_out (list[int]): the output modes of this CircuitPart
+        name (str): the name of this CircuitPart
+        tag_types (tuple[bool]): tuple of bools indicating which tags to assign (outL, inL, outR, inR)
+        **kwargs: additional keyword arguments
+
+    Note:
+
     """
 
     def __init__(
         self,
-        modes_in: list[int] = [],
-        modes_out: list[int] = [],
+        modes_in: List[int] = [],
+        modes_out: List[int] = [],
         name: str = None,
+        tag_types: Tuple[bool, ...] = (False,) * 4,
+        **kwargs,
     ):
-        print("=" * 80)
-        print("circuit part init with modes_in", modes_in, "modes_out", modes_out)
-        print("self is", self)
-        print("=" * 80)
-        self._reset_tags(modes_in, modes_out)
+        assert modes_in and (tag_types[1] or tag_types[3])
+        assert modes_out and (tag_types[0] or tag_types[2])
+
+        self.tags_out_L: Dict[int, int] = {}
+        self.tags_out_R: Dict[int, int] = {}
+        self.tags_in_L: Dict[int, int] = {}
+        self.tags_in_R: Dict[int, int] = {}
+
+        self.tag_types = tag_types
+        self._assign_new_tags(modes_in, modes_out, tag_types)
         self.name = name or self.__class__.__qualname__
+
+        # for k, v in kwargs.items():  # this relies on CircuitPart to be the last in the MRO
+        #     setattr(self, k, v)
 
     _repr_markdown_ = None
 
-    def _reset_tags(self, modes_in: Sequence[int] = None, modes_out: Sequence[int] = None):
+    def disconnect(self):
+        r"""Disconnects this CircuitPart from other CircuitParts by assigning
+        new tags to its input and output modes."""
+        self._assign_new_tags(
+            self.modes_in,
+            self.modes_out,
+            self.tag_types,
+        )
+
+    def _assign_new_tags(
+        self,
+        modes_in: Sequence[int],
+        modes_out: Sequence[int],
+        tag_types: Tuple[bool, ...],
+    ):
         r"""Assigns new tags to the input and output modes of this CircuitPart."""
+        tags0, tags1, tags2, tags3 = tag_types
         TD = TagDispenser()
-        self._input_tag_at_mode: dict[int, Tag] = {
-            m: Tag(TD.get_tag(), TD.get_tag()) for m in modes_in or self.modes_in
-        }
-        self._output_tag_at_mode: dict[int, tuple[int, Optional[int]]] = {
-            m: Tag(TD.get_tag(), TD.get_tag()) for m in modes_out or self.modes_out
-        }
+        if tags0:
+            self.tags_out_L = {m: TD.get_tag() for m in modes_out}
+        if tags1:
+            self.tags_out_R = {m: TD.get_tag() for m in modes_out}
+        if tags2:
+            self.tags_in_L = {m: TD.get_tag() for m in modes_in}
+        if tags3:
+            self.tags_in_R = {m: TD.get_tag() for m in modes_in}
 
     @property
     def modes(self) -> Optional[list[int]]:
-        "Returns the modes that this Operation is defined on"
+        r"""Returns the modes that this Operation is defined on.
+        For backward compatibility, modes fails if modes_in != modes_out."""
         if self.modes_in == self.modes_out:
             return list(self.modes_in)
         elif len(self.modes_in) == 0:
@@ -71,51 +121,37 @@ class CircuitPart:
                 "Different input and output modes. Please refer to modes_in and modes_out."
             )
 
-    @property  # NOTE: override this property in subclasses if the subclass has internal tags
-    def all_tags(self) -> Iterator[Tag]:
-        "Yields all tag pairs of this CircuitPart (output and input)."
-        yield from self._output_tag_at_mode.values()
-        yield from self._input_tag_at_mode.values()
+    @property
+    def all_tags(self) -> Iterator[int]:
+        "Yields all tags of this CircuitPart (outL, inL, outR, inR)."
+        yield from self.tags_out_L.values()
+        yield from self.tags_in_L.values()
+        yield from self.tags_out_R.values()
+        yield from self.tags_in_R.values()
 
     @property
-    def tags_in(self) -> Iterator[Tag]:
-        "Yields all input tag pairs of this CircuitPart."
-        yield from self._input_tag_at_mode.values()
+    def tags_in(self) -> Iterator[int]:
+        "Yields all input tags of this CircuitPart (inL, inR)."
+        yield from self.tags_in_L.values()
+        yield from self.tags_in_R.values()
 
     @property
-    def tags_out(self) -> Iterator[Tag]:
-        "Yields all output tag pairs of this CircuitPart."
-        yield from self._output_tag_at_mode.values()
+    def tags_out(self) -> Iterator[int]:
+        "Yields all output tags of this CircuitPart (outL, outR)."
+        yield from self.tags_out_L.values()
+        yield from self.tags_out_R.values()
 
     @property
     def modes_in(self) -> tuple[int]:
         "Returns the tuple of input modes that are used by this CircuitPart."
-        return tuple(self._input_tag_at_mode.keys())
+        in_modes = self.tags_in_L.keys().union(self.tags_in_R.keys())
+        return tuple(sorted(list(in_modes)))
 
     @property
     def modes_out(self) -> tuple[int]:
         "Returns the tuple of output modes that are used by this CircuitPart."
-        return tuple(self._output_tag_at_mode.keys())
-
-    @property
-    def tags_in_L(self) -> tuple[int]:
-        r"""Returns the tuple of input tags of type L that are used by this CircuitPart"""
-        return tuple(t.L for t in self.tags_in)
-
-    @property
-    def tags_in_R(self) -> tuple[int]:
-        r"""Returns the tuple of input tags of type R that are used by this CircuitPart"""
-        return tuple(t.R for t in self.tags_out)
-
-    @property
-    def tags_out_L(self) -> tuple[int]:
-        r"""Returns the tuple of output tags of type L that are used by this CircuitPart"""
-        return tuple(t.L for t in self.tags_out)
-
-    @property
-    def tags_out_R(self) -> tuple[int]:
-        r"""Returns the tuple of output tags of type R that are used by this CircuitPart"""
-        return tuple(t.R for t in self.tags_in)
+        out_modes = self.tags_out_L.keys().union(self.tags_out_R.keys())
+        return tuple(sorted(list(out_modes)))
 
     def can_connect_to(self, other: CircuitPart, mode: int) -> tuple[bool, str]:
         r"""Checks whether this CircuitPart can plug its `mode_out=mode` into the `mode_in=mode` of `other`.
@@ -135,22 +171,15 @@ class CircuitPart:
         if mode not in other.modes_in:
             return False, f"mode {mode} not an input of {other}."
 
-        if self.dual_enabled != other.dual_enabled:
-            return False, "dual tags mismatch"
+        if not set(self.modes_in).isdisjoint(other.modes_in):
+            return False, f"input modes overlap {self.modes_in and other.modes_in}"
 
-        intersection = self.modes_out.intersection(other.modes_in)
-        input_overlap = self.modes_in.intersection(other.modes_in) - intersection
-        output_overlap = self.modes_out.intersection(other.modes_out) - intersection
-
-        if len(input_overlap) > 0:
-            return False, f"input modes overlap ({input_overlap})"
-
-        if len(output_overlap) > 0:
-            return False, f"output modes overlap ({output_overlap})"
+        if not set(self.modes_out).isdisjoint(other.modes_out):
+            return False, f"output modes overlap {self.modes_out and other.modes_out}"
 
         return True, ""
 
-    def connect_to(self, other: CircuitPart, mode: int, check: bool = True):
+    def connect_to(self, other: CircuitPart, mode: int, check: bool = False):
         "Forward-connect self to other at the given mode."
         if check:
             can, fail_reason = self.can_connect_to(other, mode)

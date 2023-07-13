@@ -294,7 +294,7 @@ class Generaldyne(Measurement):
         raise NotImplementedError(f"Fock sampling not implemented for {self.__class__.__name__}")
 
     @property
-    def dual_enabled(self):
+    def has_dual(self):
         r"""Returns True if the detector does a projective measurement, False otherwise."""
         return self.state.is_mixed
 

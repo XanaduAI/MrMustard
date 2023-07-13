@@ -95,7 +95,7 @@ def circuit_text(
         str : String based graphic of the circuit.
     """
     # get all modes used by the ops and sort them
-    modes = sorted(list(set().union(*[op.modes_out | op.modes_in for op in ops])))
+    modes = sorted(list(set().union(*[set(op.modes_out) | set(op.modes_in) for op in ops])))
     # include all modes between min and max (need to draw over them)
     all_modes = range(min(modes), max(modes) + 1)
 

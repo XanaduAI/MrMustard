@@ -48,7 +48,7 @@ __all__ = [
 ]
 
 
-class Dgate(Transformation, Parametrized):
+class Dgate(Parametrized, Transformation):
     r"""Displacement gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -124,7 +124,7 @@ class Dgate(Transformation, Parametrized):
         )
 
 
-class Sgate(Transformation, Parametrized):
+class Sgate(Parametrized, Transformation):
     r"""Squeezing gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -157,6 +157,7 @@ class Sgate(Transformation, Parametrized):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
@@ -168,6 +169,7 @@ class Sgate(Transformation, Parametrized):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
+            **kwargs,
         )
 
     @property
@@ -175,7 +177,7 @@ class Sgate(Transformation, Parametrized):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
 
 
-class Rgate(Transformation, Parametrized):
+class Rgate(Parametrized, Transformation):
     r"""Rotation gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -238,7 +240,7 @@ class Rgate(Transformation, Parametrized):
         )
 
 
-class Pgate(Transformation, Parametrized):
+class Pgate(Parametrized, Transformation):
     r"""Quadratic phase gate.
 
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided. If a parameter
@@ -279,7 +281,7 @@ class Pgate(Transformation, Parametrized):
         return gaussian.quadratic_phase(self.shearing.value)
 
 
-class CXgate(Transformation, Parametrized):
+class CXgate(Parametrized, Transformation):
     r"""Controlled X gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -317,7 +319,7 @@ class CXgate(Transformation, Parametrized):
         return gaussian.controlled_X(self.s.value)
 
 
-class CZgate(Transformation, Parametrized):
+class CZgate(Parametrized, Transformation):
     r"""Controlled Z gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -356,7 +358,7 @@ class CZgate(Transformation, Parametrized):
         return gaussian.controlled_Z(self.s.value)
 
 
-class BSgate(Transformation, Parametrized):
+class BSgate(Parametrized, Transformation):
     r"""Beam splitter gate.
 
     It applies to a single pair of modes.
@@ -410,7 +412,7 @@ class BSgate(Transformation, Parametrized):
             )
 
 
-class MZgate(Transformation, Parametrized):
+class MZgate(Parametrized, Transformation):
     r"""Mach-Zehnder gate.
 
     It supports two conventions:
@@ -469,7 +471,7 @@ class MZgate(Transformation, Parametrized):
             )
 
 
-class S2gate(Transformation, Parametrized):
+class S2gate(Parametrized, Transformation):
     r"""Two-mode squeezing gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -519,7 +521,7 @@ class S2gate(Transformation, Parametrized):
             raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
-class Interferometer(Transformation, Parametrized):
+class Interferometer(Transformation):
     r"""N-mode interferometer.
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.

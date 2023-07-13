@@ -242,7 +242,7 @@ class Circuit(CircuitPart):
     def _disconnect_ops(self) -> None:
         r"""Disconnects ops in the circuit by resetting their tags."""
         for op in self._ops:
-            op._reset_tags()
+            op._assign_new_tags()
 
     def __rshift__(self, other: CircuitPart) -> Circuit:
         if isinstance(other, CircuitPart):
@@ -266,7 +266,9 @@ class Circuit(CircuitPart):
         self._connect_ops()
         tt: list(tuple(int, tuple(int, ...))) = []
         for op in self._ops:
-            tt.append((op.fock, op.tags))
+            array = op.fock()
+            if 
+            tt.append((op.fock, op.all_tags))
         self._disconnect_ops()
         # now we remap the tags so that they are unique and in order from 0 to N
         all_tags = [t for pair in tt for t in pair[1]]

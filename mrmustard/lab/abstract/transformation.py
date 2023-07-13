@@ -53,11 +53,7 @@ class Transformation(CircuitPart):
         name: str,
         **kwargs,
     ):
-        super().__init__(
-            modes_in=modes_in,
-            modes_out=modes_out,
-            name=name,
-        )
+        super().__init__(modes_in=modes_in, modes_out=modes_out, name=name, **kwargs)
 
     def primal(self, state: State) -> State:
         r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
@@ -90,7 +86,7 @@ class Transformation(CircuitPart):
         return new_state
 
     def fock_tensors_and_tags(self, cutoffs=None) -> list[tuple[ComplexTensor, tuple[int, ...]]]:
-        cutoffs = cutoffs or self.cutoffs
+        cutoffs = cutoffs or self.cutoffs  # self.cutoffs must be set if cutoffs not supplied
         if self.is_unitary:
             U = self.U(cutoffs)
             return [
@@ -259,6 +255,13 @@ class Transformation(CircuitPart):
             d if d is not None else math.zeros((2 * self.num_modes,)),
             shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
         )
+
+    @property
+    def fock(self):
+        if self.is_unitary:
+            return self.U(self.cutoffs)
+        else:
+            return self.choi(self.cutoffs)
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.
