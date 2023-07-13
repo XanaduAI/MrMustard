@@ -42,7 +42,7 @@ jobs:
           mv mrmustard src
 
       - name: Install only test dependencies
-        run: poetry install --no-root --with dev
+        run: poetry install --no-root --extras "ray" --with dev
 
       - name: Run tests
         run: python -m pytest tests -p no:warnings --tb=native
