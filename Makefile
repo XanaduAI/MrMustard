@@ -18,11 +18,11 @@ install:
 ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
-	$(PYTHON) setup.py install
+	poetry install
 
 .PHONY: dist
 dist:
-	$(PYTHON) setup.py sdist
+	poetry build
 
 .PHONY : clean
 clean:
