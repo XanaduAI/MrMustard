@@ -5,6 +5,7 @@ description = "Differentiable quantum Gaussian circuits"
 authors = ["Xanadu <filippo@xanadu.ai>"]
 license = "Apache License 2.0"
 readme = "README.md"
+include = ["pyproject.toml"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
