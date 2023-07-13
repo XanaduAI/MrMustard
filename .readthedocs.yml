@@ -6,6 +6,12 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.9"
+  jobs:
+    post_install:
+      - pip install --no-cache-dir --upgrade pip
+      - pip install --no-cache-dir poetry==1.4.0
+      - poetry config virtualenvs.create false
+      - poetry install --with doc
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -16,9 +22,5 @@ sphinx:
 #    - pdf
 
 # Optionally declare the Python requirements required to build your docs
-python:
-   install:
-   - requirements: doc/requirements.txt
-   - method: pip
-     path: .
-   system_packages: true
+# python:
+#    install:
