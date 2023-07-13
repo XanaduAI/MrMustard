@@ -116,12 +116,15 @@ class State(CircuitPart):
         self._LR = None
         if cov is not None and means is not None:
             self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(eigenvalues, 2.0 / settings.HBAR)
             self.num_modes = symplectic.shape[-1] // 2
         elif ket is not None or dm is not None:
             self.is_gaussian = False
+            self.is_hilbert_vector = ket is not None
             self.num_modes = len(ket.shape) if ket is not None else len(dm.shape) // 2
             self._purity = 1.0 if ket is not None else None
         else:
@@ -156,7 +159,7 @@ class State(CircuitPart):
     @property
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
-        return True if self._ket is not None else np.isclose(self.purity, 1.0, atol=1e-6)
+        return np.isclose(self.purity, 1.0, atol=1e-6)
 
     @property
     def means(self) -> Optional[RealVector]:
@@ -180,14 +183,22 @@ class State(CircuitPart):
 
     @property
     def cutoffs(self) -> List[int]:
-        r"""Returns the cutoff dimensions for each mode."""
-        if self._cutoffs is not None:
-            return self._cutoffs  # TODO: allow self._cutoffs = [N, None]
-        if self._ket is None and self._dm is None:
-            return fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
-        return list(
-            self.fock.shape[: self.num_modes]
-        )  # NOTE: triggered only if the fock representation already exists
+        r"""Returns the Hilbert space dimension of each mode."""
+        if self._cutoffs is None:
+            if self._ket is None and self._dm is None:
+                self._cutoffs = fock.autocutoffs(
+                    self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
+                )
+            else:
+                self._cutoffs = [
+                    int(c)
+                    for c in (
+                        self._ket.shape
+                        if self._ket is not None
+                        else self._dm.shape[: self.num_modes]
+                    )
+                ]
+        return self._cutoffs
 
     @property
     def shape(self) -> List[int]:
@@ -197,14 +208,14 @@ class State(CircuitPart):
         the first two moments of the number operator.
         """
         # NOTE: if we initialize State(dm=pure_dm), self.fock returns the dm, which does not have shape self.cutoffs
-        return self.cutoffs if self.is_pure else self.cutoffs + self.cutoffs
+        return self.cutoffs if self.is_hilbert_vector else self.cutoffs + self.cutoffs
 
     @property
     def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=self.shape, return_dm=self.is_mixed
+                self.cov, self.means, shape=self.shape, return_dm=not self.is_hilbert_vector
             )
             if self.is_mixed:
                 self._dm = _fock
@@ -235,7 +246,7 @@ class State(CircuitPart):
         r"""Returns the norm of the state."""
         if self.is_gaussian:
             return self._norm
-        return fock.norm(self.fock, self._dm is not None)
+        return fock.norm(self.fock, not self.is_hilbert_vector)
 
     @property
     def probability(self) -> float:
@@ -294,7 +305,7 @@ class State(CircuitPart):
                 # if state is pure and has a density matrix, calculate the ket
                 if self.is_pure:
                     self._ket = fock.dm_to_ket(self._dm)
-            current_cutoffs = list(self._ket.shape[: self.num_modes])
+            current_cutoffs = [int(s) for s in self._ket.shape]
             if cutoffs != current_cutoffs:
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
@@ -325,7 +336,7 @@ class State(CircuitPart):
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs * 2, return_dm=True
+                    self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
@@ -528,8 +539,10 @@ class State(CircuitPart):
     #     self._modes = item
     #     return self
 
-    def bargmann(self) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
-        r"""Returns the Bargmann representation of the state."""
+    def bargmann(self, numpy=False) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+        r"""Returns the Bargmann representation of the state.
+        If numpy=True, returns the numpy arrays instead of the backend arrays.
+        """
         if self.is_gaussian:
             if self.is_pure:
                 A, B, C = bargmann.wigner_to_bargmann_psi(self.cov, self.means)
@@ -537,6 +550,8 @@ class State(CircuitPart):
                 A, B, C = bargmann.wigner_to_bargmann_rho(self.cov, self.means)
         else:
             return None
+        if numpy:
+            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
 
     def get_modes(self, item) -> State:

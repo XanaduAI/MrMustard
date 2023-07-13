@@ -40,7 +40,7 @@ class Settings:
         self.AUTOCUTOFF_MIN_CUTOFF = 1
         self.CIRCUIT_DECIMALS = 3
         # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
-        self.EQ_TRANSFORMATION_CUTOFF = 5
+        self.EQ_TRANSFORMATION_CUTOFF = 3  # 3 is enough to include a full step of the rec relations
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
         self.OPT_EINSUM_OPTIMIZE = "auto-hq"  # can be "auto", "greedy", "optimal", "auto-hq"
@@ -54,6 +54,7 @@ class Settings:
         self.ALLOW_WIRE_REUSE = True
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
+        self.DEFAULT_BS_METHOD = "vanilla"  # can be 'vanilla' or 'schwinger'
 
     @property
     def SEED(self):

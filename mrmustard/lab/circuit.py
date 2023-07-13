@@ -214,6 +214,7 @@ from mrmustard import settings
 from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.typing import Matrix, Tensor, Vector
+
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
@@ -283,15 +284,18 @@ class Circuit(CircuitPart):
 
     # old methods that we keep for now:
 
-    @property
     def XYd(
         self,
-    ) -> tuple[Matrix, Matrix, Vector]:  # NOTE: Overriding Transformation.XYd for efficiency.
+        allow_none: bool = True,
+    ) -> Tuple[
+        RealMatrix, RealMatrix, RealVector
+    ]:  # NOTE: Overriding Transformation.XYd for efficiency
+
         X = XPMatrix(like_1=True)
         Y = XPMatrix(like_0=True)
         d = XPVector()
         for op in self._ops:
-            opx, opy, opd = op.XYd
+            opx, opy, opd = op.XYd(allow_none)
             opX = XPMatrix.from_xxpp(opx, modes=(op.modes, op.modes), like_1=True)
             opY = XPMatrix.from_xxpp(opy, modes=(op.modes, op.modes), like_0=True)
             opd = XPVector.from_xxpp(opd, modes=op.modes)

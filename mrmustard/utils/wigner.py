@@ -14,8 +14,9 @@
 
 """This module contains the calculation of the Wigner function."""
 
-from numba import njit
 import numpy as np
+from numba import njit
+
 from mrmustard import settings
 
 
@@ -27,7 +28,7 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
 
     Args:
         rho (complex array): the density matrix of the state in Fock representation
-        xvec (array): array of discretized :math:`x` quadrature values
+        qvec (array): array of discretized :math:`q` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
         hbar (optional float): the value of `\hbar`, defaults to ``settings.HBAR``.
 
@@ -40,7 +41,7 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
     P = np.outer(np.ones_like(qvec), pvec)
 
     cutoff = rho.shape[-1]
-    A = (Q + P * 1.0j) / (2 * np.sqrt(hbar / 2))
+    A = (Q + P * 1.0j) / np.sqrt(2 * hbar)
 
     Wmat = np.zeros((2, cutoff) + A.shape, dtype=np.complex128)
 

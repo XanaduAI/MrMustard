@@ -19,21 +19,14 @@
 
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Iterable,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from mrmustard import settings
 from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
 from mrmustard.typing import ComplexTensor, RealMatrix, RealVector
 
@@ -54,6 +47,23 @@ class Transformation(CircuitPart):
         **kwargs,
     ):
         super().__init__(modes_in=modes_in, modes_out=modes_out, name=name, **kwargs)
+
+    def bargmann(self, numpy=False):
+        X, Y, d = self.XYd(allow_none=False)
+        if self.is_unitary:
+            A, B, C = bargmann.wigner_to_bargmann_U(
+                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
+                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
+            )
+        else:
+            A, B, C = bargmann.wigner_to_bargmann_Choi(
+                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
+                Y if Y is not None else math.zeros((d.shape[-1], d.shape[-1]), dtype=d.dtype),
+                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
+            )
+        if numpy:
+            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
+        return A, B, C
 
     def primal(self, state: State) -> State:
         r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
@@ -107,7 +117,7 @@ class Transformation(CircuitPart):
         Returns:
             State: the transformed state
         """
-        X, Y, d = self.XYd if not dual else self.XYd_dual
+        X, Y, d = self.XYd(allow_none=False) if not dual else self.XYd_dual(allow_none=False)
         cov, means = gaussian.CPTP(state.cov, state.means, X, Y, d, state.modes, self.modes)
         new_state = State(
             cov=cov, means=means, modes=state.modes, _norm=state.norm
@@ -126,13 +136,15 @@ class Transformation(CircuitPart):
         """
         op_idx = [state.modes.index(m) for m in self.modes]
         if self.is_unitary:
-            U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
+            # until we have output autocutoff we use the same input cutoff list
+            U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx] * 2)
             U = math.dagger(U) if dual else U
             if state.is_pure:
                 return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
             return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
         else:
-            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx])
+            # until we have output autocutoff we use the same input cutoff list
+            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx] * 4)
             n = state.num_modes
             N0 = list(range(0, n))
             N1 = list(range(n, 2 * n))
@@ -202,59 +214,70 @@ class Transformation(CircuitPart):
         if (d := self.d_vector) is None:
             return None
         if (Xdual := self.X_matrix_dual) is None:
-            return d
-        return math.matmul(Xdual, d)
+            return -d
+        return -math.matmul(Xdual, d)
 
-    @property
-    def XYd(self) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    def XYd(
+        self, allow_none: bool = True
+    ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple.
 
         Override in subclasses if computing ``X``, ``Y`` and ``d`` together is more efficient.
         """
-        return self.X_matrix, self.Y_matrix, self.d_vector
+        if allow_none:
+            return self.X_matrix, self.Y_matrix, self.d_vector
+        X = math.eye(2 * self.num_modes) if self.X_matrix is None else self.X_matrix
+        Y = math.zeros_like(X) if self.Y_matrix is None else self.Y_matrix
+        d = math.zeros_like(X[:, 0]) if self.d_vector is None else self.d_vector
+        return X, Y, d
 
-    @property
-    def XYd_dual(self) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
+    def XYd_dual(
+        self, allow_none: bool = True
+    ) -> tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
         r"""Returns the ```(X, Y, d)``` triple of the dual of the current transformation.
 
         Override in subclasses if computing ``Xdual``, ``Ydual`` and ``ddual`` together is more efficient.
         """
-        return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
-
-    @property
-    def is_phase_covariant(self) -> bool:
-        X, Y, d = self.XYd
-        if d is not None:
-            return False
-        if X is not None and not math.allclose(self.X, math.diag(math.diag_part(self.X))):
-            return False
-        if Y is not None and not math.allclose(self.Y, math.diag(math.diag_part(self.Y))):
-            return False
-        return True
+        if allow_none:
+            return self.X_matrix_dual, self.Y_matrix_dual, self.d_vector_dual
+        Xdual = math.eye(2 * self.num_modes) if self.X_matrix_dual is None else self.X_matrix_dual
+        Ydual = math.zeros_like(Xdual) if self.Y_matrix_dual is None else self.Y_matrix_dual
+        ddual = math.zeros_like(Xdual[:, 0]) if self.d_vector_dual is None else self.d_vector_dual
+        return Xdual, Ydual, ddual
 
     def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the transformation."""
         if not self.is_unitary:
             return None
-        X, _, d = self.XYd
-        return fock.wigner_to_fock_U(
-            X if X is not None else math.eye(2 * self.num_modes),
-            d if d is not None else math.zeros((2 * self.num_modes,)),
-            shape=cutoffs * 2 if len(cutoffs) == self.num_modes else cutoffs,
-        )
+        X, _, d = self.XYd(allow_none=False)
+        if len(cutoffs) == self.num_modes:
+            shape = tuple(cutoffs) * 2
+        elif len(cutoffs) == 2 * self.num_modes:
+            shape = tuple(cutoffs)
+
+        else:
+            raise ValueError(
+                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {2*self.num_modes})"
+            )
+        return fock.wigner_to_fock_U(X, d, shape=shape)
 
     def choi(self, cutoffs: Sequence[int]):
         r"""Returns the Choi representation of the transformation."""
+        if len(cutoffs) == self.num_modes:
+            shape = tuple(cutoffs) * 4
+        elif len(cutoffs) == 4 * self.num_modes:
+            shape = tuple(cutoffs)
+        else:
+            raise ValueError(
+                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {4*self.num_modes})"
+            )
         if self.is_unitary:
-            U = self.U(cutoffs)
-            return fock.U_to_choi(U)
-        X, Y, d = self.XYd
-        return fock.wigner_to_fock_Choi(
-            X if X is not None else math.eye(2 * self.num_modes),
-            Y if Y is not None else math.zeros((2 * self.num_modes, 2 * self.num_modes)),
-            d if d is not None else math.zeros((2 * self.num_modes,)),
-            shape=cutoffs * 4 if len(cutoffs) == self.num_modes else cutoffs,
-        )
+            U = self.U(shape[: self.num_modes])
+            Udual = self.U(shape[self.num_modes :])
+            return fock.U_to_choi(U, Udual)
+        X, Y, d = self.XYd(allow_none=False)
+
+        return fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
 
     @property
     def fock(self):
@@ -352,7 +375,9 @@ class Transformation(CircuitPart):
             return self.dual(other)
         if isinstance(other, Transformation):
             return self >> other  # so that the dual is self.dual(other.dual(x))
-        raise ValueError(f"{other} is not a valid state or transformation.")
+        raise ValueError(
+            f"{other} of type {other.__class__} is not a valid state or transformation."
+        )
 
     # pylint: disable=too-many-branches,too-many-return-statements
     def __eq__(self, other):
@@ -361,59 +386,14 @@ class Transformation(CircuitPart):
             return False
         if not (self.is_gaussian and other.is_gaussian):
             return np.allclose(
-                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
-                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * self.num_modes),
+                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
                 rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
             )
 
-        sX, sY, sd = self.XYd
-        oX, oY, od = other.XYd
-        if sX is None:
-            if oX is not None:
-                if not np.allclose(
-                    oX, np.eye(oX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                ):
-                    return False
-        if oX is None:
-            if sX is not None:
-                if not np.allclose(
-                    sX, np.eye(sX.shape[0]), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                ):
-                    return False
-        if sX is not None and oX is not None:
-            if not np.allclose(sX, oX):
-                return False
-        if sY is None:
-            if oY is not None:
-                if not np.allclose(
-                    oY, np.zeros_like(oY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                ):
-                    return False
-        if oY is None:
-            if sY is not None:
-                if not np.allclose(
-                    sY, np.zeros_like(sY), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                ):
-                    return False
-        if sY is not None and oY is not None:
-            if not np.allclose(sY, oY):
-                return False
-        if sd is None:
-            if od is not None:
-                if not np.allclose(
-                    sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                ):
-                    return False
-        if od is None:
-            if sd is not None:
-                if not np.allclose(
-                    sd, np.zeros_like(sd), rtol=settings.EQ_TRANSFORMATION_RTOL_GAUSS
-                ):
-                    return False
-        if sd is not None and od is not None:
-            if not np.allclose(sd, od):
-                return False
-        return True
+        sX, sY, sd = self.XYd(allow_none=False)
+        oX, oY, od = other.XYd(allow_none=False)
+        return np.allclose(sX, oX) and np.allclose(sY, oY) and np.allclose(sd, od)
 
     def __repr__(self):
         class_name = self.__class__.__name__

@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import pytest
-from hypothesis import given, strategies as st, assume
-from hypothesis.extra.numpy import arrays
-from mrmustard.physics import gaussian
+
+from hypothesis import given
+
 from mrmustard.lab import *
-from mrmustard import settings
-from tests import random
+from tests.random import angle, medium_float, n_mode_pure_state, r
 
 
 def test_circuit_placement_SD():
@@ -53,3 +50,12 @@ def test_is_unitary():
     assert Ggate(1).is_unitary
     assert (Ggate(1) >> Ggate(1)).is_unitary
     assert not (Ggate(2) >> Attenuator([0.1, 0.2])).is_unitary
+
+
+@given(
+    r=r, phi1=angle, phi2=angle, x=medium_float, y=medium_float, G=n_mode_pure_state(num_modes=1)
+)
+def test_shift(r, phi1, phi2, x, y, G):
+    "test that the leftshift/rightshift operator works as expected"
+    circ = Sgate(r, phi1) >> Dgate(x, y) >> Rgate(phi2)
+    assert G == (circ << G) >> circ
