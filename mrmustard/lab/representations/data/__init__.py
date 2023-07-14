@@ -15,4 +15,4 @@
 """ This package contains the modules implementing base classes for datas.
 """
 
-__all__=['GaussianData', 'QPolyData', 'ArrayData', 'SymplecticData', 'WavefunctionArrayData']
+__all__ = ["GaussianData", "QPolyData", "ArrayData", "SymplecticData", "WavefunctionArrayData"]

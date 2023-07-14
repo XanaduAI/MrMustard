@@ -148,18 +148,24 @@ class TestGaussianData(TestMatVecData):
     @pytest.mark.parametrize("dim", [3])
     @pytest.mark.skip(reason="Doesn't make sense until batch dimension.")
     def test_gaussian_resulting_from_multiplication_is_correct(self, TYPE, c, dim):
-        X = np.random.rand(dim*2) # TODO: can this be moved into a parameterize fixture which would call dim?
+        X = np.random.rand(
+            dim * 2
+        )  # TODO: can this be moved into a parameterize fixture which would call dim?
         C = 42
-        cov_input_a = np.eye(dim*2)# random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
-        mean_input_a = np.random.rand(dim*2)
+        cov_input_a = np.eye(
+            dim * 2
+        )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
+        mean_input_a = np.random.rand(dim * 2)
         c_input_a = C
-        a_params = {'cov': cov_input_a, 'means': mean_input_a, 'coeffs':c_input_a}
+        a_params = {"cov": cov_input_a, "means": mean_input_a, "coeffs": c_input_a}
         input_gaussian_state_a = general_factory(TYPE, **a_params)
 
-        cov_input_b = np.eye(dim*2)#random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
-        mean_input_b = np.random.rand(dim*2)
-        c_input_b = C 
-        b_params = {'cov': cov_input_b, 'means': mean_input_b, 'coeffs':c_input_b}
+        cov_input_b = np.eye(
+            dim * 2
+        )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
+        mean_input_b = np.random.rand(dim * 2)
+        c_input_b = C
+        b_params = {"cov": cov_input_b, "means": mean_input_b, "coeffs": c_input_b}
         input_gaussian_state_b = general_factory(TYPE, **b_params)
 
         output_gaussian_state = input_gaussian_state_a * input_gaussian_state_b
@@ -175,8 +181,6 @@ class TestGaussianData(TestMatVecData):
         assert isinstance(gaussian_of_input_b, np.ndarray)
         assert isinstance(gaussian_of_output, np.ndarray)
         assert np.allclose(gaussian_of_input_a * gaussian_of_input_b, gaussian_of_output)
-        
-
 
     ###############  Outer product  ##################
     # NOTE : not implemented => not tested
@@ -186,5 +190,3 @@ class TestGaussianData(TestMatVecData):
         precision_mat = np.linalg.inv(covariance)
         gaussian = c * -np.transpose(np.exp(x, mean)) * precision_mat * (x - mean)
         return np.asarray(gaussian)
-
-
