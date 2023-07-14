@@ -57,8 +57,8 @@ class SymplecticData(MatVecData):
         if isinstance(other, SymplecticData):
             raise TypeError("Symplectic can only be multiplied by a scalar")
         else:
-            try: #Maybe other is a scalar
-                new_coeffs = self.coeffs * other 
+            try:  # Maybe other is a scalar
+                new_coeffs = self.coeffs * other
                 return self.__class__(self.symplectic, self.displacement, new_coeffs)
             except TypeError as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e

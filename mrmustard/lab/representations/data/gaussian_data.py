@@ -106,10 +106,10 @@ class GaussianData(MatVecData):
             )
             return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
         else:
-            try: # scalar
+            try:  # scalar
                 new_coeffs = self.coeffs * other
                 return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
-            except TypeError as e: #Neither GaussianData nor scalar
+            except TypeError as e:  # Neither GaussianData nor scalar
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def _compute_mul_covs(self, other: GaussianData) -> Tensor:
@@ -125,9 +125,13 @@ class GaussianData(MatVecData):
         # c1 = math.expand_dims(c1, axis=0)
         # c2 = math.expand_dims(c2, axis=0)
         # c1c2 = math.concat([c1, c2], axis=1)
-        combined_covs = [ #note the [] around cs are just there until we support the batch dimension
-            math.matmul([c1], math.solve([c1] + [c2], [c2])) for c1 in self.cov for c2 in other.cov
-        ]
+        combined_covs = (
+            [  # note the [] around cs are just there until we support the batch dimension
+                math.matmul([c1], math.solve([c1] + [c2], [c2]))
+                for c1 in self.cov
+                for c2 in other.cov
+            ]
+        )
         return math.astensor(combined_covs)
 
     def _compute_mul_coeffs(

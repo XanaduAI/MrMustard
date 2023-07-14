@@ -66,15 +66,14 @@ class QPolyData(MatVecData):
     def c(self) -> Scalar:
         return self.coeffs
 
-    def __mul__(
-        self, other: Union[Scalar, QPolyData]) -> QPolyData:
-        if isinstance(other, QPolyData): # TODO: proof it against other objects
+    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
+        if isinstance(other, QPolyData):  # TODO: proof it against other objects
             new_a = self.A + other.A
             new_b = self.b + other.b
             new_coeffs = self.c * other.c
             return self.__class__(A=new_a, b=new_b, c=new_coeffs)
         else:
-            try: # scalar
+            try:  # scalar
                 new_coeffs = self.c * other
                 return self.__class__(self.A, self.b, new_coeffs)
             except TypeError as e:  # Neither same object type nor a scalar case

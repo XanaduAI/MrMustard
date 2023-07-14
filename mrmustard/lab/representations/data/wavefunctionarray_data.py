@@ -63,7 +63,8 @@ class WavefunctionArrayData(ArrayData):
 
             except AttributeError as e:
                 raise TypeError(
-                    f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+                    f"Cannot add/subtract {self.__class__} and {other.__class__}."
+                ) from e
         else:
             raise ValueError("The two wave functions must have the same qs. ")
 
@@ -75,7 +76,7 @@ class WavefunctionArrayData(ArrayData):
             else:
                 raise ValueError("The two wave functions must have the same qs. ")
         else:
-            try: # Maybe it's a scalar...
+            try:  # Maybe it's a scalar...
                 new_array = self.array * other
                 return self.__class__(array=new_array, qs=self.qs)
             except TypeError as e:  # it's neither the same object type nor a scalar
