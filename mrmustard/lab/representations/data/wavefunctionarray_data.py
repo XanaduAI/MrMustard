@@ -63,23 +63,23 @@ class WavefunctionArrayData(ArrayData):
 
             except AttributeError as e:
                 raise TypeError(
-                    f"Cannot add/subtract {self.__class__} and {other.__class__}."
-                ) from e
+                    f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
         else:
             raise ValueError("The two wave functions must have the same qs. ")
 
     def __mul__(self, other: Union[Scalar, WavefunctionArrayData]) -> WavefunctionArrayData:
-        try:  # assuming its the same object type
+        if isinstance(other, WavefunctionArrayData):
             if self._qs_is_same(other):
                 new_array = self.array * other.array
                 return self.__class__(array=new_array, qs=self.qs)
             else:
                 raise ValueError("The two wave functions must have the same qs. ")
-        except AttributeError:  # trying to see if it's a scalar
-            new_array = self.array * other
-            return self.__class__(array=new_array, qs=self.qs)
-        except TypeError as e:  # it's neither the same object type nor a scalar
-            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+        else:
+            try: # Maybe it's a scalar...
+                new_array = self.array * other
+                return self.__class__(array=new_array, qs=self.qs)
+            except TypeError as e:  # it's neither the same object type nor a scalar
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: WavefunctionArrayData) -> WavefunctionArrayData:
         try:
