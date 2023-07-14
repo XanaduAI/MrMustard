@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 from typing import Optional, TYPE_CHECKING, Union
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
@@ -94,7 +96,7 @@ class GaussianData(MatVecData):
         return self.coeffs
 
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-        try:
+        if isinstance(other, GaussianData):
             joint_covs = self._compute_mul_covs(other=other)
 
             joint_means = self._compute_mul_means(other=other)
@@ -103,11 +105,12 @@ class GaussianData(MatVecData):
                 other=other, joint_covs=joint_covs, joint_means=joint_means
             )
             return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
-        except AttributeError:
-            new_coeffs = self.coeffs * other
-            return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
-        except TypeError as e:
-            raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+        else:
+            try: # scalar
+                new_coeffs = self.coeffs * other
+                return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
+            except TypeError as e: #Neither GaussianData nor scalar
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def _compute_mul_covs(self, other: GaussianData) -> Tensor:
         r"""Computes the combined covariances when multiplying Gaussian-represented states.
@@ -118,6 +121,10 @@ class GaussianData(MatVecData):
         Returns:
             The tensor of combined covariances
         """
+        # NOTE: will this get solved when the batch dimension is supported everywhere?
+        # c1 = math.expand_dims(c1, axis=0)
+        # c2 = math.expand_dims(c2, axis=0)
+        # c1c2 = math.concat([c1, c2], axis=1)
         combined_covs = [ #note the [] around cs are just there until we support the batch dimension
             math.matmul([c1], math.solve([c1] + [c2], [c2])) for c1 in self.cov for c2 in other.cov
         ]
@@ -155,7 +162,9 @@ class GaussianData(MatVecData):
                 other.coeffs,
             )
         ]
-        return math.astensor(combined_coeffs)
+        res = math.astensor(combined_coeffs)
+        print(type)
+        return res
 
     def _compute_mul_means(self, other: GaussianData) -> Tensor:
         r"""Computes the combined means when multiplying Gaussian-represented states.
