@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Iterator, Optional, Sequence, Tuple, List, Dict
+from typing import Dict, Iterator, List, Optional, Sequence, Tuple
 
 from mrmustard import settings
 from mrmustard.utils.tagdispenser import TagDispenser
@@ -47,7 +47,7 @@ class CircuitPart:
         modes_in (list[int]): the input modes of this CircuitPart
         modes_out (list[int]): the output modes of this CircuitPart
         name (str): the name of this CircuitPart
-        tag_types (tuple[bool]): tuple of bools indicating which tags to assign (outL, inL, outR, inR)
+        tags (Tuple[bool | Tuple, ...]): bools indicating which tags to assign (outL, inL, outR, inR). If True, they are assigned automatically.
         **kwargs: additional keyword arguments
 
     Note:
@@ -59,23 +59,21 @@ class CircuitPart:
         modes_in: List[int] = [],
         modes_out: List[int] = [],
         name: str = None,
-        tag_types: Tuple[bool, ...] = (False,) * 4,
+        tags: Tuple[bool | Tuple, ...] = (False,) * 4,
         **kwargs,
     ):
-        assert modes_in and (tag_types[1] or tag_types[3])
-        assert modes_out and (tag_types[0] or tag_types[2])
+        assert modes_in and (tags[1] or tags[3])
+        assert modes_out and (tags[0] or tags[2])
 
+        self.tag_types = tuple(bool(t) for t in tags)
         self.tags_out_L: Dict[int, int] = {}
-        self.tags_out_R: Dict[int, int] = {}
         self.tags_in_L: Dict[int, int] = {}
+        self.tags_out_R: Dict[int, int] = {}
         self.tags_in_R: Dict[int, int] = {}
-
-        self.tag_types = tag_types
-        self._assign_new_tags(modes_in, modes_out, tag_types)
+        self._assign_new_tags(modes_in, modes_out, tags)
         self.name = name or self.__class__.__qualname__
 
-        # for k, v in kwargs.items():  # this relies on CircuitPart to be the last in the MRO
-        #     setattr(self, k, v)
+        super().__init__(**kwargs)
 
     _repr_markdown_ = None
 
@@ -92,18 +90,29 @@ class CircuitPart:
         self,
         modes_in: Sequence[int],
         modes_out: Sequence[int],
-        tag_types: Tuple[bool, ...],
+        tags: Tuple[bool | Tuple, ...],
     ):
         r"""Assigns new tags to the input and output modes of this CircuitPart."""
-        tags0, tags1, tags2, tags3 = tag_types
+        tags0, tags1, tags2, tags3 = tags
         TD = TagDispenser()
-        if tags0:
+        if isinstance(tags0, tuple):
+            self.tags_out_L = {m:tag for m,tag in zip(modes_out, tags0)}
+        elif tags0:
             self.tags_out_L = {m: TD.get_tag() for m in modes_out}
-        if tags1:
-            self.tags_out_R = {m: TD.get_tag() for m in modes_out}
-        if tags2:
+
+        if isinstance(tags1, tuple):
+            self.tags_in_L = {m:tag for m,tag in zip(modes_in, tags1)}
+        elif tags1:
             self.tags_in_L = {m: TD.get_tag() for m in modes_in}
-        if tags3:
+
+        if isinstance(tags2, tuple):
+            self.tags_out_R = {m:tag for m,tag in zip(modes_out, tags2)}
+        elif tags2:
+            self.tags_out_R = {m: TD.get_tag() for m in modes_out}
+
+        if isinstance(tags3, tuple):
+            self.tags_in_R = {m:tag for m,tag in zip(modes_in, tags3)}
+        elif tags3:
             self.tags_in_R = {m: TD.get_tag() for m in modes_in}
 
     @property
@@ -170,6 +179,8 @@ class CircuitPart:
 
         if mode not in other.modes_in:
             return False, f"mode {mode} not an input of {other}."
+        
+        if 
 
         if not set(self.modes_in).isdisjoint(other.modes_in):
             return False, f"input modes overlap {self.modes_in and other.modes_in}"

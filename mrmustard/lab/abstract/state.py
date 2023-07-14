@@ -138,6 +138,7 @@ class State(CircuitPart):
             modes_in=[],
             modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above
             name=name,
+            tags=(True, False, not self.is_hilbert_vector, False),
             **kwargs,
         )
 

@@ -38,12 +38,20 @@ class Measurement(CircuitPart, ABC):
         modes (List[int]): the modes on which the measurement is acting on
     """
 
+    is_projective: bool
+
     def __init__(self, outcome: Tensor, modes: Sequence[int], name: str, **kwargs) -> None:
         if modes is None:
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._outcome = outcome
         self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
-        super().__init__(modes_in=modes, modes_out=[], name=name, **kwargs)
+        super().__init__(
+            modes_in=modes,
+            modes_out=[],
+            name=name,
+            tags=(False, True, False, not self.is_hilbert_vector),
+            **kwargs,
+        )
 
     @property
     def num_modes(self):

@@ -46,7 +46,13 @@ class Transformation(CircuitPart):
         name: str,
         **kwargs,
     ):
-        super().__init__(modes_in=modes_in, modes_out=modes_out, name=name, **kwargs)
+        super().__init__(
+            modes_in=modes_in,
+            modes_out=modes_out,
+            name=name,
+            tags=(True, True, not self.is_unitary, not self.is_unitary),
+            **kwargs,
+        )
 
     def bargmann(self, numpy=False):
         X, Y, d = self.XYd(allow_none=False)

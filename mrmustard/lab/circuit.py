@@ -218,40 +218,54 @@ from mrmustard.typing import Matrix, Tensor, Vector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
+import networkx as nx
+
 math = Math()
 
 
-class Circuit(CircuitPart):
+class TensorNetwork:
     r"""A collection of interconnected Operations that can be run as a quantum device.
-    The order matters for the Operations in the Circuit, as they are applied sequentially.
+    The order matters for the Operations in the TN, as they are applied sequentially.
     """
 
     def __init__(self, ops: list[CircuitPart] = []):
         self._ops: list[CircuitPart] = ops
-
-    def _connect_ops(self) -> None:
-        r"""Connect ops in the circuit according to their input/output modes
-        and their position in the circuit.
-        """
+        self.graph = nx.Graph()
+        # assign one node per op
+        for op in self._ops:
+            self.graph.add_node(op)
+        # connect ops
         for i, op1 in enumerate(self._ops):
             for mode in op1.modes_out:
                 for op2 in self._ops[i + 1 :]:
                     if op1.can_connect_to(op2, mode)[0]:
-                        op1.connect_to(op2, mode, check=False)
+                        self.graph.add_edge(op1, op2, mode_in=mode, mode_out=mode)
                         break
 
-    def _disconnect_ops(self) -> None:
-        r"""Disconnects ops in the circuit by resetting their tags."""
-        for op in self._ops:
-            op._assign_new_tags()
 
-    def __rshift__(self, other: CircuitPart) -> Circuit:
+    # def _connect_ops(self) -> None:
+    #     r"""Connect ops in the circuit according to their input/output modes
+    #     and their position in the circuit.
+    #     """
+    #     for i, op1 in enumerate(self._ops):
+    #         for mode in op1.modes_out:
+    #             for op2 in self._ops[i + 1 :]:
+    #                 if op1.can_connect_to(op2, mode)[0]:
+    #                     op1.connect_to(op2, mode, check=False)
+    #                     break
+
+    # def _disconnect_ops(self) -> None:
+    #     r"""Disconnects ops in the circuit by resetting their tags."""
+    #     for op in self._ops:
+    #         op.disconnect()
+
+    def __rshift__(self, other: CircuitPart) -> TensorNetwork:
         if isinstance(other, CircuitPart):
-            return Circuit(self._ops + [other])
+            return TensorNetwork(self._ops + [other])
         else:
-            raise TypeError(f"Circuit >> {other.__class__.__qualname__} is not supported.")
+            raise TypeError(f"TensorNetwork >> {other.__class__.__qualname__} is not supported.")
 
-    def primal(self, op: CircuitPart) -> Circuit:
+    def primal(self, op: CircuitPart) -> TensorNetwork:
         r"""We assume that this circuit is used as in `state >> circuit` and we do immediate execution."""
         for next_op in self._ops:
             op = next_op.primal(op)
