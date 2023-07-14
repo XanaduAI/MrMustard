@@ -128,9 +128,13 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
     if eigenvalues is None:
         return math.matmul(symplectic, math.transpose(symplectic))
 
-    return settings.HBAR/2*math.matmul(
-        math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
-        math.transpose(symplectic),
+    return (
+        settings.HBAR
+        / 2
+        * math.matmul(
+            math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
+            math.transpose(symplectic),
+        )
     )
 
 
@@ -944,15 +948,19 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     return X_dual, Y_dual, d_dual
 
 
-
 def reorder_matrix_from_qpqp_to_qqpp(N: int):
     r"""Returns the reordered matrix from qpqp ordering variables to qqpp ordering."""
-    list1 = [i for i in range(N,)]
-    list2 = [j for j in range(N,2*N)]
-    reorder_list = [None]*(len(list1)+len(list2))
+    list1 = [
+        i
+        for i in range(
+            N,
+        )
+    ]
+    list2 = [j for j in range(N, 2 * N)]
+    reorder_list = [None] * (len(list1) + len(list2))
     reorder_list[::2] = list1
     reorder_list[1::2] = list2
-    matrix = np.zeros((2*N,2*N))
-    for i,n in enumerate(reorder_list):
-        matrix[i,n] = 1
+    matrix = np.zeros((2 * N, 2 * N))
+    for i, n in enumerate(reorder_list):
+        matrix[i, n] = 1
     return matrix
