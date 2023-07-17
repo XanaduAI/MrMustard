@@ -62,8 +62,8 @@ class CircuitPart:
         tags: Tuple[bool | Tuple, ...] = (False,) * 4,
         **kwargs,
     ):
-        assert modes_in and (tags[1] or tags[3])
-        assert modes_out and (tags[0] or tags[2])
+        # assert modes_in and (tags[1] or tags[3])
+        # assert modes_out and (tags[0] or tags[2])
 
         self.tag_types = tuple(bool(t) for t in tags)
         self.tags_out_L: Dict[int, int] = {}
@@ -77,8 +77,8 @@ class CircuitPart:
 
     _repr_markdown_ = None
 
-    def disconnect(self):
-        r"""Disconnects this CircuitPart from other CircuitParts by assigning
+    def retag(self):
+        r"""Re-tags this CircuitPart by assigning
         new tags to its input and output modes."""
         self._assign_new_tags(
             self.modes_in,
@@ -96,29 +96,29 @@ class CircuitPart:
         tags0, tags1, tags2, tags3 = tags
         TD = TagDispenser()
         if isinstance(tags0, tuple):
-            self.tags_out_L = {m:tag for m,tag in zip(modes_out, tags0)}
+            self.tags_out_L = {m: tag for m, tag in zip(modes_out, tags0)}
         elif tags0:
             self.tags_out_L = {m: TD.get_tag() for m in modes_out}
 
         if isinstance(tags1, tuple):
-            self.tags_in_L = {m:tag for m,tag in zip(modes_in, tags1)}
+            self.tags_in_L = {m: tag for m, tag in zip(modes_in, tags1)}
         elif tags1:
             self.tags_in_L = {m: TD.get_tag() for m in modes_in}
 
         if isinstance(tags2, tuple):
-            self.tags_out_R = {m:tag for m,tag in zip(modes_out, tags2)}
+            self.tags_out_R = {m: tag for m, tag in zip(modes_out, tags2)}
         elif tags2:
             self.tags_out_R = {m: TD.get_tag() for m in modes_out}
 
         if isinstance(tags3, tuple):
-            self.tags_in_R = {m:tag for m,tag in zip(modes_in, tags3)}
+            self.tags_in_R = {m: tag for m, tag in zip(modes_in, tags3)}
         elif tags3:
             self.tags_in_R = {m: TD.get_tag() for m in modes_in}
 
     @property
     def modes(self) -> Optional[list[int]]:
         r"""Returns the modes that this Operation is defined on.
-        For backward compatibility, modes fails if modes_in != modes_out."""
+        For backward compatibility, modes raises a ValueError if modes_in != modes_out."""
         if self.modes_in == self.modes_out:
             return list(self.modes_in)
         elif len(self.modes_in) == 0:
@@ -179,8 +179,6 @@ class CircuitPart:
 
         if mode not in other.modes_in:
             return False, f"mode {mode} not an input of {other}."
-        
-        if 
 
         if not set(self.modes_in).isdisjoint(other.modes_in):
             return False, f"input modes overlap {self.modes_in and other.modes_in}"
@@ -189,11 +187,3 @@ class CircuitPart:
             return False, f"output modes overlap {self.modes_out and other.modes_out}"
 
         return True, ""
-
-    def connect_to(self, other: CircuitPart, mode: int, check: bool = False):
-        "Forward-connect self to other at the given mode."
-        if check:
-            can, fail_reason = self.can_connect_to(other, mode)
-            if not can:
-                raise ValueError(fail_reason)
-        other._input_tag_at_mode[mode] = self._output_tag_at_mode[mode]

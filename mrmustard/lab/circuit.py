@@ -210,38 +210,38 @@ __all__ = ["Circuit"]
 #         """String representation of the circuit."""
 #         return f"< Circuit | {len(self._ops)} ops | compiled = {self._compiled} >"
 
+import networkx as nx
+
 from mrmustard import settings
 from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.typing import Matrix, Tensor, Vector
-
 from mrmustard.utils.circdrawer import circuit_text
+from mrmustard.utils.tagdispenser import TagDispenser
 from mrmustard.utils.xptensor import XPMatrix, XPVector
-
-import networkx as nx
 
 math = Math()
 
 
-class TensorNetwork:
+class Circuit:
     r"""A collection of interconnected Operations that can be run as a quantum device.
     The order matters for the Operations in the TN, as they are applied sequentially.
     """
 
     def __init__(self, ops: list[CircuitPart] = []):
         self._ops: list[CircuitPart] = ops
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
         # assign one node per op
         for op in self._ops:
             self.graph.add_node(op)
         # connect ops
+        TD = TagDispenser()
         for i, op1 in enumerate(self._ops):
             for mode in op1.modes_out:
                 for op2 in self._ops[i + 1 :]:
                     if op1.can_connect_to(op2, mode)[0]:
-                        self.graph.add_edge(op1, op2, mode_in=mode, mode_out=mode)
+                        self.graph.add_edge(op1, op2, mode_in=mode, mode_out=mode, tag=TD.get_tag())
                         break
-
 
     # def _connect_ops(self) -> None:
     #     r"""Connect ops in the circuit according to their input/output modes
@@ -259,13 +259,13 @@ class TensorNetwork:
     #     for op in self._ops:
     #         op.disconnect()
 
-    def __rshift__(self, other: CircuitPart) -> TensorNetwork:
+    def __rshift__(self, other: CircuitPart) -> Circuit:
         if isinstance(other, CircuitPart):
-            return TensorNetwork(self._ops + [other])
+            return Circuit(self._ops + [other])
         else:
-            raise TypeError(f"TensorNetwork >> {other.__class__.__qualname__} is not supported.")
+            raise TypeError(f"Circuit >> {other.__class__.__qualname__} is not supported.")
 
-    def primal(self, op: CircuitPart) -> TensorNetwork:
+    def primal(self, op: CircuitPart) -> Circuit:
         r"""We assume that this circuit is used as in `state >> circuit` and we do immediate execution."""
         for next_op in self._ops:
             op = next_op.primal(op)
@@ -282,7 +282,6 @@ class TensorNetwork:
         tt: list(tuple(int, tuple(int, ...))) = []
         for op in self._ops:
             array = op.fock()
-            if 
             tt.append((op.fock, op.all_tags))
         self._disconnect_ops()
         # now we remap the tags so that they are unique and in order from 0 to N
@@ -304,7 +303,6 @@ class TensorNetwork:
     ) -> Tuple[
         RealMatrix, RealMatrix, RealVector
     ]:  # NOTE: Overriding Transformation.XYd for efficiency
-
         X = XPMatrix(like_1=True)
         Y = XPMatrix(like_0=True)
         d = XPVector()
