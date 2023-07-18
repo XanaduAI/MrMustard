@@ -8,38 +8,34 @@ on:
       - '.github/workflows/tests.yml'
       - 'mrmustard/**'
       - 'tests/**'
-      - 'setup.py'
-      - 'requirements*'
+      - 'pyproject.toml'
+      - 'poetry.lock'
       - 'pytest.ini'
 
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     env:
       HYPOTHESIS_PROFILE: ci
 
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - uses: actions/checkout@v3
-
-      - name: Setup python ${{ matrix.python-version }}
+      - name: Setup python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-          pip install wheel pytest pytest-cov --upgrade
-          pip install .[ray]
-          # python setup.py bdist_wheel
-          # pip install dist/*.whl
+          python -m pip install --no-cache-dir --upgrade pip
+          pip install --no-cache-dir poetry==1.4.0
+          poetry config virtualenvs.create false
+          poetry install --extras "ray" --with dev
 
       - name: Run tests
         run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
