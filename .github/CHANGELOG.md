@@ -87,6 +87,9 @@
 * More robust implementation of cutoffs for States.
 [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
+* Dependencies and versioning are now managed using Poetry.
+[(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
+
 ### Bug fixes
 
 * Fixed a bug that would make two progress bars appear during an optimization
@@ -105,7 +108,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
-[Robbe De Prins](https://github.com/rdprins)
+[Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli)
 
 ---
 
