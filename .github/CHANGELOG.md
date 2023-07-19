@@ -1,3 +1,19 @@
+# Release 0.6.0 (future)
+
+### New features
+* A general factory method and a duck style type-checker.
+[(#256)](https://github.com/XanaduAI/MrMustard/pull/256)
+
+* Data classes for the representations project. Includes `WavefunctionArrayData`, `GaussianData`, 
+`QpolyData` and `SymplecticData`.
+[(#258)](https://github.com/XanaduAI/MrMustard/pull/258)
+
+### Breaking changes
+### Improvements
+### Bug fixes
+### Documentation
+### Contributors
+[Richard A. Wolf](https://github.com/ryk-wolf)
 # Release 0.5.0 (development release)
 
 ### New features
