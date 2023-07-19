@@ -6,6 +6,7 @@ COVERAGE := --cov=mrmustard --cov-report=html:coverage_html_report --cov-append
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  install            to install Mr Mustard"
+	@echo "  install-all        to install Mr Mustard with all extras and optional dependencies"
 	@echo "  dist               to package the source distribution"
 	@echo "  clean              to delete all temporary, cache, and build files"
 	@echo "  clean-docs         to delete all built documentation"
@@ -19,6 +20,13 @@ ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
 	poetry install
+
+.PHONY: install-all
+install-all:
+ifndef PYTHON3
+	@echo "To install Mr Mustard you need to have Python 3 installed"
+endif
+	poetry install --all-extras --with dev,doc
 
 .PHONY: dist
 dist:
