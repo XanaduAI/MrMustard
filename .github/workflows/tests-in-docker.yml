@@ -1,0 +1,27 @@
+name: Tests in Docker
+
+on:
+  workflow_call:
+
+jobs:
+  run-tests:
+    name: Pytest in Docker env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Build for testing
+        run: docker build --target testing -t test-container -f env.Dockerfile .
+
+      - name: Run tests
+        run: >
+          docker run -t --rm 
+          --name testing 
+          --entrypoint python test-container 
+          -m pytest tests 
+          --cov=mrmustard 
+          --cov-report=term-missing 
+          --cov-report=xml 
+          -p no:warnings 
+          --tb=native
