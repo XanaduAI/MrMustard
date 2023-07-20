@@ -19,46 +19,25 @@ from hypothesis import strategies as st
 
 from tests.test_lab.test_states import xy_arrays
 
-from mrmustard.lab.representations.fock_ket import FockKet
-from mrmustard.lab.representations.fock_dm import FockDM
+from mrmustard.lab.representations.fock import Fock
+
+@given(array = xy_arrays())
+def test_number_means_of_fock_state(array):
+    fock = Fock(array=array)
+    expected = 1.0
+    assert np.allclose(fock.number_means, expected)
+
+@given(array = xy_arrays())
+def test_number_variances_of_fock_state(array):
+    fock = Fock(array=array)
+    expected = 1.0
+    assert np.allclose(fock.number_variances, expected)
 
 
-@given(array=xy_arrays())
-def test_purity_of_fock_ket_state(array):
-    fockket = FockKet(array=array)
-    assert np.allclose(fockket.purity, 1.0)
+class TestFockThrowErrors():
 
-
-def test_purity_of_fock_dm_state():
-    array = np.array([[0.5, 0.2],[-0.1, 1.5]])
-    fockdm = FockDM(array=array)
-    assert np.allclose(fockdm.purity, 0.615)
-
-
-@given(array=xy_arrays())
-def test_norm_of_fock_ket_state(array):
-    fockket = FockKet(array=array)
-    assert np.allclose(fockket.norm, np.abs(np.norm(array)))
-
-
-def test_norm_of_fock_dm_state():
-    array = np.array([[0.5, 0.2],[-0.1, 1.5]])
-    fockdm = FockDM(array=array)
-    assert np.allclose(fockdm.norm, 2.0)
-
-
-@given(array=xy_arrays())
-def test_probabilities_of_fock_ket_state(array):
-    fockket = FockKet(array=array)
-    assert np.allclose(fockket.probability, np.abs(array))
-
-
-@given(array=xy_arrays())
-def test_probabilities_of_fock_dm_state(array):
-    fockdm = FockDM(array=array)
-    assert np.allclose(fockdm.probability, np.diag(array))
-
-
+    def test_number_cov_with_error(self):
+        self.assertRaises(NotImplementedError)
 
 # @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 # def test_number_means(x, y):
