@@ -32,11 +32,12 @@ class FockDM(Fock):
     @property
     def purity(self) -> float:
         dm = self.data.array
-        cutoffs = self.data.cutoffs
+        cutoffs = dm.shape[: len(dm.shape) // 2]
         d = int(np.prod(cutoffs))  # combined cutoffs in all modes
         dm = math.reshape(dm, (d, d))
         dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
         return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
+
 
 
     @property
