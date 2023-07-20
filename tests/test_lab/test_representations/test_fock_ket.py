@@ -1,0 +1,1 @@
+###############Test FockKet with norm and purity and probabilities.###################

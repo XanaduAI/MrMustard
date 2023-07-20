@@ -1,0 +1,1 @@
+###############Test FockDM with norm and purity and probabilities.###################
