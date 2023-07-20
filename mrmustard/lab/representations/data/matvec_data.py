@@ -51,23 +51,23 @@ class MatVecData(Data):  # Note: this class is abstract!
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
-    def __add__(self, other: MatVecData) -> MatVecData:
-        try:
-            if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
-                combined_coeffs = self.coeffs + other.coeffs
-                return self.__class__(self.mat, self.vec, combined_coeffs)
+    # def __add__(self, other: MatVecData) -> MatVecData:
+    #     try:
+    #         if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
+    #             combined_coeffs = self.coeffs + other.coeffs
+    #             return self.__class__(self.mat, self.vec, combined_coeffs)
 
-            else:
-                mat = math.concat([self.mat, other.mat], axis=0)
-                vec = math.concat([self.vec, other.vec], axis=0)
-                reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
-                mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
-                vec = math.matvec(reorder_matrix, vec)
-                combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-                return self.__class__(mat, vec, combined_coeffs)
+    #         else:
+    #             mat = math.concat([self.mat, other.mat], axis=0)
+    #             vec = math.concat([self.vec, other.vec], axis=0)
+    #             reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
+    #             mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
+    #             vec = math.matvec(reorder_matrix, vec)
+    #             combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+    #             return self.__class__(mat, vec, combined_coeffs)
 
-        except AttributeError as e:
-            raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+    #     except AttributeError as e:
+    #         raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, x: Scalar) -> MatVecData:
         new_coeffs = self.coeffs / x
