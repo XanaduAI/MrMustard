@@ -18,29 +18,24 @@ import pytest
 from mrmustard.lab.representations.bargmann import Bargmann
 
 
-class TestBargmannThrowErrors():
-
-    bargmann = Bargmann(A=np.random.random((3,3)), b=np.random.random(3), c=1.0)
+class TestBargmannThrowErrors:
+    bargmann = Bargmann(A=np.random.random((3, 3)), b=np.random.random(3), c=1.0)
 
     def test_norm_with_error(self):
         with self.assertRaises(NotImplementedError):
             self.bargmann.norm
-    
 
     def test_number_means_with_error(self):
         with self.assertRaises(NotImplementedError):
             self.bargmann.number_means
-    
 
     def test_number_cov_with_error(self):
         with self.assertRaises(NotImplementedError):
             self.bargmann.number_cov
-    
 
     def test_number_variance_with_error(self):
         with self.assertRaises(NotImplementedError):
             self.bargmann.number_variances
-
 
     def test_probability_with_error(self):
         with self.assertRaises(NotImplementedError):

@@ -21,26 +21,28 @@ from tests.test_lab.test_states import xy_arrays
 
 from mrmustard.lab.representations.fock import Fock
 
-@given(array = xy_arrays())
+
+@given(array=xy_arrays())
 def test_number_means_of_fock_state(array):
     fock = Fock(array=array)
     expected = 1.0
     assert np.allclose(fock.number_means, expected)
 
-@given(array = xy_arrays())
+
+@given(array=xy_arrays())
 def test_number_variances_of_fock_state(array):
     fock = Fock(array=array)
     expected = 1.0
     assert np.allclose(fock.number_variances, expected)
 
 
-class TestFockThrowErrors():
-
-    fock = Fock(array=np.random.random((4,4)))
+class TestFockThrowErrors:
+    fock = Fock(array=np.random.random((4, 4)))
 
     def test_number_cov_with_error(self):
         with self.assertRaises(NotImplementedError):
             self.fock.number_cov
+
 
 # @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 # def test_number_means(x, y):

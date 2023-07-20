@@ -23,13 +23,13 @@ from mrmustard.lab.representations.fock_dm import FockDM
 
 
 def test_purity_of_fock_dm_state():
-    array = np.array([[0.5, 0.2],[-0.1, 1.5]])
+    array = np.array([[0.5, 0.2], [-0.1, 1.5]])
     fockdm = FockDM(array=array)
     assert np.allclose(fockdm.purity, 0.615)
 
 
 def test_norm_of_fock_dm_state():
-    array = np.array([[0.5, 0.2],[-0.1, 1.5]])
+    array = np.array([[0.5, 0.2], [-0.1, 1.5]])
     fockdm = FockDM(array=array)
     assert np.allclose(fockdm.norm, 2.0)
 

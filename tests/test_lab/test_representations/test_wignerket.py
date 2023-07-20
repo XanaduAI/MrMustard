@@ -19,5 +19,7 @@ from mrmustard.lab.representations.wigner_ket import WignerKet
 
 
 def test_purity_with_wigner_ket_state():
-    wignerket = WignerKet(symplectic=np.random.random((3,3)), displacement=np.random.random(3), coeffs=1.0)
-    assert(wignerket.purity, 1.0)
+    wignerket = WignerKet(
+        symplectic=np.random.random((3, 3)), displacement=np.random.random(3), coeffs=1.0
+    )
+    assert (wignerket.purity, 1.0)
