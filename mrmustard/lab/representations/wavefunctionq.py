@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from mrmustard.typing import Matrix, Scalar, Vector, Tensor
+from mrmustard.typing import Matrix, Vector, Tensor
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
 
@@ -27,11 +27,6 @@ class WaveFunctionQ(Representation):
 
     def __init__(self, qs:np.array, wavefunctionq:np.array) -> None:
         self.data = WavefunctionArrayData(qs=qs, array=wavefunctionq)
-    
-
-    @property
-    def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
     
 
     @property    
@@ -56,9 +51,4 @@ class WaveFunctionQ(Representation):
 
     @property
     def number_stdev(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
-
-    @property
-    def probability(self) -> Tensor:
         raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
