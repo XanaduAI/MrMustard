@@ -16,24 +16,19 @@ from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.lab.representations.data.symplectic_data import SymplecticData
 from mrmustard.typing import Matrix, Vector, Scalar
 
+
 class WignerKet(Wigner):
-    r""" Wigner representation of a Ket state.
-    
+    r"""Wigner representation of a Ket state.
+
     Args:
         symplectic: symplectic matrix
         displacement: dispalcement vector
-        coeffs: coefficients (complex) 
+        coeffs: coefficients (complex)
     """
 
-    def __init__(self,
-                 symplectic: Matrix, 
-                 displacement: Vector, 
-                 coeffs: Scalar = 1.0
-                 ) -> None:
-        
+    def __init__(self, symplectic: Matrix, displacement: Vector, coeffs: Scalar = 1.0) -> None:
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
         self.num_modes = symplectic.shape[-1]
-
 
     @property
     def purity(self) -> float:

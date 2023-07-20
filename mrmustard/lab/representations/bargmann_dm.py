@@ -15,12 +15,13 @@
 from mrmustard.lab.representations.bargmann import Bargmann
 from mrmustard.typing import Matrix, Scalar, Vector, Tensor
 
-class BargmannDM(Bargmann):
 
+class BargmannDM(Bargmann):
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         super().__init__(A=A, b=b, c=c)
-    
+
     @property
     def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )

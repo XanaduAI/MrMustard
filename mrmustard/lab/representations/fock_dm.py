@@ -21,13 +21,12 @@ from mrmustard.typing import Tensor
 
 math = Math()
 
-class FockDM(Fock):
 
+class FockDM(Fock):
     def __init__(self, array):
         super().__init__(array=array)
         self.num_modes = len(self.data.array.shape) // 2
         self.cutoffs = self.data.array.shape
-
 
     @property
     def purity(self) -> float:
@@ -38,14 +37,11 @@ class FockDM(Fock):
         dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
         return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
-
-
     @property
     def norm(self) -> float:
-        r""" The norm. (:math:`|amp|^2` for ``dm``). """
-        return math.sum(math.all_diagonals(self.data.array, real = True))
-
+        r"""The norm. (:math:`|amp|^2` for ``dm``)."""
+        return math.sum(math.all_diagonals(self.data.array, real=True))
 
     @property
     def probability(self) -> Tensor:
-        return math.all_diagonals(self.data.array, real = True) #TODO: cutoffs adjust
+        return math.all_diagonals(self.data.array, real=True)  # TODO: cutoffs adjust

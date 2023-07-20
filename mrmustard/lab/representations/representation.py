@@ -18,46 +18,41 @@ from mrmustard.math import Math
 
 math = Math()
 
+
 class Representation(ABC):
-    r""" Abstract parent class for the different Representation of quantum states. """
-    
+    r"""Abstract parent class for the different Representation of quantum states."""
+
     @abstractproperty
     def purity(self) -> Scalar:
-        r""" Valid for Wigner and Fock : the purity of the state. """
+        r"""Valid for Wigner and Fock : the purity of the state."""
         raise NotImplementedError()
-    
 
     @abstractproperty
     def norm(self) -> float:
-        r""" Valid for Fock: the norm of the state. """
+        r"""Valid for Fock: the norm of the state."""
         raise NotImplementedError()
-    
 
     @abstractproperty
     def number_means(self) -> RealVector:
-        r""" Valid for Fock and Wigner: the photon number means vector. """
+        r"""Valid for Fock and Wigner: the photon number means vector."""
         raise NotImplementedError()
-
 
     @abstractproperty
     def number_cov(self) -> RealMatrix:
-        r""" Valid for Wigner: the photon number covariance matrix. """
+        r"""Valid for Wigner: the photon number covariance matrix."""
         raise NotImplementedError()
-    
 
     @abstractproperty
     def number_variances(self) -> int:
-        r""" Valid for Fock : variance of the number operator in each mode. """
+        r"""Valid for Fock : variance of the number operator in each mode."""
         raise NotImplementedError()
 
-
     def number_stdev(self) -> int:
-        r""" Valid for Fock: square root of the photon number variances (standard deviation) 
-        in each mode. """
+        r"""Valid for Fock: square root of the photon number variances (standard deviation)
+        in each mode."""
         return math.sqrt(self.number_variances())
 
-
     @abstractproperty
-    def probability(self) -> Tensor: # TODO : add doc
-        r""" Valid for Fock: Probability tensor, either extracted from a DM or from a Ket"""
+    def probability(self) -> Tensor:  # TODO : add doc
+        r"""Valid for Fock: Probability tensor, either extracted from a DM or from a Ket"""
         raise NotImplementedError()

@@ -19,9 +19,10 @@ from mrmustard.typing import Matrix, Scalar, Vector, Tensor
 
 math = Math()
 
+
 class Bargmann(Representation):
-    r""" Fock-Bargmann representation of a state.
-    
+    r"""Fock-Bargmann representation of a state.
+
     Args:
         A: quadratic coefficients
         b: linear coefficients
@@ -32,32 +33,38 @@ class Bargmann(Representation):
         super().__init__()
         self.data = QPolyData(A=A, b=b, c=c)
 
-
-    @property    
+    @property
     def norm(self) -> float:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
     @property
     def number_means(self) -> Vector:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
     @property
     def number_cov(self) -> Matrix:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
     @property
     def number_variances(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
     @property
     def number_stdev(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
     @property
     def probability(self) -> Tensor:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )

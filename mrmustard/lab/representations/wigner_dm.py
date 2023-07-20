@@ -20,25 +20,19 @@ from mrmustard import settings
 
 math = Math()
 
-class WignerDM(Wigner):
 
-    r""" Wigner representation of a mixed state.
-    
+class WignerDM(Wigner):
+    r"""Wigner representation of a mixed state.
+
     Args:
         cov: covariance matrices (real symmetric)
         mean: means (real)
-        coeffs: coefficients (complex) 
+        coeffs: coefficients (complex)
     """
 
-    def __init__(self,
-                 cov: Matrix, 
-                 means: Vector, 
-                 coeffs: Scalar = 1.0
-                 ) -> None:
-        
+    def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
         self.num_modes = cov.shape[-1] // 2
-
 
     @property
     def purity(self) -> float:

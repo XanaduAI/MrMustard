@@ -19,29 +19,27 @@ from mrmustard.typing import Tensor
 
 math = Math()
 
+
 class FockKet(Fock):
-    r""" Fock representation of a state described by a ket.
-    
+    r"""Fock representation of a state described by a ket.
+
     Args:
         data: the data used to represent the state to be encoded as Fock representation
     """
 
-    def __init__(self, array:np.array):
+    def __init__(self, array: np.array):
         super().__init__(array=array)
         self.num_modes = len(self.data.array.shape)
         self.cutoffs = self.data.array.shape
-
 
     @property
     def purity(self) -> float:
         return 1.0
 
-
     @property
     def norm(self) -> float:
         return math.abs(math.norm(self.data.array))
-    
 
     @property
-    def probability(self) -> Tensor: 
-        return math.abs(self.data.array) #TODO: cutoffs
+    def probability(self) -> Tensor:
+        return math.abs(self.data.array)  # TODO: cutoffs

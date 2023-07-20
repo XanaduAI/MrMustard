@@ -15,12 +15,11 @@
 from mrmustard.lab.representations.bargmann import Bargmann
 from mrmustard.typing import Matrix, Scalar, Vector, Tensor
 
-class BargmannKet(Bargmann):
 
+class BargmannKet(Bargmann):
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         super().__init__(A=A, b=b, c=c)
-    
+
     @property
     def purity(self) -> Scalar:
         return 1.0
-    

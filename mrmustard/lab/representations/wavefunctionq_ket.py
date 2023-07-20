@@ -15,26 +15,23 @@
 import numpy as np
 from mrmustard.typing import Scalar, Tensor
 from mrmustard.math import Math
+
 math = Math()
 from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
 
-class WaveFunctionQKet(WaveFunctionQ):
 
-    def __init__(self, qs:np.array, wavefunctionq:np.array):
+class WaveFunctionQKet(WaveFunctionQ):
+    def __init__(self, qs: np.array, wavefunctionq: np.array):
         super().__init__(qs=qs, wavefunctionq=wavefunctionq)
-    
-    
+
     @property
     def purity(self) -> Scalar:
         return 1.0
-    
 
     @property
     def norm(self) -> float:
         return math.abs(math.norm(self.data.array))
-    
 
     @property
     def probability(self) -> Tensor:
-        return math.abs(self.data.array, real = True)
-    
+        return math.abs(self.data.array, real=True)

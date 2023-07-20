@@ -15,27 +15,26 @@
 import numpy as np
 from mrmustard.typing import Scalar, Tensor
 from mrmustard.math import Math
+
 math = Math()
 from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
 
-class WaveFunctionQDM(WaveFunctionQ):
 
-    def __init__(self, qs:np.array, wavefunctionq:np.array):
+class WaveFunctionQDM(WaveFunctionQ):
+    def __init__(self, qs: np.array, wavefunctionq: np.array):
         super().__init__(qs=qs, wavefunctionq=wavefunctionq)
-    
 
     @property
     def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
     @property
     def norm(self) -> float:
-        r""" The norm. (:math:`|amp|^2` for ``dm``). """
-        return math.sum(math.all_diagonals(self.data.array, real = True))
-    
+        r"""The norm. (:math:`|amp|^2` for ``dm``)."""
+        return math.sum(math.all_diagonals(self.data.array, real=True))
 
     @property
     def probability(self) -> Tensor:
-        return math.all_diagonals(self.data.array, real = True)
-    
+        return math.all_diagonals(self.data.array, real=True)
