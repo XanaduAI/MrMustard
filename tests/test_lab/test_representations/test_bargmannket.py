@@ -17,11 +17,6 @@ import pytest
 
 from mrmustard.lab.representations.bargmann_ket import BargmannKet
 
-
-class TestBargmannKetThrowErrors():
-
+def test_purity_of_bargmann_ket():
     bargmannket = BargmannKet(A=np.random.random((3,3)), b=np.random.random(3), c=1.0)
-
-    def test_purity_with_error(self):
-        with self.assertRaises(NotImplementedError):
-            self.bargmannket.purity
+    assert(bargmannket.purity, 1.0)
