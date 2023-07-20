@@ -2,8 +2,8 @@ name: "Dev Docker enviroment Build & Push"
 
 on:
   push:
-    tags:
-      - 'dev'
+    branches:
+      - develop
 
 jobs:
   tests:
