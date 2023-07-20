@@ -34,12 +34,6 @@ class Representation(ABC):
     
 
     @abstractproperty
-    def von_neumann_entropy(self) -> float:
-        r""" The Von Neumann entropy of the state. """
-        raise NotImplementedError()
-    
-
-    @abstractproperty
     def number_means(self) -> RealVector:
         r""" Valid for Fock: the photon number means vector. """
         raise NotImplementedError()

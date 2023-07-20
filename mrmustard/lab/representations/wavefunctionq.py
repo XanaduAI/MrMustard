@@ -26,23 +26,3 @@ class WaveFunctionQ(Representation):
 
     def __init__(self, qs:np.array, wavefunctionq:np.array) -> None:
         self.data = WavefunctionArrayData(qs=qs, array=wavefunctionq)
-
-
-    def purity(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-
-    def norm(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-
-
-    def von_neumann_entropy(self):
-        raise NotImplementedError("Get this of this state from other representations!") 
-    
-
-    def number_means(self):
-        raise NotImplementedError("Get this of this state from other representations!")
-    
-    
-    def number_cov(self):
-        raise NotImplementedError("Get this of this state from other representations!")

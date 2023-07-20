@@ -32,11 +32,6 @@ class WaveFunctionQDM(WaveFunctionQ):
 
 
     @property
-    def von_neumann_entropy(self) -> float:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
     def number_means(self) -> Vector:
         raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
     

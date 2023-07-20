@@ -60,8 +60,3 @@ class Fock(Representation):
                  for m in marginals
                  ]
         return math.astensor(result)
-
-
-    @property
-    def von_neumann_entropy(self) -> float:
-        raise NotImplementedError("von_neumann_entropy not implemented for Fock representation") 

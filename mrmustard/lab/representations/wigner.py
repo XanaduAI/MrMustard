@@ -47,13 +47,6 @@ class Wigner(Representation):
     
 
     @property
-    def von_neumann_entropy(self) -> float:
-        symplectic_eigvals = self.symplectic_eigenvals(self.data.cov, settings.HBAR)
-        entropy = math.sum(self._g(symplectic_eigvals))
-        return entropy
-    
-
-    @property
     def number_means(self) -> RealVector:
 
         n = self.data.means.shape[-1] // 2
@@ -103,21 +96,3 @@ class Wigner(Representation):
     @property
     def probability(self) -> Tensor:
         raise NotImplementedError()
-    
-
-    @property
-    def symplectic_eigenvals(self) -> List[Scalar]:
-        r""" Computes the sympletic eigenspectrum of a covariance matrix.
-
-        Note that for a pure state, we expect the sympletic eigenvalues to be 1.
-
-        Returns:
-            The sympletic (even) eigenvalues
-        """
-
-        J = math.J(self.data.cov.shape[-1] // 2)  # create a sympletic form
-        M = math.matmul(1j * J, self.data.cov * (2 / settings.HBAR))
-
-        eigenspectrum = math.eigvals(M)
-
-        return math.abs(eigenspectrum[::2]) # TODO: sort?
