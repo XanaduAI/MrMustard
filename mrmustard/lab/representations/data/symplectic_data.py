@@ -18,7 +18,7 @@ import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import RealMatrix, Scalar, RealVector
+from mrmustard.typing import RealMatrix, RealVector, Scalar
 from thewalrus.quantum.gaussian_checks import is_symplectic
 
 math = Math()
@@ -46,11 +46,11 @@ class SymplecticData(MatVecData):
             raise ValueError("The matrix given is not symplectic.")
 
     @property
-    def symplectic(self) -> np.array:
+    def symplectic(self) -> RealMatrix:
         return self.mat
 
     @property
-    def displacement(self) -> np.array:
+    def displacement(self) -> RealVector:
         return self.vec
 
     def __mul__(self, other: Scalar) -> SymplecticData:
