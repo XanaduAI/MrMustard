@@ -36,8 +36,11 @@ def test_number_variances_of_fock_state(array):
 
 class TestFockThrowErrors():
 
+    fock = Fock(array=np.random.random((4,4)))
+
     def test_number_cov_with_error(self):
-        self.assertRaises(NotImplementedError)
+        with self.assertRaises(NotImplementedError):
+            self.fock.number_cov
 
 # @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 # def test_number_means(x, y):
