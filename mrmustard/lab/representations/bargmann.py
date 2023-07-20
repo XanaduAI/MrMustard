@@ -33,11 +33,6 @@ class Bargmann(Representation):
         self.data = QPolyData(A=A, b=b, c=c)
 
 
-    @property
-    def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
     @property    
     def norm(self) -> float:
         raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")

@@ -19,3 +19,8 @@ class BargmannKet(Bargmann):
 
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         super().__init__(A=A, b=b, c=c)
+    
+    @property
+    def purity(self) -> Scalar:
+        return 1.0
+    
