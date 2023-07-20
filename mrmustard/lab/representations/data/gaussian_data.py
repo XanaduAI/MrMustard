@@ -22,10 +22,6 @@ from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Matrix, Scalar, Tensor, Vector
 
-
-if TYPE_CHECKING:  # This is to avoid the circular import issu with GaussianData<>QPolyData
-    from mrmustard.lab.representations.data.qpoly_data import QPolyData
-
 math = Math()
 
 
@@ -167,7 +163,6 @@ class GaussianData(MatVecData):
             )
         ]
         res = math.astensor(combined_coeffs)
-        print(type)
         return res
 
     def _compute_mul_means(self, other: GaussianData) -> Tensor:
