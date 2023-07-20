@@ -23,25 +23,25 @@ class Representation(ABC):
     
     @abstractproperty
     def purity(self) -> Scalar:
-        r""" The purity of the state. """
+        r""" Valid for Wigner and Fock : the purity of the state. """
         raise NotImplementedError()
     
 
     @abstractproperty
     def norm(self) -> float:
-        r""" The norm of the state. """
+        r""" Valid for Fock: the norm of the state. """
         raise NotImplementedError()
     
 
     @abstractproperty
     def number_means(self) -> RealVector:
-        r""" Valid for Fock: the photon number means vector. """
+        r""" Valid for Fock and Wigner: the photon number means vector. """
         raise NotImplementedError()
 
 
     @abstractproperty
     def number_cov(self) -> RealMatrix:
-        r""" Valid for Fock: the photon number covariance matrix. """
+        r""" Valid for Wigner: the photon number covariance matrix. """
         raise NotImplementedError()
     
 

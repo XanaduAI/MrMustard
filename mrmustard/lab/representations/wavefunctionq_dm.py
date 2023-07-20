@@ -14,43 +14,8 @@
 
 import numpy as np
 from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
-from mrmustard.typing import Matrix, Scalar, Vector, Tensor
 
 class WaveFunctionQDM(WaveFunctionQ):
 
     def __init__(self, qs:np.array, wavefunctionq:np.array):
         super().__init__(qs=qs, wavefunctionq=wavefunctionq)
-
-    @property
-    def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property    
-    def norm(self) -> float:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
-
-    @property
-    def number_means(self) -> Vector:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
-    def number_cov(self) -> Matrix:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
-    def number_variances(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
-    def number_stdev(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
-
-    @property
-    def probability(self) -> Tensor:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")

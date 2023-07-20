@@ -19,39 +19,3 @@ class BargmannKet(Bargmann):
 
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         super().__init__(A=A, b=b, c=c)
-        self.num_modes = A.shape[-1] 
-
-
-    @property
-    def purity(self) -> Scalar:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property    
-    def norm(self) -> float:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
-
-    @property
-    def number_means(self) -> Vector:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
-    def number_cov(self) -> Matrix:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
-    def number_variances(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-    
-
-    @property
-    def number_stdev(self) -> int:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
-
-
-    @property
-    def probability(self) -> Tensor:
-        raise NotImplementedError(f"This property is not available in {self.__class__.__qualname__} representation")
