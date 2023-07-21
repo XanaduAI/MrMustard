@@ -3,9 +3,6 @@ name: "Prod Docker enviroment Build & Push"
 on:
   release:
     types: [published]
-  push:
-    tags:
-      - "**"
 
 jobs:
   tests:
