@@ -13,7 +13,7 @@ jobs:
   environment-build-push:
     name: Build & Push
     needs: tests
-    uses: XanaduAI/cloud-actions/.github/workflows/build-push-multi-arch-docker-image.yml@sc-42170-add-multi-arch-docker-build-push
+    uses: XanaduAI/cloud-actions/.github/workflows/build-push-amd64-arm64-docker-image.yml@0b0cd18fb01a83cfb4e1482a225842ed591865ca
     with:
       tag: "dev"
       Dockerfile: env.Dockerfile
