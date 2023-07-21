@@ -55,7 +55,7 @@ class SymplecticData(MatVecData):
 
     def __mul__(self, other: Scalar) -> SymplecticData:
         if isinstance(other, SymplecticData):
-            raise TypeError("Symplectic can only be multiplied by a scalar")
+            raise TypeError("Only scalar multiplication is currently supported for SymplecticData.")
         else:
             try:  # Maybe other is a scalar
                 new_coeffs = self.coeffs * other
