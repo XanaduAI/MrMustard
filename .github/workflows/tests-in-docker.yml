@@ -16,12 +16,12 @@ jobs:
 
       - name: Run tests
         run: >
-          docker run -t --rm 
-          --name testing 
-          --entrypoint python test-container 
-          -m pytest tests 
-          --cov=mrmustard 
-          --cov-report=term-missing 
-          --cov-report=xml 
-          -p no:warnings 
+          docker run -t --rm
+          --name testing
+          --entrypoint python test-container
+          -m pytest tests
+          --cov=mrmustard
+          --cov-report=term-missing
+          --cov-report=xml
+          -p no:warnings
           --tb=native
