@@ -87,6 +87,9 @@
 * Dependencies and versioning are now managed using Poetry.
 [(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
 
+* Added some workflows to the CI for development purposes.
+[(#257)](https://github.com/XanaduAI/MrMustard/pull/263)
+
 ### Bug fixes
 
 * Fixed a bug that would make two progress bars appear during an optimization
