@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from mrmustard import settings
 from mrmustard.lab.abstract.circuitpart import CircuitPart
@@ -29,7 +29,7 @@ from .state import State
 math = Math()
 
 
-class Measurement(CircuitPart, ABC):
+class Measurement(CircuitPart):
     """this is an abstract class holding the common methods and properties
     that any measurement should implement
 
@@ -40,16 +40,19 @@ class Measurement(CircuitPart, ABC):
 
     is_projective: bool
 
-    def __init__(self, outcome: Tensor, modes: Sequence[int], name: str, **kwargs) -> None:
+    def __init__(
+        self, outcome: Optional[Tensor], modes: Sequence[int], name: str, **kwargs
+    ) -> None:
         if modes is None:
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._outcome = outcome
         self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
         super().__init__(
-            modes_in=modes,
-            modes_out=[],
             name=name,
-            tags=(False, True, False, not self.is_hilbert_vector),
+            modes_output_L=[],
+            modes_input_L=modes,
+            modes_output_R=[],
+            modes_input_R=modes if not self.is_projective else [],
             **kwargs,
         )
 
@@ -64,19 +67,16 @@ class Measurement(CircuitPart, ABC):
         return self._is_postselected
 
     @property
-    @abstractmethod
     def outcome(self):
         r"""Returns outcome of the measurement.
         If no measurement has been carried out returns `None`."""
-        ...
+        raise NotImplementedError
 
-    @abstractmethod
     def _measure_fock(self, other: State) -> Union[State, float]:
-        ...
+        raise NotImplementedError
 
-    @abstractmethod
     def _measure_gaussian(self, other: State) -> Union[State, float]:
-        ...
+        raise NotImplementedError
 
     def fock_tensors_and_tags(self, cutoffs=None):
         cutoffs = cutoffs or self.cutoffs

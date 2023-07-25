@@ -47,10 +47,11 @@ class Transformation(CircuitPart):
         **kwargs,
     ):
         super().__init__(
-            modes_in=modes_in,
-            modes_out=modes_out,
+            modes_output_L=modes_out,
+            modes_output_R=[] if not self.is_unitary else modes_out,
+            modes_input_L=modes_in,
+            modes_input_R=[] if not self.is_unitary else modes_in,
             name=name,
-            tags=(True, True, not self.is_unitary, not self.is_unitary),
             **kwargs,
         )
 

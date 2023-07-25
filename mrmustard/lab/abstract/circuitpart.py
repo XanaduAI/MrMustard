@@ -15,105 +15,90 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
-from mrmustard.utils.tagdispenser import TagDispenser
 
-Tags = namedtuple("Tags", ["outL", "inL", "outR", "inR"])
+# Tags = namedtuple("Tags", ["outL", "inL", "outR", "inR"])
+
+
+class Wire:
+    r"""
+    Represents a wire of a tensor, to be used in a tensor network.
+
+    Attributes:
+        id: An integer unique identifier for this wire.
+        duality: A string indicating the duality of this wire, either 'L' or 'R'.
+        mode: An integer mode for this wire, only wires with the same mode can be connected.
+        data: An arbitrary object associated with this wire.
+    """
+    _id_counter: int = 0
+
+    def __init__(self, is_input: bool, duality: str, mode: Optional[int] = None, data: Any = None):
+        r"""
+        Initializes a Wire instance.
+
+        Arguments:
+            is_input (bool): A boolean value indicating whether this wire is an input wire.
+            duality (str): A string indicating the duality of this wire, can only connect to wires of the same duality.
+            mode (int): An integer mode for this wire, can only connect to wires with the same mode.
+            data (Any): An optional arbitrary object associated with this wire.
+        """
+        self.id: int = Wire._id_counter * 2 + 1 if is_input else Wire._id_counter * 2
+        Wire._id_counter += 1
+        self.duality: str = duality
+        self.mode: int = mode
+        self.data: object = data
 
 
 class CircuitPart:
     r"""CircuitPart supplies functionality for constructing circuits out of components.
-    A CircuitPart does not know about its physical role; it only knows about
-    its place in the circuit and how to connect to other CircuitParts.
+    A CircuitPart does not know about its "physical role", rather it is only concerned with the
+    connectivity of its own wires.
 
-    Effectively it wraps around Kraus operators constructed out of circuit operations.
-
-    A CircuitPart assigns a pair of integers (L,R) which we call a "tag" to each Fock index.
-    In the circuit picture each input and output wire of an element is associated with a tag.
+    Effectively it enables any Kraus operator constructed out of tensor network operations.
 
     A CircuitPart provides the following functionality:
         - it can check whether it can be connected to another CircuitPart at a given mode
-        - it can be connected to another CircuitPart at a given mode
-        - it can assign new tags to its input and output modes (disconnect)
         - it can return its input and output modes
-        - it can return all its tags
-        - it can return its input and output tags
-        - it can return its input and output tags of type L
-        - it can return its input and output tags of type R
-
-    Arguments:
-        modes_in (list[int]): the input modes of this CircuitPart
-        modes_out (list[int]): the output modes of this CircuitPart
-        name (str): the name of this CircuitPart
-        tags (Tuple[bool | Tuple, ...]): bools indicating which tags to assign (outL, inL, outR, inR). If True, they are assigned automatically.
-        **kwargs: additional keyword arguments
-
-    Note:
-
+        - it keeps a list of its wires as Wire objects
     """
+    _id_counter: int = 0
 
     def __init__(
         self,
-        modes_in: List[int] = [],
-        modes_out: List[int] = [],
-        name: str = None,
-        tags: Tuple[bool | Tuple, ...] = (False,) * 4,
+        name: str,
+        modes_output_L: List[int],
+        modes_input_L: List[int],
+        modes_output_R: List[int],
+        modes_input_R: List[int],
+        data: Any = None,
         **kwargs,
     ):
-        # assert modes_in and (tags[1] or tags[3])
-        # assert modes_out and (tags[0] or tags[2])
+        r"""
+        Initializes a Tensor instance.
 
-        self.tag_types = tuple(bool(t) for t in tags)
-        self.tags_out_L: Dict[int, int] = {}
-        self.tags_in_L: Dict[int, int] = {}
-        self.tags_out_R: Dict[int, int] = {}
-        self.tags_in_R: Dict[int, int] = {}
-        self._assign_new_tags(modes_in, modes_out, tags)
-        self.name = name or self.__class__.__qualname__
-
+        Arguments:
+            name: A string name for this tensor.
+            modes_output_L: A list of left-flavored output wire modes.
+            modes_input_L: A list of left-flavored input wire modes.
+            modes_output_R: A list of right-flavored output wire modes.
+            modes_input_R: A list of right-flavored input wire modes.
+            data: An optional arbitrary object associated with this tensor.
+            name: A string name for this tensor.
+            kwargs: Additional keyword arguments to pass to the next class in the mro.
+        """
+        self.id: int = CircuitPart._id_counter
+        CircuitPart._id_counter += 1
+        self.name: str = name
+        self.output_wires_L: List[Wire] = [Wire(False, "L", mode) for mode in modes_output_L]
+        self.input_wires_L: List[Wire] = [Wire(True, "L", mode) for mode in modes_input_L]
+        self.output_wires_R: List[Wire] = [Wire(False, "R", mode) for mode in modes_output_R]
+        self.input_wires_R: List[Wire] = [Wire(True, "R", mode) for mode in modes_input_R]
+        self.data: Any = data
         super().__init__(**kwargs)
 
     _repr_markdown_ = None
-
-    def retag(self):
-        r"""Re-tags this CircuitPart by assigning
-        new tags to its input and output modes."""
-        self._assign_new_tags(
-            self.modes_in,
-            self.modes_out,
-            self.tag_types,
-        )
-
-    def _assign_new_tags(
-        self,
-        modes_in: Sequence[int],
-        modes_out: Sequence[int],
-        tags: Tuple[bool | Tuple, ...],
-    ):
-        r"""Assigns new tags to the input and output modes of this CircuitPart."""
-        tags0, tags1, tags2, tags3 = tags
-        TD = TagDispenser()
-        if isinstance(tags0, tuple):
-            self.tags_out_L = {m: tag for m, tag in zip(modes_out, tags0)}
-        elif tags0:
-            self.tags_out_L = {m: TD.get_tag() for m in modes_out}
-
-        if isinstance(tags1, tuple):
-            self.tags_in_L = {m: tag for m, tag in zip(modes_in, tags1)}
-        elif tags1:
-            self.tags_in_L = {m: TD.get_tag() for m in modes_in}
-
-        if isinstance(tags2, tuple):
-            self.tags_out_R = {m: tag for m, tag in zip(modes_out, tags2)}
-        elif tags2:
-            self.tags_out_R = {m: TD.get_tag() for m in modes_out}
-
-        if isinstance(tags3, tuple):
-            self.tags_in_R = {m: tag for m, tag in zip(modes_in, tags3)}
-        elif tags3:
-            self.tags_in_R = {m: TD.get_tag() for m in modes_in}
 
     @property
     def modes(self) -> Optional[list[int]]:
@@ -121,9 +106,9 @@ class CircuitPart:
         For backward compatibility, modes raises a ValueError if modes_in != modes_out."""
         if self.modes_in == self.modes_out:
             return list(self.modes_in)
-        elif len(self.modes_in) == 0:
+        elif len(self.modes_in) == 0:  # state
             return list(self.modes_out)
-        elif len(self.modes_out) == 0:
+        elif len(self.modes_out) == 0:  # measurement
             return list(self.modes_in)
         else:
             raise ValueError(
@@ -131,35 +116,15 @@ class CircuitPart:
             )
 
     @property
-    def all_tags(self) -> Iterator[int]:
-        "Yields all tags of this CircuitPart (outL, inL, outR, inR)."
-        yield from self.tags_out_L.values()
-        yield from self.tags_in_L.values()
-        yield from self.tags_out_R.values()
-        yield from self.tags_in_R.values()
-
-    @property
-    def tags_in(self) -> Iterator[int]:
-        "Yields all input tags of this CircuitPart (inL, inR)."
-        yield from self.tags_in_L.values()
-        yield from self.tags_in_R.values()
-
-    @property
-    def tags_out(self) -> Iterator[int]:
-        "Yields all output tags of this CircuitPart (outL, outR)."
-        yield from self.tags_out_L.values()
-        yield from self.tags_out_R.values()
-
-    @property
     def modes_in(self) -> tuple[int]:
         "Returns the tuple of input modes that are used by this CircuitPart."
-        in_modes = self.tags_in_L.keys().union(self.tags_in_R.keys())
+        in_modes = self.input_wires_L.keys().union(self.input_wires_R.keys())
         return tuple(sorted(list(in_modes)))
 
     @property
     def modes_out(self) -> tuple[int]:
         "Returns the tuple of output modes that are used by this CircuitPart."
-        out_modes = self.tags_out_L.keys().union(self.tags_out_R.keys())
+        out_modes = self.output_wires_L.keys().union(self.output_wires_R.keys())
         return tuple(sorted(list(out_modes)))
 
     def can_connect_to(self, other: CircuitPart, mode: int) -> tuple[bool, str]:

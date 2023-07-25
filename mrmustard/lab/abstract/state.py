@@ -135,10 +135,11 @@ class State(CircuitPart):
         self.parallelizable = False
         self.short_name = ""
         super().__init__(
-            modes_in=[],
-            modes_out=modes or list(range(self.num_modes)),  # num_modes is defined above
             name=name,
-            tags=(True, False, not self.is_hilbert_vector, False),
+            modes_output_L=modes or list(range(self.num_modes)),
+            modes_input_L=[],
+            modes_output_R=modes or list(range(self.num_modes)) if not self.is_hilbert_vector else [],
+            modes_input_R=[],
             **kwargs,
         )
 
