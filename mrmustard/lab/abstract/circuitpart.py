@@ -19,8 +19,6 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
 
-# Tags = namedtuple("Tags", ["outL", "inL", "outR", "inR"])
-
 
 class Wire:
     r"""
@@ -49,6 +47,9 @@ class Wire:
         self.duality: str = duality
         self.mode: int = mode
         self.data: object = data
+
+    def __repr__(self):
+        return f"Wire(id={self.id}, duality={self.duality}, mode={self.mode}, data={self.data})"
 
 
 class CircuitPart:
@@ -80,10 +81,10 @@ class CircuitPart:
 
         Arguments:
             name: A string name for this tensor.
-            modes_output_L: A list of left-flavored output wire modes.
-            modes_input_L: A list of left-flavored input wire modes.
-            modes_output_R: A list of right-flavored output wire modes.
-            modes_input_R: A list of right-flavored input wire modes.
+            modes_output_L: A list of output wire modes.
+            modes_input_L: A list of input wire modes.
+            modes_output_R: A list of dual output wire modes.
+            modes_input_R: A list of dual input wire modes.
             data: An optional arbitrary object associated with this tensor.
             name: A string name for this tensor.
             kwargs: Additional keyword arguments to pass to the next class in the mro.
@@ -116,39 +117,22 @@ class CircuitPart:
             )
 
     @property
-    def modes_in(self) -> tuple[int]:
+    def modes_in(self) -> List[int]:
         "Returns the tuple of input modes that are used by this CircuitPart."
-        in_modes = self.input_wires_L.keys().union(self.input_wires_R.keys())
-        return tuple(sorted(list(in_modes)))
+        in_modes = set([w.mode for w in self.input_wires_L]).union(
+            [w.mode for w in self.input_wires_R]
+        )
+        return list(sorted(list(in_modes)))
 
     @property
-    def modes_out(self) -> tuple[int]:
+    def modes_out(self) -> List[int]:
         "Returns the tuple of output modes that are used by this CircuitPart."
-        out_modes = self.output_wires_L.keys().union(self.output_wires_R.keys())
-        return tuple(sorted(list(out_modes)))
+        out_modes = set([w.mode for w in self.output_wires_L]).union(
+            [w.mode for w in self.output_wires_R]
+        )
+        return list(sorted(list(out_modes)))
 
-    def can_connect_to(self, other: CircuitPart, mode: int) -> tuple[bool, str]:
-        r"""Checks whether this CircuitPart can plug its `mode_out=mode` into the `mode_in=mode` of `other`.
-        This is the case if the modes exist and if there is no overlap between the output and input modes.
-        In other words, if the operations can be plugged as one would in a circuit diagram.
-
-        Arguments:
-            other (CircuitPart): the other CircuitPart
-            mode (int): the mode to check
-
-        Returns:
-            (bool, str): whether the connection is possible and an failure message
-        """
-        if mode not in self.modes_out:
-            return False, f"mode {mode} not an output of {self}."
-
-        if mode not in other.modes_in:
-            return False, f"mode {mode} not an input of {other}."
-
-        if not set(self.modes_in).isdisjoint(other.modes_in):
-            return False, f"input modes overlap {self.modes_in and other.modes_in}"
-
-        if not set(self.modes_out).isdisjoint(other.modes_out):
-            return False, f"output modes overlap {self.modes_out and other.modes_out}"
-
-        return True, ""
+    def __repr__(self):
+        return f"{self.__class__.__name__}(id={self.id}, name={self.name}, \
+            \n\tinput_wires_L={self.input_wires_L}, \n\tinput_wires_R={self.input_wires_R}, \
+            \n\toutput_wires_L={self.output_wires_L}, \n\toutput_wires_R={self.output_wires_R})"

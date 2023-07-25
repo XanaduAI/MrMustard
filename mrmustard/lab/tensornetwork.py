@@ -18,95 +18,15 @@ This module implements the :class:`.Circuit` class which acts as a representatio
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import Union
 
+import networkx as nx
 
-class Wire:
-    r"""
-    Represents a wire of a tensor, to be used in a tensor network.
-
-    Attributes:
-        id: An integer unique identifier for this wire.
-        duality: A string indicating the duality of this wire, either 'L' or 'R'.
-        mode: An integer mode for this wire, only wires with the same mode can be connected.
-        data: An arbitrary object associated with this wire.
-    """
-    _id_counter: int = 0
-
-    def __init__(self, is_input: bool, duality: str, mode: Optional[int] = None, data: Any = None):
-        r"""
-        Initializes a Wire instance.
-
-        Arguments:
-            is_input (bool): A boolean value indicating whether this wire is an input wire.
-            duality (str): A string indicating the duality of this wire, can only connect to wires of the same duality.
-            mode (int): An integer mode for this wire, can only connect to wires with the same mode.
-            data (Any): An optional arbitrary object associated with this wire.
-        """
-        self.id: int = Wire._id_counter * 2 + 1 if is_input else Wire._id_counter * 2
-        Wire._id_counter += 1
-        self.duality: str = duality
-        self.mode: int = mode
-        self.data: object = data
-
-
-class TNTensor:
-    """
-    Represents a tensor in a tensor network.
-
-    Attributes:
-        id: An integer unique identifier for this tensor.
-        name: A string name for this tensor, used for human-readable references.
-        input_wires_L: A list of left-flavored input wires connected to this tensor.
-        input_wires_R: A list of right-flavored input wires connected to this tensor.
-        output_wires_L: A list of left-flavored output wires connected to this tensor.
-        output_wires_R: A list of right-flavored output wires connected to this tensor.
-    """
-
-    _id_counter: int = 0
-
-    def __init__(
-        self,
-        name: str,
-        modes_output_L: List[int],
-        modes_input_L: List[int],
-        modes_output_R: List[int],
-        modes_input_R: List[int],
-        data: Any = None,
-    ):
-        r"""
-        Initializes a Tensor instance.
-
-        Arguments:
-            name: A string name for this tensor.
-            modes_output_L: A list of left-flavored output wire modes.
-            modes_input_L: A list of left-flavored input wire modes.
-            modes_output_R: A list of right-flavored output wire modes.
-            modes_input_R: A list of right-flavored input wire modes.
-            data: An optional arbitrary object associated with this tensor.
-        """
-        self.id: int = TNTensor._id_counter
-        TNTensor._id_counter += 1
-        self.name: str = name
-        self.output_wires_L: List[Wire] = [Wire(False, "L", mode) for mode in modes_output_L]
-        self.input_wires_L: List[Wire] = [Wire(True, "L", mode) for mode in modes_input_L]
-        self.output_wires_R: List[Wire] = [Wire(False, "R", mode) for mode in modes_output_R]
-        self.input_wires_R: List[Wire] = [Wire(True, "R", mode) for mode in modes_input_R]
-        self.data: Any = data
-
-    @property
-    def input_modes(self) -> List[Wire]:
-        r"""Returns a list of all input modes of this tensor."""
-        return list(set([w.mode for w in self.input_wires_L + self.input_wires_R]))
-
-    @property
-    def output_modes(self) -> List[Wire]:
-        r"""Returns a list of all output wires connected to this tensor."""
-        return list(set([w.mode for w in self.output_wires_L + self.output_wires_R]))
+from mrmustard.lab.abstract.circuitpart import CircuitPart
 
 
 class TensorNetwork:
-    """
+    r"""
     Represents a tensor network, maintaining a collection of tensors and their connections.
 
     Attributes:
@@ -116,13 +36,13 @@ class TensorNetwork:
     """
 
     def __init__(self):
-        """Initializes a TensorNetwork instance."""
+        r"""Initializes a TensorNetwork instance."""
         self.graph: nx.Graph = nx.Graph()
         self.tensors: dict = {}
         self.name_to_id: dict = {}
 
-    def add_tensor(self, tensor: Tensor) -> None:
-        """
+    def add_tensor(self, tensor: CircuitPart) -> None:
+        r"""
         Adds a tensor to the network.
 
         Arguments:
@@ -136,17 +56,20 @@ class TensorNetwork:
                     wire.id,
                     {
                         "tensor": tensor.id,
-                        "flavor": wire.flavor,
+                        "duality": wire.duality,
                         "mode": wire.mode,
                         "data": wire.data,
                     },
                 )
-                for wire in tensor.input_wires + tensor.output_wires
+                for wire in tensor.input_wires_L
+                + tensor.output_wires_L
+                + tensor.input_wires_R
+                + tensor.output_wires_R
             ]
         )
 
-    def get_tensor(self, identifier: Union[int, str]) -> Tensor:
-        """
+    def get_tensor(self, identifier: Union[int, str]) -> CircuitPart:
+        r"""
         Retrieves a tensor from the network by its name or id.
 
         Arguments:
@@ -161,25 +84,27 @@ class TensorNetwork:
             tensor_id = self.name_to_id.get(identifier)
             return self.tensors.get(tensor_id)
 
-    def connect_wires(self, wire1_id: int, wire2_id: int) -> None:
-        """
+    def connect_wires(self, wire1_id: int, wire2_id: int, check_physical: bool = True) -> None:
+        r"""
         Connects two wires in the network.
 
         Arguments:
             wire1_id: The id of the first wire.
             wire2_id: The id of the second wire.
+            check_physical (bool): whether to allow only physical connections (default True).
 
         Raises:
-            ValueError: If the wires have the same parity, different flavors, or different modes.
+            ValueError: If the wires are not input/output, different duality, or different modes.
         """
         wire1 = self.graph.nodes[wire1_id]
         wire2 = self.graph.nodes[wire2_id]
 
-        if wire1_id % 2 == wire2_id % 2:
-            raise ValueError("Error: Wires have the same parity")
-        elif wire1["flavor"] != wire2["flavor"]:
-            raise ValueError("Error: Wires have different flavors")
-        elif wire1["mode"] != wire2["mode"]:
-            raise ValueError("Error: Wires have different modes")
-        else:
-            self.graph.add_edge(wire1_id, wire2_id)
+        if check_physical:
+            if wire1_id % 2 == wire2_id % 2:
+                raise ValueError("Error: Wires are not input/output pairs")
+            elif wire1["duality"] != wire2["duality"]:
+                raise ValueError("Error: Wires have different duality")
+            elif wire1["mode"] != wire2["mode"]:
+                raise ValueError("Error: Wires are on different modes")
+
+        self.graph.add_edge(wire1_id, wire2_id)
