@@ -44,13 +44,14 @@ class Transformation(CircuitPart):
         modes_in: list[int],
         modes_out: list[int],
         name: str,
+        duality="L",
         **kwargs,
     ):
         super().__init__(
-            modes_output_L=modes_out,
-            modes_output_R=[] if not self.is_unitary else modes_out,
-            modes_input_L=modes_in,
-            modes_input_R=[] if not self.is_unitary else modes_in,
+            modes_output_L=modes_out if "L" in duality else [],
+            modes_input_L=modes_in if "L" in duality else [],
+            modes_output_R=modes_out if "R" in duality else [],
+            modes_input_R=modes_in if "R" in duality else [],
             name=name,
             **kwargs,
         )
@@ -165,22 +166,6 @@ class Transformation(CircuitPart):
                     dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
                 )
             return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
-
-    # @property
-    # def modes(self) -> Sequence[int]:
-    #     """Returns the list of modes on which the transformation acts on."""
-    #     if self._modes in (None, []):
-    #         for elem in self.XYd:
-    #             if elem is not None:
-    #                 self._modes = list(range(elem.shape[-1] // 2))
-    #                 break
-    #     return self._modes
-
-    # @modes.setter
-    # def modes(self, modes: List[int]):
-    #     r"""Sets the modes on which the transformation acts."""
-    #     self._validate_modes(modes)
-    #     self._modes = modes
 
     @property
     def num_modes(self) -> int:
@@ -320,44 +305,21 @@ class Transformation(CircuitPart):
 
     # TODO: use __class_getitem__ for compiler stuff
 
-    # def __gt__(self, other: Transformation):
-    #     r"""Concatenates self with other (self before other).
+    def __rshift__(self, other: Transformation):
+        r"""Concatenates self with other (other after self).
 
-    #     If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
-    #     E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
+        If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
+        E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
 
-    #     Args:
-    #         other: another transformation
+        Args:
+            other: another transformation
 
-    #     Returns:
-    #         Circuit: A circuit that concatenates self with other
-    #     """
-    #     from mrmustard.lab.circuit import Circuit, Operation
+        Returns:
+            Circuit: A circuit that concatenates self with other
+        """
+        from mrmustard.lab.circuit import Circuit
 
-    #     op1 = Operation(self, self.modes, self.modes, not self.is_unitary)
-    #     if isinstance(other, Circuit):
-    #         return Circuit([op1] + other.parts)
-    #     if hasattr(other, "is_unitary"):
-    #         op2 = Operation(other, other.modes, other.modes, not other.is_unitary)
-    #     elif hasattr(other, "is_projective"):
-    #         op2 = Operation(other, other.modes, [], not other.is_projective)
-    #     else:
-    #         raise ValueError(f"Cannot concatenate {type(self)} with {type(other)}")
-    #     return Circuit([op1, op2])
-
-    # def __rshift__(self, other: Transformation):
-    #     r"""Concatenates self with other (other after self).
-
-    #     If any of the two is a circuit, all the ops in it migrate to the new circuit that is returned.
-    #     E.g., ``circ = Sgate(1.0)[0,1] >> Dgate(0.2)[0] >> BSgate(np.pi/4)[0,1]``
-
-    #     Args:
-    #         other: another transformation
-
-    #     Returns:
-    #         Circuit: A circuit that concatenates self with other
-    #     """
-    #     return Circuit([self, other])
+        return Circuit([self, other])
 
     def __lshift__(self, other: Union[State, Transformation]):
         r"""Applies the dual of self to other.

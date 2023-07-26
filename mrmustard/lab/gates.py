@@ -81,6 +81,7 @@ class Dgate(Parametrized, Transformation):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
         super().__init__(
@@ -93,6 +94,8 @@ class Dgate(Parametrized, Transformation):
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
+            duality="L",
+            **kwargs,
         )
 
     @property

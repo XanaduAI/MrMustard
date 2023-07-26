@@ -43,7 +43,7 @@ class TensorNetwork:
 
     def add_tensor(self, tensor: CircuitPart) -> None:
         r"""
-        Adds a tensor to the network.
+        Adds a tensor to the network by adding its wires to the graph.
 
         Arguments:
             tensor: The Tensor object to add.
@@ -54,17 +54,10 @@ class TensorNetwork:
             [
                 (
                     wire.id,
-                    {
-                        "tensor": tensor.id,
-                        "duality": wire.duality,
-                        "mode": wire.mode,
-                        "data": wire.data,
-                    },
+                    {"tensor": tensor.id},
+                    {"wire": wire},
                 )
-                for wire in tensor.input_wires_L
-                + tensor.output_wires_L
-                + tensor.input_wires_R
-                + tensor.output_wires_R
+                for wire in tensor.all_wires
             ]
         )
 
@@ -84,49 +77,72 @@ class TensorNetwork:
             tensor_id = self.name_to_id.get(identifier)
             return self.tensors.get(tensor_id)
 
-    def connect_wires_by_id(
-        self, wire1_id: int, wire2_id: int, check_physical: bool = True
-    ) -> None:
+    def connect_wires(self, wire1_id, wire2_id):
         r"""
         Connects two wires in the network.
+        They can belong to different tensors or to the same tensor.
 
         Arguments:
-            wire1_id: The id of the first wire.
-            wire2_id: The id of the second wire.
-            check_physical (bool): whether to allow only physical connections (default True).
+            wire1_id (int): The id of the first wire.
+            wire2_id (int): The id of the second wire
 
         Raises:
             ValueError: If the wires are not input/output, different duality, or different modes.
         """
-        wire1 = self.graph.nodes[wire1_id]
-        wire2 = self.graph.nodes[wire2_id]
+        if self.can_connect_wires(wire1_id, wire2_id):
+            self.graph.add_edge(wire1_id, wire2_id)
 
-        if check_physical:
-            if wire1_id % 2 == wire2_id % 2:
-                raise ValueError("Error: Wires are not input/output pairs")
-            elif wire1["duality"] != wire2["duality"]:
-                raise ValueError("Error: Wires have different duality")
-            elif wire1["mode"] != wire2["mode"]:
-                raise ValueError("Error: Wires are on different modes")
 
-        self.graph.add_edge(wire1_id, wire2_id)
+class TensorNetworkCircuit(TensorNetwork):
+    r"""A restricted version of a TensorNetwork used to enforce certain rules when
+    constructing a tensor network of a circuit. For example, only input and output modes can
+    be contracted, and the duality and modes must match."""
+
+    def __init__(self):
+        r"""Initializes a TensorNetworkCircuit instance."""
+        super().__init__()
+
+    def can_connect_wires(self, wire1_id: int, wire2_id: int) -> bool:
+        r"""
+        Checks whether two wires can be connected.
+
+        Arguments:
+            wire1_id: The id of the first wire.
+            wire2_id: The id of the second wire.
+
+        Returns:
+            Whether the wires can be connected.
+        """
+        wire1 = self.graph.nodes[wire1_id].wire
+        wire2 = self.graph.nodes[wire2_id].wire
+
+        mode = wire1.mode == wire2.mode
+        equal_duality = wire1.duality == wire2.duality
+        in_out = wire1.is_input != wire2.is_input
+
+        partial_trace = mode and not equal_duality and not in_out
+        op = mode and equal_duality and in_out
+
+        return op or partial_trace
 
     def connect_wires(self, tensor_id_1, tensor_id_2, mode, duality):
         r"""
         Connects two wires in the network.
+        They can belong to different tensors or to the same tensor.
 
         Arguments:
-            tensor_id_1: The id of the first tensor.
-            tensor_id_2: The id of the second tensor.
-            mode: The mode of the wires to connect.
-            duality: The duality of the wires to connect.
+            tensor_id_1 (int): The id of the first tensor.
+            tensor_id_2 (int): The id of the second tensor (can be the same as the first tensor)
+            mode (int): The mode of the wires to connect.
+            duality (str): The duality of the wires to connect.
 
         Raises:
             ValueError: If the wires are not input/output, different duality, or different modes.
         """
         wire1_id = self.get_wire_id(tensor_id_1, mode, duality)
         wire2_id = self.get_wire_id(tensor_id_2, mode, duality)
-        self.connect_wires_by_id(wire1_id, wire2_id)
+        if self.can_connect_wires(wire1_id, wire2_id):
+            self.graph.add_edge(wire1_id, wire2_id)
 
     def get_wire_id(self, tensor_id, mode, duality):
         r"""

@@ -14,10 +14,7 @@
 
 from __future__ import annotations
 
-from collections import namedtuple
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
-
-from mrmustard import settings
+from typing import Any, List, Optional
 
 
 class Wire:
@@ -63,8 +60,10 @@ class CircuitPart:
         - it can check whether it can be connected to another CircuitPart at a given mode
         - it can return its input and output modes
         - it keeps a list of its wires as Wire objects
+        - keeps a reference to the State/Transformation/Measurement associated with this CircuitPart
     """
     _id_counter: int = 0
+    _repr_markdown_ = None  # otherwise takes over the repr due to mro
 
     def __init__(
         self,
@@ -77,16 +76,16 @@ class CircuitPart:
         **kwargs,
     ):
         r"""
-        Initializes a Tensor instance.
+        Initializes a CircuitPart instance.
 
         Arguments:
-            name: A string name for this tensor.
+            name: A string name for this circuit part.
             modes_output_L: A list of output wire modes.
             modes_input_L: A list of input wire modes.
             modes_output_R: A list of dual output wire modes.
             modes_input_R: A list of dual input wire modes.
-            data: An optional arbitrary object associated with this tensor.
-            name: A string name for this tensor.
+            data: An optional arbitrary object associated with this circuit part.
+            name: A string name for this circuit part.
             kwargs: Additional keyword arguments to pass to the next class in the mro.
         """
         self.id: int = CircuitPart._id_counter
@@ -98,8 +97,6 @@ class CircuitPart:
         self.input_wires_R: List[Wire] = [Wire(True, "R", mode) for mode in modes_input_R]
         self.data: Any = data
         super().__init__(**kwargs)
-
-    _repr_markdown_ = None
 
     @property
     def modes(self) -> Optional[list[int]]:
