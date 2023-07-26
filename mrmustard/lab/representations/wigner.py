@@ -68,13 +68,13 @@ class Wigner(Representation):
             Vector: the photon number means vector
         """
         N = means.shape[-1] // 2
-        return (
-            means[:N] ** 2
-            + means[N:] ** 2
-            + math.diag_part(cov[:N, :N])
-            + math.diag_part(cov[N:, N:])
+        return [(
+            means[i, :N] ** 2
+            + means[i, N:] ** 2
+            + math.diag_part(cov[i, :N, :N])
+            + math.diag_part(cov[i, N:, N:])
             - hbar #NOTE: if hbar is hbar*math.ones(N)
-        ) / (2 * hbar)
+        ) / (2 * hbar) for i in range(means.shape[0])]
 
     def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
@@ -91,6 +91,8 @@ class Wigner(Representation):
             |\alpha|^2 = r_q^2 + r_p^2
             
             K = A \circ A^* + B \circ B^* - \frac14 I_N + 2Re[(\alpha^* \alpha^T) \circ A + (\alpha^* \alpha^\dagger) \circ B].
+
+        :math:`\circ` is the Hadamard product of matrices.
         
         Reference: PHYSICAL REVIEW A 99, 023817 (2019)
 
@@ -103,14 +105,18 @@ class Wigner(Representation):
             Matrix: the photon number covariance matrix
         """
         N = means.shape[-1] // 2
-        mCm = cov * means[:, None] * means[None, :]
-        dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
-            2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
-        )
-        CC = (cov**2 + mCm) / (2 * hbar**2)
-        return (
-            CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
-        )
+        number_cov = []
+        for i in range(means.shape[0]):
+            mCm = cov * means[i, :, None] * means[i, None, :]
+            dd = math.diag(math.diag_part(mCm[i, :N, :N] + mCm[i, N:, N:] + mCm[i, :N, N:] + mCm[i, N:, :N])) / (
+                2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
+            )
+            CC = (cov**2 + mCm) / (2 * hbar**2)
+            number_cov.append(
+                CC[i, :N, :N] + CC[i, N:, N:] + CC[i, :N, N:] + CC[i, N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
+            )
+        return number_cov
+
 
     @property
     def number_variances(self) -> int:
