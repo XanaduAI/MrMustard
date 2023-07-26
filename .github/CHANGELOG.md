@@ -1,4 +1,4 @@
-# Release 0.5.0 (development release)
+# Release 0.5.0
 
 ### New features
 
@@ -8,7 +8,7 @@
   of customizing the the optimization progress with schedulers, trackers, heuristics, tricks, etc.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
 
-* Tensorboard based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
+* Tensorboard-based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
   It can automatically track costs as well as all trainable parameters during optimization in realtime.
   Tensorboard can be most conveniently viewed from VScode.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
@@ -105,7 +105,8 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
-[Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli)
+[Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
+[Richard A. Wolf](https://github.com/ryk-wolf)
 
 ---
 
