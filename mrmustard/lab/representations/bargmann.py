@@ -41,12 +41,14 @@ class Bargmann(Representation):
 
     @property
     def number_means(self) -> Vector:
+        # NOTE: we can use the universal trace formula to do it!
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
 
     @property
     def number_cov(self) -> Matrix:
+        # NOTE: we can use the universal trace formula to do it!
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
