@@ -19,7 +19,7 @@ import numpy as np
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
-from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()
 
@@ -73,9 +73,9 @@ class MatVecData(Data):  # Note: this class is abstract!
         new_coeffs = self.coeffs / x
         return self.__class__(self.mat, self.vec, new_coeffs)
 
-    def helper_check_is_real_symmetric(self, A) -> bool:
+    def helper_check_is_real_symmetric(self, A:Batch[Matrix]) -> bool:
         r"""Checks that the matrix given is both real and symmetric."""
-        return np.allclose(A, np.transpose(A))
+        return all([np.allclose(a, np.transpose(a)) for a in A])
 
     # def __and__(self, other: MatVecData) -> MatVecData:
     #     try: #TODO: ORDER OF ALL MATRICESA!

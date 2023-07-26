@@ -34,6 +34,10 @@ from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct,
 )
 
+np.random.seed(42)
+D = 10 #dimension, matrix will be DxD while means will be D
+N = 3 #number of elements in the batch
+
 
 ##################   FIXTURES  ###################
 @pytest.fixture
@@ -45,19 +49,19 @@ def TYPE():
 @pytest.fixture
 def MAT() -> Matrix:
     r"""Some matrix for the object's parameterization."""
-    return np.eye(10) * 42
+    return np.random.rand(N,D,D)
 
 
 @pytest.fixture
 def VEC() -> Vector:
     r"""Some vector for the object's parameterization."""
-    return np.ones(10) * 42
+    return np.random.rand(N,D)
 
 
 @pytest.fixture
 def COEFFS() -> Scalar:
     r"""Some scalar for the object's parameterization."""
-    return 42
+    return np.random.rand(1, N)
 
 
 @pytest.fixture

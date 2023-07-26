@@ -156,7 +156,7 @@ class GaussianData(MatVecData):
                 - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
             )
             for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
-                self.cov,
+                self.cov,   
                 self.means,
                 other.cov,
                 other.means,
@@ -167,7 +167,6 @@ class GaussianData(MatVecData):
             )
         ]
         res = math.astensor(combined_coeffs)
-        print(type)
         return res
 
     def _compute_mul_means(self, other: GaussianData) -> Tensor:
