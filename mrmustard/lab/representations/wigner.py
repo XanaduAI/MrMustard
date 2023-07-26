@@ -37,46 +37,80 @@ class Wigner(Representation):
 
     @property
     def norm(self) -> float:
-        # TODO: get the norm from other representation
+        # NOTE: be able to get the norm from other representation
         raise NotImplementedError()
 
     @property
-    def number_means(self) -> RealVector:
-        n = self.data.means.shape[-1] // 2
+    def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
+        r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
-        cov_top_left = math.diag_part(self.data.cov[:n, :n])
-        cov_bottom_right = math.diag_part(self.data.cov[n:, n:])
-        covariance = cov_top_left + cov_bottom_right
+        Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number means is :math:`m`.
+        
+        .. math::
 
-        means_first_half = self.data.means[:n]
-        means_second_half = self.data.means[n:]
-        means = means_first_half**2 + means_second_half**2
+            V = \begin{bmatrix}
+                A & B\\
+                B^* & A^*
+                \end{bmatrix}
 
-        return (means + covariance - settings.HBAR) / (2 * settings.HBAR)
+            |\alpha|^2 = r_q^2 + r_p^2
+            
+            m_i = A_ii + |\alpha_i|^2 - \frac{1}{2}.
+        
+        Reference: PHYSICAL REVIEW A 99, 023817 (2019)
+            
+        Args:
+            cov: the Wigner covariance matrix
+            means: the Wigner means vector
+            hbar: the value of the Planck constant
 
-    # TODO : rename variables with actual names (apple, banana)
-    @property
-    def number_cov(self) -> RealMatrix:
-        n = self.data.means.shape[-1] // 2
+        Returns:
+            Vector: the photon number means vector
+        """
+        N = means.shape[-1] // 2
+        return (
+            means[:N] ** 2
+            + means[N:] ** 2
+            + math.diag_part(cov[:N, :N])
+            + math.diag_part(cov[N:, N:])
+            - hbar #NOTE: if hbar is hbar*math.ones(N)
+        ) / (2 * hbar)
 
-        extended_means_horizontal = self.data.means[:, None]
-        extended_means_vertical = self.data.means[None, :]
+    def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
+        r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
 
-        mCm = self.data.cov * extended_means_horizontal * extended_means_vertical
+        Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number covariance matrix is :math:`K`.
+        
+        .. math::
 
-        # TODO: sum(diag_part) is better than diag_part(sum)
-        diagonal = math.diag_part(mCm[:n, :n] + mCm[n:, n:] + mCm[:n, n:] + mCm[n:, :n])
-        diag_of_diag = math.diag(diagonal)
+            V = \begin{bmatrix}
+                A & B\\
+                B^* & A^*
+                \end{bmatrix}
 
-        CC = (self.data.cov**2 + mCm) / (2 * settings.HBAR**2)
+            |\alpha|^2 = r_q^2 + r_p^2
+            
+            K = A \circ A^* + B \circ B^* - \frac14 I_N + 2Re[(\alpha^* \alpha^T) \circ A + (\alpha^* \alpha^\dagger) \circ B].
+        
+        Reference: PHYSICAL REVIEW A 99, 023817 (2019)
 
-        apple = CC[:n, :n] + CC[n:, n:] + CC[:n, n:] + CC[n:, :n]
+        Args:
+            cov: the Wigner covariance matrix
+            means: the Wigner means vector
+            hbar: the value of the Planck constant
 
-        banana = 0.25 * math.eye(n, dtype=CC.dtype)
-
-        covariances = apple + (diag_of_diag / (2 * settings.HBAR**2)) - banana
-
-        return covariances
+        Returns:
+            Matrix: the photon number covariance matrix
+        """
+        N = means.shape[-1] // 2
+        mCm = cov * means[:, None] * means[None, :]
+        dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
+            2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
+        )
+        CC = (cov**2 + mCm) / (2 * hbar**2)
+        return (
+            CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
+        )
 
     @property
     def number_variances(self) -> int:
