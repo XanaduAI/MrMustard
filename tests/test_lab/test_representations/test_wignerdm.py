@@ -20,7 +20,7 @@ from mrmustard.lab.representations.wigner_dm import WignerDM
 
 class TestWignerDMThrowErrors:
     wignerdm = WignerDM(
-        symplectic=np.random.random((3, 3)), displacement=np.random.random(3), coeffs=1.0
+        symplectic=np.random.random((2, 3, 3)), displacement=np.random.random(3), coeffs=1.0
     )
 
     def test_purity_with_error(self):

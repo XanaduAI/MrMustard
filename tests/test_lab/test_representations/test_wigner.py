@@ -19,19 +19,19 @@ from mrmustard.lab.representations.wigner import Wigner
 
 
 def test_number_means_of_wigner_state():
-    wigner = Wigner(cov=np.random.random((3, 3)), means=np.random.random(3), coeffs=1.0)
+    wigner = Wigner(cov=np.random.random((1, 3, 3)), means=np.random.random(3), coeffs=1.0)
     expected = 1.0
     assert np.allclose(wigner.number_means, expected)
 
 
 def test_number_variances_of_wigner_state():
-    wigner = Wigner(cov=np.random.random((3, 3)), means=np.random.random(3), coeffs=1.0)
+    wigner = Wigner(cov=np.random.random((1, 3, 3)), means=np.random.random(3), coeffs=1.0)
     expected = 1.0
     assert np.allclose(wigner.number_variances, expected)
 
 
 class TestWignerThrowErrors:
-    wigner = Wigner(cov=np.random.random((3, 3)), means=np.random.random(3), coeffs=1.0)
+    wigner = Wigner(cov=np.random.random((1, 3, 3)), means=np.random.random(3), coeffs=1.0)
 
     def test_norm_with_error(self):
         with self.assertRaises(NotImplementedError):
