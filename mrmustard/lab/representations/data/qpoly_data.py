@@ -85,4 +85,5 @@ class QPolyData(MatVecData):
     def _operate_all_combinations(self, X, Y, operator):
         """Returns the element-wise operation on the cartesian product of inputs X and Y."""
         both = product(X,Y)
-        return np.fromiter(map(lambda z: operator(z[0], z[1]), both), dtype=np.float64)
+        result = map(lambda z: operator(z[0], z[1]), both)
+        return np.asarray(list(result))

@@ -45,7 +45,7 @@ def TYPE():
 @pytest.fixture
 def A() -> Matrix:
     r"""Some matrix for the object's parameterization."""
-    return [random_covariance(D) for _ in range(N)]#np.random.rand(N,D,D)
+    return np.array([random_covariance(D) for _ in range(N)])#np.random.rand(N,D,D)
 
 
 @pytest.fixture
@@ -110,12 +110,30 @@ class TestQPolyData(): #TODO re-add inheritance
     # NOTE : tested in parent class
 
     ###############  Multiplication  #################
-    # def test_object_mul_result_has_correct_number_of_A_and_b_elements(self,DATA, OTHER):
-    #     post_op_result = DATA * OTHER
-    #     nb_combined_mats = post_op_result.A.shape[0]
-    #     nb_combined_vectors = post_op_result.b.shape[0]
-    #     nb_combined_constants = post_op_result.c.shape[0]
-    #     assert nb_combined_mats == nb_combined_vectors == nb_combined_constants == N*N
+    def test_object_mul_result_has_correct_number_of_A_and_b_elements(self,DATA, OTHER):
+        post_op_result = DATA * OTHER
+        nb_combined_mats = post_op_result.A.shape[0]
+        nb_combined_vectors = post_op_result.b.shape[0]
+        nb_combined_constants = post_op_result.c.shape[0]
+        assert nb_combined_mats == nb_combined_vectors == nb_combined_constants == N*N
+
+    @pytest.mark.parametrize("x", [2])
+    def test_object_mul_addition_of_all_elements_is_correct(self, DATA, TYPE, A, B, C, x):
+        other_a = deepcopy(A) * x
+        other_b = deepcopy(B) * x
+        other_c = deepcopy(C) * x
+        other_params = {"A": other_a, "b": other_b, "c": other_c}
+        other_data = general_factory(TYPE, **other_params)
+        result_post_op = DATA * other_data
+        mat_cumsum_other = np.add.reduce(np.ndarray.flatten(other_data.A))
+        mat_cumsum_original = np.add.reduce(np.ndarray.flatten(DATA.A))
+        cumsum_A = mat_cumsum_other + mat_cumsum_original
+        # vec_cumsum_other = np.add.reduce(np.ndarray.flatten(other_data.b))
+        # vec_cumsum_original = np.add.reduce(np.ndarray.flatten(DATA.b))
+        # cumsum_b = vec_cumsum_other + vec_cumsum_original
+        assert cumsum_A == np.add.reduce(np.ndarray.flatten(result_post_op.A))
+        # assert cumsum_b == np.add.reduce(np.ndarray.flatten(result_post_op.b))
+        
 
 
     # @pytest.mark.parametrize("x", [2, 7, 100])
