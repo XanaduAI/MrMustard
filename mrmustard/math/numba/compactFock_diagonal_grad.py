@@ -254,7 +254,7 @@ def fock_representation_diagonal_grad_NUMBA(
     for sum_params in range(sum(cutoffs)):
         for params in dict_params[sum_params]:
             # diagonal pivots: aa,bb,cc,dd,...
-            if params[0] < cutoffs[0] - 1:
+            if (cutoffs[0] == 1) or (params[0] < cutoffs[0] - 1):
                 arr1_dA, arr1_dB = use_diag_pivot_grad(
                     A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB
                 )

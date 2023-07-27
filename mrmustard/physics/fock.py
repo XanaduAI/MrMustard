@@ -22,11 +22,11 @@ from functools import lru_cache
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
-from numba import jit
 
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.lattice import strategies
 from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
 from mrmustard.physics.bargmann import (
@@ -35,7 +35,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.typing import Matrix, Scalar, Tensor, Vector
+from mrmustard.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
 
 math = Math()
 SQRT = np.sqrt(np.arange(1e6))
@@ -93,21 +93,27 @@ def wigner_to_fock_state(
     cov: Matrix,
     means: Vector,
     shape: Sequence[int],
+    max_prob: float = 1.0,
+    max_photons: Optional[int] = None,
     return_dm: bool = True,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
     Use with caution: if the cov matrix is that of a mixed state,
     setting return_dm to False will produce nonsense.
+    If return_dm=False, we can apply max_prob and max_photons to stop the
+    computation of the Fock representation early, when those conditions are met.
 
     * If the state is pure it can return the state vector (ket) or the density matrix.
-        The index order is going to be ket_i where i is the only multimode index.
+        The index ordering is going to be [i's] in ket_i
     * If the state is mixed it can return the density matrix.
-        The index order is going to be dm_ij where j is the right multimode index and i is the left one.
+        The index order is going to be [i's,j's] in dm_ij
 
     Args:
         cov: the Wigner covariance matrix
         means: the Wigner means vector
         shape: the shape of the tensor
+        max_prob: the maximum probability of a the state (applies only if the ket is returned)
+        max_photons: the maximum number of photons in the state (applies only if the ket is returned)
         return_dm: whether to return the density matrix (otherwise it returns the ket)
 
     Returns:
@@ -115,10 +121,16 @@ def wigner_to_fock_state(
     """
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
-        return math.hermite_renormalized(-A, B, C, shape=shape)
-    else:
+        return math.hermite_renormalized(A, B, C, shape=shape)
+    else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
-        return math.hermite_renormalized(-A, B, C, shape=shape)
+        if max_photons is None:
+            max_photons = sum(shape) - len(shape)
+        if max_prob < 1.0 or max_photons < sum(shape) - len(shape):
+            return math.hermite_renormalized_binomial(
+                A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
+            )
+        return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
 
 def wigner_to_fock_U(X, d, shape):
@@ -135,7 +147,7 @@ def wigner_to_fock_U(X, d, shape):
         Tensor: the fock representation of the unitary transformation
     """
     A, B, C = wigner_to_bargmann_U(X, d)
-    return math.hermite_renormalized(-A, B, C, shape=shape)
+    return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
 
 def wigner_to_fock_Choi(X, Y, d, shape):
@@ -153,7 +165,7 @@ def wigner_to_fock_Choi(X, Y, d, shape):
         Tensor: the fock representation of the Choi matrix
     """
     A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    return math.hermite_renormalized(-A, B, C, shape=shape)
+    return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -225,17 +237,18 @@ def dm_to_probs(dm: Tensor) -> Tensor:
     return math.all_diagonals(dm, real=True)
 
 
-def U_to_choi(U: Tensor) -> Tensor:
+def U_to_choi(U: Tensor, Udual: Optional[Tensor] = None) -> Tensor:
     r"""Converts a unitary transformation to a Choi tensor.
 
     Args:
         U: the unitary transformation
+        Udual: the dual unitary transformation (optional, will use conj U if not provided)
 
     Returns:
         Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
         where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
     """
-    return math.outer(U, math.conj(U))
+    return math.outer(U, Udual or math.conj(U))
 
 
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
@@ -370,10 +383,11 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
     validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
 
-    ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
+    ket = MMTensor(ket, axis_labels=[f"in_left_{i}" for i in range(ket.ndim)])
     kraus = MMTensor(
         kraus,
-        axis_labels=[f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx],
+        axis_labels=[f"out_left_{i}" for i in kraus_out_idx]
+        + [f"in_left_{i}" for i in kraus_in_idx],
     )
 
     # contract the operator with the ket.
@@ -440,42 +454,46 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     return k_dm_k.transpose(left + right).tensor
 
 
-def apply_choi_to_dm(choi, dm, choi_in_idx, choi_out_idx=None):
+def apply_choi_to_dm(
+    choi: ComplexTensor,
+    dm: ComplexTensor,
+    choi_in_modes: Sequence[int],
+    choi_out_modes: Sequence[int] = None,
+):
     r"""Applies a choi operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
-    The choi operator has indices that contract with the density matrix (choi_in_idx) and indices that are left over (choi_out_idx).
-    `choi` will contract choi_in_idx from the left and from the right with the density matrix.
+    The choi operator has indices that contract with the density matrix (choi_in_modes) and indices that are left over (choi_out_modes).
+    `choi` will contract choi_in_modes from the left and from the right with the density matrix.
 
     Args:
         choi (array): the choi operator to be applied
         dm (array): the density matrix to which the choi operator is applied
-        choi_in_idx (list of ints): the indices of the choi operator that contract with the density matrix
-        choi_out_idx (list of ints): the indices of the choi operator that re leftover
+        choi_in_modes (list of ints): the input modes of the choi operator that contract with the density matrix
+        choi_out_modes (list of ints): the output modes of the choi operator
 
     Returns:
         array: the resulting density matrix
     """
-    if choi_out_idx is None:
-        choi_out_idx = choi_in_idx
-
-    if not set(choi_in_idx).issubset(range(dm.ndim // 2)):
+    if choi_out_modes is None:
+        choi_out_modes = choi_in_modes
+    if not set(choi_in_modes).issubset(range(dm.ndim // 2)):
         raise ValueError("choi_in_idx should be a subset of the density matrix indices.")
 
     # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
-    validate_contraction_indices(choi_in_idx, choi_out_idx, dm.ndim // 2, "choi")
+    validate_contraction_indices(choi_in_modes, choi_out_modes, dm.ndim // 2, "choi")
 
     dm = MMTensor(
         dm,
-        axis_labels=[f"left_{i}" for i in range(dm.ndim // 2)]
-        + [f"right_{i}" for i in range(dm.ndim // 2)],
+        axis_labels=[f"in_left_{i}" for i in range(dm.ndim // 2)]
+        + [f"in_right_{i}" for i in range(dm.ndim // 2)],
     )
     choi = MMTensor(
         choi,
-        axis_labels=[f"out_left_{i}" for i in choi_out_idx]
-        + [f"left_{i}" for i in choi_in_idx]
-        + [f"out_right_{i}" for i in choi_out_idx]
-        + [f"right_{i}" for i in choi_in_idx],
+        axis_labels=[f"out_left_{i}" for i in choi_out_modes]
+        + [f"in_left_{i}" for i in choi_in_modes]
+        + [f"out_right_{i}" for i in choi_out_modes]
+        + [f"in_right_{i}" for i in choi_in_modes],
     )
 
     # contract the choi matrix with the density matrix.
@@ -670,10 +688,12 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
 
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
-    R = np.array([[2 + 0j]])  # to get the physicist polys
+    R = -np.array([[2 + 0j]])  # to get the physicist polys
 
     def f_hermite_polys(xi):
-        poly = math.hermite_renormalized(R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff)
+        poly = math.hermite_renormalized(
+            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
+        )
         return math.cast(poly, "float64")
 
     hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
@@ -838,101 +858,87 @@ def sample_homodyne(
     return homodyne_sample, probability_sample
 
 
-@jit(nopython=True)
-def _displacement(r, phi, cutoff, dtype=np.complex128):  # pragma: no cover
-    r"""Calculates the matrix elements of the displacement gate using a recurrence relation.
-    Uses the log of the matrix elements to avoid numerical issues and then takes the exponential.
+@math.custom_gradient
+def displacement(x, y, shape, tol=1e-15):
+    r"""creates a single mode displacement matrix"""
+    alpha = math.asnumpy(x) + 1j * math.asnumpy(y)
 
-    Args:
-        r (float): displacement magnitude
-        phi (float): displacement angle
-        cutoff (int): Fock ladder cutoff
-        dtype (data type): Specifies the data type used for the calculation
+    if np.sqrt(x * x + y * y) > tol:
+        gate = strategies.displacement(tuple(shape), alpha)
+    else:
+        gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
-    Returns:
-        array[complex]: matrix representing the displacement operation.
-    """
-    D = np.zeros((cutoff, cutoff), dtype=dtype)
-    rng = np.arange(cutoff)
-    rng[0] = 1
-    log_k_fac = np.cumsum(np.log(rng))
-    for n_minus_m in range(cutoff):
-        m_max = cutoff - n_minus_m
-        logL = np.log(_laguerre(r**2.0, m_max, n_minus_m))
-        for m in range(m_max):
-            n = n_minus_m + m
-            D[n, m] = np.exp(
-                0.5 * (log_k_fac[m] - log_k_fac[n])
-                + n_minus_m * np.log(r)
-                - (r**2.0) / 2.0
-                + 1j * phi * n_minus_m
-                + logL[m]
-            )
-            D[m, n] = (-1.0) ** (n_minus_m) * np.conj(D[n, m])
-    return D
+    def grad(dL_dDc):
+        dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
+        dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
+        dLdx = 2 * np.real(dL_dac)
+        dLdy = 2 * np.imag(dL_dac)
+        return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-
-@jit(nopython=True, cache=True)
-def _laguerre(x, N, alpha, dtype=np.complex128):  # pragma: no cover
-    r"""Returns the N first generalized Laguerre polynomials evaluated at x.
-
-    Args:
-        x (float): point at which to evaluate the polynomials
-        N (int): maximum Laguerre polynomial to calculate
-        alpha (float): continuous parameter for the generalized Laguerre polynomials
-    """
-    L = np.zeros(N, dtype=dtype)
-    L[0] = 1.0
-    if N > 1:
-        for m in range(0, N - 1):
-            L[m + 1] = ((2 * m + 1 + alpha - x) * L[m] - (m + alpha) * L[m - 1]) / (m + 1)
-    return L
-
-
-@jit(nopython=True)
-def _grad_displacement(T, r, phi):  # pragma: no cover
-    r"""Calculates the gradients of the displacement gate with respect to the displacement magnitude and angle.
-
-    Args:
-        T (array[complex]): array representing the gate
-        r (float): displacement magnitude
-        phi (float): displacement angle
-
-    Returns:
-        tuple[array[complex], array[complex]]: The gradient of the displacement gate with respect to r and phi
-    """
-    cutoff = T.shape[0]
-    dtype = T.dtype
-    ei = np.exp(1j * phi)
-    eic = np.exp(-1j * phi)
-    alpha = r * ei
-    alphac = r * eic
-    sqrt = np.sqrt(np.arange(cutoff, dtype=dtype))
-    grad_r = np.zeros((cutoff, cutoff), dtype=dtype)
-    grad_phi = np.zeros((cutoff, cutoff), dtype=dtype)
-
-    for m in range(cutoff):
-        for n in range(cutoff):
-            grad_r[m, n] = -r * T[m, n] + sqrt[m] * ei * T[m - 1, n] - sqrt[n] * eic * T[m, n - 1]
-            grad_phi[m, n] = (
-                sqrt[m] * 1j * alpha * T[m - 1, n] + sqrt[n] * 1j * alphac * T[m, n - 1]
-            )
-
-    return grad_r, grad_phi
+    return math.astensor(gate, dtype=gate.dtype.name), grad
 
 
 @math.custom_gradient
-def displacement(r, phi, cutoff, tol=1e-15):
-    """creates a single mode displacement matrix"""
-    if r > tol:
-        gate = _displacement(math.asnumpy(r), math.asnumpy(phi), cutoff)
+def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
+    r"""Creates a beamsplitter tensor with given cutoffs using a numba-based fock lattice strategy.
+
+    Args:
+        theta (float): transmittivity angle of the beamsplitter
+        phi (float): phase angle of the beamsplitter
+        cutoffs (int,int): cutoff dimensions of the two modes
+    """
+    if method == "vanilla":
+        bs_unitary = strategies.beamsplitter(shape, math.asnumpy(theta), math.asnumpy(phi))
+    elif method == "schwinger":
+        bs_unitary = strategies.beamsplitter_schwinger(
+            shape, math.asnumpy(theta), math.asnumpy(phi)
+        )
     else:
-        gate = math.eye(cutoff, dtype="complex128")
+        raise ValueError(
+            f"Unknown beamsplitter method {method}. Options are 'vanilla' and 'schwinger'."
+        )
 
-    def grad(dy):  # pragma: no cover
-        Dr, Dphi = _grad_displacement(math.asnumpy(gate), math.asnumpy(r), math.asnumpy(phi))
-        grad_r = math.real(math.sum(dy * math.conj(Dr)))
-        grad_phi = math.real(math.sum(dy * math.conj(Dphi)))
-        return grad_r, grad_phi, None
+    def vjp(dLdGc):
+        dtheta, dphi = strategies.beamsplitter_vjp(
+            math.asnumpy(bs_unitary),
+            math.asnumpy(math.conj(dLdGc)),
+            math.asnumpy(theta),
+            math.asnumpy(phi),
+        )
+        return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
 
-    return gate, grad
+    return math.astensor(bs_unitary, dtype=bs_unitary.dtype.name), vjp
+
+
+@math.custom_gradient
+def squeezer(r, phi, shape):
+    r"""creates a single mode squeezer matrix using a numba-based fock lattice strategy"""
+    sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
+
+    def vjp(dLdGc):
+        dr, dphi = strategies.squeezer_vjp(
+            math.asnumpy(sq_unitary),
+            math.asnumpy(math.conj(dLdGc)),
+            math.asnumpy(r),
+            math.asnumpy(phi),
+        )
+        return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
+
+    return math.astensor(sq_unitary, dtype=sq_unitary.dtype.name), vjp
+
+
+@math.custom_gradient
+def squeezed(r, phi, shape):
+    r"""creates a single mode squeezed state using a numba-based fock lattice strategy"""
+    sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
+
+    def vjp(dLdGc):
+        dr, dphi = strategies.squeezed_vjp(
+            math.asnumpy(sq_ket),
+            math.asnumpy(math.conj(dLdGc)),
+            math.asnumpy(r),
+            math.asnumpy(phi),
+        )
+        return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
+
+    return math.astensor(sq_ket, dtype=sq_ket.dtype.name), vjp

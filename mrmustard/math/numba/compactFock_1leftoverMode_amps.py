@@ -3,21 +3,22 @@ This module calculates all possible Fock representations of mode 0,where all oth
 This is done by applying the recursion relation in a selective manner.
 """
 
-import numpy as np
 import numba
-from numba import njit, int64
+import numpy as np
+from numba import int64, njit
 from numba.cpython.unsafe.tuple import tuple_setitem
+
 from mrmustard.math.numba.compactFock_helperFunctions import (
     SQRT,
-    repeat_twice,
     construct_dict_params,
+    repeat_twice,
 )
 
 
 @njit
 def write_block(
     i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode
-):
+):  # pragma: no cover
     """
     Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
     This is the coarse-grained version of applying the recurrence relation of mrmustard.math.numba.compactFock_diagonal_amps once.
@@ -62,7 +63,9 @@ def write_block(
 
 
 @njit
-def read_block(arr_write, idx_write, arr_read, idx_read_tail, cutoff_leftoverMode):
+def read_block(
+    arr_write, idx_write, arr_read, idx_read_tail, cutoff_leftoverMode
+):  # pragma: no cover
     """
     Read the blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
     that are required to apply the recurrence relation and write them to G_in
@@ -258,7 +261,7 @@ def fock_representation_1leftoverMode_amps_NUMBA(
     for sum_params in range(sum(cutoffs_tail)):
         for params in dict_params[sum_params]:
             # diagonal pivots: aa,bb,cc,dd,...
-            if params[0] < cutoffs_tail[0] - 1:
+            if (cutoffs_tail[0] == 1) or (params[0] < cutoffs_tail[0] - 1):
                 arr1 = use_diag_pivot(
                     A, B, M - 1, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1
                 )

@@ -17,7 +17,8 @@ used within Mr Mustard.
 """
 
 from itertools import chain, groupby
-from typing import List, Callable, Sequence
+from typing import List, Callable, Sequence, Union, Mapping, Dict
+from mrmustard.training.callbacks import Callback
 from mrmustard.utils import graphics
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
@@ -55,7 +56,7 @@ class Optimizer:
             "orthogonal": orthogonal_lr,
         }
         self.opt_history: List[float] = [0]
-        self.callback_history: List = []
+        self.callback_history: Dict[str, List] = {}
         self.log = create_logger(__name__)
 
     def minimize(
@@ -63,7 +64,7 @@ class Optimizer:
         cost_fn: Callable,
         by_optimizing: Sequence[Trainable],
         max_steps: int = 1000,
-        callback: Callable = None,
+        callbacks: Union[Callable, Sequence[Callable], Mapping[str, Callable]] = None,
     ):
         r"""Minimizes the given cost function by optimizing circuits and/or detectors.
 
@@ -74,32 +75,55 @@ class Optimizer:
                 contain the parameters to optimize
             max_steps (int): the minimization keeps going until the loss is stable or max_steps are
                 reached (if ``max_steps=0`` it will only stop when the loss is stable)
-            callback (Callable): a function that will be executed at each step of the optimization, which
-                takes as arguments the training step (int), the cost and the trainable parameters.
-                The return value is stored in self.callback_history.
+            callbacks (:class:`Callback`, `Callable`, or List/Dict of them): callback functions that
+                will be executed at each step of the optimization after backprop but before gradient
+                gets applied. It takes as arguments the optimizer itself, training step (int), the
+                cost value, the cost function, and the trainable parameters (values & grads) dict.
+                The optional returned dict for each step is stored in self.callback_history which
+                is a callback-name-keyed dict with each value a list of such callback result dicts.
+                Learn more about how to use callbacks to have finer control of the optimization
+                process in the :mod:`.callbacks` module.
         """
+        callbacks = self._coerce_callbacks(callbacks)
+
         try:
-            self._minimize(cost_fn, by_optimizing, max_steps, callback)
+            self._minimize(cost_fn, by_optimizing, max_steps, callbacks)
         except KeyboardInterrupt:  # graceful exit
             self.log.info("Optimizer execution halted due to keyboard interruption.")
             raise self.OptimizerInterruptedError() from None
 
-    def _minimize(self, cost_fn, by_optimizing, max_steps, callback):
+    def _minimize(self, cost_fn, by_optimizing, max_steps, callbacks):
         # finding out which parameters are trainable from the ops
         trainable_params = self._get_trainable_params(by_optimizing)
+        cost_fn_modified = False
+        orig_cost_fn = cost_fn
 
         bar = graphics.Progressbar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
-                cost, grads = self.compute_loss_and_gradients(cost_fn, trainable_params)
-                self.apply_gradients(trainable_params, grads)
+                cost, grads = self.compute_loss_and_gradients(cost_fn, trainable_params.values())
 
+                trainables = {tag: (x, dx) for (tag, x), dx in zip(trainable_params.items(), grads)}
+
+                if cost_fn_modified:
+                    self.callback_history["orig_cost"].append(orig_cost_fn())
+
+                new_cost_fn, new_grads = self._run_callbacks(
+                    callbacks=callbacks,
+                    cost_fn=cost_fn,
+                    cost=cost,
+                    trainables=trainables,
+                )
+
+                self.apply_gradients(trainable_params.values(), new_grads or grads)
                 self.opt_history.append(cost)
                 bar.step(math.asnumpy(cost))
-                if callback is not None:
-                    self.callback_history.append(
-                        callback(len(self.opt_history) - 1, cost, trainable_params)
-                    )
+
+                if callable(new_cost_fn):
+                    cost_fn = new_cost_fn
+                    if not cost_fn_modified:
+                        cost_fn_modified = True
+                        self.callback_history["orig_cost"] = self.opt_history.copy()
 
     def apply_gradients(self, trainable_params, grads):
         """Apply gradients to variables.
@@ -120,20 +144,33 @@ class Optimizer:
             update_method(grads_and_vars, param_lr)
 
     @staticmethod
-    def _get_trainable_params(trainable_items):
-        """Returns a list of trainable parameters from instances of Parametrized or
-        items that belong to the backend and are trainable
+    def _get_trainable_params(trainable_items, root_tag: str = "optimized"):
+        """Traverses all instances of Parametrized or trainable items that belong to the backend
+        and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
+        are traversal paths of collecting all parent tags for reaching each parameter.
         """
         trainables = []
-        for item in trainable_items:
+        for i, item in enumerate(trainable_items):
+            owner_tag = f"{root_tag}[{i}]"
             if isinstance(item, Parametrized):
-                trainables.append(item.trainable_parameters)
+                tag = f"{owner_tag}:{item.__class__.__qualname__}"
+                trainables.append(item.traverse_trainables(owner_tag=tag).items())
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above
                 # returns a list, hence ensuring we have a list of lists
-                trainables.append([create_parameter(item, name="from_backend", is_trainable=True)])
+                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
+                trainables.append(
+                    [
+                        (
+                            tag,
+                            create_parameter(
+                                item, name="from_backend", is_trainable=True, owner=tag
+                            ),
+                        )
+                    ]
+                )
 
-        return list(chain(*trainables))
+        return dict(chain(*trainables))
 
     @staticmethod
     def _group_vars_and_grads_by_type(trainable_params, grads):
@@ -185,6 +222,62 @@ class Optimizer:
                 self.log.info("Loss looks stable, stopping here.")
                 return True
         return False
+
+    @staticmethod
+    def _coerce_callbacks(callbacks):
+        r"""Coerce callbacks into dict and validate them."""
+        if callbacks is None:
+            callbacks = {}
+        elif callable(callbacks):
+            callbacks = {
+                callbacks.tag if isinstance(callbacks, Callback) else callbacks.__name__: callbacks
+            }
+        elif isinstance(callbacks, Sequence):
+            callbacks = {
+                cb.tag if isinstance(cb, Callback) else cb.__name__: cb for cb in callbacks
+            }
+        elif not isinstance(callbacks, Mapping):
+            raise TypeError(
+                f"Argument `callbacks` expected to be a callable or a list/dict of callables, got {type(callbacks)}."
+            )
+
+        if any(not callable(cb) for cb in callbacks.values()):
+            raise TypeError("Not all provided callbacks is callable.")
+
+        return callbacks
+
+    def _run_callbacks(self, callbacks, cost_fn, cost, trainables):
+        """Iteratively calls all callbacks and applies the necessary updates."""
+        new_cost_fn, new_grads = None, None
+
+        for cb_tag, cb in callbacks.items():
+            if cb_tag not in self.callback_history:
+                self.callback_history[cb_tag] = []
+
+            cb_result = cb(
+                optimizer=self,
+                cost_fn=cost_fn if new_cost_fn is None else new_cost_fn,
+                cost=cost,
+                trainables=trainables,
+            )
+
+            if not isinstance(cb_result, (Mapping, type(None))):
+                raise TypeError(
+                    f"The expected return type of callback functions is dict, got {type(cb_result)}."
+                )
+
+            new_cost_fn = cb_result.pop("cost_fn", None)
+
+            if "grads" in cb_result:
+                new_grads = cb_result["grads"]
+                trainables = {
+                    tag: (x, dx) for (tag, (x, _)), dx in zip(trainables.items(), new_grads)
+                }
+
+            if cb_result is not None and cb_result:
+                self.callback_history[cb_tag].append(cb_result)
+
+        return new_cost_fn, new_grads
 
     class OptimizerInterruptedError(Exception):
         """A helper class to quietly stop execution without printing a traceback."""

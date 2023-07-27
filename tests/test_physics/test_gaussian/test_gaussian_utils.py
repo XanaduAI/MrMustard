@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from hypothesis import given, strategies as st
+
 from mrmustard import *
 from mrmustard.physics import gaussian as gp
 
@@ -53,10 +53,30 @@ def test_partition_cov_2modes():
 def test_partition_cov_3modes():
     pass  # TODO
 
-    # arr = np.array([[1,2,3,4,5,6],
-    #                 [7,8,9,10,11,12],
-    #                 [13,14,15,16,17,18],
-    #                 [19,20,21,22,23,24],
-    #                 [25,26,27,28,29,30],
-    #                 [31,32,33,34,35,36]])
-    # A,B,AB = gp.partition_cov(gp.math.astensor(arr), Amodes=[0,2])
+
+def test_CPTP_with_none_X():
+    cov, means = gp.CPTP(
+        cov=np.eye(2),
+        means=np.zeros(2),
+        X=None,
+        Y=np.zeros((2, 2)),
+        d=np.zeros(2),
+        state_modes=[0],
+        transf_modes=[0],
+    )
+    assert np.allclose(cov, np.eye(2))
+    assert np.allclose(means, np.zeros(2))
+
+
+def test_CPTP_with_none_XYd():
+    cov, means = gp.CPTP(
+        cov=np.eye(2),
+        means=np.zeros(2),
+        X=None,
+        Y=None,
+        d=None,
+        state_modes=[0],
+        transf_modes=[0],
+    )
+    assert np.allclose(cov, np.eye(2))
+    assert np.allclose(means, np.zeros(2))

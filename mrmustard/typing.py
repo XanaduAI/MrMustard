@@ -33,7 +33,14 @@ __all__ = [
     "Tensor",
     "Trainable",
 ]
-from typing import Iterator, Protocol, Tuple, TypeVar, Union, runtime_checkable
+from typing import (
+    Iterator,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
 

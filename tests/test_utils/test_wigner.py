@@ -14,20 +14,21 @@
 
 """This module contains test for the calculation of the discretized Wigner function."""
 
-import pytest
 import numpy as np
+import pytest
 from scipy.stats import multivariate_normal
-from mrmustard.utils.wigner import wigner_discretized
+
+from mrmustard import settings
 from mrmustard.lab import (
-    Vacuum,
     Coherent,
+    DisplacedSqueezed,
+    Fock,
+    Gaussian,
     SqueezedVacuum,
     Thermal,
-    DisplacedSqueezed,
-    Gaussian,
-    Fock,
+    Vacuum,
 )
-from mrmustard import settings
+from mrmustard.utils.wigner import wigner_discretized
 
 
 def multivariate_normal_pdf(qvec, pvec, means, cov):

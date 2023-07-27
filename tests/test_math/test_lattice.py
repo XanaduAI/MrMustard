@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Version information.
+"""Tests for the lattice module"""
 
-Version number retrieved from pyproject.toml file
-"""
-from pathlib import Path
-import tomli
+import numpy as np
 
-
-def _get_project_root():
-    """Compute and return root dir"""
-    return Path(__file__).parent.parent
+from mrmustard.lab import Gaussian
 
 
-def _get_project_version():
-    """Parse 'pyproject.toml' and return current version"""
-    with open(f"{_get_project_root()}/pyproject.toml", mode="rb") as pyproject:
-        return tomli.load(pyproject)["tool"]["poetry"]["version"]
+def test_vanilla_vs_binomial():
+    """Test that the vanilla and binomial methods give the same result"""
+    G = Gaussian(2)
 
+    ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
+    ket_binomial = G.ket(max_photons=10)[:5, :5]
 
-__version__ = str(_get_project_version())
+    assert np.allclose(ket_vanilla, ket_binomial)

@@ -1,5 +1,0 @@
-pytest==6.2.5
-pytest-cov==3.0.0
-hypothesis==6.31.6
-pylint==2.10.0
-black>=22.1.0
