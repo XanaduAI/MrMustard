@@ -16,6 +16,7 @@ from mrmustard.math import Math
 from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Vector, Scalar
+from typing import List
 from mrmustard import settings
 
 math = Math()
@@ -35,7 +36,7 @@ class WignerDM(Wigner):
         self.num_modes = cov.shape[-1] // 2
 
     @property
-    def purity(self) -> float:
+    def purity(self) -> List[float]:
         purity_list = []
         for i in range(self.data.cov[-1]):
             purity_list.append(1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov[i, :])))

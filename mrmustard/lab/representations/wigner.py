@@ -41,7 +41,7 @@ class Wigner(Representation):
         raise NotImplementedError()
 
     @property
-    def number_means(cov: Matrix, means: Vector, hbar: float) -> Vector:
+    def number_means(cov: Matrix, means: Vector, hbar: float) -> list[Vector]:
         r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number means is :math:`m`.
@@ -76,7 +76,7 @@ class Wigner(Representation):
             - hbar #NOTE: if hbar is hbar*math.ones(N)
         ) / (2 * hbar) for i in range(means.shape[0])]
 
-    def number_cov(cov: Matrix, means: Vector, hbar: float) -> Matrix:
+    def number_cov(cov: Matrix, means: Vector, hbar: float) -> List[Matrix]:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number covariance matrix is :math:`K`.
