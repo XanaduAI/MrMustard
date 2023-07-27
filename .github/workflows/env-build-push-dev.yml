@@ -10,16 +10,16 @@ jobs:
     name: Tests
     uses: ./.github/workflows/tests-in-docker.yml
 
-  # environment-build-push:
-  #   name: Build & Push
-  #   needs: tests
-  #   uses: XanaduAI/cloud-actions/.github/workflows/build-push-amd64-arm64-docker-image.yml@0b0cd18fb01a83cfb4e1482a225842ed591865ca
-  #   with:
-  #     tag: "dev"
-  #     Dockerfile: env.Dockerfile
-  #     image-target: base
-  #   secrets:
-  #     AWS_ECR_REPOSITORY_URL: ${{ secrets.AWS_ECR_REPOSITORY_URL }}
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #     AWS_REGION: ${{ secrets.AWS_REGION }}
+  environment-build-push:
+    name: Build & Push
+    needs: tests
+    uses: XanaduAI/cloud-actions/.github/workflows/build-push-amd64-arm64-docker-image.yml@0b0cd18fb01a83cfb4e1482a225842ed591865ca
+    with:
+      tag: "dev"
+      Dockerfile: env.Dockerfile
+      image-target: base
+    secrets:
+      AWS_ECR_REPOSITORY_URL: ${{ secrets.AWS_ECR_REPOSITORY_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
