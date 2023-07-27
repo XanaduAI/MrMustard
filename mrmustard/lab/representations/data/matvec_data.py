@@ -50,7 +50,7 @@ class MatVecData(Data):  # Note: this class is abstract!
 
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
-        
+
     def __add__(self, other: MatVecData) -> MatVecData:
         raise NotImplementedError
 

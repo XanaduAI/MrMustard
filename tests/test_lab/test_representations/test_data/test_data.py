@@ -94,7 +94,9 @@ class TestData:
         _ = -DATA
         assert DATA == pre_op_data_control
 
-    @pytest.mark.parametrize("operator", [ op.eq])  #TODO: re-add those after batch op.and_ op.add, op.sub,
+    @pytest.mark.parametrize(
+        "operator", [op.eq]
+    )  # TODO: re-add those after batch op.and_ op.add, op.sub,
     def test_original_data_object_is_left_untouched_after_applying_operation_of_arity_two(
         self, DATA, OTHER, operator
     ):
@@ -108,7 +110,9 @@ class TestData:
             DATA / other
 
     @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize("operator", [op.mul, op.truediv, op.eq])  #TODO: re-add op.and_ op.add, op.sub,
+    @pytest.mark.parametrize(
+        "operator", [op.mul, op.truediv, op.eq]
+    )  # TODO: re-add op.and_ op.add, op.sub,
     def test_algebraic_op_raises_TypeError_if_other_object_has_different_attributes(
         self, DATA, other, operator
     ):
