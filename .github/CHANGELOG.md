@@ -1,4 +1,19 @@
-# Release 0.5.0
+# Release 0.6.0 (development release)
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Contributors
+
+
+# Release 0.5.0 (current release)
 
 ### New features
 
@@ -19,7 +34,7 @@
 
   def cost_fn():
       ...
-  
+
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -35,7 +50,7 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
-* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+* Gaussian states support a `bargmann` method for returning the bargmann representation.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
@@ -50,7 +65,7 @@
   ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
   ```
 
-* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation.
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
@@ -98,13 +113,13 @@
 * When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
   [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
 
-* Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
+* Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the
 cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
 
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
+[Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf)
 
@@ -137,7 +152,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ---
 
-# Release 0.4.0 (current release)
+# Release 0.4.0
 
 ### New features
 
