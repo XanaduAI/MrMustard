@@ -71,9 +71,9 @@ class QPolyData(MatVecData):
 
     def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
         if isinstance(other, QPolyData):  # TODO: proof it against other objects
-            new_a = self._operate_all_combinations(self.A, other.A, op.add)
-            new_b = self._operate_all_combinations(self.b, other.b, op.add)
-            new_coeffs = self._operate_all_combinations(self.c, other.c, op.mul)
+            new_a = self._operate_on_all_combinations(self.A, other.A, op.add)
+            new_b = self._operate_on_all_combinations(self.b, other.b, op.add)
+            new_coeffs = self._operate_on_all_combinations(self.c, other.c, op.mul)
             return self.__class__(A=new_a, b=new_b, c=new_coeffs)
         else:
             try:  # scalar
@@ -81,8 +81,9 @@ class QPolyData(MatVecData):
                 return self.__class__(self.A, self.b, new_coeffs)
             except TypeError as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-            
-    def _operate_all_combinations(self, X, Y, operator):
+    
+    @staticmethod  
+    def _operate_on_all_combinations(X, Y, operator):
         """Returns the element-wise operation on the cartesian product of inputs X and Y."""
         both = product(X,Y)
         result = map(lambda z: operator(z[0], z[1]), both)

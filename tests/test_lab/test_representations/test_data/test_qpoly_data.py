@@ -21,9 +21,11 @@ The fixtures must correspond to the concrete class being tested, here QPolyData.
 """
 
 import numpy as np
+import operator as op
 import pytest
 
 from copy import deepcopy
+from functools import reduce
 from thewalrus.random import random_covariance
 
 from mrmustard.lab.representations.data.qpoly_data import QPolyData
@@ -33,7 +35,7 @@ from mrmustard.utils.misc_tools import general_factory
 
 np.random.seed(42)
 D = 10 #dimension, matrix will be DxD while means will be D
-N = 3 #number of elements in the batch
+N = 1 #number of elements in the batch
 
 #########   Instantiating class to test  #########
 @pytest.fixture
@@ -117,23 +119,58 @@ class TestQPolyData(): #TODO re-add inheritance
         nb_combined_constants = post_op_result.c.shape[0]
         assert nb_combined_mats == nb_combined_vectors == nb_combined_constants == N*N
 
-    @pytest.mark.parametrize("x", [2])
-    def test_object_mul_addition_of_all_elements_is_correct(self, DATA, TYPE, A, B, C, x):
-        other_a = deepcopy(A) * x
-        other_b = deepcopy(B) * x
-        other_c = deepcopy(C) * x
-        other_params = {"A": other_a, "b": other_b, "c": other_c}
-        other_data = general_factory(TYPE, **other_params)
-        result_post_op = DATA * other_data
-        mat_cumsum_other = np.add.reduce(np.ndarray.flatten(other_data.A))
-        mat_cumsum_original = np.add.reduce(np.ndarray.flatten(DATA.A))
-        cumsum_A = mat_cumsum_other + mat_cumsum_original
-        # vec_cumsum_other = np.add.reduce(np.ndarray.flatten(other_data.b))
-        # vec_cumsum_original = np.add.reduce(np.ndarray.flatten(DATA.b))
-        # cumsum_b = vec_cumsum_other + vec_cumsum_original
-        assert cumsum_A == np.add.reduce(np.ndarray.flatten(result_post_op.A))
-        # assert cumsum_b == np.add.reduce(np.ndarray.flatten(result_post_op.b))
-        
+    @pytest.mark.parametrize("operator", [op.add, op.mul])
+    @pytest.mark.parametrize("X", [np.ones(2), np.ones(5), np.ones(100)*42])
+    @pytest.mark.parametrize("Y", [np.ones(5), np.ones(2), np.ones(100)*0.42])
+    def test_commutative_operations_on_cartesian_product_correct_irrespective_of_nb_elements(self,
+                                                                                             DATA,
+                                                                                             operator,
+                                                                                             X,
+                                                                                             Y):
+        res_manual = [operator(x,y) for x in X for y in Y]
+        res = DATA._operate_on_all_combinations(X,Y, operator)
+        assert np.allclose(res_manual, res)
+
+    @pytest.mark.parametrize("x", [np.random.rand(D)])
+    def test_result_of_qpoly_objects_multiplication_is_correct(self, DATA, OTHER, x):
+        XXX = np.dot(x, DATA.A)
+        YYY = np.dot(DATA.b, x)
+        exponential_1 = np.exp( (1/2)* XXX + YYY)
+        exponential_2 = np.exp( (1/2)* np.dot(OTHER.A, x) + np.dot(OTHER.b, x))
+        exponential_1 *= DATA.c
+        exponential_2 *= OTHER.c
+        mul_op_res = DATA * OTHER
+        mul_op_exp = np.exp( (1/2)* np.dot(mul_op_res.A, x) + np.dot(mul_op_res.b, x))
+        mul_op_exp *= mul_op_exp.c
+        assert mul_op_exp == exponential_1*exponential_2
+
+    # @pytest.mark.parametrize("d", [2])
+    # def test_multiplied_elements_are_bigger_or_equal_to_one_of_the_initial_components_if_positive(self, 
+    #                                                                                        TYPE, d):
+    #     a1 = [np.eye(d)*2, np.eye(d)*2.5, np.eye(d)*3.5]
+    #     a2 =[np.eye(d)*3, np.eye(d)*1.5, np.eye(d)*4.3]
+    #     b1 = [np.ones(d)*1.5, np.ones(d)*2, np.ones(d)*3]
+    #     b2 = [np.ones(d)*2.5, np.ones(d)*2.5, np.ones(d)*3]
+    #     pars1 = {"A": a1, "b": b1}
+    #     pars2 = {"A": a2, "b": b2}
+    #     data1 = general_factory(TYPE, **pars1)
+    #     data2 = general_factory(TYPE, **pars2)
+    #     multiplied_data = data1 * data2
+    #     sum_of_init_data_mats = reduce(lambda x, y: x+y, DATA.A)
+    #     sum_of_init_other_mats = reduce(lambda x, y: x+y, OTHER.A)
+    #     sum_of_init_data_vecs = reduce(lambda x, y: x+y, DATA.b)
+    #     sum_of_init_other_vecs = reduce(lambda x, y: x+y, OTHER.b)
+    #     sum_of_init_data_cs = reduce(lambda x, y: x+y, DATA.c)
+    #     sum_of_init_other_cs = reduce(lambda x, y: x+y, OTHER.c)
+    #     assert np.all(multiplied_data.A >= sum_of_init_data_mats) or np.all(multiplied_data.A >= sum_of_init_other_mats)
+    #     assert np.all(multiplied_data.b >= sum_of_init_data_vecs) or np.all(multiplied_data.A >= sum_of_init_other_vecs)
+    #     assert np.all(multiplied_data.c >= sum_of_init_data_cs) or np.all(multiplied_data.A >= sum_of_init_other_cs)
+
+
+    
+
+
+
 
 
     # @pytest.mark.parametrize("x", [2, 7, 100])
