@@ -25,6 +25,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.lab.abstract.circuitpart import CircuitPart
+from mrmustard.lab.abstract.state import State
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
@@ -37,14 +38,13 @@ math = Math()
 
 class Transformation(CircuitPart):
     r"""Base class for all Transformations."""
-    is_unitary: bool
 
     def __init__(
         self,
         modes_in: list[int],
         modes_out: list[int],
         name: str,
-        duality="L",
+        duality: str,
         **kwargs,
     ):
         super().__init__(
@@ -56,24 +56,7 @@ class Transformation(CircuitPart):
             **kwargs,
         )
 
-    def bargmann(self, numpy=False):
-        X, Y, d = self.XYd(allow_none=False)
-        if self.is_unitary:
-            A, B, C = bargmann.wigner_to_bargmann_U(
-                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
-                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
-            )
-        else:
-            A, B, C = bargmann.wigner_to_bargmann_Choi(
-                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
-                Y if Y is not None else math.zeros((d.shape[-1], d.shape[-1]), dtype=d.dtype),
-                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
-            )
-        if numpy:
-            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
-        return A, B, C
-
-    def primal(self, state: State) -> State:
+    def _primal(self, state: State) -> State:
         r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
 
         Args:
@@ -83,12 +66,12 @@ class Transformation(CircuitPart):
             State: the transformed state
         """
         if state.is_gaussian:
-            new_state = self.transform_gaussian(state, dual=False)
+            new_state = self._transform_gaussian(state, dual=False)
         else:
-            new_state = self.transform_fock(state, dual=False)
+            new_state = self._transform_fock(state, dual=False)
         return new_state
 
-    def dual(self, state: State) -> State:
+    def _dual(self, state: State) -> State:
         r"""Applies the dual of self (dual of a ``Transformation``) to other (a ``State``) and returns the transformed state.
 
         Args:
@@ -98,24 +81,12 @@ class Transformation(CircuitPart):
             State: the transformed state
         """
         if state.is_gaussian:
-            new_state = self.transform_gaussian(state, dual=True)
+            new_state = self._transform_gaussian(state, dual=True)
         else:
-            new_state = self.transform_fock(state, dual=True)
+            new_state = self._transform_fock(state, dual=True)
         return new_state
 
-    def fock_tensors_and_tags(self, cutoffs=None) -> list[tuple[ComplexTensor, tuple[int, ...]]]:
-        cutoffs = cutoffs or self.cutoffs  # self.cutoffs must be set if cutoffs not supplied
-        if self.is_unitary:
-            U = self.U(cutoffs)
-            return [
-                (U, self.tags_out_L + self.tags_in_L),
-                (math.conj(U), self.tags_out_R + self.tags_in_R),
-            ]
-        else:
-            choi = self.choi(cutoffs)
-            return [(choi, self.tags_out_L + self.tags_out_R + self.tags_in_L + self.tags_in_R)]
-
-    def transform_gaussian(self, state: State, dual: bool) -> State:
+    def _transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.
 
         Args:
@@ -132,40 +103,8 @@ class Transformation(CircuitPart):
         )  # NOTE: assumes modes don't change
         return new_state
 
-    def transform_fock(self, state: State, dual: bool) -> State:
-        r"""Transforms a state in Fock representation.
-
-        Args:
-            state (State): the state to transform
-            dual (bool): whether to apply the dual channel
-
-        Returns:
-            State: the transformed state
-        """
-        op_idx = [state.modes.index(m) for m in self.modes]
-        if self.is_unitary:
-            # until we have output autocutoff we use the same input cutoff list
-            U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx] * 2)
-            U = math.dagger(U) if dual else U
-            if state.is_pure:
-                return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
-            return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
-        else:
-            # until we have output autocutoff we use the same input cutoff list
-            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx] * 4)
-            n = state.num_modes
-            N0 = list(range(0, n))
-            N1 = list(range(n, 2 * n))
-            N2 = list(range(2 * n, 3 * n))
-            N3 = list(range(3 * n, 4 * n))
-            if dual:
-                choi = math.transpose(choi, N1 + N0 + N3 + N2)  # we flip out-in
-
-            if state.is_pure:
-                return State(
-                    dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
-                )
-            return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+    def _transform_fock(self, state: State, dual: bool) -> State:
+        raise NotImplementedError
 
     @property
     def num_modes(self) -> int:
@@ -236,47 +175,6 @@ class Transformation(CircuitPart):
         Ydual = math.zeros_like(Xdual) if self.Y_matrix_dual is None else self.Y_matrix_dual
         ddual = math.zeros_like(Xdual[:, 0]) if self.d_vector_dual is None else self.d_vector_dual
         return Xdual, Ydual, ddual
-
-    def U(self, cutoffs: Sequence[int]):
-        r"""Returns the unitary representation of the transformation."""
-        if not self.is_unitary:
-            return None
-        X, _, d = self.XYd(allow_none=False)
-        if len(cutoffs) == self.num_modes:
-            shape = tuple(cutoffs) * 2
-        elif len(cutoffs) == 2 * self.num_modes:
-            shape = tuple(cutoffs)
-
-        else:
-            raise ValueError(
-                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {2*self.num_modes})"
-            )
-        return fock.wigner_to_fock_U(X, d, shape=shape)
-
-    def choi(self, cutoffs: Sequence[int]):
-        r"""Returns the Choi representation of the transformation."""
-        if len(cutoffs) == self.num_modes:
-            shape = tuple(cutoffs) * 4
-        elif len(cutoffs) == 4 * self.num_modes:
-            shape = tuple(cutoffs)
-        else:
-            raise ValueError(
-                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {4*self.num_modes})"
-            )
-        if self.is_unitary:
-            U = self.U(shape[: self.num_modes])
-            Udual = self.U(shape[self.num_modes :])
-            return fock.U_to_choi(U, Udual)
-        X, Y, d = self.XYd(allow_none=False)
-
-        return fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
-
-    @property
-    def fock(self):
-        if self.is_unitary:
-            return self.U(self.cutoffs)
-        else:
-            return self.choi(self.cutoffs)
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.
@@ -405,3 +303,139 @@ class Transformation(CircuitPart):
                 )
 
         return header + body
+
+
+# for reference:
+
+
+class Unitary(Transformation):
+    def __init__(
+        self,
+        modes: list[int],
+        name: str,
+        duality: str = "L",
+        **kwargs,
+    ):
+        super().__init__(
+            modes_in=modes,
+            modes_out=modes,
+            name=name,
+            duality=duality,
+            **kwargs,
+        )
+
+    @property
+    def fock(self):
+        return self.U(self.cutoffs)
+
+    def bargmann(self, numpy=False):
+        X, _, d = self.XYd(allow_none=False)
+        A, B, C = bargmann.wigner_to_bargmann_U(X, d)
+        if numpy:
+            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
+        return A, B, C
+
+    def _transform_fock(self, state: State) -> State:
+        op_idx = [state.modes.index(m) for m in self.modes]
+        U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx] * 2)
+        if state.is_hilbert_vector:
+            return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
+        return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
+
+    def U(self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False):
+        r"""Returns the unitary representation of the transformation.
+        If specified, shape takes precedence over cutoffs.
+        shape is in the order (out_L, in_L) or (out_R, in_R).
+
+        Note that for a Unitary transformation on N modes, len(cutoffs) is N
+        and len(shape) is 2N.
+
+        Arguments:
+            cutoffs (Sequence[int]): the cutoffs of the input and output modes
+            shape (Optional[Sequence[int]]): the shape of the unitary matrix
+            dual (bool): whether to return the dual unitary
+
+        Returns:
+            ComplexTensor: the unitary matrix in Fock representation
+        """
+        if len(cutoffs) != self.num_modes:
+            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+        shape = shape or tuple(cutoffs) * 2
+        X, _, d = self.XYd(allow_none=False)
+        U = fock.wigner_to_fock_U(X, d, shape=shape)
+        if dual:
+            return math.dagger(U)
+        return U
+
+    def choi(
+        self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False
+    ):
+        r"""Returns the Choi representation of the transformation.
+        If specified, shape takes precedence over cutoffs.
+        The shape is in the order (out_L, in_L, out_R, in_R).
+
+        Arguments:
+            cutoffs (Sequence[int]): the cutoffs of the input and output modes
+            shape (Optional[Sequence[int]]): the shape of the Choi matrix
+            dual (bool): whether to return the dual Choi
+        """
+        if len(cutoffs) != self.num_modes:
+            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+        shape = shape or tuple(cutoffs) * 4
+        U = self.U(shape[: self.num_modes])
+        Udual = self.U(shape[self.num_modes :])
+        if dual:
+            return fock.U_to_choi(Udual, U)
+        return fock.U_to_choi(U, Udual)
+
+
+class Channel(Transformation):
+    def __init__(
+        self,
+        modes_in: list[int],
+        modes_out: list[int],
+        name: str,
+        **kwargs,
+    ):
+        super().__init__(
+            modes_in=modes_in,
+            modes_out=modes_out,
+            name=name,
+            duality="LR",
+            **kwargs,
+        )
+
+    def bargmann(self, numpy=False):
+        X, Y, d = self.XYd(allow_none=False)
+        A, B, C = bargmann.wigner_to_bargmann_Choi(X, Y, d)
+        if numpy:
+            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
+        return A, B, C
+
+    def _transform_fock(self, state: State, dual: bool = False) -> State:
+        op_idx = [state.modes.index(m) for m in self.modes]
+        choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx], dual=dual)
+        if state.is_hilbert_vector:
+            return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
+        return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+
+    def choi(
+        self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False
+    ):
+        if len(cutoffs) != self.num_modes:
+            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+        shape = shape or tuple(cutoffs) * 4
+        X, Y, d = self.XYd(allow_none=False)
+        choi = fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
+        if dual:
+            n = len(shape) // 4
+            N0 = list(range(0, n))
+            N1 = list(range(n, 2 * n))
+            N2 = list(range(2 * n, 3 * n))
+            N3 = list(range(3 * n, 4 * n))
+            choi = math.conjugate(math.transpose(choi, N1 + N0 + N3 + N2))  # if dual we flip out-in
+        return choi
+
+    @property
+    def fock(self):
+        return self.choi(self.cutoffs)  # note self.cutoffs is not implemented

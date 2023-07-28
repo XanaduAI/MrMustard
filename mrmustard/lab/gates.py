@@ -21,7 +21,7 @@ This module defines gates and operations that can be applied to quantum modes to
 from typing import List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
-from mrmustard.lab.abstract import Transformation
+from mrmustard.lab.abstract import Channel, Transformation, Unitary
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
@@ -48,7 +48,7 @@ __all__ = [
 ]
 
 
-class Dgate(Parametrized, Transformation):
+class Dgate(Parametrized, Unitary):
     r"""Displacement gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -68,7 +68,6 @@ class Dgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "D"
     parallelizable = True
 
@@ -144,7 +143,7 @@ class Dgate(Parametrized, Transformation):
             return fock.displacement(x[0], y[0], shape=shape)
 
 
-class Sgate(Parametrized, Transformation):
+class Sgate(Parametrized, Unitary):
     r"""Squeezing gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -164,7 +163,6 @@ class Sgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "S"
     parallelizable = True
 
@@ -234,7 +232,7 @@ class Sgate(Parametrized, Transformation):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
 
 
-class Rgate(Parametrized, Transformation):
+class Rgate(Parametrized, Unitary):
     r"""Rotation gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -252,7 +250,6 @@ class Rgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "R"
     parallelizable = True
 
@@ -316,7 +313,7 @@ class Rgate(Parametrized, Transformation):
         )
 
 
-class Pgate(Parametrized, Transformation):
+class Pgate(Parametrized, Unitary):
     r"""Quadratic phase gate.
 
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided. If a parameter
@@ -332,7 +329,6 @@ class Pgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "P"
     parallelizable = True
 
@@ -357,7 +353,7 @@ class Pgate(Parametrized, Transformation):
         return gaussian.quadratic_phase(self.shearing.value)
 
 
-class CXgate(Parametrized, Transformation):
+class CXgate(Parametrized, Unitary):
     r"""Controlled X gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -370,7 +366,6 @@ class CXgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "CX"
     parallelizable = False
 
@@ -395,7 +390,7 @@ class CXgate(Parametrized, Transformation):
         return gaussian.controlled_X(self.s.value)
 
 
-class CZgate(Parametrized, Transformation):
+class CZgate(Parametrized, Unitary):
     r"""Controlled Z gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -409,7 +404,6 @@ class CZgate(Parametrized, Transformation):
     """
 
     is_gaussian = True
-    is_unitary = True
     short_name = "CZ"
     parallelizable = False
 
@@ -434,7 +428,7 @@ class CZgate(Parametrized, Transformation):
         return gaussian.controlled_Z(self.s.value)
 
 
-class BSgate(Parametrized, Transformation):
+class BSgate(Parametrized, Unitary):
     r"""Beam splitter gate.
 
     It applies to a single pair of modes.
@@ -451,7 +445,6 @@ class BSgate(Parametrized, Transformation):
     """
 
     is_gaussian = True
-    is_unitary = True
     short_name = "BS"
     parallelizable = False
 
@@ -515,7 +508,7 @@ class BSgate(Parametrized, Transformation):
             )
 
 
-class MZgate(Parametrized, Transformation):
+class MZgate(Parametrized, Unitary):
     r"""Mach-Zehnder gate.
 
     It supports two conventions:
@@ -535,7 +528,6 @@ class MZgate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "MZ"
     parallelizable = False
 
@@ -574,7 +566,7 @@ class MZgate(Parametrized, Transformation):
             )
 
 
-class S2gate(Parametrized, Transformation):
+class S2gate(Parametrized, Unitary):
     r"""Two-mode squeezing gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -589,7 +581,6 @@ class S2gate(Parametrized, Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "S2"
     parallelizable = False
 
@@ -624,7 +615,7 @@ class S2gate(Parametrized, Transformation):
             raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
-class Interferometer(Transformation):
+class Interferometer(Unitary):
     r"""N-mode interferometer.
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
@@ -636,7 +627,6 @@ class Interferometer(Transformation):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "I"
     parallelizable = False
 
@@ -680,7 +670,7 @@ class Interferometer(Transformation):
         return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
-class RealInterferometer(Transformation, Parametrized):
+class RealInterferometer(Unitary, Parametrized):
     r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix). This interferometer does not mix q and p.
     Does not mix q's and p's.
 
@@ -690,7 +680,6 @@ class RealInterferometer(Transformation, Parametrized):
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "RI"
     parallelizable = False
 
@@ -734,7 +723,7 @@ class RealInterferometer(Transformation, Parametrized):
         return f"RealInterferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
-class Ggate(Transformation, Parametrized):
+class Ggate(Unitary, Parametrized):
     r"""A generic N-mode Gaussian unitary transformation with zero displacement.
 
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
@@ -746,7 +735,6 @@ class Ggate(Transformation, Parametrized):
         symplectic_trainable (bool): whether symplectic is a trainable variable.
     """
     is_gaussian = True
-    is_unitary = True
     short_name = "G"
     parallelizable = False
 
@@ -791,7 +779,7 @@ class Ggate(Transformation, Parametrized):
 
 
 # pylint: disable=no-member
-class Attenuator(Transformation, Parametrized):
+class Attenuator(Channel, Parametrized):
     r"""The noisy attenuator channel.
 
     It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
@@ -821,7 +809,6 @@ class Attenuator(Transformation, Parametrized):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = False
     short_name = "Att"
     parallelizable = True
 
@@ -856,7 +843,7 @@ class Attenuator(Transformation, Parametrized):
         return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[1]
 
 
-class Amplifier(Transformation, Parametrized):
+class Amplifier(Channel, Parametrized):
     r"""The noisy amplifier channel.
 
     It corresponds to mixing with a thermal environment and applying a two-mode squeezing gate.
@@ -881,7 +868,6 @@ class Amplifier(Transformation, Parametrized):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = False
     short_name = "Amp"
     parallelizable = True
 
@@ -917,7 +903,7 @@ class Amplifier(Transformation, Parametrized):
 
 
 # pylint: disable=no-member
-class AdditiveNoise(Transformation, Parametrized):
+class AdditiveNoise(Channel, Parametrized):
     r"""The additive noise channel.
 
     Equivalent to an amplifier followed by an attenuator. E.g.,
@@ -943,7 +929,6 @@ class AdditiveNoise(Transformation, Parametrized):
         modes (optional, List[int]): the list of modes this gate is applied to
     """
     is_gaussian = True
-    is_unitary = False
     short_name = "Add"
     parallelizable = True
 

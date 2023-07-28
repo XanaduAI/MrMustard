@@ -92,6 +92,11 @@ class TensorNetwork:
         if self.can_connect_wires(wire1_id, wire2_id):
             self.graph.add_edge(wire1_id, wire2_id)
 
+    @classmethod
+    def from_circuit(self, circuit):  # these must all be transformations with current Circuit
+        for op in circuit.ops:
+            pass
+
 
 class TensorNetworkCircuit(TensorNetwork):
     r"""A restricted version of a TensorNetwork used to enforce certain rules when
