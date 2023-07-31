@@ -29,7 +29,7 @@ class Wire:
     """
     _id_counter: int = 0
 
-    def __init__(self, is_input: bool, duality: str, mode: Optional[int] = None, data: Any = None):
+    def __init__(self, is_input: bool, duality: str, mode: Optional[int] = None, **data):
         r"""
         Initializes a Wire instance.
 
@@ -37,16 +37,18 @@ class Wire:
             is_input (bool): A boolean value indicating whether this wire is an input wire.
             duality (str): A string indicating the duality of this wire, can only connect to wires of the same duality.
             mode (int): An integer mode for this wire, can only connect to wires with the same mode.
-            data (Any): An optional arbitrary object associated with this wire.
+            data (Any): An optional arbitrary dict of objects associated with this wire.
         """
+        self.is_input = is_input
         self.id: int = Wire._id_counter * 2 + 1 if is_input else Wire._id_counter * 2
         Wire._id_counter += 1
         self.duality: str = duality
         self.mode: int = mode
-        self.data: object = data
+        for key, val in data.items():
+            setattr(self, key, val)
 
     def __repr__(self):
-        return f"Wire(id={self.id}, duality={self.duality}, mode={self.mode}, data={self.data})"
+        return f"Wire(id={self.id}, duality={self.duality}, mode={self.mode}, is_input={self.is_input})"
 
 
 class CircuitPart:
@@ -129,7 +131,15 @@ class CircuitPart:
         )
         return list(sorted(list(out_modes)))
 
+    @property
+    def all_wires(self) -> List[Wire]:
+        "Returns a list of all wires of this CircuitPart."
+        return self.output_wires_L + self.input_wires_L + self.output_wires_R + self.input_wires_R
+
     def __repr__(self):
-        return f"{self.__class__.__name__}(id={self.id}, name={self.name}, \
-            \n\tinput_wires_L={self.input_wires_L}, \n\tinput_wires_R={self.input_wires_R}, \
-            \n\toutput_wires_L={self.output_wires_L}, \n\toutput_wires_R={self.output_wires_R})"
+        # parts
+        oL = f", output_wires_L={self.output_wires_L}" if len(self.output_wires_L) > 0 else ""
+        oR = f", output_wires_R={self.output_wires_R}" if len(self.output_wires_R) > 0 else ""
+        iL = f", input_wires_L={self.input_wires_L}" if len(self.input_wires_L) > 0 else ""
+        iR = f", input_wires_R={self.input_wires_R}" if len(self.input_wires_R) > 0 else ""
+        return f"{self.__class__.__name__}(id={self.id}, name={self.name}{oL}{oR}{iL}{iR})\n"

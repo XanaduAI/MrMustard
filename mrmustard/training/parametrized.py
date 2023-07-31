@@ -51,6 +51,7 @@ class Parametrized:
         owner = f"{self.__class__.__qualname__}"
         self.param_names = []  # list of parameter names to preserve order
         remaining_params = {}
+        blacklist = ["modes, modes_in", "modes_out"]
         for name, value in kwargs.items():
             # filter untrainable parameters
             if f"{name}_trainable" not in kwargs:
@@ -63,10 +64,10 @@ class Parametrized:
             is_trainable = kwargs.get(f"{name}_trainable", False) or math.is_trainable(value)
             bounds = kwargs.get(f"{name}_bounds", None)
             param = create_parameter(value, name, is_trainable, bounds, owner)
-
             # dynamically assign parameter as attribute of the class
-            self.__dict__[name] = param
-            self.param_names.append(name)
+            if all(bl not in name for bl in blacklist):
+                self.__dict__[name] = param
+                self.param_names.append(name)
         super().__init__(**remaining_params)
 
     def param_string(self, decimals: int) -> str:

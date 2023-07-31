@@ -38,8 +38,8 @@ class TensorNetwork:
     def __init__(self):
         r"""Initializes a TensorNetwork instance."""
         self.graph: nx.Graph = nx.Graph()
-        self.tensors: dict = {}
-        self.name_to_id: dict = {}
+        self.tensors: dict[int, CircuitPart] = {}
+        self.name_to_id: dict[str, int] = {}
 
     def add_tensor(self, tensor: CircuitPart) -> None:
         r"""
@@ -50,16 +50,8 @@ class TensorNetwork:
         """
         self.name_to_id[tensor.name] = tensor.id
         self.tensors[tensor.id] = tensor
-        self.graph.add_nodes_from(
-            [
-                (
-                    wire.id,
-                    {"tensor": tensor.id},
-                    {"wire": wire},
-                )
-                for wire in tensor.all_wires
-            ]
-        )
+        for wire in tensor.all_wires:
+            self.graph.add_node(wire.id, tensor=tensor.id, wire=wire)
 
     def get_tensor(self, identifier: Union[int, str]) -> CircuitPart:
         r"""
@@ -97,6 +89,9 @@ class TensorNetwork:
         for op in circuit.ops:
             pass
 
+    def __repr__(self) -> str:
+        return f"TensorNetwork(graph={self.graph}, tensors=\n{self.tensors})"
+
 
 class TensorNetworkCircuit(TensorNetwork):
     r"""A restricted version of a TensorNetwork used to enforce certain rules when
@@ -106,6 +101,44 @@ class TensorNetworkCircuit(TensorNetwork):
     def __init__(self):
         r"""Initializes a TensorNetworkCircuit instance."""
         super().__init__()
+        self.current_input_wires_L = []
+        self.current_output_wires_L = []
+        self.current_input_wires_R = []
+        self.current_output_wires_R = []
+
+    def add_tensor(self, tensor: CircuitPart) -> None:
+        super().add_tensor(tensor)
+
+        id_to_remove = []
+        for wire_in in tensor.input_wires_L:
+            for wire_out in self.current_output_wires_L:
+                if self.can_connect_wires(wire_in.id, wire_out.id):
+                    self.graph.add_edge(wire_in.id, wire_out.id)
+                    id_to_remove.append(wire_out.id)
+                    break
+            else:
+                # else for the for loop, not the if statement, which means
+                #  it didn't break, i.e. the wire wasn't connected
+                self.current_input_wires_L.append(wire_in)
+        self.current_output_wires_L = [
+            wire for wire in self.current_output_wires_L if wire.id not in id_to_remove
+        ]
+        self.current_output_wires_L.extend(tensor.output_wires_L)
+
+        id_to_remove = []
+        for wire_in in tensor.input_wires_R:
+            for wire_out in self.current_output_wires_R:
+                if self.can_connect_wires(wire_in.id, wire_out.id):
+                    print("connecting", wire_in, wire_out)
+                    self.graph.add_edge(wire_in.id, wire_out.id)
+                    id_to_remove.append(wire_out.id)
+                    break
+            else:
+                self.current_input_wires_R.append(wire_in)
+        self.current_output_wires_R = [
+            wire for wire in self.current_output_wires_R if wire.id not in id_to_remove
+        ]
+        self.current_output_wires_R.extend(tensor.output_wires_R)
 
     def can_connect_wires(self, wire1_id: int, wire2_id: int) -> bool:
         r"""
@@ -118,8 +151,8 @@ class TensorNetworkCircuit(TensorNetwork):
         Returns:
             Whether the wires can be connected.
         """
-        wire1 = self.graph.nodes[wire1_id].wire
-        wire2 = self.graph.nodes[wire2_id].wire
+        wire1 = self.graph.nodes[wire1_id]["wire"]
+        wire2 = self.graph.nodes[wire2_id]["wire"]
 
         mode = wire1.mode == wire2.mode
         equal_duality = wire1.duality == wire2.duality

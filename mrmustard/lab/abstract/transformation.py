@@ -88,6 +88,7 @@ class Transformation(CircuitPart):
 
     def _transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.
+        Applies the CPTP channel all the time, but it's cheap.
 
         Args:
             state (State): the state to transform
@@ -246,22 +247,6 @@ class Transformation(CircuitPart):
             f"{other} of type {other.__class__} is not a valid state or transformation."
         )
 
-    # pylint: disable=too-many-branches,too-many-return-statements
-    def __eq__(self, other):
-        r"""Returns ``True`` if the two transformations are equal."""
-        if not isinstance(other, Transformation):
-            return False
-        if not (self.is_gaussian and other.is_gaussian):
-            return np.allclose(
-                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
-                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
-                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
-            )
-
-        sX, sY, sd = self.XYd(allow_none=False)
-        oX, oY, od = other.XYd(allow_none=False)
-        return np.allclose(sX, oX) and np.allclose(sY, oY) and np.allclose(sd, od)
-
     def __repr__(self):
         class_name = self.__class__.__name__
         modes = self.modes
@@ -305,20 +290,18 @@ class Transformation(CircuitPart):
         return header + body
 
 
-# for reference:
-
-
 class Unitary(Transformation):
     def __init__(
         self,
-        modes: list[int],
+        modes_in: list[int],
+        modes_out: list[int],
         name: str,
         duality: str = "L",
         **kwargs,
     ):
         super().__init__(
-            modes_in=modes,
-            modes_out=modes,
+            modes_in=modes_in,
+            modes_out=modes_out,
             name=name,
             duality=duality,
             **kwargs,
@@ -388,6 +371,22 @@ class Unitary(Transformation):
             return fock.U_to_choi(Udual, U)
         return fock.U_to_choi(U, Udual)
 
+    def __eq__(self, other):
+        r"""Returns ``True`` if the two transformations are equal."""
+        if not isinstance(other, Unitary):
+            return False
+        if not (self.is_gaussian and other.is_gaussian):
+            return np.allclose(
+                self.U(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes),
+                other.U(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes),
+                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
+            )
+        sX, sY, sd = self.XYd(allow_none=False)
+        oX, oY, od = other.XYd(allow_none=False)
+        assert np.isclose(np.linalg.norm(sY), 0)
+        assert np.isclose(np.linalg.norm(oY), 0)
+        return np.allclose(sX, oX) and np.allclose(sd, od)
+
 
 class Channel(Transformation):
     def __init__(
@@ -439,3 +438,17 @@ class Channel(Transformation):
     @property
     def fock(self):
         return self.choi(self.cutoffs)  # note self.cutoffs is not implemented
+
+    def __eq__(self, other):
+        r"""Returns ``True`` if the two transformations are equal."""
+        if not isinstance(other, Channel):
+            return False
+        if not (self.is_gaussian and other.is_gaussian):
+            return np.allclose(
+                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
+            )
+        sX, sY, sd = self.XYd(allow_none=False)
+        oX, oY, od = other.XYd(allow_none=False)
+        return np.allclose(sX, oX) and np.allclose(sY, oY) and np.allclose(sd, od)

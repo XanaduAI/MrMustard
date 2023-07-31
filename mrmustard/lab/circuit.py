@@ -23,14 +23,14 @@ __all__ = ["Circuit"]
 from typing import List, Optional, Tuple
 
 from mrmustard import settings
-from mrmustard.lab.abstract import State, Transformation
+from mrmustard.lab.abstract import State, Transformation, Unitary
 from mrmustard.training import Parametrized
 from mrmustard.typing import RealMatrix, RealVector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 
-class Circuit(Transformation, Parametrized):
+class Circuit(Parametrized, Transformation):
     """Represents a quantum circuit: a set of operations to be applied on quantum states.
 
     Args:
@@ -39,8 +39,19 @@ class Circuit(Transformation, Parametrized):
 
     def __init__(self, ops: Optional[List] = None):
         self._ops = list(ops) if ops is not None else []
-        super().__init__()
+        modes_in = set()
+        modes_out = set()
+        for op in self._ops:
+            modes_out.difference_update(op.modes_in)
+            modes_out.update(op.modes_out)
+            modes_in.update(op.modes_in)
         self.reset()
+        super().__init__(
+            modes_in=tuple(sorted(modes_in)),
+            modes_out=tuple(sorted(modes_out)),
+            name="Circuit",
+            duality="L" if all(op.duality == "L" for op in self._ops) else "LR",
+        )
 
     def reset(self):
         """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
@@ -95,7 +106,7 @@ class Circuit(Transformation, Parametrized):
     @property
     def is_unitary(self):
         """Returns `true` if all operations in the circuit are unitary."""
-        return all(op.is_unitary for op in self._ops)
+        return all(isinstance(op, Unitary) for op in self._ops)
 
     def __len__(self):
         return len(self._ops)

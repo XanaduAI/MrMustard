@@ -41,7 +41,7 @@ __all__ = [
 ]
 
 
-class Vacuum(State, Parametrized):
+class Vacuum(Parametrized, State):
     r"""The N-mode vacuum state."""
     short_name = "Vac"
     parallelizable = False
