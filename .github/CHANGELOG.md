@@ -1,4 +1,19 @@
-# Release 0.5.0
+# Release 0.6.0 (development release)
+
+### New features
+
+### Breaking changes
+
+### Improvements
+
+### Bug fixes
+
+### Documentation
+
+### Contributors
+
+
+# Release 0.5.0 (current release)
 
 ### New features
 
@@ -19,7 +34,7 @@
 
   def cost_fn():
       ...
-  
+
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -35,7 +50,7 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
-* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+* Gaussian states support a `bargmann` method for returning the bargmann representation.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
@@ -50,7 +65,7 @@
   ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
   ```
 
-* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation.
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
