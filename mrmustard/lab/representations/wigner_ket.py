@@ -28,7 +28,15 @@ class WignerKet(Wigner):
 
     def __init__(self, symplectic: Matrix, displacement: Vector, coeffs: Scalar = 1.0) -> None:
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
-        self.num_modes = symplectic.shape[-1]
+
+    @property
+    def cov(self):
+        return self.data.symplectic #times sym^T
+    
+    @property
+    def means(self):
+        return self.data.dispalcement
+    
 
     @property
     def purity(self) -> float:

@@ -33,7 +33,14 @@ class WignerDM(Wigner):
 
     def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
-        self.num_modes = cov.shape[-1] // 2
+    
+    @property
+    def cov(self):
+        return self.data.cov
+    
+    @property
+    def means(self):
+        return self.data.means
 
     @property
     def purity(self) -> List[float]:

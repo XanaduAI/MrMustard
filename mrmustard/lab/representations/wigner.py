@@ -27,13 +27,13 @@ class Wigner(Representation):
     r"""Parent abstract class for the WignerKet and WignerDM representations.
 
     Args:
-        cov: covariance matricx of the state (real symmetric) TODO: support only Gaussian state. If not Gaussian, cov can be complex.
-        mean: mean vector of the state (real)
-        coeffs: coefficients (complex)
+        mat: a matrix
+        vec: a vector
+        coeffs: coefficients
     """
 
-    def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
-        self.data = MatVecData(cov=cov, means=means, coeffs=coeffs)
+    def __init__(self, mat: Matrix, vec: Vector, coeffs: Scalar = 1.0) -> None:
+        self.data = MatVecData(mat=mat, vec=vec, coeffs=coeffs)
 
     @property
     def norm(self) -> float:
@@ -41,7 +41,7 @@ class Wigner(Representation):
         raise NotImplementedError()
 
     @property
-    def number_means(cov: Matrix, means: Vector, hbar: float) -> list[Vector]:
+    def number_means(self, hbar: float) -> list[Vector]:
         r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number means is :math:`m`.
@@ -67,6 +67,8 @@ class Wigner(Representation):
         Returns:
             Vector: the photon number means vector
         """
+        cov = self.cov
+        means = self.means
         N = means.shape[-1] // 2
         return [(
             means[i, :N] ** 2
@@ -76,7 +78,7 @@ class Wigner(Representation):
             - hbar #NOTE: if hbar is hbar*math.ones(N)
         ) / (2 * hbar) for i in range(means.shape[0])]
 
-    def number_cov(cov: Matrix, means: Vector, hbar: float) -> List[Matrix]:
+    def number_cov(self, hbar: float) -> List[Matrix]:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number covariance matrix is :math:`K`.
@@ -104,6 +106,8 @@ class Wigner(Representation):
         Returns:
             Matrix: the photon number covariance matrix
         """
+        cov = self.cov
+        means = self.means
         N = means.shape[-1] // 2
         number_cov = []
         for i in range(means.shape[0]):
