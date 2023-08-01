@@ -22,7 +22,7 @@ from typing import Optional, TYPE_CHECKING, Union
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Batch, RealMatrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 # if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
 #     from mrmustard.lab.representations.data.gaussian_data import GaussianData
@@ -46,7 +46,7 @@ class QPolyData(MatVecData):
         c:      series of constants
     """
 
-    def __init__(self, A: Batch[RealMatrix], b: Batch[Vector], c: Optional[Batch[Scalar]]) -> None:
+    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Optional[Batch[Scalar]]=None) -> None:
         if c is None: #default cs should all be 1
             n = b.shape[0] # number of elements
             c = np.repeat(1.0, n)
@@ -58,7 +58,7 @@ class QPolyData(MatVecData):
             raise ValueError("Matrix A is not real symmetric, object can't be initialized.")
 
     @property
-    def A(self) -> Batch[RealMatrix]:
+    def A(self) -> Batch[Matrix]:
         return self.mat
 
     @property

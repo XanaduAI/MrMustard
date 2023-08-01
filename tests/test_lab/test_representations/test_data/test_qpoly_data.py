@@ -59,25 +59,16 @@ def A(D,N) -> Batch[Matrix]:
         As.append(A)
     return As
 
-
 @pytest.fixture
 def B(D,N) -> Batch[Vector]:
     r"""Some batch of vectors for the object's parameterization."""
-    bs = []
-    for _ in range(N):
-        b = np.random.normal(size=D) + 1j*np.random.normal(size=D)
-        bs.append(b)
-    return bs
+    return [np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)]
 
 
 @pytest.fixture
 def C(N) -> Batch[Scalar]:
     r"""Some batch of scalars for the object's parameterization."""
-    cs = []
-    for _ in range(N):
-        c = np.random.normal() + 1j*np.random.normal()
-        cs.append(c)
-    return cs
+    return [np.random.normal() + 1j*np.random.normal() for _ in range(N)]
 
 
 @pytest.fixture
