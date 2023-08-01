@@ -63,19 +63,19 @@ def MAT(D,N) -> Batch[Matrix]:
         m = np.random.normal(size=(D,D)) + 1j*np.random.normal(size=(D,D))
         m = m + m.T  # symmetrize A
         mats.append(m)
-    return mats
+    return np.array(mats)
 
 
 @pytest.fixture
 def VEC(D,N) -> Batch[Vector]:
     r"""Some batch of vectors for the object's parameterization."""
-    return [np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)]
+    return np.array([np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)])
 
 
 @pytest.fixture
 def COEFFS(N) -> Batch[Scalar]:
     r"""Some batch of scalars for the object's parameterization."""
-    return [np.random.normal() + 1j*np.random.normal() for _ in range(N)]
+    return np.array([np.random.normal() + 1j*np.random.normal() for _ in range(N)])
 
 
 @pytest.fixture
@@ -99,12 +99,12 @@ def OTHER(DATA) -> MatVecData:
 
 class TestMatVecData(): #TestData
     ####################  Init  ######################
-
     def if_coeffs_not_given_they_are_equal_to_1(self, TYPE, PARAMS):
         params_without_coeffs = deepcopy(PARAMS)
         del params_without_coeffs["coeffs"]
         new_data = general_factory(TYPE, **params_without_coeffs)
-        assert new_data.c == 1
+        n = len(new_data.coeffs)
+        assert np.allclose(new_data.coeffs, np.ones(n))
 
     ##################  Negative  ####################
     def test_negative_returns_new_object_with_neg_coeffs_and_unaltered_mat_and_vec(self, DATA):

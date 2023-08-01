@@ -66,19 +66,19 @@ def SYMPLECTIC(N) -> Matrix: #TODO: generator for symplectic matrices
             [0, 0, 0, 1]
             ])
         mats.append(m)
-    return mats
+    return np.array(mats)
 
 
 @pytest.fixture
 def DISPLACEMENT(N,D) -> Vector:
     r"""Some vector for the object's parameterization."""
-    return [np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)]
+    return np.array([np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)])
 
 
 @pytest.fixture
 def COEFFS(N) -> Scalar:
     r"""Some scalar for the object's parameterization."""
-    return [np.random.normal() + 1j*np.random.normal() for _ in range(N)]
+    return np.array([np.random.normal() + 1j*np.random.normal() for _ in range(N)])
 
 
 @pytest.fixture
@@ -102,12 +102,6 @@ def OTHER(DATA) -> SymplecticData:
 
 class TestSymplecticData(TestMatVecData):
     ####################  Init  ######################
-
-    def test_init_without_coeffs_has_coeffs_equal_to_1(self, SYMPLECTIC, DISPLACEMENT):
-        symplectic_data = SymplecticData(symplectic=SYMPLECTIC, displacement=DISPLACEMENT)
-        n = len(symplectic_data.coeffs)
-        assert np.allclose(symplectic_data.coeffs, np.ones(n))
-
     def test_init_with_a_non_symplectic_matrix_raises_ValueError(self, DISPLACEMENT, COEFFS):
         non_symplectic_mat = np.eye(10)  # TODO factory method for this
         non_symplectic_mat[0] += np.array(range(10))
