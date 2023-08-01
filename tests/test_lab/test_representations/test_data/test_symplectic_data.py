@@ -39,7 +39,7 @@ from tests.test_lab.test_representations.test_data.tools_for_tests import (
 @pytest.fixture
 def D() -> int:
     """The dimension: matrices will be DxD and vectors will be D."""
-    return 5
+    return 4
 
 @pytest.fixture
 def N() -> int:
@@ -53,19 +53,20 @@ def TYPE():
 
 
 @pytest.fixture
-def SYMPLECTIC() -> Matrix:
+def SYMPLECTIC(N) -> Matrix: #TODO: generator for symplectic matrices
     r"""A symplectic matrix used for object parameterization.
     Taken from https://mathworld.wolfram.com/SymplecticGroup.html
     """
-    symp_mat = np.array(
-        [
+    mats = []
+    for _ in range(N):
+        m = np.array([
             [1, 0, 0, 1],
             [0, 1, 1, 0],
             [0, 0, 1, 0],
-            [0, 0, 0, 1],
-        ]
-    )
-    return symp_mat
+            [0, 0, 0, 1]
+            ])
+        mats.append(m)
+    return mats
 
 
 @pytest.fixture
@@ -134,7 +135,7 @@ class TestSymplecticData(TestMatVecData):
         with pytest.raises(TypeError):
             OTHER * DATA
 
-    @pytest.mark.parametrize("x", [0, 2, 10, 250])
+    @pytest.mark.parametrize("x", [0, 2, 10, 2500])
     def test_mul_with_scalar_multiplies_coeffs_and_leaves_mat_and_vec_unaltered(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         post_op_data = DATA * x

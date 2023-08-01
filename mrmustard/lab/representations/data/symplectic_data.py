@@ -38,18 +38,23 @@ class SymplecticData(MatVecData):
         coeffs:         default to be 1.
     """
 
-    def __init__(
-        self, symplectic: Batch[Matrix], displacement: Batch[RealVector], coeffs: Optional[Batch[Scalar]]=None) -> None:
+    def __init__(self, symplectic: Batch[Matrix],
+                 displacement: Batch[RealVector], 
+                 coeffs: Optional[Batch[Scalar]]=None
+                 ) -> None:
         if coeffs is None: #default cs should all be 1
             try:
                 n = displacement.shape[0] # number of elements
             except AttributeError:
                 n = len(displacement)
             coeffs = np.repeat(1.0, n)
-        if is_symplectic(math.asnumpy(symplectic)): # Check if it is a symplectic matrix
-            super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
-        else:
-            raise ValueError("The matrix given is not symplectic.")
+
+        for mat in symplectic:
+            if is_symplectic(math.asnumpy(mat)) == False:
+                raise ValueError("The matrix given is not symplectic.")
+
+        # reaching here means no matrix is non-symplectic
+        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)            
 
     @property
     def symplectic(self) -> np.array:
