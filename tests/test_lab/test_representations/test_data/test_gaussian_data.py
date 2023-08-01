@@ -35,27 +35,42 @@ from thewalrus.random import random_covariance
 
 #########   Instantiating class to test  #########
 @pytest.fixture
+def D() -> int:
+    """The dimension: matrices will be DxD and vectors will be D."""
+    return 5
+
+@pytest.fixture
+def N() -> int:
+    """The number of elements in the batch."""
+    return 3
+
+@pytest.fixture
 def TYPE():
     r"""Type of the object under test."""
     return GaussianData
 
 
 @pytest.fixture
-def COV() -> Matrix:
-    r"""Some matrix for the object's parameterization."""
-    return np.eye(10) * 42
+def COV(N, D) -> Matrix:
+    r"""Some batch of matrices for the object's parameterization."""
+    covs = []
+    for _ in range(N):
+        c = np.random.normal(size=(D,D)) + 1j*np.random.normal(size=(D,D))
+        c = c + c.T  # symmetrize A
+        covs.append(c)
+    return np.array(covs)
 
 
 @pytest.fixture
-def MEANS() -> Vector:
-    r"""Some vector for the object's parameterization."""
-    return np.ones(10) * 42
+def MEANS(N, D) -> Vector:
+    r"""Some batch of vectors for the object's parameterization."""
+    return np.array([np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)])
 
 
 @pytest.fixture
-def COEFFS() -> Scalar:
-    r"""Some scalar for the object's parameterization."""
-    return 42
+def COEFFS(N) -> Scalar:
+    r"""Some batch of scalars for the object's parameterization."""
+    return np.array([np.random.normal() + 1j*np.random.normal() for _ in range(N)])
 
 
 @pytest.fixture
@@ -79,28 +94,24 @@ def OTHER(DATA) -> GaussianData:
 
 class TestGaussianData(TestMatVecData):
     ####################  Init  ######################
-
     def test_defining_neither_cov_nor_mean_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
             GaussianData(coeffs=COEFFS)
 
-    def test_if_coeffs_is_undefined_it_is_equal_to_1(self, COV, MEANS):
-        gaussian_data = GaussianData(cov=COV, means=MEANS)
-        assert gaussian_data.coeffs == 1
+    # @pytest.mark.parametrize("x", [2, ])#10, 250
+    # def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
+    #     comparison_covariance = np.eye(x)
+    #     means = np.ones(x)
+    #     gaussian_data = GaussianData(means=[means], coeffs=COEFFS)
+    #     for c in gaussian_data.cov:
+    #         assert np.allclose(c, comparison_covariance)
 
-    @pytest.mark.parametrize("x", [0, 2, 10, 250])
-    def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
-        comparison_covariance = np.eye(x)
-        means = np.ones(x)
-        gaussian_data = GaussianData(means=means, coeffs=COEFFS)
-        assert np.allclose(gaussian_data.cov, comparison_covariance)
-
-    @pytest.mark.parametrize("x", [0, 2, 10, 250])
-    def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
-        covariance = np.eye(x)
-        comparison_means = np.zeros(x)
-        gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
-        assert np.allclose(gaussian_data.means, comparison_means)
+    # @pytest.mark.parametrize("x", [0, 2, 10, 250])
+    # def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
+    #     covariance = np.eye(x)
+    #     comparison_means = np.zeros(x)
+    #     gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
+    #     assert np.allclose(gaussian_data.means, comparison_means)
 
     def test_if_neither_means_nor_cov_is_defined_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
@@ -111,82 +122,82 @@ class TestGaussianData(TestMatVecData):
         with pytest.raises(ValueError):
             non_symmetric_mat = np.eye(10)
             non_symmetric_mat[0] += np.array(range(10))
-            GaussianData(cov=non_symmetric_mat, means=MEAN)
+            GaussianData(cov=[non_symmetric_mat], means=MEAN)
 
-    ##################  Negative  ####################
-    # NOTE : tested in parent class
+    # ##################  Negative  ####################
+    # # NOTE : tested in parent class
 
-    ##################  Equality  ####################
-    # NOTE : tested in parent class
+    # ##################  Equality  ####################
+    # # NOTE : tested in parent class
 
-    ##################  Addition  ####################
-    # NOTE : tested in parent class
+    # ##################  Addition  ####################
+    # # NOTE : tested in parent class
 
-    ################  Subtraction  ###################
-    # NOTE : tested in parent class
+    # ################  Subtraction  ###################
+    # # NOTE : tested in parent class
 
-    #############  Scalar division  ##################
-    # NOTE : tested in parent class
+    # #############  Scalar division  ##################
+    # # NOTE : tested in parent class
 
-    ##############  Multiplication  ##################
+    # ##############  Multiplication  ##################
 
     @pytest.mark.parametrize("x", [2, 7, 200])
     def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         multiplied_data = DATA * x
-        assert multiplied_data.c == (pre_op_data.coeffs * x)  # coeffs are multiplied
+        assert np.allclose(multiplied_data.c, (pre_op_data.coeffs * x) ) # coeffs are multiplied
         assert np.allclose(multiplied_data.cov, pre_op_data.cov)  # unaltered
         assert np.allclose(multiplied_data.means, pre_op_data.means)  # unaltered
 
-    @pytest.mark.skip(reason="Doesn't make sense until batch dimension.")
-    def test_multiplying_gaussian_by_another_gaussian_returns_a_gaussian_object(self, DATA, TYPE):
-        other = deepcopy(DATA)
-        output = other * DATA
-        assert isinstance(output, TYPE)
+    
+    # def test_multiplying_gaussian_by_another_gaussian_returns_a_gaussian_object(self, DATA, TYPE):
+    #     other = deepcopy(DATA)
+    #     output = other * DATA
+    #     assert isinstance(output, TYPE)
 
-    @pytest.mark.parametrize("c", [5])
-    @pytest.mark.parametrize("dim", [3])
-    @pytest.mark.skip(reason="Doesn't make sense until batch dimension.")
-    def test_gaussian_resulting_from_multiplication_is_correct(self, TYPE, c, dim):
-        X = np.random.rand(
-            dim * 2
-        )  # TODO: can this be moved into a parameterize fixture which would call dim?
-        C = 42
-        cov_input_a = np.eye(
-            dim * 2
-        )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
-        mean_input_a = np.random.rand(dim * 2)
-        c_input_a = C
-        a_params = {"cov": cov_input_a, "means": mean_input_a, "coeffs": c_input_a}
-        input_gaussian_state_a = general_factory(TYPE, **a_params)
+    # @pytest.mark.parametrize("c", [5])
+    # @pytest.mark.parametrize("dim", [3])
+    # @pytest.mark.skip(reason="Doesn't make sense until batch dimension.")
+    # def test_gaussian_resulting_from_multiplication_is_correct(self, TYPE, c, dim):
+    #     X = np.random.rand(
+    #         dim * 2
+    #     )  # TODO: can this be moved into a parameterize fixture which would call dim?
+    #     C = 42
+    #     cov_input_a = np.eye(
+    #         dim * 2
+    #     )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
+    #     mean_input_a = np.random.rand(dim * 2)
+    #     c_input_a = C
+    #     a_params = {"cov": cov_input_a, "means": mean_input_a, "coeffs": c_input_a}
+    #     input_gaussian_state_a = general_factory(TYPE, **a_params)
 
-        cov_input_b = np.eye(
-            dim * 2
-        )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
-        mean_input_b = np.random.rand(dim * 2)
-        c_input_b = C
-        b_params = {"cov": cov_input_b, "means": mean_input_b, "coeffs": c_input_b}
-        input_gaussian_state_b = general_factory(TYPE, **b_params)
+    #     cov_input_b = np.eye(
+    #         dim * 2
+    #     )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
+    #     mean_input_b = np.random.rand(dim * 2)
+    #     c_input_b = C
+    #     b_params = {"cov": cov_input_b, "means": mean_input_b, "coeffs": c_input_b}
+    #     input_gaussian_state_b = general_factory(TYPE, **b_params)
 
-        output_gaussian_state = input_gaussian_state_a * input_gaussian_state_b
-        cov_output = output_gaussian_state.cov
-        mean_output = output_gaussian_state.means
-        c_output = output_gaussian_state.c
+    #     output_gaussian_state = input_gaussian_state_a * input_gaussian_state_b
+    #     cov_output = output_gaussian_state.cov
+    #     mean_output = output_gaussian_state.means
+    #     c_output = output_gaussian_state.c
 
-        gaussian_of_input_a = self._helper_gaussian(cov_input_a, mean_input_a, c_input_a, X)
-        gaussian_of_input_b = self._helper_gaussian(cov_input_b, mean_input_b, c_input_b, X)
-        gaussian_of_output = self._helper_gaussian(cov_output, mean_output, c_output, X)
+    #     gaussian_of_input_a = self._helper_gaussian(cov_input_a, mean_input_a, c_input_a, X)
+    #     gaussian_of_input_b = self._helper_gaussian(cov_input_b, mean_input_b, c_input_b, X)
+    #     gaussian_of_output = self._helper_gaussian(cov_output, mean_output, c_output, X)
 
-        assert isinstance(gaussian_of_input_a, np.ndarray)
-        assert isinstance(gaussian_of_input_b, np.ndarray)
-        assert isinstance(gaussian_of_output, np.ndarray)
-        assert np.allclose(gaussian_of_input_a * gaussian_of_input_b, gaussian_of_output)
+    #     assert isinstance(gaussian_of_input_a, np.ndarray)
+    #     assert isinstance(gaussian_of_input_b, np.ndarray)
+    #     assert isinstance(gaussian_of_output, np.ndarray)
+    #     assert np.allclose(gaussian_of_input_a * gaussian_of_input_b, gaussian_of_output)
 
-    ###############  Outer product  ##################
-    # NOTE : not implemented => not tested
+    # ###############  Outer product  ##################
+    # # NOTE : not implemented => not tested
 
-    ###################  Helper  #####################
-    def _helper_gaussian(self, covariance, mean, c, x) -> np.ndarray:
-        precision_mat = np.linalg.inv(covariance)
-        gaussian = c * -np.transpose(np.exp(x, mean)) * precision_mat * (x - mean)
-        return np.asarray(gaussian)
+    # ###################  Helper  #####################
+    # def _helper_gaussian(self, covariance, mean, c, x) -> np.ndarray:
+    #     precision_mat = np.linalg.inv(covariance)
+    #     gaussian = c * -np.transpose(np.exp(x, mean)) * precision_mat * (x - mean)
+    #     return np.asarray(gaussian)

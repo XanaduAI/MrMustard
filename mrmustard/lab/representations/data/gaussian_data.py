@@ -20,10 +20,10 @@ from typing import Optional, TYPE_CHECKING, Union
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Matrix, Scalar, Tensor, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
 
 
-if TYPE_CHECKING:  # This is to avoid the circular import issu with GaussianData<>QPolyData
+if TYPE_CHECKING:  # This is to avoid the circular import issue with GaussianData<>QPolyData
     from mrmustard.lab.representations.data.qpoly_data import QPolyData
 
 math = Math()
@@ -50,37 +50,32 @@ class GaussianData(MatVecData):
 
     def __init__(
         self,
-        cov: Optional[Matrix] = None,
-        means: Optional[Vector] = None,
-        coeffs: Optional[Scalar] = 1.0,
+        cov: Optional[Batch[Matrix]] = None,
+        means: Optional[Batch[Vector]] = None,
+        coeffs: Optional[Batch[Scalar]] = None,
     ) -> None:
-        # TODO: BATCH
+        
         if cov is not None or means is not None:  # at least one is defined -or both-
+
             if cov is None:
-                self.num_modes = means.shape[0] // 2
-                cov = math.eye(2 * self.num_modes, dtype=means.dtype)
-                # batch_size = mean.shape[-2]
-                # cov = math.astensor( list( repeat( math.eye(dim, dtype=mean.dtype), batch_size )))
+                means =  np.array(means)
+                dim = means.shape[1]
+                batch_size = means.shape[0]
+                # cov = math.eye(2 * self.num_modes, dtype=means.dtype)
+                cov = math.astensor( list( np.repeat( math.eye(dim, dtype=means.dtype), batch_size )))
 
             elif means is None:  # we know cov is not None here
-                self.num_modes = cov.shape[-1] // 2
-                means = math.zeros(2 * self.num_modes, dtype=cov.dtype)
-
-                # batch_size = cov.shape[-3]
-                # mean = math.zeros( (batch_size, dim), dtype=cov.dtype )
+                cov = np.array(cov)
+                dim = np.array(means).shape[1]
+                batch_size = cov.shape[0]
+                # means = math.zeros(2 * self.num_modes, dtype=cov.dtype)
+                
+                means = math.zeros( (batch_size, dim), dtype=cov.dtype )
         else:
             raise ValueError("You need to define at one: covariance or mean")
+        
+        self.num_modes = means.shape[0] // 2
 
-        # if coeffs is None:
-        #     coeffs = 1.0
-        # batch_size = cov.shape[-3]
-        # coeffs = math.ones((batch_size), dtype=mean.dtype)
-
-        # if isinstance(cov, QPolyData): #NOTE: what do we do about this? support or not?
-        #     cov, mean, coeffs = self._from_QPolyData(poly=cov)
-        # Robertson–Schr ̈odinger uncertainty relation for a (Gaussian) quantum state
-        # if (cov + 1j*sympmat(self.num_modes)).numpy().all() >= 0:
-        #     raise ValueError("The covariance matrix is not valid. cov + i\Omega < 0.")
         super().__init__(mat=cov, vec=means, coeffs=coeffs)
 
     @property
