@@ -33,13 +33,15 @@ class MatVecData(Data):  # Note: this class is abstract!
         coeffs: the coefficients
     """
 
-    def __init__(self, mat: Matrix, vec: Vector, coeffs: Scalar) -> None:
+    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]) -> None:
         self.mat = mat  # math.atleast_3d(mat)
         self.vec = vec  # math.atleast_2d(vec)
         self.coeffs = coeffs  # math.atleast_1d(coeffs)
 
     def __neg__(self) -> MatVecData:
-        new_coeffs = -self.coeffs
+        new_coeffs = []
+        for c in self.coeffs:
+            new_coeffs.append(-c)
         return self.__class__(self.mat, self.vec, new_coeffs)
 
     def __eq__(self, other: MatVecData) -> bool:

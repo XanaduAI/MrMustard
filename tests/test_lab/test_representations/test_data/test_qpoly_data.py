@@ -25,23 +25,22 @@ import operator as op
 import pytest
 
 from copy import deepcopy
-from functools import reduce
 
 from mrmustard.lab.representations.data.qpoly_data import QPolyData
-from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
-# from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
+from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 
 np.random.seed(42)
 
 #########   Instantiating class to test  #########
 @pytest.fixture
-def D():
+def D() -> int:
     """The dimension: matrices will be DxD and vectors will be D."""
     return 5
 
 @pytest.fixture
-def N():
+def N() -> int:
     """The number of elements in the batch."""
     return 3
 
@@ -51,7 +50,7 @@ def TYPE():
     return QPolyData
 
 @pytest.fixture
-def A(D,N) -> Matrix:
+def A(D,N) -> Batch[Matrix]:
     r"""Some batch of matrices for the object's parameterization."""
     As = []
     for _ in range(N):
@@ -62,7 +61,7 @@ def A(D,N) -> Matrix:
 
 
 @pytest.fixture
-def B(D,N) -> Vector:
+def B(D,N) -> Batch[Vector]:
     r"""Some batch of vectors for the object's parameterization."""
     bs = []
     for _ in range(N):
@@ -72,7 +71,7 @@ def B(D,N) -> Vector:
 
 
 @pytest.fixture
-def C(N) -> Scalar:
+def C(N) -> Batch[Scalar]:
     r"""Some batch of scalars for the object's parameterization."""
     cs = []
     for _ in range(N):
@@ -105,7 +104,7 @@ def X(D) -> QPolyData:
     r"""Generates a random complex X-vector of the correct dimension."""
     return np.random.normal(size=D) + 1j*np.random.normal(size=D)
             
-class TestQPolyData(): #TODO re-add inheritance
+class TestQPolyData(TestMatVecData): #TODO re-add inheritance
     ####################  Init  ######################
     def test_non_symmetric_matrix_raises_ValueError(self, B, C):
         non_symmetric_mat = np.eye(10)  # TODO factory method for this

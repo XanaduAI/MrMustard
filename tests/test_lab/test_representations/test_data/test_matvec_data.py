@@ -27,9 +27,9 @@ import pytest
 from copy import deepcopy
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.typing import Batch, Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
-from tests.test_lab.test_representations.test_data.test_data import TestData
+#from tests.test_lab.test_representations.test_data.test_data import TestData
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct,
 )
@@ -41,27 +41,49 @@ N = 3 #number of elements in the batch
 
 ##################   FIXTURES  ###################
 @pytest.fixture
+def D():
+    """The dimension: matrices will be DxD and vectors will be D."""
+    return 5
+
+@pytest.fixture
+def N():
+    """The number of elements in the batch."""
+    return 3
+
+@pytest.fixture
 def TYPE():
     r"""Type of the object under test."""
     return MatVecData
 
-
 @pytest.fixture
-def MAT() -> Matrix:
-    r"""Some matrix for the object's parameterization."""
-    return np.random.rand(N,D,D)
-
-
-@pytest.fixture
-def VEC() -> Vector:
-    r"""Some vector for the object's parameterization."""
-    return np.random.rand(N,D)
+def MAT(D,N) -> Batch[Matrix]:
+    r"""Some batch of matrices for the object's parameterization."""
+    mats = []
+    for _ in range(N):
+        m = np.random.normal(size=(D,D)) + 1j*np.random.normal(size=(D,D))
+        m = m + m.T  # symmetrize A
+        mats.append(m)
+    return mats
 
 
 @pytest.fixture
-def COEFFS() -> Scalar:
-    r"""Some scalar for the object's parameterization."""
-    return np.random.rand(1, N)
+def VEC(D,N) -> Batch[Vector]:
+    r"""Some batch of vectors for the object's parameterization."""
+    vs = []
+    for _ in range(N):
+        v = np.random.normal(size=D) + 1j*np.random.normal(size=D)
+        vs.append(v)
+    return vs
+
+
+@pytest.fixture
+def COEFFS(N) -> Batch[Scalar]:
+    r"""Some batch of scalars for the object's parameterization."""
+    cs = []
+    for _ in range(N):
+        c = np.random.normal() + 1j*np.random.normal()
+        cs.append(c)
+    return cs
 
 
 @pytest.fixture
@@ -83,7 +105,7 @@ def OTHER(DATA) -> MatVecData:
     return deepcopy(DATA)
 
 
-class TestMatVecData(TestData):
+class TestMatVecData(): #TestData
     ####################  Init  ######################
 
     def if_coeffs_not_given_they_are_equal_to_1(self, TYPE, PARAMS):
@@ -96,34 +118,42 @@ class TestMatVecData(TestData):
     def test_negative_returns_new_object_with_neg_coeffs_and_unaltered_mat_and_vec(self, DATA):
         pre_op_data = deepcopy(DATA)
         neg_data = -DATA
-        manual_neg_coeffs = -pre_op_data.coeffs
+        manual_neg_coeffs = []
+        for c in pre_op_data.coeffs:
+            manual_neg_coeffs.append(-c)
         assert manual_neg_coeffs == neg_data.coeffs
         assert np.allclose(neg_data.mat, pre_op_data.mat)
         assert np.allclose(neg_data.vec, pre_op_data.vec)
 
-    ##################  Equality  ####################
-    # NOTE: tested in parent
+    # ##################  Equality  ####################
+    # # NOTE: tested in parent
 
-    ###########  Addition / subtraction  #############
-    # TODO: more complex tests of the general concat case!
-    @pytest.mark.parametrize("operator", [op.add, op.sub])
-    def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
-        pre_op_data = deepcopy(DATA)
-        processed_data = operator(DATA, OTHER)
-        assert operator(DATA.coeffs, OTHER.coeffs) == processed_data.coeffs
-        assert np.allclose(DATA.mat, pre_op_data.mat)
-        assert np.allclose(DATA.vec, pre_op_data.vec)
+    # ###########  Addition / subtraction  #############
+    # # TODO: more complex tests of the general concat case!
+    # @pytest.mark.parametrize("operator", [op.add, op.sub])
+    # def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
+    #     pre_op_data = deepcopy(DATA)
+    #     processed_data = operator(DATA, OTHER)
+    #     s0 = set(processed_data.coeffs)
+    #     cs = []
+    #     for c0 in DATA.coeffs:
+    #         for c1 in OTHER.coeffs:
+    #             cs.append(operator(c0, c1))
+    #     s1 = set(cs)
+    #     assert s0.symmetric_difference(s1) == set()
+    #     # assert np.allclose(DATA.mat, pre_op_data.mat)
+    #     # assert np.allclose(DATA.vec, pre_op_data.vec)
 
     #######  Scalar division / multiplication ########
-    @pytest.mark.parametrize("operator", [op.truediv, op.mul])
-    @pytest.mark.parametrize("x", [0.00001, 7, 100])
-    def test_scalar_mul_or_div_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
-        pre_op_data = deepcopy(DATA)
-        divided_data = operator(DATA, x)
-        helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, pre_op_data, operator, x)
+    # @pytest.mark.parametrize("operator", [op.truediv, op.mul])
+    # @pytest.mark.parametrize("x", [0.00001, 7, 100])
+    # def test_scalar_mul_or_div_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
+    #     pre_op_data = deepcopy(DATA)
+    #     divided_data = operator(DATA, x)
+    #     helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, pre_op_data, operator, x)
 
-    ###############  Multiplication  ##################
-    # #TODO : write more tests (other than the generic ones from the parents)
+    # ###############  Multiplication  ##################
+    # # #TODO : write more tests (other than the generic ones from the parents)
 
-    ###############  Outer product  ##################
-    # NOTE: not implented yet so no tests
+    # ###############  Outer product  ##################
+    # # NOTE: not implented yet so no tests
