@@ -42,13 +42,6 @@ class SymplecticData(MatVecData):
                  displacement: Batch[RealVector], 
                  coeffs: Optional[Batch[Scalar]]=None
                  ) -> None:
-        if coeffs is None: #default cs should all be 1
-            try:
-                n = displacement.shape[0] # number of elements
-            except AttributeError:
-                n = len(displacement)
-            coeffs = np.repeat(1.0, n)
-
         for mat in symplectic:
             if is_symplectic(math.asnumpy(mat)) == False:
                 raise ValueError("The matrix given is not symplectic.")

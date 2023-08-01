@@ -47,13 +47,8 @@ class QPolyData(MatVecData):
     """
 
     def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Optional[Batch[Scalar]]=None) -> None:
-        if c is None: #default cs should all be 1
-            n = b.shape[0] # number of elements
-            c = np.repeat(1.0, n)
-
         if self.helper_check_is_real_symmetric(A):
             super().__init__(mat=A, vec=b, coeffs=c)
-
         else:
             raise ValueError("Matrix A is not real symmetric, object can't be initialized.")
 
