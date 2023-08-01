@@ -69,21 +69,13 @@ def MAT(D,N) -> Batch[Matrix]:
 @pytest.fixture
 def VEC(D,N) -> Batch[Vector]:
     r"""Some batch of vectors for the object's parameterization."""
-    vs = []
-    for _ in range(N):
-        v = np.random.normal(size=D) + 1j*np.random.normal(size=D)
-        vs.append(v)
-    return vs
+    return [np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)]
 
 
 @pytest.fixture
 def COEFFS(N) -> Batch[Scalar]:
     r"""Some batch of scalars for the object's parameterization."""
-    cs = []
-    for _ in range(N):
-        c = np.random.normal() + 1j*np.random.normal()
-        cs.append(c)
-    return cs
+    return [np.random.normal() + 1j*np.random.normal() for _ in range(N)]
 
 
 @pytest.fixture
@@ -118,9 +110,7 @@ class TestMatVecData(): #TestData
     def test_negative_returns_new_object_with_neg_coeffs_and_unaltered_mat_and_vec(self, DATA):
         pre_op_data = deepcopy(DATA)
         neg_data = -DATA
-        manual_neg_coeffs = []
-        for c in pre_op_data.coeffs:
-            manual_neg_coeffs.append(-c)
+        manual_neg_coeffs = [-c for c in pre_op_data.coeffs]
         assert manual_neg_coeffs == neg_data.coeffs
         assert np.allclose(neg_data.mat, pre_op_data.mat)
         assert np.allclose(neg_data.vec, pre_op_data.vec)

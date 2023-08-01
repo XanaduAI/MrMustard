@@ -37,6 +37,16 @@ from tests.test_lab.test_representations.test_data.tools_for_tests import (
 
 #########   Instantiating class to test  #########
 @pytest.fixture
+def D() -> int:
+    """The dimension: matrices will be DxD and vectors will be D."""
+    return 5
+
+@pytest.fixture
+def N() -> int:
+    """The number of elements in the batch."""
+    return 3
+
+@pytest.fixture
 def TYPE():
     r"""Type of the object under test."""
     return SymplecticData
@@ -59,15 +69,15 @@ def SYMPLECTIC() -> Matrix:
 
 
 @pytest.fixture
-def DISPLACEMENT() -> Vector:
+def DISPLACEMENT(N,D) -> Vector:
     r"""Some vector for the object's parameterization."""
-    return np.ones(10) * 42
+    return [np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)]
 
 
 @pytest.fixture
-def COEFFS() -> Scalar:
+def COEFFS(N) -> Scalar:
     r"""Some scalar for the object's parameterization."""
-    return 42
+    return [np.random.normal() + 1j*np.random.normal() for _ in range(N)]
 
 
 @pytest.fixture
@@ -94,13 +104,14 @@ class TestSymplecticData(TestMatVecData):
 
     def test_init_without_coeffs_has_coeffs_equal_to_1(self, SYMPLECTIC, DISPLACEMENT):
         symplectic_data = SymplecticData(symplectic=SYMPLECTIC, displacement=DISPLACEMENT)
-        assert symplectic_data.coeffs == 1
+        n = len(symplectic_data.coeffs)
+        assert np.allclose(symplectic_data.coeffs, np.ones(n))
 
     def test_init_with_a_non_symplectic_matrix_raises_ValueError(self, DISPLACEMENT, COEFFS):
         non_symplectic_mat = np.eye(10)  # TODO factory method for this
         non_symplectic_mat[0] += np.array(range(10))
         with pytest.raises(ValueError):
-            SymplecticData(non_symplectic_mat, DISPLACEMENT, COEFFS)
+            SymplecticData([non_symplectic_mat], DISPLACEMENT, COEFFS)
 
     ##################  Negative  ####################
     # NOTE : tested in parent class

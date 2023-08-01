@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import numpy as np
 
+from typing import Optional
+
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import RealMatrix, Scalar, RealVector
+from mrmustard.typing import Batch, Matrix, Scalar, RealVector
 from thewalrus.quantum.gaussian_checks import is_symplectic
 
 math = Math()
@@ -37,10 +39,14 @@ class SymplecticData(MatVecData):
     """
 
     def __init__(
-        self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0
-    ) -> None:
-        # Check if it is a symplectic matrix
-        if is_symplectic(math.asnumpy(symplectic)):
+        self, symplectic: Batch[Matrix], displacement: Batch[RealVector], coeffs: Optional[Batch[Scalar]]=None) -> None:
+        if coeffs is None: #default cs should all be 1
+            try:
+                n = displacement.shape[0] # number of elements
+            except AttributeError:
+                n = len(displacement)
+            coeffs = np.repeat(1.0, n)
+        if is_symplectic(math.asnumpy(symplectic)): # Check if it is a symplectic matrix
             super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
         else:
             raise ValueError("The matrix given is not symplectic.")
