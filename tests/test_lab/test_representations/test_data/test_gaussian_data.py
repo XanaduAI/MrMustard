@@ -98,20 +98,19 @@ class TestGaussianData(TestMatVecData):
         with pytest.raises(ValueError):
             GaussianData(coeffs=COEFFS)
 
-    # @pytest.mark.parametrize("x", [2, ])#10, 250
-    # def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
-    #     comparison_covariance = np.eye(x)
-    #     means = np.ones(x)
-    #     gaussian_data = GaussianData(means=[means], coeffs=COEFFS)
-    #     for c in gaussian_data.cov:
-    #         assert np.allclose(c, comparison_covariance)
+    @pytest.mark.parametrize("x", [2 ])#10, 250
+    def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
+        comparison_covariance = np.array([np.eye(x), np.eye(x)])
+        means = np.array([np.ones(x), np.ones(x)])
+        gaussian_data = GaussianData(means=means, coeffs=COEFFS)
+        assert np.allclose(gaussian_data.cov, comparison_covariance)
 
-    # @pytest.mark.parametrize("x", [0, 2, 10, 250])
-    # def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
-    #     covariance = np.eye(x)
-    #     comparison_means = np.zeros(x)
-    #     gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
-    #     assert np.allclose(gaussian_data.means, comparison_means)
+    @pytest.mark.parametrize("x", [2, 10, 250])
+    def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
+        covariance = np.array([np.eye(x), np.eye(x)])
+        comparison_means = np.array([np.zeros(x), np.zeros(x)])
+        gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
+        assert np.allclose(gaussian_data.means, comparison_means)
 
     def test_if_neither_means_nor_cov_is_defined_raises_ValueError(self, COEFFS):
         with pytest.raises(ValueError):
@@ -150,10 +149,10 @@ class TestGaussianData(TestMatVecData):
         assert np.allclose(multiplied_data.means, pre_op_data.means)  # unaltered
 
     
-    # def test_multiplying_gaussian_by_another_gaussian_returns_a_gaussian_object(self, DATA, TYPE):
-    #     other = deepcopy(DATA)
-    #     output = other * DATA
-    #     assert isinstance(output, TYPE)
+    @pytest.mark.parametrize("operator", [op.add, op.mul, op.sub])
+    def test_operating_on_two_gaussians_returns_a_gaussian_object(self, DATA, OTHER, TYPE, operator):
+        output = operator(DATA, OTHER)
+        assert isinstance(output, TYPE)
 
     # @pytest.mark.parametrize("c", [5])
     # @pytest.mark.parametrize("dim", [3])

@@ -61,15 +61,13 @@ class GaussianData(MatVecData):
                 means =  np.array(means)
                 dim = means.shape[1]
                 batch_size = means.shape[0]
-                # cov = math.eye(2 * self.num_modes, dtype=means.dtype)
-                cov = math.astensor( list( np.repeat( math.eye(dim, dtype=means.dtype), batch_size )))
+                cov = np.array([math.eye(dim, dtype=means.dtype) for _ in range(batch_size)])
 
             elif means is None:  # we know cov is not None here
+                means =  np.array(means)
                 cov = np.array(cov)
-                dim = np.array(means).shape[1]
-                batch_size = cov.shape[0]
-                # means = math.zeros(2 * self.num_modes, dtype=cov.dtype)
-                
+                dim = cov.shape[1]
+                batch_size = cov.shape[0]                
                 means = math.zeros( (batch_size, dim), dtype=cov.dtype )
         else:
             raise ValueError("You need to define at one: covariance or mean")
@@ -121,8 +119,8 @@ class GaussianData(MatVecData):
         # c2 = math.expand_dims(c2, axis=0)
         # c1c2 = math.concat([c1, c2], axis=1)
         combined_covs = (
-            [  # note the [] around cs are just there until we support the batch dimension
-                math.matmul([c1], math.solve([c1] + [c2], [c2]))
+            [ 
+                math.matmul(c1, math.solve(c1 + c2, c2))
                 for c1 in self.cov
                 for c2 in other.cov
             ]
