@@ -23,32 +23,33 @@ class Wire:
 
     Attributes:
         id: An integer unique identifier for this wire.
-        duality: A string indicating the duality of this wire, either 'L' or 'R'.
+        LR: A string indicating the Left/Right duality of this wire, either 'L' or 'R'.
         mode: An integer mode for this wire, only wires with the same mode can be connected.
         data: An arbitrary object associated with this wire.
     """
     _id_counter: int = 0
 
-    def __init__(self, is_input: bool, duality: str, mode: Optional[int] = None, **data):
+    def __init__(self, is_input: bool, LR: str, owner_id=int, mode: Optional[int] = None, **data):
         r"""
         Initializes a Wire instance.
 
         Arguments:
             is_input (bool): A boolean value indicating whether this wire is an input wire.
-            duality (str): A string indicating the duality of this wire, can only connect to wires of the same duality.
+            LR (str): A string indicating the L/R duality of this wire.
             mode (int): An integer mode for this wire, can only connect to wires with the same mode.
             data (Any): An optional arbitrary dict of objects associated with this wire.
         """
         self.is_input = is_input
+        self.LR: str = LR
+        self.owner_id: int = owner_id
         self.id: int = Wire._id_counter * 2 + 1 if is_input else Wire._id_counter * 2
         Wire._id_counter += 1
-        self.duality: str = duality
         self.mode: int = mode
         for key, val in data.items():
             setattr(self, key, val)
 
     def __repr__(self):
-        return f"Wire(id={self.id}, duality={self.duality}, mode={self.mode}, is_input={self.is_input})"
+        return f"Wire(id={self.id}, LR={self.LR}, mode={self.mode}, is_input={self.is_input}, owner_id={self.owner_id})"
 
 
 class CircuitPart:
@@ -93,10 +94,18 @@ class CircuitPart:
         self.id: int = CircuitPart._id_counter
         CircuitPart._id_counter += 1
         self.name: str = name
-        self.output_wires_L: List[Wire] = [Wire(False, "L", mode) for mode in modes_output_L]
-        self.input_wires_L: List[Wire] = [Wire(True, "L", mode) for mode in modes_input_L]
-        self.output_wires_R: List[Wire] = [Wire(False, "R", mode) for mode in modes_output_R]
-        self.input_wires_R: List[Wire] = [Wire(True, "R", mode) for mode in modes_input_R]
+        self.output_wires_L: List[Wire] = [
+            Wire(is_input=False, LR="L", mode=mode, owner_id=self.id) for mode in modes_output_L
+        ]
+        self.input_wires_L: List[Wire] = [
+            Wire(is_input=True, LR="L", mode=mode, owner_id=self.id) for mode in modes_input_L
+        ]
+        self.output_wires_R: List[Wire] = [
+            Wire(is_input=False, LR="R", mode=mode, owner_id=self.id) for mode in modes_output_R
+        ]
+        self.input_wires_R: List[Wire] = [
+            Wire(is_input=True, LR="R", mode=mode, owner_id=self.id) for mode in modes_input_R
+        ]
         self.data: Any = data
         super().__init__(**kwargs)
 
@@ -114,6 +123,13 @@ class CircuitPart:
             raise ValueError(
                 "Different input and output modes. Please refer to modes_in and modes_out."
             )
+
+    def wire_order(self, wire_id: int) -> int:
+        r"""Returns the order of a wire in this CircuitPart."""
+        for i, w in enumerate(self.all_wires):
+            if w.id == wire_id:
+                return i
+        raise ValueError(f"Wire {wire_id} not found in {self}.")
 
     @property
     def modes_in(self) -> List[int]:

@@ -519,10 +519,16 @@ class Fock(State, Parametrized):
         normalize: bool = False,
         **kwargs,
     ):
-        super().__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs, modes=modes, **kwargs)
-
         self._n = [n] if isinstance(n, int) else n
         self._normalize = normalize
+
+        super().__init__(
+            self,
+            ket=fock.fock_state(self._n),
+            cutoffs=cutoffs or tuple(photons + 1 for photons in self._n),
+            modes=modes,
+            **kwargs,
+        )
 
     def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).

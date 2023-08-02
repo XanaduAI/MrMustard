@@ -87,22 +87,6 @@ class State(CircuitPart):
             _norm (float, default=1.0): the norm of the state. Warning: only set if you know what you are doing.
 
         """
-        # print("=" * 80)
-        # print(
-        #     "state called with args: ",
-        #     cov,
-        #     means,
-        #     eigenvalues,
-        #     symplectic,
-        #     ket,
-        #     dm,
-        #     modes,
-        #     cutoffs,
-        #     _norm,
-        #     name,
-        #     kwargs,
-        # )
-        # print("=" * 80)
         self._purity = None
         self._fock_probabilities = None
         self._cutoffs = cutoffs
@@ -133,12 +117,13 @@ class State(CircuitPart):
             )
 
         self.parallelizable = False
-        self.short_name = ""
         super().__init__(
             name=name,
             modes_output_L=modes or list(range(self.num_modes)),
             modes_input_L=[],
-            modes_output_R=modes or list(range(self.num_modes)) if not self.is_hilbert_vector else [],
+            modes_output_R=modes or list(range(self.num_modes))
+            if not self.is_hilbert_vector
+            else [],
             modes_input_R=[],
             **kwargs,
         )

@@ -470,12 +470,16 @@ class BSgate(Parametrized, Unitary):
             phi_bounds=phi_bounds,
         )
 
-    def U(self, cutoffs: Optional[List[int]], method=None):
+    def U(
+        self, cutoffs: Optional[List[int]] = None, shape: Optional[List[int]] = None, method=None
+    ):
         r"""Returns the symplectic transformation matrix for the beam splitter.
 
         Args:
             cutoffs (List[int]): the list of cutoff dimensions for each mode
-                in the order (out_0, out_1, in_0, in_1).
+                in the order given in `self.modes`.
+            shape (List[int]): the complete list of cutoff dimensions for all indices
+                in the order (out_0, out_1, in_0, in_1)
             method (str): the method used to compute the unitary matrix. Options are:
                 * 'vanilla': uses the standard method
                 * 'schwinger': slower, but numerically stable
@@ -484,16 +488,12 @@ class BSgate(Parametrized, Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        if len(cutoffs) == 4:
-            shape = tuple(cutoffs)
-        elif len(cutoffs) == 2:
-            shape = tuple(cutoffs) + tuple(cutoffs)
-        else:
-            raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
+        assert cutoffs or shape, "Either cutoffs or shape must be provided."
+        shape = shape or tuple(cutoffs) + tuple(cutoffs)
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
-            shape=shape,
+            shape=tuple(shape),
             method=method or settings.DEFAULT_BS_METHOD,
         )
 

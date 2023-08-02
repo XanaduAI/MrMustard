@@ -20,9 +20,14 @@ from __future__ import annotations
 
 from typing import Union
 
+import matplotlib.pyplot as plt
 import networkx as nx
 
-from mrmustard.lab.abstract.circuitpart import CircuitPart
+from mrmustard import settings
+from mrmustard.lab.abstract.circuitpart import CircuitPart, Wire
+from mrmustard.math import Math
+
+math = Math()
 
 
 class TensorNetwork:
@@ -39,7 +44,9 @@ class TensorNetwork:
         r"""Initializes a TensorNetwork instance."""
         self.graph: nx.Graph = nx.Graph()
         self.tensors: dict[int, CircuitPart] = {}
-        self.name_to_id: dict[str, int] = {}
+        self.wires: dict[int, Wire] = {}
+        self.name_to_tensor_id: dict[str, int] = {}  # for quick retrieval of tensors by name
+        self.wire_to_tensor: dict[int, int] = {}
 
     def add_tensor(self, tensor: CircuitPart) -> None:
         r"""
@@ -48,10 +55,36 @@ class TensorNetwork:
         Arguments:
             tensor: The Tensor object to add.
         """
-        self.name_to_id[tensor.name] = tensor.id
+        self.name_to_tensor_id[tensor.name] = tensor.id
         self.tensors[tensor.id] = tensor
+
         for wire in tensor.all_wires:
-            self.graph.add_node(wire.id, tensor=tensor.id, wire=wire)
+            self.graph.add_node(wire.id, tensor_id=tensor.id)
+            self.wires[wire.id] = wire
+            self.wire_to_tensor[wire.id] = tensor.id
+
+        # for visual purposes, we keep the wires together by adding edges between them, but these do nothing.
+        for wire1 in tensor.all_wires:
+            for wire2 in tensor.all_wires:
+                if wire1.id != wire2.id:
+                    self.graph.add_edge(wire1.id, wire2.id, kind="visual")
+
+    def free_wires(self) -> list[Wire]:
+        r"""
+        Returns the free wires in the network.
+
+        Returns:
+            A list of wires that are not going to be contracted.
+        """
+        # return wires that have no edge of kind "inner_product"
+        return [
+            wire
+            for wire in self.wires.values()
+            if not any(
+                self.graph.edges[edge]["kind"] == "inner_product"
+                for edge in self.graph.edges(wire.id)
+            )
+        ]
 
     def get_tensor(self, identifier: Union[int, str]) -> CircuitPart:
         r"""
@@ -69,6 +102,19 @@ class TensorNetwork:
             tensor_id = self.name_to_id.get(identifier)
             return self.tensors.get(tensor_id)
 
+    def can_connect_wires(self, wire1_id: int, wire2_id: int) -> bool:
+        r"""
+        Checks whether two wires can be connected.
+
+        Arguments:
+            wire1_id: The id of the first wire.
+            wire2_id: The id of the second wire.
+
+        Returns:
+            Whether the wires can be connected.
+        """
+        return True  # override in TensorNetworkCircuit
+
     def connect_wires(self, wire1_id, wire2_id):
         r"""
         Connects two wires in the network.
@@ -84,61 +130,126 @@ class TensorNetwork:
         if self.can_connect_wires(wire1_id, wire2_id):
             self.graph.add_edge(wire1_id, wire2_id)
 
-    @classmethod
-    def from_circuit(self, circuit):  # these must all be transformations with current Circuit
-        for op in circuit.ops:
-            pass
-
     def __repr__(self) -> str:
         return f"TensorNetwork(graph={self.graph}, tensors=\n{self.tensors})"
+
+    def draw(self, show_cutoffs=False, show_ids=False):
+        edge_colors = [
+            "blue" if self.graph.edges[e]["kind"] == "inner_product" else "red"
+            for e in self.graph.edges
+        ]
+        positions = {}
+        for center, tensor in enumerate(self.tensors.values()):
+            for wire in tensor.all_wires:
+                positions[wire.id] = (
+                    2 * center - (wire.is_input - 0.5),
+                    -0.5 * (wire.mode + 0.5 * (wire.LR == "R")),
+                )
+
+        node_colors = [self.graph.nodes[n]["tensor_id"] for n in self.graph.nodes]
+        labels = dict()
+        for n in self.graph.nodes:
+            wire = self.wires[n]
+            labels[n] = self.tensors[wire.owner_id].short_name
+            if show_cutoffs:
+                labels[n] += f"\n{wire.cutoff}" if hasattr(wire, "cutoff") else ""
+            if show_ids:
+                labels[n] += f"\nid={wire.id}" if hasattr(wire, "id") else ""
+
+        widths = [
+            2 if self.graph.edges[e]["kind"] == "inner_product" else 4 for e in self.graph.edges
+        ]
+        node_sizes = (
+            1000  # [1200 if self.graph.nodes[n]["tensor_id"] else 1000 for n in self.graph.nodes]
+        )
+
+        # Normalize color values to between 0 and 1
+        node_norm = [
+            (float(i) - min(node_colors)) / (max(node_colors) - min(node_colors))
+            for i in node_colors
+        ]
+
+        # use figsize = (num_tensors, num_modes)
+        plt.figure(figsize=(len(self.tensors), len(set([w.mode for w in self.wires.values()]))))
+
+        nx.draw_networkx_nodes(
+            self.graph,
+            pos=positions,
+            node_color=node_norm,
+            node_size=node_sizes,
+            cmap=plt.cm.Pastel1,  # use colormap that avoids dark colors
+            vmin=0,
+            vmax=1,
+        )
+
+        nx.draw_networkx_edges(
+            self.graph,
+            pos=positions,
+            width=widths,
+            edge_color=edge_colors,
+            alpha=0.6,
+        )
+
+        nx.draw_networkx_labels(
+            self.graph,
+            pos=positions,
+            labels=labels,
+            font_size=10,
+            font_color="black",
+            font_weight="bold",
+        )
+
+        plt.show()
+
+
+ID = int
 
 
 class TensorNetworkCircuit(TensorNetwork):
     r"""A restricted version of a TensorNetwork used to enforce certain rules when
     constructing a tensor network of a circuit. For example, only input and output modes can
-    be contracted, and the duality and modes must match."""
+    be contracted, and the duality and modes must match, unless it's a partial trace operation."""
 
     def __init__(self):
         r"""Initializes a TensorNetworkCircuit instance."""
         super().__init__()
-        self.current_input_wires_L = []
-        self.current_output_wires_L = []
-        self.current_input_wires_R = []
-        self.current_output_wires_R = []
+        self.circuit_input_wires_L = []
+        self.circuit_output_wires_L = []
+        self.circuit_input_wires_R = []
+        self.circuit_output_wires_R = []
 
     def add_tensor(self, tensor: CircuitPart) -> None:
         super().add_tensor(tensor)
 
-        id_to_remove = []
+        # we automatically connect the tensor to the circuit if possible
+        id_to_remove: list[ID] = []
         for wire_in in tensor.input_wires_L:
-            for wire_out in self.current_output_wires_L:
+            for wire_out in self.circuit_output_wires_L:
                 if self.can_connect_wires(wire_in.id, wire_out.id):
-                    self.graph.add_edge(wire_in.id, wire_out.id)
+                    self.graph.add_edge(wire_in.id, wire_out.id, kind="inner_product")
                     id_to_remove.append(wire_out.id)
                     break
             else:
-                # else for the for loop, not the if statement, which means
-                #  it didn't break, i.e. the wire wasn't connected
-                self.current_input_wires_L.append(wire_in)
-        self.current_output_wires_L = [
-            wire for wire in self.current_output_wires_L if wire.id not in id_to_remove
+                # if the wire wasn't connected
+                self.circuit_input_wires_L.append(wire_in)
+        self.circuit_output_wires_L = [
+            wire for wire in self.circuit_output_wires_L if wire.id not in id_to_remove
         ]
-        self.current_output_wires_L.extend(tensor.output_wires_L)
+        self.circuit_output_wires_L.extend(tensor.output_wires_L)
 
         id_to_remove = []
         for wire_in in tensor.input_wires_R:
-            for wire_out in self.current_output_wires_R:
+            for wire_out in self.circuit_output_wires_R:
                 if self.can_connect_wires(wire_in.id, wire_out.id):
-                    print("connecting", wire_in, wire_out)
-                    self.graph.add_edge(wire_in.id, wire_out.id)
+                    self.graph.add_edge(wire_in.id, wire_out.id, kind="inner_product")
                     id_to_remove.append(wire_out.id)
                     break
             else:
-                self.current_input_wires_R.append(wire_in)
-        self.current_output_wires_R = [
-            wire for wire in self.current_output_wires_R if wire.id not in id_to_remove
+                self.circuit_input_wires_R.append(wire_in)
+        self.circuit_output_wires_R = [
+            wire for wire in self.circuit_output_wires_R if wire.id not in id_to_remove
         ]
-        self.current_output_wires_R.extend(tensor.output_wires_R)
+        self.circuit_output_wires_R.extend(tensor.output_wires_R)
 
     def can_connect_wires(self, wire1_id: int, wire2_id: int) -> bool:
         r"""
@@ -151,11 +262,11 @@ class TensorNetworkCircuit(TensorNetwork):
         Returns:
             Whether the wires can be connected.
         """
-        wire1 = self.graph.nodes[wire1_id]["wire"]
-        wire2 = self.graph.nodes[wire2_id]["wire"]
+        wire1 = self.wires[wire1_id]
+        wire2 = self.wires[wire2_id]
 
         mode = wire1.mode == wire2.mode
-        equal_duality = wire1.duality == wire2.duality
+        equal_duality = wire1.LR == wire2.LR
         in_out = wire1.is_input != wire2.is_input
 
         partial_trace = mode and not equal_duality and not in_out
@@ -163,37 +274,48 @@ class TensorNetworkCircuit(TensorNetwork):
 
         return op or partial_trace
 
-    def connect_wires(self, tensor_id_1, tensor_id_2, mode, duality):
-        r"""
-        Connects two wires in the network.
-        They can belong to different tensors or to the same tensor.
+    def _add_fock_cutoffs(self):
+        # add from states first
+        _largest = 0
+        for wire in self.wires.values():
+            owner = self.tensors[wire.owner_id]
+            try:
+                wire.cutoff = owner.shape[owner.wire_order(wire.id)]
+                _largest = max(_largest, wire.cutoff)
+            except AttributeError:  # transformations don't have a shape attribute
+                wire.cutoff = None
 
-        Arguments:
-            tensor_id_1 (int): The id of the first tensor.
-            tensor_id_2 (int): The id of the second tensor (can be the same as the first tensor)
-            mode (int): The mode of the wires to connect.
-            duality (str): The duality of the wires to connect.
+        # if a node is connected to a node with a cutoff via an inner product it inherits the cutoff:
+        for wire in self.wires.values():
+            if wire.cutoff is None:
+                for neighbor in self.graph.neighbors(wire.id):
+                    if self.graph.edges[wire.id, neighbor]["kind"] == "inner_product":
+                        wire.cutoff = self.wires[neighbor].cutoff
+                        break
 
-        Raises:
-            ValueError: If the wires are not input/output, different duality, or different modes.
-        """
-        wire1_id = self.get_wire_id(tensor_id_1, mode, duality)
-        wire2_id = self.get_wire_id(tensor_id_2, mode, duality)
-        if self.can_connect_wires(wire1_id, wire2_id):
-            self.graph.add_edge(wire1_id, wire2_id)
+        # set all remaining cutoffs to the largest cutoff
+        for wire in self.wires.values():
+            if wire.cutoff is None:
+                wire.cutoff = max(_largest, settings.TN_DEFAULT_BOND_CUTOFF)
 
-    def get_wire_id(self, tensor_id, mode, duality):
-        r"""
-        Gets the id of a wire in the network.
+    def _write_contraction_ids(self):
+        id = 0
+        for edge in self.graph.edges:
+            if self.graph.edges[edge]["kind"] == "inner_product":
+                self.wires[edge[0]].contraction_id = id
+                self.wires[edge[1]].contraction_id = id
+                id += 1
+        # write all the rest
+        for wire in self.wires.values():
+            if not hasattr(wire, "contraction_id"):
+                wire.contraction_id = id
+                id += 1
 
-        Arguments:
-            tensor_id: The id of the tensor.
-            mode: The mode of the wire.
-            duality: The duality of the wire.
+    def _get_opt_einsum_args(self):
+        for tensor_id in self.tensors:
+            array = self.tensors[tensor_id].fock
+            ids = [w.contraction_id for w in self.tensors[tensor_id].all_wires]
+            yield array, ids
 
-        Returns:
-            The id of the wire.
-        """
-        for wire_id, wire in self.graph.nodes(data=True):
-            if wire["tensor"] == tensor_id and wire["mode"] == mode and wire["duality"] == duality:
-                return wire_id
+    def contract(self):
+        return math.einsum(*[el for pair in self._get_opt_einsum_args() for el in pair])

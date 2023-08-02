@@ -44,14 +44,14 @@ class Transformation(CircuitPart):
         modes_in: list[int],
         modes_out: list[int],
         name: str,
-        duality: str,
+        LR: str,
         **kwargs,
     ):
         super().__init__(
-            modes_output_L=modes_out if "L" in duality else [],
-            modes_input_L=modes_in if "L" in duality else [],
-            modes_output_R=modes_out if "R" in duality else [],
-            modes_input_R=modes_in if "R" in duality else [],
+            modes_output_L=modes_out if "L" in LR else [],
+            modes_input_L=modes_in if "L" in LR else [],
+            modes_output_R=modes_out if "R" in LR else [],
+            modes_input_R=modes_in if "R" in LR else [],
             name=name,
             **kwargs,
         )
@@ -296,20 +296,32 @@ class Unitary(Transformation):
         modes_in: list[int],
         modes_out: list[int],
         name: str,
-        duality: str = "L",
+        LR: str = "L",
         **kwargs,
     ):
+        if LR not in ["L", "R"]:
+            raise ValueError(f"LR must be 'L' or 'R' (got {LR})")
+        self.LR = LR
+
         super().__init__(
             modes_in=modes_in,
             modes_out=modes_out,
             name=name,
-            duality=duality,
+            LR=LR,
             **kwargs,
         )
 
     @property
     def fock(self):
-        return self.U(self.cutoffs)
+        U = self.U(shape=self.shape)
+        return U if self.LR == "L" else math.conj(U)
+
+    @property
+    def shape(self):
+        try:
+            return [wire.cutoff for wire in self.all_wires]
+        except AttributeError:
+            raise AttributeError("shape is not yet set for this transformation")
 
     def bargmann(self, numpy=False):
         X, _, d = self.XYd(allow_none=False)
@@ -325,7 +337,12 @@ class Unitary(Transformation):
             return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
 
-    def U(self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False):
+    def U(
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        dual: bool = False,
+    ):
         r"""Returns the unitary representation of the transformation.
         If specified, shape takes precedence over cutoffs.
         shape is in the order (out_L, in_L) or (out_R, in_R).
@@ -400,7 +417,7 @@ class Channel(Transformation):
             modes_in=modes_in,
             modes_out=modes_out,
             name=name,
-            duality="LR",
+            LR="LR",
             **kwargs,
         )
 
@@ -417,6 +434,17 @@ class Channel(Transformation):
         if state.is_hilbert_vector:
             return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+
+    @property
+    def fock(self):
+        return self.choi(shape=self.shape)
+
+    @property
+    def shape(self):
+        try:
+            return [wire.cutoff for wire in self.all_wires]
+        except AttributeError:
+            raise AttributeError("shape is not yet set for this transformation")
 
     def choi(
         self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False

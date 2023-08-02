@@ -17,10 +17,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Sequence, Union
 
 from mrmustard import settings
 from mrmustard.lab.abstract.circuitpart import CircuitPart
+from mrmustard.lab.abstract.state import State
 from mrmustard.math import Math
 from mrmustard.typing import Tensor
 
@@ -29,7 +30,7 @@ from .state import State
 math = Math()
 
 
-class Measurement(CircuitPart):
+class Measurement:
     """this is an abstract class holding the common methods and properties
     that any measurement should implement
 
@@ -38,8 +39,6 @@ class Measurement(CircuitPart):
         modes (List[int]): the modes on which the measurement is acting on
     """
 
-    is_projective: bool
-
     def __init__(
         self, outcome: Optional[Tensor], modes: Sequence[int], name: str, **kwargs
     ) -> None:
@@ -47,14 +46,6 @@ class Measurement(CircuitPart):
             raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
         self._outcome = outcome
         self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
-        super().__init__(
-            name=name,
-            modes_output_L=[],
-            modes_input_L=modes,
-            modes_output_R=[],
-            modes_input_R=modes if not self.is_projective else [],
-            **kwargs,
-        )
 
     @property
     def num_modes(self):
@@ -78,13 +69,6 @@ class Measurement(CircuitPart):
     def _measure_gaussian(self, other: State) -> Union[State, float]:
         raise NotImplementedError
 
-    def fock_tensors_and_tags(self, cutoffs=None):
-        cutoffs = cutoffs or self.cutoffs
-        if self.is_pure:
-            return self.ket(cutoffs), self.tags_out_L
-        else:
-            return self.dm(cutoffs), self.tags_out_L + self.tags_out_R
-
     def primal(self, other: State) -> Union[State, float]:
         r"""performs the measurement procedure according to the representation
         of the incoming state.
@@ -94,24 +78,66 @@ class Measurement(CircuitPart):
 
         return self._measure_fock(other)
 
-    # def __rshift__(self, other) -> Union[State, float]:
-    #     return Circuit([self, other])
+    def __getitem__(self, items) -> Measurement:
+        """Assign modes via the getitem syntax: allows measurements to be used as
+        ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
+        """
+        if isinstance(items, int):
+            modes = [items]
+        elif isinstance(items, slice):
+            modes = list(range(items.start, items.stop, items.step))
+        elif isinstance(items, (Sequence, Iterable)):
+            modes = list(items)
+        else:
+            raise ValueError(f"{items} is not a valid slice or list of modes.")
+        self._modes = modes
 
-    # def __getitem__(self, items) -> Measurement:
-    #     """Assign modes via the getitem syntax: allows measurements to be used as
-    #     ``output = meas[0,1](input)``, e.g. measuring modes 0 and 1.
-    #     """
-    #     if isinstance(items, int):
-    #         modes = [items]
-    #     elif isinstance(items, slice):
-    #         modes = list(range(items.start, items.stop, items.step))
-    #     elif isinstance(items, (Sequence, Iterable)):
-    #         modes = list(items)
-    #     else:
-    #         raise ValueError(f"{items} is not a valid slice or list of modes.")
-    #     self._modes = modes
+        return self
 
-    #     return self
+
+class POVM(CircuitPart):
+    def __init__(self, povm_elem: State) -> None:
+        r"""Initializes a POVM instance. povm_elem is a State object representing
+        a POVM element. It is assumed that the POVM element is proportional to a density matrix.
+        The modes of the state are taken to be the modes on which the POVM acts on.
+
+        If the State is a ket the measurement is automatically projective. If the State is a
+        density matrix the measurement is considered non-projective and the povm element is
+        a probability operator.
+        """
+        if not isinstance(povm_elem, State):
+            raise ValueError("POVM element must be initialized with a State object.")
+        if povm_elem.is_hilbert_vector:
+            self.is_projective = True
+        else:
+            self.is_projective = False
+
+        self.short_name = povm_elem.short_name or povm_elem.name or "POVM"
+        self.povm_elem = povm_elem
+
+        super().__init__(
+            name=povm_elem.name,
+            modes_output_L=[],
+            modes_input_L=povm_elem.modes_out,
+            modes_output_R=[],
+            modes_input_R=[] if self.is_projective else povm_elem.modes_out,
+            data=povm_elem,
+        )
+
+    @property
+    def fock(self):
+        r"""returns the Fock representation of the POVM element"""
+        return self.povm_elem.fock
+
+    @property
+    def shape(self):
+        r"""returns the shape of the POVM element"""
+        return self.povm_elem.shape
+
+    @property
+    def cutoffs(self):
+        r"""returns the cutoffs of the POVM element"""
+        return self.povm_elem.cutoffs
 
 
 class FockMeasurement(Measurement):

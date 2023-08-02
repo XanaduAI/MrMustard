@@ -55,6 +55,7 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self.DEFAULT_BS_METHOD = "vanilla"  # can be 'vanilla' or 'schwinger'
+        self.TN_DEFAULT_BOND_CUTOFF = 70
 
     @property
     def SEED(self):
