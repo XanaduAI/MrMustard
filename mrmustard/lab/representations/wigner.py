@@ -70,13 +70,17 @@ class Wigner(Representation):
         cov = self.cov
         means = self.means
         N = means.shape[-1] // 2
-        return [(
-            means[i, :N] ** 2
-            + means[i, N:] ** 2
-            + math.diag_part(cov[i, :N, :N])
-            + math.diag_part(cov[i, N:, N:])
-            - hbar #NOTE: if hbar is hbar*math.ones(N)
-        ) / (2 * hbar) for i in range(means.shape[0])]
+        return [
+            (
+                means[i, :N] ** 2
+                + means[i, N:] ** 2
+                + math.diag_part(cov[i, :N, :N])
+                + math.diag_part(cov[i, N:, N:])
+                - hbar  # NOTE: if hbar is hbar*math.ones(N)
+            )
+            / (2 * hbar)
+            for i in range(means.shape[0])
+        ]
 
     def number_cov(self, hbar: float = settings.HBAR) -> List[Matrix]:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
@@ -112,15 +116,21 @@ class Wigner(Representation):
         number_cov = []
         for i in range(means.shape[0]):
             mCm = cov * means[i, :, None] * means[i, None, :]
-            dd = math.diag(math.diag_part(mCm[i, :N, :N] + mCm[i, N:, N:] + mCm[i, :N, N:] + mCm[i, N:, :N])) / (
+            dd = math.diag(
+                math.diag_part(mCm[i, :N, :N] + mCm[i, N:, N:] + mCm[i, :N, N:] + mCm[i, N:, :N])
+            ) / (
                 2 * hbar**2  # TODO: sum(diag_part) is better than diag_part(sum)
             )
             CC = (cov**2 + mCm) / (2 * hbar**2)
             number_cov.append(
-                CC[i, :N, :N] + CC[i, N:, N:] + CC[i, :N, N:] + CC[i, N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
+                CC[i, :N, :N]
+                + CC[i, N:, N:]
+                + CC[i, :N, N:]
+                + CC[i, N:, :N]
+                + dd
+                - 0.25 * math.eye(N, dtype=CC.dtype)
             )
         return number_cov
-
 
     @property
     def number_variances(self):

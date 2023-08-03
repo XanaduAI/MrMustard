@@ -33,11 +33,11 @@ class WignerDM(Wigner):
 
     def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
-    
+
     @property
     def cov(self):
         return self.data.cov
-    
+
     @property
     def means(self):
         return self.data.means
