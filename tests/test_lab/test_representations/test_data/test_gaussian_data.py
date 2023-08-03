@@ -25,6 +25,7 @@ import operator as op
 import pytest
 
 from copy import deepcopy
+from scipy.stats import multivariate_normal as mvg
 
 from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Scalar, Vector
@@ -154,49 +155,64 @@ class TestGaussianData(TestMatVecData):
         output = operator(DATA, OTHER)
         assert isinstance(output, TYPE)
 
-    # @pytest.mark.parametrize("c", [5])
-    # @pytest.mark.parametrize("dim", [3])
-    # @pytest.mark.skip(reason="Doesn't make sense until batch dimension.")
-    # def test_gaussian_resulting_from_multiplication_is_correct(self, TYPE, c, dim):
-    #     X = np.random.rand(
-    #         dim * 2
-    #     )  # TODO: can this be moved into a parameterize fixture which would call dim?
-    #     C = 42
-    #     cov_input_a = np.eye(
-    #         dim * 2
-    #     )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
-    #     mean_input_a = np.random.rand(dim * 2)
-    #     c_input_a = C
-    #     a_params = {"cov": cov_input_a, "means": mean_input_a, "coeffs": c_input_a}
-    #     input_gaussian_state_a = general_factory(TYPE, **a_params)
 
-    #     cov_input_b = np.eye(
-    #         dim * 2
-    #     )  # random_covariance(dim) #should be random cov but let's not complicate things until the test actually passes
-    #     mean_input_b = np.random.rand(dim * 2)
-    #     c_input_b = C
-    #     b_params = {"cov": cov_input_b, "means": mean_input_b, "coeffs": c_input_b}
-    #     input_gaussian_state_b = general_factory(TYPE, **b_params)
 
-    #     output_gaussian_state = input_gaussian_state_a * input_gaussian_state_b
-    #     cov_output = output_gaussian_state.cov
-    #     mean_output = output_gaussian_state.means
-    #     c_output = output_gaussian_state.c
-
-    #     gaussian_of_input_a = self._helper_gaussian(cov_input_a, mean_input_a, c_input_a, X)
-    #     gaussian_of_input_b = self._helper_gaussian(cov_input_b, mean_input_b, c_input_b, X)
-    #     gaussian_of_output = self._helper_gaussian(cov_output, mean_output, c_output, X)
-
-    #     assert isinstance(gaussian_of_input_a, np.ndarray)
-    #     assert isinstance(gaussian_of_input_b, np.ndarray)
-    #     assert isinstance(gaussian_of_output, np.ndarray)
-    #     assert np.allclose(gaussian_of_input_a * gaussian_of_input_b, gaussian_of_output)
+    # @pytest.mark.parametrize("x", [2])#, 7, 200
+    # def test_multiplication_is_correct(self, DATA, OTHER, D, x):
+    #     g1 = mvg.pdf(x, mean=DATA.means, cov=DATA.cov)
+    #     g2 = mvg.pdf(x, mean=OTHER.means, cov=OTHER.cov)
+    #     scipy_mvg_mul = g1 * g2 
+    #     post_op_data = DATA * OTHER
+    #     new_cov, new_mean, new_coeff = self._helper_full_gaussian_mul(k=D,
+    #                                                      cov1=DATA.cov, cov2=OTHER.cov, 
+    #                                                      mean1=DATA.means, mean2=OTHER.means,
+    #                                                      c=post_op_data.coeffs)
+    #     our_mvg_mul = new_coeff * self._helper_full_gaussian_pdf(D, new_cov, new_mean, x=x)
+    #     assert scipy_mvg_mul == our_mvg_mul
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
 
-    # ###################  Helper  #####################
-    # def _helper_gaussian(self, covariance, mean, c, x) -> np.ndarray:
-    #     precision_mat = np.linalg.inv(covariance)
-    #     gaussian = c * -np.transpose(np.exp(x, mean)) * precision_mat * (x - mean)
-    #     return np.asarray(gaussian)
+    
+    def _helper_full_gaussian_pdf(self, k, cov, mean, x, c=1):
+        return self._helper_gaussian_precoeff(k,cov) * self._helper_gaussian_exp(cov, mean, x, c)
+
+    @staticmethod
+    def _helper_gaussian_precoeff(k,cov):
+        pi_part = (2*np.pi)**(k/2)
+        det_part = np.sqrt(np.linalg.det(cov))
+        return 1 / (pi_part * det_part)
+    
+    @staticmethod
+    def _helper_gaussian_exp(cov, mean, x, c):
+        coeff = -(1/2)
+        precision = np.linalg.inv(cov)
+        eta = x - mean
+        pre_exponential = np.dot( np.dot(np.transpose(eta), precision), eta)
+        exponential = np.exp(coeff * pre_exponential)
+        return c * exponential
+    
+    @staticmethod
+    def _helper_mul_covs(cov1, cov2):
+        precision1 = np.linalg.inv(cov1)
+        precision2 = np.linalg.inv(cov2)
+        return np.linalg.inv(precision1+precision2)
+
+    @staticmethod
+    def _helper_mul_means(new_cov, cov1, cov2, mean1, mean2):
+        precision1 = np.linalg.inv(cov1)
+        precision2 = np.linalg.inv(cov2)
+        eta1 = np.dot(precision1, mean1)
+        eta2 = np.dot(precision2, mean2)
+        etas = eta1+eta2
+        return np.dot(new_cov, etas)
+
+    def _helper_mul_alpha(self, k, cov1, cov2, mean1, mean2, c=1):
+        joint_cov = cov1+cov2
+        return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, mean=mean2, x=mean1, c=c)
+
+    def _helper_full_gaussian_mul(self, k, cov1, cov2, mean1, mean2, c=1):
+        new_cov = self._helper_mul_covs(cov1, cov2)
+        new_mean = self._helper_mul_means(new_cov, cov1, cov2, mean1, mean2)
+        new_coeff = self._helper_mul_alpha(k, cov1, cov2, mean1, mean2, c=c)
+        return new_cov, new_mean, new_coeff
