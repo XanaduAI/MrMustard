@@ -79,6 +79,7 @@ class State:  # pylint: disable=too-many-public-methods
 
         Supply either:
             * a covariance matrix and means vector
+            * a symplectic matrix and displacement vector
             * a fock representation (ket or dm)
             * a quadrature variable vector and corresponding wavefunction samples
         together with the flag_ket to indicate the nature of the state.
@@ -595,6 +596,7 @@ class State:  # pylint: disable=too-many-public-methods
         return self.representation.data.__add__(other)
 
 
+    #TODO: ask for this implementation of rmul and mul!
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
 
