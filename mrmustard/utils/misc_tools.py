@@ -42,9 +42,9 @@ def duck_type_checker(obj_a: object, obj_b: object) -> bool:
         True if both objects have exactly the same attributes, False otherwise.
 
     Raises:
-        TypeError:  If at least one of the objects given can't be compared via duck-typing, i.e.
-        lack attributes. A typical example would be python basic types such as ``int``, ``float``,
-        ``bool``, etc.
+        TypeError: If at least one of the objects given can't be compared via duck-typing, i.e.
+            lack attributes. A typical example would be python basic types such as ``int``, ``float``,
+            ``bool``, etc.
     """
     try:
         set_a = set(obj_a.__dict__.keys())
