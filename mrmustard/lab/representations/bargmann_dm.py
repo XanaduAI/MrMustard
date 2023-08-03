@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from mrmustard.lab.representations.bargmann import Bargmann
-from mrmustard.typing import Matrix, Scalar, Vector, Tensor
+from mrmustard.typing import Matrix, Scalar, Vector
 
 
 class BargmannDM(Bargmann):
@@ -21,7 +21,7 @@ class BargmannDM(Bargmann):
         super().__init__(A=A, b=b, c=c)
 
     @property
-    def purity(self) -> Scalar:
+    def purity(self):
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )

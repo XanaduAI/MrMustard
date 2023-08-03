@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from mrmustard.lab.representations.bargmann import Bargmann
-from mrmustard.typing import Matrix, Scalar, Vector, Tensor
+from mrmustard.typing import Matrix, Scalar, Vector
 
 
 class BargmannKet(Bargmann):

@@ -15,7 +15,7 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.data.qpoly_data import QPolyData
-from mrmustard.typing import Matrix, Scalar, Vector, Tensor
+from mrmustard.typing import Matrix, Scalar, Vector
 
 math = Math()
 
