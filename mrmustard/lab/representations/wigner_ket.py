@@ -15,6 +15,9 @@
 from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.lab.representations.data.symplectic_data import SymplecticData
 from mrmustard.typing import Matrix, Vector, Scalar
+from mrmustard.math import Math
+math = Math()
+from mrmustard import settings
 
 
 class WignerKet(Wigner):
@@ -31,7 +34,7 @@ class WignerKet(Wigner):
 
     @property
     def cov(self):
-        return self.data.symplectic #times sym^T
+        return settings.HBAR/2*math.matmul(self.data.symplectic, math.transpose(self.data.symplectic))
     
     @property
     def means(self):

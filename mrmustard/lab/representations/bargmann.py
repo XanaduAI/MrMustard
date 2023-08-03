@@ -34,39 +34,39 @@ class Bargmann(Representation):
         self.data = QPolyData(A=A, b=b, c=c)
 
     @property
-    def norm(self) -> float:
+    def norm(self):
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
 
     @property
-    def number_means(self) -> Vector:
+    def number_means(self):
         # NOTE: we can use the universal trace formula to do it!
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
 
     @property
-    def number_cov(self) -> Matrix:
+    def number_cov(self):
         # NOTE: we can use the universal trace formula to do it!
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
 
     @property
-    def number_variances(self) -> int:
+    def number_variances(self):
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
 
     @property
-    def number_stdev(self) -> int:
+    def number_stdev(self):
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )
 
     @property
-    def probability(self) -> Tensor:
+    def probability(self):
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"
         )

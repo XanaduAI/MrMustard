@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from mrmustard.typing import Matrix, Vector, Tensor
+from mrmustard.typing import Matrix, Vector
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
 

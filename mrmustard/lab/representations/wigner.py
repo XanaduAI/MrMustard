@@ -15,7 +15,7 @@
 from mrmustard.math import Math
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import Scalar, RealMatrix, RealVector, Matrix, Vector, Tensor
+from mrmustard.typing import Scalar, Matrix, Vector
 from typing import List
 from mrmustard import settings
 
@@ -36,12 +36,12 @@ class Wigner(Representation):
         self.data = MatVecData(mat=mat, vec=vec, coeffs=coeffs)
 
     @property
-    def norm(self) -> float:
+    def norm(self):
         # NOTE: be able to get the norm from other representation
         raise NotImplementedError()
 
     @property
-    def number_means(self, hbar: float) -> list[Vector]:
+    def number_means(self, hbar: float = settings.HBAR) -> list[Vector]:
         r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number means is :math:`m`.
@@ -78,7 +78,7 @@ class Wigner(Representation):
             - hbar #NOTE: if hbar is hbar*math.ones(N)
         ) / (2 * hbar) for i in range(means.shape[0])]
 
-    def number_cov(self, hbar: float) -> List[Matrix]:
+    def number_cov(self, hbar: float = settings.HBAR) -> List[Matrix]:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number covariance matrix is :math:`K`.
@@ -123,9 +123,9 @@ class Wigner(Representation):
 
 
     @property
-    def number_variances(self) -> int:
+    def number_variances(self):
         raise NotImplementedError()
 
     @property
-    def probability(self) -> Tensor:
+    def probability(self):
         raise NotImplementedError()
