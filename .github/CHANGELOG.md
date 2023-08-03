@@ -1,3 +1,16 @@
+# Release 0.6.0 (future)
+
+### New features
+* A general factory method and a duck style type-checker.
+
+### Breaking changes
+### Improvements
+### Bug fixes
+### Documentation
+### Contributors
+[Richard A. Wolf](https://github.com/ryk-wolf)
+
+
 # Release 0.5.0 (development release)
 
 ### New features
@@ -83,6 +96,7 @@
 
 * More robust implementation of cutoffs for States.
 [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
 
 ### Bug fixes
 
