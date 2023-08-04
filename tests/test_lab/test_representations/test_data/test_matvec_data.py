@@ -29,7 +29,7 @@ from copy import deepcopy
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
-#from tests.test_lab.test_representations.test_data.test_data import TestData
+from tests.test_lab.test_representations.test_data.test_data import TestData
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct,
 )
@@ -97,7 +97,7 @@ def OTHER(DATA) -> MatVecData:
     return deepcopy(DATA)
 
 
-class TestMatVecData(): #TestData
+class TestMatVecData(TestData): #TestData
     ####################  Init  ######################
     def if_coeffs_not_given_they_are_equal_to_1(self, TYPE, PARAMS):
         params_without_coeffs = deepcopy(PARAMS)
