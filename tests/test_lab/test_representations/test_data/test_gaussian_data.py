@@ -56,8 +56,9 @@ def COV(N, D) -> Matrix:
     r"""Some batch of matrices for the object's parameterization."""
     covs = []
     for _ in range(N):
-        c = np.random.normal(size=(D,D)) + 1j*np.random.normal(size=(D,D))
+        c = np.random.normal(size=(D,D)) #+ 1j*np.random.normal(size=(D,D))
         c = c + c.T  # symmetrize A
+        c = np.dot(c, np.conj(c.T)) #make positive semi-definite
         covs.append(c)
     return np.array(covs)
 
@@ -65,13 +66,13 @@ def COV(N, D) -> Matrix:
 @pytest.fixture
 def MEANS(N, D) -> Vector:
     r"""Some batch of vectors for the object's parameterization."""
-    return np.array([np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)])
+    return np.array([np.random.normal(size=D) for _ in range(N)]) #+ 1j*np.random.normal(size=D) 
 
 
 @pytest.fixture
 def COEFFS(N) -> Scalar:
     r"""Some batch of scalars for the object's parameterization."""
-    return np.array([np.random.normal() + 1j*np.random.normal() for _ in range(N)])
+    return np.array([np.random.normal() for _ in range(N)]) #+ 1j*np.random.normal() 
 
 
 @pytest.fixture
@@ -157,25 +158,41 @@ class TestGaussianData(TestMatVecData):
 
 
 
-    # @pytest.mark.parametrize("x", [2])#, 7, 200
-    # def test_multiplication_is_correct(self, DATA, OTHER, D, x):
-    #     g1 = mvg.pdf(x, mean=DATA.means, cov=DATA.cov)
-    #     g2 = mvg.pdf(x, mean=OTHER.means, cov=OTHER.cov)
-    #     scipy_mvg_mul = g1 * g2 
-    #     post_op_data = DATA * OTHER
-    #     new_cov, new_mean, new_coeff = self._helper_full_gaussian_mul(k=D,
-    #                                                      cov1=DATA.cov, cov2=OTHER.cov, 
-    #                                                      mean1=DATA.means, mean2=OTHER.means,
-    #                                                      c=post_op_data.coeffs)
-    #     our_mvg_mul = new_coeff * self._helper_full_gaussian_pdf(D, new_cov, new_mean, x=x)
-    #     assert scipy_mvg_mul == our_mvg_mul
+    @pytest.mark.parametrize("x", [2])#, 7, 200
+    def test_multiplication_is_correct_on_first_elements(self, DATA, OTHER, D, N, x):
+        dat = DATA * OTHER #TODO make iterative version
+        i = 0
+        j = 0
+
+        index = 0#N*i +j #0
+        
+        g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
+        g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
+        curr_scipy_mvg_mul = g1 * g2
+        
+        
+        new_cov, new_mean, new_coeff = self._helper_full_gaussian_mul(k=D,
+                                                         cov1=DATA.cov[i], cov2=OTHER.cov[j], 
+                                                         mean1=DATA.means[i], mean2=OTHER.means[j],
+                                                         c=DATA.coeffs[i]*OTHER.coeffs[j])
+        curr_sep_mvg_muls = new_coeff * self._helper_full_gaussian_pdf(D, new_cov, new_mean, x=x)
+
+        curr_mvg_object_mul = dat.coeffs[index] * self._helper_full_gaussian_pdf(k=D, 
+                                                                                cov=dat.cov[index],
+                                                                                means=dat.means[index],
+                                                                                x=x)
+     
+        
+        assert np.isclose(curr_scipy_mvg_mul, curr_sep_mvg_muls )
+        assert np.isclose(curr_scipy_mvg_mul, curr_mvg_object_mul)
+        # assert np.isclose(curr_sep_mvg_muls , curr_mvg_object_mul)
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
 
     
-    def _helper_full_gaussian_pdf(self, k, cov, mean, x, c=1):
-        return self._helper_gaussian_precoeff(k,cov) * self._helper_gaussian_exp(cov, mean, x, c)
+    def _helper_full_gaussian_pdf(self, k, cov, means, x, c=1):
+        return self._helper_gaussian_precoeff(k,cov) * self._helper_gaussian_exp(cov, means, x, c)
 
     @staticmethod
     def _helper_gaussian_precoeff(k,cov):
@@ -209,7 +226,7 @@ class TestGaussianData(TestMatVecData):
 
     def _helper_mul_alpha(self, k, cov1, cov2, mean1, mean2, c=1):
         joint_cov = cov1+cov2
-        return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, mean=mean2, x=mean1, c=c)
+        return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, means=mean2, x=mean1, c=c)
 
     def _helper_full_gaussian_mul(self, k, cov1, cov2, mean1, mean2, c=1):
         new_cov = self._helper_mul_covs(cov1, cov2)
