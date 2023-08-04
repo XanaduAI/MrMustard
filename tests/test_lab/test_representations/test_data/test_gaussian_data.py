@@ -158,34 +158,23 @@ class TestGaussianData(TestMatVecData):
 
 
 
-    @pytest.mark.parametrize("x", [2])#, 7, 200
+    @pytest.mark.parametrize("x", [2, 7, 200])#, 7, 200
     def test_multiplication_is_correct_on_first_elements(self, DATA, OTHER, D, N, x):
-        dat = DATA * OTHER #TODO make iterative version
-        i = 0
-        j = 0
+        dat = DATA * OTHER 
+        index = 0#N*i +j #NOTE: Why is this always 0?! it shouldn't be... should it?
 
-        index = 0#N*i +j #0
-        
-        g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
-        g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
-        curr_scipy_mvg_mul = g1 * g2
-        
-        
-        new_cov, new_mean, new_coeff = self._helper_full_gaussian_mul(k=D,
-                                                         cov1=DATA.cov[i], cov2=OTHER.cov[j], 
-                                                         mean1=DATA.means[i], mean2=OTHER.means[j],
-                                                         c=DATA.coeffs[i]*OTHER.coeffs[j])
-        curr_sep_mvg_muls = new_coeff * self._helper_full_gaussian_pdf(D, new_cov, new_mean, x=x)
+        for i in range(N):
+            for j in range(N):
+    
+                g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
+                g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
+                curr_scipy_mvg_mul = g1 * g2
 
-        curr_mvg_object_mul = dat.coeffs[index] * self._helper_full_gaussian_pdf(k=D, 
-                                                                                cov=dat.cov[index],
-                                                                                means=dat.means[index],
-                                                                                x=x)
-     
-        
-        assert np.isclose(curr_scipy_mvg_mul, curr_sep_mvg_muls )
-        assert np.isclose(curr_scipy_mvg_mul, curr_mvg_object_mul)
-        # assert np.isclose(curr_sep_mvg_muls , curr_mvg_object_mul)
+                curr_mvg_object_mul = dat.coeffs[index] * self._helper_full_gaussian_pdf(k=D, 
+                                                                                        cov=dat.cov[index],
+                                                                                        means=dat.means[index],
+                                                                                        x=x)
+                assert np.isclose(curr_scipy_mvg_mul, curr_mvg_object_mul)
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
