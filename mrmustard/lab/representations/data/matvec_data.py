@@ -28,9 +28,9 @@ class MatVecData(Data):  # Note: this class is abstract!
     r"""Contains matrix and vector -like data for certain Representation objects.
 
     Args:
-        mat: the matrix-like data to be contained in the class
-        vec: the vector-like data to be contained in the class
-        coeffs: the coefficients
+        mat (Batch[Matrix]):    the matrix-like data to be contained in the class
+        vec (Batch[Vector]):    the vector-like data to be contained in the class
+        coeffs (Batch[Scalar]): the coefficients
     """
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]) -> None:

@@ -33,9 +33,9 @@ class SymplecticData(MatVecData):
     :math:`\bm{d} = \sqrt{2\hbar}[\Re(\alpha), \Im(\alpha)]`
 
     Args:
-        symplectic:     symplectic matrix with qqpp-ordering
-        displacement:   the real displacement vector
-        coeffs:         default to be 1.
+        symplectic (Batch[Matrix]):         symplectic matrix with qqpp-ordering
+        displacement (Batch[RealVector]):   the real displacement vector
+        coeffs (Optional[Batch[Scalar]]):   default to be 1.
     """
 
     def __init__(self, symplectic: Batch[Matrix],

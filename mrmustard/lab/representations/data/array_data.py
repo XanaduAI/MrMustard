@@ -27,7 +27,7 @@ class ArrayData(Data):
     """Contains array-like data for certain Representation objects.
 
     Args:
-        array : data to be contained in the class
+        array (Vector) : data to be contained in the class
     """
 
     def __init__(self, array: Vector) -> None:

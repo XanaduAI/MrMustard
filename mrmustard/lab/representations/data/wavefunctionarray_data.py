@@ -21,7 +21,7 @@ from typing import Union
 from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
-from mrmustard.typing import Scalar
+from mrmustard.typing import Scalar, Vector
 
 math = Math()
 
@@ -30,11 +30,11 @@ class WavefunctionArrayData(ArrayData):
     r"""Data class for the Wavefunction, encapsulating q-variable points and corresponding values.
 
     Args:
-        qs:     q-variable points
-        array:  q-Wavefunction values corresponding to the qs
+        qs (Vector):     q-variable points
+        array (Vector):  q-Wavefunction values corresponding to the qs
     """
 
-    def __init__(self, qs: np.array, array: np.array) -> None:
+    def __init__(self, qs: Vector, array: Vector) -> None:
         super().__init__(array=array)
         self.qs = qs
 

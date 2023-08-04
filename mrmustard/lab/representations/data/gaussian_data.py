@@ -40,9 +40,10 @@ class GaussianData(MatVecData):
     `coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
 
     Args:
-        cov:    covariance matrices (real symmetric)
-        means:  mean vector of the state (real), note that the dimension must be even
-        coeffs: coefficients (complex)
+        cov (Optional[Batch[Matrix]]):      covariance matrices (real symmetric)
+        means (Optional[Batch[Vector]]):    mean vector of the state (real), note that the 
+                                            dimension must be even
+        coeffs (Optional[Batch[Scalar]]):   coefficients (complex)
 
     Raises:
         ValueError: if neither means nor covariance is defined
@@ -109,10 +110,10 @@ class GaussianData(MatVecData):
         r"""Computes the combined covariances when multiplying Gaussian-represented states.
 
         Args:
-            other: another GaussianData object which covariance will be multiplied
+            other (GaussianData): another GaussianData object which covariance will be multiplied
 
         Returns:
-            The tensor of combined covariances
+            (Tensor) The tensor of combined covariances
         """
         # NOTE: will this get solved when the batch dimension is supported everywhere?
         # c1 = math.expand_dims(c1, axis=0)
@@ -133,12 +134,12 @@ class GaussianData(MatVecData):
         r"""Computes the combined coefficients when multiplying Gaussian-represented states.
 
         Args:
-            other:          another GaussianData object which coeffs will be multiplied
-            joint_covs:     the combined covariances of the two objects
-            joint_means:    the combined means of the two objects
+            other (GaussianData):   another GaussianData object which coeffs will be multiplied
+            joint_covs (Tensor):    the combined covariances of the two objects
+            joint_means (Tensor):   the combined means of the two objects
 
         Returns:
-            The tensor of multiplied coefficients
+            (Tensor) The tensor of multiplied coefficients
         """
         combined_coeffs = [
             co1
@@ -169,10 +170,10 @@ class GaussianData(MatVecData):
         in batch.
 
         Args:
-            other:  another GaussianData object which means will be multiplied
+            other (GaussianData):  another GaussianData object which means will be multiplied
 
         Returns:
-            The tensor of combined multiplied means
+            (Tensor) The tensor of combined multiplied means
         """
         combined_means = [
             math.matvec(c1, math.solve(c1 + c2, m2)) + math.matvec(c2, math.solve(c1 + c2, m1))

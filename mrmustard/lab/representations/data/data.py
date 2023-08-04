@@ -29,19 +29,19 @@ class Data(ABC):
         pass
 
     @staticmethod
-    def same(
+    def same( #change this method for the batches
         X: List[Union[List[Vector], List[Scalar]]],
         Y: List[Union[List[Vector], List[Scalar]]],
     ) -> bool:
         r"""Method to compare two sets of elements
 
         Args:
-            X: list of elements to be compared with ys
-            Y: list of elements to be compared with xs
+            X (List[Union[List[Vector], List[Scalar]]]):    list of elements to be compared with ys
+            Y (List[Union[List[Vector], List[Scalar]]]):    list of elements to be compared with xs
 
         Returns:
-            True if all the elements compared are same within numpy's default rtol/atol, False
-            otherwise
+            (bool) True if all the elements compared are same within numpy's default rtol/atol, 
+            False otherwise
         """
         return all([np.allclose(x, y) for x, y in zip(X, Y)])
 
@@ -73,21 +73,3 @@ class Data(ABC):
 
     def __rmul__(self, other: Scalar) -> Data:
         return self.__mul__(other=other)
-
-    # @abstractmethod
-    # def __and__(self, other: Data) -> Data:
-    #     r"""Performs a tensor product between the two objects."""
-    #     raise NotImplementedError()
-
-    # @abstractmethod
-    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> Data:
-    #     r""" Simplifies the object by performing some data compression.
-
-    #     Args:
-    #         rtol: the relative tolerance for numpy's `allclose`
-    #         atol: the absolute tolerance for numpy's `allclose`
-
-    #     Returns:
-    #         An object of the same input class, simplified
-    #     """
-    #     raise NotImplementedError()

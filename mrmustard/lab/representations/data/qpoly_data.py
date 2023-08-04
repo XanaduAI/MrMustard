@@ -41,9 +41,9 @@ class QPolyData(MatVecData):
     Note that if constants are not provided, they will all be initialized at 1.
 
     Args:
-        mat:    series of quadratic coefficient
-        vec:    series of linear coefficients
-        c:      series of constants
+        A (Batch[Matrix]):          series of quadratic coefficient
+        b (Batch[Vector]):          series of linear coefficients
+        c (Optional[Batch[Scalar]]):series of constants
     """
 
     def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Optional[Batch[Scalar]]=None) -> None:
