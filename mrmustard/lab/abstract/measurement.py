@@ -39,11 +39,9 @@ class Measurement:
         modes (List[int]): the modes on which the measurement is acting on
     """
 
-    def __init__(
-        self, outcome: Optional[Tensor], modes: Sequence[int], name: str, **kwargs
-    ) -> None:
+    def __init__(self, outcome: Tensor, modes: Sequence[int]) -> None:
         if modes is None:
-            raise ValueError(f"Modes not defined for {self.__class__.__name__}.")
+            raise ValueError(f"Modes not defined for {self.__class__.__qualname__}.")
         self._outcome = outcome
         self._is_postselected = bool(outcome)  # whether outcome is user-defined (i.e. not sampled)
 
@@ -93,51 +91,6 @@ class Measurement:
         self._modes = modes
 
         return self
-
-
-class POVM(CircuitPart):
-    def __init__(self, povm_elem: State) -> None:
-        r"""Initializes a POVM instance. povm_elem is a State object representing
-        a POVM element. It is assumed that the POVM element is proportional to a density matrix.
-        The modes of the state are taken to be the modes on which the POVM acts on.
-
-        If the State is a ket the measurement is automatically projective. If the State is a
-        density matrix the measurement is considered non-projective and the povm element is
-        a probability operator.
-        """
-        if not isinstance(povm_elem, State):
-            raise ValueError("POVM element must be initialized with a State object.")
-        if povm_elem.is_hilbert_vector:
-            self.is_projective = True
-        else:
-            self.is_projective = False
-
-        self.short_name = povm_elem.short_name or povm_elem.name or "POVM"
-        self.povm_elem = povm_elem
-
-        super().__init__(
-            name=povm_elem.name,
-            modes_output_L=[],
-            modes_input_L=povm_elem.modes_out,
-            modes_output_R=[],
-            modes_input_R=[] if self.is_projective else povm_elem.modes_out,
-            data=povm_elem,
-        )
-
-    @property
-    def fock(self):
-        r"""returns the Fock representation of the POVM element"""
-        return self.povm_elem.fock
-
-    @property
-    def shape(self):
-        r"""returns the shape of the POVM element"""
-        return self.povm_elem.shape
-
-    @property
-    def cutoffs(self):
-        r"""returns the cutoffs of the POVM element"""
-        return self.povm_elem.cutoffs
 
 
 class FockMeasurement(Measurement):

@@ -12,50 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+""" CircuitPart class for constructing circuits out of components."""
+
 from __future__ import annotations
 
-from typing import Any, List, Optional
-
-
-class Wire:
-    r"""
-    Represents a wire of a tensor, to be used in a tensor network.
-
-    Attributes:
-        id: An integer unique identifier for this wire.
-        LR: A string indicating the Left/Right duality of this wire, either 'L' or 'R'.
-        mode: An integer mode for this wire, only wires with the same mode can be connected.
-        data: An arbitrary object associated with this wire.
-    """
-    _id_counter: int = 0
-
-    def __init__(self, is_input: bool, LR: str, owner_id=int, mode: Optional[int] = None, **data):
-        r"""
-        Initializes a Wire instance.
-
-        Arguments:
-            is_input (bool): A boolean value indicating whether this wire is an input wire.
-            LR (str): A string indicating the L/R duality of this wire.
-            mode (int): An integer mode for this wire, can only connect to wires with the same mode.
-            data (Any): An optional arbitrary dict of objects associated with this wire.
-        """
-        self.is_input = is_input
-        self.LR: str = LR
-        self.owner_id: int = owner_id
-        self.id: int = Wire._id_counter * 2 + 1 if is_input else Wire._id_counter * 2
-        Wire._id_counter += 1
-        self.mode: int = mode
-        for key, val in data.items():
-            setattr(self, key, val)
-
-    def __repr__(self):
-        return f"Wire(id={self.id}, LR={self.LR}, mode={self.mode}, is_input={self.is_input}, owner_id={self.owner_id})"
+from collections import namedtuple
+from typing import Optional
 
 
 class CircuitPart:
     r"""CircuitPart supplies functionality for constructing circuits out of components.
     A CircuitPart does not know about its "physical role", rather it is only concerned with the
-    connectivity of its own wires.
+    connectivity of its own wires. Note that CircuitPart implements only computed properties.
 
     Effectively it enables any Kraus operator constructed out of tensor network operations.
 
@@ -66,96 +34,241 @@ class CircuitPart:
         - keeps a reference to the State/Transformation/Measurement associated with this CircuitPart
     """
     _id_counter: int = 0
-    _repr_markdown_ = None  # otherwise takes over the repr due to mro
+    _wire_id_counter: int = 0
+    _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
     def __init__(
         self,
         name: str,
-        modes_output_L: List[int],
-        modes_input_L: List[int],
-        modes_output_R: List[int],
-        modes_input_R: List[int],
-        data: Any = None,
-        **kwargs,
+        modes_output_ket: list[int] = [],
+        modes_input_ket: list[int] = [],
+        modes_output_bra: list[int] = [],
+        modes_input_bra: list[int] = [],
     ):
         r"""
         Initializes a CircuitPart instance.
 
         Arguments:
             name: A string name for this circuit part.
-            modes_output_L: A list of output wire modes.
-            modes_input_L: A list of input wire modes.
-            modes_output_R: A list of dual output wire modes.
-            modes_input_R: A list of dual input wire modes.
-            data: An optional arbitrary object associated with this circuit part.
-            name: A string name for this circuit part.
-            kwargs: Additional keyword arguments to pass to the next class in the mro.
+            modes_output_ket: where the output modes on the ket side exist for this Circuitpart.
+            modes_input_ket: where the input modes on the ket side exist for this Circuitpart.
+            modes_output_bra: where the output modes on the bra side exist for this Circuitpart.
+            modes_input_bra: where the input modes on the bra side exist for this Circuitpart.
         """
         self.id: int = CircuitPart._id_counter
         CircuitPart._id_counter += 1
-        self.name: str = name
-        self.output_wires_L: List[Wire] = [
-            Wire(is_input=False, LR="L", mode=mode, owner_id=self.id) for mode in modes_output_L
-        ]
-        self.input_wires_L: List[Wire] = [
-            Wire(is_input=True, LR="L", mode=mode, owner_id=self.id) for mode in modes_input_L
-        ]
-        self.output_wires_R: List[Wire] = [
-            Wire(is_input=False, LR="R", mode=mode, owner_id=self.id) for mode in modes_output_R
-        ]
-        self.input_wires_R: List[Wire] = [
-            Wire(is_input=True, LR="R", mode=mode, owner_id=self.id) for mode in modes_input_R
-        ]
-        self.data: Any = data
-        super().__init__(**kwargs)
+
+        self.name: str = name + "_" + str(self.id)
+
+        # note there is no default mechanism for
+        # validating modes and ids fields
+        self._input = namedtuple("input", ["ket", "bra"])
+        self._input.ket = dict()
+        self._input.bra = dict()
+        self._output = namedtuple("output", ["ket", "bra"])
+        self._output.ket = dict()
+        self._output.bra = dict()
+
+        for mode in modes_output_ket:
+            self._output.ket[mode] = CircuitPart._wire_id_counter
+            CircuitPart._wire_id_counter += 1
+        for mode in modes_input_ket:
+            self._input.ket[mode] = CircuitPart._wire_id_counter
+            CircuitPart._wire_id_counter += 1
+        for mode in modes_output_bra:
+            self._output.bra[mode] = CircuitPart._wire_id_counter
+            CircuitPart._wire_id_counter += 1
+        for mode in modes_input_bra:
+            self._input.bra[mode] = CircuitPart._wire_id_counter
+            CircuitPart._wire_id_counter += 1
 
     @property
-    def modes(self) -> Optional[list[int]]:
-        r"""Returns the modes that this Operation is defined on.
-        For backward compatibility, modes raises a ValueError if modes_in != modes_out."""
-        if self.modes_in == self.modes_out:
+    def input(self):  # override in views
+        return self._input
+
+    @property
+    def output(self):  # override in views
+        return self._output
+
+    @property
+    def only_ket(self) -> bool:
+        return len(self.input.bra) == 0 and len(self.output.bra) == 0
+
+    @property
+    def only_bra(self) -> bool:
+        return len(self.input.ket) == 0 and len(self.output.ket) == 0
+
+    @property
+    def has_ket(self) -> bool:
+        return len(self.input.ket) > 0 or len(self.output.ket) > 0
+
+    @property
+    def has_bra(self) -> bool:
+        return len(self.input.bra) > 0 or len(self.output.bra) > 0
+
+    @property
+    def one_sided(self) -> bool:
+        return self.only_ket or self.only_bra
+
+    @property
+    def two_sided(self) -> bool:
+        return not self.one_sided
+
+    @property
+    def ids(self) -> list[int]:
+        r"""Returns the list of wire ids for this CircuitPart."""
+        in_ket = list(self.input.ket.values())
+        in_bra = list(self.input.bra.values())
+        out_ket = list(self.output.ket.values())
+        out_bra = list(self.output.bra.values())
+        return in_ket + in_bra + out_ket + out_bra
+
+    @property
+    def modes(self) -> list[int]:
+        r"""For backward compatibility.
+        It returns a list of modes for this CircuitPart, unless it's ambiguous."""
+        if self.modes_in == self.modes_out:  # transformation (on same modes)
             return list(self.modes_in)
         elif len(self.modes_in) == 0:  # state
             return list(self.modes_out)
         elif len(self.modes_out) == 0:  # measurement
             return list(self.modes_in)
         else:
-            raise ValueError(
-                "Different input and output modes. Please refer to modes_in and modes_out."
-            )
-
-    def wire_order(self, wire_id: int) -> int:
-        r"""Returns the order of a wire in this CircuitPart."""
-        for i, w in enumerate(self.all_wires):
-            if w.id == wire_id:
-                return i
-        raise ValueError(f"Wire {wire_id} not found in {self}.")
+            raise ValueError("modes is ambiguous for this CircuitPart. Please use self.modes_dict.")
 
     @property
-    def modes_in(self) -> List[int]:
+    def modes_in(self) -> list[int]:
         "Returns the tuple of input modes that are used by this CircuitPart."
-        in_modes = set([w.mode for w in self.input_wires_L]).union(
-            [w.mode for w in self.input_wires_R]
-        )
-        return list(sorted(list(in_modes)))
+        return list(sorted(list(set(self.input.ket.keys()).union(set(self.input.bra.keys())))))
 
     @property
-    def modes_out(self) -> List[int]:
+    def modes_out(self) -> list[int]:
         "Returns the tuple of output modes that are used by this CircuitPart."
-        out_modes = set([w.mode for w in self.output_wires_L]).union(
-            [w.mode for w in self.output_wires_R]
-        )
-        return list(sorted(list(out_modes)))
+        return list(sorted(list(set(self.output.ket.keys()).union(set(self.output.bra.keys())))))
 
     @property
-    def all_wires(self) -> List[Wire]:
-        "Returns a list of all wires of this CircuitPart."
-        return self.output_wires_L + self.input_wires_L + self.output_wires_R + self.input_wires_R
+    def has_inputs(self) -> bool:
+        r"""Returns whether this CircuitPart has input wires."""
+        return len(self.modes_in) > 0
 
-    def __repr__(self):
-        # parts
-        oL = f", output_wires_L={self.output_wires_L}" if len(self.output_wires_L) > 0 else ""
-        oR = f", output_wires_R={self.output_wires_R}" if len(self.output_wires_R) > 0 else ""
-        iL = f", input_wires_L={self.input_wires_L}" if len(self.input_wires_L) > 0 else ""
-        iR = f", input_wires_R={self.input_wires_R}" if len(self.input_wires_R) > 0 else ""
-        return f"{self.__class__.__name__}(id={self.id}, name={self.name}{oL}{oR}{iL}{iR})\n"
+    @property
+    def has_outputs(self) -> bool:
+        r"""Returns whether this CircuitPart has output wires."""
+        return len(self.modes_out) > 0
+
+    @property
+    def adjoint(self) -> AdjointView:
+        r"""Returns the adjoint of this CircuitPart. That is, L <-> R."""
+        return AdjointView(self)
+
+    @property
+    def dual(self) -> DualView:
+        r"""Returns the dual of this CircuitPart. That is, in <-> out."""
+        return DualView(self)
+
+    # @property
+    # def transpose(self, modes: list[int]) -> TransposeView:
+    #     r"""Returns the transpose of this CircuitPart. That is, a new mode ordering.
+    #     Arguments:
+    #         modes: A list of modes in the new order.
+
+    #     Returns:
+    #         A TransposeView of this CircuitPart with the modes in the new order.
+    #     """
+    #     return TransposeView(self, modes)
+
+
+class CircuitPartView:
+    r"""Base class for CircuitPart views. It is used to implement the adjoint and dual views.
+    It is not meant to be used directly.
+    """
+
+    def __init__(self, cp: CircuitPart) -> None:
+        r"""Initializes a CircuitPartView instance, which wraps
+        around a CircuitPart and replaces the input and output attributes.
+
+        Arguments:
+            cp: The CircuitPart to view.
+        """
+        self.cp = cp
+
+
+class DualView(CircuitPartView, CircuitPart):
+    r"""Dual view of a CircuitPart. It is used to implement the dual.
+    It swaps the input and output wires of a CircuitPart.
+    """
+
+    @property
+    def input(self):
+        return self.cp.output
+
+    @property
+    def output(self):
+        return self.cp.input
+
+    @property
+    def dual(self):
+        return self.cp
+
+
+class AdjointView(CircuitPartView, CircuitPart):
+    r"""Adjoint view of a CircuitPart. It is used to implement the adjoint.
+    It swaps the ket and bra wires of a CircuitPart.
+    """
+
+    @property
+    def input(self):
+        _input = namedtuple("input", ["ket", "bra"])
+        _input.ket = self.cp.input.bra
+        _input.bra = self.cp.input.ket
+        return _input
+
+    @property
+    def output(self):
+        _output = namedtuple("output", ["ket", "bra"])
+        _output.ket = self.cp.output.bra
+        _output.bra = self.cp.output.ket
+        return _output
+
+    @property
+    def adjoint(self):
+        return self.cp
+
+
+# class TransposeView(CircuitPart):
+#     def __init__(
+#         self, cp, order: Optional[list[int]] = None, modes: Optional[list[int]] = None
+#     ) -> None:
+#         r"""Initializes a TransposeView instance. It takes a CircuitPart and a list of modes
+#         or a list of mode indices to transpose the CircuitPart to. It is assumed that the
+#         modes are a permutation of the modes of the CircuitPart.
+
+#         Arguments:
+#             cp: The CircuitPart to transpose.
+#             order: A list of mode indices to transpose the CircuitPart to.
+#             modes: A list of modes to transpose the CircuitPart to.
+
+#         Returns:
+#             A TransposeView of the CircuitPart with the modes in the new order.
+#         """
+#         if order and modes:
+#             raise ValueError("Cannot specify both order and modes.")
+#         if not order and not modes:
+#             raise ValueError("Must specify either order or modes.")
+#         self.order = order or [cp.modes.index(mode) for mode in modes]
+#         self.modes = modes or [cp.modes[i] for i in order]
+#         super().__init__(cp)
+
+#     @property
+#     def input(self):
+#         _input = namedtuple("input", ["ket", "bra"])
+#         _input.ket = {self.modes[o]: self.cp.input.ket[self.modes[o]] for i,o in self.order}
+#             mode: self.cp.input.bra[self.cp.modes[self.order[mode]]]
+#             for mode in range(len(self.order))
+#         }
+#         return _input
+
+#     @property
+#     def output(self):
+#         _output = namedtuple("output", ["ket", "bra"])
+#         return _output

@@ -29,32 +29,15 @@ from mrmustard.lab.abstract.state import State
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
-from mrmustard.typing import ComplexTensor, RealMatrix, RealVector
+from mrmustard.typing import RealMatrix, RealVector
 
 from .state import State
 
 math = Math()
 
 
-class Transformation(CircuitPart):
+class Transformation:
     r"""Base class for all Transformations."""
-
-    def __init__(
-        self,
-        modes_in: list[int],
-        modes_out: list[int],
-        name: str,
-        LR: str,
-        **kwargs,
-    ):
-        super().__init__(
-            modes_output_L=modes_out if "L" in LR else [],
-            modes_input_L=modes_in if "L" in LR else [],
-            modes_output_R=modes_out if "R" in LR else [],
-            modes_input_R=modes_in if "R" in LR else [],
-            name=name,
-            **kwargs,
-        )
 
     def _primal(self, state: State) -> State:
         r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
@@ -202,8 +185,6 @@ class Transformation(CircuitPart):
         self.modes = modes
         return self
 
-    # TODO: use __class_getitem__ for compiler stuff
-
     def __rshift__(self, other: Transformation):
         r"""Concatenates self with other (other after self).
 
@@ -290,31 +271,22 @@ class Transformation(CircuitPart):
         return header + body
 
 
-class Unitary(Transformation):
+class Unitary(CircuitPart, Transformation):
     def __init__(
         self,
+        name: str,
         modes_in: list[int],
         modes_out: list[int],
-        name: str,
-        LR: str = "L",
-        **kwargs,
     ):
-        if LR not in ["L", "R"]:
-            raise ValueError(f"LR must be 'L' or 'R' (got {LR})")
-        self.LR = LR
-
         super().__init__(
-            modes_in=modes_in,
-            modes_out=modes_out,
             name=name,
-            LR=LR,
-            **kwargs,
+            modes_input_ket=modes_in,
+            modes_output_ket=modes_out,
         )
 
     @property
     def fock(self):
-        U = self.U(shape=self.shape)
-        return U if self.LR == "L" else math.conj(U)
+        return self.U(shape=self.shape)
 
     @property
     def shape(self):
@@ -405,20 +377,19 @@ class Unitary(Transformation):
         return np.allclose(sX, oX) and np.allclose(sd, od)
 
 
-class Channel(Transformation):
+class Channel(CircuitPart, Transformation):
     def __init__(
         self,
-        modes_in: list[int],
-        modes_out: list[int],
         name: str,
-        **kwargs,
+        modes_output: list[int],
+        modes_input: list[int],
     ):
         super().__init__(
-            modes_in=modes_in,
-            modes_out=modes_out,
             name=name,
-            LR="LR",
-            **kwargs,
+            modes_input_ket=modes_input,
+            modes_output_ket=modes_output,
+            modes_input_bra=modes_input,
+            modes_output_bra=modes_output,
         )
 
     def bargmann(self, numpy=False):

@@ -97,7 +97,6 @@ class State(CircuitPart):
         self._ket = ket
         self._dm = dm
         self._norm = _norm
-        self._LR = None
         if cov is not None and means is not None:
             self.is_gaussian = True
             self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
@@ -119,13 +118,10 @@ class State(CircuitPart):
         self.parallelizable = False
         super().__init__(
             name=name,
-            modes_output_L=modes or list(range(self.num_modes)),
-            modes_input_L=[],
-            modes_output_R=modes or list(range(self.num_modes))
+            modes_output_ket=modes or list(range(self.num_modes)),
+            modes_output_bra=(modes or list(range(self.num_modes)))
             if not self.is_hilbert_vector
             else [],
-            modes_input_R=[],
-            **kwargs,
         )
 
     @property

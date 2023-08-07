@@ -54,7 +54,7 @@ class Vacuum(Parametrized, State):
     ):
         cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
         means = gaussian.vacuum_means(num_modes, settings.HBAR)
-        super().__init__(cov=cov, means=means, modes=modes, **kwargs)
+        super().__init__(cov=cov, means=means, modes=modes, name="Vacuum", **kwargs)
 
 
 class Coherent(Parametrized, State):
@@ -193,6 +193,7 @@ class SqueezedVacuum(Parametrized, State):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
+            name="SqueezedVacuum",
             **kwargs,
         )
         self._normalize = normalize
@@ -311,6 +312,7 @@ class Thermal(Parametrized, State):
             nbar=nbar,
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
+            name="Thermal",
             **kwargs,
         )
         self._normalize = normalize

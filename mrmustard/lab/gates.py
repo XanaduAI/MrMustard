@@ -83,6 +83,7 @@ class Dgate(Parametrized, Unitary):
         **kwargs,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
+
         super().__init__(
             modes_in=modes or list(range(m)),
             modes_out=modes or list(range(m)),
@@ -93,7 +94,6 @@ class Dgate(Parametrized, Unitary):
             y_trainable=y_trainable,
             x_bounds=x_bounds,
             y_bounds=y_bounds,
-            duality="L",
             **kwargs,
         )
 
@@ -259,6 +259,7 @@ class Rgate(Parametrized, Unitary):
         angle_trainable: bool = False,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or list(range(len(math.atleast_1d(angle)))),
@@ -267,6 +268,7 @@ class Rgate(Parametrized, Unitary):
             angle=angle,
             angle_trainable=angle_trainable,
             angle_bounds=angle_bounds,
+            **kwargs,
         )
 
     @property
@@ -338,6 +340,7 @@ class Pgate(Parametrized, Unitary):
         shearing_trainable: bool = False,
         shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or list(range(len(math.atleast_1d(shearing)))),
@@ -346,6 +349,7 @@ class Pgate(Parametrized, Unitary):
             shearing=shearing,
             shearing_trainable=shearing_trainable,
             shearing_bounds=shearing_bounds,
+            **kwargs,
         )
 
     @property
@@ -375,6 +379,7 @@ class CXgate(Parametrized, Unitary):
         s_trainable: bool = False,
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or [0, 1],
@@ -383,6 +388,7 @@ class CXgate(Parametrized, Unitary):
             s=s,
             s_trainable=s_trainable,
             s_bounds=s_bounds,
+            **kwargs,
         )
 
     @property
@@ -413,6 +419,7 @@ class CZgate(Parametrized, Unitary):
         s_trainable: bool = False,
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or [0, 1],
@@ -421,6 +428,7 @@ class CZgate(Parametrized, Unitary):
             s=s,
             s_trainable=s_trainable,
             s_bounds=s_bounds,
+            **kwargs,
         )
 
     @property
@@ -457,6 +465,7 @@ class BSgate(Parametrized, Unitary):
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or [0, 1],
@@ -468,6 +477,7 @@ class BSgate(Parametrized, Unitary):
             phi_trainable=phi_trainable,
             theta_bounds=theta_bounds,
             phi_bounds=phi_bounds,
+            **kwargs,
         )
 
     def U(
@@ -541,6 +551,7 @@ class MZgate(Parametrized, Unitary):
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         internal: bool = False,
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or [0, 1],
@@ -552,6 +563,7 @@ class MZgate(Parametrized, Unitary):
             phi_b_trainable=phi_b_trainable,
             phi_a_bounds=phi_a_bounds,
             phi_b_bounds=phi_b_bounds,
+            **kwargs,
         )
         self._internal = internal
 
@@ -593,6 +605,7 @@ class S2gate(Parametrized, Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or [0, 1],
@@ -604,6 +617,7 @@ class S2gate(Parametrized, Unitary):
             phi_trainable=phi_trainable,
             r_bounds=r_bounds,
             phi_bounds=phi_bounds,
+            **kwargs,
         )
 
     @property
@@ -636,17 +650,20 @@ class Interferometer(Unitary):
         unitary: Optional[ComplexMatrix] = None,
         unitary_trainable: bool = False,
         modes: Optional[list[int]] = None,
+        **kwargs,
     ):
         if modes is not None and num_modes != len(modes):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
+
         super().__init__(
             modes_in=modes or list(range(num_modes)),
             modes_out=modes or list(range(num_modes)),
             name="Interferometer",
             unitary=unitary,
             unitary_trainable=unitary_trainable,
+            **kwargs,
         )
 
     @property
@@ -689,17 +706,20 @@ class RealInterferometer(Unitary, Parametrized):
         orthogonal: Optional[RealMatrix] = None,
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
+
         super().__init__(
             modes_in=modes or list(range(num_modes)),
             modes_out=modes or list(range(num_modes)),
             name="RealInterferometer",
             orthogonal=orthogonal,
             orthogonal_trainable=orthogonal_trainable,
+            **kwargs,
         )
 
     @property
@@ -744,6 +764,7 @@ class Ggate(Unitary, Parametrized):
         symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -755,6 +776,7 @@ class Ggate(Unitary, Parametrized):
             name="Ggate",
             symplectic=symplectic,
             symplectic_trainable=symplectic_trainable,
+            **kwargs,
         )
 
     @property
@@ -821,6 +843,7 @@ class Attenuator(Channel, Parametrized):
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or list(range(len(math.atleast_1d(transmissivity)))),
@@ -832,6 +855,7 @@ class Attenuator(Channel, Parametrized):
             nbar_trainable=nbar_trainable,
             transmissivity_bounds=transmissivity_bounds,
             nbar_bounds=nbar_bounds,
+            **kwargs,
         )
 
     @property
@@ -880,6 +904,7 @@ class Amplifier(Channel, Parametrized):
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or list(range(len(math.atleast_1d(gain)))),
@@ -891,6 +916,7 @@ class Amplifier(Channel, Parametrized):
             nbar=nbar,
             nbar_trainable=nbar_trainable,
             nbar_bounds=nbar_bounds,
+            **kwargs,
         )
 
     @property
@@ -938,6 +964,7 @@ class AdditiveNoise(Channel, Parametrized):
         noise_trainable: bool = False,
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
+        **kwargs,
     ):
         super().__init__(
             modes_in=modes or list(range(len(math.atleast_1d(noise)))),
@@ -946,6 +973,7 @@ class AdditiveNoise(Channel, Parametrized):
             noise=noise,
             noise_trainable=noise_trainable,
             noise_bounds=noise_bounds,
+            **kwargs,
         )
 
     @property
