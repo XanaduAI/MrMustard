@@ -141,15 +141,19 @@ class TestMatVecData(TestData): #TestData
                                                                                      DATA, 
                                                                                      operator, 
                                                                                      x):
-        pre_op_data = deepcopy(DATA)
+        precision = 3
+        preop_data = deepcopy(DATA)
         postop_data = operator(DATA, x)
         f = lambda x : np.linalg.norm(x)
-        norms_of_mats_preop = set( np.around( [f(m) for m in pre_op_data.mat] , 3) )
-        norms_of_mats_postop = set( np.around( [f(m) for m in postop_data.mat] , 3) )
-        norms_of_vecs_preop = set( np.around( [f(v) for v in pre_op_data.mat] , 3) )
-        norms_of_vecs_postop = set( np.around( [f(v) for v in postop_data.mat] , 3) )
+        norms_of_mats_preop = set( np.around( [f(m) for m in preop_data.mat] , precision) )
+        norms_of_mats_postop = set( np.around( [f(m) for m in postop_data.mat] , precision) )
+        norms_of_vecs_preop = set( np.around( [f(v) for v in preop_data.mat] , precision) )
+        norms_of_vecs_postop = set( np.around( [f(v) for v in postop_data.mat] , precision) )
+        coeffs_preop = set( np.around(preop_data.coeffs, precision) )
+        coeffs_postop = set( np.around(postop_data.coeffs, precision) )
         assert norms_of_mats_preop.symmetric_difference(norms_of_mats_postop) == set()
         assert norms_of_vecs_preop.symmetric_difference(norms_of_vecs_postop) == set()
+        assert coeffs_preop.symmetric_difference(coeffs_postop) != set()
         
 
     # ###############  Multiplication  ##################
