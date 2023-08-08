@@ -22,7 +22,7 @@ from mrmustard import settings
 
 
 class WignerKet(Wigner):
-    r"""Wigner representation of a Ket state.
+    r"""Wigner representation of a ket state.
 
     Args:
         symplectic: symplectic matrix

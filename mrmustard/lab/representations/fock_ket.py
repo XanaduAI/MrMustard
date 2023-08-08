@@ -21,15 +21,14 @@ math = Math()
 
 
 class FockKet(Fock):
-    r"""Fock representation of a state described by a ket.
+    r"""Fock representation of a ket state.
 
     Args:
-        data: the data used to represent the state to be encoded as Fock representation
+        array: the ket vector of the state
+        cutoffs: the cutoffs of the ket vector
     """
-
     def __init__(self, array: np.array):
         super().__init__(array=array)
-        self.num_modes = len(self.data.array.shape)
         self.cutoffs = self.data.array.shape
 
     @property

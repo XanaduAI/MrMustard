@@ -23,9 +23,14 @@ math = Math()
 
 
 class FockDM(Fock):
+    r"""Fock representation of a mixed state.
+
+    Args:
+        array: the density matrix of the state
+        cutoffs: the cutoffs of the density matrix
+    """
     def __init__(self, array):
         super().__init__(array=array)
-        self.num_modes = len(self.data.array.shape) // 2
         self.cutoffs = self.data.array.shape
 
     @property

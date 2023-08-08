@@ -17,6 +17,13 @@ from mrmustard.typing import Matrix, Scalar, Vector
 
 
 class BargmannKet(Bargmann):
+    r"""Fock-Bargmann representation of a ket state.
+
+    Args:
+        A: complex symmetric matrix
+        b: complex vector
+        c: constants
+    """
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
         super().__init__(A=A, b=b, c=c)
 

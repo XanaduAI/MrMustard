@@ -19,7 +19,7 @@ from mrmustard.lab.representations.data.wavefunctionarray_data import Wavefuncti
 
 
 class WaveFunctionQ(Representation):
-    r"""Wavefunction representation of a state.
+    r"""WavefunctionQ representation of a state.
 
     Args:
         qs: q-variable points

@@ -24,8 +24,8 @@ class Bargmann(Representation):
     r"""Fock-Bargmann representation of a state.
 
     Args:
-        A: quadratic coefficients
-        b: linear coefficients
+        A: complex symmetric matrix
+        b: complex vector
         c: constants
     """
 

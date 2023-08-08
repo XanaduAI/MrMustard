@@ -24,12 +24,12 @@ class Representation(ABC):
 
     @abstractproperty
     def purity(self) -> Scalar:
-        r"""Valid for Wigner and Fock : the purity of the state."""
+        r"""Valid for all representation classes : the purity of the state."""
         raise NotImplementedError()
 
     @abstractproperty
     def norm(self) -> float:
-        r"""Valid for Fock: the norm of the state."""
+        r"""Valid for Fock and WaveFunctionQ: the norm of the state."""
         raise NotImplementedError()
 
     @abstractproperty
@@ -54,5 +54,5 @@ class Representation(ABC):
 
     @abstractproperty
     def probability(self) -> Tensor:  # TODO : add doc
-        r"""Valid for Fock: Probability tensor, either extracted from a DM or from a Ket"""
+        r"""Valid for Fock and WaveFucntionQ: Probability tensor, either extracted from a DM or from a Ket"""
         raise NotImplementedError()

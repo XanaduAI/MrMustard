@@ -24,7 +24,7 @@ math = Math()
 
 
 class Wigner(Representation):
-    r"""Parent abstract class for the WignerKet and WignerDM representations.
+    r"""Wigner representation of a state.
 
     Args:
         mat: a matrix

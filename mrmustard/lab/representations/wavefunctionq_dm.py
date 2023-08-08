@@ -21,6 +21,12 @@ from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
 
 
 class WaveFunctionQDM(WaveFunctionQ):
+    r"""WavefunctionQ representation of a mixed state.
+
+    Args:
+        qs: q-variable points
+        array: q-Wavefunction values correspoidng qs
+    """
     def __init__(self, qs: np.array, wavefunctionq: np.array):
         super().__init__(qs=qs, wavefunctionq=wavefunctionq)
 

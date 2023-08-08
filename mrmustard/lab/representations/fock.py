@@ -25,8 +25,7 @@ class Fock(Representation):
     r"""Fock representation of a state.
 
     Args:
-        data: the data used to represent the state to be encoded as Fock representation, it will be
-              fed to an ArrayData object
+        array: the state tensor
     """
 
     def __init__(self, array: np.array) -> None:
