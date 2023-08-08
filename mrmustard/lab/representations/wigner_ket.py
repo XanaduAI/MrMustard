@@ -43,7 +43,7 @@ class WignerKet(Wigner):
 
     @property
     def means(self):
-        return self.data.dispalcement
+        return self.data.displacement
 
     @property
     def purity(self) -> float:
