@@ -129,16 +129,53 @@ class TestConverter():
 
 
     #Fock -> WaveFunctionQ
-    def test_convert_from_fockket_to_wavefunctionqket(self):
-        pass
+    @given(x=medium_float, y=medium_float)
+    def test_convert_from_wignerket_to_fockket_to_wavefunctionqket_coherent_state(self, x, y):
+        """Test that the wavefunction converted from Fock representation is correct for a coherent state.
+            The analytic function used for coherent state is:
+            ::math::
+                \psi_{\alpha}(x) = (\Omega/(\pi\hbar))^{1/4} e^{-\frac12|\alpha|^2} e^{-\zeta^2 + \sqrt{2}}\alpha \zeta - \frac12\alpha^2}
+
+            where :math:`\zeta = x\sqrt{\frac{\Omega}{\hbar}}` and we always set :math:`\Omega = 1`.  
+        """
+        hbar = settings.HBAR
+        N = 1
+        alpha = x + 1j * y
+        symplectic = math.eye(N * 2, dtype=math.float64)
+        displacement = math.sqrt(2 * hbar, dtype=symplectic.dtype) * math.concat([x, y], axis=0)
+        wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
+        qs = [0,0.5,1.7]
+        wavefunctionq_ket = self.converter.convert(source=wigner_ket, destination="WaveFunctionQ", qs = qs)
+        def coherent_state_analytic(x, alpha):
+            x = x * np.sqrt(1/settings.HBAR)
+            return np.exp(-math.norm(alpha)**2/2)/(np.pi*settings.HBAR)**(1/4) *np.exp(x**2/2) * np.exp(-(x-alpha/np.sqrt(2))**2)    
+        assert np.allclose(coherent_state_analytic(qs, alpha), wavefunctionq_ket)
+        
 
     def test_convert_from_fockdm_to_wavefunctionqdm(self):
         pass
 
 class TestConverterFockWithCutoffs():
 
-    def test_convert_from_wignerket_to_fockket_with_cutoffs(self):
-        pass
+    @given(x=medium_float, y=medium_float)
+    def test_convert_from_wignerket_to_fockket_coherent_state_with_cutoffs(self, x, y):
+        """Test that the Fock representation of a ket from Wigner is correct for a coherent state"""
+        hbar = settings.HBAR
+        N = 1
+        symplectic = math.eye(N * 2, dtype=math.float64)
+        displacement = math.sqrt(2 * hbar, dtype=symplectic.dtype) * math.concat([x, y], axis=0)
+        wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
+        fock_ket = self.converter.convert(source=wigner_ket, destination="Fock", cutoffs=[50])
+        assert fock_ket.data.shape == (50,)
 
-    def test_convert_from_wignerdm_to_fockdm_with_cutoffs(self):
-        pass
+
+    @given(x=medium_float, y=medium_float)
+    def test_convert_from_wignerdm_to_fockdm_coherent_state(self, x, y):
+        """Test that the Fock representation of a dm from Wigner is correct for a coherent state"""
+        hbar = settings.HBAR
+        N=2
+        cov = math.eye(N * 2, dtype=math.float64)
+        means = math.sqrt(2 * hbar, dtype=cov.dtype) * math.concat([x, y], axis=0)
+        wigner_dm = WignerDM(cov=cov, means=means)
+        fock_dm = self.converter.convert(source=wigner_dm, destination="Fock", cutoffs = [50,50])
+        assert fock_dm.data.shape == (50,50,)

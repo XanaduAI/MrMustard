@@ -179,11 +179,12 @@ class Converter():
                 else:
                     cutoffs = None
                 return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
-            
             elif s_name == "WignerDM" and d_name == "FockDM":
                 cutoffs = kwargs.get('cutoffs')
                 return f(source, cutoffs=cutoffs)
-            
+            elif d_name == "WaveFunctionQKet" or d_name == "WaveFunctionQDM":
+                qs = kwargs.get('qs')
+                return f(source, qs=qs)
             else:
                 return f(source)
             
