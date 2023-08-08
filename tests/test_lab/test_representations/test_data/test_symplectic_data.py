@@ -129,7 +129,7 @@ class TestSymplecticData(TestMatVecData):
         with pytest.raises(TypeError):
             OTHER * DATA
 
-    @pytest.mark.parametrize("x", [0, 2, 10, 2500])
+    @pytest.mark.parametrize("x", [0, 2, 10, 2500]) #the only necessary correctness for Symplectic
     def test_mul_with_scalar_multiplies_coeffs_and_leaves_mat_and_vec_unaltered(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         post_op_data = DATA * x

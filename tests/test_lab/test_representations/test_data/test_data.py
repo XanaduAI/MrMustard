@@ -138,15 +138,15 @@ class TestData:
                 pass
 
     ##################  Equality  ####################
-    # def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
-    #     other = general_factory(TYPE, **PARAMS)
-    #     for k in DATA.__dict__.keys():
-    #         getattr(other, k)
-    #         try:  # non-array, non-list attributes
-    #             assert getattr(DATA, k) == getattr(other, k)
-    #         except ValueError:
-    #             assert np.allclose(getattr(DATA, k), getattr(other, k))
-    #     assert DATA == other
+    def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):
+        other = general_factory(TYPE, **PARAMS)
+        for k in DATA.__dict__.keys():
+            getattr(other, k)
+            try:  # non-array, non-list attributes
+                assert getattr(DATA, k) == getattr(other, k)
+            except ValueError:
+                assert np.allclose(getattr(DATA, k), getattr(other, k))
+        assert DATA == other
 
     def test_copy_of_same_objects_are_equal(self, DATA):
         other_same = deepcopy(DATA)

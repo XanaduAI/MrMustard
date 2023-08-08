@@ -72,7 +72,7 @@ class QPolyData(MatVecData):
             return self.__class__(A=new_a, b=new_b, c=new_coeffs)
         else:
             try:  # scalar
-                new_coeffs = np.fromiter(map(lambda x: x * other ,self.c), dtype=np.float64)
+                new_coeffs = np.fromiter(map(lambda x: np.multiply(x, other) , self.c), dtype=np.complex64)
                 return self.__class__(self.A, self.b, new_coeffs)
             except TypeError as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e

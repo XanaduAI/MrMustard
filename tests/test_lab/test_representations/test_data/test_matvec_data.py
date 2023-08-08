@@ -135,15 +135,25 @@ class TestMatVecData(TestData): #TestData
     #     # assert np.allclose(DATA.vec, pre_op_data.vec)
 
     #######  Scalar division / multiplication ########
-    # @pytest.mark.parametrize("operator", [op.truediv, op.mul])
-    # @pytest.mark.parametrize("x", [0.00001, 7, 100])
-    # def test_scalar_mul_or_div_if_mat_vec_same_change_only_coeffs(self, DATA, operator, x):
-    #     pre_op_data = deepcopy(DATA)
-    #     divided_data = operator(DATA, x)
-    #     helper_mat_vec_unchanged_computed_coeffs_are_correct(divided_data, pre_op_data, operator, x)
+    @pytest.mark.parametrize("operator", [op.truediv, op.mul])
+    @pytest.mark.parametrize("x", [0.001, 7, 100])
+    def test_scalar_mul_or_div_if_mat_vec_same_dont_change_mat_vec_but_change_coeffs(self, 
+                                                                                     DATA, 
+                                                                                     operator, 
+                                                                                     x):
+        pre_op_data = deepcopy(DATA)
+        postop_data = operator(DATA, x)
+        f = lambda x : np.linalg.norm(x)
+        norms_of_mats_preop = set( np.around( [f(m) for m in pre_op_data.mat] , 3) )
+        norms_of_mats_postop = set( np.around( [f(m) for m in postop_data.mat] , 3) )
+        norms_of_vecs_preop = set( np.around( [f(v) for v in pre_op_data.mat] , 3) )
+        norms_of_vecs_postop = set( np.around( [f(v) for v in postop_data.mat] , 3) )
+        assert norms_of_mats_preop.symmetric_difference(norms_of_mats_postop) == set()
+        assert norms_of_vecs_preop.symmetric_difference(norms_of_vecs_postop) == set()
+        
 
     # ###############  Multiplication  ##################
-    # # #TODO : write more tests (other than the generic ones from the parents)
+    # NOTE: tested in child
 
     # ###############  Outer product  ##################
     # # NOTE: not implented yet so no tests

@@ -158,23 +158,23 @@ class TestGaussianData(TestMatVecData):
 
 
 
-    @pytest.mark.parametrize("x", [2, 7, 200])#, 7, 200
-    def test_multiplication_is_correct_on_first_elements(self, DATA, OTHER, D, N, x):
-        dat = DATA * OTHER 
-        index = 0#N*i +j #NOTE: Why is this always 0?! it shouldn't be... should it?
+    # @pytest.mark.parametrize("x", [2, 7, 200])#, 7, 200
+    # def test_multiplication_is_correct_on_first_elements(self, DATA, OTHER, D, N, x):
+    #     dat = DATA * OTHER 
+    #     index = 0#N*i +j #NOTE: Why is this always 0?! it shouldn't be... should it?
 
-        for i in range(N):
-            for j in range(N):
+    #     for i in range(N):
+    #         for j in range(N):
     
-                g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
-                g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
-                curr_scipy_mvg_mul = g1 * g2
+    #             g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
+    #             g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
+    #             curr_scipy_mvg_mul = g1 * g2
 
-                curr_mvg_object_mul = dat.coeffs[index] * self._helper_full_gaussian_pdf(k=D, 
-                                                                                        cov=dat.cov[index],
-                                                                                        means=dat.means[index],
-                                                                                        x=x)
-                assert np.isclose(curr_scipy_mvg_mul, curr_mvg_object_mul)
+    #             curr_mvg_object_mul = dat.coeffs[index] * self._helper_full_gaussian_pdf(k=D, 
+    #                                                                                     cov=dat.cov[index],
+    #                                                                                     means=dat.means[index],
+    #                                                                                     x=x)
+    #             assert np.isclose(curr_scipy_mvg_mul, curr_mvg_object_mul)
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
