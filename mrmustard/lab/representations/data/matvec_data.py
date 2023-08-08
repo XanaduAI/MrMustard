@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from typing import Set, Tuple
+
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
@@ -28,7 +30,7 @@ class MatVecData(Data):  # Note: this class is abstract!
     r"""Contains matrix and vector -like data for certain Representation objects.
 
     Args:
-        mat (Batch[Matrix]):    the matrix-like data to be contained in the class
+        mat (Batch[Matrix]): the matrix-like data to be contained in the class
         vec (Batch[Vector]):    the vector-like data to be contained in the class
         coeffs (Batch[Scalar]): the coefficients
     """
@@ -52,18 +54,25 @@ class MatVecData(Data):  # Note: this class is abstract!
             new_coeffs.append(-c)
         return self.__class__(self.mat, self.vec, new_coeffs)
 
-    def __eq__(self, other: MatVecData) -> bool:
+    def __eq__(self, other: MatVecData, ignore_scalars:bool=False) -> bool:
         try:
-            return super().same(
-                X=[self.mat, self.vec, self.coeffs], Y=[other.mat, other.vec, other.coeffs]
-            )
-
+            answer = False
+            if ignore_scalars: # objects have the same matrices and vectors
+                if self._helper_vecs_or_mats_are_same(self.vec, other.vec):
+                    if self._helper_vecs_or_mats_are_same(self.mat, other.mat):
+                        answer = True
+            else: # compare everything including scalars
+                if self._helper_scalars_are_same(self.coeffs, other.coeffs):
+                    if self._helper_vecs_or_mats_are_same(self.vec, other.vec):
+                        if self._helper_vecs_or_mats_are_same(self.mat, other.mat):
+                            answer = True
+            return answer
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
     def __add__(self, other: MatVecData) -> MatVecData:
         try:
-            if super().same(X=[self.mat, self.vec], Y=[other.mat, other.vec]):
+            if self.__eq__(other, ignore_scalars=True):
                 combined_coeffs = self.coeffs + other.coeffs
                 return self.__class__(self.mat, self.vec, combined_coeffs)
 
@@ -86,6 +95,25 @@ class MatVecData(Data):  # Note: this class is abstract!
     def helper_check_is_real_symmetric(self, A:Batch[Matrix]) -> bool:
         r"""Checks that the matrix given is both real and symmetric."""
         return all([np.allclose(a, np.transpose(a)) for a in A])
+    
+
+    def _helper_vecs_or_mats_are_same(self, tensors_a, tensors_b, precision=3) -> bool:
+        f = lambda x : np.linalg.norm(x)
+        norms_a = [f(a) for a in tensors_a]
+        norms_b = [f(b) for b in tensors_b]
+        return self._helper_scalars_are_same(norms_a, norms_b, precision)
+
+    def _helper_scalars_are_same(self, a, b, precision=3) -> bool:
+        A, B = self._helper_to_sets(a, b, precision)
+        return A.symmetric_difference(B) ==  set()
+
+    @staticmethod
+    def _helper_to_sets(a, b, precision) -> Tuple[Set,Set]:
+        A = np.around(a, precision)
+        B = np.around(b, precision)
+        set_A = set(A)
+        set_B = set(B)
+        return (set_A, set_B)
 
     # def __and__(self, other: MatVecData) -> MatVecData:
     #     try: #TODO: ORDER OF ALL MATRICESA!
