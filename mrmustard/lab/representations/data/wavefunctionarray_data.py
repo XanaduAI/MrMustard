@@ -43,9 +43,7 @@ class WavefunctionArrayData(ArrayData):
 
     def __eq__(self, other: ArrayData) -> bool:
         try:
-            return super().same(X=[self.array], Y=[other.array]) and super().same(
-                X=[self.qs], Y=[other.qs]
-            )
+            return super().__eq__(other) and np.allclose(self.qs, other.qs)
 
         except AttributeError as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e

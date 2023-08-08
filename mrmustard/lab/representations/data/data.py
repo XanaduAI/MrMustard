@@ -28,23 +28,6 @@ class Data(ABC):
     def __init__(self) -> None:
         pass
 
-    @staticmethod
-    def same( #change this method for the batches
-        X: List[Union[List[Vector], List[Scalar]]],
-        Y: List[Union[List[Vector], List[Scalar]]],
-    ) -> bool:
-        r"""Method to compare two sets of elements
-
-        Args:
-            X (List[Union[List[Vector], List[Scalar]]]):    list of elements to be compared with ys
-            Y (List[Union[List[Vector], List[Scalar]]]):    list of elements to be compared with xs
-
-        Returns:
-            (bool) True if all the elements compared are same within numpy's default rtol/atol, 
-            False otherwise
-        """
-        return all([np.allclose(x, y) for x, y in zip(X, Y)])
-
     @abstractmethod
     def __neg__(self) -> Data:
         raise NotImplementedError()  # prompting override in children
