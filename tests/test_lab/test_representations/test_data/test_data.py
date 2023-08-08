@@ -148,9 +148,9 @@ class TestData:
     #             assert np.allclose(getattr(DATA, k), getattr(other, k))
     #     assert DATA == other
 
-    # def test_copy_of_same_objects_are_equal(self, DATA):
-    #     other_same = deepcopy(DATA)
-    #     assert DATA == other_same
+    def test_copy_of_same_objects_are_equal(self, DATA):
+        other_same = deepcopy(DATA)
+        assert DATA == other_same
 
     ###############  Outer product  ##################
     # NOTE : not implemented => not tested
