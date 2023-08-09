@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple, Union
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
@@ -73,10 +73,10 @@ class MatVecData(Data):  # Note: this class is abstract!
     def __add__(self, other: MatVecData) -> MatVecData:
         try:
             if self.__eq__(other, ignore_scalars=True):
-                # sorting and re-rodering necessary so the correct coeffs are combined 
+                # sorting and re-ordering necessary so the correct coeffs are combined 
                 # (because equality doesn't guarantee anything in terms of order)
-                new_mats, new_vecs, new_coeffs = self._helper_make_new_object_params(other)
-                return self.__class__(new_mats, new_vecs, new_coeffs)
+                new_ms, new_vs, new_cs = self._helper_make_new_object_params_for_add_sub(other)
+                return self.__class__(mat=new_ms, vec=new_vs, coeffs=new_cs)
 
             else:
                 mat = math.concat([self.mat, other.mat], axis=0)
@@ -99,18 +99,31 @@ class MatVecData(Data):  # Note: this class is abstract!
         return all([np.allclose(a, np.transpose(a)) for a in A])
     
 
-    def _helper_vecs_or_mats_are_same(self, tensors_a, tensors_b, precision=3) -> bool:
+    def _helper_vecs_or_mats_are_same(self, 
+                                      tensors_a:Union[List[Matrix], List[Vector]], 
+                                      tensors_b:Union[List[Matrix], List[Vector]], 
+                                      precision:Optional[float]=3.0
+                                      ) -> bool:
+        r"""Given 2 lists of matrices or vectors, determines whether they are the same (based on 
+        norm) up to precision. Order is irrelevant and permutations of a set of elements all 
+        evaluate to True."""
         f = lambda x : np.linalg.norm(x)
         norms_a = [f(a) for a in tensors_a]
         norms_b = [f(b) for b in tensors_b]
         return self._helper_scalars_are_same(norms_a, norms_b, precision)
 
-    def _helper_scalars_are_same(self, a, b, precision=3) -> bool:
+    def _helper_scalars_are_same(self, a:List[Scalar],
+                                 b:List[Scalar], 
+                                 precision:Optional[float]=3.0
+                                 ) -> bool:
+        r"""Given 2 lists of scalar, determines whether they are the same, up to precision. Order 
+        is irrelevant and permutations of a set of elements all evaluate to True."""
         A, B = self._helper_to_sets(a, b, precision)
         return A.symmetric_difference(B) ==  set()
 
     @staticmethod
-    def _helper_to_sets(a, b, precision) -> Tuple[Set,Set]:
+    def _helper_to_sets(a:Scalar, b:Scalar, precision:Optional[float]=3.0) -> Tuple[Set,Set]:
+        r"""Given 2 lists of scalars, returns the sets containing them, rounded to precision."""
         A = np.around(a, precision)
         B = np.around(b, precision)
         set_A = set(A)
@@ -118,7 +131,9 @@ class MatVecData(Data):  # Note: this class is abstract!
         return (set_A, set_B)
     
 
-    def _helper_make_new_object_params(self, other):
+    def _helper_make_new_object_params_for_add_sub(self, other:MatVecData
+                                       ) -> Tuple[List[Matrix], List[Vector], List[Scalar]]:
+        r"""Generates the new parameters fro the object after addition/subtraction."""
         N = len(self.coeffs)
         sorted_tups_self = self._helper_make_sorted_list_of_tuples(self)
         sorted_tups_other = self._helper_make_sorted_list_of_tuples(other)
@@ -135,6 +150,8 @@ class MatVecData(Data):  # Note: this class is abstract!
     
     @staticmethod
     def _helper_make_sorted_list_of_tuples(obj:MatVecData) -> List[Tuple[Matrix, Vector, Scalar]]:
+        r"""Given a MatVecData object, returns the list of tuples made by 
+        (mat[i], vec[i], coeffs[i])."""
         # we're sorting on the norm of the vectors, it could be norm of matrices (x[0])
         N = len(obj.coeffs)
         all_tuples = []
