@@ -76,16 +76,19 @@ class MatVecData(Data):  # Note: this class is abstract!
                 # sorting and re-ordering necessary so the correct coeffs are combined 
                 # (because equality doesn't guarantee anything in terms of order)
                 new_ms, new_vs, new_cs = self._helper_make_new_object_params_for_add_sub(other)
-                return self.__class__(mat=new_ms, vec=new_vs, coeffs=new_cs)
+                return self.__class__(new_ms, new_vs, new_cs)
 
-            else:
-                mat = math.concat([self.mat, other.mat], axis=0)
-                vec = math.concat([self.vec, other.vec], axis=0)
-                reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
-                mat = math.matmul(math.matmul(reorder_matrix, mat), math.transpose(reorder_matrix))
-                vec = math.matvec(reorder_matrix, vec)
+            else: #TODO: investigate this: is it correct? what is APPLE? How to test?
+                combined_matrices = math.concat([self.mat, other.mat], axis=0)
+                combined_vectors = math.concat([self.vec, other.vec], axis=0)
                 combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-                return self.__class__(mat, vec, combined_coeffs)
+
+                reorder_matrix = reorder_matrix_from_qpqp_to_qqpp(self.mat.shape[-1])
+                APPLE = math.matmul(reorder_matrix, combined_matrices)
+                combined_matrices = math.matmul( APPLE, math.transpose(reorder_matrix))
+                combined_vectors = math.matvec(reorder_matrix, combined_vectors)
+                
+                return self.__class__(combined_matrices, combined_vectors, combined_coeffs)
 
         except AttributeError as e:
             raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
@@ -102,7 +105,7 @@ class MatVecData(Data):  # Note: this class is abstract!
     def _helper_vecs_or_mats_are_same(self, 
                                       tensors_a:Union[List[Matrix], List[Vector]], 
                                       tensors_b:Union[List[Matrix], List[Vector]], 
-                                      precision:Optional[float]=3.0
+                                      precision:Optional[int]=3
                                       ) -> bool:
         r"""Given 2 lists of matrices or vectors, determines whether they are the same (based on 
         norm) up to precision. Order is irrelevant and permutations of a set of elements all 
@@ -114,7 +117,7 @@ class MatVecData(Data):  # Note: this class is abstract!
 
     def _helper_scalars_are_same(self, a:List[Scalar],
                                  b:List[Scalar], 
-                                 precision:Optional[float]=3.0
+                                 precision:Optional[int]=3
                                  ) -> bool:
         r"""Given 2 lists of scalar, determines whether they are the same, up to precision. Order 
         is irrelevant and permutations of a set of elements all evaluate to True."""
@@ -122,7 +125,7 @@ class MatVecData(Data):  # Note: this class is abstract!
         return A.symmetric_difference(B) ==  set()
 
     @staticmethod
-    def _helper_to_sets(a:Scalar, b:Scalar, precision:Optional[float]=3.0) -> Tuple[Set,Set]:
+    def _helper_to_sets(a:Scalar, b:Scalar, precision:Optional[int]=3) -> Tuple[Set,Set]:
         r"""Given 2 lists of scalars, returns the sets containing them, rounded to precision."""
         A = np.around(a, precision)
         B = np.around(b, precision)

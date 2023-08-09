@@ -95,12 +95,15 @@ class GaussianData(MatVecData):
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
         if isinstance(other, GaussianData):
             joint_covs = self._compute_mul_covs(other=other)
+            print(f"JOINT COVS SHAPE: {joint_covs.shape}")
 
             joint_means = self._compute_mul_means(other=other)
+            print(f"JOINT MEANS SHAPE: {joint_means.shape}")
 
             joint_coeffs = self._compute_mul_coeffs(
                 other=other, joint_covs=joint_covs, joint_means=joint_means
             )
+            print(f"JOINT COEFFS SHAPE: {joint_coeffs.shape}")
             return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
         else:
             try:  # scalar
@@ -131,7 +134,7 @@ class GaussianData(MatVecData):
         )
         return math.astensor(combined_covs)
 
-    def _compute_mul_coeffs(
+    def _compute_mul_coeffs( #TODO: check this part which is wrong (doesn't return the correct number of coefficients)
         self, other: GaussianData, joint_covs: Tensor, joint_means: Tensor
     ) -> Tensor:
         r"""Computes the combined coefficients when multiplying Gaussian-represented states.

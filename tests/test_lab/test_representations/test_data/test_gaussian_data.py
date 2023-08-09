@@ -159,22 +159,30 @@ class TestGaussianData(TestMatVecData):
 
 
     # @pytest.mark.parametrize("x", [2, 7, 200])#, 7, 200
-    # def test_multiplication_is_correct_on_first_elements(self, DATA, OTHER, D, N, x):
-    #     dat = DATA * OTHER 
-    #     index = 0#N*i +j #NOTE: Why is this always 0?! it shouldn't be... should it?
+    # def test_multiplication_is_correct(self, DATA, OTHER, D, N, x):
+    #     multiplied_data = DATA * OTHER 
+    #     scipy_direct_mul = []
+    #     our_mul = []
 
     #     for i in range(N):
     #         for j in range(N):
     
     #             g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
     #             g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
-    #             curr_scipy_mvg_mul = g1 * g2
+    #             curr_scipy_mul = g1 * g2
+    #             scipy_direct_mul.append(curr_scipy_mul)
 
-    #             curr_mvg_object_mul = dat.coeffs[index] * self._helper_full_gaussian_pdf(k=D, 
-    #                                                                                     cov=dat.cov[index],
-    #                                                                                     means=dat.means[index],
-    #                                                                                     x=x)
-    #             assert np.isclose(curr_scipy_mvg_mul, curr_mvg_object_mul)
+    #     m = multiplied_data.coeffs.shape[0]
+    #     for i in range(m):
+    #         curr_g = multiplied_data.coeffs[i] * mvg.pdf(x, 
+    #                                                      mean=multiplied_data.means[i], 
+    #                                                      cov=multiplied_data.cov[i]
+    #                                                      )
+    #         our_mul.append(curr_g)
+    #     our_res = sum(our_mul)
+    #     scipy_res = sum(scipy_direct_mul)
+    #     assert our_res == scipy_res
+            
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
