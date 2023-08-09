@@ -73,7 +73,10 @@ class GaussianData(MatVecData):
         else:
             raise ValueError("You need to define at one: covariance or mean")
         
-        self.num_modes = means.shape[0] // 2
+        try:
+            self.num_modes = means.shape[0] // 2
+        except AttributeError:
+            self.num_modes = len(means)//2
 
         super().__init__(mat=cov, vec=means, coeffs=coeffs)
 

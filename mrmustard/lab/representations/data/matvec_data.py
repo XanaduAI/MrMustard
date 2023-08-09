@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import Set, Tuple
+from typing import List, Set, Tuple
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
@@ -73,8 +73,10 @@ class MatVecData(Data):  # Note: this class is abstract!
     def __add__(self, other: MatVecData) -> MatVecData:
         try:
             if self.__eq__(other, ignore_scalars=True):
-                combined_coeffs = self.coeffs + other.coeffs
-                return self.__class__(self.mat, self.vec, combined_coeffs)
+                # sorting and re-rodering necessary so the correct coeffs are combined 
+                # (because equality doesn't guarantee anything in terms of order)
+                new_mats, new_vecs, new_coeffs = self._helper_make_new_object_params(other)
+                return self.__class__(new_mats, new_vecs, new_coeffs)
 
             else:
                 mat = math.concat([self.mat, other.mat], axis=0)
@@ -114,6 +116,36 @@ class MatVecData(Data):  # Note: this class is abstract!
         set_A = set(A)
         set_B = set(B)
         return (set_A, set_B)
+    
+
+    def _helper_make_new_object_params(self, other):
+        N = len(self.coeffs)
+        sorted_tups_self = self._helper_make_sorted_list_of_tuples(self)
+        sorted_tups_other = self._helper_make_sorted_list_of_tuples(other)
+        
+        new_mats = []
+        new_vecs = []
+        new_coeffs = []
+        for i in range(N):
+            new_mats.append(sorted_tups_self[i][0])
+            new_vecs.append(sorted_tups_self[i][1])
+            ith_coeff = sorted_tups_self[i][2] + sorted_tups_other[i][2]
+            new_coeffs.append(ith_coeff)
+        return (new_mats, new_vecs, new_coeffs)
+    
+    @staticmethod
+    def _helper_make_sorted_list_of_tuples(obj:MatVecData) -> List[Tuple[Matrix, Vector, Scalar]]:
+        # we're sorting on the norm of the vectors, it could be norm of matrices (x[0])
+        N = len(obj.coeffs)
+        all_tuples = []
+        for i in range(N):
+            all_tuples.append( (obj.mat[i], obj.vec[i], obj.coeffs[i]) )
+        sorted_tuples = all_tuples.copy()
+        f = lambda x: np.linalg.norm(x[1])
+        sorted_tuples.sort(key=f)
+        return sorted_tuples
+
+
 
     # def __and__(self, other: MatVecData) -> MatVecData:
     #     try: #TODO: ORDER OF ALL MATRICESA!

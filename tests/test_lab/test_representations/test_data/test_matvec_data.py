@@ -119,20 +119,7 @@ class TestMatVecData(TestData): #TestData
     # # NOTE: tested in parent
 
     # ###########  Addition / subtraction  #############
-    # # TODO: more complex tests of the general concat case!
-    # @pytest.mark.parametrize("operator", [op.add, op.sub])
-    # def test_when_mat_and_vec_same_coefs_get_element_wise_operation(self, operator, DATA, OTHER):
-    #     pre_op_data = deepcopy(DATA)
-    #     processed_data = operator(DATA, OTHER)
-    #     s0 = set(processed_data.coeffs)
-    #     cs = []
-    #     for c0 in DATA.coeffs:
-    #         for c1 in OTHER.coeffs:
-    #             cs.append(operator(c0, c1))
-    #     s1 = set(cs)
-    #     assert s0.symmetric_difference(s1) == set()
-    #     # assert np.allclose(DATA.mat, pre_op_data.mat)
-    #     # assert np.allclose(DATA.vec, pre_op_data.vec)
+    # TODO: test correctness of addition/subtraction
 
     #######  Scalar division / multiplication ########
     @pytest.mark.parametrize("operator", [op.truediv, op.mul])
@@ -157,7 +144,7 @@ class TestMatVecData(TestData): #TestData
         
 
     # ###############  Multiplication  ##################
-    # NOTE: tested in child
+    # NOTE: tested in children
 
     # ###############  Outer product  ##################
     # # NOTE: not implented yet so no tests
