@@ -274,14 +274,7 @@ class Converter():
         The order of the rows/columns of A and B corresponds to a density matrix with the usual 
         ordering of the indices.
 
-        Note that here A and B are defined with inverted blocks with respect to the literature,
-        otherwise the density matrix would have the left and the right indices swapped once we 
-        convert to Fock.
-        By inverted blocks we mean that if A is normally defined as
-          `A = [[A_00, A_01], [A_10, A_11]]`,
-        here we define it as 
-        `A = [[A_11, A_10], [A_01, A_00]]`. 
-        For `B` we have `B = [B_0, B_1] -> B = [B_1, B_0]`.
+        Note that here A and B are defined with respect to the literature.
 
         Args:
             wigner_dm (WignerDM) : the Wigner DM representation of the state
@@ -293,12 +286,12 @@ class Converter():
         N = wigner_dm.data.cov.shape[-1]//2
 
         A = math.matmul(
-            self._cayley(self._pq_to_aadag(wigner_dm.data.cov), c=0.5), math.Xmat(N)
-        )  # X on the right, so the index order will be rho_{left,right}
-        #TODO: integrate PR255 here
+            math.Xmat(N), self._cayley(self._pq_to_aadag(wigner_dm.data.cov), c=0.5)
+        )
         Q, beta = self._wigner_to_husimi(wigner_dm.data.cov, wigner_dm.data.means)
-        B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
-        C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
+        b = math.solve(Q, beta)
+        B = math.conj(b)
+        C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
 
         return BargmannDM(A=A, b=B, c=C)
 
@@ -321,12 +314,9 @@ class Converter():
         means = wigner_ket.means
         wigner_dm = WignerDM(cov=cov, means=means)
         bargmann_dm = self._wignerdm_to_bargmanndm(wigner_dm=wigner_dm)
-        # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half 
-        # rather than the second
-        #TODO: modified with PR255
         
-        return BargmannKet(bargmann_dm.data.A[:N, :N], 
-                           bargmann_dm.data.b[:N], 
+        return BargmannKet(bargmann_dm.data.A[N:, N:], 
+                           bargmann_dm.data.b[N:], 
                            math.sqrt(bargmann_dm.data.c))
     
 
