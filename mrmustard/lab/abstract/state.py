@@ -665,17 +665,18 @@ class State:  # pylint: disable=too-many-public-methods
         return self
         
 
-    def to_WaveFunctionQ(self):
+    def to_WaveFunctionQ(self, qs):
         r'''Converts the representation of the state to q-wavefunction Representation and returns a new State.
 
         Args:
             source (State): the state itself
+            qs(array): list of values on q-axis of the wavefunction
             target (Srting): the target q-Wavefunction representation of the state
 
         Returns:
             State: the converted state with the target q-Wavefunction Representation
         '''
-        self.representation = converter.convert(self.representation, "WaveFunctionQ") 
+        self.representation = converter.convert(self.representation, qs, "WaveFunctionQ") 
         return self
         
 
