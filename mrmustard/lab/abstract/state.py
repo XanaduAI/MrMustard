@@ -70,10 +70,11 @@ class State:  # pylint: disable=too-many-public-methods
         symplectic: RealMatrix = None,
         ket: ComplexTensor = None,
         dm: ComplexTensor = None,
+        A: ComplexMatrix = None,
+        B: ComplexVector = None,
+        C: float = None,
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
-        _norm: float = 1.0,
-        representation: Representation = None,
     ):
         r"""Initializes the state.
 
@@ -81,78 +82,64 @@ class State:  # pylint: disable=too-many-public-methods
             * a covariance matrix and means vector
             * a symplectic matrix and displacement vector
             * a fock representation (ket or dm)
-            * a quadrature variable vector and corresponding wavefunction samples
-        together with the flag_ket to indicate the nature of the state.
-        Or supply simply with the Representation Class.
+            * a ABC triple related to the Bargmann representation
 
         Args:
             cov (Matrix): the covariance matrix
             means (Vector): the means vector
             symplectic (Matrix): the symplectic matrix
-            displacement (Vector): the displacement vector
-            fock (Tensor): the Fock representation
-            qs (Vector): the point value for corresponding q-wavefunction
-            wavefunctionq (Vector): the value of the point of the q-wavefunction
-            flag_ket (boolean): whether this state is a ket (pure) or a density matrix (mixed)
-            representation (Representation): the Representation Class contains all information about the state
+            eigenvalues (Vector): the eigenvalues of the state
+            ket (Tensor): the ket of the Fock representation
+            dm (Tensor): the density matrix of the Fock representation
+            A (Matrix): the matrix of the Bargmann representation
+            B (Vector): the vector of the Bargmann representation
+            C (Scalar): the coefficient of the Bargmann representation
+            modes (optional, Sequence[int]): the modes in which the state is defined
+            cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
+
         """
-        #plug in representation
-        # self._purity = None
-        # self._fock_probabilities = None
-        # self._cutoffs = cutoffs
-        # self._cov = cov
-        # self._means = means
-        # self._eigenvalues = eigenvalues
-        # self._symplectic = symplectic
-        # self._ket = ket
-        # self._dm = dm
-        # self._norm = _norm
-  
-        #Bargmann as default
-        #Case 1: Wigner representation #TODO: add coeff?
+        self._cutoffs = cutoffs
+        #Case 1: Wigner representation
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
             self.num_modes = cov.shape[-1] // 2
-            self.representation = WignerDM(cov, means)
-        #TODO: eigenvalues is ignored! -> to discuss
-        #TODO: add displacement here not means?
-        elif symplectic is not None and means is not None:
-            self.is_gaussian = True
-            self.is_hilbert_vector = True
-            self.num_modes = symplectic.shape[-1] // 2
-            self.representation = WignerKet(symplectic, means)
+            #check if the state is pure and init with different representation classes
+            self.representation = WignerKet(cov, means) if np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0) else WignerDM(cov, means)
+        # #TODO: what is this eigenvalues? a list?
+        # elif eigenvalues is not None and symplectic is not None:
+        #     self.is_gaussian = True
+        #     self.num_modes = symplectic.shape[-1] // 2
+        #     means = math.zeros_like(self.num_modes)
+        #     cov = (settings.HBAR / 2) * math.matmul(symplectic, math.matmul(eigenvalues, symplectic))
+        #     self.representation = WignerKet(cov, means) if np.allclose(eigenvalues, 2.0 / settings.HBAR) else WignerDM(cov, means)
         #Case 2: Fock representation
         elif ket is not None:
             self.is_gaussian = False
-            self.is_hilbert_vector = True
             self.num_modes = len(ket.shape)
             self._purity = 1.0
             self.representation = FockKet(ket)
         elif dm is not None:
             self.is_gaussian = False
-            self.is_hilbert_vector = False
             self.num_modes = len(dm.shape) // 2
             self._purity = None
             self.representation = FockDM(dm)
-        #TODO: Case 3: q-Wavefunction representation not support at the init?
-        # elif qs is not None and wavefunctionq is not None and flag_ket is not None:
-        #     if flag_ket:
-        #         self.representation = WaveFunctionQKet(qs, wavefunctionq)
-        #     else:
-        #         self.representation = WaveFunctionQDM(qs, wavefunctionq)
+        #Case 3: Bargmann representation
+        elif A is not None and B is not None and C is not None:
+            self.is_gaussian = True or False 
+            self.representation = BargmannKet(A,B,C)
+            #TODO: pure or mixed bargmann you are talking about? is_gaussian?
         else:
             raise ValueError(
                 "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a symplectic matrix and displacement, or a ket or dm in fock representation."
             )
                 
-        #skip
+
         self._modes = modes
         if modes is not None:
-            self._modes = modes
             assert (
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+
 
     @property
     def modes(self):
@@ -212,7 +199,10 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def number_stdev(self) -> RealVector:
         r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-        return self.representation.number_stdev
+        if isinstance(self.representation, (FockKet, FockDM)):
+            return self.representation.number_stdev
+        else:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
     
     
     @property
@@ -247,7 +237,7 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
-        if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
+        if not isinstance(self.representation, (WignerKet, WignerDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
         return self.representation.number_cov
 
@@ -255,14 +245,9 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
-        if self._norm:
-            return self._norm
-        
         if not isinstance(self.representation, (FockKet, FockDM, WaveFunctionQKet, WaveFunctionQDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
-        
-        self._norm = self.representation.norm
-        return self._norm
+        return self.representation.norm
    
 
     @property
@@ -294,10 +279,11 @@ class State:  # pylint: disable=too-many-public-methods
             Tensor: the ket
         """
 
-        if not self.is_pure:
-            return None # TODO: ask if this should be an error
-        if self.representation.__class__.__name__.endswith('DM'):
-            raise AttributeError("We do not support to decompose the density matrix to ket now!")
+        if self.is_mixed:
+            return None
+        #TODO: which one is better? two lines above and below.
+        # if self.representation.__class__.__name__.endswith('DM'):
+        #     raise AttributeError("We do not support to decompose the density matrix to ket now!")
         
         if isinstance(self.representation, FockKet):
             if cutoffs is None:
@@ -305,13 +291,10 @@ class State:  # pylint: disable=too-many-public-methods
             return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
     
         if isinstance(self.representation, WignerKet):
-            if not self._ket:
-                #transform internally from Wigner to Fock and return it
-                cutoffs = cutoffs or self.cutoffs
-                self_copy = copy.deepcopy(self)
-                self._ket = self_copy.to_Fock(cutoffs=cutoffs, max_prob=max_prob, max_photon=max_photons).ket()
-            return self._ket
-
+            cutoffs = cutoffs or self._cutoffs
+            self_copy = copy.deepcopy(self)
+            return self_copy.to_Fock(cutoffs=cutoffs, max_prob=max_prob, max_photon=max_photons).ket()
+        
         raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
             
@@ -329,18 +312,17 @@ class State:  # pylint: disable=too-many-public-methods
         if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
         
-        if self._dm:
+        if isinstance(self.representation, FockDM):
             if cutoffs is None:
-                return self._dm #TODO: or self.representation.data.array
+                return self.representation.data.array
             else:
-                return fock.pad_array_with_cutoffs(self._dm, cutoffs)
+                return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
         
-        if self._ket:
+        if isinstance(self.representation, FockKet):
             if cutoffs is None:
-                return fock.ket_to_dm(self._ket)
+                return fock.ket_to_dm(self.representation.data.array)
             else:
-                return fock.pad_array_with_cutoffs(fock.ket_to_dm(self.representation.data.array), cutoffs)
-        
+                return fock.pad_array_with_cutoffs(fock.ket_to_dm(self.representation.data.array), cutoffs) 
         
         if isinstance(self.representation, WignerKet):
             if cutoffs is None:
@@ -348,7 +330,8 @@ class State:  # pylint: disable=too-many-public-methods
             self_copy = copy.deepcopy(self)
             self_copy.to_Fock()
             return fock.pad_array_with_cutoffs(fock.ket_to_dm(self_copy.ket()), cutoffs)
-        elif isinstance(self.representation, WignerDM):
+        
+        if isinstance(self.representation, WignerDM):
             self_copy = copy.deepcopy(self)
             self_copy.to_Fock(cutoffs=cutoffs)
             return self_copy.representation.data.array
@@ -356,15 +339,14 @@ class State:  # pylint: disable=too-many-public-methods
 
     @property
     def fock(self) -> ComplexTensor:
-        #TODO: it looks like self.ket + slef.dm
         r"""Returns the Fock representation of the state."""
-        if self._ket or self._dm:
-            return self._ket if self._ket is not None else self._dm
-        else:
+        if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+        
+        return self.ket if isinstance(self.representation, (FockKet, WignerKet)) else self.dm
 
 
-
+    @property
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
         r"""Returns the probabilities in Fock representation.
 
@@ -377,10 +359,10 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the probabilities
         """
-        if self._fock_probabilities is None:
-            if isinstance(self.representation, (FockKet, FockDM)):
-                self._fock_probabilities = self.representation.probability(cutoffs)
-        return self._fock_probabilities
+        if isinstance(self.representation, (FockKet, FockDM)):
+            return self.representation.probability(cutoffs)
+        else:
+            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
 
     def primal(self, other: Union[State, Transformation]) -> State:
@@ -441,7 +423,7 @@ class State:  # pylint: disable=too-many-public-methods
 
         # return the probability (norm) of the state when there are no modes left
         return (
-            fock.math.abs(out_fock) ** 2
+            math.abs(out_fock) ** 2
             if other.is_pure and self.is_pure
             else fock.math.abs(out_fock)
         )
@@ -657,10 +639,6 @@ class State:  # pylint: disable=too-many-public-methods
             State: the converted state with the target Fock Representation
         """
         self.representation = converter.convert(self.representation, "Fock", max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
-        if self.representation.__class__.__name__.endswith('Ket'): #TODO: keep all records after to_X functions
-            self._ket = self.representation.data.array
-        if self.representation.__class__.__name__.endswith('DM'):
-            self._dm = self.representation.data.array
         return self
         
 
@@ -690,12 +668,6 @@ class State:  # pylint: disable=too-many-public-methods
             State: the converted state with the target Wigner Representation
         '''
         self.representation = converter.convert(self.representation, "Wigner")
-        if self.representation.__class__.__name__.endswith('Ket'):
-            self._symplectic = self.representation.data.symplectic
-            self._means = self.representation.data.means
-        if self.representation.__class__.__name__.endswith('DM'):
-            self._cov = self.representation.data.cov
-            self._means = self.representation.data.means
         return self
 
 
