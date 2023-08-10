@@ -118,6 +118,7 @@ class State:  # pylint: disable=too-many-public-methods
                 self.num_modes = cov.shape[-1] // 2
                 self.representation = WignerDM(cov, means)
             #TODO: eigenvalues is ignored! -> to discuss
+            #TODO: add displacement here not means?
             elif symplectic is not None and means is not None:
                 self.is_gaussian = True
                 self.is_hilbert_vector = True
@@ -136,7 +137,7 @@ class State:  # pylint: disable=too-many-public-methods
                 self.num_modes = len(dm.shape) // 2
                 self._purity = None
                 self.representation = FockDM(dm)
-            #NOTE: Case 3: q-Wavefunction representation not support at the init
+            #TODO: Case 3: q-Wavefunction representation not support at the init?
             # elif qs is not None and wavefunctionq is not None and flag_ket is not None:
             #     if flag_ket:
             #         self.representation = WaveFunctionQKet(qs, wavefunctionq)
@@ -240,29 +241,30 @@ class State:  # pylint: disable=too-many-public-methods
     @property
     def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
-        try: #try->if
-            return self.representation.number_means()
-        except:
+        if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
-
+        return self.representation.number_means
 
     @property
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
-        try:
-            return self.representation.number_cov()
-        except:
+        if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+        return self.representation.number_cov
 
 
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
-        try:
-            return self.representation.norm
-        except:
+        if self._norm:
+            return self._norm
+        
+        if not isinstance(self.representation, (FockKet, FockDM, WaveFunctionQKet, WaveFunctionQDM)):
             raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
-
+        
+        self._norm = self.representation.norm
+        return self._norm
+   
 
     @property
     def probability(self) -> float:
@@ -295,7 +297,7 @@ class State:  # pylint: disable=too-many-public-methods
 
         if not self.is_pure:
             return None # TODO: ask if this should be an error
-        if not self.representation.__class__.__name__.endswith('Ket'):
+        if self.representation.__class__.__name__.endswith('DM'):
             raise AttributeError("We do not support to decompose the density matrix to ket now!")
         
         if isinstance(self.representation, FockKet):
@@ -314,8 +316,6 @@ class State:  # pylint: disable=too-many-public-methods
         raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
             
-
-
 
     def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
