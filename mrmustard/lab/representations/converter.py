@@ -166,21 +166,12 @@ class Converter():
             f = self.g[s_name][d_name]["f"]
 
             if s_name == "WignerKet" and d_name == "FockKet":
-                if kwargs.get('max_prob'):
-                    max_prob = kwargs.get('max_prob')
-                else:
-                    max_prob = 1.0
-                if kwargs.get('max_photon'):
-                    max_photon = kwargs.get('max_photon')
-                else:
-                    max_photon = None
-                if kwargs.get('cutoffs') :
-                    cutoffs = kwargs.get('cutoffs') 
-                else:
-                    cutoffs = None
+                max_prob = kwargs.get('max_prob') if kwargs.get('max_prob') else 1.0
+                max_photon = kwargs.get('max_photon') if kwargs.get('max_photon') else None
+                cutoffs = kwargs.get('cutoffs') if kwargs.get('cutoffs') else None
                 return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
             elif s_name == "WignerDM" and d_name == "FockDM":
-                cutoffs = kwargs.get('cutoffs')
+                cutoffs = kwargs.get('cutoffs') if kwargs.get('cutoffs') else None
                 return f(source, cutoffs=cutoffs)
             elif d_name == "WaveFunctionQKet" or d_name == "WaveFunctionQDM":
                 qs = kwargs.get('qs')
@@ -192,25 +183,19 @@ class Converter():
             raise ValueError(f"Either {s_name} or {destination} is not a valid representation name"
                              ) from e
         
-        
-        
-
-    
+            
     def shortest_path(self, source:Representation, destination:Representation):
-        raise NotImplementedError # TODO : implement
+        raise NotImplementedError
 
 
     def add_edge(self):
-        raise NotImplementedError # TODO : implement
-
+        raise NotImplementedError
 
 
     def show(self) -> None:
-        raise NotImplementedError # TODO : implement
+        raise NotImplementedError
     
 
-         # TODO : for the whole following code double-check / add to the doc
-         # TODO : for the whole following code complete the signatures with type hints
     ########################################################################
     ###                    From Wigner to Husimi                         ###
     ########################################################################
@@ -265,7 +250,7 @@ class Converter():
 
     def _cayley(self, X:Tensor, c:float) -> Tensor:
         r"""
-        Returns the self._cayley transform of a matrix:
+        Returns the Cayley transformation of a matrix:
         :math:`cay(X) = (X - cI)(X + cI)^{-1}`
 
         Args:
@@ -273,7 +258,7 @@ class Converter():
             X (Tensor): a matrix
 
         Returns:
-            The self._cayley transform of X tensor
+            The cayley transformation of X tensor with respect to c
         """
 
         I = math.eye(X.shape[0], dtype=X.dtype)
@@ -305,12 +290,12 @@ class Converter():
             The BargmannDM representation of the input state
 
         """
-        N = wigner_dm.num_modes
+        N = wigner_dm.data.cov.shape[-1]//2
 
         A = math.matmul(
             self._cayley(self._pq_to_aadag(wigner_dm.data.cov), c=0.5), math.Xmat(N)
         )  # X on the right, so the index order will be rho_{left,right}
-
+        #TODO: integrate PR255 here
         Q, beta = self._wigner_to_husimi(wigner_dm.data.cov, wigner_dm.data.means)
         B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
         C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
@@ -331,13 +316,14 @@ class Converter():
             The Bargmann representation of the input state
         """
 
-        N = wigner_ket.num_modes
-        cov = settings.HBAR / 2 * math.matmul(wigner_ket.data.symplectic, math.transpose(wigner_ket.data.symplectic))
-        means = wigner_ket.data.displacement
+        N = wigner_ket.data.symplectic.shape[-1] // 2
+        cov = wigner_ket.cov
+        means = wigner_ket.means
         wigner_dm = WignerDM(cov=cov, means=means)
         bargmann_dm = self._wignerdm_to_bargmanndm(wigner_dm=wigner_dm)
         # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half 
         # rather than the second
+        #TODO: modified with PR255
         
         return BargmannKet(bargmann_dm.data.A[:N, :N], 
                            bargmann_dm.data.b[:N], 
@@ -376,7 +362,7 @@ class Converter():
         C = bargmann_ket.data.c
 
         if cutoffs is None:
-            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerket.num_modes)
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerket.data.symplectic.shape[-1]//2)
 
         if max_photon is None:
             max_photon = sum(np.shape(cutoffs)) - len(np.shape(cutoffs))
@@ -404,7 +390,7 @@ class Converter():
         """
 
         if cutoffs is None:
-            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.num_modes)
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.data.cov.shape[-1]//2)
         bargmann_dm = self._wignerdm_to_bargmanndm(wignerdm)
         A = bargmann_dm.data.A
         B = bargmann_dm.data.b
@@ -417,7 +403,7 @@ class Converter():
     ###                     From Fock to Wavefunction                    ###
     ########################################################################
 
-    @tensor_int_cache # TODO : check whether this should be private or not
+    @tensor_int_cache
     def _oscillator_eigenstates(self, q: RealVector, cutoff: int) -> Tensor:
         r"""
         Harmonic oscillator eigenstate wavefunctions 
@@ -485,7 +471,10 @@ class Converter():
             ComplexFunctionND: the wavefunction at the given positions wrapped in a
             :class:`~.ComplexFunctionND` object.
         """
+        if not qs:
+            raise AssertionError("The number of points are necessary to generate the wavefunctionq state.")
 
+        #TODO : check this
         krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, fock_ket.data.cutoffs)]
 
         ket = fock_ket.data.array
@@ -512,6 +501,8 @@ class Converter():
             ComplexFunctionND: the wavefunction at the given positions wrapped in a
             :class:`~.ComplexFunctionND` object.
         """
+        if not qs:
+            raise AssertionError("The number of points are necessary to generate the wavefunctionq state.")
 
         krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, fock_dm.data.cutoffs)]
 
