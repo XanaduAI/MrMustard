@@ -96,59 +96,57 @@ class State:  # pylint: disable=too-many-public-methods
             flag_ket (boolean): whether this state is a ket (pure) or a density matrix (mixed)
             representation (Representation): the Representation Class contains all information about the state
         """
-        self._purity = None
-        self._fock_probabilities = None
-        self._cutoffs = cutoffs
-        self._cov = cov
-        self._means = means
-        self._eigenvalues = eigenvalues
-        self._symplectic = symplectic
-        self._ket = ket
-        self._dm = dm
-        self._norm = _norm
-        #Case 0: All data of the state is wrapped inside one of the Representation classes
-        if representation:
-            self.representation = representation
-            #TODO: where to get the self.num_modes
+        #plug in representation
+        # self._purity = None
+        # self._fock_probabilities = None
+        # self._cutoffs = cutoffs
+        # self._cov = cov
+        # self._means = means
+        # self._eigenvalues = eigenvalues
+        # self._symplectic = symplectic
+        # self._ket = ket
+        # self._dm = dm
+        # self._norm = _norm
+  
+        #Bargmann as default
+        #Case 1: Wigner representation #TODO: add coeff?
+        if cov is not None and means is not None:
+            self.is_gaussian = True
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
+            self.num_modes = cov.shape[-1] // 2
+            self.representation = WignerDM(cov, means)
+        #TODO: eigenvalues is ignored! -> to discuss
+        #TODO: add displacement here not means?
+        elif symplectic is not None and means is not None:
+            self.is_gaussian = True
+            self.is_hilbert_vector = True
+            self.num_modes = symplectic.shape[-1] // 2
+            self.representation = WignerKet(symplectic, means)
+        #Case 2: Fock representation
+        elif ket is not None:
+            self.is_gaussian = False
+            self.is_hilbert_vector = True
+            self.num_modes = len(ket.shape)
+            self._purity = 1.0
+            self.representation = FockKet(ket)
+        elif dm is not None:
+            self.is_gaussian = False
+            self.is_hilbert_vector = False
+            self.num_modes = len(dm.shape) // 2
+            self._purity = None
+            self.representation = FockDM(dm)
+        #TODO: Case 3: q-Wavefunction representation not support at the init?
+        # elif qs is not None and wavefunctionq is not None and flag_ket is not None:
+        #     if flag_ket:
+        #         self.representation = WaveFunctionQKet(qs, wavefunctionq)
+        #     else:
+        #         self.representation = WaveFunctionQDM(qs, wavefunctionq)
         else:
-            #Case 1: Wigner representation #TODO: add coeff?
-            if cov is not None and means is not None:
-                self.is_gaussian = True
-                self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
-                self.num_modes = cov.shape[-1] // 2
-                self.representation = WignerDM(cov, means)
-            #TODO: eigenvalues is ignored! -> to discuss
-            #TODO: add displacement here not means?
-            elif symplectic is not None and means is not None:
-                self.is_gaussian = True
-                self.is_hilbert_vector = True
-                self.num_modes = symplectic.shape[-1] // 2
-                self.representation = WignerKet(symplectic, means)
-            #Case 2: Fock representation
-            elif ket is not None:
-                self.is_gaussian = False
-                self.is_hilbert_vector = True
-                self.num_modes = len(ket.shape)
-                self._purity = 1.0
-                self.representation = FockKet(ket)
-            elif dm is not None:
-                self.is_gaussian = False
-                self.is_hilbert_vector = False
-                self.num_modes = len(dm.shape) // 2
-                self._purity = None
-                self.representation = FockDM(dm)
-            #TODO: Case 3: q-Wavefunction representation not support at the init?
-            # elif qs is not None and wavefunctionq is not None and flag_ket is not None:
-            #     if flag_ket:
-            #         self.representation = WaveFunctionQKet(qs, wavefunctionq)
-            #     else:
-            #         self.representation = WaveFunctionQDM(qs, wavefunctionq)
-            else:
-                raise ValueError(
-                    "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a symplectic matrix and displacement, or a ket or dm in fock representation."
-                )
+            raise ValueError(
+                "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a symplectic matrix and displacement, or a ket or dm in fock representation."
+            )
                 
-
+        #skip
         self._modes = modes
         if modes is not None:
             self._modes = modes
@@ -164,6 +162,7 @@ class State:  # pylint: disable=too-many-public-methods
             return list(range(self.num_modes))
         return self._modes
     
+    #TODO: something here?
     def indices(self, modes) -> Union[Tuple[int], int]:
         r"""Returns the indices of the given modes.
 
