@@ -354,8 +354,10 @@ class State:  # pylint: disable=too-many-public-methods
             self_copy.to_Fock(cutoffs=cutoffs)
             return self_copy.representation.data.array
 
+
     @property
     def fock(self) -> ComplexTensor:
+        #TODO: it looks like self.ket + slef.dm
         r"""Returns the Fock representation of the state."""
         if self._ket or self._dm:
             return self._ket if self._ket is not None else self._dm

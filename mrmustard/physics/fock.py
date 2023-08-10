@@ -942,3 +942,18 @@ def squeezed(r, phi, shape):
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
     return math.astensor(sq_ket, dtype=sq_ket.dtype.name), vjp
+
+
+def pad_array_with_cutoffs(array: np.array, cutoffs: List[int]):
+    "pads the array with a larger cutoffs and return it with the right size of the input cutoffs."
+    current_cutoffs = array.shape
+    if current_cutoffs == cutoffs:
+        return array
+    else:
+        difference = [new - old for new, old in zip(cutoffs, current_cutoffs)]
+        if any(x > 0 for x in difference):
+            paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+            padded = math.pad(array, paddings, mode="constant")
+        else:
+            padded = array
+        return padded[tuple(slice(s) for s in cutoffs)]
