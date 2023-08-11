@@ -167,12 +167,12 @@ class State(CircuitPart):
     @property
     def cutoffs(self) -> List[int]:
         r"""Returns the Hilbert space dimension of each mode."""
-        if self._cutoffs is None:
-            if self._ket is None and self._dm is None:
+        if self._cutoffs is None:  # we need to compute them
+            if self._ket is None and self._dm is None:  # we have to use autocutoffs
                 self._cutoffs = fock.autocutoffs(
                     self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
                 )
-            else:
+            else:  # we can use the shape of a pre-existing fock representation
                 self._cutoffs = [
                     int(c)
                     for c in (
@@ -190,7 +190,6 @@ class State(CircuitPart):
         If the state is in Gaussian representation, the shape is inferred from
         the first two moments of the number operator.
         """
-        # NOTE: if we initialize State(dm=pure_dm), self.fock returns the dm, which does not have shape self.cutoffs
         return self.cutoffs if self.is_hilbert_vector else self.cutoffs + self.cutoffs
 
     @property

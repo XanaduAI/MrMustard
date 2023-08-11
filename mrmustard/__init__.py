@@ -50,12 +50,11 @@ class Settings:
         # misc
         self.FLATTEN_CIRCUIT = True
         self.PROGRESSBAR = True
-        self.WIRE_CUTOFF = 50
         self.ALLOW_WIRE_REUSE = True
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self.DEFAULT_BS_METHOD = "vanilla"  # can be 'vanilla' or 'schwinger'
-        self.TN_DEFAULT_BOND_CUTOFF = 70
+        self.TN_DEFAULT_BOND_DIMENSION = 70
 
     @property
     def SEED(self):
