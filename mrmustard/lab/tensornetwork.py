@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from mrmustard import settings
-from mrmustard.lab.abstract.circuitpart import CircuitPart
+from mrmustard.lab.abstract.circuitpart import CircuitPartView
 from mrmustard.math import Math
 
 math = Math()
@@ -34,41 +34,38 @@ math = Math()
 ID = int  # just a type alias
 
 
-class TNTensor(CircuitPart):
-    r"""Wrapper for MM objects that allows to add them multiple times to a TN.
-    It offers the same CircuitPart functionality as the tensor it wraps,
-    but with unique wire ids.
-    """
+# class TNTensor(CircuitPart):
+#     r"""Wrapper for MM objects that allows to add them multiple times to a TN.
+#     It offers the same CircuitPart functionality as the tensor it wraps,
+#     but with unique wire ids.
+#     """
 
-    def __init__(self, circuit_part: CircuitPart):
-        # The TNTensor and its wires get unique ids from the CircuitPart init.
-        # Note we use output.ket etc so that views work too.
-        super().__init__(
-            name=circuit_part.name,
-            modes_output_ket=circuit_part.output.ket.keys(),
-            modes_input_ket=circuit_part.input.ket.keys(),
-            modes_output_bra=circuit_part.output.bra.keys(),
-            modes_input_bra=circuit_part.input.bra.keys(),
-        )
-        self.mm_obj = circuit_part
-        self._id_map = {id_self: id_mm for id_self, id_mm in zip(self.ids, self.mm_obj.ids)}
-        for id in self.ids:
-            self[id]["dimension"] = self._dimension(id)
+#     def __init__(self, circuit_part: CircuitPart):
+#         # The TNTensor and its wires get unique ids from the CircuitPart init.
+#         # Note we use output.ket etc so that views work too.
+#         super().__init__(
+#             name=circuit_part.name,
+#             modes_output_ket=circuit_part.output.ket.keys(),
+#             modes_input_ket=circuit_part.input.ket.keys(),
+#             modes_output_bra=circuit_part.output.bra.keys(),
+#             modes_input_bra=circuit_part.input.bra.keys(),
+#         )
+#         self.mm_obj = circuit_part
+#         self._id_map = {id_self: id_mm for id_self, id_mm in zip(self.ids, self.mm_obj.ids)}
 
-    @property
-    def fock(self):
-        return math.hermite_renormalized(*self.mm_obj.bargmann(), shape=self.shape)
+#         for id in self.ids:
+#             self[id]["dimension"] = self._dimension(id)
 
-    @property
-    def shape(self):
-        return tuple(self[id]["dimension"] for id in self.ids)
+#     @property
+#     def shape(self):
+#         return tuple(self[id]["dimension"] for id in self.ids)
 
-    def _dimension(self, id: ID):
-        i = self.mm_obj.modes.index(self.mm_obj.mode_from_id(id))
-        try:
-            return self.mm_obj.cutoffs[i]
-        except AttributeError:
-            return None
+# def _dimension(self, id: ID):
+#     i = self.mm_obj.modes.index(self.mm_obj.mode_from_id(id))
+#     try:
+#         return self.mm_obj.cutoffs[i]
+#     except AttributeError:
+#         return None
 
 
 class TensorNetwork:
@@ -79,43 +76,40 @@ class TensorNetwork:
     def __init__(self):
         r"""Initializes a TensorNetwork instance."""
         self.graph: nx.Graph = nx.Graph()
-        super().__init__(name="TN")
 
     def __getitem__(self, id: ID) -> dict:
         "get wire dict by id"
         return self.graph.nodes[id]
 
+    def _will_contract(self, id: ID) -> bool:
+        "returns True if the wire is currently part of an inner product"
+        return self.graph.edges(id, data=True)["contract"]
+
     @property
     def input(self) -> dict:
-        return {
-            "ket": {
-                wire["mode"]: id
-                for id, wire in self.graph.nodes(data=True)
-                if wire["direction"] == "in" and wire["type"] == "ket" and not wire["connected"]
-            },
-            "bra": {
-                wire["mode"]: id
-                for id, wire in self.graph.nodes(data=True)
-                if wire["direction"] == "in" and wire["type"] == "bra" and not wire["connected"]
-            },
-        }
+        "mimics the CircuitPart input property"
+        ket = {}
+        bra = {}
+        for id, d in self.graph.nodes(data=True):
+            if d["direction"] == "in" and d["type"] == "ket" and not self._will_contract(id):
+                ket[d["mode"]] = id
+            elif d["direction"] == "in" and d["type"] == "bra" and not self._will_contract(id):
+                bra[d["mode"]] = id
+        return {"ket": ket, "bra": bra}
 
     @property
     def output(self) -> dict:
-        return {
-            "ket": {
-                wire["mode"]: id
-                for id, wire in self.graph.nodes(data=True)
-                if wire["direction"] == "out" and wire["type"] == "ket" and not wire["connected"]
-            },
-            "bra": {
-                wire["mode"]: id
-                for id, wire in self.graph.nodes(data=True)
-                if wire["direction"] == "out" and wire["type"] == "bra" and not wire["connected"]
-            },
-        }
+        "mimics the CircuitPart output property"
+        ket = {}
+        bra = {}
+        for id, d in self.graph.nodes(data=True):
+            if d["direction"] == "out" and d["type"] == "ket" and not self._will_contract(id):
+                ket[d["mode"]] = id
+            elif d["direction"] == "out" and d["type"] == "bra" and not self._will_contract(id):
+                bra[d["mode"]] = id
+        return {"ket": ket, "bra": bra}
 
-    def add_tensor(self, tensor: TNTensor):
+    def add_tensor(self, tensor: CircuitPartView):
         r"""
         Adds a tensor to the network by adding a node to the graph for each of its wires.
 
@@ -129,8 +123,8 @@ class TensorNetwork:
                 mode=mode,
                 direction="in",
                 type="ket",
-                connected=False,
-                dimension=None,
+                dimension=tensor.wire(id)["shape"],  # TODO we should link id to dimension
+                name=tensor.name,
             )
         for mode, id in tensor.input.bra.items():
             self.graph.add_node(
@@ -139,8 +133,8 @@ class TensorNetwork:
                 mode=mode,
                 direction="in",
                 type="bra",
-                connected=False,
                 dimension=None,
+                name=tensor.name,
             )
         for mode, id in tensor.output.ket.items():
             self.graph.add_node(
@@ -149,8 +143,8 @@ class TensorNetwork:
                 mode=mode,
                 direction="out",
                 type="ket",
-                connected=False,
                 dimension=None,
+                name=tensor.name,
             )
         for mode, id in tensor.output.bra.items():
             self.graph.add_node(
@@ -159,74 +153,33 @@ class TensorNetwork:
                 mode=mode,
                 direction="out",
                 type="bra",
-                connected=False,
                 dimension=None,
+                name=tensor.name,
             )
         self._add_fake_edges(tensor)
 
-    def connect(self, id1: Optional[ID] = None, id2: Optional[ID] = None):
+    def connect(self, id1: ID, id2: ID):
         r"""
         Connects two wires specified by id.
-        If called with no arguments it connects all the tensors in order,
-        as if they were in a circuit.
 
         Arguments:
             id1: The id of the first wire.
             id2: The id of the second wire.
         """
-        if id1 is None and id2 is None:
-            self._connect_network()
-        else:
-            self._connect_wires(id1, id2)
-
-    def _connect_wires(self, id1: ID, id2: ID):
         # if a dimension exist, use it for both wires and favor the largest
         c1 = self[id1]["dimension"]
         c2 = self[id2]["dimension"]
         dimension = max([c1, c2], key=lambda x: x if x is not None else -1)
+        self.graph.add_edge(id1, id2)
         self[id1]["dimension"] = dimension
         self[id2]["dimension"] = dimension
+        self[id1]["contract"] = True
+        self[id2]["contract"] = True
 
-        self.graph.add_edge(id1, id2, kind="inner_product")
-        self[id1]["connected"] = True
-        self[id2]["connected"] = True
-
-    def _connect_network(self):
-        for tensor in self.tensors.values():
-            self.connect_tensor_default(tensor)
-
-    def connect_tensor_default(self, tensor: TNTensor):
-        r"""Connects tensor to the current TN as it would happen in a circuit."""
-        # ket side  # TODO use set intersections
-        common_modes = set(tensor.input.ket).intersection(self.output.ket)
-        for mode, id in tensor.input.ket.items():
-            if mode in common_modes:
-                self.connect(self.output.ket[mode], id)
-                self.output.ket.pop(mode)
-            else:
-                self.input.ket[mode] = id
-        for mode, id in tensor.output.ket.items():
-            self.output.ket[mode] = id
-
-        # bra side
-        if (self.has_ket and self.has_bra) and (tensor.only_ket or tensor.only_bra):
-            tensor = tensor.adjoint
-        elif (self.only_ket and self.only_bra) and (tensor.has_ket and tensor.has_bra):
-            self = self.adjoint  # probably wrong
-        for mode, id in tensor.input.bra.items():
-            for mode_tn, id_tn in self.output.bra.items():
-                if mode == mode_tn:
-                    self.connect(id, id_tn)
-                    self.output.bra.pop(mode_tn)
-                    break
-            else:
-                self.input.bra[mode] = id
-        for mode, id in tensor.output.bra.items():
-            self.output.bra[mode] = id
-
-    def _add_fake_edges(self, tensor: TNTensor):
-        r"""Adds fake edges between all the wires of a tensor.
-        For visualization purposes only.
+    def _add_fake_edges(self, tensor: CircuitPartView):
+        r"""Adds 'fake' internal edges between all the wires of a tensor.
+        For visualization purposes only (though technically they correspond
+        to the adjacency matrix for this tensor)
 
         Arguments:
             id: The id of the tensor.
@@ -236,7 +189,7 @@ class TensorNetwork:
                 self.graph.add_edge(id1, id2, kind="fake")
 
     def __repr__(self) -> str:
-        return f"TensorNetwork(graph={self.graph}, tensors=\n{self.tensors})"
+        return f"TensorNetwork(graph={self.graph})"
 
     def draw(self, show_dimensions=True, show_ids=False):
         positions = dict()
@@ -330,7 +283,8 @@ class TensorNetwork:
 
     def _get_opt_einsum_args(self):
         for tensor in self.tensors.values():
-            yield tensor.fock, list(self.id_data("contraction_ids"))
+            fock = math.hermite_renormalized(*self.original.bargmann(), shape=self.shape)
+            yield fock, list(self.id_data("contraction_ids"))
 
     def contract(self):
         self._set_wire_dimension()

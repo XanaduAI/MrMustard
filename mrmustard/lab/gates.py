@@ -801,7 +801,7 @@ class Ggate(Unitary, Parametrized):
 
 
 # pylint: disable=no-member
-class Attenuator(Channel, Parametrized):
+class Attenuator(Parametrized, Channel):
     r"""The noisy attenuator channel.
 
     It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
@@ -867,7 +867,7 @@ class Attenuator(Channel, Parametrized):
         return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[1]
 
 
-class Amplifier(Channel, Parametrized):
+class Amplifier(Parametrized, Channel):
     r"""The noisy amplifier channel.
 
     It corresponds to mixing with a thermal environment and applying a two-mode squeezing gate.
@@ -929,7 +929,7 @@ class Amplifier(Channel, Parametrized):
 
 
 # pylint: disable=no-member
-class AdditiveNoise(Channel, Parametrized):
+class AdditiveNoise(Parametrized, Channel):
     r"""The additive noise channel.
 
     Equivalent to an amplifier followed by an attenuator. E.g.,

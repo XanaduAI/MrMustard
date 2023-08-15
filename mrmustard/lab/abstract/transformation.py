@@ -381,15 +381,15 @@ class Channel(CircuitPart, Transformation):
     def __init__(
         self,
         name: str,
-        modes_output: list[int],
-        modes_input: list[int],
+        modes_out: list[int],
+        modes_in: list[int],
     ):
         super().__init__(
             name=name,
-            modes_input_ket=modes_input,
-            modes_output_ket=modes_output,
-            modes_input_bra=modes_input,
-            modes_output_bra=modes_output,
+            modes_input_ket=modes_in,
+            modes_output_ket=modes_out,
+            modes_input_bra=modes_in,
+            modes_output_bra=modes_out,
         )
 
     def bargmann(self, numpy=False):
