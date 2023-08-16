@@ -133,8 +133,10 @@ class GaussianData(MatVecData):
             ]
         )
         return math.astensor(combined_covs)
+    
 
     def _compute_mul_coeffs( #TODO: check this part which is wrong (doesn't return the correct number of coefficients)
+            # TODO : implement formula 130 of representations scrape everything else
         self, other: GaussianData, joint_covs: Tensor, joint_means: Tensor
     ) -> Tensor:
         r"""Computes the combined coefficients when multiplying Gaussian-represented states.
@@ -147,27 +149,67 @@ class GaussianData(MatVecData):
         Returns:
             (Tensor) The tensor of multiplied coefficients
         """
-        combined_coeffs = [
-            co1
-            * co2
-            * math.exp(
-                0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
-                + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
-                - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
-            )
-            for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
-                self.cov,   
-                self.means,
-                other.cov,
-                other.means,
-                joint_covs,
-                joint_means,
-                self.coeffs,
-                other.coeffs,
-            )
-        ]
-        res = math.astensor(combined_coeffs)
-        return res
+        # over each mat/vec pair do
+        return np.array([-1])
+
+    def _helper_mul_alpha(self,k, cov1, cov2, mean1, mean2, c=1):
+        joint_cov = cov1+cov2
+        return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, mean=mean2, x=mean1, c=c)
+
+    def _helper_full_gaussian_pdf(self, k, cov, mean, x, c=1):
+        return self._helper_gaussian_precoeff(k,cov) * self._helper_gaussian_exp(cov, mean, x, c)
+
+    @staticmethod
+    def _helper_gaussian_precoeff(k,cov):
+        pi_part = (2*np.pi)**(k/2)
+        det_part = np.sqrt(np.linalg.det(cov))
+        return 1 / (pi_part * det_part)
+    
+    @staticmethod
+    def _helper_gaussian_exp(cov, mean, x, c):
+        coeff = -(1/2)
+        precision = np.linalg.inv(cov)
+        eta = x - mean
+        pre_exponential = np.dot( np.dot(np.transpose(eta), precision), eta)
+        exponential = np.exp(coeff * pre_exponential)
+        return c * exponential
+
+
+    # def _compute_mul_coeffs( #TODO: check this part which is wrong (doesn't return the correct number of coefficients)
+    #         # TODO : implement formula 130 of representations scrape everything else
+    #     self, other: GaussianData, joint_covs: Tensor, joint_means: Tensor
+    # ) -> Tensor:
+    #     r"""Computes the combined coefficients when multiplying Gaussian-represented states.
+
+    #     Args:
+    #         other (GaussianData):   another GaussianData object which coeffs will be multiplied
+    #         joint_covs (Tensor):    the combined covariances of the two objects
+    #         joint_means (Tensor):   the combined means of the two objects
+
+    #     Returns:
+    #         (Tensor) The tensor of multiplied coefficients
+    #     """
+    #     combined_coeffs = [
+    #         co1
+    #         * co2
+    #         * math.exp(
+    #             0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
+    #             + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
+    #             - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
+    #         )
+    #         for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
+    #             self.cov,   
+    #             self.means,
+    #             other.cov,
+    #             other.means,
+    #             joint_covs,
+    #             joint_means,
+    #             self.coeffs,
+    #             other.coeffs,
+    #         )
+    #     ]
+    #     res = math.astensor(combined_coeffs)
+    #     return res
 
     def _compute_mul_means(self, other: GaussianData) -> Tensor:
         r"""Computes the combined means when multiplying Gaussian-represented states.
