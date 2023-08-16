@@ -15,44 +15,49 @@
 from abc import ABC, abstractproperty
 from mrmustard.typing import RealMatrix, RealVector, Scalar, Tensor
 from mrmustard.math import Math
+from mrmustard.lab.representations.data.data import Data
 
 math = Math()
 
 
 class Representation(ABC):
-    r"""Abstract parent class for the different Representation of quantum states."""
+    r"""Abstract base class for the different Representation of quantum states.
+        
+        Args:
+            data (Data)
+
+        Methods:
+            purity
+            norm
+            number_means
+            number_cov
+            number_variances
+            number_stdev
+            probability
+    """
+
+    def __init__(self, data):
+        self.data = Data(data)
+
 
     @abstractproperty
     def purity(self) -> Scalar:
-        r"""Valid for all representation classes : the purity of the state."""
-        raise NotImplementedError()
+        r"""Purity of the quantum state, defined as :math:`\mathrm{Tr} \rho^2`."""
+        # Valid for all representation classes
+
 
     @abstractproperty
     def norm(self) -> float:
-        r"""Valid for Fock and WaveFunctionQ: the norm of the state."""
-        raise NotImplementedError()
+        r"""The norm of the state, defined as :math:`` for pure state and :math:`` for mixed state."""
+        # Valid for Fock and WaveFunctionQ
+
 
     @abstractproperty
     def number_means(self) -> RealVector:
-        r"""Valid for Fock and Wigner: the photon number means vector."""
-        raise NotImplementedError()
+        r"""The photon number means vector."""
+        # Valid for Fock and Wigner
 
     @abstractproperty
-    def number_cov(self) -> RealMatrix:
-        r"""Valid for Wigner: the photon number covariance matrix."""
-        raise NotImplementedError()
-
-    @abstractproperty
-    def number_variances(self) -> int:
-        r"""Valid for Fock : variance of the number operator in each mode."""
-        raise NotImplementedError()
-
-    def number_stdev(self) -> int:
-        r"""Valid for Fock: square root of the photon number variances (standard deviation)
-        in each mode."""
-        return math.sqrt(self.number_variances())
-
-    @abstractproperty
-    def probability(self) -> Tensor:  # TODO : add doc
-        r"""Valid for Fock and WaveFucntionQ: Probability tensor, either extracted from a DM or from a Ket"""
-        raise NotImplementedError()
+    def probability(self) -> Tensor:
+        r"""Probability tensor, either extracted from a DM or from a Ket"""
+        # Valid for Fock and WaveFucntionQ

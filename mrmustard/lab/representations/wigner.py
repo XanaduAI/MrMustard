@@ -131,10 +131,7 @@ class Wigner(Representation):
                 - 0.25 * math.eye(N, dtype=CC.dtype)
             )
         return number_cov
-
-    @property
-    def number_variances(self):
-        raise NotImplementedError()
+    
 
     @property
     def probability(self):

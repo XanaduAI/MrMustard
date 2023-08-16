@@ -29,11 +29,11 @@ class Fock(Representation):
     """
 
     def __init__(self, array: np.array) -> None:
-        super().__init__()
         self.data = ArrayData(array=array)
 
     @property
     def number_means(self) -> Tensor:
+        r"""Returns the photon number means vector."""
         probs = self.probability()
         nb_modes = range(len(probs.shape))
         modes = list(nb_modes)  # NOTE : there is probably a more optimized way of doing this
@@ -41,12 +41,10 @@ class Fock(Representation):
         result = [math.sum(m * math.arange(len(m), dtype=m.dtype)) for m in marginals]
         return math.astensor(result)
 
-    @property
-    def number_cov(self) -> RealMatrix:
-        raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
 
     @property
     def number_variances(self) -> Tensor:
+        r"""The variance of the number operator in each mode."""
         probs = self.probability()
         modes = list(range(len(probs.shape)))
         marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
@@ -59,3 +57,10 @@ class Fock(Representation):
             for m in marginals
         ]
         return math.astensor(result)
+
+
+    @property
+    def number_stdev(self) -> int:
+        r"""The square root of the photon number variances (standard deviation)
+        in each mode."""
+        return math.sqrt(self.number_variances())
