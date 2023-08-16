@@ -12,7 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" This package contains the modules implementing base classes for representations, data classes and the converter class.
+""" This package contains the modules implementing base classes for representations.
+
+    Representations classes serves for the state. 
+    We support the Wigner representation, Fock representation, Bargmann representation and WaveFunctionQ representation for now.
+    Each of them has an abstract class and two concrete classes with ket and density matrix to represent pure and mixed states.
+
+    Each representation class has a corresponding data class. The storage of data and all algebras come from the data attribute.
+
+    All functions related to the specific representation will be found in this own representation classes.
+
+    We support the converter to transfer from one representation class to another.
 """
 
 __all__ = [
