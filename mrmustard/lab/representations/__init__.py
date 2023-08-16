@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" This package contains the modules implementing base classes for representations, datas and converter.
+""" This package contains the modules implementing base classes for representations, data classes and the converter class.
 """
 
 __all__ = [
