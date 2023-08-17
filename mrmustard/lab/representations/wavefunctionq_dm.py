@@ -27,6 +27,7 @@ class WaveFunctionQDM(WaveFunctionQ):
         qs: q-variable points
         array: q-Wavefunction values correspoidng qs
     """
+
     def __init__(self, qs: np.array, wavefunctionq: np.array):
         super().__init__(qs=qs, wavefunctionq=wavefunctionq)
 

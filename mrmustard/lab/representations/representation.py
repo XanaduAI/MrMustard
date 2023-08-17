@@ -22,35 +22,32 @@ math = Math()
 
 class Representation(ABC):
     r"""Abstract base class for the different Representation of quantum states.
-        
-        Args:
-            data (Data)
 
-        Methods:
-            purity
-            norm
-            number_means
-            number_cov
-            number_variances
-            number_stdev
-            probability
+    Args:
+        data (Data)
+
+    Methods:
+        purity
+        norm
+        number_means
+        number_cov
+        number_variances
+        number_stdev
+        probability
     """
 
     def __init__(self, data):
         self.data = Data(data)
-
 
     @abstractproperty
     def purity(self) -> Scalar:
         r"""Purity of the quantum state, defined as :math:`\mathrm{Tr} \rho^2`."""
         # Valid for all representation classes
 
-
     @abstractproperty
     def norm(self) -> float:
         r"""The norm of the state, defined as :math:`` for pure state and :math:`` for mixed state."""
         # Valid for Fock and WaveFunctionQ
-
 
     @abstractproperty
     def number_means(self) -> RealVector:

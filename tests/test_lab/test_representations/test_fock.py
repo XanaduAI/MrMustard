@@ -21,12 +21,10 @@ from mrmustard.lab import State, Coherent
 from mrmustard.physics import fock
 from mrmustard.lab.representations.fock import Fock
 
+
 class TestFockThrowErrors:
     fock = Fock(array=np.random.random((4, 4)))
 
     def test_number_cov_with_error(self):
         with self.assertRaises(NotImplementedError):
             self.fock.number_cov
-
-
-

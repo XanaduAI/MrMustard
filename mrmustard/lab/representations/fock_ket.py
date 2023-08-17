@@ -27,6 +27,7 @@ class FockKet(Fock):
         array: the ket vector of the state
         cutoffs: the cutoffs of the ket vector
     """
+
     def __init__(self, array: np.array):
         super().__init__(array=array)
         self.cutoffs = self.data.array.shape

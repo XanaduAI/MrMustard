@@ -36,15 +36,15 @@ def test_norm_of_fock_ket_state(array):
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_means_function_of_fock_ket_state_from_coherent_state(x,y):
-    ket = ket=Coherent(x, y).ket([80])
+def test_number_means_function_of_fock_ket_state_from_coherent_state(x, y):
+    ket = ket = Coherent(x, y).ket([80])
     fockket = FockKet(array=ket)
     expected = x**2 + y**2
     assert np.allclose(fockket.number_means, expected)
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_variance_function_of_fock_ket_state_from_coherent_state(x,y):
+def test_number_variance_function_of_fock_ket_state_from_coherent_state(x, y):
     ket = Coherent(x, y).ket([80])
     fockket = FockKet(array=ket)
     expected = x**2 + y**2
@@ -52,7 +52,7 @@ def test_number_variance_function_of_fock_ket_state_from_coherent_state(x,y):
 
 
 def test_number_variances_function_of_fock_ket_state_from_fock_state():
-    ket = np.array([0,1,0,0,0])
+    ket = np.array([0, 1, 0, 0, 0])
     fockket = FockKet(array=ket)
     expected = 0
     assert np.allclose(fockket.number_variances, expected)

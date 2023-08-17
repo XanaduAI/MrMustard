@@ -36,7 +36,7 @@ def test_norm_of_fock_dm_state():
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_means_function_of_fock_dm_state_from_coherent_state(x,y):
+def test_number_means_function_of_fock_dm_state_from_coherent_state(x, y):
     dm = Coherent(x, y).ket([80]).dm([80])
     fockdm = FockDM(array=dm)
     expected = x**2 + y**2
@@ -44,7 +44,7 @@ def test_number_means_function_of_fock_dm_state_from_coherent_state(x,y):
 
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
-def test_number_means_function_of_fock_dm_state_from_coherent_state(x,y):
+def test_number_means_function_of_fock_dm_state_from_coherent_state(x, y):
     dm = Coherent(x, y).ket([80]).dm([80])
     fockdm = FockDM(array=dm)
     expected = x**2 + y**2

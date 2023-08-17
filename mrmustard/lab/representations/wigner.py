@@ -131,7 +131,6 @@ class Wigner(Representation):
                 - 0.25 * math.eye(N, dtype=CC.dtype)
             )
         return number_cov
-    
 
     @property
     def probability(self):

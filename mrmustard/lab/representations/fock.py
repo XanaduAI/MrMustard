@@ -41,7 +41,6 @@ class Fock(Representation):
         result = [math.sum(m * math.arange(len(m), dtype=m.dtype)) for m in marginals]
         return math.astensor(result)
 
-
     @property
     def number_variances(self) -> Tensor:
         r"""The variance of the number operator in each mode."""
@@ -57,7 +56,6 @@ class Fock(Representation):
             for m in marginals
         ]
         return math.astensor(result)
-
 
     @property
     def number_stdev(self) -> int:

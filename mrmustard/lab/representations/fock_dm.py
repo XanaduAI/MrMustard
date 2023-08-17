@@ -29,6 +29,7 @@ class FockDM(Fock):
         array: the density matrix of the state
         cutoffs: the cutoffs of the density matrix
     """
+
     def __init__(self, array):
         super().__init__(array=array)
         self.cutoffs = self.data.array.shape
