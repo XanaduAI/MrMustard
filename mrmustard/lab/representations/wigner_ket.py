@@ -19,6 +19,7 @@ from mrmustard.math import Math
 
 math = Math()
 from mrmustard import settings
+from thewalrus.symplectic import is_symplectic
 
 
 class WignerKet(Wigner):
@@ -31,6 +32,9 @@ class WignerKet(Wigner):
     """
 
     def __init__(self, symplectic: Matrix, displacement: Vector, coeffs: Scalar = 1.0) -> None:
+        # Check the symplecticity of the matrix
+        if not is_symplectic(symplectic):
+            raise ValueError("The matrix is not symplectic!")
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
 
     @property

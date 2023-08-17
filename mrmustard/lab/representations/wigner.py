@@ -82,6 +82,7 @@ class Wigner(Representation):
             for i in range(means.shape[0])
         ]
 
+    @property
     def number_cov(self, hbar: float = settings.HBAR) -> List[Matrix]:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
 

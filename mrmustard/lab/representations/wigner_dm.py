@@ -32,6 +32,19 @@ class WignerDM(Wigner):
     """
 
     def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
+        r"""Wigner representation of a mixed state is initialized by a covariance matrix, a real mean vector and a coefficient (optinal).
+
+        Args:
+            cov: covariance matrices (real symmetric)
+            mean: means (real)
+            coeffs: coefficients (complex)
+        """
+        # Check the covariance matrices is real symmetric
+        if not all(math.imag(cov) == 0) or not math.transpose(cov) == cov:
+            raise ValueError("The covariance matrix is not real or symmetric!")
+        # Check the mean vector is real
+        if not all(math.imag(means) == 0):
+            raise ValueError("The mean vector is not real!")
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
 
     @property

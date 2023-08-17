@@ -14,18 +14,25 @@
 
 from mrmustard.lab.representations.bargmann import Bargmann
 from mrmustard.typing import Matrix, Scalar, Vector
+from mrmustard.math import Math
+
+math = Math()
 
 
 class BargmannDM(Bargmann):
-    r"""Fock-Bargmann representation of a mixed state.
-
-    Args:
-        A: quadratic coefficients
-        b: linear coefficients
-        c: constants
-    """
+    r"""Fock-Bargmann representation of a mixed state."""
 
     def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
+        r"""Fock-Bargmann representation of a mixed state.
+
+        Args:
+            A: complex symmetric matrix
+            b: complex vector
+            c: constants
+        """
+        # Check the covariance matrices is real symmetric
+        if not math.transpose(A) == A:
+            raise ValueError("The A matrix is symmetric!")
         super().__init__(A=A, b=b, c=c)
 
     @property
