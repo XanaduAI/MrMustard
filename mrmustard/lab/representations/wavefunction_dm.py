@@ -17,19 +17,21 @@ from mrmustard.typing import Scalar, Tensor
 from mrmustard.math import Math
 
 math = Math()
-from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
+from mrmustard.lab.representations.wavefunction import WaveFunction
 
 
-class WaveFunctionQDM(WaveFunctionQ):
-    r"""WavefunctionQ representation of a mixed state.
+class WaveFunctionDM(WaveFunction):
+    r"""Wavefunction representation of a mixed state."""
 
-    Args:
-        qs: q-variable points
-        array: q-Wavefunction values correspoidng qs
-    """
+    def __init__(self, qs: np.array, quadrature_angle: np.float, wavefunction: np.array):
+        r"""The wavefunction representation is initialized through three parameters.
 
-    def __init__(self, qs: np.array, wavefunctionq: np.array):
-        super().__init__(qs=qs, wavefunctionq=wavefunctionq)
+        Args:
+            points: variable points along the basis.
+            quadrature_angle: quadrature angle along different basis.
+            array: the wavefunction values according to each points.
+        """
+        super().__init__(qs=qs, quadrature_angle=quadrature_angle, wavefunction=wavefunction)
 
     @property
     def purity(self) -> Scalar:

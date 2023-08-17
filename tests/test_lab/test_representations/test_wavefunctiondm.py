@@ -19,25 +19,25 @@ from hypothesis import given
 from tests.test_lab.test_states import xy_arrays
 from tests.random import vector
 
-from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
+from mrmustard.lab.representations.wavefunction_dm import WaveFunctionDM
 
 
 @given(array=xy_arrays())
 def test_purity_of_wavefunctionq_ket_state(array):
     qs = vector(array.shape[-1])
-    wfqdm = WaveFunctionQDM(qs=qs, array=array)
-    assert np.allclose(wfqdm.purity, 1.0)
+    wfdm = WaveFunctionDM(qs=qs, quadrature_angle=0, array=array)
+    assert np.allclose(wfdm.purity, 1.0)
 
 
 @given(array=xy_arrays())
 def test_norm_of_wavefunctionq_ket_state(array):
     qs = vector(array.shape[-1])
-    wfqdm = WaveFunctionQDM(qs=qs, array=array)
-    assert np.allclose(wfqdm.norm, np.abs(np.norm(array)))
+    wfdm = WaveFunctionDM(qs=qs, quadrature_angle=0, array=array)
+    assert np.allclose(wfdm.norm, np.abs(np.norm(array)))
 
 
 @given(array=xy_arrays())
 def test_probabilities_of_wavefunctionq_ket_state(array):
     qs = vector(array.shape[-1])
-    wfqdm = WaveFunctionQDM(qs=qs, array=array)
-    assert np.allclose(wfqdm.probability, np.abs(array))
+    wfdm = WaveFunctionDM(qs=qs, quadrature_angle=0, array=array)
+    assert np.allclose(wfdm.probability, np.abs(array))

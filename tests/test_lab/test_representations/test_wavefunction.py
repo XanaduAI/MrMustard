@@ -15,20 +15,20 @@
 import numpy as np
 import pytest
 
-from mrmustard.lab.representations.wavefunctionq import WaveFunctionQ
+from mrmustard.lab.representations.wavefunction import WaveFunction
 
 
-class TestWaveFunctionQThrowErrors:
-    wfq = WaveFunctionQ(qs=np.random(3), array=np.random.random((3, 3)))
+class TestWaveFunctionThrowErrors:
+    wf = WaveFunction(qs=np.random(3), quadrature_angle=0, array=np.random.random((3, 3)))
 
     def test_number_means_with_error(self):
         with self.assertRaises(NotImplementedError):
-            self.wfq.number_means
+            self.wf.number_means
 
     def test_number_cov_with_error(self):
         with self.assertRaises(NotImplementedError):
-            self.wfq.number_cov
+            self.wf.number_cov
 
     def test_number_variance_with_error(self):
         with self.assertRaises(NotImplementedError):
-            self.wfq.number_variances
+            self.wf.number_variances

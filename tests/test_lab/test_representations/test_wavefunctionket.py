@@ -19,25 +19,25 @@ from hypothesis import given
 from tests.test_lab.test_states import xy_arrays
 from tests.random import vector
 
-from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
+from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
 
 
 @given(array=xy_arrays())
 def test_purity_of_wavefunctionq_ket_state(array):
     qs = vector(array.shape[-1])
-    wfqket = WaveFunctionQKet(qs=qs, array=array)
-    assert np.allclose(wfqket.purity, 1.0)
+    wfket = WaveFunctionKet(qs=qs, quadrature_angle=0, array=array)
+    assert np.allclose(wfket.purity, 1.0)
 
 
 @given(array=xy_arrays())
 def test_norm_of_wavefunctionq_ket_state(array):
     qs = vector(array.shape[-1])
-    wfqket = WaveFunctionQKet(qs=qs, array=array)
-    assert np.allclose(wfqket.norm, np.abs(np.norm(array)))
+    wfket = WaveFunctionKet(qs=qs, quadrature_angle=0, array=array)
+    assert np.allclose(wfket.norm, np.abs(np.norm(array)))
 
 
 @given(array=xy_arrays())
 def test_probabilities_of_wavefunctionq_ket_state(array):
     qs = vector(array.shape[-1])
-    wfqket = WaveFunctionQKet(qs=qs, array=array)
-    assert np.allclose(wfqket.probability, np.abs(array))
+    wfket = WaveFunctionKet(qs=qs, array=array)
+    assert np.allclose(wfket.probability, np.abs(array))

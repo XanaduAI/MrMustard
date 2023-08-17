@@ -22,39 +22,59 @@ math = Math()
 
 class Representation(ABC):
     r"""Abstract base class for the different Representation of quantum states.
+        Each representation class has a data attribute to store all the information related to this state in this representation.
+        Each representation class has several methods to calculate the state properties.
 
-    Args:
-        data (Data)
+        Attributes:
+            data (Data): the state information in different Data class.
 
-    Methods:
-        purity
-        norm
-        number_means
-        number_cov
-        number_variances
-        number_stdev
-        probability
+        Methods:
+            purity: the purity of the state.
+            norm: the norm of the state.
+            number_means: :math: mean vector of the photon number.
+            number_cov: covariance matrix of the photon number.
+            number_variances: math:`<\bar{n}^2> - <\bar{n}>^2` variances of the photon number.
+            probability: fock probability or wavefunction probability.
     """
 
     def __init__(self, data):
+        r"""Representation class is initialized by the data related to the state.
+
+            Args:
+            data (Data): the information related to the representation.
+        
+        """
         self.data = Data(data)
 
     @abstractproperty
     def purity(self) -> Scalar:
-        r"""Purity of the quantum state, defined as :math:`\mathrm{Tr} \rho^2`."""
+        r"""Returns the purity of the quantum state, defined as :math:`\mathrm{Tr} \rho^2`."""
         # Valid for all representation classes
 
     @abstractproperty
     def norm(self) -> float:
-        r"""The norm of the state, defined as :math:`` for pure state and :math:`` for mixed state."""
+        r"""Returns the norm of the state, defined as :math:`` for pure state and :math:`` for mixed state."""
         # Valid for Fock and WaveFunctionQ
 
     @abstractproperty
     def number_means(self) -> RealVector:
-        r"""The photon number means vector."""
+        r"""Returns the photon number means vector. """
         # Valid for Fock and Wigner
+
+    
+    @abstractproperty
+    def number_cov(self) -> RealVector:
+        r"""Returns the photon number covariance matrix."""
+        # Valid for Wigner
+
+    
+    @abstractproperty
+    def number_variances(self) -> RealVector:
+        r"""Returns the variance of the number operator."""
+        # Valid for Fock
+
 
     @abstractproperty
     def probability(self) -> Tensor:
-        r"""Probability tensor, either extracted from a DM or from a Ket"""
+        r"""Returns the probability tensor, either extracted from a ket state or density matrix."""
         # Valid for Fock and WaveFucntionQ

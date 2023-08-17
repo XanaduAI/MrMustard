@@ -18,16 +18,26 @@ from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.data.wavefunctionarray_data import WavefunctionArrayData
 
 
-class WaveFunctionQ(Representation):
-    r"""WavefunctionQ representation of a state.
+class WaveFunction(Representation):
+    r"""Wavefunction representation of a state.
 
-    Args:
-        qs: q-variable points
-        array: q-Wavefunction values correspoidng qs
+        The wavefunction representation is to describe the state in the quadrature basis.
+        The quandrature angle is used to characterize the rotation of the basis inside the phase space.
+        For example, if the angle is 0, we say it is the wavefunction in the position basis.
+        If the angle is 90 degree, we say it is the wavefunction in the momentum basis.
+
     """
 
-    def __init__(self, qs: np.array, wavefunctionq: np.array) -> None:
-        self.data = WavefunctionArrayData(qs=qs, array=wavefunctionq)
+    def __init__(self, points: np.array, quadrature_angle: np.float, wavefunction: np.array) -> None:
+        r"""The wavefunction representation is initialized through three parameters.
+
+        Args:
+            points: variable points along the basis.
+            quadrature_angle: quadrature angle along different basis.
+            array: the wavefunction values according to each points.
+        """
+        self.data = WavefunctionArrayData(qs=points, array=wavefunction)
+        self.quadrature_angle = quadrature_angle
 
     @property
     def norm(self) -> float:

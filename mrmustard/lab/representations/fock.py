@@ -22,13 +22,18 @@ math = Math()
 
 
 class Fock(Representation):
-    r"""Fock representation of a state.
+    r"""Fock representation of a state. 
+        
+        The Fock representation is to describe the state in the photon number basis or Fock basis.
 
-    Args:
-        array: the state tensor
     """
 
     def __init__(self, array: np.array) -> None:
+        r"""The Fock representation is initialized through one parameter.
+
+        Args:
+            array: the fock tensor.
+        """
         self.data = ArrayData(array=array)
 
     @property
@@ -43,7 +48,7 @@ class Fock(Representation):
 
     @property
     def number_variances(self) -> Tensor:
-        r"""The variance of the number operator in each mode."""
+        r"""Returns the variance of the number operator in each mode."""
         probs = self.probability()
         modes = list(range(len(probs.shape)))
         marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
@@ -56,9 +61,3 @@ class Fock(Representation):
             for m in marginals
         ]
         return math.astensor(result)
-
-    @property
-    def number_stdev(self) -> int:
-        r"""The square root of the photon number variances (standard deviation)
-        in each mode."""
-        return math.sqrt(self.number_variances())
