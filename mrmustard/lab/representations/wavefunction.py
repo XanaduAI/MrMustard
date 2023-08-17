@@ -21,14 +21,16 @@ from mrmustard.lab.representations.data.wavefunctionarray_data import Wavefuncti
 class WaveFunction(Representation):
     r"""Wavefunction representation of a state.
 
-        The wavefunction representation is to describe the state in the quadrature basis.
-        The quandrature angle is used to characterize the rotation of the basis inside the phase space.
-        For example, if the angle is 0, we say it is the wavefunction in the position basis.
-        If the angle is 90 degree, we say it is the wavefunction in the momentum basis.
+    The wavefunction representation is to describe the state in the quadrature basis.
+    The quandrature angle is used to characterize the rotation of the basis inside the phase space.
+    For example, if the angle is 0, we say it is the wavefunction in the position basis.
+    If the angle is 90 degree, we say it is the wavefunction in the momentum basis.
 
     """
 
-    def __init__(self, points: np.array, quadrature_angle: np.float, wavefunction: np.array) -> None:
+    def __init__(
+        self, points: np.array, quadrature_angle: np.float, wavefunction: np.array
+    ) -> None:
         r"""The wavefunction representation is initialized through three parameters.
 
         Args:

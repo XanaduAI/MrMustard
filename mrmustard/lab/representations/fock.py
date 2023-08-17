@@ -22,9 +22,9 @@ math = Math()
 
 
 class Fock(Representation):
-    r"""Fock representation of a state. 
-        
-        The Fock representation is to describe the state in the photon number basis or Fock basis.
+    r"""Fock representation of a state.
+
+    The Fock representation is to describe the state in the photon number basis or Fock basis.
 
     """
 
