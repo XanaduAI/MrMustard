@@ -40,9 +40,8 @@ class Fock(Representation):
     def number_means(self) -> Tensor:
         r"""Returns the photon number means vector."""
         probs = self.probability()
-        nb_modes = range(len(probs.shape))
-        modes = list(nb_modes)  # NOTE : there is probably a more optimized way of doing this
-        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in nb_modes]
+        modes = np.arange(len(probs.shape))
+        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in modes]
         result = [math.sum(m * math.arange(len(m), dtype=m.dtype)) for m in marginals]
         return math.astensor(result)
 
