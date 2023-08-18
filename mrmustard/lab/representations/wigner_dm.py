@@ -48,7 +48,4 @@ class WignerDM(Wigner):
 
     @property
     def purity(self) -> Optional[float]:
-        purity_list = []
-        for i in range(self.data.cov[-1]):
-            purity_list.append(1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov[i, :])))
-        return purity_list
+        return [1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov[i, :])) for i in range(self.data.cov[0])]
