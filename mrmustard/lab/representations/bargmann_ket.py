@@ -37,5 +37,5 @@ class BargmannKet(Bargmann):
         self.data = QPolyData(A=A, b=b, c=c)
 
     @property
-    def purity(self) -> Scalar:
+    def purity(self) -> float:
         return 1.0
