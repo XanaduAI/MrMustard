@@ -18,7 +18,6 @@ from mrmustard.lab.representations.fock import Fock
 from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.typing import Tensor
 
-
 math = Math()
 
 
