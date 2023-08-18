@@ -39,7 +39,7 @@ class Wigner(Representation):
         Args:
             cov: the Wigner covariance matrix
             means: the Wigner means vector
-            hbar: the value of the Planck constant
+            hbar: the value of the reduced Planck constant
 
         Returns:
             Vector: the photon number means vector
@@ -80,7 +80,7 @@ class Wigner(Representation):
         Args:
             cov: the Wigner covariance matrix
             means: the Wigner means vector
-            hbar: the value of the Planck constant
+            hbar: the value of the reduced Planck constant
 
         Returns:
             Matrix: the photon number covariance matrix

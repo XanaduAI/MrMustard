@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from typing import Optional
+import numpy as np
 from mrmustard.math import Math
 from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.lab.representations.data.gaussian_data import GaussianData
@@ -25,18 +26,21 @@ class WignerDM(Wigner):
     r"""The WignerDM representation is to characterize the mixed Gaussian state with its wigner quasiprobabilistic distribution in phase space,
     which is a Gaussian function. This Gaussian function is characterized by a mean vector and a covariance matrix.
 
-
     Args:
-        cov: the covaraince matrix
-        means: the means vector
-        coeffs: coefficients of the state
+        cov (Optional[Matrix]): covariance matrices and the first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
+        means (Optional[Vector]): means vectors and the first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
+        coeffs (Optional[Scalar]): coefficients of the state and the length of is is the batch dimensionthe first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
 
     """
 
-    def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
+    def __init__(
+        self, cov: Optional[Matrix], means: Optional[Vector], coeffs: Optional[Scalar] = 1.0
+    ) -> None:
         # Check the covariance matrices is real symmetric
-        if not all(math.imag(cov) == 0) or not math.transpose(cov) == cov:
-            raise ValueError("The covariance matrix is not real or symmetric!")
+        if not all(math.imag(cov) == 0):
+            raise ValueError("The covariance matrix is not real!")
+        if not np.allclose(math.transpose(cov), cov):
+            raise ValueError("The covariance matrix is not symmetric!")
         # Check the mean vector is real
         if not all(math.imag(means) == 0):
             raise ValueError("The mean vector is not real!")

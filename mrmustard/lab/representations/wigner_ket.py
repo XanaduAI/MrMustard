@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 from thewalrus.symplectic import is_symplectic
 from strawberryfields.decompositions import williamson
 import numpy as np
@@ -32,32 +33,40 @@ class WignerKet(Wigner):
     covaraince matrix can be obtained from its symplectic matrix :math:`\frac{\hbar}{2}SS^T`.
 
     Args:
-        symplectic: symplectic matrix
-        displacement: dispalcement vector
-        coeffs: coefficients of the state
+        symplectic (Optional[Matrix]): symplectic matrices and the first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
+        displacement (Optional[Vector]): dispalcement vectors and the first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
+        coeffs (Optional[Scalar]): coefficients of the state and the length of is is the batch dimensionthe first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
 
     Properties:
         cov: the covariance matrix calculating from its symplectic matrix.
         means: the same as the displacement vector.
     """
 
-    def __init__(self, symplectic: Matrix, displacement: Vector, coeffs: Scalar = 1.0) -> None:
+    def __init__(
+        self,
+        symplectic: Optional[Matrix],
+        displacement: Optional[Vector],
+        coeffs: Optional[Scalar] = 1.0,
+    ) -> None:
         # Check the symplecticity of the matrix
-        if not is_symplectic(symplectic):
+        if not all([is_symplectic(symplectic[i]) for i in range(symplectic[0])]):
             raise ValueError("The matrix is not symplectic!")
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
 
     @property
-    def cov(self):
+    def cov(self) -> Optional[Matrix]:
         "Returns the covariance matrix of the state."
-        return (
-            settings.HBAR
-            / 2
-            * math.matmul(self.data.symplectic, math.transpose(self.data.symplectic))
-        )
+        return [
+            (
+                settings.HBAR
+                / 2
+                * math.matmul(self.data.symplectic[i], math.transpose(self.data.symplectic[i]))
+            )
+            for i in self.data.symplectic.shape[0]
+        ]
 
     @property
-    def means(self):
+    def means(self) -> Optional[Vector]:
         "Returns the means vector of the state."
         return self.data.displacement
 
