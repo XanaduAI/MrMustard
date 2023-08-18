@@ -11,38 +11,38 @@
 # WITHOUT WARRAnTIES OR COnDITIOnS OF AnY KInD, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from typing import Optional
 from mrmustard.math import Math
 from mrmustard.lab.representations.representation import Representation
-from mrmustard.lab.representations.data.matvec_data import MatVecData
-from mrmustard.typing import Scalar, Matrix, Vector
-from typing import List
+from mrmustard.typing import Matrix, Vector
 from mrmustard import settings
-
 
 math = Math()
 
 
 class Wigner(Representation):
-    r"""Wigner representation of a state.
+    r"""Wigner representation of a Gaussian state.
 
-    Args:
-        mat: a matrix
-        vec: a vector
-        coeffs: coefficients
+    The Wigner representation is to characterize the Gaussian state with its wigner quasiprobabilistic distribution in phase space,
+    which is a Gaussian function.
     """
-
-    def __init__(self, mat: Matrix, vec: Vector, coeffs: Scalar = 1.0) -> None:
-        self.data = MatVecData(mat=mat, vec=vec, coeffs=coeffs)
 
     @property
     def norm(self):
-        # NOTE: be able to get the norm from other representation
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
 
-    @property
-    def number_means(self, hbar: float = settings.HBAR) -> list[Vector]:
+    def number_means(self, hbar: float = settings.HBAR) -> Optional[Vector]:
         r"""Returns the photon number means vector given a Wigner covariance matrix and a means vector.
+            
+        Args:
+            cov: the Wigner covariance matrix
+            means: the Wigner means vector
+            hbar: the value of the Planck constant
+
+        Returns:
+            Vector: the photon number means vector
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number means is :math:`m`.
         
@@ -58,14 +58,6 @@ class Wigner(Representation):
             m_i = A_ii + |\alpha_i|^2 - \frac{1}{2}.
         
         Reference: PHYSICAL REVIEW A 99, 023817 (2019)
-            
-        Args:
-            cov: the Wigner covariance matrix
-            means: the Wigner means vector
-            hbar: the value of the Planck constant
-
-        Returns:
-            Vector: the photon number means vector
         """
         cov = self.cov
         means = self.means
@@ -82,9 +74,16 @@ class Wigner(Representation):
             for i in range(means.shape[0])
         ]
 
-    @property
-    def number_cov(self, hbar: float = settings.HBAR) -> List[Matrix]:
+    def number_cov(self, hbar: float = settings.HBAR) -> Optional[Matrix]:
         r"""Returns the photon number covariance matrix given a Wigner covariance matrix and a means vector.
+
+        Args:
+            cov: the Wigner covariance matrix
+            means: the Wigner means vector
+            hbar: the value of the Planck constant
+
+        Returns:
+            Matrix: the photon number covariance matrix
 
         Suppose we have the covariance matrix :math:`V` and a means vector :math:`r`, the number covariance matrix is :math:`K`.
         
@@ -102,14 +101,6 @@ class Wigner(Representation):
         :math:`\circ` is the Hadamard product of matrices.
         
         Reference: PHYSICAL REVIEW A 99, 023817 (2019)
-
-        Args:
-            cov: the Wigner covariance matrix
-            means: the Wigner means vector
-            hbar: the value of the Planck constant
-
-        Returns:
-            Matrix: the photon number covariance matrix
         """
         cov = self.cov
         means = self.means
@@ -133,6 +124,7 @@ class Wigner(Representation):
             )
         return number_cov
 
-    @property
     def probability(self):
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )

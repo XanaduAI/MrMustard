@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import numpy as np
 from mrmustard.lab.representations.bargmann import Bargmann
+from mrmustard.lab.representations.data.qpoly_data import QPolyData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.math import Math
 
@@ -20,23 +21,17 @@ math = Math()
 
 
 class BargmannDM(Bargmann):
-    r"""Fock-Bargmann representation of a mixed state."""
+    r"""BargmannDM representation is the Bargmann representation of a mixed state.
+    It is defined as :math:`\langle \alpha||\rho||\beta\rangle = e^{-1/2|\alpha|^2}e^{-1/2|\beta|^2}\langle \alpha|\rho|\beta\rangle = c\exp\left(\frac12 x^T A x + b^T x\right)`.
 
-    def __init__(self, A: Matrix, b: Vector, c: Scalar) -> None:
-        r"""Fock-Bargmann representation of a mixed state.
+    Args:
+        A: complex symmetric matrix
+        b: complex vector
+        c: constants
+    """
 
-        Args:
-            A: complex symmetric matrix
-            b: complex vector
-            c: constants
-        """
+    def __init__(self, A: Matrix, b: Vector, c: Scalar):
         # Check the covariance matrices is real symmetric
-        if not math.transpose(A) == A:
+        if not np.allclose(math.transpose(A), A):
             raise ValueError("The A matrix is symmetric!")
-        super().__init__(A=A, b=b, c=c)
-
-    @property
-    def purity(self):
-        raise NotImplementedError(
-            f"This property is not available in {self.__class__.__qualname__} representation"
-        )
+        self.data = QPolyData(A=A, b=b, c=c)

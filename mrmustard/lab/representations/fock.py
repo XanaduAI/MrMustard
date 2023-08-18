@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-from mrmustard.math import Math
+
 from mrmustard.lab.representations.representation import Representation
-from mrmustard.lab.representations.data.array_data import ArrayData
-from mrmustard.typing import Tensor, RealMatrix
+from mrmustard.typing import Vector, Matrix
+from mrmustard.math import Math
 
 math = Math()
 
@@ -28,26 +27,14 @@ class Fock(Representation):
 
     """
 
-    def __init__(self, array: np.array) -> None:
-        r"""The Fock representation is initialized through one parameter.
-
-        Args:
-            array: the fock tensor.
-        """
-        self.data = ArrayData(array=array)
-
-    @property
-    def number_means(self) -> Tensor:
-        r"""Returns the photon number means vector."""
+    def number_means(self) -> Vector:
         probs = self.probability()
-        modes = np.arange(len(probs.shape))
-        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in modes]
+        modes = list(range(len(probs.shape)))
+        marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
         result = [math.sum(m * math.arange(len(m), dtype=m.dtype)) for m in marginals]
         return math.astensor(result)
 
-    @property
-    def number_variances(self) -> Tensor:
-        r"""Returns the variance of the number operator in each mode."""
+    def number_variances(self) -> Vector:
         probs = self.probability()
         modes = list(range(len(probs.shape)))
         marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
@@ -60,3 +47,8 @@ class Fock(Representation):
             for m in marginals
         ]
         return math.astensor(result)
+
+    def number_cov(self) -> Matrix:
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )

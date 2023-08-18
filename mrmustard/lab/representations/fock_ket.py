@@ -15,31 +15,35 @@
 import numpy as np
 from mrmustard.math import Math
 from mrmustard.lab.representations.fock import Fock
-from mrmustard.typing import Tensor
+from mrmustard.lab.representations.data.array_data import ArrayData
+from mrmustard.typing import RealVector, Tensor
 
 math = Math()
 
 
 class FockKet(Fock):
-    r"""Fock representation of a ket state.
+    r"""
+    The Fock ket representation is to describe the pure state in the photon number basis or Fock basis :math:`\langle n|\psi\rangle`.
 
     Args:
-        array: the ket vector of the state
-        cutoffs: the cutoffs of the ket vector
+        data: the Data class instance to store the fock tensor of the state.
     """
 
     def __init__(self, array: np.array):
-        super().__init__(array=array)
-        self.cutoffs = self.data.array.shape
+        # Check it is a physical state: the norm is from 0 to 1
+        if not math.norm(array) > 0 and math.norm(array) <= 1:
+            raise ValueError("The array does not represent a physical state.")
+        self.data = ArrayData(array=array)
 
     @property
     def purity(self) -> float:
+        r"""The purity of the pure state is 1.0."""
         return 1.0
 
     @property
     def norm(self) -> float:
+        r"""The norm of the pure state (:math:`|amp|`)."""
         return math.abs(math.norm(self.data.array))
 
-    @property
     def probability(self) -> Tensor:
-        return math.abs(self.data.array)  # TODO: cutoffs
+        return math.abs(self.data.array)

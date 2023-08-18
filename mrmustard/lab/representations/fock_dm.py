@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import numpy as np
-
 from mrmustard.math import Math
 from mrmustard.lab.representations.fock import Fock
+from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.typing import Tensor
 
 
@@ -23,19 +23,22 @@ math = Math()
 
 
 class FockDM(Fock):
-    r"""Fock representation of a mixed state.
+    r"""
+    The Fock ket representation is to describe the mixed state in the photon number basis or Fock basis :math:`\langle m|\rho|n\rangle`.
 
     Args:
-        array: the density matrix of the state
-        cutoffs: the cutoffs of the density matrix
+        data: the Data class instance to store the fock tensor of the state.
     """
 
     def __init__(self, array):
-        super().__init__(array=array)
-        self.cutoffs = self.data.array.shape
+        # Check it is a physical state: the norm is from 0 to 1
+        if not math.norm(array) > 0 and math.norm(array) <= 1:
+            raise ValueError("The array does not represent a physical state.")
+        self.data = ArrayData(array=array)
 
     @property
     def purity(self) -> float:
+        r"""The purity of the pure state is :math:`Tr(\rho^2)`."""
         dm = self.data.array
         cutoffs = dm.shape[: len(dm.shape) // 2]
         d = int(np.prod(cutoffs))  # combined cutoffs in all modes
@@ -45,9 +48,8 @@ class FockDM(Fock):
 
     @property
     def norm(self) -> float:
-        r"""The norm. (:math:`|amp|^2` for ``dm``)."""
+        r"""The norm of the mixed state (:math:`|amp|^2`)."""
         return math.sum(math.all_diagonals(self.data.array, real=True))
 
-    @property
     def probability(self) -> Tensor:
-        return math.all_diagonals(self.data.array, real=True)  # TODO: cutoffs adjust
+        return math.all_diagonals(self.data.array, real=True)

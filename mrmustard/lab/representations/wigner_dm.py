@@ -11,34 +11,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from typing import Optional
 from mrmustard.math import Math
 from mrmustard.lab.representations.wigner import Wigner
 from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Vector, Scalar
-from typing import List
 from mrmustard import settings
 
 math = Math()
 
 
 class WignerDM(Wigner):
-    r"""Wigner representation of a mixed state.
+    r"""The WignerDM representation is to characterize the mixed Gaussian state with its wigner quasiprobabilistic distribution in phase space,
+    which is a Gaussian function. This Gaussian function is characterized by a mean vector and a covariance matrix.
+
 
     Args:
-        cov: covariance matrices (real symmetric)
-        mean: means (real)
-        coeffs: coefficients (complex)
+        cov: the covaraince matrix
+        means: the means vector
+        coeffs: coefficients of the state
+
     """
 
     def __init__(self, cov: Matrix, means: Vector, coeffs: Scalar = 1.0) -> None:
-        r"""Wigner representation of a mixed state is initialized by a covariance matrix, a real mean vector and a coefficient (optinal).
-
-        Args:
-            cov: covariance matrices (real symmetric)
-            mean: means (real)
-            coeffs: coefficients (complex)
-        """
         # Check the covariance matrices is real symmetric
         if not all(math.imag(cov) == 0) or not math.transpose(cov) == cov:
             raise ValueError("The covariance matrix is not real or symmetric!")
@@ -48,15 +43,7 @@ class WignerDM(Wigner):
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
 
     @property
-    def cov(self):
-        return self.data.cov
-
-    @property
-    def means(self):
-        return self.data.means
-
-    @property
-    def purity(self) -> List[float]:
+    def purity(self) -> Optional[float]:
         purity_list = []
         for i in range(self.data.cov[-1]):
             purity_list.append(1 / math.sqrt(math.det((2 / settings.HBAR) * self.data.cov[i, :])))
