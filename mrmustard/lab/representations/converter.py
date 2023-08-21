@@ -33,15 +33,15 @@ from mrmustard.lab.representations.wigner_dm import WignerDM
 
 math = Math()
 
-class Converter():
 
+class Converter:
     def __init__(self) -> None:
         r"""
         Class for an object allowing conversion between a given source representation and a desired
           destination one. It relies on the representation transition graph which we detail below.
-        
-        The transition graph describes transitions between representations. Nodes are the names 
-        -as strings- of the Representation object. Edges are functions corresponding to the 
+
+        The transition graph describes transitions between representations. Nodes are the names
+        -as strings- of the Representation object. Edges are functions corresponding to the
         transitions between two Representation objects
         Note that this graph is:
             - Finite
@@ -67,7 +67,6 @@ class Converter():
         wq_DM = "WaveFunctionQDM"
         w_DM = "WignerDM"
 
-
         ### DEFINE EDGES - CONNEXIONS
 
         # Ket component of the graph
@@ -79,7 +78,6 @@ class Converter():
         w2b_DM = (w_DM, b_DM)
         w2f_DM = (w_DM, f_DM)
         f2wq_DM = (f_DM, wq_DM)
-
 
         ### DEFINE EDGE LABELS - FORMULAS
 
@@ -93,7 +91,6 @@ class Converter():
         f_w2f_DM = self._wignerdm_to_fockdm
         f_f2wq_DM = self._fockdm_to_wavefunctionqdm
 
-
         ### DEFINE GRAPH
 
         edges = [w2b_K, w2f_K, f2wq_K, w2b_DM, w2f_DM, f2wq_DM]
@@ -104,44 +101,41 @@ class Converter():
             f2wq_K: {"f": f_f2wq_K},
             w2b_DM: {"f": f_w2b_DM},
             w2f_DM: {"f": f_w2f_DM},
-            f2wq_DM: {"f": f_f2wq_DM}
+            f2wq_DM: {"f": f_f2wq_DM},
         }
 
         self.g = nx.DiGraph()
-        
+
         self.g.add_edges_from(edges)
 
         nx.set_edge_attributes(self.g, transition_formulas)
-        
 
-
-    def _find_target_node_name(self, source:str, destination:str) -> str:
-        r"""" Given source and destination names, returns the name of the target node in the graph.
+    def _find_target_node_name(self, source: str, destination: str) -> str:
+        r""" " Given source and destination names, returns the name of the target node in the graph.
 
         Args:
-            source:         the class name of the source Representation, containing the Ket/DM 
+            source:         the class name of the source Representation, containing the Ket/DM
                             suffix
             destination:    the name of the target Representation without the 'Ket'/'DM' suffix
 
         Raises:
-            ValueError:     if the source name doesn't contain the desired 'Ket' or "DM' suffix   
+            ValueError:     if the source name doesn't contain the desired 'Ket' or "DM' suffix
 
         Returns:
-            The string of the target representation concatenated with either 'Ket' or 'DM' 
+            The string of the target representation concatenated with either 'Ket' or 'DM'
             depending on the source.
         """
-        #suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
-    
-        if source.endswith('Ket'):
-            return destination + 'Ket'
-        elif source.endswith('DM'):
-            return destination + 'DM'
+        # suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
+
+        if source.endswith("Ket"):
+            return destination + "Ket"
+        elif source.endswith("DM"):
+            return destination + "DM"
         else:
             raise ValueError("Invalid input: source name must contain 'Ket' or 'DM'.")
-  
 
-    def convert(self, source:Representation, destination:str, **kwargs) -> Representation:
-        r""" Converts from a source Representation to target Representation.
+    def convert(self, source: Representation, destination: str, **kwargs) -> Representation:
+        r"""Converts from a source Representation to target Representation.
 
         .. code-block::
             # assuming we have some State object s
@@ -150,11 +144,11 @@ class Converter():
 
         Args:
             source:         the state which representation must be transformed
-            destination:    the name of the target prepresentation, this name must NOT include 
+            destination:    the name of the target prepresentation, this name must NOT include
                             'Ket'/'DM'
 
         Raises:
-            ValueError:     if the destination or the source names are not supported, aka either 
+            ValueError:     if the destination or the source names are not supported, aka either
                             not in the graph or the source contains neither 'Ket' nor 'DM'.
 
         Returns:
@@ -166,40 +160,37 @@ class Converter():
             f = self.g[s_name][d_name]["f"]
 
             if s_name == "WignerKet" and d_name == "FockKet":
-                max_prob = kwargs.get('max_prob') if kwargs.get('max_prob') else 1.0
-                max_photon = kwargs.get('max_photon') if kwargs.get('max_photon') else None
-                cutoffs = kwargs.get('cutoffs') if kwargs.get('cutoffs') else None
+                max_prob = kwargs.get("max_prob") if kwargs.get("max_prob") else 1.0
+                max_photon = kwargs.get("max_photon") if kwargs.get("max_photon") else None
+                cutoffs = kwargs.get("cutoffs") if kwargs.get("cutoffs") else None
                 return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
             elif s_name == "WignerDM" and d_name == "FockDM":
-                cutoffs = kwargs.get('cutoffs') if kwargs.get('cutoffs') else None
+                cutoffs = kwargs.get("cutoffs") if kwargs.get("cutoffs") else None
                 return f(source, cutoffs=cutoffs)
             elif d_name == "WaveFunctionQKet" or d_name == "WaveFunctionQDM":
-                qs = kwargs.get('qs')
+                qs = kwargs.get("qs")
                 return f(source, qs=qs)
             else:
                 return f(source)
-            
-        except (ValueError, KeyError) as e:
-            raise ValueError(f"Either {s_name} or {destination} is not a valid representation name"
-                             ) from e
-        
-            
-    def shortest_path(self, source:Representation, destination:Representation):
-        raise NotImplementedError
 
+        except (ValueError, KeyError) as e:
+            raise ValueError(
+                f"Either {s_name} or {destination} is not a valid representation name"
+            ) from e
+
+    def shortest_path(self, source: Representation, destination: Representation):
+        raise NotImplementedError
 
     def add_edge(self):
         raise NotImplementedError
 
-
     def show(self) -> None:
         raise NotImplementedError
-    
 
     ########################################################################
     ###                    From Wigner to Husimi                         ###
     ########################################################################
-    def _pq_to_aadag(self, X:Union[Matrix, Vector]) -> Union[Matrix, Vector]:
+    def _pq_to_aadag(self, X: Union[Matrix, Vector]) -> Union[Matrix, Vector]:
         r"""
         Maps a matrix or vector from the q/p basis to the a/adagger basis
 
@@ -215,13 +206,12 @@ class Converter():
 
         if X.ndim == 2:
             return math.matmul(math.matmul(R, X / settings.HBAR), math.dagger(R))
-        
+
         elif X.ndim == 1:
             return math.matvec(R, X / math.sqrt(settings.HBAR, dtype=X.dtype))
-        
+
         else:
             raise ValueError("Input to complexify must be a matrix or vector")
-
 
     def _wigner_to_husimi(self, cov: Matrix, means: Vector) -> Tuple[Matrix, Vector]:
         r"""
@@ -242,13 +232,11 @@ class Converter():
 
         return Q, beta
 
-
     ########################################################################
     ###                    From Wigner to Bargmann                       ###
     ########################################################################
 
-
-    def _cayley(self, X:Tensor, c:float) -> Tensor:
+    def _cayley(self, X: Tensor, c: float) -> Tensor:
         r"""
         Returns the Cayley transformation of a matrix:
         :math:`cay(X) = (X - cI)(X + cI)^{-1}`
@@ -263,15 +251,14 @@ class Converter():
 
         I = math.eye(X.shape[0], dtype=X.dtype)
 
-        return math.solve(X + c * I, X - c * I) # TODO : solve the argument nb issue
-
+        return math.solve(X + c * I, X - c * I)  # TODO : solve the argument nb issue
 
     def _wignerdm_to_bargmanndm(self, wigner_dm: WignerDM) -> BargmannDM:
         r"""
-        Converts the wigner representation in terms of covariance matrix and mean vector into the 
-        Bargmann `A,B,C` triple for a density matrix (i.e. for `M` modes, `A` has shape `2M x 2M` 
+        Converts the wigner representation in terms of covariance matrix and mean vector into the
+        Bargmann `A,B,C` triple for a density matrix (i.e. for `M` modes, `A` has shape `2M x 2M`
         and `B` has shape `2M`).
-        The order of the rows/columns of A and B corresponds to a density matrix with the usual 
+        The order of the rows/columns of A and B corresponds to a density matrix with the usual
         ordering of the indices.
 
         Note that here A and B are defined with respect to the literature.
@@ -283,11 +270,9 @@ class Converter():
             The BargmannDM representation of the input state
 
         """
-        N = wigner_dm.data.cov.shape[-1]//2
+        N = wigner_dm.data.cov.shape[-1] // 2
 
-        A = math.matmul(
-            math.Xmat(N), self._cayley(self._pq_to_aadag(wigner_dm.data.cov), c=0.5)
-        )
+        A = math.matmul(math.Xmat(N), self._cayley(self._pq_to_aadag(wigner_dm.data.cov), c=0.5))
         Q, beta = self._wigner_to_husimi(wigner_dm.data.cov, wigner_dm.data.means)
         b = math.solve(Q, beta)
         B = math.conj(b)
@@ -295,11 +280,10 @@ class Converter():
 
         return BargmannDM(A=A, b=B, c=C)
 
-
     def _wignerket_to_bargmannket(self, wigner_ket: WignerKet) -> BargmannKet:
         r"""
-        Converts the Wigner representation in terms of covariance matrix and mean vector into the 
-        Bargmann A,B,C triple for a Hilbert vector (i.e. for M modes, A has shape M x M and B has 
+        Converts the Wigner representation in terms of covariance matrix and mean vector into the
+        Bargmann A,B,C triple for a Hilbert vector (i.e. for M modes, A has shape M x M and B has
         shape M).
 
         Args:
@@ -314,18 +298,17 @@ class Converter():
         means = wigner_ket.means
         wigner_dm = WignerDM(cov=cov, means=means)
         bargmann_dm = self._wignerdm_to_bargmanndm(wigner_dm=wigner_dm)
-        
-        return BargmannKet(bargmann_dm.data.A[N:, N:], 
-                           bargmann_dm.data.b[N:], 
-                           math.sqrt(bargmann_dm.data.c))
-    
 
+        return BargmannKet(
+            bargmann_dm.data.A[N:, N:], bargmann_dm.data.b[N:], math.sqrt(bargmann_dm.data.c)
+        )
 
     ########################################################################
     ###                     From Wigner to Fock                         ###
     ########################################################################
 
-    def _wignerket_to_fockket(self,
+    def _wignerket_to_fockket(
+        self,
         wignerket: WignerKet,
         max_prob: float = 1.0,
         max_photon: Optional[int] = None,
@@ -335,11 +318,11 @@ class Converter():
         Returns the Fock representation of a Gaussian state in ket form.
 
         Args:
-            wignerket (WignerKet)       : the WignerKet object. 
+            wignerket (WignerKet)       : the WignerKet object.
             cutoffs (List[int]) .       : the shape of the desired Fock tensor
-            max_prob (float)            : the maximum probability of a the state (applies only if 
+            max_prob (float)            : the maximum probability of a the state (applies only if
                                           the ket is returned)
-            max_photon (Optional[int]) : the maximum number of photons in the state (applies only 
+            max_photon (Optional[int]) : the maximum number of photons in the state (applies only
                                           if the ket is returned)
 
         Returns:
@@ -352,27 +335,33 @@ class Converter():
         C = bargmann_ket.data.c
 
         if cutoffs is None:
-            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerket.data.symplectic.shape[-1]//2)
+            cutoffs = np.repeat(
+                settings.AUTOCUTOFF_MIN_CUTOFF, wignerket.data.symplectic.shape[-1] // 2
+            )
 
         if max_photon is None:
             max_photon = sum(np.shape(cutoffs)) - len(np.shape(cutoffs))
 
         if max_prob < 1.0 or max_photon < sum(np.shape(cutoffs)) - len(np.shape(cutoffs)):
-            return FockKet(array=math.hermite_renormalized_binomial(
-                A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photon + 1
-            ))
-        
+            return FockKet(
+                array=math.hermite_renormalized_binomial(
+                    A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photon + 1
+                )
+            )
+
         else:
             return FockKet(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs)))
 
-
-
-    def _wignerdm_to_fockdm(self, wignerdm: WignerDM, cutoffs: List[int] = None,) -> FockDM:
+    def _wignerdm_to_fockdm(
+        self,
+        wignerdm: WignerDM,
+        cutoffs: List[int] = None,
+    ) -> FockDM:
         r"""
         Returns the Fock representation of a Gaussian state in density matrix form.
 
         Args:
-            wignerdm (WignerDM): the WignerDM object. 
+            wignerdm (WignerDM): the WignerDM object.
             cutoffs (List[int]): the shape of the desired Fock tensor
 
         Returns:
@@ -380,14 +369,13 @@ class Converter():
         """
 
         if cutoffs is None:
-            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.data.cov.shape[-1]//2)
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.data.cov.shape[-1] // 2)
         bargmann_dm = self._wignerdm_to_bargmanndm(wignerdm)
         A = bargmann_dm.data.A
         B = bargmann_dm.data.b
         C = bargmann_dm.data.c
 
         return FockDM(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape)))
-
 
     ########################################################################
     ###                     From Fock to Wavefunction                    ###
@@ -396,17 +384,17 @@ class Converter():
     @tensor_int_cache
     def _oscillator_eigenstates(self, q: RealVector, cutoff: int) -> Tensor:
         r"""
-        Harmonic oscillator eigenstate wavefunctions 
+        Harmonic oscillator eigenstate wavefunctions
         `\psi_n(q) = <q|n>` for n = 0, 1, 2, ..., cutoff-1.
 
         Args:
-            q (Vector)  : a vector containing the q points at which the function is evaluated 
+            q (Vector)  : a vector containing the q points at which the function is evaluated
                           (units of \sqrt{\hbar})
             cutoff (int): maximum number of photons
 
         Returns:
-            Tensor: a tensor of shape ``(cutoff, len(q))``. The entry with index ``[n, j]`` 
-            represents the eigenstate evaluated with number of photons ``n`` evaluated at 
+            Tensor: a tensor of shape ``(cutoff, len(q))``. The entry with index ``[n, j]``
+            represents the eigenstate evaluated with number of photons ``n`` evaluated at
             position ``q[j]``, i.e., `\psi_n(q_j) = <q_j|n>`.
 
         .. details::
@@ -424,16 +412,17 @@ class Converter():
             where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
         """
 
-        def f_hermite_polys(xi): # TODO : un-nest this? if possible
+        def f_hermite_polys(xi):  # TODO : un-nest this? if possible
             poly = math.hermite_renormalized(
-                R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff)
+                R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff
+            )
             return math.cast(poly, "float64")
-        
+
         omega_over_hbar = math.cast(1 / settings.HBAR, "float64")
         x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
 
         # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-        prefactor = (omega_over_hbar/np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
+        prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
 
         # Renormalized physicist hermite polys: Hn / sqrt(n!)
         R = np.array([[2 + 0j]])  # to get the physicist polys
@@ -444,11 +433,9 @@ class Converter():
         psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
         return psi
 
-
-    def _fockket_to_wavefunctionqket(self, 
-                                     fock_ket:FockKet, 
-                                     qs:Optional[Sequence[Sequence[float]]] = None
-                                     ) -> WaveFunctionQKet:
+    def _fockket_to_wavefunctionqket(
+        self, fock_ket: FockKet, qs: Optional[Sequence[Sequence[float]]] = None
+    ) -> WaveFunctionQKet:
         r"""
         Returns the position wavefunction of the Fock ket state at a vector of positions.
 
@@ -462,10 +449,15 @@ class Converter():
             :class:`~.ComplexFunctionND` object.
         """
         if not qs:
-            raise AssertionError("The number of points are necessary to generate the wavefunctionq state.")
+            raise AssertionError(
+                "The number of points are necessary to generate the wavefunctionq state."
+            )
 
-        #TODO : check this
-        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, fock_ket.data.cutoffs)]
+        # TODO : check this
+        krausses = [
+            math.transpose(self._oscillator_eigenstates(q, c))
+            for q, c in zip(qs, fock_ket.data.cutoffs)
+        ]
 
         ket = fock_ket.data.array
 
@@ -474,11 +466,9 @@ class Converter():
 
         return ket  # now in q basis
 
-
-    def _fockdm_to_wavefunctionqdm(self, 
-                                   fock_dm: FockDM, 
-                                   qs: Optional[Sequence[Sequence[float]]] = None
-                                   ) -> WaveFunctionQDM:
+    def _fockdm_to_wavefunctionqdm(
+        self, fock_dm: FockDM, qs: Optional[Sequence[Sequence[float]]] = None
+    ) -> WaveFunctionQDM:
         r"""
         Returns the position wavefunction of the Fock density matrix at a vector of positions.
 
@@ -492,9 +482,14 @@ class Converter():
             :class:`~.ComplexFunctionND` object.
         """
         if not qs:
-            raise AssertionError("The number of points are necessary to generate the wavefunctionq state.")
+            raise AssertionError(
+                "The number of points are necessary to generate the wavefunctionq state."
+            )
 
-        krausses = [math.transpose(self._oscillator_eigenstates(q, c)) for q, c in zip(qs, fock_dm.data.cutoffs)]
+        krausses = [
+            math.transpose(self._oscillator_eigenstates(q, c))
+            for q, c in zip(qs, fock_dm.data.cutoffs)
+        ]
 
         dm = fock_dm.data.array
         for i, h_n in enumerate(krausses):
