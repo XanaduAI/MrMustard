@@ -8,9 +8,13 @@
 
 ### Bug fixes
 
+* Fixed a bug that the variables of the apply_choi_to_dm function have not the correct name
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
 ### Documentation
 
 ### Contributors
+[Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)
