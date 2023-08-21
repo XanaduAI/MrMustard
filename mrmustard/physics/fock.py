@@ -577,7 +577,7 @@ def contract_states(
 
     if a_is_dm:
         if b_is_dm:  # a DM, b DM
-            dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_idx=modes, choi_out_idx=[])
+            dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_modes=modes, choi_out_modes=[])
         else:  # a DM, b ket
             dm = apply_kraus_to_dm(
                 kraus=math.conj(stateB), dm=stateA, kraus_in_idx=modes, kraus_out_idx=[]
