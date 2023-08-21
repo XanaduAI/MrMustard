@@ -38,8 +38,8 @@ from mrmustard.lab.representations.fock_dm import FockDM
 from mrmustard.lab.representations.fock_ket import FockKet
 from mrmustard.lab.representations.wigner_ket import WignerKet
 from mrmustard.lab.representations.wigner_dm import WignerDM
-from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
-from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
+from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
+from mrmustard.lab.representations.wavefunction_dm import WaveFunctionDM
 from mrmustard.lab.representations.converter import Converter
 from mrmustard.typing import (
     ComplexMatrix,
@@ -73,6 +73,10 @@ class State:  # pylint: disable=too-many-public-methods
         A: ComplexMatrix = None,
         B: ComplexVector = None,
         C: float = None,
+        points: Vector = None,
+        wavefunction: Tensor = None,
+        quadrature_angle: float = None,
+        ket_wavefunction: bool = None,
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
     ):
@@ -99,23 +103,28 @@ class State:  # pylint: disable=too-many-public-methods
 
         """
         self._cutoffs = cutoffs
-        #Case 1: Wigner representation
+        # Case 1: Wigner representation
         if cov is not None and means is not None:
             self.is_gaussian = True
             self.num_modes = cov.shape[-1] // 2
-            #check if the state is pure and init with different representation classes
+            # check if the state is pure and init with different representation classes
             if np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0):
-                symplectic = cov_to_symplectic(cov) #??? TODO: check this
-                self.representation = WignerKet(symplectic, means)  
+                self.representation = WignerKet.from_covariance(cov, means)
             else:
                 self.representation = WignerDM(cov, means)
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
             self.num_modes = symplectic.shape[-1] // 2
             means = math.zeros_like(self.num_modes)
-            cov = (settings.HBAR / 2) * math.matmul(symplectic, math.matmul(eigenvalues, symplectic))
-            self.representation = WignerKet(cov, means) if np.allclose(eigenvalues, 2.0 / settings.HBAR) else WignerDM(cov, means)
-        #Case 2: Fock representation
+            cov = (settings.HBAR / 2) * math.matmul(
+                symplectic, math.matmul(eigenvalues, symplectic)
+            )
+            self.representation = (
+                WignerKet(cov, means)
+                if np.allclose(eigenvalues, 2.0 / settings.HBAR)
+                else WignerDM(cov, means)
+            )
+        # Case 2: Fock representation
         elif ket is not None:
             self.is_gaussian = False
             self.num_modes = len(ket.shape)
@@ -124,16 +133,36 @@ class State:  # pylint: disable=too-many-public-methods
             self.is_gaussian = False
             self.num_modes = len(dm.shape) // 2
             self.representation = FockDM(dm)
-        #Case 3: Bargmann representation
+        # Case 3: Bargmann representation
         elif A is not None and B is not None and C is not None:
-            self.is_gaussian = True or False 
-            #T0DO:check if off diagonal block and conjugate of each other?
-            self.representation = BargmannKet(A,B,C)
+            # For now, Bargmann is only ofr Gaussian states. To be extended.
+            self.is_gaussian = True
+            self.num_modes = A.shape[-1] // 2
+            if np.allclose(
+                A[: self.num_modes, : self.num_modes],
+                math.conj(A[self.num_modes :, self.num_modes :]),
+            ) and np.allclose(B[: self.num_modes], math.conj(A[self.num_modes :])):
+                self.representation = BargmannKet(A, B, C)
+            else:
+                self.representation = BargmannDM(A, B, C)
+        # Case 4: Wavefunction
+        elif (
+            points is not None
+            and wavefunction is not None
+            and ket_wavefunction
+            and quadrature_angle
+        ):
+            self.is_gaussian = None
+            if ket_wavefunction:
+                self.num_modes = len(wavefunction.shape)
+                self.representation = WaveFunctionKet(points, wavefunction, quadrature_angle)
+            else:
+                self.num_modes = len(wavefunction.shape) // 2
+                self.representation = WaveFunctionDM(points, wavefunction, quadrature_angle)
         else:
             raise ValueError(
-                "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a symplectic matrix and displacement, or a ket or dm in fock representation."
+                "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a symplectic matrix and eigenvalues, or a ket or dm in fock representation, or ABC triple in bargmann representation."
             )
-                
 
         self._modes = modes
         if modes is not None:
@@ -141,15 +170,12 @@ class State:  # pylint: disable=too-many-public-methods
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
 
-
     @property
     def modes(self):
-        r"""Returns the modes of the state.
-        """
+        r"""Returns the modes of the state."""
         if self._modes is None:
             return list(range(self.num_modes))
         return self._modes
-    
 
     def indices(self, modes) -> Union[Tuple[int], int]:
         r"""Returns the indices of the given modes.
@@ -163,7 +189,6 @@ class State:  # pylint: disable=too-many-public-methods
         if isinstance(modes, int):
             return self.modes.index(modes)
         return tuple(self.modes.index(m) for m in modes)
-    
 
     @property
     def purity(self) -> float:
@@ -179,45 +204,37 @@ class State:  # pylint: disable=too-many-public-methods
     def is_pure(self):
         r"""Returns ``True`` if the state is pure and ``False`` otherwise."""
         return np.isclose(self.purity, 1.0, atol=1e-6)
-    
 
     @property
     def means(self) -> Optional[RealVector]:
         r"""Returns the means vector of the state."""
         return self.representation.data.means
-   
+
     @property
     def cov(self) -> Optional[RealMatrix]:
         r"""Returns the covariance matrix of the state."""
         return self.representation.data.cov
-    
-    @property
-    def number_stdev(self) -> RealVector:
-        r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
-        return self.representation.number_stdev
-    
-    
+
     @property
     def cutoffs(self) -> List[int]:
         r"""Returns the cutoff dimensions for each mode."""
         if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
+            raise AttributeError(
+                "The representation of your state do not have this attribute, transform it with the Converter please!"
+            )
 
         if isinstance(self.representation, (FockKet, FockDM)):
             self._cutoffs = self.representation.data.cutoffs
         elif isinstance(self.representation, (WignerKet, WignerDM)):
-            self._cutoffs = fock.autocutoffs(
-                    self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY
-                )
+            self._cutoffs = fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
         return self._cutoffs
-            
+
     # @property
     # #TODO: Depends on the representation!!! only FOCK KET/DM -> implement shape in Fock
     # def shape(self) -> List[int]:
     #     r"""Returns the shape of the state.
     #     """
     #     return self.representation.shape->
-
 
     @property
     def number_means(self) -> RealVector:
@@ -229,12 +246,15 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the complete photon number covariance matrix."""
         return self.representation.number_cov
 
+    @property
+    def number_stdev(self) -> RealVector:
+        r"""Returns the square root of the photon number variances (standard deviation) in each mode."""
+        return math.sqrt(self.representation.number_variance())
 
     @property
     def norm(self) -> float:
         r"""Returns the norm of the state."""
         return self.representation.norm
-   
 
     @property
     def probability(self) -> float:
@@ -243,7 +263,6 @@ class State:  # pylint: disable=too-many-public-methods
         if isinstance(self.representation, FockKet):
             return norm**2
         return norm
-
 
     def ket(
         self,
@@ -266,26 +285,28 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if self.is_mixed:
             return None
-        
+
         if isinstance(self.representation, "FockDM"):
             return fock.dm_to_ket(self.representation.array)
 
-        if self.representation.__class__.__name__.endswith('DM'):
+        if self.representation.__class__.__name__.endswith("DM"):
             raise AttributeError("We do not support to decompose the density matrix to ket now!")
-        
+
         if isinstance(self.representation, FockKet):
             if cutoffs is None:
                 return self.representation.data.array
             return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
-    
-        if isinstance(self.representation, WignerKet):
-            cutoffs = cutoffs or self._cutoffs #TODO
-            self_copy = copy.deepcopy(self)
-            return self_copy.to_Fock(cutoffs=cutoffs, max_prob=max_prob, max_photon=max_photons).ket()
-        
-        raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
 
-            
+        if isinstance(self.representation, WignerKet):
+            cutoffs = cutoffs or self._cutoffs  # TODO
+            self_copy = copy.deepcopy(self)
+            return self_copy.to_Fock(
+                cutoffs=cutoffs, max_prob=max_prob, max_photon=max_photons
+            ).ket()
+
+        raise AttributeError(
+            "The representation of your state do not have this attribute, transform it with the Converter please!"
+        )
 
     def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
@@ -298,41 +319,45 @@ class State:  # pylint: disable=too-many-public-methods
             Tensor: the density matrix
         """
         if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
-        
+            raise AttributeError(
+                "The representation of your state do not have this attribute, transform it with the Converter please!"
+            )
+
         if isinstance(self.representation, FockDM):
             if cutoffs is None:
                 return self.representation.data.array
             else:
                 return fock.pad_array_with_cutoffs(self.representation.data.array, cutoffs)
-        
+
         if isinstance(self.representation, FockKet):
             if cutoffs is None:
                 return fock.ket_to_dm(self.representation.data.array)
             else:
-                return fock.pad_array_with_cutoffs(fock.ket_to_dm(self.representation.data.array), cutoffs) 
-        
+                return fock.pad_array_with_cutoffs(
+                    fock.ket_to_dm(self.representation.data.array), cutoffs
+                )
+
         if isinstance(self.representation, WignerKet):
             if cutoffs is None:
                 cutoffs = self.cutoffs
             self_copy = copy.deepcopy(self)
             self_copy.to_Fock()
             return fock.pad_array_with_cutoffs(fock.ket_to_dm(self_copy.ket()), cutoffs)
-        
+
         if isinstance(self.representation, WignerDM):
             self_copy = copy.deepcopy(self)
             self_copy.to_Fock(cutoffs=cutoffs)
             return self_copy.representation.data.array
 
-
     @property
     def fock(self) -> ComplexTensor:
         r"""Returns the Fock representation of the state."""
         if not isinstance(self.representation, (FockKet, FockDM, WignerKet, WignerDM)):
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
-        
-        return self.ket if isinstance(self.representation, (FockKet, WignerKet)) else self.dm
+            raise AttributeError(
+                "The representation of your state do not have this attribute, transform it with the Converter please!"
+            )
 
+        return self.ket if isinstance(self.representation, (FockKet, WignerKet)) else self.dm
 
     @property
     def fock_probabilities(self, cutoffs: Sequence[int]) -> RealTensor:
@@ -347,11 +372,7 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             Tensor: the probabilities
         """
-        if isinstance(self.representation, (FockKet, FockDM)):
-            return self.representation.probability(cutoffs)
-        else:
-            raise AttributeError("The representation of your state do not have this attribute, transform it with the Converter please!")
-
+        return self.representation.probability(cutoffs)
 
     def primal(self, other: Union[State, Transformation]) -> State:
         r"""Returns the post-measurement state after ``other`` is projected onto ``self``.
@@ -364,7 +385,7 @@ class State:  # pylint: disable=too-many-public-methods
         Note that the returned state is not normalized. To normalize a state you can use
         ``mrmustard.physics.normalize``.
         """
- 
+
         if isinstance(other, State):
             return self._project_onto_state(other)
         try:
@@ -373,7 +394,6 @@ class State:  # pylint: disable=too-many-public-methods
             raise TypeError(
                 f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
             ) from e
-        
 
     def _project_onto_state(self, other: State) -> Union[State, float]:
         """If states are gaussian use generaldyne measurement, else use
@@ -385,7 +405,6 @@ class State:  # pylint: disable=too-many-public-methods
 
         # either self or other is not gaussian
         return self._project_onto_fock(other)
-
 
     def _project_onto_fock(self, other: State) -> Union[State, float]:
         """Returns the post-measurement state of the projection between two non-Gaussian
@@ -411,11 +430,8 @@ class State:  # pylint: disable=too-many-public-methods
 
         # return the probability (norm) of the state when there are no modes left
         return (
-            math.abs(out_fock) ** 2
-            if other.is_pure and self.is_pure
-            else fock.math.abs(out_fock)
+            math.abs(out_fock) ** 2 if other.is_pure and self.is_pure else fock.math.abs(out_fock)
         )
-
 
     def _contract_with_other(self, other):
         other_cutoffs = [
@@ -436,7 +452,6 @@ class State:  # pylint: disable=too-many-public-methods
             )
 
         return out_fock
-
 
     def _project_onto_gaussian(self, other: State) -> Union[State, float]:
         """Returns the result of a generaldyne measurement given that states ``self`` and
@@ -466,21 +481,17 @@ class State:  # pylint: disable=too-many-public-methods
                 means=new_means,
                 cov=new_cov,
                 modes=remaining_modes,
-                _norm=probability if not getattr(self, "_normalize", False) else 1.0,
             )
 
         return probability
-
 
     def __iter__(self) -> Iterable[State]:
         """Iterates over the modes and their corresponding tensors."""
         return (self.get_modes(i) for i in range(self.num_modes))
 
-
     def __and__(self, other: State) -> State:
         r"""Concatenates two states."""
         return self.representation.data.__and__(other)
-
 
     def __getitem__(self, item) -> State:
         "setting the modes of a state (same API of `Transformation`)"
@@ -496,7 +507,6 @@ class State:  # pylint: disable=too-many-public-methods
             )
         self._modes = item
         return self
-    
 
     def bargmann(self, numpy=False) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
         r"""Returns the Bargmann representation of the state.
@@ -512,7 +522,6 @@ class State:  # pylint: disable=too-many-public-methods
         if numpy:
             return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
-
 
     def get_modes(self, item) -> State:
         r"""Returns the state on the given modes."""
@@ -536,14 +545,14 @@ class State:  # pylint: disable=too-many-public-methods
             means, _ = gaussian.partition_means(self.means, item_idx)
             return State(cov=cov, means=means, modes=item)
 
-        fock_partitioned = fock.trace(self.dm(self.cutoffs), keep=item_idx) #TODO: this self.cutoffs is not correct now with the new structure
+        fock_partitioned = fock.trace(
+            self.dm(self.cutoffs), keep=item_idx
+        )  # TODO: this self.cutoffs is not correct now with the new structure
         return State(dm=fock_partitioned, modes=item)
-
 
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
         r"""Returns whether the states are equal."""
         return self.representation.data.__eq__(other)
-
 
     def __rshift__(self, other: Transformation) -> State:
         r"""Applies other (a Transformation) to self (a State), e.g., ``Coherent(x=0.1) >> Sgate(r=0.1)``."""
@@ -553,7 +562,6 @@ class State:  # pylint: disable=too-many-public-methods
             )
         return other.primal(self)
 
-
     def __lshift__(self, other: State):
         r"""Implements projection onto a state or the dual transformation applied on a state.
 
@@ -561,26 +569,21 @@ class State:  # pylint: disable=too-many-public-methods
         """
         return other.primal(self)
 
-
     def __add__(self, other: State):
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
         return self.representation.data.__add__(other)
 
-
-    #TODO: ask for this implementation of rmul and mul!
+    # TODO: ask for this implementation of rmul and mul!
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
 
         E.g., ``0.5 * psi``.
         """
         return self.representation.data.__rmul__(other)
-    
 
     def __mul__(self, other: State):
-        r"""Implements multiplication of two objects.
-        """
+        r"""Implements multiplication of two objects."""
         return self.representation.data.__rmul__(other)
-
 
     def __truediv__(self, other):
         r"""Implements division by a scalar from the left.
@@ -589,7 +592,6 @@ class State:  # pylint: disable=too-many-public-methods
         """
         return self.representation.data.__truediv__(other)
 
-
     @staticmethod
     def _format_probability(prob: float) -> str:
         if prob < 0.001:
@@ -597,24 +599,21 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             return f"{prob:.3%}"
 
-
-    #TO_X functions make a new state
     def to_Bargmann(self):
-        r'''Converts the representation of the state to Bargmann Representation and returns a new State.
+        r"""Converts the representation of the state to Bargmann Representation and returns a new State.
         Args:
             source (State): the state itself
             target (Srting): the target Bargmann representation of the state
 
         Returns:
             State: the converted state with the target Bargmann Representation
-        '''
+        """
         representation = converter.convert(self.representation, "Bargmann")
-        A = representation.data.A
+        return State(A=representation.data.A, B=representation.data.B, C=representation.data.C)
 
-        return State(A=A, B=B, c=C)
-        
-
-    def to_Fock(self, max_prob: float = 1.0, max_photon: int = None, cutoffs: Union(List[int], int) = None):        
+    def to_Fock(
+        self, max_prob: float = 1.0, max_photon: int = None, cutoffs: Union(List[int], int) = None
+    ):
         r"""Converts the representation of the state to Fock Representation and returns a new State.
 
         Args:
@@ -629,38 +628,43 @@ class State:  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Fock Representation
         """
-        self.representation = converter.convert(self.representation, "Fock", max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
-        return self
-        
+        representation = converter.convert(
+            self.representation, "Fock", max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs
+        )
+        if self.__class__.__qualname__.endswith("Ket"):
+            return State(ket=representation.data.array)
+        else:
+            return State(dm=representation.data.array)
 
-    def to_WaveFunctionQ(self, qs):
-        r'''Converts the representation of the state to q-wavefunction Representation and returns a new State.
+    def to_WaveFunction(self, qs, quadrature_angle):
+        r"""Converts the representation of the state to wavefunction Representation and returns a new State.
 
         Args:
             source (State): the state itself
-            qs(array): list of values on q-axis of the wavefunction
+            qs(array): list of values on axis of the wavefunction
+            quadrature angle: the quadrature angle of the wavefunction on phase space
             target (Srting): the target q-Wavefunction representation of the state
 
         Returns:
             State: the converted state with the target q-Wavefunction Representation
-        '''
-        self.representation = converter.convert(self.representation, qs, "WaveFunctionQ") 
-        return self
-        
-
-    def to_Wigner(self):
-        r'''Converts the representation of the state to Wigner Representation and returns a new State.
-
-        Args:
-            source (State): the state itself
-            target (Srting): the target Wigner representation of the state
-
-        Returns:
-            State: the converted state with the target Wigner Representation
-        '''
-        self.representation = converter.convert(self.representation, "Wigner")
-        return self
-
+        """
+        representation = converter.convert(
+            self.representation, qs, quadrature_angle, "WaveFunction"
+        )
+        if self.__class__.__qualname__.endswith("Ket"):
+            return State(
+                points=representation.data.qs,
+                wavefunction=representation.data.array,
+                quadrature_angle=quadrature_angle,
+                ket_wavefunction=True,
+            )
+        else:
+            return State(
+                points=representation.data.qs,
+                wavefunction=representation.data.array,
+                quadrature_angle=quadrature_angle,
+                ket_wavefunction=False,
+            )
 
     def _repr_markdown_(self):
         table = (
