@@ -238,13 +238,6 @@ class State(CircuitPart):
             return norm**2
         return norm
 
-    def fock_tensors_and_tags(self, cutoffs=None) -> list[tuple[ComplexTensor, set[int]]]:
-        cutoffs = cutoffs or self.cutoffs
-        if self.is_pure:
-            return [(self.ket(cutoffs), self.tags_out_L)]
-        else:
-            return [(self.dm(cutoffs), self.tags_out_L + self.tags_out_R)]
-
     def ket(
         self,
         cutoffs: List[int] = None,

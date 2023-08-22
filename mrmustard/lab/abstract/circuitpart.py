@@ -16,22 +16,27 @@
 
 from __future__ import annotations
 
-from collections import ChainMap, defaultdict, namedtuple
-from dataclasses import dataclass
-
-# just type aliases
-ID = int
-MODE = int
-DIMENSION = int
+from collections import namedtuple
+from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
 class Wire:
-    id: ID
-    mode: MODE
+    id: int
+    mode: int
     direction: str
     type: str
-    dimension: DIMENSION = None
+    contraction_id: int
+    owner: CircuitPart
+    dimension: Optional[int] = None
+    connected_to: Optional[Wire] = None
+
+
+@dataclass
+class WireGroup:
+    ket: dict = field(default_factory=dict)
+    bra: dict = field(default_factory=dict)
 
 
 class CircuitPart:
@@ -42,10 +47,10 @@ class CircuitPart:
     def __init__(
         self,
         name: str,
-        modes_output_ket: list[MODE] = [],
-        modes_input_ket: list[MODE] = [],
-        modes_output_bra: list[MODE] = [],
-        modes_input_bra: list[MODE] = [],
+        modes_output_ket: list[int] = [],
+        modes_input_ket: list[int] = [],
+        modes_output_bra: list[int] = [],
+        modes_input_bra: list[int] = [],
     ):
         r"""
         Initializes a CircuitPart instance.
@@ -58,26 +63,23 @@ class CircuitPart:
             modes_input_bra: the input modes on the bra side
         """
         # set unique self.id and name
-        self.id: ID = CircuitPart._id_counter
+        self.id: int = CircuitPart._id_counter
         CircuitPart._id_counter += 1
         self.name: str = name + "_" + str(self.id)
 
-        # initialize namedtuples
-        self._in = namedtuple("input", ["ket", "bra"])
-        self._out = namedtuple("output", ["ket", "bra"])
+        # initialize ket and bra wire dicts
+        self._in = WireGroup()
+        self._out = WireGroup()
 
-        # initialize wires
+        # initialize wires by updating the ket and bra dicts
         for mode in modes_output_ket:
-            self._out.ket = {mode: Wire(self._new_id(), mode, "out", "ket")}
+            self._out.ket |= {mode: Wire(self._new_id(), mode, "out", "ket", self._new_id(), self)}
         for mode in modes_input_ket:
-            self._in.ket = {mode: Wire(self._new_id(), mode, "in", "ket")}
+            self._in.ket |= {mode: Wire(self._new_id(), mode, "in", "ket", self._new_id(), self)}
         for mode in modes_output_bra:
-            self._out.bra = {mode: Wire(self._new_id(), mode, "out", "bra")}
+            self._out.bra |= {mode: Wire(self._new_id(), mode, "out", "bra", self._new_id(), self)}
         for mode in modes_input_bra:
-            self._in.bra = {mode: Wire(self._new_id(), mode, "in", "bra")}
-
-    # def __getitem__(self, id):
-    #     return self.wire(id)
+            self._in.bra |= {mode: Wire(self._new_id(), mode, "in", "bra", self._new_id(), self)}
 
     @property
     def wires(self):
@@ -91,7 +93,12 @@ class CircuitPart:
             + list(self.input.bra.values())
         )
 
-    def wire(self, id: ID) -> Wire:
+    @property
+    def contraction_ids(self):
+        r"""Returns a list of all contraction_ids in this CircuitPart."""
+        return [wire.contraction_id for wire in self.wires]
+
+    def wire(self, id: int) -> Wire:
         r"""Returns the wire with the given id."""
         for wire in self.wires:
             if wire.id == id:
@@ -110,26 +117,26 @@ class CircuitPart:
     def output(self):
         return self._out
 
-    @property
-    def has_only_ket(self) -> bool:
-        return len(self.input.bra) == 0 and len(self.output.bra) == 0
+    # @property
+    # def has_only_ket(self) -> bool:
+    #     return len(self.input.bra) == 0 and len(self.output.bra) == 0
 
-    @property
-    def has_only_bra(self) -> bool:
-        return len(self.input.ket) == 0 and len(self.output.ket) == 0
+    # @property
+    # def has_only_bra(self) -> bool:
+    #     return len(self.input.ket) == 0 and len(self.output.ket) == 0
 
-    @property
-    def has_ket(self) -> bool:
-        return len(self.input.ket) > 0 or len(self.output.ket) > 0
+    # @property
+    # def has_ket(self) -> bool:
+    #     return len(self.input.ket) > 0 or len(self.output.ket) > 0
 
-    @property
-    def has_bra(self) -> bool:
-        return len(self.input.bra) > 0 or len(self.output.bra) > 0
+    # @property
+    # def has_bra(self) -> bool:
+    #     return len(self.input.bra) > 0 or len(self.output.bra) > 0
 
     @property
     def ids(self) -> list[int]:
         r"""Returns the list of wire ids for this CircuitPart."""
-        pass
+        return [wire.id for wire in self.wires]
 
     @property
     def modes(self) -> list[int]:
@@ -145,37 +152,37 @@ class CircuitPart:
             raise ValueError("modes are ambiguous for this CircuitPart.")
 
     @property
-    def modes_in(self) -> set[int]:
+    def modes_in(self) -> list[int]:
         "Returns the set of input modes that are used by this CircuitPart."
-        return set(self.input.ket | self.input.bra)
+        return list(self.input.ket | self.input.bra)
 
     @property
     def modes_out(self) -> set[int]:
         "Returns the set of output modes that are used by this CircuitPart."
-        return set(self.output.ket | self.output.bra)
+        return list(self.output.ket | self.output.bra)
 
     @property
     def all_modes(self) -> set[int]:
         "Returns a list of all the modes spanned by this CircuitPart."
-        return set(self.modes_out + self.modes_in)
+        return self.modes_out + self.modes_in
 
-    @property
-    def has_inputs(self) -> bool:
-        r"""Returns whether this CircuitPart has input wires."""
-        return len(self.modes_in) > 0
+    # @property
+    # def has_inputs(self) -> bool:
+    #     r"""Returns whether this CircuitPart has input wires."""
+    #     return len(self.modes_in) > 0
 
-    @property
-    def has_outputs(self) -> bool:
-        r"""Returns whether this CircuitPart has output wires."""
-        return len(self.modes_out) > 0
+    # @property
+    # def has_outputs(self) -> bool:
+    #     r"""Returns whether this CircuitPart has output wires."""
+    #     return len(self.modes_out) > 0
 
-    @property
-    def has_only_inputs(self) -> bool:
-        return len(self.modes_out) == 0
+    # @property
+    # def has_only_inputs(self) -> bool:
+    #     return len(self.modes_out) == 0
 
-    @property
-    def has_only_outputs(self) -> bool:
-        return len(self.modes_in) == 0
+    # @property
+    # def has_only_outputs(self) -> bool:
+    #     return len(self.modes_in) == 0
 
     @property
     def adjoint(self) -> AdjointView:
@@ -196,14 +203,16 @@ class CircuitPart:
 class CircuitPartView(CircuitPart):
     r"""Base class for CircuitPart views. It remaps the ids of the original CircuitPart."""
 
-    def __init__(self, circuit_part):
+    def __init__(
+        self, circuit_part, modes_output_ket, modes_input_ket, modes_output_bra, modes_input_bra
+    ):
         self.original = circuit_part  # MM object
         super().__init__(
             self.original.name,
-            self.original.modes_output_ket,
-            self.original.modes_input_ket,
-            self.original.modes_output_bra,
-            self.original.modes_input_bra,
+            modes_output_ket or self.original.modes_output_ket,
+            modes_input_ket or self.original.modes_input_ket,
+            modes_output_bra or self.original.modes_output_bra,
+            modes_input_bra or self.original.modes_input_bra,
         )
 
         self._id_map = {id: orig_id for id, orig_id in zip(self.ids, self.original.ids)}

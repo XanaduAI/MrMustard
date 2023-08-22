@@ -85,29 +85,29 @@ class TensorNetwork:
         "returns True if the wire is currently part of an inner product"
         return self.graph.edges(id, data=True)["contract"]
 
-    @property
-    def input(self) -> dict:
-        "mimics the CircuitPart input property"
-        ket = {}
-        bra = {}
-        for id, d in self.graph.nodes(data=True):
-            if d["direction"] == "in" and d["type"] == "ket" and not self._will_contract(id):
-                ket[d["mode"]] = id
-            elif d["direction"] == "in" and d["type"] == "bra" and not self._will_contract(id):
-                bra[d["mode"]] = id
-        return {"ket": ket, "bra": bra}
+    # @property
+    # def input(self) -> dict:
+    #     "mimics the CircuitPart input property"
+    #     ket = {}
+    #     bra = {}
+    #     for id, d in self.graph.nodes(data=True):
+    #         if d["direction"] == "in" and d["type"] == "ket" and not self._will_contract(id):
+    #             ket[d["mode"]] = id
+    #         elif d["direction"] == "in" and d["type"] == "bra" and not self._will_contract(id):
+    #             bra[d["mode"]] = id
+    #     return {"ket": ket, "bra": bra}
 
-    @property
-    def output(self) -> dict:
-        "mimics the CircuitPart output property"
-        ket = {}
-        bra = {}
-        for id, d in self.graph.nodes(data=True):
-            if d["direction"] == "out" and d["type"] == "ket" and not self._will_contract(id):
-                ket[d["mode"]] = id
-            elif d["direction"] == "out" and d["type"] == "bra" and not self._will_contract(id):
-                bra[d["mode"]] = id
-        return {"ket": ket, "bra": bra}
+    # @property
+    # def output(self) -> dict:
+    #     "mimics the CircuitPart output property"
+    #     ket = {}
+    #     bra = {}
+    #     for id, d in self.graph.nodes(data=True):
+    #         if d["direction"] == "out" and d["type"] == "ket" and not self._will_contract(id):
+    #             ket[d["mode"]] = id
+    #         elif d["direction"] == "out" and d["type"] == "bra" and not self._will_contract(id):
+    #             bra[d["mode"]] = id
+    #     return {"ket": ket, "bra": bra}
 
     def add_tensor(self, tensor: CircuitPartView):
         r"""
