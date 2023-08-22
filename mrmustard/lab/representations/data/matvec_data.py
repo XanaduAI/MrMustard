@@ -179,7 +179,7 @@ class MatVecData(Data):  # Note: this class is abstract!
             new_vecs.append(sorted_tups_self[i][1])
             ith_coeff = sorted_tups_self[i][2] + sorted_tups_other[i][2]
             new_coeffs.append(ith_coeff)
-        return (new_mats, new_vecs, new_coeffs)
+        return (np.array(new_mats), np.array(new_vecs), np.array(new_coeffs))
     
     @staticmethod
     def _helper_make_sorted_list_of_tuples(obj:MatVecData) -> List[Tuple[Matrix, Vector, Scalar]]:

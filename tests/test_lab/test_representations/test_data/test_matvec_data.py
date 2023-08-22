@@ -120,6 +120,27 @@ class TestMatVecData(TestData): #TestData
 
     # ###########  Addition / subtraction  #############
     # TODO: test correctness of addition/subtraction
+    # testing that the 1st elt of 2nd object is at index len of 1st elt + 1
+    # just this basic stuff
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
+    def test_length_of_added_subtracted_objects_is_same_as_previous_if_objects_are_same(self, DATA, operator):
+        l0 = DATA.coeffs.shape[0]
+        new_data = operator(DATA, DATA)
+        assert l0 == new_data.coeffs.shape[0]
+
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
+    def test_length_of_added_subtracted_objects_is_sum_of_lengths_if_objects_are_diff(self, DATA, TYPE, operator):
+        mat = DATA.mat +3
+        vec = DATA.vec +1
+        coeffs = DATA.coeffs + 2
+        parameters = (mat, vec, coeffs)
+        other_data = general_factory(TYPE, *parameters)
+        l0 = DATA.coeffs.shape[0]
+        l1 = other_data.coeffs.shape[0]
+        new_data = operator(DATA, other_data)
+        total_length = l0+l1
+        assert total_length == new_data.coeffs.shape[0]
+
 
     #######  Scalar division / multiplication ########
     @pytest.mark.parametrize("operator", [op.truediv, op.mul])
