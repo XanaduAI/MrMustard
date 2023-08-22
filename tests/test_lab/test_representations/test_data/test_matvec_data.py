@@ -34,7 +34,9 @@ from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct,
 )
 
-np.random.seed(42)
+from mrmustard import settings
+settings.SEED = 42
+
 D = 10 #dimension, matrix will be DxD while means will be D
 N = 3 #number of elements in the batch
 
@@ -60,7 +62,7 @@ def MAT(D,N) -> Batch[Matrix]:
     r"""Some batch of matrices for the object's parameterization."""
     mats = []
     for _ in range(N):
-        m = np.random.normal(size=(D,D)) + 1j*np.random.normal(size=(D,D))
+        m = settings.rng.normal(size=(D,D)) + 1j*settings.rng.normal(size=(D,D))
         m = m + m.T  # symmetrize A
         mats.append(m)
     return np.array(mats)
@@ -69,13 +71,13 @@ def MAT(D,N) -> Batch[Matrix]:
 @pytest.fixture
 def VEC(D,N) -> Batch[Vector]:
     r"""Some batch of vectors for the object's parameterization."""
-    return np.array([np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)])
+    return np.array([settings.rng.normal(size=D) + 1j*settings.rng.normal(size=D) for _ in range(N)])
 
 
 @pytest.fixture
 def COEFFS(N) -> Batch[Scalar]:
     r"""Some batch of scalars for the object's parameterization."""
-    return np.array([np.random.normal() + 1j*np.random.normal() for _ in range(N)])
+    return np.array([settings.rng.normal() + 1j*settings.rng.normal() for _ in range(N)])
 
 
 @pytest.fixture
