@@ -32,13 +32,14 @@ from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 from thewalrus.random import random_covariance
+from mrmustard import settings
 
 
 #########   Instantiating class to test  #########
 @pytest.fixture
 def D() -> int:
-    """The dimension: matrices will be DxD and vectors will be D."""
-    return 5
+    """The dimension: matrices will be DxD and vectors will be D. D must be even."""
+    return 4
 
 @pytest.fixture
 def N() -> int:
@@ -54,25 +55,22 @@ def TYPE():
 @pytest.fixture
 def COV(N, D) -> Matrix:
     r"""Some batch of matrices for the object's parameterization."""
-    covs = []
-    for _ in range(N):
-        c = np.random.normal(size=(D,D)) #+ 1j*np.random.normal(size=(D,D))
-        c = c + c.T  # symmetrize A
-        c = np.dot(c, np.conj(c.T)) #make positive semi-definite
-        covs.append(c)
-    return np.array(covs)
+    c = settings.rng.normal(size=(N,D,D))
+    c = c + np.transpose(c, (0,2,1))  # symmetrize
+    c = np.einsum('bij,bkj->bik', c, np.conj(c)) # make positive semi-definite
+    return c
 
 
 @pytest.fixture
 def MEANS(N, D) -> Vector:
     r"""Some batch of vectors for the object's parameterization."""
-    return np.array([np.random.normal(size=D) for _ in range(N)]) #+ 1j*np.random.normal(size=D) 
+    return settings.rng.normal(size=(N,D))
 
 
 @pytest.fixture
 def COEFFS(N) -> Scalar:
     r"""Some batch of scalars for the object's parameterization."""
-    return np.array([np.random.normal() for _ in range(N)]) #+ 1j*np.random.normal() 
+    return settings.rng.normal(size=N)
 
 
 @pytest.fixture
@@ -100,7 +98,7 @@ class TestGaussianData(TestMatVecData):
         with pytest.raises(ValueError):
             GaussianData(coeffs=COEFFS)
 
-    @pytest.mark.parametrize("x", [2 ])#10, 250
+    @pytest.mark.parametrize("x", [2])
     def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
         comparison_covariance = np.array([np.eye(x), np.eye(x)])
         means = np.array([np.ones(x), np.ones(x)])
@@ -113,10 +111,6 @@ class TestGaussianData(TestMatVecData):
         comparison_means = np.array([np.zeros(x), np.zeros(x)])
         gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
         assert np.allclose(gaussian_data.means, comparison_means)
-
-    def test_if_neither_means_nor_cov_is_defined_raises_ValueError(self, COEFFS):
-        with pytest.raises(ValueError):
-            GaussianData(coeffs=COEFFS)
 
     @pytest.mark.skip(reason="Currently not implemented")
     def test_non_symmetric_covariance_raises_ValueError(self, MEAN):
@@ -142,11 +136,11 @@ class TestGaussianData(TestMatVecData):
 
     # ##############  Multiplication  ##################
 
-    @pytest.mark.parametrize("x", [2, 7, 200])
-    def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, x):
+    @pytest.mark.parametrize("c", [2, 7, 200])
+    def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, c):
         pre_op_data = deepcopy(DATA)
-        multiplied_data = DATA * x
-        assert np.allclose(multiplied_data.c, (pre_op_data.coeffs * x) ) # coeffs are multiplied
+        multiplied_data = DATA * c
+        assert np.allclose(multiplied_data.c, (pre_op_data.coeffs * c) ) # coeffs are multiplied
         assert np.allclose(multiplied_data.cov, pre_op_data.cov)  # unaltered
         assert np.allclose(multiplied_data.means, pre_op_data.means)  # unaltered
 
@@ -157,31 +151,18 @@ class TestGaussianData(TestMatVecData):
         assert isinstance(output, TYPE)
 
 
+    @pytest.mark.parametrize("x", [np.array([-0.1,0.2,-0.3,0.4]), np.array([0.1,-0.2,0.3,-0.4])])
+    def test_multiplication_is_correct(self, DATA, OTHER, D, N, x):
+        our_res = (DATA * OTHER).value(x)
+        
+        scipy_res = 0.0
+        for i in range(N):
+            for j in range(N):
+                g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
+                g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
+                scipy_res += g1 * g2
 
-    # @pytest.mark.parametrize("x", [2, 7, 200])#, 7, 200
-    # def test_multiplication_is_correct(self, DATA, OTHER, D, N, x):
-    #     multiplied_data = DATA * OTHER 
-    #     scipy_direct_mul = []
-    #     our_mul = []
-
-    #     for i in range(N):
-    #         for j in range(N):
-    
-    #             g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
-    #             g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
-    #             curr_scipy_mul = g1 * g2
-    #             scipy_direct_mul.append(curr_scipy_mul)
-
-    #     m = multiplied_data.coeffs.shape[0]
-    #     for i in range(m):
-    #         curr_g = multiplied_data.coeffs[i] * mvg.pdf(x, 
-    #                                                      mean=multiplied_data.means[i], 
-    #                                                      cov=multiplied_data.cov[i]
-    #                                                      )
-    #         our_mul.append(curr_g)
-    #     our_res = sum(our_mul)
-    #     scipy_res = sum(scipy_direct_mul)
-    #     assert our_res == scipy_res
+        assert np.allclose(our_res, scipy_res)
             
 
     # ###############  Outer product  ##################
