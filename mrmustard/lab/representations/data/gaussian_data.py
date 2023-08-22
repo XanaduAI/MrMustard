@@ -37,7 +37,7 @@ class GaussianData(MatVecData):
     These are the parameters of a linear combination of Gaussians, which is Gaussian if there is
     only one contribution for each.
     Each contribution parametrizes the Gaussian function:
-    `coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))`.
+    `coeffs * exp(-0.5*(x-mean)^T cov^-1 (x-mean))/sqrt((2pi)^k det(cov))` where k is the size of cov.
 
     Args:
         cov (Optional[Batch[Matrix]]):      covariance matrices (real symmetric)
@@ -59,19 +59,16 @@ class GaussianData(MatVecData):
         if cov is not None or means is not None:  # at least one is defined -or both-
 
             if cov is None:
-                means =  np.array(means)
-                dim = means.shape[1]
+                dim = means.shape[-1]
                 batch_size = means.shape[0]
-                cov = np.array([math.eye(dim, dtype=means.dtype) for _ in range(batch_size)])
+                cov = math.astensor([math.eye(dim, dtype=means.dtype) for _ in range(batch_size)])
 
             elif means is None:  # we know cov is not None here
-                means =  np.array(means)
-                cov = np.array(cov)
-                dim = cov.shape[1]
+                dim = cov.shape[-1]
                 batch_size = cov.shape[0]                
-                means = math.zeros( (batch_size, dim), dtype=cov.dtype )
+                means = math.zeros((batch_size, dim), dtype=cov.dtype)
         else:
-            raise ValueError("You need to define at one: covariance or mean")
+            raise ValueError("You need to define at last one of covariance or mean")
         
         try:
             self.num_modes = means.shape[0] // 2
@@ -91,29 +88,41 @@ class GaussianData(MatVecData):
     @property
     def c(self) -> Scalar:
         return self.coeffs
-
+    
+    def value(self, x: np.array):
+        r"""returns the value of the gaussian at x.
+        
+        Arguments:
+            x (array of floats): where to evaluate the function
+        """
+        val = 0.0
+        for sigma, mu, c in zip(self.cov, self.means, self.c):
+            exponent = -0.5*math.sum(math.solve(cov, (x-mu))*(x-mu))
+            denom = math.sqrt((2*np.pi)**len(x) * math.det(cov))
+            val += math.exp(exponent)/denom 
+        return val
+    
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
         if isinstance(other, GaussianData):
             joint_covs = self._compute_mul_covs(other=other)
-            print(f"JOINT COVS SHAPE: {joint_covs.shape}")
 
             joint_means = self._compute_mul_means(other=other)
-            print(f"JOINT MEANS SHAPE: {joint_means.shape}")
 
             joint_coeffs = self._compute_mul_coeffs(
                 other=other, joint_covs=joint_covs, joint_means=joint_means
             )
-            print(f"JOINT COEFFS SHAPE: {joint_coeffs.shape}")
             return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
         else:
-            try:  # scalar
+            try:  # hope it's a scalar
                 new_coeffs = self.coeffs * other
                 return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
             except TypeError as e:  # Neither GaussianData nor scalar
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def _compute_mul_covs(self, other: GaussianData) -> Tensor:
-        r"""Computes the combined covariances when multiplying Gaussian-represented states.
+        r"""Computes the combined covariances when multiplying Gaussians.
+        The formula is cov1 (cov1 + cov2)^-1 cov2 for each pair of cov1 and cov2
+        from self and other (see https://math.stackexchange.com/q/964103)
 
         Args:
             other (GaussianData): another GaussianData object which covariance will be multiplied
@@ -121,10 +130,6 @@ class GaussianData(MatVecData):
         Returns:
             (Tensor) The tensor of combined covariances
         """
-        # NOTE: will this get solved when the batch dimension is supported everywhere?
-        # c1 = math.expand_dims(c1, axis=0)
-        # c2 = math.expand_dims(c2, axis=0)
-        # c1c2 = math.concat([c1, c2], axis=1)
         combined_covs = (
             [ 
                 math.matmul(c1, math.solve(c1 + c2, c2))
@@ -134,88 +139,11 @@ class GaussianData(MatVecData):
         )
         return math.astensor(combined_covs)
     
-
-    def _compute_mul_coeffs( #TODO: check this part which is wrong (doesn't return the correct number of coefficients)
-            # TODO : implement formula 130 of representations scrape everything else
-        self, other: GaussianData, joint_covs: Tensor, joint_means: Tensor
-    ) -> Tensor:
-        r"""Computes the combined coefficients when multiplying Gaussian-represented states.
-
-        Args:
-            other (GaussianData):   another GaussianData object which coeffs will be multiplied
-            joint_covs (Tensor):    the combined covariances of the two objects
-            joint_means (Tensor):   the combined means of the two objects
-
-        Returns:
-            (Tensor) The tensor of multiplied coefficients
-        """
-        # over each mat/vec pair do
-        return np.array([-1])
-
-    def _helper_mul_alpha(self,k, cov1, cov2, mean1, mean2, c=1):
-        joint_cov = cov1+cov2
-        return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, mean=mean2, x=mean1, c=c)
-
-    def _helper_full_gaussian_pdf(self, k, cov, mean, x, c=1):
-        return self._helper_gaussian_precoeff(k,cov) * self._helper_gaussian_exp(cov, mean, x, c)
-
-    @staticmethod
-    def _helper_gaussian_precoeff(k,cov):
-        pi_part = (2*np.pi)**(k/2)
-        det_part = np.sqrt(np.linalg.det(cov))
-        return 1 / (pi_part * det_part)
-    
-    @staticmethod
-    def _helper_gaussian_exp(cov, mean, x, c):
-        coeff = -(1/2)
-        precision = np.linalg.inv(cov)
-        eta = x - mean
-        pre_exponential = np.dot( np.dot(np.transpose(eta), precision), eta)
-        exponential = np.exp(coeff * pre_exponential)
-        return c * exponential
-
-
-    # def _compute_mul_coeffs( #TODO: check this part which is wrong (doesn't return the correct number of coefficients)
-    #         # TODO : implement formula 130 of representations scrape everything else
-    #     self, other: GaussianData, joint_covs: Tensor, joint_means: Tensor
-    # ) -> Tensor:
-    #     r"""Computes the combined coefficients when multiplying Gaussian-represented states.
-
-    #     Args:
-    #         other (GaussianData):   another GaussianData object which coeffs will be multiplied
-    #         joint_covs (Tensor):    the combined covariances of the two objects
-    #         joint_means (Tensor):   the combined means of the two objects
-
-    #     Returns:
-    #         (Tensor) The tensor of multiplied coefficients
-    #     """
-    #     combined_coeffs = [
-    #         co1
-    #         * co2
-    #         * math.exp(
-    #             0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
-    #             + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
-    #             - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
-    #         )
-    #         for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
-    #             self.cov,   
-    #             self.means,
-    #             other.cov,
-    #             other.means,
-    #             joint_covs,
-    #             joint_means,
-    #             self.coeffs,
-    #             other.coeffs,
-    #         )
-    #     ]
-    #     res = math.astensor(combined_coeffs)
-    #     return res
-
     def _compute_mul_means(self, other: GaussianData) -> Tensor:
-        r"""Computes the combined means when multiplying Gaussian-represented states.
-
-        Formula correpsonds to : c1 (c1 + c2)^-1 m2 + c2 (c1 + c2)^-1 m1 for each pair of cov mat
-        in batch.
+        r"""Computes the combined means when multiplying Gaussians.
+        The formula is cov1 (cov1 + cov2)^-1 mu2 + cov2 (cov1 + cov2)^-1 mu1 for each 
+        pair of (cov1, mu1) and (cov2, mu2) from self and other.
+        (see https://math.stackexchange.com/q/964103)
 
         Args:
             other (GaussianData):  another GaussianData object which means will be multiplied
@@ -229,53 +157,17 @@ class GaussianData(MatVecData):
             for c2, m2 in zip(other.cov, other.means)
         ]
         return math.astensor(combined_means)
+    
 
-    # @staticmethod
-    # def _from_QPolyData(poly:QPolyData
-    #                     ) -> Tuple[Batch[Matrix], Batch[Vector], Batch[Scalar]] :
-    #     r""" Extracts necessary information from a QPolyData object to build a GaussianData one.
+    def _compute_mul_coeffs(self, other: GaussianData) -> Tensor:
+        r"""Computes the combined coefficients when multiplying Gaussians.
 
-    #     Args:
-    #         poly: the quadratic polynomial data
+        Args:
+            other (GaussianData):   another GaussianData object which coeffs will be multiplied
 
-    #     Returns:
-    #         The necessary matrix vector and coefficients to build a GaussianData object
-    #     """
-    #     inv_A = math.inv(poly.A)
-    #     cov = 2 * inv_A
+        Returns:
+            (Tensor) The tensor of multiplied coefficients
+        """
+        return math.outer(self.c, other.c).reshape(-1)
 
-    #     mean = 2 * math.solve(poly.A, poly.b)
 
-    #     pre_coeffs = math.cast( math.exp( 0.5 * math.einsum("bca,bcd,bde->bae", mean, cov, mean)),
-    #                             dtype=poly.c.dtype
-    #                             )
-    #     coeffs = poly.c * pre_coeffs
-
-    #     return (cov, mean, coeffs)
-
-    # old code for mul TODO: do we keep?
-    # def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
-    # covs = []
-    # for c1 in self.cov:
-    #     for c2 in other.cov:
-    #         covs.append(math.matmul(c1, math.solve(c1 + c2, c2)))
-
-    # means = []
-    # for c1, m1 in zip(self.cov, self.mean):
-    #     for c2, m2 in zip(other.cov, other.mean):
-    #         means.append(
-    #             math.matvec(c1, math.solve(c1 + c2, m2))
-    #             + math.matvec(c2, math.solve(c1 + c2, m1))
-    #         )
-
-    # coeffs = []
-    # for c1, m1, c2, m2, c3, m3, co1, co2 in zip(
-    #     self.cov, self.mean, other.cov, other.mean, cov, mean, self.coeffs, other.coeffs
-    # ):
-    #     coeffs.append(co1 * co2
-    #         * math.exp(
-    #             0.5 * math.sum(m1 * math.solve(c1, m1), axes=-1)
-    #             + 0.5 * math.sum(m2 * math.solve(c2, m2), axes=-1)
-    #             - 0.5 * math.sum(m3 * math.solve(c3, m3), axes=-1)
-    #         )
-    #     )
