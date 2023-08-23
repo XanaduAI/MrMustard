@@ -8,7 +8,7 @@
 
 ### Bug fixes
 
-* Fixed a bug that the variables of the apply_choi_to_dm function have not the correct name
+* Fixed a bug that the argument names of functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm) do not have the correct name
   [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
 
 ### Documentation
