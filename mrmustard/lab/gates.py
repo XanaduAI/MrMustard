@@ -497,12 +497,6 @@ class BSgate(Parametrized, Unitary):
         """
         assert cutoffs or shape, "Either cutoffs or shape must be provided."
         shape = shape or tuple(cutoffs) + tuple(cutoffs)
-        if len(cutoffs) == 4:
-            shape = tuple(cutoffs)
-        elif len(cutoffs) == 2:
-            shape = tuple(cutoffs) + tuple(cutoffs)
-        else:
-            raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
