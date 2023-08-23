@@ -19,6 +19,7 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from opt_einsum import contract
 
 from mrmustard import settings
 from mrmustard.math.autocast import Autocast
@@ -136,10 +137,11 @@ class TFMath(MathInterface):
     def diag_part(self, array: tf.Tensor) -> tf.Tensor:
         return tf.linalg.diag_part(array)
 
-    def einsum(self, string: str, *tensors) -> tf.Tensor:
-        if type(string) is str:
-            return tf.einsum(string, *tensors)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+    def einsum(self, string: str, *tensors, **kwargs) -> tf.Tensor:
+        if isinstance(string, str):
+            return tf.einsum(string, *tensors, **kwargs)
+        else:
+            return contract(string, *tensors, **kwargs)
 
     def exp(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.exp(array)
