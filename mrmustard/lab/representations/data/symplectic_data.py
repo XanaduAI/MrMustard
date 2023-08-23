@@ -14,14 +14,15 @@
 
 from __future__ import annotations
 
-import numpy as np
-
+from itertools import product
 from typing import Optional
+
+import numpy as np
+from thewalrus.quantum.gaussian_checks import is_symplectic
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Batch, Matrix, Scalar, RealVector
-from thewalrus.quantum.gaussian_checks import is_symplectic
+from mrmustard.typing import Batch, Matrix, RealVector, Scalar
 
 math = Math()
 
@@ -44,12 +45,12 @@ class SymplecticData(MatVecData):
         displacement: Batch[RealVector],
         coeffs: Optional[Batch[Scalar]] = None,
     ) -> None:
-        for mat in symplectic:
+        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
+        for mat in self.mat:
             if is_symplectic(math.asnumpy(mat)) == False:
                 raise ValueError("The matrix given is not symplectic.")
 
         # reaching here means no matrix is non-symplectic
-        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
 
     @property
     def symplectic(self) -> np.array:
@@ -68,3 +69,20 @@ class SymplecticData(MatVecData):
                 return self.__class__(self.symplectic, self.displacement, new_coeffs)
             except (TypeError, ValueError) as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+    def __and__(self, other: SymplecticData) -> SymplecticData:
+        "symplectic tensor product as block-wise block diag concatenation"
+        if isinstance(other, SymplecticData):
+            new_symplectics = [
+                math.symplectic_tensor_product(s1, s2)
+                for s1, s2 in product(self.symplectic, other.symplectic)
+            ]
+            new_displacements = []
+            d = len(self.displacement[0]) // 2
+            for d1, d2 in product(self.displacement, other.displacement):
+                new_displacements.append(np.concatenate([d1[:d], d2[:d], d1[d:], d2[d:]]))
+            new_displacements = math.astensor(new_displacements)
+            new_coeffs = math.reshape(math.outer(self.coeffs, other.coeffs), -1)
+            return self.__class__(new_symplectics, new_displacements, new_coeffs)
+        else:
+            raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.")
