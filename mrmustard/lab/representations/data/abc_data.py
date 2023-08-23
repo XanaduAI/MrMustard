@@ -89,5 +89,5 @@ class ABCData(MatVecData):
         else:
             try:  # scalar
                 return self.__class__(self.A, self.b, other * self.c)
-            except TypeError as e:  # Neither same object type nor a scalar case
+            except (TypeError, ValueError) as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
