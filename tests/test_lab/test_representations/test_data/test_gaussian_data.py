@@ -41,10 +41,12 @@ def D() -> int:
     """The dimension: matrices will be DxD and vectors will be D. D must be even."""
     return 4
 
+
 @pytest.fixture
 def N() -> int:
     """The number of elements in the batch."""
     return 3
+
 
 @pytest.fixture
 def TYPE():
@@ -55,16 +57,16 @@ def TYPE():
 @pytest.fixture
 def COV(N, D) -> Matrix:
     r"""Some batch of matrices for the object's parameterization."""
-    c = settings.rng.normal(size=(N,D,D))
-    c = c + np.transpose(c, (0,2,1))  # symmetrize
-    c = np.einsum('bij,bkj->bik', c, np.conj(c)) # make positive semi-definite
+    c = settings.rng.normal(size=(N, D, D))
+    c = c + np.transpose(c, (0, 2, 1))  # symmetrize
+    c = np.einsum("bij,bkj->bik", c, np.conj(c))  # make positive semi-definite
     return c
 
 
 @pytest.fixture
 def MEANS(N, D) -> Vector:
     r"""Some batch of vectors for the object's parameterization."""
-    return settings.rng.normal(size=(N,D))
+    return settings.rng.normal(size=(N, D))
 
 
 @pytest.fixture
@@ -140,58 +142,58 @@ class TestGaussianData(TestMatVecData):
     def test_if_given_scalar_mul_multiplies_coeffs_and_nothing_else(self, DATA, c):
         pre_op_data = deepcopy(DATA)
         multiplied_data = DATA * c
-        assert np.allclose(multiplied_data.c, (pre_op_data.coeffs * c) ) # coeffs are multiplied
+        assert np.allclose(multiplied_data.c, (pre_op_data.coeffs * c))  # coeffs are multiplied
         assert np.allclose(multiplied_data.cov, pre_op_data.cov)  # unaltered
         assert np.allclose(multiplied_data.means, pre_op_data.means)  # unaltered
 
-    
     @pytest.mark.parametrize("operator", [op.add, op.mul, op.sub])
-    def test_operating_on_two_gaussians_returns_a_gaussian_object(self, DATA, OTHER, TYPE, operator):
+    def test_operating_on_two_gaussians_returns_a_gaussian_object(
+        self, DATA, OTHER, TYPE, operator
+    ):
         output = operator(DATA, OTHER)
         assert isinstance(output, TYPE)
 
-
-    @pytest.mark.parametrize("x", [np.array([-0.1,0.2,-0.3,0.4]), np.array([0.1,-0.2,0.3,-0.4])])
+    @pytest.mark.parametrize(
+        "x", [np.array([-0.1, 0.2, -0.3, 0.4]), np.array([0.1, -0.2, 0.3, -0.4])]
+    )
     def test_multiplication_is_correct(self, DATA, OTHER, D, N, x):
         our_res = (DATA * OTHER).value(x)
-        
+
         scipy_res = 0.0
         for i in range(N):
+            g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
             for j in range(N):
-                g1 = DATA.coeffs[i] * mvg.pdf(x, mean=DATA.means[i], cov=DATA.cov[i])
                 g2 = OTHER.coeffs[j] * mvg.pdf(x, mean=OTHER.means[j], cov=OTHER.cov[j])
                 scipy_res += g1 * g2
 
         assert np.allclose(our_res, scipy_res)
-            
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
 
-    
     def _helper_full_gaussian_pdf(self, k, cov, means, x, c=1):
-        return self._helper_gaussian_precoeff(k,cov) * self._helper_gaussian_exp(cov, means, x, c)
+        return self._helper_gaussian_precoeff(k, cov) * self._helper_gaussian_exp(cov, means, x, c)
 
     @staticmethod
-    def _helper_gaussian_precoeff(k,cov):
-        pi_part = (2*np.pi)**(k/2)
+    def _helper_gaussian_precoeff(k, cov):
+        pi_part = (2 * np.pi) ** (k / 2)
         det_part = np.sqrt(np.linalg.det(cov))
         return 1 / (pi_part * det_part)
-    
+
     @staticmethod
     def _helper_gaussian_exp(cov, mean, x, c):
-        coeff = -(1/2)
+        coeff = -(1 / 2)
         precision = np.linalg.inv(cov)
         eta = x - mean
-        pre_exponential = np.dot( np.dot(np.transpose(eta), precision), eta)
+        pre_exponential = np.dot(np.dot(np.transpose(eta), precision), eta)
         exponential = np.exp(coeff * pre_exponential)
         return c * exponential
-    
+
     @staticmethod
     def _helper_mul_covs(cov1, cov2):
         precision1 = np.linalg.inv(cov1)
         precision2 = np.linalg.inv(cov2)
-        return np.linalg.inv(precision1+precision2)
+        return np.linalg.inv(precision1 + precision2)
 
     @staticmethod
     def _helper_mul_means(new_cov, cov1, cov2, mean1, mean2):
@@ -199,11 +201,11 @@ class TestGaussianData(TestMatVecData):
         precision2 = np.linalg.inv(cov2)
         eta1 = np.dot(precision1, mean1)
         eta2 = np.dot(precision2, mean2)
-        etas = eta1+eta2
+        etas = eta1 + eta2
         return np.dot(new_cov, etas)
 
     def _helper_mul_alpha(self, k, cov1, cov2, mean1, mean2, c=1):
-        joint_cov = cov1+cov2
+        joint_cov = cov1 + cov2
         return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, means=mean2, x=mean1, c=c)
 
     def _helper_full_gaussian_mul(self, k, cov1, cov2, mean1, mean2, c=1):

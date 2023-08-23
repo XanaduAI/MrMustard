@@ -41,7 +41,7 @@ class GaussianData(MatVecData):
 
     Args:
         cov (Optional[Batch[Matrix]]):      covariance matrices (real symmetric)
-        means (Optional[Batch[Vector]]):    mean vector of the state (real), note that the 
+        means (Optional[Batch[Vector]]):    mean vector of the state (real), note that the
                                             dimension must be even
         coeffs (Optional[Batch[Scalar]]):   coefficients (complex)
 
@@ -55,9 +55,7 @@ class GaussianData(MatVecData):
         means: Optional[Batch[Vector]] = None,
         coeffs: Optional[Batch[Scalar]] = None,
     ) -> None:
-        
         if cov is not None or means is not None:  # at least one is defined -or both-
-
             if cov is None:
                 dim = means.shape[-1]
                 batch_size = means.shape[0]
@@ -65,16 +63,12 @@ class GaussianData(MatVecData):
 
             elif means is None:  # we know cov is not None here
                 dim = cov.shape[-1]
-                batch_size = cov.shape[0]                
+                batch_size = cov.shape[0]
                 means = math.zeros((batch_size, dim), dtype=cov.dtype)
         else:
             raise ValueError("You need to define at last one of covariance or mean")
-        
-        try:
-            self.num_modes = means.shape[0] // 2
-        except AttributeError:
-            self.num_modes = len(means)//2
 
+        # self.num_modes = means.shape[-1] // 2
         super().__init__(mat=cov, vec=means, coeffs=coeffs)
 
     @property
@@ -88,29 +82,25 @@ class GaussianData(MatVecData):
     @property
     def c(self) -> Scalar:
         return self.coeffs
-    
+
     def value(self, x: np.array):
         r"""returns the value of the gaussian at x.
-        
+
         Arguments:
             x (array of floats): where to evaluate the function
         """
         val = 0.0
         for sigma, mu, c in zip(self.cov, self.means, self.c):
-            exponent = -0.5*math.sum(math.solve(cov, (x-mu))*(x-mu))
-            denom = math.sqrt((2*np.pi)**len(x) * math.det(cov))
-            val += math.exp(exponent)/denom 
+            exponent = -0.5 * math.sum(math.solve(sigma, (x - mu)) * (x - mu))
+            denom = math.sqrt((2 * np.pi) ** len(x) * math.det(sigma))
+            val += c * math.exp(exponent) / denom
         return val
-    
+
     def __mul__(self, other: Union[Scalar, GaussianData]) -> GaussianData:
         if isinstance(other, GaussianData):
             joint_covs = self._compute_mul_covs(other=other)
-
             joint_means = self._compute_mul_means(other=other)
-
-            joint_coeffs = self._compute_mul_coeffs(
-                other=other, joint_covs=joint_covs, joint_means=joint_means
-            )
+            joint_coeffs = self._compute_mul_coeffs(other=other)
             return self.__class__(cov=joint_covs, means=joint_means, coeffs=joint_coeffs)
         else:
             try:  # hope it's a scalar
@@ -130,18 +120,14 @@ class GaussianData(MatVecData):
         Returns:
             (Tensor) The tensor of combined covariances
         """
-        combined_covs = (
-            [ 
-                math.matmul(c1, math.solve(c1 + c2, c2))
-                for c1 in self.cov
-                for c2 in other.cov
-            ]
-        )
+        combined_covs = [
+            math.matmul(c1, math.solve(c1 + c2, c2)) for c1 in self.cov for c2 in other.cov
+        ]
         return math.astensor(combined_covs)
-    
+
     def _compute_mul_means(self, other: GaussianData) -> Tensor:
         r"""Computes the combined means when multiplying Gaussians.
-        The formula is cov1 (cov1 + cov2)^-1 mu2 + cov2 (cov1 + cov2)^-1 mu1 for each 
+        The formula is cov1 (cov1 + cov2)^-1 mu2 + cov2 (cov1 + cov2)^-1 mu1 for each
         pair of (cov1, mu1) and (cov2, mu2) from self and other.
         (see https://math.stackexchange.com/q/964103)
 
@@ -157,7 +143,6 @@ class GaussianData(MatVecData):
             for c2, m2 in zip(other.cov, other.means)
         ]
         return math.astensor(combined_means)
-    
 
     def _compute_mul_coeffs(self, other: GaussianData) -> Tensor:
         r"""Computes the combined coefficients when multiplying Gaussians.
@@ -168,6 +153,9 @@ class GaussianData(MatVecData):
         Returns:
             (Tensor) The tensor of multiplied coefficients
         """
-        return math.outer(self.c, other.c).reshape(-1)
-
-
+        combined_coeffs = [
+            c1 * c2 * self.__class__(cov=[cov1 + cov2], means=[m1], coeffs=[1]).value(m2)
+            for cov1, m1, c1 in zip(self.cov, self.means, self.c)
+            for cov2, m2, c2 in zip(other.cov, other.means, other.c)
+        ]
+        return math.astensor(combined_coeffs)
