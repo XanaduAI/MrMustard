@@ -433,7 +433,8 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_modes, kraus_out_modes=None):
     )
     kraus = MMTensor(
         kraus,
-        axis_labels=[f"out_left_{i}" for i in kraus_out_modes] + [f"left_{i}" for i in kraus_in_modes],
+        axis_labels=[f"out_left_{i}" for i in kraus_out_modes]
+        + [f"left_{i}" for i in kraus_in_modes],
     )
     kraus_conj = MMTensor(
         math.conj(kraus.tensor),
