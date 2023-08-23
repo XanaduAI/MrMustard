@@ -14,11 +14,11 @@
 
 from __future__ import annotations
 
-import numpy as np
 import operator as op
-
 from itertools import product
-from typing import Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
+
+import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
@@ -91,3 +91,14 @@ class ABCData(MatVecData):
                 return self.__class__(self.A, self.b, other * self.c)
             except (TypeError, ValueError) as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+    def __and__(self, other: ABCData) -> ABCData:
+        try:
+            covs = [math.block_diag(m1, m2) for m1 in self.cov for m2 in other.cov]
+            means = [math.concat([v1, v2], axis=-1) for v1 in self.means for v2 in other.means]
+            coeffs = [c1 * c2 for c1 in self.c for c2 in other.c]
+
+            return self.__class__(math.astensor(covs), math.astensor(means), math.astensor(coeffs))
+
+        except AttributeError as e:
+            raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
