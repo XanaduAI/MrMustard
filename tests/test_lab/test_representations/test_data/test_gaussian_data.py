@@ -32,7 +32,8 @@ from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
 from thewalrus.random import random_covariance
-from mrmustard import settings
+
+np.random.seed(42)
 
 
 #########   Instantiating class to test  #########
@@ -57,7 +58,7 @@ def TYPE():
 @pytest.fixture
 def COV(N, D) -> Matrix:
     r"""Some batch of matrices for the object's parameterization."""
-    c = settings.rng.normal(size=(N, D, D))
+    c = np.random.normal(size=(N, D, D))
     c = c + np.transpose(c, (0, 2, 1))  # symmetrize
     c = np.einsum("bij,bkj->bik", c, np.conj(c))  # make positive semi-definite
     return c
@@ -66,13 +67,13 @@ def COV(N, D) -> Matrix:
 @pytest.fixture
 def MEANS(N, D) -> Vector:
     r"""Some batch of vectors for the object's parameterization."""
-    return settings.rng.normal(size=(N, D))
+    return np.random.normal(size=(N, D))
 
 
 @pytest.fixture
 def COEFFS(N) -> Scalar:
     r"""Some batch of scalars for the object's parameterization."""
-    return settings.rng.normal(size=N)
+    return np.random.normal(size=N)
 
 
 @pytest.fixture
