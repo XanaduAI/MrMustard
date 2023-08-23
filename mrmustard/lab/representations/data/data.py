@@ -14,12 +14,10 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import Union
 
-from mrmustard.typing import Scalar, Vector
+from mrmustard.typing import Scalar
 
 
 class Data(ABC):
