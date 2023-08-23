@@ -88,6 +88,16 @@ class TFMath(MathInterface):
             array = self.expand_dims(array, 0)
         return self.cast(array, dtype)
 
+    def arrayflatten(self, array_of_arrays: Union[tf.Tensor, List]) -> tf.Tensor:
+        arr = self.transpose(self.astensor(array_of_arrays), (0, 2, 1, 3))
+        return self.reshape(arr, (arr.shape[0] * arr.shape[1], arr.shape[2] * arr.shape[3]))
+
+    def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
+        Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
+        Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
+        shape = (Za.shape[0] + Zb.shape[0], Za.shape[1] + Zb.shape[1])
+        return self.arrayflatten([[mat1, Za], [Zb, mat2]])
+
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
@@ -293,6 +303,16 @@ class TFMath(MathInterface):
 
     def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
         return tf.reduce_sum(array, axes)
+
+    def symplectic_tensor_product(self, S1, S2) -> tf.Tensor:
+        d = S1.shape[-1] // 2
+        A1, B1, C1, D1 = S1[:d, :d], S1[:d, d:], S1[d:, :d], S1[d:, d:]
+        A2, B2, C2, D2 = S2[:d, :d], S2[:d, d:], S2[d:, :d], S2[d:, d:]
+        A = self.block_diag(A1, A2)
+        B = self.block_diag(B1, B2)
+        C = self.block_diag(C1, C2)
+        D = self.block_diag(D1, D2)
+        return self.arrayflatten([[A, B], [C, D]])
 
     @Autocast()
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: List[int]) -> tf.Tensor:
