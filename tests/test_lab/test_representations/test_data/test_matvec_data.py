@@ -20,12 +20,13 @@ Check parents test classe-s for more details on the rationale.
 The fixtures must correspond to the concrete class being tested, here MatVecData.
 """
 
-import numpy as np
 import operator as op
-import pytest
-
 from copy import deepcopy
 
+import numpy as np
+import pytest
+
+from mrmustard import settings
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
@@ -33,8 +34,6 @@ from tests.test_lab.test_representations.test_data.test_data import TestData
 from tests.test_lab.test_representations.test_data.tools_for_tests import (
     helper_mat_vec_unchanged_computed_coeffs_are_correct,
 )
-
-from mrmustard import settings
 
 settings.SEED = 42
 
@@ -169,12 +168,15 @@ class TestMatVecData(TestData):  # TestData
         norms_of_vecs_postop = set(np.around([f(v) for v in postop_data.mat], precision))
         coeffs_preop = set(np.around(preop_data.coeffs, precision))
         coeffs_postop = set(np.around(postop_data.coeffs, precision))
-        assert norms_of_mats_preop.symmetric_difference(norms_of_mats_postop) == set()
-        assert norms_of_vecs_preop.symmetric_difference(norms_of_vecs_postop) == set()
-        assert coeffs_preop.symmetric_difference(coeffs_postop) != set()
+        assert norms_of_mats_preop == norms_of_mats_postop
+        assert norms_of_vecs_preop == norms_of_vecs_postop
+        assert coeffs_preop != coeffs_postop
+
+    # ###############  Tensor product  ##################
+    # TODO: to test in children
 
     # ###############  Multiplication  ##################
     # NOTE: tested in children
 
     # ###############  Outer product  ##################
-    # # NOTE: not implented yet so no tests
+    # NOTE: not implented yet so no tests
