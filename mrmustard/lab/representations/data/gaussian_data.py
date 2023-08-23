@@ -14,17 +14,17 @@
 
 from __future__ import annotations
 
-import numpy as np
+from itertools import product
+from typing import Optional, Union  # TYPE_CHECKING
 
-from typing import Optional, TYPE_CHECKING, Union
+import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
 
-
-if TYPE_CHECKING:  # This is to avoid the circular import issue with GaussianData<>ABCData
-    from mrmustard.lab.representations.data.abc_data import ABCData
+# if TYPE_CHECKING:  # This is to avoid the circular import issue with GaussianData<>ABCData
+#     from mrmustard.lab.representations.data.abc_data import ABCData
 
 math = Math()
 
@@ -110,6 +110,22 @@ class GaussianData(MatVecData):
                 return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
             except (TypeError, ValueError) as e:  # Neither GaussianData nor scalar
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+    def __and__(self, other: GaussianData) -> GaussianData:
+        "tensor product as block-wise block diag concatenation"
+        if isinstance(other, GaussianData):
+            new_covs = [
+                math.symplectic_tensor_product(s1, s2) for s1, s2 in product(self.cov, other.cov)
+            ]
+            new_means = []
+            d = len(self.means[0]) // 2
+            for d1, d2 in product(self.means, other.means):
+                new_means.append(np.concatenate([d1[:d], d2[:d], d1[d:], d2[d:]]))
+            new_means = math.astensor(new_means)
+            new_coeffs = math.reshape(math.outer(self.coeffs, other.coeffs), -1)
+            return self.__class__(new_covs, new_means, new_coeffs)
+        else:
+            raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.")
 
     def _compute_mul_covs(self, other: GaussianData) -> Tensor:
         r"""Computes the combined covariances when multiplying Gaussians.
