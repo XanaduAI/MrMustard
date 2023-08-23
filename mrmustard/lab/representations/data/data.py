@@ -25,20 +25,17 @@ from mrmustard.typing import Scalar, Vector
 class Data(ABC):
     r"""Abstract parent class for types of data encoding a quantum state's representation."""
 
-    def __init__(self) -> None:
-        pass
-
     @abstractmethod
     def __neg__(self) -> Data:
-        raise NotImplementedError()  # prompting override in children
+        ...
 
     @abstractmethod
     def __eq__(self, other: Data) -> bool:
-        raise NotImplementedError()  # prompting override in children
+        ...
 
     @abstractmethod
     def __add__(self, other: Data) -> Data:
-        raise NotImplementedError()  # prompting override in children
+        ...
 
     def __sub__(self, other: Data) -> Data:
         try:
@@ -48,11 +45,11 @@ class Data(ABC):
 
     @abstractmethod
     def __truediv__(self, other: Union[Scalar, Data]) -> Data:
-        raise NotImplementedError()  # prompting override in children
+        ...
 
     @abstractmethod
     def __mul__(self, other: Union[Scalar, Data]) -> Data:
-        raise NotImplementedError()  # prompting override in children
+        ...
 
     def __rmul__(self, other: Scalar) -> Data:
         return self.__mul__(other=other)
