@@ -30,6 +30,7 @@ from typing import (
 import numpy as np
 
 from mrmustard import settings
+from mrmustard.lab.abstract.circuitpart import CircuitPart
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.typing import (
@@ -49,7 +50,7 @@ math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
-class State:  # pylint: disable=too-many-public-methods
+class State(CircuitPart):  # pylint: disable=too-many-public-methods
     r"""Base class for quantum states."""
 
     def __init__(
@@ -63,6 +64,7 @@ class State:  # pylint: disable=too-many-public-methods
         modes: Sequence[int] = None,
         cutoffs: Sequence[int] = None,
         _norm: float = 1.0,
+        name: str = "State",
     ):
         r"""Initializes the state.
 
@@ -107,13 +109,21 @@ class State:  # pylint: disable=too-many-public-methods
             self._purity = 1.0 if ket is not None else None
         else:
             raise ValueError(
-                "State must be initialized with either a covariance matrix and means vector, an eigenvalues array and symplectic matrix, or a fock representation"
+                "State must be initialized with cov/means, eigenvalues and symplectic matrix, or a fock representation"
             )
         self._modes = modes
         if modes is not None:
             assert (
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+
+        super().__init__(
+            name=name,
+            modes_output_ket=modes or list(range(self.num_modes)),
+            modes_output_bra=(modes or list(range(self.num_modes)))
+            if not self.is_hilbert_vector
+            else [],
+        )
 
     @property
     def modes(self):
