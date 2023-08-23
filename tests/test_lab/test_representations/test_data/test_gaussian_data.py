@@ -157,7 +157,7 @@ class TestGaussianData(TestMatVecData):
     @pytest.mark.parametrize(
         "x", [np.array([-0.1, 0.2, -0.3, 0.4]), np.array([0.1, -0.2, 0.3, -0.4])]
     )
-    def test_multiplication_is_correct(self, DATA, OTHER, D, N, x):
+    def test_multiplication_is_correct(self, DATA, OTHER, N, x):
         our_res = (DATA * OTHER).value(x)
 
         scipy_res = 0.0
