@@ -38,16 +38,18 @@ class SymplecticData(MatVecData):
         coeffs (Optional[Batch[Scalar]]):   default to be 1.
     """
 
-    def __init__(self, symplectic: Batch[Matrix],
-                 displacement: Batch[RealVector], 
-                 coeffs: Optional[Batch[Scalar]]=None
-                 ) -> None:
+    def __init__(
+        self,
+        symplectic: Batch[Matrix],
+        displacement: Batch[RealVector],
+        coeffs: Optional[Batch[Scalar]] = None,
+    ) -> None:
         for mat in symplectic:
             if is_symplectic(math.asnumpy(mat)) == False:
                 raise ValueError("The matrix given is not symplectic.")
 
         # reaching here means no matrix is non-symplectic
-        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)            
+        super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
 
     @property
     def symplectic(self) -> np.array:
@@ -64,5 +66,5 @@ class SymplecticData(MatVecData):
             try:  # Maybe other is a scalar
                 new_coeffs = self.coeffs * other
                 return self.__class__(self.symplectic, self.displacement, new_coeffs)
-            except TypeError as e:
+            except (TypeError, ValueError) as e:
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
