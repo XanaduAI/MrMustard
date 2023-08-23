@@ -285,7 +285,7 @@ class Unitary(CircuitPart, Transformation):
     @property
     def shape(self):
         try:
-            return [wire.cutoff for wire in self.all_wires]
+            return [wire.dimension for wire in self.wires]
         except AttributeError:
             raise AttributeError("shape is not yet set for this transformation")
 
@@ -407,7 +407,7 @@ class Channel(CircuitPart, Transformation):
     @property
     def shape(self):
         try:
-            return [wire.cutoff for wire in self.all_wires]
+            return [wire.dimension for wire in self.wires]
         except AttributeError:
             raise AttributeError("shape is not yet set for this transformation")
 
@@ -427,10 +427,6 @@ class Channel(CircuitPart, Transformation):
             N3 = list(range(3 * n, 4 * n))
             choi = math.conjugate(math.transpose(choi, N1 + N0 + N3 + N2))  # if dual we flip out-in
         return choi
-
-    @property
-    def fock(self):
-        return self.choi(self.cutoffs)  # note self.cutoffs is not implemented
 
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
