@@ -24,7 +24,7 @@ from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
 
 
 if TYPE_CHECKING:  # This is to avoid the circular import issue with GaussianData<>ABCData
-    from mrmustard.lab.representations.data.abc_datamport ABCData
+    from mrmustard.lab.representations.data.abc_data import ABCData
 
 math = Math()
 
