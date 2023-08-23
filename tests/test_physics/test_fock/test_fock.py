@@ -252,6 +252,14 @@ def test_apply_kraus_to_ket_1mode():
     assert ket_out.shape == (2, 5, 4)
 
 
+def test_apply_kraus_to_ket_1mode_with_argument_names():
+    """Test that Kraus operators are applied to a ket on the correct indices with argument names"""
+    ket = np.random.normal(size=(2, 3, 4))
+    kraus = np.random.normal(size=(5, 3))
+    ket_out = fock.apply_kraus_to_ket(kraus=kraus, ket=ket, kraus_in_modes=[1], kraus_out_modes=[1])
+    assert ket_out.shape == (2, 5, 4)
+
+
 def test_apply_kraus_to_ket_2mode():
     """Test that Kraus operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(2, 3, 4))
@@ -273,6 +281,14 @@ def test_apply_kraus_to_dm_1mode():
     dm = np.random.normal(size=(2, 3, 2, 3))
     kraus = np.random.normal(size=(5, 3))
     dm_out = fock.apply_kraus_to_dm(kraus, dm, [1], [1])
+    assert dm_out.shape == (2, 5, 2, 5)
+
+
+def test_apply_kraus_to_dm_1mode_with_argument_names():
+    """Test that Kraus operators are applied to a dm on the correct indices with argument names"""
+    dm = np.random.normal(size=(2, 3, 2, 3))
+    kraus = np.random.normal(size=(5, 3))
+    dm_out = fock.apply_kraus_to_dm(kraus=kraus, dm=dm, kraus_in_modes=[1], kraus_out_modes=[1])
     assert dm_out.shape == (2, 5, 2, 5)
 
 
@@ -300,6 +316,14 @@ def test_apply_choi_to_ket_1mode():
     assert ket_out.shape == (4, 5, 4, 5)
 
 
+def test_apply_choi_to_ket_1mode_with_argument_names():
+    """Test that choi operators are applied to a ket on the correct indices with argument names"""
+    ket = np.random.normal(size=(3, 5))
+    choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
+    ket_out = fock.apply_choi_to_ket(choi=choi, ket=ket, choi_in_modes=[0], choi_out_modes=[0])
+    assert ket_out.shape == (4, 5, 4, 5)
+
+
 def test_apply_choi_to_ket_2mode():
     """Test that choi operators are applied to a ket on the correct indices"""
     ket = np.random.normal(size=(3, 5))
@@ -316,7 +340,7 @@ def test_apply_choi_to_dm_1mode():
     assert dm_out.shape == (4, 5, 4, 5)
 
 
-def test_apply_choi_to_dm_1mode_with_arg_names():
+def test_apply_choi_to_dm_1mode_with_argument_names():
     """Test that choi operators are applied to a dm on the correct indices with argument names"""
     dm = np.random.normal(size=(3, 5, 3, 5))
     choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
@@ -329,14 +353,6 @@ def test_apply_choi_to_dm_2mode():
     dm = np.random.normal(size=(4, 5, 4, 5))
     choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l_1,2, in_l_1, out_r_1,2, in_r_1]
     dm_out = fock.apply_choi_to_dm(choi, dm, [1], [1, 2])
-    assert dm_out.shape == (4, 2, 3, 4, 2, 3)
-
-
-def test_apply_choi_to_dm_2mode_with_arg_names():
-    """Test that choi operators are applied to a dm on the correct indices with argument names"""
-    dm = np.random.normal(size=(4, 5, 4, 5))
-    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l_1,2, in_l_1, out_r_1,2, in_r_1]
-    dm_out = fock.apply_choi_to_dm(choi=choi, dm=dm, choi_in_modes=[1], choi_out_modes=[1, 2])
     assert dm_out.shape == (4, 2, 3, 4, 2, 3)
 
 
