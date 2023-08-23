@@ -23,15 +23,19 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.lab.abstract import State
 from mrmustard.lab.abstract.circuitpart import Wire
+from mrmustard.math import Math
 from mrmustard.physics.fock import autocutoffs
 
+math = Math()
 
-def connect(wire1: Wire, wire2: Wire, dim: int = None):
+
+def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     r"""Connects a wire of this CircuitPart to another Wire (of the same or another CircuitPart).
     Arguments:
         wire1: the first wire
         wire2: the second wire
-        dim: set the dimension of the contraction (optional)
+        dim (int): set the dimension of the contraction (if None, it's automatically computed
+                    for States or propagated for other CircuitParts)
     """
     wire1.connected_to = wire2
     wire2.connected_to = wire1
@@ -49,7 +53,7 @@ def connect(wire1: Wire, wire2: Wire, dim: int = None):
 
 # TODO: revisit when we have Bargmann by default
 def get_dimension(wire: Wire, probability: Optional[float] = None) -> Optional[int]:
-    r"""Returns the dimension of a wire.
+    r"""Returns the dimension of a wire (fock cutoff)
     Arguments:
         wire (Wire): the wire
     Returns:
@@ -63,3 +67,20 @@ def get_dimension(wire: Wire, probability: Optional[float] = None) -> Optional[i
         means = wire.owner.means
         sub_means = np.array([means[i], means[j]])
         return autocutoffs(sub_cov, sub_means, probability or settings.AUTOCUTOFF_PROBABILITY)[0]
+
+
+def contract(tensors: list, default_dim: Optional[int] = None):
+    r"""Contract a list of tensors.
+    Arguments:
+        tensors: the tensors to contract
+        default_dim (optional int): the dimension to use for the wires that don't have one
+    Returns:
+        (tensor) the contracted tensor
+    """
+    opt_einsum_args = []
+    for t in tensors:
+        for w in t.wires:
+            w.dimension = w.dimension or default_dim or settings.TN_BOND_DIM
+        opt_einsum_args.append(t.fock)
+        opt_einsum_args.append([w.contraction_id for w in t.wires])
+    return math.einsum(*opt_einsum_args)
