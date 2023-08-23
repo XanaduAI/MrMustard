@@ -68,7 +68,6 @@ class GaussianData(MatVecData):
         else:
             raise ValueError("You need to define at last one of covariance or mean")
 
-        # self.num_modes = means.shape[-1] // 2
         super().__init__(mat=cov, vec=means, coeffs=coeffs)
 
     @property
@@ -93,6 +92,9 @@ class GaussianData(MatVecData):
         for sigma, mu, c in zip(self.cov, self.means, self.c):
             exponent = -0.5 * math.sum(math.solve(sigma, (x - mu)) * (x - mu))
             denom = math.sqrt((2 * np.pi) ** len(x) * math.det(sigma))
+            print(c)
+            print(math.exp(exponent))
+            print(denom)
             val += c * math.exp(exponent) / denom
         return val
 
@@ -106,7 +108,7 @@ class GaussianData(MatVecData):
             try:  # hope it's a scalar
                 new_coeffs = self.coeffs * other
                 return self.__class__(cov=self.cov, means=self.means, coeffs=new_coeffs)
-            except TypeError as e:  # Neither GaussianData nor scalar
+            except (TypeError, ValueError) as e:  # Neither GaussianData nor scalar
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def _compute_mul_covs(self, other: GaussianData) -> Tensor:
@@ -154,7 +156,7 @@ class GaussianData(MatVecData):
             (Tensor) The tensor of multiplied coefficients
         """
         combined_coeffs = [
-            c1 * c2 * self.__class__(cov=[cov1 + cov2], means=[m1], coeffs=[1]).value(m2)
+            c1 * c2 * self.__class__(cov=[cov1 + cov2], means=[m1]).value(m2)
             for cov1, m1, c1 in zip(self.cov, self.means, self.c)
             for cov2, m2, c2 in zip(other.cov, other.means, other.c)
         ]
