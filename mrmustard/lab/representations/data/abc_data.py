@@ -24,19 +24,19 @@ from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
-# if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>QPolyData
+# if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>ABCData
 #     from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
 
 math = Math()
 
 
-class QPolyData(MatVecData):
-    r"""Quadratic polynomial data for certain Representation objects.
+class ABCData(MatVecData):
+    r"""Exponential of quadratic polynomial for the Bargmann representation.
 
     Quadratic Gaussian data is made of: quadratic coefficients, linear coefficients, constant.
     Each of these has a batch dimension, and the batch dimension is the same for all of them.
-    They are the parameters of a Gaussian expressed as `c * exp(-x^T A x + x^T b)`.
+    They are the parameters of the function `c * exp(x^T A x / 2 + x^T b)`.
 
     Note that if constants are not provided, they will all be initialized at 1.
 
@@ -46,11 +46,27 @@ class QPolyData(MatVecData):
         c (Optional[Batch[Scalar]]):series of constants
     """
 
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Optional[Batch[Scalar]]=None) -> None:
-        if self.helper_check_is_real_symmetric(A):
+    def __init__(
+        self, A: Batch[Matrix], b: Batch[Vector], c: Optional[Batch[Scalar]] = None
+    ) -> None:
+        if self._helper_check_is_symmetric(A):
             super().__init__(mat=A, vec=b, coeffs=c)
         else:
-            raise ValueError("Matrix A is not real symmetric, object can't be initialized.")
+            raise ValueError("Matrix A is not symmetric, object can't be initialized.")
+
+    def value(self, x: Vector) -> Scalar:
+        r"""Value of this function at x.
+
+        Args:
+            x (Vector): point at which the function is evaluated
+
+        Returns:
+            Scalar: value of the function
+        """
+        val = 0.0
+        for A, b, c in zip(self.A, self.b, self.c):
+            val += math.exp(0.5 * math.sum(x * math.matvec(A, x)) + math.sum(x * b)) * c
+        return val
 
     @property
     def A(self) -> Batch[Matrix]:
@@ -64,22 +80,14 @@ class QPolyData(MatVecData):
     def c(self) -> Batch[Scalar]:
         return self.coeffs
 
-    def __mul__(self, other: Union[Scalar, QPolyData]) -> QPolyData:
-        if isinstance(other, QPolyData):  # TODO: proof it against other objects
-            new_a = self._operate_on_all_combinations(self.A, other.A, op.add)
-            new_b = self._operate_on_all_combinations(self.b, other.b, op.add)
-            new_coeffs = self._operate_on_all_combinations(self.c, other.c, op.mul)
-            return self.__class__(A=new_a, b=new_b, c=new_coeffs)
+    def __mul__(self, other: Union[Scalar, ABCData]) -> ABCData:
+        if isinstance(other, ABCData):
+            new_a = math.astensor([A1 + A2 for A1, A2 in product(self.A, other.A)])
+            new_b = math.astensor([b1 + b2 for b1, b2 in product(self.b, other.b)])
+            new_c = math.astensor([c1 * c2 for c1, c2 in product(self.c, other.c)])
+            return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:  # scalar
-                new_coeffs = np.fromiter(map(lambda x: np.multiply(x, other) , self.c), dtype=np.complex64)
-                return self.__class__(self.A, self.b, new_coeffs)
+                return self.__class__(self.A, self.b, other * self.c)
             except TypeError as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-    
-    @staticmethod  
-    def _operate_on_all_combinations(X, Y, operator):
-        """Returns the element-wise operation on the cartesian product of inputs X and Y."""
-        both = product(X,Y)
-        result = map(lambda z: operator(z[0], z[1]), both)
-        return np.asarray(list(result))
