@@ -36,7 +36,6 @@ class MatVecData(Data):  # Note: this class is abstract!
     """
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]) -> None:
-        # TODO: check that dimensions make sense, aka mat is NxDxD, vecs are NxD and coeffs are N
         if coeffs is None:  # default all 1s
             coeffs = math.ones(len(vec))
 
@@ -45,23 +44,19 @@ class MatVecData(Data):  # Note: this class is abstract!
         self.coeffs = math.atleast_1d(math.astensor(coeffs))
 
     def __neg__(self) -> MatVecData:
-        # TODO update this because it's now an array I can cast over
-        new_coeffs = []
-        for c in self.coeffs:
-            new_coeffs.append(-c)
-        return self.__class__(self.mat, self.vec, new_coeffs)
+        return self.__class__(self.mat, self.vec, -self.coeffs)
 
     def __eq__(self, other: MatVecData, ignore_scalars: bool = False) -> bool:
         try:
             answer = False
             if ignore_scalars:  # objects have the same matrices and vectors
-                if self._helper_vecs_or_mats_are_same(self.vec, other.vec):
-                    if self._helper_vecs_or_mats_are_same(self.mat, other.mat):
+                if self._helper_vecs_are_same(self.vec, other.vec):
+                    if self._helper_mats_are_same(self.mat, other.mat):
                         answer = True
             else:  # compare everything including scalars
                 if self._helper_scalars_are_same(self.coeffs, other.coeffs):
-                    if self._helper_vecs_or_mats_are_same(self.vec, other.vec):
-                        if self._helper_vecs_or_mats_are_same(self.mat, other.mat):
+                    if self._helper_vecs_are_same(self.vec, other.vec):
+                        if self._helper_mats_are_same(self.mat, other.mat):
                             answer = True
             return answer
         except AttributeError as e:
@@ -98,19 +93,19 @@ class MatVecData(Data):  # Note: this class is abstract!
             (bool): True if all matrices in the batch are symmetric, False otherwise.
 
         """
-        return all([np.allclose(m, np.transpose(m)) for m in M])
+        return np.allclose(M, np.transpose(M, (0, 2, 1)))
 
-    def _helper_vecs_or_mats_are_same(
+    def _helper_mats_are_same(
         self,
-        tensors_a: Union[List[Matrix], List[Vector]],
-        tensors_b: Union[List[Matrix], List[Vector]],
+        mats_a: List[Matrix],
+        mats_b: List[Matrix],
         precision: Optional[int] = 3,
     ) -> bool:
         r"""Determines whether the two sets of tensors given are the same up to precision.
 
         Given 2 lists of matrices or vectors, determines whether they are the same (based on
         norm) up to thye given precision. Order is irrelevant and permutations of a set of elements
-          all evaluate to True.
+        all evaluate to True.
 
         Note: there is one caveat to the way this equality is evaluated. Since the process computes
         the norms of all the tensors and then builds a set out of those elements, it means that any
@@ -126,8 +121,8 @@ class MatVecData(Data):  # Note: this class is abstract!
         the same, but this is still not a guarantee.
 
         Args:
-            tensors_a (Union[List[Matrix], List[Vector]])   : a list of either matrices or vectors
-            tensors_b (Union[List[Matrix], List[Vector]])   : a list of either matrices or vectors
+            mats_a (Union[List[Matrix], List[Vector]])   : a list of either matrices or vectors
+            mats_b (Union[List[Matrix], List[Vector]])   : a list of either matrices or vectors
             precision (Optional[int]):                      : the number of decimals to which to
                                                             round the resulting scalar, default
                                                             value is 3
@@ -136,9 +131,18 @@ class MatVecData(Data):  # Note: this class is abstract!
             (bool) : True if both tensors have the same norms, up to precision, false otherwise.
 
         """
-        f = lambda x: np.linalg.norm(x)
-        norms_a = [f(a) for a in tensors_a]
-        norms_b = [f(b) for b in tensors_b]
+        norms_a = np.linalg.norm(mats_a, axis=(1, 2))
+        norms_b = np.linalg.norm(mats_b, axis=(1, 2))
+        return self._helper_scalars_are_same(norms_a, norms_b, precision)
+
+    def _helper_vecs_are_same(
+        self, vecs_a: List[Vector], vecs_b: List[Vector], precision: Optional[int] = 3
+    ) -> bool:
+        r"""Given 2 lists of matrices or vectors, determines whether they are the same (based on
+        norm) up to thye given precision. Order is irrelevant and permutations of a set of elements
+          all evaluate to True."""
+        norms_a = np.linalg.norm(vecs_a, axis=1)
+        norms_b = np.linalg.norm(vecs_b, axis=1)
         return self._helper_scalars_are_same(norms_a, norms_b, precision)
 
     def _helper_scalars_are_same(
@@ -146,22 +150,14 @@ class MatVecData(Data):  # Note: this class is abstract!
     ) -> bool:
         r"""Given 2 lists of scalar, determines whether they are the same, up to precision. Order
         is irrelevant and permutations of a set of elements all evaluate to True."""
-        A, B = self._helper_to_sets(a, b, precision)
-        return A.symmetric_difference(B) == set()
-
-    @staticmethod
-    def _helper_to_sets(a: Scalar, b: Scalar, precision: Optional[int] = 3) -> Tuple[Set, Set]:
-        r"""Given 2 lists of scalars, returns the sets containing them, rounded to precision."""
         A = np.around(a, precision)
         B = np.around(b, precision)
-        set_A = set(A)
-        set_B = set(B)
-        return (set_A, set_B)
+        return A.isdisjoint(B)
 
     def _helper_make_new_object_params_for_add_sub(
         self, other: MatVecData
     ) -> Tuple[List[Matrix], List[Vector], List[Scalar]]:
-        r"""Generates the new parameters fro the object after addition/subtraction."""
+        r"""Generates the new parameters for the object after addition/subtraction."""
         N = len(self.coeffs)
         sorted_tups_self = self._helper_make_sorted_list_of_tuples(self)
         sorted_tups_other = self._helper_make_sorted_list_of_tuples(other)
@@ -180,18 +176,12 @@ class MatVecData(Data):  # Note: this class is abstract!
     def _helper_make_sorted_list_of_tuples(obj: MatVecData) -> List[Tuple[Matrix, Vector, Scalar]]:
         r"""Given a MatVecData object, returns the list of tuples made by
         (mat[i], vec[i], coeffs[i])."""
-        # we're sorting on the norm of the vectors, it could be norm of matrices (x[0])
-        N = len(obj.coeffs)
-        all_tuples = []
-        for i in range(N):
-            all_tuples.append((obj.mat[i], obj.vec[i], obj.coeffs[i]))
-        sorted_tuples = all_tuples.copy()
-        f = lambda x: np.linalg.norm(x[1])
-        sorted_tuples.sort(key=f)
-        return sorted_tuples
+        all_tuples = list(zip(obj.mat, obj.vec, obj.coeffs))
+        all_tuples.sort(key=lambda x: np.linalg.norm(x[0]))
+        return all_tuples
 
     # def __and__(self, other: MatVecData) -> MatVecData:
-    #     try: #TODO: ORDER OF ALL MATRICESA!
+    #     try: #TODO: ORDER OF ALL MATRICES!
     #         mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
     #         vec = [math.concat([v1, v2], axis= -1) for v1 in self.vec for v2 in other.vec]
     #         coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
