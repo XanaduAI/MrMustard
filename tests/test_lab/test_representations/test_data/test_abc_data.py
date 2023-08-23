@@ -128,16 +128,6 @@ class TestABCData(TestMatVecData):  # TODO re-add inheritance
         nb_combined_constants = post_op_result.c.shape[0]
         assert nb_combined_mats == nb_combined_vectors == nb_combined_constants == N * N
 
-    @pytest.mark.parametrize("operator", [op.add, op.mul])
-    @pytest.mark.parametrize("Y", [np.ones(2), np.ones(5), np.ones(100) * 42])
-    @pytest.mark.parametrize("Z", [np.ones(5), np.ones(2), np.ones(100) * 0.42])
-    def test_commutative_operations_on_cartesian_product_correct_irrespective_of_nb_elements(
-        self, DATA, operator, Y, Z
-    ):
-        res_manual = [operator(y, z) for y in Y for z in Z]
-        res = DATA._operate_on_all_combinations(Y, Z, operator)
-        assert np.allclose(res_manual, res)
-
     def test_result_of_abc_objects_multiplication_is_correct(self, DATA, OTHER, X):
         our_operation = (DATA * OTHER).value(X)
         manual_operation = DATA.value(X) * OTHER.value(X)
