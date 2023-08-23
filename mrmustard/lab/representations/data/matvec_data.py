@@ -40,9 +40,9 @@ class MatVecData(Data):  # Note: this class is abstract!
         if coeffs is None:  # default all 1s
             coeffs = math.ones(len(vec))
 
-        self.mat = math.atleast_3d(mat)
-        self.vec = math.atleast_2d(vec)
-        self.coeffs = math.atleast_1d(coeffs)
+        self.mat = math.atleast_3d(math.astensor(mat))
+        self.vec = math.atleast_2d(math.astensor(vec))
+        self.coeffs = math.atleast_1d(math.astensor(coeffs))
 
     def __neg__(self) -> MatVecData:
         # TODO update this because it's now an array I can cast over
