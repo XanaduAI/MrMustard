@@ -72,6 +72,22 @@ class TFMath(MathInterface):
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
+    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        if len(array.shape) == 0:
+            array = self.expand_dims(array, 0)
+        if len(array.shape) == 1:
+            array = self.expand_dims(array, 0)
+        return self.cast(array, dtype)
+
+    def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        if len(array.shape) == 0:
+            array = self.expand_dims(array, 0)
+        if len(array.shape) == 1:
+            array = self.expand_dims(array, 0)
+        if len(array.shape) == 2:
+            array = self.expand_dims(array, 0)
+        return self.cast(array, dtype)
+
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
