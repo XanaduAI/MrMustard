@@ -37,7 +37,7 @@ class MatVecData(Data):  # Note: this class is abstract!
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]) -> None:
         if coeffs is None:  # default all 1s
-            coeffs = math.ones(len(vec))
+            coeffs = math.ones(len(vec), dtype=math.float64)
 
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
@@ -80,6 +80,8 @@ class MatVecData(Data):  # Note: this class is abstract!
             raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, x: Scalar) -> MatVecData:
+        if not isinstance(x, (int, float, complex)):
+            raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
         new_coeffs = self.coeffs / x
         return self.__class__(self.mat, self.vec, new_coeffs)
 
@@ -152,7 +154,7 @@ class MatVecData(Data):  # Note: this class is abstract!
         is irrelevant and permutations of a set of elements all evaluate to True."""
         A = np.around(a, precision)
         B = np.around(b, precision)
-        return A.isdisjoint(B)
+        return not set(A).isdisjoint(B)
 
     def _helper_make_new_object_params_for_add_sub(
         self, other: MatVecData
