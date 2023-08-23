@@ -5,7 +5,7 @@
 [(#256)](https://github.com/XanaduAI/MrMustard/pull/256)
 
 * Data classes for the representations project. Includes `WavefunctionArrayData`, `GaussianData`, 
-`QpolyData` and `SymplecticData`.
+`ABCData` and `SymplecticData`.
 [(#258)](https://github.com/XanaduAI/MrMustard/pull/258)
 
 ### Breaking changes
