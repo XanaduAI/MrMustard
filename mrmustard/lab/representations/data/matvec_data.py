@@ -14,9 +14,9 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from typing import List, Optional, Set, Tuple, Union
+
+import numpy as np
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
@@ -154,7 +154,7 @@ class MatVecData(Data):  # Note: this class is abstract!
         is irrelevant and permutations of a set of elements all evaluate to True."""
         A = np.around(a, precision)
         B = np.around(b, precision)
-        return not set(A).isdisjoint(B)
+        return set(A) == set(B)
 
     def _helper_make_new_object_params_for_add_sub(
         self, other: MatVecData
@@ -181,17 +181,6 @@ class MatVecData(Data):  # Note: this class is abstract!
         all_tuples = list(zip(obj.mat, obj.vec, obj.coeffs))
         all_tuples.sort(key=lambda x: np.linalg.norm(x[0]))
         return all_tuples
-
-    # def __and__(self, other: MatVecData) -> MatVecData:
-    #     try: #TODO: ORDER OF ALL MATRICES!
-    #         mat = [math.block_diag([c1, c2]) for c1 in self.mat for c2 in other.mat]
-    #         vec = [math.concat([v1, v2], axis= -1) for v1 in self.vec for v2 in other.vec]
-    #         coeffs = [c1 * c2 for c1 in self.coeffs for c2 in other.coeffs]
-
-    #         return self.__class__(math.astensor(mat), math.astensor(vec), math.astensor(coeffs))
-
-    #     except AttributeError as e:
-    #         raise TypeError(f"Cannot tensor {self.__class__} and {other.__class__}.") from e
 
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
