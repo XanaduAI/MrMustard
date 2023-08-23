@@ -37,16 +37,12 @@ class MatVecData(Data):  # Note: this class is abstract!
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]) -> None:
         # TODO: check that dimensions make sense, aka mat is NxDxD, vecs are NxD and coeffs are N
-        if coeffs is None:  # default cs should all be 1
-            try:
-                n = vec.shape[0]  # number of elements if it's a numpy array
-            except AttributeError:
-                n = len(vec)  # if it's a list
-            coeffs = math.ones(n)
+        if coeffs is None:  # default all 1s
+            coeffs = math.ones(len(vec))
 
-        self.mat = mat
-        self.vec = vec
-        self.coeffs = coeffs
+        self.mat = math.atleast_3d(mat)
+        self.vec = math.atleast_2d(vec)
+        self.coeffs = math.atleast_1d(coeffs)
 
     def __neg__(self) -> MatVecData:
         # TODO update this because it's now an array I can cast over
