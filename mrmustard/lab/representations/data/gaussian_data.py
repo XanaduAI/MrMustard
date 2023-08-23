@@ -23,8 +23,8 @@ from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Tensor, Vector
 
 
-if TYPE_CHECKING:  # This is to avoid the circular import issue with GaussianData<>QPolyData
-    from mrmustard.lab.representations.data.qpoly_data import QPolyData
+if TYPE_CHECKING:  # This is to avoid the circular import issue with GaussianData<>ABCData
+    from mrmustard.lab.representations.data.abc_datamport ABCData
 
 math = Math()
 
@@ -83,7 +83,7 @@ class GaussianData(MatVecData):
     def c(self) -> Scalar:
         return self.coeffs
 
-    def value(self, x: np.array):
+    def value(self, x: Vector) -> Scalar:
         r"""returns the value of the gaussian at x.
 
         Arguments:
