@@ -13,7 +13,9 @@
 ### Bug fixes
 ### Documentation
 ### Contributors
-[Richard A. Wolf](https://github.com/ryk-wolf)
+[Richard A. Wolf](https://github.com/ryk-wolf), [Filippo Miatto](https://github.com/ziofil)
+
+
 # Release 0.5.0 (development release)
 
 ### New features
