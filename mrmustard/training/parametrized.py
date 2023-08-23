@@ -18,7 +18,7 @@ class constructor generate a backend Tensor and are assigned to fields
 of the class.
 """
 
-from typing import Any, Generator, List, Sequence, Tuple, Mapping
+from typing import Any, Generator, List, Mapping, Sequence, Tuple
 
 import numpy as np
 
@@ -50,10 +50,14 @@ class Parametrized:
     def __init__(self, **kwargs):  # NOTE: only kwargs so that we can use the arg names
         owner = f"{self.__class__.__qualname__}"
         self.param_names = []  # list of parameter names to preserve order
+        remaining_params = {}
+        blacklist = ["modes", "modes_in", "modes_out"]
         for name, value in kwargs.items():
-            # filter out `{name}_trainable` or `{name}_bounds`` to become fields
-            # of the class as those kwargs are used to define the variables
-            if "_trainable" in name or "_bounds" in name:
+            # filter untrainable parameters
+            if f"{name}_trainable" not in kwargs:
+                if name.endswith("_bounds") or name.endswith("_trainable"):
+                    continue
+                remaining_params[name] = value
                 continue
 
             # convert into parameter class
@@ -62,8 +66,10 @@ class Parametrized:
             param = create_parameter(value, name, is_trainable, bounds, owner)
 
             # dynamically assign parameter as attribute of the class
-            self.__dict__[name] = param
-            self.param_names.append(name)
+            if all(bl not in name for bl in blacklist):
+                self.__dict__[name] = param
+                self.param_names.append(name)
+        super().__init__(**remaining_params)
 
     def param_string(self, decimals: int) -> str:
         r"""Returns a string representation of the parameter values, separated by commas and rounded
@@ -77,15 +83,19 @@ class Parametrized:
         Returns:
             str: string representation of the parameter values
         """
+
+        def val_to_string(value):
+            sign = "-" if value < 0 else ""
+            value = np.abs(np.round(value, decimals))
+            int_part = int(value)
+            decimal_part = np.round(value - int_part, decimals)
+            return sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
+
         strings = []
         for name, value in self.kw_parameters:
             value = math.asnumpy(value)
             if value.ndim == 0:  # don't show arrays
-                sign = "-" if value < 0 else ""
-                value = np.abs(np.round(value, decimals))
-                int_part = int(value)
-                decimal_part = np.round(value - int_part, decimals)
-                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
+                string = val_to_string(value)
             else:
                 string = f"{name}"
             strings.append(string)
