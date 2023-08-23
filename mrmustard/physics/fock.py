@@ -362,8 +362,9 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     r"""Applies a kraus operator to a ket.
     It assumes that the ket is indexed as left_1, ..., left_n.
 
-    The kraus op has indices that contract with the ket (kraus_in_idx) and indices that are left over (kraus_out_idx).
-    The final index order will be sorted (note that an index appearing in both kraus_in_idx and kraus_out_idx will replace the original index).
+    The kraus op has indices that contract with the ket (kraus_in_idx) and indices that are
+    left over (kraus_out_idx). The final index order will be sorted (note that an index
+    appearing in both kraus_in_idx and kraus_out_idx will replace the original index).
 
     Args:
         kraus (array): the kraus operator to be applied
@@ -405,8 +406,9 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     r"""Applies a kraus operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
-    The kraus operator has indices that contract with the density matrix (kraus_in_idx) and indices that are leftover (kraus_out_idx).
-    `kraus` will contract from the left and from the right with the density matrix. For right contraction the kraus op is conjugated.
+    The kraus operator has indices that contract with the density matrix (kraus_in_idx) and
+    indices that are leftover (kraus_out_idx). `kraus` will contract from the left and from
+    the right with the density matrix. For right contraction the kraus op is conjugated.
 
     Args:
         kraus (array): the operator to be applied
@@ -461,10 +463,12 @@ def apply_choi_to_dm(
     choi_out_modes: Sequence[int] = None,
 ):
     r"""Applies a choi operator to a density matrix.
-    It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
-
-    The choi operator has indices that contract with the density matrix (choi_in_modes) and indices that are left over (choi_out_modes).
-    `choi` will contract choi_in_modes from the left and from the right with the density matrix.
+    It assumes that the density matrix is indexed as our_L_1, ..., out_L_n, out_R_1, ..., out_R_n.
+    It assumes that the choi operator is indexed as:
+    out_L_1, ..., out_L_n, in_L_1, ..., in_L_n, out_R_1, ..., out_R_n, in_R_1, ..., in_R_n.
+    The choi operator has indices that contract with the density matrix (choi_in_idx) and indices
+    that are left over (choi_out_idx). `choi` will contract choi_in_idx from the left and
+    from the right with the density matrix.
 
     Args:
         choi (array): the choi operator to be applied
@@ -511,10 +515,12 @@ def apply_choi_to_dm(
 
 def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx=None):
     r"""Applies a choi operator to a ket.
-    It assumes that the ket is indexed as left_1, ..., left_n.
-
-    The choi operator has indices that contract with the ket (choi_in_idx) and indices that are left over (choi_out_idx).
-    `choi` will contract choi_in_idx from the left and from the right with the ket.
+    It assumes that the ket is indexed as out_left_1, ..., out_left_n.
+    It assumes that the choi operator is indexed as:
+    out_L_1, ..., out_L_n, in_L_1, ..., in_L_n, out_R_1, ..., out_R_n, in_R_1, ..., in_R_n.
+    The choi operator has indices that contract with the ket (choi_in_idx) and indices that are
+    left over (choi_out_idx). `choi` will contract choi_in_idx from the left and from the
+    right with the ket.
 
     Args:
         choi (array): the choi operator to be applied
