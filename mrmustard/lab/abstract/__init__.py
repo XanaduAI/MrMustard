@@ -15,6 +15,6 @@
 """ This package contains the modules implementing base classes for states, measurements and tranformations.
 """
 
-from .state import State
 from .measurement import FockMeasurement, Measurement
-from .transformation import Transformation
+from .state import State
+from .transformation import Channel, Transformation, Unitary
