@@ -16,8 +16,6 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import List, Union
-
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar, Vector

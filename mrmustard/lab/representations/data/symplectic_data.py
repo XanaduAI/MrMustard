@@ -14,10 +14,10 @@
 
 from __future__ import annotations
 
+import numpy as np
 from itertools import product
 from typing import Optional
 
-import numpy as np
 from thewalrus.quantum.gaussian_checks import is_symplectic
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData

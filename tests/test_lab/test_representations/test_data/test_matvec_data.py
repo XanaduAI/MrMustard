@@ -19,21 +19,16 @@ Check parents test classe-s for more details on the rationale.
 
 The fixtures must correspond to the concrete class being tested, here MatVecData.
 """
-
-import operator as op
-from copy import deepcopy
-
 import numpy as np
+import operator as op
 import pytest
+from copy import deepcopy
 
 from mrmustard import settings
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.test_data import TestData
-from tests.test_lab.test_representations.test_data.tools_for_tests import (
-    helper_mat_vec_unchanged_computed_coeffs_are_correct,
-)
 
 settings.SEED = 42
 

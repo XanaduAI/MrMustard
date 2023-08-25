@@ -14,13 +14,11 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Set, Tuple, Union
-
 import numpy as np
+from typing import List, Optional, Set, Tuple, Union
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
-from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()

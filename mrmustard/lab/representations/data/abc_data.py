@@ -14,17 +14,14 @@
 
 from __future__ import annotations
 
-import operator as op
 from itertools import product
 from typing import TYPE_CHECKING, Optional, Union
-
-import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
-# if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>ABCData
+# if TYPE_CHECKING: # This is to avoid the circular import issue with GaussianData<>ABCData
 #     from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
 

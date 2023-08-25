@@ -23,7 +23,6 @@ The fixtures must correspond to the concrete class being tested, here Wavefuncti
 import numpy as np
 import operator as op
 import pytest
-
 from copy import deepcopy
 
 from mock_data import MockNoCommonAttributesObject

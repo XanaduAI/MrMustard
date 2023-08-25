@@ -20,10 +20,10 @@ Check parents test classe-s for more details on the rationale.
 The fixtures must correspond to the concrete class being tested, here GaussianData.
 
 """
+
 import numpy as np
 import operator as op
 import pytest
-
 from copy import deepcopy
 from scipy.stats import multivariate_normal as mvg
 
@@ -31,7 +31,6 @@ from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
-from thewalrus.random import random_covariance
 
 np.random.seed(42)
 
@@ -171,4 +170,3 @@ class TestGaussianData(TestMatVecData):
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
-
