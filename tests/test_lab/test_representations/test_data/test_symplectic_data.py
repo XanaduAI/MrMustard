@@ -40,10 +40,12 @@ def D() -> int:
     """The dimension: matrices will be DxD and vectors will be D."""
     return 4
 
+
 @pytest.fixture
 def N() -> int:
     """The number of elements in the batch."""
     return 3
+
 
 @pytest.fixture
 def TYPE():
@@ -52,32 +54,27 @@ def TYPE():
 
 
 @pytest.fixture
-def SYMPLECTIC(N) -> Matrix: #TODO: generator for symplectic matrices
+def SYMPLECTIC(N) -> Matrix:  # TODO: generator for symplectic matrices
     r"""A symplectic matrix used for object parameterization.
     Taken from https://mathworld.wolfram.com/SymplecticGroup.html
     """
     mats = []
     for _ in range(N):
-        m = np.array([
-            [1, 0, 0, 1],
-            [0, 1, 1, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-            ])
+        m = np.array([[1, 0, 0, 1], [0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
         mats.append(m)
     return np.array(mats)
 
 
 @pytest.fixture
-def DISPLACEMENT(N,D) -> Vector:
+def DISPLACEMENT(N, D) -> Vector:
     r"""Some vector for the object's parameterization."""
-    return np.array([np.random.normal(size=D) + 1j*np.random.normal(size=D) for _ in range(N)])
+    return np.array([np.random.normal(size=D) + 1j * np.random.normal(size=D) for _ in range(N)])
 
 
 @pytest.fixture
 def COEFFS(N) -> Scalar:
     r"""Some scalar for the object's parameterization."""
-    return np.array([np.random.normal() + 1j*np.random.normal() for _ in range(N)])
+    return np.array([np.random.normal() + 1j * np.random.normal() for _ in range(N)])
 
 
 @pytest.fixture
@@ -128,7 +125,7 @@ class TestSymplecticData(TestMatVecData):
         with pytest.raises(TypeError):
             OTHER * DATA
 
-    @pytest.mark.parametrize("x", [0, 2, 10, 2500]) #the only necessary correctness for Symplectic
+    @pytest.mark.parametrize("x", [0, 2, 10, 2500])  # the only necessary correctness for Symplectic
     def test_mul_with_scalar_multiplies_coeffs_and_leaves_mat_and_vec_unaltered(self, DATA, x):
         pre_op_data = deepcopy(DATA)
         post_op_data = DATA * x

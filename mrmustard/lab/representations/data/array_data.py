@@ -69,4 +69,3 @@ class ArrayData(Data):
             return self.__class__(array=np.outer(self.array, other.array))
         except AttributeError as e:
             raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
-    
