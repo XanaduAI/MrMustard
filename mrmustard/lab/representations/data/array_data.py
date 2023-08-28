@@ -16,8 +16,6 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import List, Union
-
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Scalar, Vector
@@ -71,4 +69,3 @@ class ArrayData(Data):
             return self.__class__(array=np.outer(self.array, other.array))
         except AttributeError as e:
             raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
-    
