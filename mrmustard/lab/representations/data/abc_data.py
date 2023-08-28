@@ -17,6 +17,8 @@ from __future__ import annotations
 from itertools import product
 from typing import TYPE_CHECKING, Optional, Union
 
+import numpy as np
+
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, ComplexMatrix, ComplexVector, Scalar
@@ -86,7 +88,7 @@ class ABCData(MatVecData):
         else:
             try:  # scalar
                 return self.__class__(self.A, self.b, other * self.c)
-            except (TypeError, ValueError) as e:  # Neither same object type nor a scalar case
+            except Exception as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: ABCData) -> ABCData:
@@ -94,10 +96,8 @@ class ABCData(MatVecData):
             As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
             bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
             cs = [c1 * c2 for c1 in self.c for c2 in other.c]
-
             return self.__class__(As, bs, cs)
-
-        except AttributeError as e:
+        except Exception as e:
             raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
 
     def __matmul__(self, other: ABCData) -> ABCData:
@@ -106,16 +106,14 @@ class ABCData(MatVecData):
         newA = graph.A
         newb = graph.b
         newc = graph.c
-        i_prev = 1e32
-        j_prev = 1e32
-        for i, j in zip(self._contract_idxs, other._contract_idxs):
-            i = i - int(i_prev < i)
-            j = j + self.dim - int(j_prev < j)
-            noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, graph.dim))
-            Abar = math.gather(math.gather(graph.A, noij, axis=1), noij, axis=2)
-            bbar = math.gather(graph.b, noij, axis=1)
+        for n, (i, j) in enumerate(zip(self._contract_idxs, other._contract_idxs)):
+            i = i - np.sum(np.array(self._contract_idxs[:n]) < i)
+            j = j + self.dim - n - np.sum(np.array(other._contract_idxs[:n]) < j)
+            noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, newA.shape[-1]))
+            Abar = math.gather(math.gather(newA, noij, axis=1), noij, axis=2)
+            bbar = math.gather(newb, noij, axis=1)
             D = math.gather(
-                math.concat([graph.A[..., i][..., None], graph.A[..., j][..., None]], axis=-1),
+                math.concat([newA[..., i][..., None], newA[..., j][..., None]], axis=-1),
                 noij,
                 axis=1,
             )
@@ -123,15 +121,15 @@ class ABCData(MatVecData):
                 [
                     math.concat(
                         [
-                            graph.A[:, i, i][:, None, None],
-                            graph.A[:, j, i][:, None, None] - 1,
+                            newA[:, i, i][:, None, None],
+                            newA[:, j, i][:, None, None] - 1,
                         ],
                         axis=-1,
                     ),
                     math.concat(
                         [
-                            graph.A[:, i, j][:, None, None] - 1,
-                            graph.A[:, j, j][:, None, None],
+                            newA[:, i, j][:, None, None] - 1,
+                            newA[:, j, j][:, None, None],
                         ],
                         axis=-1,
                     ),
@@ -139,17 +137,15 @@ class ABCData(MatVecData):
                 axis=-2,
             )
             Minv = math.inv(M)
-            b_ = math.concat([graph.b[:, i][:, None], graph.b[:, j][:, None]], axis=-1)
+            b_ = math.concat([newb[:, i][:, None], newb[:, j][:, None]], axis=-1)
 
             newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
             newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
             newc = (
-                graph.c
+                newc
                 * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
                 / math.sqrt(-math.det(M))
             )
-            j_prev = j
-            i_prev = i
         return self.__class__(newA, newb, newc)
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
