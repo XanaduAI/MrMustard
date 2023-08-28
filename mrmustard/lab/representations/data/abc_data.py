@@ -149,10 +149,11 @@ class ABCData(MatVecData):
         return self.__class__(newA, newb, newc)
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
-        for i in tuple(idx):
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
             if i > self.dim:
                 raise IndexError(
                     f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
                 )
-        self._contract_idxs = tuple(idx)
+        self._contract_idxs = idx
         return self
