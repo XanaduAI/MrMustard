@@ -41,45 +41,35 @@ class MatVecData(Data):  # Note: this class is abstract!
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
         self.coeffs = math.atleast_1d(math.astensor(coeffs))
-        self.dim = self.mat.shape[-1]
         assert (
             len(self.mat) == len(self.vec) == len(self.coeffs)
         ), "All inputs must have the same batch size."
+        self.batch_dim = self.mat.shape[0]
+        self.dim = self.mat.shape[-1]
 
     def __neg__(self) -> MatVecData:
         return self.__class__(self.mat, self.vec, -self.coeffs)
 
-    def __eq__(self, other: MatVecData, ignore_scalars: bool = False) -> bool:
+    def __eq__(self, other: MatVecData, include_scalars: bool = True) -> bool:
+        A, B = sorted([self, other], key=lambda x: x.batch_dim)  # A smaller or equal batch than B
         try:
-            answer = False
-            if ignore_scalars:  # objects have the same matrices and vectors
-                if self._helper_vecs_are_same(self.vec, other.vec):
-                    if self._helper_mats_are_same(self.mat, other.mat):
-                        answer = True
-            else:  # compare everything including scalars
-                if self._helper_scalars_are_same(self.coeffs, other.coeffs):
-                    if self._helper_vecs_are_same(self.vec, other.vec):
-                        if self._helper_mats_are_same(self.mat, other.mat):
-                            answer = True
-            return answer
-        except AttributeError as e:
+            if include_scalars and all(
+                memoryview(c).tobytes() in memoryview(B.coeffs).tobytes() for c in A.coeffs
+            ):
+                if all(memoryview(v).tobytes() in memoryview(B.vec).tobytes() for v in A.vec):
+                    if all(memoryview(m).tobytes() in memoryview(B.mat).tobytes() for m in A.mat):
+                        return True
+            return False
+        except Exception as e:
             raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
 
     def __add__(self, other: MatVecData) -> MatVecData:
         try:
-            if self.__eq__(other, ignore_scalars=True):
-                # sorting and re-ordering necessary so the correct coeffs are paired up
-                # (because equality doesn't guarantee anything in terms of order)
-                new_ms, new_vs, new_cs = self._helper_make_new_object_params_for_add_sub(other)
-                return self.__class__(new_ms, new_vs, new_cs)
-
-            else:  # note that in subtract the coefficients were made negative beforehand so it's ok!
-                combined_matrices = math.concat([self.mat, other.mat], axis=0)
-                combined_vectors = math.concat([self.vec, other.vec], axis=0)
-                combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-                return self.__class__(combined_matrices, combined_vectors, combined_coeffs)
-
-        except AttributeError as e:
+            combined_matrices = math.concat([self.mat, other.mat], axis=0)
+            combined_vectors = math.concat([self.vec, other.vec], axis=0)
+            combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+            return self.__class__(combined_matrices, combined_vectors, combined_coeffs)
+        except Exception as e:
             raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
 
     def __truediv__(self, x: Scalar) -> MatVecData:
@@ -87,77 +77,6 @@ class MatVecData(Data):  # Note: this class is abstract!
             raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
         new_coeffs = self.coeffs / x
         return self.__class__(self.mat, self.vec, new_coeffs)
-
-    # def _helper_check_is_symmetric(self, M: Batch[Matrix]) -> bool:
-    #     r"""Checks that the matrices in the given batch are symmetric.
-
-    #     Args:
-    #         M (Batch[Matrix]):  the batch of matrices to be examined
-
-    #     Returns:
-    #         (bool): True if all matrices in the batch are symmetric, False otherwise.
-
-    #     """
-    #     return np.allclose(M, np.transpose(M, (0, 2, 1)))
-
-    def _helper_mats_are_same(
-        self,
-        mats_a: List[Matrix],
-        mats_b: List[Matrix],
-        precision: Optional[int] = 3,
-    ) -> bool:
-        r"""Determines whether the two sets of tensors given are the same up to precision.
-
-        Given 2 lists of matrices or vectors, determines whether they are the same (based on
-        norm) up to thye given precision. Order is irrelevant and permutations of a set of elements
-        all evaluate to True.
-
-        Note: there is one caveat to the way this equality is evaluated. Since the process computes
-        the norms of all the tensors and then builds a set out of those elements, it means that any
-        two norms with the same values up to precision will be stored only a single time. If both
-        tensors have the same pair of tensors sharing a value this does not matter. However, if one
-        of the tensors has more elements sharing the same norm than the other, this will be
-        identified as both elements being the same (despite it not being the case). Our current bet
-        is that this should happen seldom enough for it to not be problematic, but future
-        developments should address this issue.
-        Advice for next steps: checking the difference between the cardinal of the set and the
-        length of the list (this gives how many items were mrophed into a single one in the passage
-        to set). Compare this for both tensors, if they are the same it's more likely that they're
-        the same, but this is still not a guarantee.
-
-        Args:
-            mats_a (Union[List[Matrix], List[Vector]])   : a list of either matrices or vectors
-            mats_b (Union[List[Matrix], List[Vector]])   : a list of either matrices or vectors
-            precision (Optional[int]):                      : the number of decimals to which to
-                                                            round the resulting scalar, default
-                                                            value is 3
-
-        Returns:
-            (bool) : True if both tensors have the same norms, up to precision, false otherwise.
-
-        """
-        norms_a = np.linalg.norm(mats_a, axis=(1, 2))
-        norms_b = np.linalg.norm(mats_b, axis=(1, 2))
-        return self._helper_scalars_are_same(norms_a, norms_b, precision)
-
-    def _helper_vecs_are_same(
-        self, vecs_a: List[Vector], vecs_b: List[Vector], precision: Optional[int] = 3
-    ) -> bool:
-        r"""Given 2 lists of matrices or vectors, determines whether they are the same (based on
-        norm) up to thye given precision. Order is irrelevant and permutations of a set of elements
-          all evaluate to True."""
-        norms_a = np.linalg.norm(vecs_a, axis=1)
-        norms_b = np.linalg.norm(vecs_b, axis=1)
-        return self._helper_scalars_are_same(norms_a, norms_b, precision)
-
-    def _helper_scalars_are_same(
-        self, a: List[Scalar], b: List[Scalar], precision: Optional[int] = 3
-    ) -> bool:
-        r"""Given 2 lists of scalar, determines whether they are the same, up to precision. Order
-        is irrelevant and permutations of a set of elements all evaluate to True."""
-        A = np.around(a, precision)
-        B = np.around(b, precision)
-        return set(A) == set(B)
 
     def _helper_make_new_object_params_for_add_sub(
         self, other: MatVecData
