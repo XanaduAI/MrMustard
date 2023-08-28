@@ -78,32 +78,6 @@ class MatVecData(Data):  # Note: this class is abstract!
         new_coeffs = self.coeffs / x
         return self.__class__(self.mat, self.vec, new_coeffs)
 
-    def _helper_make_new_object_params_for_add_sub(
-        self, other: MatVecData
-    ) -> Tuple[List[Matrix], List[Vector], List[Scalar]]:
-        r"""Generates the new parameters for the object after addition/subtraction."""
-        N = len(self.coeffs)
-        sorted_tups_self = self._helper_make_sorted_list_of_tuples(self)
-        sorted_tups_other = self._helper_make_sorted_list_of_tuples(other)
-
-        new_mats = []
-        new_vecs = []
-        new_coeffs = []
-        for i in range(N):
-            new_mats.append(sorted_tups_self[i][0])
-            new_vecs.append(sorted_tups_self[i][1])
-            ith_coeff = sorted_tups_self[i][2] + sorted_tups_other[i][2]
-            new_coeffs.append(ith_coeff)
-        return (np.array(new_mats), np.array(new_vecs), np.array(new_coeffs))
-
-    @staticmethod
-    def _helper_make_sorted_list_of_tuples(obj: MatVecData) -> List[Tuple[Matrix, Vector, Scalar]]:
-        r"""Given a MatVecData object, returns the list of tuples made by
-        (mat[i], vec[i], coeffs[i])."""
-        all_tuples = list(zip(obj.mat, obj.vec, obj.coeffs))
-        all_tuples.sort(key=lambda x: np.linalg.norm(x[0]))
-        return all_tuples
-
     # # TODO: decide which simplify we want to keep
     # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
     #     N = self.mat.shape[0]
