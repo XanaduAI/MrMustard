@@ -79,9 +79,9 @@ class ABCData(MatVecData):
 
     def __mul__(self, other: Union[Scalar, ABCData]) -> ABCData:
         if isinstance(other, ABCData):
-            new_a = math.astensor([A1 + A2 for A1, A2 in product(self.A, other.A)])
-            new_b = math.astensor([b1 + b2 for b1, b2 in product(self.b, other.b)])
-            new_c = math.astensor([c1 * c2 for c1, c2 in product(self.c, other.c)])
+            new_a = math.concat([A1 + A2 for A1, A2 in product(self.A, other.A)], axis=0)
+            new_b = math.concat([b1 + b2 for b1, b2 in product(self.b, other.b)], axis=0)
+            new_c = math.concat([c1 * c2 for c1, c2 in product(self.c, other.c)], axis=0)
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:  # scalar
