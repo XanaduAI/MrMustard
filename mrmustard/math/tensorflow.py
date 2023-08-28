@@ -95,7 +95,6 @@ class TFMath(MathInterface):
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
         Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
-        shape = (Za.shape[0] + Zb.shape[0], Za.shape[1] + Zb.shape[1])
         return self.arrayflatten([[mat1, Za], [Zb, mat2]])
 
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:

@@ -20,7 +20,6 @@ import numpy as np
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
-from mrmustard.physics.gaussian import reorder_matrix_from_qpqp_to_qqpp
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
 
 math = Math()
@@ -39,9 +38,11 @@ class MatVecData(Data):  # Note: this class is abstract!
         if coeffs is None:  # default all 1s
             coeffs = math.ones(len(vec), dtype=math.float64)
 
+        assert len(mat) == len(vec) == len(coeffs), "All inputs must have the same batch size."
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
         self.coeffs = math.atleast_1d(math.astensor(coeffs))
+        self.dim = self.mat.shape[-1]
 
     def __neg__(self) -> MatVecData:
         return self.__class__(self.mat, self.vec, -self.coeffs)

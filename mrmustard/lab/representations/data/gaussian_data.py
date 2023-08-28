@@ -14,10 +14,9 @@
 
 from __future__ import annotations
 
+import numpy as np
 from itertools import product
 from typing import Optional, Union  # TYPE_CHECKING
-
-import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
