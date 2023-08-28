@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-from collections import namedtuple
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -169,50 +168,28 @@ class CircuitPart:
 class CircuitPartView(CircuitPart):
     r"""Base class for CircuitPart views. It remaps the ids of the original CircuitPart."""
 
-    def __init__(
-        self, circuit_part, modes_output_ket, modes_input_ket, modes_output_bra, modes_input_bra
-    ):
-        self.original = circuit_part  # MM object
+    def __init__(self, circuit_part):
+        self._original = circuit_part  # MM object
         super().__init__(
-            self.original.name,
-            modes_output_ket or self.original.modes_output_ket,
-            modes_input_ket or self.original.modes_input_ket,
-            modes_output_bra or self.original.modes_output_bra,
-            modes_input_bra or self.original.modes_input_bra,
+            self._original.name,
+            self._original.output.ket.keys(),
+            self._original.input.ket.keys(),
+            self._original.output.bra.keys(),
+            self._original.input.bra.keys(),
         )
 
-        self._id_map = {id: orig_id for id, orig_id in zip(self.ids, self.original.ids)}
+        self._id_map = {id: orig_id for id, orig_id in zip(self.ids, self._original.ids)}
 
-    def original_id(self, id):
+    def _original_id(self, id):
         return self._id_map[id]
 
     def __getattr__(self, attr):
-        orig_attr = self.original.__getattribute__(attr)
+        orig_attr = self._original.__getattribute__(attr)
         if callable(orig_attr):
 
             def method(*args, **kwargs):
-                return orig_attr(*args, **kwargs)
-
-            return method
-        return orig_attr
-
-
-class CircuitPartView2:
-    r"""Base class for CircuitPart views. It remaps the ids of the original CircuitPart."""
-
-    def __init__(self, circuit_part):
-        self.original = circuit_part  # MM object
-
-        self._id_map = {id: orig_id for id, orig_id in zip(self.ids, self.original.ids)}
-
-    def original_id(self, id):
-        return self._id_map[id]
-
-    def __getattr__(self, attr):
-        orig_attr = self.original.__getattribute__(attr)
-        if callable(orig_attr):
-
-            def method(*args, **kwargs):
+                # must use kwarg `id=` if you want to pipe to original id
+                kwargs["id"] = self._original_id(kwargs["id"])
                 return orig_attr(*args, **kwargs)
 
             return method
@@ -224,23 +201,23 @@ class DualView(CircuitPartView):
     It swaps the input and output wires of a CircuitPart.
     """
 
-    # def __new__(cls, circuit_part: CircuitPart):
-    #     "makes sure that DualView(DualView(circuit_part)) == CircuitPartView(circuit_part)"
-    #     if isinstance(circuit_part, DualView):
-    #         return circuit_part.view
-    #     return super().__new__(cls)
+    def __new__(cls, circuit_part: CircuitPart):
+        "makes sure that DualView(DualView(circuit_part)) == CircuitPartView(circuit_part)"
+        if isinstance(circuit_part, DualView):
+            return circuit_part._original
+        return super().__new__(cls)
 
     @property
     def input(self):
-        return self.original.output  # namedtuple name is still output
+        return self._original.output  # namedtuple name is still output
 
     @property
     def output(self):
-        return self.original.input  # namedtuple name is still input
+        return self._original.input  # namedtuple name is still input
 
     @property
     def dual(self):
-        return self.original.view
+        return self._original.view
 
 
 class AdjointView(CircuitPartView):
@@ -248,27 +225,20 @@ class AdjointView(CircuitPartView):
     It swaps the ket and bra wires of a CircuitPart.
     """
 
-    # def __new__(cls, circuit_part: CircuitPart):
-    #     if isinstance(circuit_part, AdjointView):
-    #         return circuit_part.view
-    #     return super().__new__(cls)
+    def __new__(cls, circuit_part: CircuitPart):
+        "makes sure that AdjointView(AdjointView(circuit_part)) == CircuitPartView(circuit_part)"
+        if isinstance(circuit_part, AdjointView):
+            return circuit_part._original
+        return super().__new__(cls)
 
     @property
-    def input(self):
-        # swaps ket and bra
-        _input = namedtuple("input", ["ket", "bra"])
-        _input.ket = self.original.input.bra
-        _input.bra = self.original.input.ket
-        return _input
+    def input(self):  # swaps ket and bra
+        return WireGroup(ket=self._original.input.bra, bra=self._original.input.ket)
 
     @property
-    def output(self):
-        # swaps ket and bra
-        _output = namedtuple("output", ["ket", "bra"])
-        _output.ket = self.original.output.bra
-        _output.bra = self.original.output.ket
-        return _output
+    def output(self):  # swaps ket and bra
+        return WireGroup(ket=self._original.output.bra, bra=self._original.output.ket)
 
     @property
     def adjoint(self):
-        return self.original.view
+        return self._original.view
