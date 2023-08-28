@@ -79,9 +79,9 @@ class ABCData(MatVecData):
 
     def __mul__(self, other: Union[Scalar, ABCData]) -> ABCData:
         if isinstance(other, ABCData):
-            new_a = math.concat([A1 + A2 for A1, A2 in product(self.A, other.A)], axis=0)
-            new_b = math.concat([b1 + b2 for b1, b2 in product(self.b, other.b)], axis=0)
-            new_c = math.concat([c1 * c2 for c1, c2 in product(self.c, other.c)], axis=0)
+            new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
+            new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
+            new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:  # scalar
@@ -95,7 +95,7 @@ class ABCData(MatVecData):
             bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
             cs = [c1 * c2 for c1 in self.c for c2 in other.c]
 
-            return self.__class__(math.astensor(As), math.astensor(bs), math.astensor(cs))
+            return self.__class__(As, bs, cs)
 
         except AttributeError as e:
             raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
