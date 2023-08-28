@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Batch, C, ComplexMatrix, ComplexVector, Scalar
+from mrmustard.typing import Batch, ComplexMatrix, ComplexVector, Scalar
 
 # if TYPE_CHECKING: # This is to avoid the circular import issue with GaussianData<>ABCData
 #     from mrmustard.lab.representations.data.gaussian_data import GaussianData
@@ -46,10 +46,7 @@ class ABCData(MatVecData):
     def __init__(
         self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Optional[Batch[Scalar]] = None
     ) -> None:
-        if self._helper_check_is_symmetric(A):
-            super().__init__(mat=A, vec=b, coeffs=c)
-        else:
-            raise ValueError("Matrix A is not symmetric, object can't be initialized.")
+        super().__init__(mat=A, vec=b, coeffs=c)
 
     def value(self, x: ComplexVector) -> Scalar:
         r"""Value of this function at x.
@@ -64,6 +61,9 @@ class ABCData(MatVecData):
         for A, b, c in zip(self.A, self.b, self.c):
             val += math.exp(0.5 * math.sum(x * math.matvec(A, x)) + math.sum(x * b)) * c
         return val
+
+    def __call__(self, x: ComplexVector) -> Scalar:
+        return self.value(x)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -102,29 +102,56 @@ class ABCData(MatVecData):
 
     def __matmul__(self, other: ABCData) -> ABCData:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
+        graph = self & other
+        newA = graph.A
+        newb = graph.b
+        newc = graph.c
+        i_prev = 1e32
+        j_prev = 1e32
         for i, j in zip(self._contract_idxs, other._contract_idxs):
-            j = j + self.dim
-            together = self & other
-
-            noij = list(range(i)) + list(range(i + 1, j) + list(range(j + 1, together.dim)), axis=0)
-            Abar = math.gather(math.gather(together.A, noij, axis=1), noij, axis=2)
-            bbar = math.gather(together.b, noij, axis=1)
-            D = math.concat([together.A[..., i], together.A[..., j]], axis=-1)
-            M = math.astensor(
+            i = i - int(i_prev < i)
+            j = j + self.dim - int(j_prev < j)
+            noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, graph.dim))
+            Abar = math.gather(math.gather(graph.A, noij, axis=1), noij, axis=2)
+            bbar = math.gather(graph.b, noij, axis=1)
+            D = math.gather(
+                math.concat([graph.A[..., i][..., None], graph.A[..., j][..., None]], axis=-1),
+                noij,
+                axis=1,
+            )
+            M = math.concat(
                 [
-                    [together.A[:, i, i], together.A[:, j, i] - 1],
-                    [together.A[:, i, j] - 1, together.A[:, j, j]],
-                ]
+                    math.concat(
+                        [
+                            graph.A[:, i, i][:, None, None],
+                            graph.A[:, j, i][:, None, None] - 1,
+                        ],
+                        axis=-1,
+                    ),
+                    math.concat(
+                        [
+                            graph.A[:, i, j][:, None, None] - 1,
+                            graph.A[:, j, j][:, None, None],
+                        ],
+                        axis=-1,
+                    ),
+                ],
+                axis=-2,
             )
             Minv = math.inv(M)
-            b_ = math.astensor([together.b[:, i], together.b[:, j]])
+            b_ = math.concat([graph.b[:, i][:, None], graph.b[:, j][:, None]], axis=-1)
 
             newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
             newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
             newc = (
-                together.c
+                graph.c
                 * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
-                / math.sqrt(math.det(M))
+                / math.sqrt(-math.det(M))
             )
+            j_prev = j
+            i_prev = i
+        return self.__class__(newA, newb, newc)
 
-            return self.__class__(newA, newb, newc)
+    def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
+        self._contract_idxs = idx if isinstance(idx, tuple) else (idx,)
+        return self
