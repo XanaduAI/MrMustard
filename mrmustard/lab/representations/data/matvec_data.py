@@ -14,9 +14,8 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Set, Tuple, Union
-
 import numpy as np
+from typing import List, Optional, Set, Tuple, Union
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math

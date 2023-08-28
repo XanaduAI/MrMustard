@@ -23,7 +23,6 @@ The fixtures must correspond to the concrete class being tested, here ArrayData.
 import numpy as np
 import operator as op
 import pytest
-
 from copy import deepcopy
 
 from mrmustard.lab.representations.data.array_data import ArrayData

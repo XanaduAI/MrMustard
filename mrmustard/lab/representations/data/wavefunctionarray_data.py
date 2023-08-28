@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from typing import Union
 
 from mrmustard.lab.representations.data.array_data import ArrayData

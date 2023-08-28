@@ -20,10 +20,10 @@ Check parents test classe-s for more details on the rationale.
 The fixtures must correspond to the concrete class being tested, here GaussianData.
 
 """
+
 import numpy as np
 import operator as op
 import pytest
-
 from copy import deepcopy
 from scipy.stats import multivariate_normal as mvg
 
@@ -31,7 +31,6 @@ from mrmustard.lab.representations.data.gaussian_data import GaussianData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.test_matvec_data import TestMatVecData
-from thewalrus.random import random_covariance
 
 np.random.seed(42)
 
@@ -171,46 +170,3 @@ class TestGaussianData(TestMatVecData):
 
     # ###############  Outer product  ##################
     # # NOTE : not implemented => not tested
-
-    def _helper_full_gaussian_pdf(self, k, cov, means, x, c=1):
-        return self._helper_gaussian_precoeff(k, cov) * self._helper_gaussian_exp(cov, means, x, c)
-
-    @staticmethod
-    def _helper_gaussian_precoeff(k, cov):
-        pi_part = (2 * np.pi) ** (k / 2)
-        det_part = np.sqrt(np.linalg.det(cov))
-        return 1 / (pi_part * det_part)
-
-    @staticmethod
-    def _helper_gaussian_exp(cov, mean, x, c):
-        coeff = -(1 / 2)
-        precision = np.linalg.inv(cov)
-        eta = x - mean
-        pre_exponential = np.dot(np.dot(np.transpose(eta), precision), eta)
-        exponential = np.exp(coeff * pre_exponential)
-        return c * exponential
-
-    @staticmethod
-    def _helper_mul_covs(cov1, cov2):
-        precision1 = np.linalg.inv(cov1)
-        precision2 = np.linalg.inv(cov2)
-        return np.linalg.inv(precision1 + precision2)
-
-    @staticmethod
-    def _helper_mul_means(new_cov, cov1, cov2, mean1, mean2):
-        precision1 = np.linalg.inv(cov1)
-        precision2 = np.linalg.inv(cov2)
-        eta1 = np.dot(precision1, mean1)
-        eta2 = np.dot(precision2, mean2)
-        etas = eta1 + eta2
-        return np.dot(new_cov, etas)
-
-    def _helper_mul_alpha(self, k, cov1, cov2, mean1, mean2, c=1):
-        joint_cov = cov1 + cov2
-        return self._helper_full_gaussian_pdf(k=k, cov=joint_cov, means=mean2, x=mean1, c=c)
-
-    def _helper_full_gaussian_mul(self, k, cov1, cov2, mean1, mean2, c=1):
-        new_cov = self._helper_mul_covs(cov1, cov2)
-        new_mean = self._helper_mul_means(new_cov, cov1, cov2, mean1, mean2)
-        new_coeff = self._helper_mul_alpha(k, cov1, cov2, mean1, mean2, c=c)
-        return new_cov, new_mean, new_coeff

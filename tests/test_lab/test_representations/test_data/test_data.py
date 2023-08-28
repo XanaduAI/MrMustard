@@ -45,7 +45,6 @@ defined in the file where the test was written, blocking resolution sequence.
 import numpy as np
 import operator as op
 import pytest
-
 from copy import deepcopy
 
 from mrmustard.utils.misc_tools import general_factory
