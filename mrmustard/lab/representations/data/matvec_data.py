@@ -14,8 +14,9 @@
 
 from __future__ import annotations
 
-import numpy as np
 from typing import List, Optional, Set, Tuple, Union
+
+import numpy as np
 
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
@@ -37,11 +38,13 @@ class MatVecData(Data):  # Note: this class is abstract!
         if coeffs is None:  # default all 1s
             coeffs = math.ones(len(vec), dtype=math.float64)
 
-        assert len(mat) == len(vec) == len(coeffs), "All inputs must have the same batch size."
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
         self.coeffs = math.atleast_1d(math.astensor(coeffs))
         self.dim = self.mat.shape[-1]
+        assert (
+            len(self.mat) == len(self.vec) == len(self.coeffs)
+        ), "All inputs must have the same batch size."
 
     def __neg__(self) -> MatVecData:
         return self.__class__(self.mat, self.vec, -self.coeffs)
@@ -85,17 +88,17 @@ class MatVecData(Data):  # Note: this class is abstract!
         new_coeffs = self.coeffs / x
         return self.__class__(self.mat, self.vec, new_coeffs)
 
-    def _helper_check_is_symmetric(self, M: Batch[Matrix]) -> bool:
-        r"""Checks that the matrices in the given batch are symmetric.
+    # def _helper_check_is_symmetric(self, M: Batch[Matrix]) -> bool:
+    #     r"""Checks that the matrices in the given batch are symmetric.
 
-        Args:
-            M (Batch[Matrix]):  the batch of matrices to be examined
+    #     Args:
+    #         M (Batch[Matrix]):  the batch of matrices to be examined
 
-        Returns:
-            (bool): True if all matrices in the batch are symmetric, False otherwise.
+    #     Returns:
+    #         (bool): True if all matrices in the batch are symmetric, False otherwise.
 
-        """
-        return np.allclose(M, np.transpose(M, (0, 2, 1)))
+    #     """
+    #     return np.allclose(M, np.transpose(M, (0, 2, 1)))
 
     def _helper_mats_are_same(
         self,
