@@ -14,17 +14,14 @@
 
 from __future__ import annotations
 
-import operator as op
 from itertools import product
 from typing import TYPE_CHECKING, Optional, Union
 
-import numpy as np
-
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
-from mrmustard.typing import Batch, Matrix, Scalar, Vector
+from mrmustard.typing import Batch, C, ComplexMatrix, ComplexVector, Scalar
 
-# if TYPE_CHECKING: # This is to avoid the circular import issu with GaussianData<>ABCData
+# if TYPE_CHECKING: # This is to avoid the circular import issue with GaussianData<>ABCData
 #     from mrmustard.lab.representations.data.gaussian_data import GaussianData
 
 
@@ -47,14 +44,14 @@ class ABCData(MatVecData):
     """
 
     def __init__(
-        self, A: Batch[Matrix], b: Batch[Vector], c: Optional[Batch[Scalar]] = None
+        self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Optional[Batch[Scalar]] = None
     ) -> None:
         if self._helper_check_is_symmetric(A):
             super().__init__(mat=A, vec=b, coeffs=c)
         else:
             raise ValueError("Matrix A is not symmetric, object can't be initialized.")
 
-    def value(self, x: Vector) -> Scalar:
+    def value(self, x: ComplexVector) -> Scalar:
         r"""Value of this function at x.
 
         Args:
@@ -69,11 +66,11 @@ class ABCData(MatVecData):
         return val
 
     @property
-    def A(self) -> Batch[Matrix]:
+    def A(self) -> Batch[ComplexMatrix]:
         return self.mat
 
     @property
-    def b(self) -> Batch[Vector]:
+    def b(self) -> Batch[ComplexVector]:
         return self.vec
 
     @property
@@ -94,11 +91,40 @@ class ABCData(MatVecData):
 
     def __and__(self, other: ABCData) -> ABCData:
         try:
-            covs = [math.block_diag(m1, m2) for m1 in self.cov for m2 in other.cov]
-            means = [math.concat([v1, v2], axis=-1) for v1 in self.means for v2 in other.means]
-            coeffs = [c1 * c2 for c1 in self.c for c2 in other.c]
+            As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
+            bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
+            cs = [c1 * c2 for c1 in self.c for c2 in other.c]
 
-            return self.__class__(math.astensor(covs), math.astensor(means), math.astensor(coeffs))
+            return self.__class__(math.astensor(As), math.astensor(bs), math.astensor(cs))
 
         except AttributeError as e:
             raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
+
+    def __matmul__(self, other: ABCData) -> ABCData:
+        r"""Implements the contraction of (A,b,c) triples across the marked indices."""
+        for i, j in zip(self._contract_idxs, other._contract_idxs):
+            j = j + self.dim
+            together = self & other
+
+            noij = list(range(i)) + list(range(i + 1, j) + list(range(j + 1, together.dim)), axis=0)
+            Abar = math.gather(math.gather(together.A, noij, axis=1), noij, axis=2)
+            bbar = math.gather(together.b, noij, axis=1)
+            D = math.concat([together.A[..., i], together.A[..., j]], axis=-1)
+            M = math.astensor(
+                [
+                    [together.A[:, i, i], together.A[:, j, i] - 1],
+                    [together.A[:, i, j] - 1, together.A[:, j, j]],
+                ]
+            )
+            Minv = math.inv(M)
+            b_ = math.astensor([together.b[:, i], together.b[:, j]])
+
+            newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
+            newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
+            newc = (
+                together.c
+                * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
+                / math.sqrt(math.det(M))
+            )
+
+            return self.__class__(newA, newb, newc)
