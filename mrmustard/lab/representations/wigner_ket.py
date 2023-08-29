@@ -28,7 +28,7 @@ class WignerKet(Wigner):
     r"""The Wigner ket representation is to characterize the pure Gaussian state with its wigner quasiprobabilistic distribution in phase space,
     which is a Gaussian function. This Gaussian function is characterized by a mean vector and a covariance matrix.
 
-    WignerKet class is a special class because the evolution of the pure state under unitary operators can be described by the multiplication
+    WignerKet class is a special class since the evolution of the pure state under unitary operators can be described by the multiplication
     of their symplectic matrices. So that in this case, we need only store the symplectic matrix is enough for the pure Gaussian state and its
     covaraince matrix can be obtained from its symplectic matrix :math:`\frac{\hbar}{2}SS^T`.
 
@@ -49,13 +49,23 @@ class WignerKet(Wigner):
         coeffs: Optional[Scalar] = 1.0,
     ) -> None:
         # Check the symplecticity of the matrix
-        if not all([is_symplectic(symplectic[i]) for i in range(symplectic[0])]):
-            raise ValueError("The matrix is not symplectic!")
+        def check_symplectic(sym):
+            if not is_symplectic(sym):
+                raise ValueError("The matrix is not symplectic!")
+
+        if symplectic.shape == 3:
+            for i in range(symplectic.shape[0]):
+                check_symplectic(symplectic[i,:])
+        elif symplectic.shape == 2:
+            check_symplectic(symplectic)
+            symplectic = math.expand_dims(symplectic, axis = 0)
+            displacement = math.expand_dims(displacement, axis = 0)
+
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
 
     @property
     def cov(self) -> Optional[Matrix]:
-        "Returns the covariance matrix of the state."
+        "Returns the covariance matrix/matrices of the state."
         return [
             (
                 settings.HBAR
@@ -67,7 +77,7 @@ class WignerKet(Wigner):
 
     @property
     def means(self) -> Optional[Vector]:
-        "Returns the means vector of the state."
+        "Returns the means vector(s) of the state."
         return self.data.displacement
 
     @property
@@ -77,7 +87,16 @@ class WignerKet(Wigner):
     @classmethod
     def from_covariance(cls, cov, means):
         r"""This function allows us to construct a WignerKet class state from a covariance matrix and means."""
-        symplectic, diag = williamson(cov)
-        if not np.allclose(diag, 2.0 / settings.HBAR):
-            raise ValueError("The covariance matrix is not for a Gaussian pure state.")
+        def check_diag(diag):
+            if not np.allclose(diag, 2.0 / settings.HBAR):
+                raise ValueError("The covariance matrix is not for a Gaussian pure state.")  
+        if cov.shape == 2:
+            symplectic, diag = williamson(cov)
+            check_diag(diag)
+            symplectic = math.expand_dims(symplectic, axis = 0)
+        elif cov.shape ==3:
+            symplectic = cov
+            for i in range(cov.shape[0]):
+                symplectic[i,:], diag = williamson(cov[i,:])
+                check_diag(diag)
         return cls(symplectic, means)
