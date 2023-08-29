@@ -29,6 +29,9 @@ class BargmannKet(Bargmann):
         A (Optional[Matrix]): complex symmetric matrices and the first dimension is the batch dimension indicates the linear combination of different BargmannKet Classes.
         b (Optional[Vector]): complex vectors and the first dimension is the batch dimension indicates the linear combination of different BargmannKet Classes.
         c (Optional[Scalar]): constants and the first dimension is the batch dimension indicates the linear combination of different BargmannKet Classes.
+
+    Properties:
+        purity: the purity of the state.
     """
 
     def __init__(self, A: Optional[Matrix], b: Optional[Vector], c: Optional[Scalar]):
