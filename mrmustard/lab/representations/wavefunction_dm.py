@@ -28,6 +28,13 @@ class WaveFunctionDM(WaveFunction):
         points: variable points along the basis.
         quadrature_angle: quadrature angle along different basis.
         wavefunction: the wavefunction values according to each points.
+
+    Properties:
+        purity: the purity of the state.
+        norm: the norm of the state.
+
+    Methods:
+        probability: get the probability of the state in quadrature basis.
     """
 
     def __init__(self, points: Tensor, quadrature_angle: float, wavefunction: Tensor):

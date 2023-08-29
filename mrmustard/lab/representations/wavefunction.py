@@ -23,12 +23,6 @@ class WaveFunction(Representation):
     The quandrature angle is used to characterize the rotation of the basis inside the phase space.
     For example, if the angle is 0, we say it is the wavefunction in the position basis.
     If the angle is 90 degree, we say it is the wavefunction in the momentum basis.
-
-    Args:
-        points: variable points along the basis.
-        quadrature_angle: quadrature angle along different basis.
-        array: the wavefunction values according to each points.
-
     """
 
     @property

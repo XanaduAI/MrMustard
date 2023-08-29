@@ -40,6 +40,10 @@ class WignerKet(Wigner):
     Properties:
         cov: the covariance matrix calculating from its symplectic matrix.
         means: the same as the displacement vector.
+        purity: the purity of the state.
+
+    Classmethod:
+        from_covariance: decompose the covariance matrix into the symplectic one and initialize the class.
     """
 
     def __init__(

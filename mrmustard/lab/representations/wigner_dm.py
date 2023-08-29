@@ -31,6 +31,10 @@ class WignerDM(Wigner):
         means (Optional[Vector]): means vectors and the first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
         coeffs (Optional[Scalar]): coefficients of the state and the length of is is the batch dimensionthe first dimension is the batch dimension indicates the linear combination of different WignerKet Classes.
 
+    Properties:
+        cov: the covariance matrix calculating from its symplectic matrix.
+        means: the same as the displacement vector.
+        purity: the purity of the state.
     """
 
     def __init__(
