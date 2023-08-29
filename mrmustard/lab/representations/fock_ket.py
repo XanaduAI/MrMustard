@@ -27,6 +27,13 @@ class FockKet(Fock):
 
     Args:
         data: the Data class instance to store the fock tensor of the state.
+
+    Properties:
+        purity: the purity of the state.
+        norm: the norm of the state.
+
+    Methods:
+        probability: get the probability of the state in quadrature basis.
     """
 
     def __init__(self, array: np.array):
