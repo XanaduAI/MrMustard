@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 import numpy as np
 from mrmustard.lab.representations.bargmann import Bargmann
-from mrmustard.lab.representations.data.qpoly_data import QPolyData
+from mrmustard.lab.representations.data.abc_data import ABCData
 from mrmustard.typing import Matrix, Scalar, Vector
 from mrmustard.math import Math
 
@@ -25,13 +26,18 @@ class BargmannDM(Bargmann):
     It is defined as :math:`\langle \alpha||\rho||\beta\rangle = e^{-1/2|\alpha|^2}e^{-1/2|\beta|^2}\langle \alpha|\rho|\beta\rangle = c\exp\left(\frac12 x^T A x + b^T x\right)`.
 
     Args:
-        A: complex symmetric matrix
-        b: complex vector
-        c: constants
+        A (Optional[Matrix]): complex symmetric matrices and the first dimension is the batch dimension indicates the linear combination of different BargmannKet Classes.
+        b (Optional[Vector]): complex vectors and the first dimension is the batch dimension indicates the linear combination of different BargmannKet Classes.
+        c (Optional[Scalar]): constants and the first dimension is the batch dimension indicates the linear combination of different BargmannKet Classes.
     """
 
-    def __init__(self, A: Matrix, b: Vector, c: Scalar):
+    def __init__(self, A: Optional[Matrix], b: Optional[Vector], c: Optional[Scalar]):
         # Check the covariance matrices is real symmetric
         if not np.allclose(math.transpose(A), A):
             raise ValueError("The A matrix is symmetric!")
-        self.data = QPolyData(A=A, b=b, c=c)
+
+        if A.shape == 2:
+            A = math.expand_dims(A, axis=0)
+            b = math.expand_dims(b, axis=0)
+
+        self.data = ABCData(A=A, b=b, c=c)

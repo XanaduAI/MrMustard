@@ -55,11 +55,11 @@ class WignerKet(Wigner):
 
         if symplectic.shape == 3:
             for i in range(symplectic.shape[0]):
-                check_symplectic(symplectic[i,:])
+                check_symplectic(symplectic[i, :])
         elif symplectic.shape == 2:
             check_symplectic(symplectic)
-            symplectic = math.expand_dims(symplectic, axis = 0)
-            displacement = math.expand_dims(displacement, axis = 0)
+            symplectic = math.expand_dims(symplectic, axis=0)
+            displacement = math.expand_dims(displacement, axis=0)
 
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
 
@@ -87,16 +87,18 @@ class WignerKet(Wigner):
     @classmethod
     def from_covariance(cls, cov, means):
         r"""This function allows us to construct a WignerKet class state from a covariance matrix and means."""
+
         def check_diag(diag):
             if not np.allclose(diag, 2.0 / settings.HBAR):
-                raise ValueError("The covariance matrix is not for a Gaussian pure state.")  
+                raise ValueError("The covariance matrix is not for a Gaussian pure state.")
+
         if cov.shape == 2:
             symplectic, diag = williamson(cov)
             check_diag(diag)
-            symplectic = math.expand_dims(symplectic, axis = 0)
-        elif cov.shape ==3:
+            symplectic = math.expand_dims(symplectic, axis=0)
+        elif cov.shape == 3:
             symplectic = cov
             for i in range(cov.shape[0]):
-                symplectic[i,:], diag = williamson(cov[i,:])
+                symplectic[i, :], diag = williamson(cov[i, :])
                 check_diag(diag)
         return cls(symplectic, means)
