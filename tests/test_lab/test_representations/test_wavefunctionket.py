@@ -22,22 +22,64 @@ from tests.random import vector
 from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
 
 
-@given(array=xy_arrays())
-def test_purity_of_wavefunctionq_ket_state(array):
-    qs = vector(array.shape[-1])
-    wfket = WaveFunctionKet(qs=qs, quadrature_angle=0, array=array)
-    assert np.allclose(wfket.purity, 1.0)
+class TestWaveFunctionKetInit:
+    """Test class for the initialization of the WaveFunctionKet class."""
+
+    def test_init_wavefunction_ket_with_all_arguments(self):
+        "Test that the initialization of the wavefunction ket class with all arguments."
+        WaveFunctionKet(points=np.random(3), quadrature_angle=0, wavefunction=np.random.uniform(3))
+
+    def test_init_wavefunction_ket_with_non_physical_state(self):
+        "Test that the initialization of the wavefunction ket class with non physical state."
+        with self.assertRaises(ValueError):
+            WaveFunctionKet(
+                points=np.random(3), quadrature_angle=0, wavefunction=np.array([100, 100, 100])
+            )
 
 
-@given(array=xy_arrays())
-def test_norm_of_wavefunctionq_ket_state(array):
-    qs = vector(array.shape[-1])
-    wfket = WaveFunctionKet(qs=qs, quadrature_angle=0, array=array)
-    assert np.allclose(wfket.norm, np.abs(np.norm(array)))
+class TestWaveFunctionKetProperties:
+    """Test class for each properties returns the correct values."""
+
+    def test_purity_of_wavefunction_ket(self):
+        """Test that the purity of any wavefunction ket class state is 1.0."""
+        wfket = WaveFunctionKet(
+            points=np.random(3), quadrature_angle=0, wavefunction=np.random.uniform(3)
+        )
+        assert wfket.purity, 1.0
+
+    @given(array=xy_arrays())
+    def test_norm_of_wavefunction_ket(self, array):
+        """Test that the norm of the wavefunction ket class is correct."""
+        points = vector(array.shape[-1])
+        wfket = WaveFunctionKet(points=points, quadrature_angle=0, wavefunction=array)
+        assert np.allclose(wfket.norm, np.abs(np.norm(array)))
+
+    @given(array=xy_arrays())
+    def test_probabilities_of_wavefunction_ket_state(self, array):
+        """Test that the probability of the wavefunction ket class is the absolute value of the wavefunction."""
+        points = vector(array.shape[-1])
+        wfket = WaveFunctionKet(points=points, quadrature_angle=0, wavefunction=array)
+        assert np.allclose(wfket.probability, np.abs(array))
 
 
-@given(array=xy_arrays())
-def test_probabilities_of_wavefunctionq_ket_state(array):
-    qs = vector(array.shape[-1])
-    wfket = WaveFunctionKet(qs=qs, array=array)
-    assert np.allclose(wfket.probability, np.abs(array))
+class TestWaveFunctionKetThrowErrors:
+    """Test class for all non-implement properties or methods of the class."""
+
+    wfket = WaveFunctionKet(
+        points=np.random(3), quadrature_angle=0, wavefunction=np.random.uniform(3)
+    )
+
+    def test_number_means_with_error(self):
+        """Test that number means method is not implement for WaveFunctionKet and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wfket.number_means()
+
+    def test_number_cov_with_error(self):
+        """Test that number covariance method is not implement for WaveFunctionKet and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wfket.number_cov()
+
+    def test_number_variance_with_error(self):
+        """Test that number variance method is not implement for WaveFunctionKet and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wfket.number_variances()
