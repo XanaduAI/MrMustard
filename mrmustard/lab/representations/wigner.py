@@ -124,6 +124,11 @@ class Wigner(Representation):
             )
         return number_cov
 
+    def number_variances(self):
+        raise NotImplementedError(
+            f"This property is not available in {self.__class__.__qualname__} representation"
+        )
+
     def probability(self):
         raise NotImplementedError(
             f"This property is not available in {self.__class__.__qualname__} representation"

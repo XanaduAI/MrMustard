@@ -18,8 +18,74 @@ import pytest
 from mrmustard.lab.representations.wigner_ket import WignerKet
 
 
-def test_purity_with_wigner_ket_state():
+class TestWignerKetInit:
+    """Test class for the initialization of the WignerKet class."""
+
+    def test_init_wigner_ket_with_2dsymp(self):
+        "Test that the initialization of the WignerKet class works with 2d symplectic matrix."
+        wignerket = WignerKet(
+            symplectic=np.random.random((3, 3)), displacement=np.random.random(3), coeffs=1.0
+        )
+        assert wignerket.cov.shape == 3
+        assert wignerket.cov.shape[0] == 1
+        assert wignerket.means.shape == 2
+        assert wignerket.means.shape[0] == 1
+
+    def test_init_wigner_ket_with_covariancematrix_with_2dcov(self):
+        "Test that the initialization of the WignerKet class works with the class method: from_covariance with a 2d covariance matrix."
+        wignerket = WignerKet.from_covariance(
+            cov=np.random.random((3, 3)), means=np.random.random(3)
+        )
+        assert wignerket.data.symplectic.shape == 3
+        assert wignerket.data.symplectic.shape[0] == 1
+        assert wignerket.data.displacement.shape == 2
+        assert wignerket.data.displacement.shape[0] == 1
+
+        assert wignerket.cov.shape == 3
+        assert wignerket.cov.shape[0] == 1
+        assert wignerket.means.shape == 2
+        assert wignerket.means.shape[0] == 1
+
+    def test_init_wigner_ket_with_covariancematrix_with_3dcov(self):
+        "Test that the initialization of the WignerKet class works with the class method: from_covariance with a 3d covariance matrix."
+        wignerket = WignerKet.from_covariance(
+            cov=np.random.random((2, 3, 3)), means=np.random.random(2, 3)
+        )
+        assert wignerket.data.symplectic.shape == 3
+        assert wignerket.data.symplectic.shape[0] == 1
+        assert wignerket.data.displacement.shape == 2
+        assert wignerket.data.displacement.shape[0] == 1
+
+
+class TestWignerKetProperties:
+    """Test class for each properties returns the correct values."""
+
+    def test_purity_with_wigner_ket_state(self):
+        """Test that the purity of any wigner ket class state is 1.0."""
+        wignerket = WignerKet(
+            symplectic=np.random.random((1, 3, 3)), displacement=np.random.random(1, 3), coeffs=1.0
+        )
+        assert wignerket.purity, 1.0
+
+
+class TestWignerKetThrowErrors:
+    """Test class for all non-implement properties or methods of the class."""
+
     wignerket = WignerKet(
-        symplectic=np.random.random((1, 3, 3)), displacement=np.random.random(3), coeffs=1.0
+        symplectic=np.random.random((1, 3, 3)), displacement=np.random.random(1, 3), coeffs=1.0
     )
-    assert (wignerket.purity, 1.0)
+
+    def test_norm_with_error(self):
+        """Test that the norm is not implement for WignerKet and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wignerket.norm()
+
+    def test_number_variance_with_error(self):
+        """Test that the number variance is not implement for WignerKet and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wignerket.number_variances()
+
+    def test_probability_with_error(self):
+        """Test that the probability method is not implement for WignerKet and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wignerket.probability()

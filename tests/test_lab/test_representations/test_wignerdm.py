@@ -14,15 +14,64 @@
 
 import numpy as np
 import pytest
-
+from mrmustard.math import Math
 from mrmustard.lab.representations.wigner_dm import WignerDM
+from mrmustard import settings
+
+math = Math()
+
+
+class TestWignerDMInit:
+    """Test class for the initialization of the WignerDM class."""
+
+    def test_init_wigner_dm_with_2dcov(self):
+        "Test that the initialization of the WignerDM class works with 2d covariance matrix."
+        wignerdm = WignerDM(cov=np.random.random((3, 3)), means=np.random.random(3), coeffs=1.0)
+        assert wignerdm.data.cov.shape == 3
+        assert wignerdm.data.cov.shape[0] == 1
+        assert wignerdm.data.means.shape == 2
+        assert wignerdm.data.means.shape[0] == 1
+
+    def test_init_wigner_dm_with_3dcov(self):
+        "Test that the initialization of the WignerDM class works with 2d covariance matrix."
+        wignerdm = WignerDM(
+            cov=np.random.random((3, 3, 3)), means=np.random.random(3, 3), coeffs=1.0
+        )
+        assert wignerdm.data.cov.shape == 3
+        assert wignerdm.data.cov.shape[0] == 1
+        assert wignerdm.data.means.shape == 2
+        assert wignerdm.data.means.shape[0] == 1
+
+
+class TestWignerDMProperties:
+    """Test class for each properties returns the correct values."""
+
+    def test_purity_with_wigner_dm_state(self):
+        """Test that the purity of any wigner ket class state is 1.0."""
+        wignerdm = WignerDM(
+            cov=np.random.random((1, 3, 3)), means=np.random.random(1, 3), coeffs=1.0
+        )
+        assert wignerdm.purity, 1 / math.sqrt(
+            math.det((2 / settings.HBAR) * wignerdm.data.cov[0, :])
+        )
 
 
 class TestWignerDMThrowErrors:
-    wignerdm = WignerDM(
-        symplectic=np.random.random((2, 3, 3)), displacement=np.random.random(3), coeffs=1.0
-    )
+    """Test class for all non-implement properties or methods of the class."""
 
-    def test_purity_with_error(self):
+    wignerdm = WignerDM(cov=np.random.random((1, 3, 3)), means=np.random.random(1, 3), coeffs=1.0)
+
+    def test_norm_with_error(self):
+        """Test that the norm is not implement for WignerDM and returns an error."""
         with self.assertRaises(NotImplementedError):
-            self.wignerdm.purity
+            self.wignerdm.norm()
+
+    def test_number_variance_with_error(self):
+        """Test that the number variance is not implement for WignerDM and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wignerdm.number_variances()
+
+    def test_probability_with_error(self):
+        """Test that the probability method is not implement for WignerDM and returns an error."""
+        with self.assertRaises(NotImplementedError):
+            self.wignerdm.probability()
