@@ -14,7 +14,10 @@
 
 import numpy as np
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from mrmustard.math import Math
+from mrmustard.physics import gaussian
 from mrmustard.lab.representations.wigner_dm import WignerDM
 from mrmustard import settings
 
@@ -54,6 +57,16 @@ class TestWignerDMProperties:
         assert wignerdm.purity, 1 / math.sqrt(
             math.det((2 / settings.HBAR) * wignerdm.data.cov[0, :])
         )
+
+    @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
+    def test_number_means_function_of_wigner_dm_state_from_coherent_state(self, x, y):
+        """Test that the number means is correct for a coherent state."""
+        wignerdm = WignerDM(
+            cov=gaussian.vacuum_cov(1, settings.HBAR),
+            means=gaussian.displacement(x, y, settings.HBAR),
+        )
+        expected = x**2 + y**2
+        assert np.allclose(wignerdm.number_means(), expected)
 
 
 class TestWignerDMThrowErrors:
