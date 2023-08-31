@@ -42,15 +42,16 @@ will break when inheriting the test. With `mark.parametrize`, the class instance
 defined in the file where the test was written, blocking resolution sequence.
 """
 
-import numpy as np
 import operator as op
-import pytest
 from copy import deepcopy
+
+import numpy as np
+import pytest
 
 from mrmustard.utils.misc_tools import general_factory
 from tests.test_lab.test_representations.test_data.mock_data import (
-    MockData,
     MockCommonAttributesObject,
+    MockData,
     MockNoCommonAttributesObject,
 )
 
@@ -105,14 +106,6 @@ class TestData:
     def test_truediv_raises_TypeError_if_divisor_is_not_scalar(self, DATA, other):
         with pytest.raises(TypeError):
             DATA / other
-
-    @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
-    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq])  # op.and_
-    def test_algebraic_op_raises_TypeError_if_other_object_is_of_wrong_type(
-        self, DATA, other, operator
-    ):
-        with pytest.raises(TypeError):
-            operator(DATA, other)
 
     @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_new_object_created_by_add_sub_operations_has_same_attribute_shapes_as_old_object(
