@@ -38,7 +38,7 @@ class WignerDM(Wigner):
     """
 
     def __init__(
-        self, cov: Optional[Matrix], means: Optional[Vector], coeffs: Optional[Scalar] = 1.0
+        self, cov: Optional[Matrix], means: Optional[Vector], coeffs: Optional[Scalar] = None
     ) -> None:
         # Check the covariance matrices is real symmetric
         if not all(math.imag(cov) == 0):
@@ -48,10 +48,6 @@ class WignerDM(Wigner):
         # Check the mean vector is real
         if not all(math.imag(means) == 0):
             raise ValueError("The mean vector is not real!")
-
-        if cov.shape == 2:
-            cov = math.expand_dims(cov, axis=0)
-            means = math.expand_dims(means, axis=0)
 
         self.data = GaussianData(cov=cov, means=means, coeffs=coeffs)
 

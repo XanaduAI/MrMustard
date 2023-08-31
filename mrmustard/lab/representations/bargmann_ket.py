@@ -39,10 +39,6 @@ class BargmannKet(Bargmann):
         if not np.allclose(math.transpose(A), A):
             raise ValueError("The A matrix is symmetric!")
 
-        if A.shape == 2:
-            A = math.expand_dims(A, axis=0)
-            b = math.expand_dims(b, axis=0)
-
         self.data = ABCData(A=A, b=b, c=c)
 
     @property

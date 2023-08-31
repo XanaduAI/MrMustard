@@ -13,7 +13,7 @@
 # limitations under the License.
 from typing import Optional
 from thewalrus.symplectic import is_symplectic
-from strawberryfields.decompositions import williamson
+from strawberryfields.decompositions import williamson  # thewalrus->
 import numpy as np
 from mrmustard import settings
 from mrmustard.lab.representations.wigner import Wigner
@@ -62,8 +62,6 @@ class WignerKet(Wigner):
                 check_symplectic(symplectic[i, :])
         elif symplectic.shape == 2:
             check_symplectic(symplectic)
-            symplectic = math.expand_dims(symplectic, axis=0)
-            displacement = math.expand_dims(displacement, axis=0)
 
         self.data = SymplecticData(symplectic=symplectic, displacement=displacement, coeffs=coeffs)
 
@@ -92,7 +90,7 @@ class WignerKet(Wigner):
     def from_covariance(cls, cov, means):
         r"""This function allows us to construct a WignerKet class state from a covariance matrix and means."""
 
-        def check_diag(diag):
+        def check_diag(diag):  # TODO: det to be 1
             if not np.allclose(diag, 2.0 / settings.HBAR):
                 raise ValueError("The covariance matrix is not for a Gaussian pure state.")
 
