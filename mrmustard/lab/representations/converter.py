@@ -52,6 +52,9 @@ class Converter:
         - Order : 8
         - Size : 6
         - Degree 1 for all nodes
+
+    Now we support the conversion including:
+        Wigner to Bargmann, Bargmann to Fock, Wigner to Fock and Fock to Wavefunction.
     """
 
     def __init__(self) -> None:
@@ -166,17 +169,18 @@ class Converter:
             d_name = self._find_target_node_name(source=s_name, destination=destination)
             f = self.g[s_name][d_name]["f"]
 
-            if s_name == "WignerKet" and d_name == "FockKet":
+            if d_name == "FockKet":
                 max_prob = kwargs.get("max_prob") if kwargs.get("max_prob") else 1.0
                 max_photon = kwargs.get("max_photon") if kwargs.get("max_photon") else None
                 cutoffs = kwargs.get("cutoffs") if kwargs.get("cutoffs") else None
                 return f(source, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
-            elif s_name == "WignerDM" and d_name == "FockDM":
+            elif d_name == "FockDM":
                 cutoffs = kwargs.get("cutoffs") if kwargs.get("cutoffs") else None
                 return f(source, cutoffs=cutoffs)
-            elif d_name == "WaveFunctionQKet" or d_name == "WaveFunctionQDM":
-                qs = kwargs.get("qs")
-                return f(source, qs=qs)
+            elif d_name == "WaveFunctionKet" or d_name == "WaveFunctionDM":
+                points = kwargs.get("points")
+                quadrature_angle = kwargs.get("quadrature_angle")
+                return f(source, points=points, quadrature_angle=quadrature_angle)
             else:
                 return f(source)
 
