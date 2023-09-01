@@ -178,4 +178,4 @@ class TestConverterFockWithCutoffs():
         means = math.sqrt(2 * hbar, dtype=cov.dtype) * math.concat([x, y], axis=0)
         wigner_dm = WignerDM(cov=cov, means=means)
         fock_dm = self.converter.convert(source=wigner_dm, destination="Fock", cutoffs = [50,50])
-        assert fock_dm.data.shape == (50,50,)
+        assert fock_dm.data.shape == (50,50)
