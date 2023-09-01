@@ -26,8 +26,8 @@ from mrmustard.lab.representations.bargmann_ket import BargmannKet
 from mrmustard.lab.representations.bargmann_dm import BargmannDM
 from mrmustard.lab.representations.fock_ket import FockKet
 from mrmustard.lab.representations.fock_dm import FockDM
-from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
-from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
+from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
+from mrmustard.lab.representations.wavefunction_dm import WaveFunctionDM
 from mrmustard.lab.representations.wigner_ket import WignerKet
 from mrmustard.lab.representations.wigner_dm import WignerDM
 
@@ -35,8 +35,7 @@ math = Math()
 
 
 class Converter:
-    def __init__(self) -> None:
-        r"""
+    r"""
         Class for an object allowing conversion between a given source representation and a desired
           destination one. It relies on the representation transition graph which we detail below.
 
@@ -53,55 +52,63 @@ class Converter:
             - Size : 6
             - Degree 1 for all nodes
         """
+    def __init__(self) -> None:
         ### DEFINE NODES - REPRESENTATION NAMES
 
         # Ket part of the graph
-        b_K = "BargmannKet"
-        f_K = "FockKet"
-        wq_K = "WaveFunctionQKet"
-        w_K = "WignerKet"
+        wigner_K = "WignerKet"
+        bargmann_K = "BargmannKet"
+        fock_K = "FockKet"
+        wavefunction_K = "WaveFunctionKet"
 
         # DM component of the graph
-        b_DM = "BargmannDM"
-        f_DM = "FockDM"
-        wq_DM = "WaveFunctionQDM"
-        w_DM = "WignerDM"
+        wigner_DM = "WignerDM"
+        bargmann_DM = "BargmannDM"
+        fock_DM = "FockDM"
+        wavefunction_DM = "WaveFunctionDM"
+       
 
         ### DEFINE EDGES - CONNECTIONS
 
         # Ket component of the graph
-        w2b_K = (w_K, b_K)
-        w2f_K = (w_K, f_K)
-        f2wq_K = (f_K, wq_K)
+        w2b_K = (wigner_K, bargmann_K)
+        b2f_K = (bargmann_K, fock_K)
+        w2f_K = (wigner_K, fock_K)
+        f2wf_K = (fock_K, wavefunction_K)
 
         # DM component of the graph
-        w2b_DM = (w_DM, b_DM)
-        w2f_DM = (w_DM, f_DM)
-        f2wq_DM = (f_DM, wq_DM)
+        w2b_DM = (wigner_DM, bargmann_DM)
+        b2f_DM = (bargmann_DM, fock_DM)
+        w2f_DM = (wigner_DM, fock_DM)
+        f2wf_DM = (fock_DM, wavefunction_DM)
 
         ### DEFINE EDGE LABELS - FORMULAS
 
         # Ket component of the graph
-        f_w2b_K = self._wignerket_to_bargmannket
-        f_w2f_K = self._wignerket_to_fockket
-        f_f2wq_K = self._fockket_to_wavefunctionqket
+        w2b_K = self._wignerket_to_bargmannket
+        b2f_K = self._bargmannket_to_fockket
+        w2f_K = self._wignerket_to_fockket
+        f2wf_K = self._fockket_to_wavefunctionket
 
         # DM component of the graph
-        f_w2b_DM = self._wignerdm_to_bargmanndm
-        f_w2f_DM = self._wignerdm_to_fockdm
-        f_f2wq_DM = self._fockdm_to_wavefunctionqdm
+        w2b_DM = self._wignerdm_to_bargmanndm
+        b2f_DM = self._bargmanndm_to_fockdm
+        w2f_DM = self._wignerdm_to_fockdm
+        f2wf_DM = self._fockdm_to_wavefunctiondm
 
         ### DEFINE GRAPH
 
-        edges = [w2b_K, w2f_K, f2wq_K, w2b_DM, w2f_DM, f2wq_DM]
+        edges = [w2b_K, b2f_K, w2f_K, f2wf_K, w2b_DM, b2f_DM, w2f_DM, f2wf_DM]
 
         transition_formulas = {
             w2b_K: {"f": f_w2b_K},
+            b2f_K: {"f": f_b2f_K},
             w2f_K: {"f": f_w2f_K},
-            f2wq_K: {"f": f_f2wq_K},
+            f2wf_K: {"f": f_f2wf_K},
             w2b_DM: {"f": f_w2b_DM},
+            b2f_DM: {"f": f_b2f_DM},
             w2f_DM: {"f": f_w2f_DM},
-            f2wq_DM: {"f": f_f2wq_DM},
+            f2wf_DM: {"f": f_f2wf_DM},
         }
 
         self.g = nx.DiGraph()
@@ -303,6 +310,78 @@ class Converter:
         )
 
     ########################################################################
+    ###                     From Bargmann to Fock                         ###
+    ########################################################################
+
+    def _bargmannket_to_fockket(
+        self,
+        bargmannket: BargmannKet,
+        max_prob: float = 1.0,
+        max_photon: Optional[int] = None,
+        cutoffs: List[int] = None,
+    ) -> FockKet:
+        r"""
+        Returns the Fock representation of a Gaussian state in ket form.
+
+        Args:
+            bargmannket (BargmannKet)       : the BargmannKet object.
+            cutoffs (List[int]) .       : the shape of the desired Fock tensor
+            max_prob (float)            : the maximum probability of a the state (applies only if
+                                          the ket is returned)
+            max_photon (Optional[int]) : the maximum number of photons in the state (applies only
+                                          if the ket is returned)
+
+        Returns:
+            FockKet: the fock representation of the ket.
+        """
+        A = bargmannket.data.A
+        B = bargmannket.data.b
+        C = bargmannket.data.c
+
+        if cutoffs is None:
+            cutoffs = np.repeat(
+                settings.AUTOCUTOFF_MIN_CUTOFF, bargmannket.data.A.shape[-1] // 2
+            )
+
+        if max_photon is None:
+            max_photon = sum(np.shape(cutoffs)) - len(np.shape(cutoffs))
+
+        if max_prob < 1.0 or max_photon < sum(np.shape(cutoffs)) - len(np.shape(cutoffs)):
+            return FockKet(
+                array=math.hermite_renormalized_binomial(
+                    A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photon + 1
+                )
+            )
+
+        else:
+            return FockKet(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs)))
+
+    def _bargmanndm_to_fockdm(
+        self,
+        bargmanndm: BargmannDM,
+        cutoffs: List[int] = None,
+    ) -> FockDM:
+        r"""
+        Returns the Fock representation of a Gaussian state in density matrix form.
+
+        Args:
+            bargmanndm (BargmannDM): the BargmannDM object.
+            cutoffs (List[int]): the shape of the desired Fock tensor
+
+        Returns:
+            Tensor: the fock representation
+        """
+        A = bargmanndm.data.A
+        B = bargmanndm.data.b
+        C = bargmanndm.data.c
+
+        if cutoffs is None:
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, bargmanndm.data.A.shape[-1] // 2)
+
+        return FockDM(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape)))
+    
+
+    ########################################################################
     ###                     From Wigner to Fock                         ###
     ########################################################################
 
@@ -327,29 +406,8 @@ class Converter:
         Returns:
             FockKet: the fock representation of the ket.
         """
-
         bargmann_ket = self._wignerket_to_bargmannket(wignerket)
-        A = bargmann_ket.data.A
-        B = bargmann_ket.data.b
-        C = bargmann_ket.data.c
-
-        if cutoffs is None:
-            cutoffs = np.repeat(
-                settings.AUTOCUTOFF_MIN_CUTOFF, wignerket.data.symplectic.shape[-1] // 2
-            )
-
-        if max_photon is None:
-            max_photon = sum(np.shape(cutoffs)) - len(np.shape(cutoffs))
-
-        if max_prob < 1.0 or max_photon < sum(np.shape(cutoffs)) - len(np.shape(cutoffs)):
-            return FockKet(
-                array=math.hermite_renormalized_binomial(
-                    A, B, C, shape=cutoffs.shape, max_l2=max_prob, global_cutoff=max_photon + 1
-                )
-            )
-
-        else:
-            return FockKet(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs)))
+        return self._bargmannket_to_fockket(bargmannket=bargmann_ket, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
 
     def _wignerdm_to_fockdm(
         self,
@@ -366,15 +424,8 @@ class Converter:
         Returns:
             Tensor: the fock representation
         """
-
-        if cutoffs is None:
-            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, wignerdm.data.cov.shape[-1] // 2)
         bargmann_dm = self._wignerdm_to_bargmanndm(wignerdm)
-        A = bargmann_dm.data.A
-        B = bargmann_dm.data.b
-        C = bargmann_dm.data.c
-
-        return FockDM(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape)))
+        return self._bargmanndm_to_fockdm(bargmanndm=bargmann_dm, cutoffs=cutoffs)
 
     ########################################################################
     ###                     From Fock to Wavefunction                    ###
