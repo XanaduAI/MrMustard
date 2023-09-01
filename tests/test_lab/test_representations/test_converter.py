@@ -180,3 +180,8 @@ class TestConverterFockWithCutoffs():
         wigner_dm = WignerDM(cov=cov, means=means)
         fock_dm = self.converter.convert(source=wigner_dm, destination="Fock", cutoffs = [50,50])
         assert fock_dm.data.shape == (50,50)
+
+
+class TestOscillatorEignestates(): #TODO: test an internal function.
+    r"""Test that the oscillator eigenstates are correct generated."""
+    pass

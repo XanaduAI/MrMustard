@@ -463,7 +463,7 @@ class Converter:
             where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
         """
 
-        def f_hermite_polys(xi):  # TODO : un-nest this? if possible
+        def f_hermite_polys(xi):
             poly = math.hermite_renormalized(
                 R, 2 * math.astensor([xi], "complex128"), 1 + 0j, cutoff
             )
@@ -476,9 +476,13 @@ class Converter:
         prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
 
         # Renormalized physicist hermite polys: Hn / sqrt(n!)
-        R = np.array([[2 + 0j]])  # to get the physicist polys
+        R = np.array([[-2 + 0j]])  # to get the physicist polys
 
-        hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
+        #if the tensor is a scalar, just apply it
+        if x_tensor.shape ==():
+            hermite_polys = f_hermite_polys(x_tensor)
+        else:
+            hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
 
         # (real) wavefunction
         psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
