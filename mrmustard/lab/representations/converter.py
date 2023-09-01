@@ -67,7 +67,7 @@ class Converter:
         wq_DM = "WaveFunctionQDM"
         w_DM = "WignerDM"
 
-        ### DEFINE EDGES - CONNEXIONS
+        ### DEFINE EDGES - CONNECTIONS
 
         # Ket component of the graph
         w2b_K = (w_K, b_K)
