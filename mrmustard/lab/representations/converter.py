@@ -37,22 +37,23 @@ math = Math()
 
 class Converter:
     r"""
-        Class for an object allowing conversion between a given source representation and a desired
-          destination one. It relies on the representation transition graph which we detail below.
+    Class for an object allowing conversion between a given source representation and a desired
+      destination one. It relies on the representation transition graph which we detail below.
 
-        The transition graph describes transitions between representations. Nodes are the names
-        -as strings- of the Representation object. Edges are functions corresponding to the
-        transitions between two Representation objects
-        Note that this graph is:
-            - Finite
-            - Directed
-            - Disconnected, with 2 connected components
-            - Cyclic
-            - Unweighted
-            - Order : 8
-            - Size : 6
-            - Degree 1 for all nodes
-        """
+    The transition graph describes transitions between representations. Nodes are the names
+    -as strings- of the Representation object. Edges are functions corresponding to the
+    transitions between two Representation objects
+    Note that this graph is:
+        - Finite
+        - Directed
+        - Disconnected, with 2 connected components
+        - Cyclic
+        - Unweighted
+        - Order : 8
+        - Size : 6
+        - Degree 1 for all nodes
+    """
+
     def __init__(self) -> None:
         ### DEFINE NODES - REPRESENTATION NAMES
 
@@ -67,7 +68,6 @@ class Converter:
         bargmann_DM = "BargmannDM"
         fock_DM = "FockDM"
         wavefunction_DM = "WaveFunctionDM"
-       
 
         ### DEFINE EDGES - CONNECTIONS
 
@@ -340,9 +340,7 @@ class Converter:
         C = bargmannket.data.c
 
         if cutoffs is None:
-            cutoffs = np.repeat(
-                settings.AUTOCUTOFF_MIN_CUTOFF, bargmannket.data.A.shape[-1] // 2
-            )
+            cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, bargmannket.data.A.shape[-1] // 2)
 
         if max_photon is None:
             max_photon = sum(np.shape(cutoffs)) - len(np.shape(cutoffs))
@@ -380,7 +378,6 @@ class Converter:
             cutoffs = np.repeat(settings.AUTOCUTOFF_MIN_CUTOFF, bargmanndm.data.A.shape[-1] // 2)
 
         return FockDM(array=math.hermite_renormalized(A, B, C, shape=tuple(cutoffs.shape)))
-    
 
     ########################################################################
     ###                     From Wigner to Fock                         ###
@@ -408,7 +405,9 @@ class Converter:
             FockKet: the fock representation of the ket.
         """
         bargmann_ket = self._wignerket_to_bargmannket(wignerket)
-        return self._bargmannket_to_fockket(bargmannket=bargmann_ket, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs)
+        return self._bargmannket_to_fockket(
+            bargmannket=bargmann_ket, max_prob=max_prob, max_photon=max_photon, cutoffs=cutoffs
+        )
 
     def _wignerdm_to_fockdm(
         self,
@@ -478,8 +477,8 @@ class Converter:
         # Renormalized physicist hermite polys: Hn / sqrt(n!)
         R = np.array([[-2 + 0j]])  # to get the physicist polys
 
-        #if the tensor is a scalar, just apply it
-        if x_tensor.shape ==():
+        # if the tensor is a scalar, just apply it
+        if x_tensor.shape == ():
             hermite_polys = f_hermite_polys(x_tensor)
         else:
             hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
@@ -489,7 +488,10 @@ class Converter:
         return psi
 
     def _fockket_to_wavefunctionket(
-        self, fock_ket: FockKet, points: Optional[Sequence[Sequence[float]]] = None, quadrature_angle: float = 0.0
+        self,
+        fock_ket: FockKet,
+        points: Optional[Sequence[Sequence[float]]] = None,
+        quadrature_angle: float = 0.0,
     ) -> WaveFunctionKet:
         r"""
         Returns the position wavefunction of the Fock ket state at a vector of positions.
@@ -508,11 +510,11 @@ class Converter:
                 "The number of points are necessary to generate the wavefunction state."
             )
         if not quadrature_angle:
-            raise ValueError(
-                "The axis of wavefunction along with needs to be given."
-            )
+            raise ValueError("The axis of wavefunction along with needs to be given.")
 
-        fock_ket_new = (State(ket=fock_ket.data.array) >> Rgate(quadrature_angle)).ket(cutoffs=fock_ket.data.array.shape)
+        fock_ket_new = (State(ket=fock_ket.data.array) >> Rgate(quadrature_angle)).ket(
+            cutoffs=fock_ket.data.array.shape
+        )
 
         krausses = [
             math.transpose(self._oscillator_eigenstates(q, c))
@@ -527,7 +529,10 @@ class Converter:
         return ket  # now in q basis
 
     def _fockdm_to_wavefunctiondm(
-        self, fock_dm: FockDM, points: Optional[Sequence[Sequence[float]]] = None, quadrature_angle: float = 0.0
+        self,
+        fock_dm: FockDM,
+        points: Optional[Sequence[Sequence[float]]] = None,
+        quadrature_angle: float = 0.0,
     ) -> WaveFunctionDM:
         r"""
         Returns the position wavefunction of the Fock density matrix at a vector of positions.
@@ -546,11 +551,11 @@ class Converter:
                 "The number of points are necessary to generate the wavefunction state."
             )
         if not quadrature_angle:
-            raise ValueError(
-                "The axis of wavefunction along with needs to be given."
-            )
-        
-        fock_dm_new = (State(dm=fock_dm.data.array) >> Rgate(quadrature_angle)).dm(cutoffs=fock_dm.data.array.shape)
+            raise ValueError("The axis of wavefunction along with needs to be given.")
+
+        fock_dm_new = (State(dm=fock_dm.data.array) >> Rgate(quadrature_angle)).dm(
+            cutoffs=fock_dm.data.array.shape
+        )
 
         krausses = [
             math.transpose(self._oscillator_eigenstates(q, c))
