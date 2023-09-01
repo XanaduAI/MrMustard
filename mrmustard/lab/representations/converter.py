@@ -47,7 +47,7 @@ class Converter:
             - Finite
             - Directed
             - Disconnected, with 2 connected components
-            - Acyclic
+            - Cyclic
             - Unweighted
             - Order : 8
             - Size : 6

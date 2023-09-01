@@ -22,8 +22,8 @@ from mrmustard.lab.representations.bargmann_ket import BargmannKet
 from mrmustard.lab.representations.bargmann_dm import BargmannDM
 from mrmustard.lab.representations.wigner_ket import WignerKet
 from mrmustard.lab.representations.wigner_dm import WignerDM
-from mrmustard.lab.representations.wavefunctionq_ket import WaveFunctionQKet
-from mrmustard.lab.representations.wavefunctionq_dm import WaveFunctionQDM
+from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
+from mrmustard.lab.representations.wavefunction_dm import WaveFunctionDM
 
 from mrmustard import settings
 from hypothesis import given
@@ -50,9 +50,9 @@ class TestConverter():
         wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
         bargmann_ket = self.converter.convert(source=wigner_ket, destination="Bargmann")
         assert isinstance(bargmann_ket, BargmannKet), "The conversion is not correct!"
-        assert bargmann_ket.A == 0.0
-        assert bargmann_ket.b == (x + 1j*y)
-        assert bargmann_ket.c == math.exp(-1/2*math.norm(x + 1j*y)**2)
+        assert np.allclose(bargmann_ket.A, 0.0)
+        assert np.allclose(bargmann_ket.b, (x + 1j*y))
+        assert np.allclose(bargmann_ket.c, math.exp(-1/2*math.norm(x + 1j*y)**2))
     
     @given(r=r, phi=angle)
     def test_convert_from_wignerket_to_bargmannket_squeezed_state(self, r, phi):
@@ -64,9 +64,9 @@ class TestConverter():
         wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
         bargmann_ket = self.converter.convert(source=wigner_ket, destination="Bargmann")
         assert isinstance(bargmann_ket, BargmannKet), "The conversion is not correct!"
-        assert bargmann_ket.A == math.tanh(r)*math.exp(1j*phi)
-        assert bargmann_ket.b == 0
-        assert bargmann_ket.c == math.sqrt(math.sech(r))
+        assert np.allclose(bargmann_ket.A, math.tanh(r)*math.exp(1j*phi))
+        assert np.allclose(bargmann_ket.b, 0)
+        assert np.allclose(bargmann_ket.c, math.sqrt(math.sech(r)))
 
     @given(x=medium_float, y=medium_float)
     def test_convert_from_wignerdm_to_bargmanndm_coherent_state(self, x, y):
@@ -78,9 +78,9 @@ class TestConverter():
         wigner_dm = WignerDM(cov=cov, means=means)
         bargmann_dm = self.converter.convert(source=wigner_dm, destination="Bargmann")
         assert isinstance(bargmann_dm, BargmannDM), "The conversion is not correct!"
-        assert bargmann_dm.A == math.zeros(N * N, dtype=math.float64)
-        assert bargmann_dm.b == math.concat([x - 1j* y, x+ 1j* y], axis=0)
-        assert bargmann_dm.c == math.exp(-math.norm(x + 1j*y)**2)
+        assert np.allclose(bargmann_dm.A, math.zeros((N * N), dtype=math.float64))
+        assert np.allclose(bargmann_dm.b, math.concat([x - 1j* y, x+ 1j* y], axis=0))
+        assert np.allclose(bargmann_dm.c, math.exp(-math.norm(x + 1j*y)**2))
     
 
     @given(r=r, phi=angle)
@@ -88,14 +88,14 @@ class TestConverter():
         """Test that the Bargmann representation of a dm is correct for a squeezed state"""
         hbar = settings.HBAR
         N = 2
-        cov = squeezed_vacuum_cov(r, phi)
+        cov = squeezed_vacuum_cov(r, phi, hbar)
         means = math.sqrt(2 * hbar, dtype=cov.dtype) * math.concat([0, 0], axis=0)
         wigner_dm = WignerDM(cov=cov, means=means)
         bargmann_dm = self.converter.convert(source=wigner_dm, destination="Bargmann")
         assert isinstance(bargmann_dm, BargmannDM), "The conversion is not correct!"
-        assert bargmann_dm.A == math.array([[math.tanh(r)*math.exp(-1j*phi),0],[0, math.tanh(r)*math.exp(1j*phi)]])
-        assert bargmann_dm.b == math.concat([0, 0], axis=0)
-        assert bargmann_dm.c == math.sech(r)
+        assert np.allclose(bargmann_dm.A, math.array([[math.tanh(r)*math.exp(-1j*phi),0],[0, math.tanh(r)*math.exp(1j*phi)]]))
+        assert np.allclose(bargmann_dm.b, math.concat([0, 0], axis=0))
+        assert np.allclose(bargmann_dm.c, math.sech(r))
 
     #Wigner -> Fock
     @given(x=medium_float, y=medium_float)
@@ -108,9 +108,9 @@ class TestConverter():
         wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
         fock_ket = self.converter.convert(source=wigner_ket, destination="Fock")
         assert isinstance(fock_ket, FockKet), "The conversion is not correct!"
-        assert fock_ket[0] == math.exp(-1/2*math.norm(x + 1j*y)**2)
-        assert fock_ket[1] == fock_ket[0] * (x + 1j*y)
-        assert fock_ket[2] == fock_ket[1] * (x + 1j*y)/math.sqrt(2)
+        assert np.allclose(fock_ket[0], math.exp(-1/2*math.norm(x + 1j*y)**2))
+        assert np.allclose(fock_ket[1], fock_ket[0] * (x + 1j*y))
+        assert np.allclose(fock_ket[2], fock_ket[1] * (x + 1j*y)/math.sqrt(2))
 
 
     @given(x=medium_float, y=medium_float)
@@ -123,12 +123,12 @@ class TestConverter():
         wigner_dm = WignerDM(cov=cov, means=means)
         fock_dm = self.converter.convert(source=wigner_dm, destination="Fock")
         assert isinstance(fock_dm, FockDM), "The conversion is not correct!"
-        assert fock_dm[0,0] == math.exp(-math.norm(x + 1j*y)**2)
-        assert fock_dm[0,1] == fock_dm[0,0]**2 * (x + 1j*y)
-        assert fock_dm[1,0] == fock_dm[0,1]
+        assert np.allclose(fock_dm[0,0], math.exp(-math.norm(x + 1j*y)**2))
+        assert np.allclose(fock_dm[0,1], fock_dm[0,0]**2 * (x + 1j*y))
+        assert np.allclose(fock_dm[1,0], fock_dm[0,1])
 
 
-    #Fock -> WaveFunctionQ
+    #Fock -> WaveFunction
     @given(x=medium_float, y=medium_float)
     def test_convert_from_wignerket_to_fockket_to_wavefunctionqket_coherent_state(self, x, y):
         """Test that the wavefunction converted from Fock representation is correct for a coherent state.
@@ -145,7 +145,7 @@ class TestConverter():
         displacement = math.sqrt(2 * hbar, dtype=symplectic.dtype) * math.concat([x, y], axis=0)
         wigner_ket = WignerKet(symplectic=symplectic, displacement=displacement)
         qs = [0,0.5,1.7]
-        wavefunctionq_ket = self.converter.convert(source=wigner_ket, destination="WaveFunctionQ", qs = qs)
+        wavefunctionq_ket = self.converter.convert(source=wigner_ket, destination="WaveFunction", qs = qs)
         def coherent_state_analytic(x, alpha):
             x = x * np.sqrt(1/settings.HBAR)
             return np.exp(-math.norm(alpha)**2/2)/(np.pi*settings.HBAR)**(1/4) *np.exp(x**2/2) * np.exp(-(x-alpha/np.sqrt(2))**2)    
