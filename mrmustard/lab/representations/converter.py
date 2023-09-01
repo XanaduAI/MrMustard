@@ -125,7 +125,6 @@ class Converter:
             The string of the target representation concatenated with either 'Ket' or 'DM'
             depending on the source.
         """
-        # suffix = sub(r'(?<![A-Z\W])(?=[A-Z])', ' ', source).split()[-1]
 
         if source.endswith("Ket"):
             return destination + "Ket"
