@@ -30,6 +30,7 @@ from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
 from mrmustard.lab.representations.wavefunction_dm import WaveFunctionDM
 from mrmustard.lab.representations.wigner_ket import WignerKet
 from mrmustard.lab.representations.wigner_dm import WignerDM
+from mrmustard.lab import State, Rgate
 
 math = Math()
 
@@ -457,7 +458,7 @@ class Converter:
             .. math::
 
                 \psi_n(x) = 1/sqrt[2^n n!](\frac{\omega}{\pi \hbar})^{1/4}
-                    \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\pi}} x)
+                    \exp{-\frac{\omega}{2\hbar} x^2} H_n(\sqrt{\frac{\omega}{\hbar}} x)
 
             where :math:`H_n(x)` is the (physicists) `n`-th Hermite polynomial.
         """
@@ -483,65 +484,76 @@ class Converter:
         psi = math.exp(-(x_tensor**2 / 2)) * math.transpose(prefactor * hermite_polys)
         return psi
 
-    def _fockket_to_wavefunctionqket(
-        self, fock_ket: FockKet, qs: Optional[Sequence[Sequence[float]]] = None
-    ) -> WaveFunctionQKet:
+    def _fockket_to_wavefunctionket(
+        self, fock_ket: FockKet, points: Optional[Sequence[Sequence[float]]] = None, quadrature_angle: float = 0.0
+    ) -> WaveFunctionKet:
         r"""
         Returns the position wavefunction of the Fock ket state at a vector of positions.
 
         Args:
             fockket (FockKet): a Fock ket object.
-            qs (optional Sequence[Sequence[float]]): a sequence of positions for each mode.
-                If ``None``, a set of positions is automatically generated.
+            points (optional Sequence[Sequence[float]]): a sequence of positions for each mode.
+            quadrature_angle (float): the angle indicates the wavefunction along with axis. For example, angle=0.0 along q-axis, angle=np.pi/2 along p-axis.
 
         Returns:
             ComplexFunctionND: the wavefunction at the given positions wrapped in a
             :class:`~.ComplexFunctionND` object.
         """
-        if not qs:
-            raise AssertionError(
-                "The number of points are necessary to generate the wavefunctionq state."
+        if not points:
+            raise ValueError(
+                "The number of points are necessary to generate the wavefunction state."
+            )
+        if not quadrature_angle:
+            raise ValueError(
+                "The axis of wavefunction along with needs to be given."
             )
 
-        # TODO : check this
+        fock_ket_new = (State(ket=fock_ket.data.array) >> Rgate(quadrature_angle)).ket(cutoffs=fock_ket.data.array.shape)
+
         krausses = [
             math.transpose(self._oscillator_eigenstates(q, c))
-            for q, c in zip(qs, fock_ket.data.cutoffs)
+            for q, [c] in zip(points, fock_ket_new.data.cutoffs)
         ]
 
-        ket = fock_ket.data.array
+        ket = fock_ket_new.data.array
 
         for i, h_n in enumerate(krausses):
             ket = apply_kraus_to_ket(h_n, ket, [i])
 
         return ket  # now in q basis
 
-    def _fockdm_to_wavefunctionqdm(
-        self, fock_dm: FockDM, qs: Optional[Sequence[Sequence[float]]] = None
-    ) -> WaveFunctionQDM:
+    def _fockdm_to_wavefunctiondm(
+        self, fock_dm: FockDM, points: Optional[Sequence[Sequence[float]]] = None, quadrature_angle: float = 0.0
+    ) -> WaveFunctionDM:
         r"""
         Returns the position wavefunction of the Fock density matrix at a vector of positions.
 
         Args:
             fockdm (FockDM): a Fock density matrix object.
-            qs (optional Sequence[Sequence[float]]): a sequence of positions for each mode.
-                If ``None``, a set of positions is automatically generated.
+            points (optional Sequence[Sequence[float]]): a sequence of positions for each mode.
+            quadrature_angle (float): the angle indicates the wavefunction along with axis. For example, angle=0.0 along q-axis, angle=np.pi/2 along p-axis.
 
         Returns:
             ComplexFunctionND: the wavefunction at the given positions wrapped in a
             :class:`~.ComplexFunctionND` object.
         """
-        if not qs:
+        if not points:
             raise AssertionError(
-                "The number of points are necessary to generate the wavefunctionq state."
+                "The number of points are necessary to generate the wavefunction state."
             )
+        if not quadrature_angle:
+            raise ValueError(
+                "The axis of wavefunction along with needs to be given."
+            )
+        
+        fock_dm_new = (State(dm=fock_dm.data.array) >> Rgate(quadrature_angle)).dm(cutoffs=fock_dm.data.array.shape)
 
         krausses = [
             math.transpose(self._oscillator_eigenstates(q, c))
-            for q, c in zip(qs, fock_dm.data.cutoffs)
+            for q, [c] in zip(points, fock_dm_new.data.cutoffs)
         ]
 
-        dm = fock_dm.data.array
+        dm = fock_dm_new.data.array
         for i, h_n in enumerate(krausses):
             dm = apply_kraus_to_dm(h_n, dm, [i])
         return dm
