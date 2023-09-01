@@ -35,10 +35,10 @@ import pytest
 from thewalrus.random import random_symplectic, random_covariance
 
 class TestConverter():
+    r"""Test that the converter will convert between representation correctly."""
     def __init__(self) -> None:
         self.converter = Converter()
 
-    #######################Test Conversion###########################
     #Wigner -> Bargmann
     @given(x=medium_float, y=medium_float)
     def test_convert_from_wignerket_to_bargmannket_cohenrent_state(self, x, y):
@@ -152,10 +152,11 @@ class TestConverter():
         assert np.allclose(coherent_state_analytic(qs, alpha), wavefunctionq_ket)
         
 
-    def test_convert_from_fockdm_to_wavefunctionqdm(self):
+    def test_convert_from_fockdm_to_wavefunctiondm(self):
         pass
 
 class TestConverterFockWithCutoffs():
+    r"""Test that the special case for converter (anywhere -> Fock) to have the correct cutoffs."""
 
     @given(x=medium_float, y=medium_float)
     def test_convert_from_wignerket_to_fockket_coherent_state_with_cutoffs(self, x, y):
