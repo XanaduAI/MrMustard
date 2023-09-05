@@ -92,13 +92,15 @@ class ABCData(MatVecData):
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: ABCData) -> ABCData:
-        try:
-            As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
-            bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
-            cs = [c1 * c2 for c1 in self.c for c2 in other.c]
-            return self.__class__(As, bs, cs)
-        except Exception as e:
-            raise TypeError(f"Cannot tensor product {self.__class__} and {other.__class__}.") from e
+        As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
+        bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
+        cs = [c1 * c2 for c1 in self.c for c2 in other.c]
+        return self.__class__(As, bs, cs)
+
+    def conj(self):
+        new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        new._contract_idxs = self._contract_idxs
+        return new
 
     def __matmul__(self, other: ABCData) -> ABCData:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
@@ -108,14 +110,14 @@ class ABCData(MatVecData):
         newc = graph.c
         for n, (i, j) in enumerate(zip(self._contract_idxs, other._contract_idxs)):
             i = i - np.sum(np.array(self._contract_idxs[:n]) < i)
-            j = j + self.dim - n - np.sum(np.array(other._contract_idxs[:n]) < j)
+            j = j + (self.dim - n) - np.sum(np.array(other._contract_idxs[:n]) < j)
             noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, newA.shape[-1]))
             Abar = math.gather(math.gather(newA, noij, axis=1), noij, axis=2)
             bbar = math.gather(newb, noij, axis=1)
             D = math.gather(
                 math.concat([newA[..., i][..., None], newA[..., j][..., None]], axis=-1),
                 noij,
-                axis=1,
+                axis=-2,
             )
             M = math.concat(
                 [
@@ -139,12 +141,12 @@ class ABCData(MatVecData):
             Minv = math.inv(M)
             b_ = math.concat([newb[:, i][:, None], newb[:, j][:, None]], axis=-1)
 
-            newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
-            newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
+            newA = Abar - math.einsum("bij,bjk,blk->bil", D, Minv, D)
+            newb = bbar - math.einsum("bij,bjk,bk->bi", D, Minv, b_)
             newc = (
                 newc
-                * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
-                / math.sqrt(-math.det(M))
+                * math.exp(-math.einsum("bi,bij,bj->b", b_, Minv, b_) / 2)
+                / (math.sqrt(math.det(M)) * np.sqrt(2) * np.pi)
             )
         return self.__class__(newA, newb, newc)
 
@@ -155,5 +157,6 @@ class ABCData(MatVecData):
                 raise IndexError(
                     f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
                 )
-        self._contract_idxs = idx
-        return self
+        new = self.__class__(self.A, self.b, self.c)
+        new._contract_idxs = idx
+        return new
