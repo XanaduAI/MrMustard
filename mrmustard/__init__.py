@@ -43,6 +43,7 @@ class Settings:
         self.EQ_TRANSFORMATION_CUTOFF = 3  # 3 is enough to include a full step of the rec relations
         self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
         self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
+        self.EQUALITY_PRECISION_DECIMALS = 6  #  decimals for (A,b,c) equality check
         # for the detectors
         self.PNR_INTERNAL_CUTOFF = 50
         self.HOMODYNE_SQUEEZING = 10.0
