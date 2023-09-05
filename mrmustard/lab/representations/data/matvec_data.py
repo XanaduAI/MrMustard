@@ -18,6 +18,7 @@ from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
 
+from mrmustard import settings
 from mrmustard.lab.representations.data.data import Data
 from mrmustard.math import Math
 from mrmustard.typing import Batch, Matrix, Scalar, Vector
@@ -44,33 +45,40 @@ class MatVecData(Data):  # Note: this class is abstract!
         assert (
             len(self.mat) == len(self.vec) == len(self.coeffs)
         ), "All inputs must have the same batch size."
+        assert (
+            self.mat.shape[-1] == self.mat.shape[-2] == self.vec.shape[-1]
+        ), "A and b must have the same dimension and A must be symmetric"
         self.batch_dim = self.mat.shape[0]
         self.dim = self.mat.shape[-1]
 
     def __neg__(self) -> MatVecData:
         return self.__class__(self.mat, self.vec, -self.coeffs)
 
-    def __eq__(self, other: MatVecData, include_scalars: bool = True) -> bool:
+    def __eq__(self, other: MatVecData, exclude_scalars: bool = False) -> bool:
         A, B = sorted([self, other], key=lambda x: x.batch_dim)  # A smaller or equal batch than B
-        try:
-            if include_scalars and all(
-                memoryview(c).tobytes() in memoryview(B.coeffs).tobytes() for c in A.coeffs
-            ):
-                if all(memoryview(v).tobytes() in memoryview(B.vec).tobytes() for v in A.vec):
-                    if all(memoryview(m).tobytes() in memoryview(B.mat).tobytes() for m in A.mat):
-                        return True
-            return False
-        except Exception as e:
-            raise TypeError(f"Cannot compare {self.__class__} and {other.__class__}.") from e
+        # check scalars
+        Ac = np.around(A.coeffs, settings.EQUALITY_PRECISION_DECIMALS)
+        Bc = memoryview(np.around(B.coeffs, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+        if exclude_scalars or all(memoryview(c).tobytes() in Bc for c in Ac):
+            # check vectors
+            Av = np.around(A.vec, settings.EQUALITY_PRECISION_DECIMALS)
+            Bv = memoryview(np.around(B.vec, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+            if all(memoryview(v).tobytes() in Bv for v in Av):
+                # check matrices
+                Am = np.around(A.mat, settings.EQUALITY_PRECISION_DECIMALS)
+                Bm = memoryview(np.around(B.mat, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+                if all(memoryview(m).tobytes() in Bm for m in Am):
+                    return True
+        return False
 
     def __add__(self, other: MatVecData) -> MatVecData:
-        try:
-            combined_matrices = math.concat([self.mat, other.mat], axis=0)
-            combined_vectors = math.concat([self.vec, other.vec], axis=0)
-            combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-            return self.__class__(combined_matrices, combined_vectors, combined_coeffs)
-        except Exception as e:
-            raise TypeError(f"Cannot add/subtract {self.__class__} and {other.__class__}.") from e
+        if self.__eq__(other, exclude_scalars=True):
+            new_coeffs = self.coeffs + other.coeffs
+            return self.__class__(self.mat, self.vec, new_coeffs)
+        combined_matrices = math.concat([self.mat, other.mat], axis=0)
+        combined_vectors = math.concat([self.vec, other.vec], axis=0)
+        combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
+        return self.__class__(combined_matrices, combined_vectors, combined_coeffs)
 
     def __truediv__(self, x: Scalar) -> MatVecData:
         if not isinstance(x, (int, float, complex)):
