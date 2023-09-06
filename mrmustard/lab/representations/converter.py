@@ -37,12 +37,13 @@ math = Math()
 
 class Converter:
     r"""
-    Class for an object allowing conversion between a given source representation and a desired
+    Class for the State Class allowing conversion between a given source representation and a desired
       destination one. It relies on the representation transition graph which we detail below.
 
     The transition graph describes transitions between representations. Nodes are the names
     -as strings- of the Representation object. Edges are functions corresponding to the
-    transitions between two Representation objects
+    transitions between two Representation objects.
+
     Note that this graph is:
         - Finite
         - Directed
@@ -50,7 +51,7 @@ class Converter:
         - Cyclic
         - Unweighted
         - Order : 8
-        - Size : 6
+        - Size : 8
         - Degree 1 for all nodes
 
     Now we support the conversion including:
@@ -89,16 +90,16 @@ class Converter:
         ### DEFINE EDGE LABELS - FORMULAS
 
         # Ket component of the graph
-        w2b_K = self._wignerket_to_bargmannket
-        b2f_K = self._bargmannket_to_fockket
-        w2f_K = self._wignerket_to_fockket
-        f2wf_K = self._fockket_to_wavefunctionket
+        f_w2b_K = self._wignerket_to_bargmannket
+        f_b2f_K = self._bargmannket_to_fockket
+        f_w2f_K = self._wignerket_to_fockket
+        f_f2wf_K = self._fockket_to_wavefunctionket
 
         # DM component of the graph
-        w2b_DM = self._wignerdm_to_bargmanndm
-        b2f_DM = self._bargmanndm_to_fockdm
-        w2f_DM = self._wignerdm_to_fockdm
-        f2wf_DM = self._fockdm_to_wavefunctiondm
+        f_w2b_DM = self._wignerdm_to_bargmanndm
+        f_b2f_DM = self._bargmanndm_to_fockdm
+        f_w2f_DM = self._wignerdm_to_fockdm
+        f_f2wf_DM = self._fockdm_to_wavefunctiondm
 
         ### DEFINE GRAPH
 
@@ -177,7 +178,7 @@ class Converter:
             elif d_name == "FockDM":
                 cutoffs = kwargs.get("cutoffs") if kwargs.get("cutoffs") else None
                 return f(source, cutoffs=cutoffs)
-            elif d_name == "WaveFunctionKet" or d_name == "WaveFunctionDM":
+            elif d_name in ("WaveFunctionKet", "WaveFunctionDM"):
                 points = kwargs.get("points")
                 quadrature_angle = kwargs.get("quadrature_angle")
                 return f(source, points=points, quadrature_angle=quadrature_angle)
@@ -189,27 +190,31 @@ class Converter:
                 f"Either {s_name} or {destination} is not a valid representation name"
             ) from e
 
-    def shortest_path(self, source: Representation, destination: Representation):
+    def shortest_path(self):
+        r"""Desirable function to find the shortest path in the graph for the conversion."""
         raise NotImplementedError
 
     def add_edge(self):
+        r"""Desirable function to customize the graph from the user."""
         raise NotImplementedError
 
     def show(self) -> None:
+        r"""Desirable function to show the whole graph."""
         raise NotImplementedError
 
     ########################################################################
     ###                    From Wigner to Husimi                         ###
     ########################################################################
+    # This could be a vertex in the graph, but now we keep it private transition.
     def _pq_to_aadag(self, X: Union[Matrix, Vector]) -> Union[Matrix, Vector]:
         r"""
-        Maps a matrix or vector from the q/p basis to the a/adagger basis
+        Maps a matrix or vector from the q/p basis to the a/a^dagger basis.
 
         Args:
             X (Union[Matrix, Vector]) : A matrix or vector in the Q/P basis
 
         Returns:
-            The input matrix/vector in the A/A^\dagger basis
+            The input matrix/vector in the a/a^\dagger basis
         """
 
         N = X.shape[0] // 2
@@ -226,11 +231,11 @@ class Converter:
 
     def _wigner_to_husimi(self, cov: Matrix, means: Vector) -> Tuple[Matrix, Vector]:
         r"""
-        Converts from a Wigner Representation (covariance and mean vector) to Husimi Representation.
+        Converts the covariance and mean vector from Wigner Representation to Husimi Representation.
 
         Args:
-            cov (Matrix)     : covariance matrix of the state
-            means (Vector)   : mean vector of the state
+            cov (Matrix)     : covariance matrix of the state in wigner representation
+            means (Vector)   : mean vector of the state in wigner representation
 
         Returns:
             The Husimi representation's complex covariance and means vector
@@ -250,7 +255,7 @@ class Converter:
     def _cayley(self, X: Tensor, c: float) -> Tensor:
         r"""
         Returns the Cayley transformation of a matrix:
-        :math:`cay(X) = (X - cI)(X + cI)^{-1}`
+        :math:`cay(X) = (X - cI)(X + cI)^{-1}`.
 
         Args:
             c (float): the parameter of the self._cayley transform
@@ -262,17 +267,17 @@ class Converter:
 
         I = math.eye(X.shape[0], dtype=X.dtype)
 
-        return math.solve(X + c * I, X - c * I)  # TODO : solve the argument nb issue
+        return math.solve(X + c * I, X - c * I)
 
     def _wignerdm_to_bargmanndm(self, wigner_dm: WignerDM) -> BargmannDM:
         r"""
         Converts the wigner representation in terms of covariance matrix and mean vector into the
         Bargmann `A,B,C` triple for a density matrix (i.e. for `M` modes, `A` has shape `2M x 2M`
         and `B` has shape `2M`).
-        The order of the rows/columns of A and B corresponds to a density matrix with the usual
+        The order of the rows/columns of A and B corresponds to a density matrix with (out1,out2,...,in1,in2,...)
         ordering of the indices.
 
-        Note that here A and B are defined with respect to the literature.
+        Note that here A and B are defined with respect to the literature (reference: arXiv:2209.06069).
 
         Args:
             wigner_dm (WignerDM) : the Wigner DM representation of the state
@@ -296,6 +301,8 @@ class Converter:
         Converts the Wigner representation in terms of covariance matrix and mean vector into the
         Bargmann A,B,C triple for a Hilbert vector (i.e. for M modes, A has shape M x M and B has
         shape M).
+
+        Note that here A and B are defined with respect to the literature (reference: arXiv:2209.06069).
 
         Args:
             wigner_ket (WignerKet) : the input Wigner representation of the state
@@ -326,14 +333,14 @@ class Converter:
         cutoffs: List[int] = None,
     ) -> FockKet:
         r"""
-        Returns the Fock representation of a Gaussian state in ket form.
+        Returns the Fock representation of a Gaussian pure state in ket form.
 
         Args:
-            bargmannket (BargmannKet)       : the BargmannKet object.
+            bargmannket (BargmannKet)   : the BargmannKet object
             cutoffs (List[int]) .       : the shape of the desired Fock tensor
             max_prob (float)            : the maximum probability of a the state (applies only if
                                           the ket is returned)
-            max_photon (Optional[int]) : the maximum number of photons in the state (applies only
+            max_photon (Optional[int])  : the maximum number of photons in the state (applies only
                                           if the ket is returned)
 
         Returns:
@@ -365,10 +372,10 @@ class Converter:
         cutoffs: List[int] = None,
     ) -> FockDM:
         r"""
-        Returns the Fock representation of a Gaussian state in density matrix form.
+        Returns the Fock representation of a Gaussian mixed state in density matrix form.
 
         Args:
-            bargmanndm (BargmannDM): the BargmannDM object.
+            bargmanndm (BargmannDM): the BargmannDM object
             cutoffs (List[int]): the shape of the desired Fock tensor
 
         Returns:
@@ -443,13 +450,13 @@ class Converter:
 
         Args:
             q (Vector)  : a vector containing the q points at which the function is evaluated
-                          (units of \sqrt{\hbar})
+                          (units of \sqrt{\hbar}).
             cutoff (int): maximum number of photons
 
         Returns:
             Tensor: a tensor of shape ``(cutoff, len(q))``. The entry with index ``[n, j]``
             represents the eigenstate evaluated with number of photons ``n`` evaluated at
-            position ``q[j]``, i.e., `\psi_n(q_j) = <q_j|n>`.
+            position ``q[j]``, i.e., `\psi_n(q_j) = <q_j|n>`
 
         .. details::
 
@@ -498,7 +505,7 @@ class Converter:
         quadrature_angle: float = 0.0,
     ) -> WaveFunctionKet:
         r"""
-        Returns the position wavefunction of the Fock ket state at a vector of positions.
+        Returns the wavefunction of the Fock ket state at a vector of positions according to the quadrature angle given.
 
         Args:
             fockket (FockKet): a Fock ket object.
@@ -506,8 +513,7 @@ class Converter:
             quadrature_angle (float): the angle indicates the wavefunction along with axis. For example, angle=0.0 along q-axis, angle=np.pi/2 along p-axis.
 
         Returns:
-            ComplexFunctionND: the wavefunction at the given positions wrapped in a
-            :class:`~.ComplexFunctionND` object.
+            Tensor: the wavefunction at the given positions.
         """
         if not points:
             raise ValueError(
@@ -530,7 +536,7 @@ class Converter:
         for i, h_n in enumerate(krausses):
             ket = apply_kraus_to_ket(h_n, ket, [i])
 
-        return ket  # now in q basis
+        return ket
 
     def _fockdm_to_wavefunctiondm(
         self,
@@ -539,7 +545,7 @@ class Converter:
         quadrature_angle: float = 0.0,
     ) -> WaveFunctionDM:
         r"""
-        Returns the position wavefunction of the Fock density matrix at a vector of positions.
+        Returns the position wavefunction of the Fock density matrix at a vector of positions according to the quadrature angle given.
 
         Args:
             fockdm (FockDM): a Fock density matrix object.
@@ -547,8 +553,7 @@ class Converter:
             quadrature_angle (float): the angle indicates the wavefunction along with axis. For example, angle=0.0 along q-axis, angle=np.pi/2 along p-axis.
 
         Returns:
-            ComplexFunctionND: the wavefunction at the given positions wrapped in a
-            :class:`~.ComplexFunctionND` object.
+            Tensor: the wavefunction at the given positions.
         """
         if not points:
             raise AssertionError(
