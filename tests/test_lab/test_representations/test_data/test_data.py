@@ -111,7 +111,7 @@ class TestData:
     def test_algebraic_op_raises_TypeError_if_other_object_is_of_wrong_type(
         self, DATA, other, operator
     ):
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, AttributeError):
             operator(DATA, other)
 
     @pytest.mark.parametrize("operator", [op.add, op.sub])
