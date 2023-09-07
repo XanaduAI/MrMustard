@@ -36,6 +36,8 @@ from mrmustard.physics import fock, gaussian, bargmann
 from mrmustard.lab.representations.representation import Representation
 from mrmustard.lab.representations.fock_dm import FockDM
 from mrmustard.lab.representations.fock_ket import FockKet
+from mrmustard.lab.representations.bargmann_dm import BargmannDM
+from mrmustard.lab.representations.bargmann_ket import BargmannKet
 from mrmustard.lab.representations.wigner_ket import WignerKet
 from mrmustard.lab.representations.wigner_dm import WignerDM
 from mrmustard.lab.representations.wavefunction_ket import WaveFunctionKet
@@ -73,8 +75,8 @@ class State:  # pylint: disable=too-many-public-methods
         A: ComplexMatrix = None,
         B: ComplexVector = None,
         C: float = None,
-        points: Vector = None,
-        wavefunction: Tensor = None,
+        points: RealVector = None,
+        wavefunction: ComplexTensor = None,
         quadrature_angle: float = None,
         ket_wavefunction: bool = None,
         modes: Sequence[int] = None,
@@ -87,6 +89,7 @@ class State:  # pylint: disable=too-many-public-methods
             * a symplectic matrix and displacement vector
             * a fock representation (ket or dm)
             * a ABC triple related to the Bargmann representation
+            * a point-wise wavefunction and its corresponding points, quadrature_angle and a flag if it is a pure state wavefunction or quadrature distribution for mixed state
 
         Args:
             cov (Matrix): the covariance matrix
@@ -98,6 +101,10 @@ class State:  # pylint: disable=too-many-public-methods
             A (Matrix): the matrix of the Bargmann representation
             B (Vector): the vector of the Bargmann representation
             C (Scalar): the coefficient of the Bargmann representation
+            points (Realvector): the points value for the wavefunction
+            wavefunction (ComplexTensor): the discrete wavefunction
+            quadrature_angle (float): along which basis is the wavefunction
+            ket_wavefunction (bool): a flag to indicate if it is a pure state wavefunction or quadrature distribution for mixed state
             modes (optional, Sequence[int]): the modes in which the state is defined
             cutoffs (Sequence[int], default=None): set to force the cutoff dimensions of the state
 
@@ -119,11 +126,10 @@ class State:  # pylint: disable=too-many-public-methods
             cov = (settings.HBAR / 2) * math.matmul(
                 symplectic, math.matmul(eigenvalues, symplectic)
             )
-            self.representation = (
-                WignerKet(cov, means)
-                if np.allclose(eigenvalues, 2.0 / settings.HBAR)
-                else WignerDM(cov, means)
-            )
+            if np.allclose(eigenvalues, 2.0 / settings.HBAR):
+                self.representation = WignerKet.from_covariance(cov, means)
+            else:
+                self.representation = WignerDM(cov, means)
         # Case 2: Fock representation
         elif ket is not None:
             self.is_gaussian = False
@@ -135,23 +141,28 @@ class State:  # pylint: disable=too-many-public-methods
             self.representation = FockDM(dm)
         # Case 3: Bargmann representation
         elif A is not None and B is not None and C is not None:
-            # For now, Bargmann is only ofr Gaussian states. To be extended.
+            # For now, Bargmann is only for Gaussian states. To be extended.
             self.is_gaussian = True
             self.num_modes = A.shape[-1] // 2
-            if np.allclose(
-                A[: self.num_modes, : self.num_modes],
-                math.conj(A[self.num_modes :, self.num_modes :]),
-            ) and np.allclose(B[: self.num_modes], math.conj(A[self.num_modes :])):
+            # We identify the Bargmann representation to be ket or dm by the structure of it:
+            # whether block diagonal of A matrix is conjugate of each other and the off-diagonal blocks are zeros
+            # and first half of b vector is the conjugate of the second haf of the b vector.
+            if (
+                np.allclose(
+                    A[: self.num_modes, : self.num_modes],
+                    math.conj(A[self.num_modes :, self.num_modes :]),
+                )
+                and np.allclose(
+                    A[: self.num_modes, : self.num_modes],
+                    math.zeros((self.num_modes, self.num_modes)),
+                )
+                and np.allclose(B[: self.num_modes], math.conj(B[self.num_modes :]))
+            ):
                 self.representation = BargmannKet(A, B, C)
             else:
                 self.representation = BargmannDM(A, B, C)
-        # Case 4: Wavefunction
-        elif (
-            points is not None
-            and wavefunction is not None
-            and ket_wavefunction
-            and quadrature_angle
-        ):
+        # Case 4: Wavefunction for pure state or Quadrature distribution for mixed state
+        elif points and wavefunction and ket_wavefunction and quadrature_angle:
             self.is_gaussian = None
             if ket_wavefunction:
                 self.num_modes = len(wavefunction.shape)
@@ -161,7 +172,7 @@ class State:  # pylint: disable=too-many-public-methods
                 self.representation = WaveFunctionDM(points, wavefunction, quadrature_angle)
         else:
             raise ValueError(
-                "State must be initialized with either a wrapped Representation class, a covariance matrix and means vector, a symplectic matrix and eigenvalues, or a ket or dm in fock representation, or ABC triple in bargmann representation."
+                "State must be initialized with a covariance matrix and means vector, a symplectic matrix and eigenvalues, or a ket or dm in fock representation, or ABC triple in bargmann representation or point-wise wavefunction with its points and quadrature_angle and a flag ket_wavefunction to indicate where it is a pure wavefunction or quadrature distribution of the mixed state."
             )
 
         self._modes = modes
@@ -228,13 +239,6 @@ class State:  # pylint: disable=too-many-public-methods
         elif isinstance(self.representation, (WignerKet, WignerDM)):
             self._cutoffs = fock.autocutoffs(self.cov, self.means, settings.AUTOCUTOFF_PROBABILITY)
         return self._cutoffs
-
-    # @property
-    # #TODO: Depends on the representation!!! only FOCK KET/DM -> implement shape in Fock
-    # def shape(self) -> List[int]:
-    #     r"""Returns the shape of the state.
-    #     """
-    #     return self.representation.shape->
 
     @property
     def number_means(self) -> RealVector:
@@ -573,7 +577,6 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
         return self.representation.data.__add__(other)
 
-    # TODO: ask for this implementation of rmul and mul!
     def __rmul__(self, other):
         r"""Implements multiplication by a scalar from the left.
 
@@ -609,7 +612,7 @@ class State:  # pylint: disable=too-many-public-methods
             State: the converted state with the target Bargmann Representation
         """
         representation = converter.convert(self.representation, "Bargmann")
-        return State(A=representation.data.A, B=representation.data.B, C=representation.data.C)
+        return State(A=representation.data.A, B=representation.data.b, C=representation.data.c)
 
     def to_Fock(
         self, max_prob: float = 1.0, max_photon: int = None, cutoffs: Union(List[int], int) = None
@@ -636,12 +639,12 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             return State(dm=representation.data.array)
 
-    def to_WaveFunction(self, qs, quadrature_angle):
+    def to_WaveFunction(self, points, quadrature_angle):
         r"""Converts the representation of the state to wavefunction Representation and returns a new State.
 
         Args:
             source (State): the state itself
-            qs(array): list of values on axis of the wavefunction
+            points(array): list of values on axis of the wavefunction
             quadrature angle: the quadrature angle of the wavefunction on phase space
             target (Srting): the target q-Wavefunction representation of the state
 
@@ -649,7 +652,7 @@ class State:  # pylint: disable=too-many-public-methods
             State: the converted state with the target q-Wavefunction Representation
         """
         representation = converter.convert(
-            self.representation, qs, quadrature_angle, "WaveFunction"
+            self.representation, points, quadrature_angle, "WaveFunction"
         )
         if self.__class__.__qualname__.endswith("Ket"):
             return State(
