@@ -21,7 +21,14 @@ class MockData:
     r"""Mock class for Data objects and any child of Data that is still abstract."""
 
     def __init__(
-        self, mat=None, vec=None, coeffs=None, array=np.ones(10), cutoffs=None, qs=None
+        self,
+        mat=None,
+        vec=None,
+        coeffs=None,
+        array=np.ones(10),
+        cutoffs=None,
+        qs=None,
+        batch_dim=None,
     ) -> None:
         self.mat = mat
         self.vec = vec
@@ -29,6 +36,7 @@ class MockData:
         self.array = array
         self.cutoffs = cutoffs
         self.qs = qs
+        self.batch_dim = batch_dim
 
     def raise_error_if_different_type_and_not_scalar(self, other):
         if (not isinstance(other, self.__class__)) and (not isinstance(other, mock_scalar)):
@@ -77,6 +85,7 @@ class MockNoCommonAttributesObject:
         self.apple = None
         self.pear = None
         self.banana = None
+        self.batch_dim = None
 
 
 class MockCommonAttributesObject:

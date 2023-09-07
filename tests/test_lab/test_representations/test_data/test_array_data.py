@@ -75,11 +75,17 @@ class TestArrayData(TestData):
         res_from_manual_op = operator(DATA.array, OTHER.array)
         assert np.allclose(res_from_object_op.array, res_from_manual_op)
 
-    ##################  Addition  ####################
-    # NOTE: tested in parent
-
-    ################  Subtraction  ###################
-    # NOTE: tested in parent
+    ##################  Addition and Subtraction ####################
+    @pytest.mark.parametrize("operator", [op.add, op.sub])
+    def test_new_object_created_by_add_sub_operations_has_same_attribute_shapes_as_old_object(
+        self, DATA, OTHER, operator
+    ):
+        for k in DATA.__dict__.keys():
+            new_data = operator(DATA, OTHER)
+            try:  # numpy array attributes
+                assert getattr(DATA, k).shape == getattr(new_data, k).shape
+            except AttributeError:  # scalar attributes
+                pass
 
     # #############  Scalar division  ##################
     @pytest.mark.parametrize("x", [2])

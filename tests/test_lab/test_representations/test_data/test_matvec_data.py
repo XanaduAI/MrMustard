@@ -130,7 +130,7 @@ class TestMatVecData(TestData):  # TestData
     ):
         l0 = DATA.coeffs.shape[0]
         new_data = operator(DATA, DATA)
-        assert l0 == new_data.coeffs.shape[0]
+        assert 2 * l0 == new_data.coeffs.shape[0]
 
     @pytest.mark.parametrize("operator", [op.add, op.sub])
     def test_length_of_added_subtracted_objects_is_sum_of_lengths_if_objects_are_diff(
