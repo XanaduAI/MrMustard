@@ -13,7 +13,22 @@
 # limitations under the License.
 
 """Version information.
-   Version number (major.minor.patch[-label])
-"""
 
-__version__ = "0.5.0-dev"
+Version number retrieved from pyproject.toml file
+"""
+from pathlib import Path
+import tomli
+
+
+def _get_project_root():
+    """Compute and return root dir"""
+    return Path(__file__).parent.parent
+
+
+def _get_project_version():
+    """Parse 'pyproject.toml' and return current version"""
+    with open(f"{_get_project_root()}/pyproject.toml", mode="rb") as pyproject:
+        return tomli.load(pyproject)["tool"]["poetry"]["version"]
+
+
+__version__ = str(_get_project_version())

@@ -66,11 +66,11 @@ Development environment
 -----------------------
 
 Mr Mustard uses a ``pytest`` suite for testing and ``black`` for formatting. These
-dependencies can be installed via ``pip``:
+dependencies can be installed via ``poetry``:
 
 .. code-block:: bash
 
-    pip install -r requirements-dev.txt
+    poetry install --with dev
 
 Software tests
 --------------
@@ -175,11 +175,11 @@ Documentation
 -------------
 
 Additional packages are required to build the documentation, as specified in
-``doc/requirements.txt``. These packages can be installed using:
+``pyproject.toml`` under the group ``doc``. These packages can be installed using:
 
 .. code-block:: bash
 
-    pip install -r doc/requirements.txt
+    poetry install --with doc
 
 from within the top-level directory. To then build the HTML documentation, run
 
