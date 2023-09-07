@@ -41,9 +41,8 @@ class MatVecData(Data):  # Note: this class is abstract!
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
         self.coeffs = math.atleast_1d(math.astensor(coeffs))
-        assert (
-            len(self.mat) == len(self.vec) == len(self.coeffs)
-        ), "All inputs must have the same batch size."
+        if not len(self.mat) == len(self.vec) == len(self.coeffs):
+            raise ValueError("All inputs must have the same batch size.")
         self.batch_dim = self.mat.shape[0]
         self.dim = self.mat.shape[-1]
 
