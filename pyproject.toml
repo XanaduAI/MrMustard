@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mrmustard"
-version = "0.5.0-dev"
+version = "0.6.0-dev"
 description = "Differentiable quantum Gaussian circuits"
 authors = ["Xanadu <filippo@xanadu.ai>"]
 license = "Apache License 2.0"
