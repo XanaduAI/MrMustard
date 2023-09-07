@@ -101,16 +101,17 @@ class TestGaussianData(TestMatVecData):
             GaussianData(coeffs=COEFFS)
 
     @pytest.mark.parametrize("x", [2])
-    def test_if_2D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x):
-        comparison_covariance = np.array([np.eye(x), np.eye(x)])
-        means = np.array([np.ones(x), np.ones(x)])
+    def test_if_3D_cov_is_none_then_initialized_at_npeye_of_correct_shape(self, COEFFS, x, N):
+        comparison_covariance = np.stack([np.eye(x)] * N)
+        means = np.stack([np.ones(x)] * N)
+        print(comparison_covariance.shape, means.shape)
         gaussian_data = GaussianData(means=means, coeffs=COEFFS)
         assert np.allclose(gaussian_data.cov, comparison_covariance)
 
     @pytest.mark.parametrize("x", [2, 10, 250])
-    def test_if_1D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x):
-        covariance = np.array([np.eye(x), np.eye(x)])
-        comparison_means = np.array([np.zeros(x), np.zeros(x)])
+    def test_if_2D_mean_is_none_then_initialized_at_npzeros_of_correct_shape(self, COEFFS, x, N):
+        covariance = np.stack([np.eye(x)] * N)
+        comparison_means = np.stack([np.zeros(x)] * N)
         gaussian_data = GaussianData(cov=covariance, coeffs=COEFFS)
         assert np.allclose(gaussian_data.means, comparison_means)
 

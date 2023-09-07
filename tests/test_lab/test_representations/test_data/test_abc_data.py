@@ -100,7 +100,7 @@ class TestABCData(TestMatVecData):  # TODO re-add inheritance
     def test_non_symmetric_matrix_raises_ValueError(self, B, C):
         non_symmetric_mat = np.eye(10)  # TODO factory method for this
         non_symmetric_mat[0] += np.array(range(10))
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             ABCData([non_symmetric_mat], B, C)
 
     ##################  Negative  ####################
