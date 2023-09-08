@@ -1,19 +1,9 @@
-# Release 0.6.0 (future)
+# Release 0.6.0 (development release)
 
 ### New features
+
 * A general factory method and a duck style type-checker.
-
-### Breaking changes
-### Improvements
-### Bug fixes
-### Documentation
-### Contributors
-[Richard A. Wolf](https://github.com/ryk-wolf)
-
-
-# Release 0.5.0 (development release)
-
-### New features
+  [#256](https://github.com/XanaduAI/MrMustard/pull/256)
 
 ### Breaking changes
 
@@ -26,7 +16,7 @@
 ### Documentation
 
 ### Contributors
-[Yuan Yao](https://github.com/sylviemonet)
+[Yuan Yao](https://github.com/sylviemonet), [Richard A. Wolf](https://github.com/ryk-wolf)
 
 
 # Release 0.5.0 (current release)
