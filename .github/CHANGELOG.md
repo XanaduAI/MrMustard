@@ -1,24 +1,13 @@
-# Release 0.6.0 (future)
+# Release 0.6.0 (development release)
 
 ### New features
+
 * A general factory method and a duck style type-checker.
-[(#256)](https://github.com/XanaduAI/MrMustard/pull/256)
+  [(#256)](https://github.com/XanaduAI/MrMustard/pull/256)
 
 * Data classes for the representations project. Includes `WavefunctionArrayData`, `GaussianData`, 
-`ABCData` and `SymplecticData`.
-[(#258)](https://github.com/XanaduAI/MrMustard/pull/258)
-
-### Breaking changes
-### Improvements
-### Bug fixes
-### Documentation
-### Contributors
-[Richard A. Wolf](https://github.com/ryk-wolf), [Filippo Miatto](https://github.com/ziofil)
-
-
-# Release 0.5.0 (development release)
-
-### New features
+  `ABCData` and `SymplecticData`.
+  [(#258)](https://github.com/XanaduAI/MrMustard/pull/258)
 
 ### Breaking changes
 
@@ -26,12 +15,14 @@
 
 ### Bug fixes
 
-* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm).
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
 
 ### Documentation
 
 ### Contributors
-[Yuan Yao](https://github.com/sylviemonet)
+
+[Richard A. Wolf](https://github.com/ryk-wolf), [Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)
