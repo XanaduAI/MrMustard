@@ -97,7 +97,7 @@ class ABCData(MatVecData):
 
     def __matmul__(self, other: ABCData) -> ABCData:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
-        #Useful for the future, but not for this PR
+        # Useful for the future, but not for this PR
         raise NotImplementedError()
         # graph = self & other
         # newA = graph.A
