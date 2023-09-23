@@ -45,8 +45,8 @@ class Vacuum(State):
     r"""The N-mode vacuum state."""
 
     def __init__(self, num_modes: int):
-        cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
-        means = gaussian.vacuum_means(num_modes, settings.HBAR)
+        cov = gaussian.vacuum_cov(num_modes)
+        means = gaussian.vacuum_means(num_modes)
         State.__init__(self, cov=cov, means=means)
 
 
@@ -109,13 +109,13 @@ class Coherent(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
-        cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
+        means = gaussian.displacement(self.x.value, self.y.value)
+        cov = gaussian.vacuum_cov(means.shape[-1] // 2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def means(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value)
 
 
 class SqueezedVacuum(Parametrized, State):
@@ -176,13 +176,15 @@ class SqueezedVacuum(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
+        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
+        means = gaussian.vacuum_means(
+            cov.shape[-1] // 2,
+        )
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
 
 
 class TMSV(Parametrized, State):
@@ -231,13 +233,16 @@ class TMSV(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
-        means = gaussian.vacuum_means(2, settings.HBAR)
+        cov = gaussian.two_mode_squeezed_vacuum_cov(
+            self.r.value,
+            self.phi.value,
+        )
+        means = gaussian.vacuum_means(2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value)
 
 
 class Thermal(Parametrized, State):
@@ -284,13 +289,13 @@ class Thermal(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.thermal_cov(self.nbar.value, settings.HBAR)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
+        cov = gaussian.thermal_cov(self.nbar.value)
+        means = gaussian.vacuum_means(cov.shape[-1] // 2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
-        return gaussian.thermal_cov(self.nbar.value, settings.HBAR)
+        return gaussian.thermal_cov(self.nbar.value)
 
 
 class DisplacedSqueezed(Parametrized, State):
@@ -371,17 +376,17 @@ class DisplacedSqueezed(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
-        means = gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
+        means = gaussian.displacement(self.x.value, self.y.value)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
 
     @property
     def means(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value)
 
 
 class Gaussian(Parametrized, State):
@@ -421,7 +426,10 @@ class Gaussian(Parametrized, State):
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
-        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (settings.HBAR / 2, None),
+        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (
+            settings.HBAR / 2,
+            None,
+        ),
         modes: List[int] = None,
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
@@ -447,7 +455,7 @@ class Gaussian(Parametrized, State):
         self._normalize = normalize
 
         cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
+        means = gaussian.vacuum_means(cov.shape[-1] // 2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
     @property

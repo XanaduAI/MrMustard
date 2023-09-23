@@ -94,7 +94,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -140,7 +140,7 @@ class State:  # pylint: disable=too-many-public-methods
         """Returns the purity of the state."""
         if self._purity is None:
             if self.is_gaussian:
-                self._purity = gaussian.purity(self.cov, settings.HBAR)
+                self._purity = gaussian.purity(self.cov)
             else:
                 self._purity = fock.purity(self._dm)
         return self._purity
@@ -172,7 +172,9 @@ class State:  # pylint: disable=too-many-public-methods
             return math.sqrt(math.diag_part(self.number_cov))
 
         return math.sqrt(
-            fock.number_variances(self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2)
+            fock.number_variances(
+                self.fock, is_dm=len(self.fock.shape) == self.num_modes * 2
+            )
         )
 
     @property
@@ -209,7 +211,10 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=self.shape, return_dm=not self.is_hilbert_vector
+                self.cov,
+                self.means,
+                shape=self.shape,
+                return_dm=not self.is_hilbert_vector,
             )
             if self.is_mixed:
                 self._dm = _fock
@@ -223,7 +228,7 @@ class State:  # pylint: disable=too-many-public-methods
     def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
         if self.is_gaussian:
-            return gaussian.number_means(self.cov, self.means, settings.HBAR)
+            return gaussian.number_means(self.cov, self.means)
 
         return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
 
@@ -231,9 +236,11 @@ class State:  # pylint: disable=too-many-public-methods
     def number_cov(self) -> RealMatrix:
         r"""Returns the complete photon number covariance matrix."""
         if not self.is_gaussian:
-            raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
+            raise NotImplementedError(
+                "number_cov not yet implemented for non-gaussian states"
+            )
 
-        return gaussian.number_cov(self.cov, self.means, settings.HBAR)
+        return gaussian.number_cov(self.cov, self.means)
 
     @property
     def norm(self) -> float:
@@ -275,7 +282,9 @@ class State:  # pylint: disable=too-many-public-methods
         if cutoffs is None:
             cutoffs = self.cutoffs
         else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+            cutoffs = [
+                c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)
+            ]
 
         # TODO: shouldn't we check if trainable instead? that's when we want to recompute fock
         if self.is_gaussian:
@@ -294,7 +303,9 @@ class State:  # pylint: disable=too-many-public-methods
                     self._ket = fock.dm_to_ket(self._dm)
             current_cutoffs = [int(s) for s in self._ket.shape]
             if cutoffs != current_cutoffs:
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                paddings = [
+                    (0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)
+                ]
                 if any(p != (0, 0) for p in paddings):
                     padded = fock.math.pad(self._ket, paddings, mode="constant")
                 else:
@@ -315,7 +326,9 @@ class State:  # pylint: disable=too-many-public-methods
         if cutoffs is None:
             cutoffs = self.cutoffs
         else:
-            cutoffs = [c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)]
+            cutoffs = [
+                c if c is not None else self.cutoffs[i] for i, c in enumerate(cutoffs)
+            ]
         if self.is_pure:
             ket = self.ket(cutoffs=cutoffs)
             if ket is not None:
@@ -326,9 +339,13 @@ class State:  # pylint: disable=too-many-public-methods
                     self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
-                paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
+                paddings = [
+                    (0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)
+                ]
                 if any(p != (0, 0) for p in paddings):
-                    padded = fock.math.pad(self._dm, paddings + paddings, mode="constant")
+                    padded = fock.math.pad(
+                        self._dm, paddings + paddings, mode="constant"
+                    )
                 else:
                     padded = self._dm
                 return padded[tuple(slice(s) for s in cutoffs + cutoffs)]
@@ -420,7 +437,8 @@ class State:  # pylint: disable=too-many-public-methods
 
     def _contract_with_other(self, other):
         other_cutoffs = [
-            None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+            None if m not in self.modes else other.cutoffs[other.indices(m)]
+            for m in other.modes
         ]
         if hasattr(self, "_preferred_projection"):
             out_fock = self._preferred_projection(other, other.indices(self.modes))
@@ -428,8 +446,12 @@ class State:  # pylint: disable=too-many-public-methods
             # matching other's cutoffs
             self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
             out_fock = fock.contract_states(
-                stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
-                stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+                stateA=other.ket(other_cutoffs)
+                if other.is_pure
+                else other.dm(other_cutoffs),
+                stateB=self.ket(self_cutoffs)
+                if self.is_pure
+                else self.dm(self_cutoffs),
                 a_is_dm=other.is_mixed,
                 b_is_dm=self.is_mixed,
                 modes=other.indices(self.modes),
@@ -487,7 +509,9 @@ class State:  # pylint: disable=too-many-public-methods
                 # we want self & other to have shape [1,3,2,1,3,2]
                 # before transposing shape is [1,3,1,3]+[2,2]
                 self_idx = list(range(len(self_fock.shape)))
-                other_idx = list(range(len(self_idx), len(self_idx) + len(other_fock.shape)))
+                other_idx = list(
+                    range(len(self_idx), len(self_idx) + len(other_fock.shape))
+                )
                 return State(
                     dm=math.transpose(
                         dm,
@@ -508,7 +532,9 @@ class State:  # pylint: disable=too-many-public-methods
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
         return State(
-            cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
+            cov=cov,
+            means=means,
+            modes=self.modes + [m + self.num_modes for m in other.modes],
         )
 
     def __getitem__(self, item) -> State:
@@ -526,7 +552,9 @@ class State:  # pylint: disable=too-many-public-methods
         self._modes = item
         return self
 
-    def bargmann(self, numpy=False) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
+    def bargmann(
+        self, numpy=False
+    ) -> Optional[tuple[ComplexMatrix, ComplexVector, complex]]:
         r"""Returns the Bargmann representation of the state.
         If numpy=True, returns the numpy arrays instead of the backend arrays.
         """
@@ -581,11 +609,15 @@ class State:  # pylint: disable=too-many-public-methods
             return True
         try:
             return np.allclose(
-                self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
+                self.ket(cutoffs=other.cutoffs),
+                other.ket(cutoffs=other.cutoffs),
+                atol=1e-6,
             )
         except TypeError:
             return np.allclose(
-                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
+                self.dm(cutoffs=other.cutoffs),
+                other.dm(cutoffs=other.cutoffs),
+                atol=1e-6,
             )
 
     def __rshift__(self, other: Transformation) -> State:
@@ -607,7 +639,9 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Implements a mixture of states (only available in fock representation for the moment)."""
         if not isinstance(other, State):
             raise TypeError(f"Cannot add {other.__class__.__qualname__} to a state")
-        warnings.warn("mixing states forces conversion to fock representation", UserWarning)
+        warnings.warn(
+            "mixing states forces conversion to fock representation", UserWarning
+        )
         return State(dm=self.dm(self.cutoffs) + other.dm(self.cutoffs))
 
     def __rmul__(self, other):
@@ -617,7 +651,8 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if self.is_gaussian:
             warnings.warn(
-                "scalar multiplication forces conversion to fock representation", UserWarning
+                "scalar multiplication forces conversion to fock representation",
+                UserWarning,
             )
             if self.is_pure:
                 return State(ket=self.ket() * other)
@@ -634,7 +669,9 @@ class State:  # pylint: disable=too-many-public-methods
         E.g. ``psi / 0.5``
         """
         if self.is_gaussian:
-            warnings.warn("scalar division forces conversion to fock representation", UserWarning)
+            warnings.warn(
+                "scalar division forces conversion to fock representation", UserWarning
+            )
             if self.is_pure:
                 return State(ket=self.ket() / other)
             return State(dm=self.dm() / other)
