@@ -38,7 +38,9 @@ class Progressbar:
             )
         else:
             self.bar = Progress(
-                TextColumn("Step {task.completed}/{task.total} | {task.fields[speed]:.1f} it/s"),
+                TextColumn(
+                    "Step {task.completed}/{task.total} | {task.fields[speed]:.1f} it/s"
+                ),
                 BarColumn(),
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 TextColumn("Cost = {task.fields[loss]:.5f} | ⏳ "),
@@ -113,23 +115,30 @@ def mikkel_plot(
 
     xvec = np.linspace(*xbounds, plot_args["resolution"])
     pvec = np.linspace(*ybounds, plot_args["resolution"])
-    W, X, P = wigner_discretized(rho, xvec, pvec, settings.HBAR)
+    W, X, P = wigner_discretized(rho, xvec, pvec)
 
     ### PLOTTING ###
 
     fig, ax = plt.subplots(
-        2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
+        2,
+        2,
+        figsize=(6, 6),
+        gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]},
     )
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
     # Wigner function
-    ax[1][0].contourf(X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max())
+    ax[1][0].contourf(
+        X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max()
+    )
     ax[1][0].set_xlabel("$x$", fontsize=12)
     ax[1][0].set_ylabel("$p$", fontsize=12)
     ax[1][0].get_xaxis().set_ticks(plot_args["xticks"])
     ax[1][0].xaxis.set_ticklabels(plot_args["xtick_labels"])
     ax[1][0].get_yaxis().set_ticks(plot_args["yticks"])
-    ax[1][0].yaxis.set_ticklabels(plot_args["ytick_labels"], rotation="vertical", va="center")
+    ax[1][0].yaxis.set_ticklabels(
+        plot_args["ytick_labels"], rotation="vertical", va="center"
+    )
     ax[1][0].tick_params(direction="in")
     ax[1][0].set_xlim(xbounds)
     ax[1][0].set_ylim(ybounds)
@@ -160,7 +169,9 @@ def mikkel_plot(
     ax[1][1].grid(plot_args["grid"])
 
     # Density matrix
-    ax[0][1].matshow(abs(rho), cmap=plot_args["cmap"], vmin=-abs(rho).max(), vmax=abs(rho).max())
+    ax[0][1].matshow(
+        abs(rho), cmap=plot_args["cmap"], vmin=-abs(rho).max(), vmax=abs(rho).max()
+    )
     ax[0][1].set_title(r"abs($\rho$)", fontsize=12)
     ax[0][1].tick_params(direction="in")
     ax[0][1].get_xaxis().set_ticks([])

@@ -57,7 +57,6 @@ def vacuum_means(num_modes: int) -> Tuple[Matrix, Vector]:
     return displacement(
         math.zeros(num_modes, dtype="float64"),
         math.zeros(num_modes, dtype="float64"),
-        settings.HBAR,
     )
 
 
@@ -727,7 +726,7 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
     return math.gather(means, Aindices), math.gather(means, Bindices)
 
 
-def purity(cov: Matrix, hbar: float) -> Scalar:
+def purity(cov: Matrix) -> Scalar:
     r"""Returns the purity of the state with the given covariance matrix.
 
     Args:
@@ -736,28 +735,27 @@ def purity(cov: Matrix, hbar: float) -> Scalar:
     Returns:
         float: the purity
     """
-    return 1 / math.sqrt(math.det((2 / hbar) * cov))
+    return 1 / math.sqrt(math.det((2 / settings.HBAR) * cov))
 
 
-def symplectic_eigenvals(cov: Matrix, hbar: float) -> Any:
+def symplectic_eigenvals(cov: Matrix) -> Any:
     r"""Returns the sympletic eigenspectrum of a covariance matrix.
 
     For a pure state, we expect the sympletic eigenvalues to be 1.
 
     Args:
         cov (Matrix): the covariance matrix
-        hbar (float): the value of the Planck constant
 
     Returns:
         List[float]: the sympletic eigenvalues
     """
     J = math.J(cov.shape[-1] // 2)  # create a sympletic form
-    M = math.matmul(1j * J, cov * (2 / hbar))
+    M = math.matmul(1j * J, cov * (2 / settings.HBAR))
     vals = math.eigvals(M)  # compute the eigenspectrum
     return math.abs(vals[::2])  # return the even eigenvalues  # TODO: sort?
 
 
-def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
+def von_neumann_entropy(cov: Matrix) -> float:
     r"""Returns the Von Neumann entropy.
 
     For a pure state, we expect the Von Neumann entropy to be 0.
@@ -776,12 +774,12 @@ def von_neumann_entropy(cov: Matrix, hbar: float) -> float:
             (x - 1) / 2, (x - 1) / 2 + 1e-9
         )
 
-    symp_vals = symplectic_eigenvals(cov, hbar)
+    symp_vals = symplectic_eigenvals(cov)
     entropy = math.sum(g(symp_vals))
     return entropy
 
 
-def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0) -> float:
+def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
     r"""Returns the fidelity of two gaussian states.
 
     Reference: `arXiv:2102.05748 <https://arxiv.org/pdf/2102.05748.pdf>`_, equations 95-99.
@@ -797,13 +795,17 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix, hbar=2.0) -> 
         float: the fidelity
     """
 
-    cov1 = math.cast(cov1 / hbar, "complex128")  # convert to units where hbar = 1
-    cov2 = math.cast(cov2 / hbar, "complex128")  # convert to units where hbar = 1
+    cov1 = math.cast(
+        cov1 / settings.HBAR, "complex128"
+    )  # convert to units where hbar = 1
+    cov2 = math.cast(
+        cov2 / settings.HBAR, "complex128"
+    )  # convert to units where hbar = 1
 
     mu1 = math.cast(mu1, "complex128")
     mu2 = math.cast(mu2, "complex128")
     deltar = (mu2 - mu1) / math.sqrt(
-        hbar, dtype=mu1.dtype
+        settings.HBAR, dtype=mu1.dtype
     )  # convert to units where hbar = 1
     J = math.J(cov1.shape[0] // 2)
     I = math.eye(cov1.shape[0])
@@ -855,7 +857,7 @@ def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
     return cov * mat[:, None] * mat[None, :]
 
 
-def log_negativity(cov: Matrix, hbar: float) -> float:
+def log_negativity(cov: Matrix) -> float:
     r"""Returns the log_negativity of a Gaussian state.
 
     Reference: `https://arxiv.org/pdf/quant-ph/0102117.pdf <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_ , Equation 57, 61.
@@ -866,7 +868,7 @@ def log_negativity(cov: Matrix, hbar: float) -> float:
     Returns:
         float: the log-negativity
     """
-    vals = symplectic_eigenvals(cov, hbar) / (hbar / 2)
+    vals = symplectic_eigenvals(cov) / (settings.HBAR / 2)
     vals_filtered = math.boolean_mask(
         vals, vals < 1.0
     )  # Get rid of terms that would lead to zero contribution.

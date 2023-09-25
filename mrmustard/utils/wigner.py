@@ -19,9 +19,11 @@ from numba import njit
 
 from mrmustard import settings
 
+hbar = settings.HBAR
+
 
 @njit
-def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
+def wigner_discretized(rho, qvec, pvec):
     r"""Calculates the discretized Wigner function for a single mode.
 
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
@@ -30,7 +32,6 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
         rho (complex array): the density matrix of the state in Fock representation
         qvec (array): array of discretized :math:`q` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
-        hbar (optional float): the value of `\hbar`, defaults to ``settings.HBAR``.
 
     Retunrs:
         tuple(array, array, array): array containing the discretized Wigner function, and the Q and
@@ -55,12 +56,16 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
 
     for m in range(1, cutoff):
         # Wigner function for |m><m|
-        Wmat[1, m] = (2 * np.conj(A) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]) / np.sqrt(m)
+        Wmat[1, m] = (
+            2 * np.conj(A) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]
+        ) / np.sqrt(m)
         W += np.real(rho[m, m] * Wmat[1, m])
 
         for n in range(m + 1, cutoff):
             # Wigner function for |m><n|
-            Wmat[1, n] = (2 * A * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]) / np.sqrt(n)
+            Wmat[1, n] = (
+                2 * A * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]
+            ) / np.sqrt(n)
             W += 2 * np.real(rho[m, n] * Wmat[1, n])
         Wmat[0] = Wmat[1]
 
