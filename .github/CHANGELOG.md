@@ -503,7 +503,7 @@ This release contains contributions from (in alphabetical order):
   and [(#158)](https://github.com/XanaduAI/MrMustard/pull/158).
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
-  methods that allowed specifying values for `hbar` now retrieve it directly from `Settings`.
+  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
 
 ### Improvements
 
