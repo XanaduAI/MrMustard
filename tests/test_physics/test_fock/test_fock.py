@@ -127,18 +127,14 @@ def test_lossy_squeezing(n_mean, phi, eta):
     """Tests the total photon number distribution of a lossy squeezed state"""
     r = np.arcsinh(np.sqrt(n_mean))
     cutoff = 40
-    ps = (
-        SqueezedVacuum(r=r, phi=phi) >> Attenuator(transmissivity=eta)
-    ).fock_probabilities([cutoff])
-    expected = np.array(
-        [total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)]
+    ps = (SqueezedVacuum(r=r, phi=phi) >> Attenuator(transmissivity=eta)).fock_probabilities(
+        [cutoff]
     )
+    expected = np.array([total_photon_number_distribution(n, 1, r, eta) for n in range(cutoff)])
     assert np.allclose(ps, expected, atol=1e-5)
 
 
-@given(
-    n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1)
-)
+@given(n_mean=st.floats(0, 2), phi=st_angle, eta_0=st.floats(0, 1), eta_1=st.floats(0, 1))
 def test_lossy_two_mode_squeezing(n_mean, phi, eta_0, eta_1):
     """Tests the photon number distribution of a lossy two-mode squeezed state"""
     cutoff = 40
@@ -241,18 +237,14 @@ def test_fock_trace_function():
 def test_dm_choi():
     """tests that choi op is correctly applied to a dm"""
     circ = Ggate(1) >> Attenuator([0.1])
-    dm_out = fock.apply_choi_to_dm(
-        circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10]), [0], [0]
-    )
+    dm_out = fock.apply_choi_to_dm(circ.choi([10, 10, 10, 10]), Vacuum(1).dm([10]), [0], [0])
     dm_expected = (Vacuum(1) >> circ).dm([10])
     assert np.allclose(dm_out, dm_expected, atol=1e-5)
 
 
 def test_single_mode_choi_application_order():
     """Test dual operations output the correct mode ordering"""
-    s = Attenuator(1.0) << State(
-        dm=SqueezedVacuum(1.0, np.pi / 2).dm([40])
-    )  # apply identity gate
+    s = Attenuator(1.0) << State(dm=SqueezedVacuum(1.0, np.pi / 2).dm([40]))  # apply identity gate
     assert np.allclose(s.dm([10]), SqueezedVacuum(1.0, np.pi / 2).dm([10]))
 
 
@@ -268,9 +260,7 @@ def test_apply_kraus_to_ket_1mode_with_argument_names():
     """Test that Kraus operators are applied to a ket on the correct indices with argument names"""
     ket = np.random.normal(size=(2, 3, 4))
     kraus = np.random.normal(size=(5, 3))
-    ket_out = fock.apply_kraus_to_ket(
-        kraus=kraus, ket=ket, kraus_in_modes=[1], kraus_out_modes=[1]
-    )
+    ket_out = fock.apply_kraus_to_ket(kraus=kraus, ket=ket, kraus_in_modes=[1], kraus_out_modes=[1])
     assert ket_out.shape == (2, 5, 4)
 
 
@@ -302,9 +292,7 @@ def test_apply_kraus_to_dm_1mode_with_argument_names():
     """Test that Kraus operators are applied to a dm on the correct indices with argument names"""
     dm = np.random.normal(size=(2, 3, 2, 3))
     kraus = np.random.normal(size=(5, 3))
-    dm_out = fock.apply_kraus_to_dm(
-        kraus=kraus, dm=dm, kraus_in_modes=[1], kraus_out_modes=[1]
-    )
+    dm_out = fock.apply_kraus_to_dm(kraus=kraus, dm=dm, kraus_in_modes=[1], kraus_out_modes=[1])
     assert dm_out.shape == (2, 5, 2, 5)
 
 
@@ -336,9 +324,7 @@ def test_apply_choi_to_ket_1mode_with_argument_names():
     """Test that choi operators are applied to a ket on the correct indices with argument names"""
     ket = np.random.normal(size=(3, 5))
     choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
-    ket_out = fock.apply_choi_to_ket(
-        choi=choi, ket=ket, choi_in_modes=[0], choi_out_modes=[0]
-    )
+    ket_out = fock.apply_choi_to_ket(choi=choi, ket=ket, choi_in_modes=[0], choi_out_modes=[0])
     assert ket_out.shape == (4, 5, 4, 5)
 
 
@@ -362,18 +348,14 @@ def test_apply_choi_to_dm_1mode_with_argument_names():
     """Test that choi operators are applied to a dm on the correct indices with argument names"""
     dm = np.random.normal(size=(3, 5, 3, 5))
     choi = np.random.normal(size=(4, 3, 4, 3))  # [out_l, in_l, out_r, in_r]
-    dm_out = fock.apply_choi_to_dm(
-        choi=choi, dm=dm, choi_in_modes=[0], choi_out_modes=[0]
-    )
+    dm_out = fock.apply_choi_to_dm(choi=choi, dm=dm, choi_in_modes=[0], choi_out_modes=[0])
     assert dm_out.shape == (4, 5, 4, 5)
 
 
 def test_apply_choi_to_dm_2mode():
     """Test that choi operators are applied to a dm on the correct indices"""
     dm = np.random.normal(size=(4, 5, 4, 5))
-    choi = np.random.normal(
-        size=(2, 3, 5, 2, 3, 5)
-    )  # [out_l_1,2, in_l_1, out_r_1,2, in_r_1]
+    choi = np.random.normal(size=(2, 3, 5, 2, 3, 5))  # [out_l_1,2, in_l_1, out_r_1,2, in_r_1]
     dm_out = fock.apply_choi_to_dm(choi, dm, [1], [1, 2])
     assert dm_out.shape == (4, 2, 3, 4, 2, 3)
 
@@ -455,12 +437,8 @@ def test_number_means(x, y):
 
 @given(x=st.floats(-1, 1), y=st.floats(-1, 1))
 def test_number_variances_coh(x, y):
-    assert np.allclose(
-        fock.number_variances(Coherent(x, y).ket([80]), False)[0], x * x + y * y
-    )
-    assert np.allclose(
-        fock.number_variances(Coherent(x, y).dm([80]), True)[0], x * x + y * y
-    )
+    assert np.allclose(fock.number_variances(Coherent(x, y).ket([80]), False)[0], x * x + y * y)
+    assert np.allclose(fock.number_variances(Coherent(x, y).dm([80]), True)[0], x * x + y * y)
 
 
 def test_number_variances_fock():

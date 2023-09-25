@@ -56,16 +56,12 @@ def wigner_discretized(rho, qvec, pvec):
 
     for m in range(1, cutoff):
         # Wigner function for |m><m|
-        Wmat[1, m] = (
-            2 * np.conj(A) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]
-        ) / np.sqrt(m)
+        Wmat[1, m] = (2 * np.conj(A) * Wmat[0, m] - np.sqrt(m) * Wmat[0, m - 1]) / np.sqrt(m)
         W += np.real(rho[m, m] * Wmat[1, m])
 
         for n in range(m + 1, cutoff):
             # Wigner function for |m><n|
-            Wmat[1, n] = (
-                2 * A * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]
-            ) / np.sqrt(n)
+            Wmat[1, n] = (2 * A * Wmat[1, n - 1] - np.sqrt(m) * Wmat[0, n - 1]) / np.sqrt(n)
             W += 2 * np.real(rho[m, n] * Wmat[1, n])
         Wmat[0] = Wmat[1]
 

@@ -122,9 +122,7 @@ def gaussian_cov(symplectic: Matrix, eigenvalues: Vector = None) -> Matrix:
         return math.matmul(symplectic, math.transpose(symplectic))
 
     return math.matmul(
-        math.matmul(
-            symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))
-        ),
+        math.matmul(symplectic, math.diag(math.concat([eigenvalues, eigenvalues], axis=0))),
         math.transpose(symplectic),
     )
 
@@ -156,9 +154,7 @@ def rotation_symplectic(angle: Union[Scalar, Vector]) -> Matrix:
     )
 
 
-def squeezing_symplectic(
-    r: Union[Scalar, Vector], phi: Union[Scalar, Vector]
-) -> Matrix:
+def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -> Matrix:
     r"""Symplectic matrix of a squeezing gate.
 
     The dimension depends on the dimension of ``r`` and ``phi``.
@@ -588,9 +584,7 @@ def general_dyne(
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
     pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
     outcome = (
-        pdf.sample(dtype=cov.dtype)
-        if proj_means is None
-        else math.cast(proj_means, cov.dtype)
+        pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
     )
     prob = pdf.prob(outcome)
 
@@ -641,19 +635,12 @@ def number_cov(cov: Matrix, means: Vector) -> Matrix:
     """
     N = means.shape[-1] // 2
     mCm = cov * means[:, None] * means[None, :]
-    dd = math.diag(
-        math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])
-    ) / (
+    dd = math.diag(math.diag_part(mCm[:N, :N] + mCm[N:, N:] + mCm[:N, N:] + mCm[N:, :N])) / (
         2 * settings.HBAR**2  # TODO: sum(diag_part) is better than diag_part(sum)
     )
     CC = (cov**2 + mCm) / (2 * settings.HBAR**2)
     return (
-        CC[:N, :N]
-        + CC[N:, N:]
-        + CC[:N, N:]
-        + CC[N:, :N]
-        + dd
-        - 0.25 * math.eye(N, dtype=CC.dtype)
+        CC[:N, :N] + CC[N:, N:] + CC[:N, N:] + CC[N:, :N] + dd - 0.25 * math.eye(N, dtype=CC.dtype)
     )
 
 
@@ -675,8 +662,7 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     """
     N = len(cov) // 2
     Aindices = math.astensor(
-        [i for i in range(N) if i not in Bmodes]
-        + [i + N for i in range(N) if i not in Bmodes]
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
     )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)
@@ -695,8 +681,7 @@ def partition_cov(cov: Matrix, Amodes: Sequence[int]) -> Tuple[Matrix, Matrix, M
     """
     N = cov.shape[-1] // 2
     Bindices = math.cast(
-        [i for i in range(N) if i not in Amodes]
-        + [i + N for i in range(N) if i not in Amodes],
+        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
         "int32",
     )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
@@ -718,8 +703,7 @@ def partition_means(means: Vector, Amodes: Sequence[int]) -> Tuple[Vector, Vecto
     """
     N = len(means) // 2
     Bindices = math.cast(
-        [i for i in range(N) if i not in Amodes]
-        + [i + N for i in range(N) if i not in Amodes],
+        [i for i in range(N) if i not in Amodes] + [i + N for i in range(N) if i not in Amodes],
         "int32",
     )
     Aindices = math.cast(Amodes + [i + N for i in Amodes], "int32")
@@ -770,9 +754,7 @@ def von_neumann_entropy(cov: Matrix) -> float:
     """
 
     def g(x):
-        return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy(
-            (x - 1) / 2, (x - 1) / 2 + 1e-9
-        )
+        return math.xlogy((x + 1) / 2, (x + 1) / 2) - math.xlogy((x - 1) / 2, (x - 1) / 2 + 1e-9)
 
     symp_vals = symplectic_eigenvals(cov)
     entropy = math.sum(g(symp_vals))
@@ -795,12 +777,8 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
         float: the fidelity
     """
 
-    cov1 = math.cast(
-        cov1 / settings.HBAR, "complex128"
-    )  # convert to units where hbar = 1
-    cov2 = math.cast(
-        cov2 / settings.HBAR, "complex128"
-    )  # convert to units where hbar = 1
+    cov1 = math.cast(cov1 / settings.HBAR, "complex128")  # convert to units where hbar = 1
+    cov2 = math.cast(cov2 / settings.HBAR, "complex128")  # convert to units where hbar = 1
 
     mu1 = math.cast(mu1, "complex128")
     mu2 = math.cast(mu2, "complex128")
@@ -874,8 +852,7 @@ def log_negativity(cov: Matrix) -> float:
     )  # Get rid of terms that would lead to zero contribution.
     if len(vals_filtered) > 0:
         return -math.sum(
-            math.log(vals_filtered)
-            / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
+            math.log(vals_filtered) / math.cast(math.log(2.0), dtype=vals_filtered.dtype)
         )
 
     return 0
@@ -950,9 +927,7 @@ def XYd_dual(X: Matrix, Y: Matrix, d: Vector):
     d_dual = d
     if Y is not None:
         Y_dual = (
-            math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual)))
-            if X_dual is not None
-            else Y
+            math.matmul(X_dual, math.matmul(Y, math.transpose(X_dual))) if X_dual is not None else Y
         )
     if d is not None:
         d_dual = math.matvec(X_dual, d) if X_dual is not None else d

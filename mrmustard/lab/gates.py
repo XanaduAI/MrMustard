@@ -279,9 +279,7 @@ class Rgate(Parametrized, Transformation):
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
-        angles = self.angle.value * math.ones(
-            self.num_modes, dtype=self.angle.value.dtype
-        )
+        angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
 
         # calculate rotation unitary for each mode and concatenate with outer product
         Ur = None
@@ -296,8 +294,7 @@ class Rgate(Parametrized, Transformation):
         # return total unitary with indexes reordered according to MM convention
         return math.transpose(
             Ur,
-            list(range(0, 2 * self.num_modes, 2))
-            + list(range(1, 2 * self.num_modes, 2)),
+            list(range(0, 2 * self.num_modes, 2)) + list(range(1, 2 * self.num_modes, 2)),
         )
 
 
@@ -463,9 +460,7 @@ class BSgate(Parametrized, Transformation):
         elif len(cutoffs) == 2:
             shape = tuple(cutoffs) + tuple(cutoffs)
         else:
-            raise ValueError(
-                f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4)."
-            )
+            raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
@@ -530,9 +525,7 @@ class MZgate(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.mz_symplectic(
-            self.phi_a.value, self.phi_b.value, internal=self._internal
-        )
+        return gaussian.mz_symplectic(self.phi_a.value, self.phi_b.value, internal=self._internal)
 
     def _validate_modes(self, modes):
         if len(modes) != 2:
@@ -607,9 +600,7 @@ class Interferometer(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and num_modes != len(modes):
-            raise ValueError(
-                f"Invalid number of modes: got {len(modes)}, should be {num_modes}"
-            )
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(
@@ -659,14 +650,10 @@ class RealInterferometer(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and (num_modes != len(modes)):
-            raise ValueError(
-                f"Invalid number of modes: got {len(modes)}, should be {num_modes}"
-            )
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
-        super().__init__(
-            orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable
-        )
+        super().__init__(orthogonal=orthogonal, orthogonal_trainable=orthogonal_trainable)
         self._modes = modes or list(range(num_modes))
         self._is_gaussian = True
         self.short_name = "RI"
@@ -712,9 +699,7 @@ class Ggate(Parametrized, Transformation):
         modes: Optional[List[int]] = None,
     ):
         if modes is not None and (num_modes != len(modes)):
-            raise ValueError(
-                f"Invalid number of modes: got {len(modes)}, should be {num_modes}"
-            )
+            raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if symplectic is None:
             symplectic = math.random_symplectic(num_modes)
         super().__init__(
