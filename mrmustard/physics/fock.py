@@ -76,7 +76,9 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
     M = len(means) // 2
     cutoffs = []
     for i in range(M):
-        cov_i = np.array([[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]])
+        cov_i = np.array(
+            [[cov[i, i], cov[i, i + M]], [cov[i + M, i], cov[i + M, i + M]]]
+        )
         means_i = np.array([means[i], means[i + M]])
         # apply 1-d recursion until probability is less than 0.99
         A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
@@ -270,7 +272,9 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
         state_b = state_b[tuple(min_cutoffs * 2)]
         a = math.reshape(state_a, -1)
         return math.real(
-            math.sum(math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a))
+            math.sum(
+                math.conj(a) * math.matvec(math.reshape(state_b, (len(a), len(a))), a)
+            )
         )
 
     if b_ket:
@@ -282,7 +286,9 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
         state_b = state_b[tuple(min_cutoffs)]
         b = math.reshape(state_b, -1)
         return math.real(
-            math.sum(math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b))
+            math.sum(
+                math.conj(b) * math.matvec(math.reshape(state_a, (len(b), len(b))), b)
+            )
         )
 
     # mixed state
@@ -302,7 +308,9 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
         (
             math.trace(
                 math.sqrtm(
-                    math.matmul(math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a))
+                    math.matmul(
+                        math.matmul(math.sqrtm(state_a), state_b), math.sqrtm(state_a)
+                    )
                 )
             )
             ** 2
@@ -314,7 +322,9 @@ def number_means(tensor, is_dm: bool):
     r"""Returns the mean of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+    marginals = [
+        math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))
+    ]
     return math.astensor(
         [
             math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
@@ -327,12 +337,19 @@ def number_variances(tensor, is_dm: bool):
     r"""Returns the variance of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = list(range(len(probs.shape)))
-    marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
+    marginals = [
+        math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))
+    ]
     return math.astensor(
         [
             (
-                math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2)
-                - math.sum(marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)) ** 2
+                math.sum(
+                    marginal * math.arange(marginal.shape[0], dtype=marginal.dtype) ** 2
+                )
+                - math.sum(
+                    marginal * math.arange(marginal.shape[0], dtype=marginal.dtype)
+                )
+                ** 2
             )
             for marginal in marginals
         ]
@@ -344,7 +361,9 @@ def purity(dm: Tensor) -> Scalar:
     cutoffs = dm.shape[: len(dm.shape) // 2]
     d = int(np.prod(cutoffs))  # combined cutoffs in all modes
     dm = math.reshape(dm, (d, d))
-    dm = dm / math.trace(dm)  # assumes all nonzero values are included in the density matrix
+    dm = dm / math.trace(
+        dm
+    )  # assumes all nonzero values are included in the density matrix
     return math.abs(math.sum(math.transpose(dm) * dm))  # tr(rho^2)
 
 
@@ -424,7 +443,9 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_modes, kraus_out_modes=None):
         kraus_out_modes = kraus_in_modes
 
     if not set(kraus_in_modes).issubset(range(dm.ndim // 2)):
-        raise ValueError("kraus_in_modes should be a subset of the density matrix indices.")
+        raise ValueError(
+            "kraus_in_modes should be a subset of the density matrix indices."
+        )
 
     # check that there are no repeated indices in kraus_in_modes and kraus_out_modes (separately)
     validate_contraction_indices(kraus_in_modes, kraus_out_modes, dm.ndim // 2, "kraus")
@@ -482,7 +503,9 @@ def apply_choi_to_dm(
     if choi_out_modes is None:
         choi_out_modes = choi_in_modes
     if not set(choi_in_modes).issubset(range(dm.ndim // 2)):
-        raise ValueError("choi_in_modes should be a subset of the density matrix indices.")
+        raise ValueError(
+            "choi_in_modes should be a subset of the density matrix indices."
+        )
 
     # check that there are no repeated indices in kraus_in_modes and kraus_out_modes (separately)
     validate_contraction_indices(choi_in_modes, choi_out_modes, dm.ndim // 2, "choi")
@@ -539,7 +562,9 @@ def apply_choi_to_ket(choi, ket, choi_in_modes, choi_out_modes=None):
     validate_contraction_indices(choi_in_modes, choi_out_modes, ket.ndim, "choi")
 
     ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
-    ket_dual = MMTensor(math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)])
+    ket_dual = MMTensor(
+        math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)]
+    )
     choi = MMTensor(
         choi,
         axis_labels=[f"out_left_{i}" for i in choi_out_modes]
@@ -581,7 +606,9 @@ def contract_states(
 
     if a_is_dm:
         if b_is_dm:  # a DM, b DM
-            dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_modes=modes, choi_out_modes=[])
+            dm = apply_choi_to_dm(
+                choi=stateB, dm=stateA, choi_in_modes=modes, choi_out_modes=[]
+            )
         else:  # a DM, b ket
             dm = apply_kraus_to_dm(
                 kraus=math.conj(stateB),
@@ -660,9 +687,13 @@ def trace(dm, keep: List[int]):
     dm = MMTensor(
         dm,
         axis_labels=[
-            f"out_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)
+            f"out_{i}" if i in keep else f"contract_{i}"
+            for i in range(len(dm.shape) // 2)
         ]
-        + [f"in_{i}" if i in keep else f"contract_{i}" for i in range(len(dm.shape) // 2)],
+        + [
+            f"in_{i}" if i in keep else f"contract_{i}"
+            for i in range(len(dm.shape) // 2)
+        ],
     )
     return dm.contract().tensor
 
@@ -697,7 +728,9 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
 
     # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
+    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(
+        2 ** (-math.arange(0, cutoff))
+    )
 
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
@@ -828,7 +861,9 @@ def quadrature_distribution(
         )
 
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * math.new_constant(
+            estimate_quadrature_axis(cutoff), "q_tensor"
+        )
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (
@@ -840,7 +875,9 @@ def quadrature_distribution(
     return x, math.cast(pdf, "float64")
 
 
-def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
+def sample_homodyne(
+    state: Tensor, quadrature_angle: float = 0.0
+) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
 
@@ -857,7 +894,7 @@ def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle, settings.HBAR)
+    x, pdf = quadrature_distribution(state, quadrature_angle)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution
@@ -899,7 +936,9 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         cutoffs (int,int): cutoff dimensions of the two modes
     """
     if method == "vanilla":
-        bs_unitary = strategies.beamsplitter(shape, math.asnumpy(theta), math.asnumpy(phi))
+        bs_unitary = strategies.beamsplitter(
+            shape, math.asnumpy(theta), math.asnumpy(phi)
+        )
     elif method == "schwinger":
         bs_unitary = strategies.beamsplitter_schwinger(
             shape, math.asnumpy(theta), math.asnumpy(phi)
@@ -916,7 +955,9 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
             math.asnumpy(theta),
             math.asnumpy(phi),
         )
-        return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
+        return math.astensor(dtheta, dtype=theta.dtype), math.astensor(
+            dphi, dtype=phi.dtype
+        )
 
     return math.astensor(bs_unitary, dtype=bs_unitary.dtype.name), vjp
 
