@@ -41,9 +41,7 @@ hbar0 = settings.HBAR
 @st.composite
 def xy_arrays(draw):
     length = draw(st.integers(2, 10))
-    return draw(
-        arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0))
-    )
+    return draw(arrays(dtype=np.float, shape=(2, length), elements=st.floats(-5.0, 5.0)))
 
 
 @given(nmodes, st.floats(0.1, 5.0))
@@ -60,9 +58,7 @@ def test_vacuum_state(nmodes, hbar):
 @given(x=medium_float, y=medium_float)
 def test_coherent_state_single(x, y):
     state = Coherent(x, y)
-    assert np.allclose(
-        state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]])
-    )
+    assert np.allclose(state.cov, np.array([[settings.HBAR / 2, 0], [0, settings.HBAR / 2]]))
     assert np.allclose(state.means, np.array([x, y]) * np.sqrt(2 * settings.HBAR))
 
 
@@ -93,9 +89,7 @@ def test_coherent_state_multiple(xy):
     state = Coherent(x, y)
     assert np.allclose(state.cov, np.eye(2 * len(x)) * settings.HBAR / 2)
     assert len(x) == len(y)
-    assert np.allclose(
-        state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR)
-    )
+    assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
     # restoring hbar to its original value
     settings.HBAR = hbar0
@@ -262,9 +256,7 @@ def test_concat_pure_states(pure):
     psi = state1 & state2
 
     # test concatenated state
-    psi_dm = math.transpose(
-        math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3]
-    )
+    psi_dm = math.transpose(math.tensordot(state1.dm(), state2.dm(), [[], []]), [0, 2, 1, 3])
     assert np.allclose(psi.dm(), psi_dm)
 
 
