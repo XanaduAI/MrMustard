@@ -19,10 +19,7 @@ from numba import njit
 
 from mrmustard import settings
 
-hbar = settings.HBAR
 
-
-@njit
 def wigner_discretized(rho, qvec, pvec):
     r"""Calculates the discretized Wigner function for a single mode.
 
@@ -37,7 +34,13 @@ def wigner_discretized(rho, qvec, pvec):
         tuple(array, array, array): array containing the discretized Wigner function, and the Q and
             P coordinates (in meshgrid form) in which the function is calculated
     """
+    hbar = settings.HBAR
+    return _wigner_discretized(rho, qvec, pvec, hbar)
 
+@njit
+def _wigner_discretized(rho, qvec, pvec, hbar):
+    r""" Calculates the discretized Wigner function for a given value of hbar.
+    """
     Q = np.outer(qvec, np.ones_like(pvec))
     P = np.outer(np.ones_like(qvec), pvec)
 
