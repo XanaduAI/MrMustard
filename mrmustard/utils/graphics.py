@@ -113,7 +113,7 @@ def mikkel_plot(
 
     xvec = np.linspace(*xbounds, plot_args["resolution"])
     pvec = np.linspace(*ybounds, plot_args["resolution"])
-    W, X, P = wigner_discretized(rho, xvec, pvec, settings.HBAR)
+    W, X, P = wigner_discretized(rho, xvec, pvec)
 
     ### PLOTTING ###
 

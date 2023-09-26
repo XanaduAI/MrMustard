@@ -42,21 +42,21 @@ def wig_laguerre_val(L, x, c):
     LL_n^L = (-1)^n sqrt(L!n!/(L+n)!) LaguerreL[n,L,x]    
     The evaluation uses Clenshaw recursion
     """
-
     if len(c) == 1:
-        y0 = c[0]
-        y1 = 0
+        y0 = np.array([[c[0]]])
+        y1 = np.array([[0]]).astype(np.complex128)
     elif len(c) == 2:
-        y0 = c[0]
-        y1 = c[1]
+        y0 = np.array([[c[0]]])
+        y1 = np.array([[c[1]]]).astype(np.complex128)
     else:
         k = len(c)
-        y0 = c[-2]
-        y1 = c[-1]
+        y0 = np.array([[c[-2]]])
+        y1 = np.array([[c[-1]]])
         for i in range(3, len(c) + 1):
             k -= 1
-            y0,    y1 = c[-i] - y1 * (float((k - 1)*(L + k - 1))/((L+k)*k))**0.5, \
-            y0 - y1 * ((L + 2*k -1) - x) * ((L+k)*k)**-0.5
+            temp_y0 = y0
+            y0 = c[-i] - y1 * (float((k - 1)*(L + k - 1))/((L+k)*k))**0.5
+            y1 = temp_y0 - y1 * ((L + 2*k -1) - x) * ((L+k)*k)**-0.5
             
     return y0 - y1 * ((L + 1) - x) * (L + 1)**-0.5
 
@@ -64,7 +64,7 @@ def wig_laguerre_val(L, x, c):
 # Methods
 # ~~~~~~~
 
-def wigner_discretized(rho, qvec, pvec, method="iterative"):
+def wigner_discretized(rho, qvec, pvec):
     r"""Calculates the discretized Wigner function for a single mode.
 
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
@@ -73,23 +73,22 @@ def wigner_discretized(rho, qvec, pvec, method="iterative"):
         rho (complex array): the density matrix of the state in Fock representation
         qvec (array): array of discretized :math:`q` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
-        hbar (optional float): the value of `\hbar`, defaults to ``settings.HBAR``.
 
     Returns:
         tuple(array, array, array): array containing the discretized Wigner function, and the Q and
             P coordinates (in meshgrid form) in which the function is calculated
     """
     hbar = settings.HBAR
+    method = settings.DISCRETIZATION_METHOD
     if method == "cleanshaw":
-        return wigner_discretized_cleanshaw(rho, qvec, pvec, hbar)
+        return _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar)
     elif method == "iterative":
-        return wigner_discretized_iterative(rho, qvec, pvec, hbar)
-    
-    raise ValueError(f"Method `{method}` not supported. Please select one of"
-                     "the supported methods, namely 'cleanshaw' and 'iterative'")
+        return _wigner_discretized_iterative(rho, qvec, pvec, hbar)
+    else:
+        raise ValueError(f"Method `{method}` not supported. Please select one of"
+                          "the supported methods, namely 'cleanshaw' and 'iterative'")
 
-@njit
-def wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
+def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
     cutoff = rho.shape[0]
     Q, P, grid = make_grid(qvec, pvec, hbar)
     
@@ -103,13 +102,13 @@ def wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
     L = cutoff - 1 
     while L > 0:
         L -= 1
-        #here c_L = _wig_laguerre_val(L, B, np.diag(rho, L))
+        #here c_L = wig_laguerre_val(L, B, np.diag(rho, L))
         w0 = wig_laguerre_val(L, B, np.diag(rho2, L)) + w0 * A * (L+1)**-0.5
 
     return w0.real * np.exp(-B*0.5) * (hbar*0.5 / np.pi), Q, P
 
 @njit
-def wigner_discretized_iterative(rho, qvec, pvec, hbar):
+def _wigner_discretized_iterative(rho, qvec, pvec, hbar):
     cutoff = rho.shape[-1]
     Q, P, grid = make_grid(qvec, pvec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
