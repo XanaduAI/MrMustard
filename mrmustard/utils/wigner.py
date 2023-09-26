@@ -37,10 +37,10 @@ def wigner_discretized(rho, qvec, pvec):
     hbar = settings.HBAR
     return _wigner_discretized(rho, qvec, pvec, hbar)
 
+
 @njit
 def _wigner_discretized(rho, qvec, pvec, hbar):
-    r""" Calculates the discretized Wigner function for a given value of hbar.
-    """
+    r"""Calculates the discretized Wigner function for a given value of hbar."""
     Q = np.outer(qvec, np.ones_like(pvec))
     P = np.outer(np.ones_like(qvec), pvec)
 
