@@ -27,10 +27,10 @@ __all__ = ["wigner_discretized"]
 # ~~~~~~~
 
 @njit
-def make_grid(qvec, pvec):
+def make_grid(qvec, pvec, hbar):
     Q = np.outer(qvec, np.ones_like(pvec))
     P = np.outer(np.ones_like(qvec), pvec)
-    return Q, P, (Q + P * 1.0j) / np.sqrt(2 * settings.HBAR)
+    return Q, P, (Q + P * 1.0j) / np.sqrt(2 * hbar)
 
 @njit
 def wig_laguerre_val(L, x, c):
@@ -79,18 +79,19 @@ def wigner_discretized(rho, qvec, pvec, method="iterative"):
         tuple(array, array, array): array containing the discretized Wigner function, and the Q and
             P coordinates (in meshgrid form) in which the function is calculated
     """
+    hbar = settings.HBAR
     if method == "cleanshaw":
-        return wigner_discretized_cleanshaw(rho, qvec, pvec)
+        return wigner_discretized_cleanshaw(rho, qvec, pvec, hbar)
     elif method == "iterative":
-        return wigner_discretized_iterative(rho, qvec, pvec)
+        return wigner_discretized_iterative(rho, qvec, pvec, hbar)
     
     raise ValueError(f"Method `{method}` not supported. Please select one of"
                      "the supported methods, namely 'cleanshaw' and 'iterative'")
 
 @njit
-def wigner_discretized_cleanshaw(rho, qvec, pvec):
+def wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
     cutoff = rho.shape[0]
-    Q, P, grid = make_grid(qvec, pvec)
+    Q, P, grid = make_grid(qvec, pvec, hbar)
     
     A = 2*grid
     B = np.abs(A)
@@ -108,10 +109,9 @@ def wigner_discretized_cleanshaw(rho, qvec, pvec):
     return w0.real * np.exp(-B*0.5) * (hbar*0.5 / np.pi), Q, P
 
 @njit
-def wigner_discretized_iterative(rho, qvec, pvec):
+def wigner_discretized_iterative(rho, qvec, pvec, hbar):
     cutoff = rho.shape[-1]
-    hbar = settings.HBAR
-    Q, P, grid = make_grid(qvec, pvec)
+    Q, P, grid = make_grid(qvec, pvec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
 
     # W = rho(0,0)W(|0><0|)
