@@ -35,7 +35,7 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        self._discretization_method = "iterative"
+        self._discretization_method = "cleanshaw"
         self.AUTOCUTOFF_PROBABILITY = 0.999  # capture at least 99.9% of the probability
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1

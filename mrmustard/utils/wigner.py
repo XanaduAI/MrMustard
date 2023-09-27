@@ -46,15 +46,15 @@ def wig_laguerre_val(L, x, c):
     The evaluation uses Clenshaw recursion
     """
     if len(c) == 1:
-        y0 = np.array([[c[0]]])
+        y0 = np.array([[c[0]]]).astype(np.complex128)
         y1 = np.array([[0]]).astype(np.complex128)
     elif len(c) == 2:
-        y0 = np.array([[c[0]]])
+        y0 = np.array([[c[0]]]).astype(np.complex128)
         y1 = np.array([[c[1]]]).astype(np.complex128)
     else:
         k = len(c)
-        y0 = np.array([[c[-2]]])
-        y1 = np.array([[c[-1]]])
+        y0 = np.array([[c[-2]]]).astype(np.complex128)
+        y1 = np.array([[c[-1]]]).astype(np.complex128)
         for i in range(3, len(c) + 1):
             k -= 1
             temp_y0 = y0
@@ -83,17 +83,19 @@ def wigner_discretized(rho, qvec, pvec):
     """
     hbar = settings.HBAR
     method = settings.DISCRETIZATION_METHOD
+
+    rho_np = math.asnumpy(rho)
     if method == "cleanshaw":
-        return _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar)
+        return _wigner_discretized_cleanshaw(rho_np, qvec, pvec, hbar)
     elif method == "iterative":
-        return _wigner_discretized_iterative(rho, qvec, pvec, hbar)
+        return _wigner_discretized_iterative(rho_np, qvec, pvec, hbar)
     else:
         raise ValueError(f"Method `{method}` not supported. Please select one of"
                           "the supported methods, namely 'cleanshaw' and 'iterative'")
 
-# @njit
+@njit
 def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
-    cutoff = rho.shape[0]
+    cutoff = len(rho)
     Q, P, grid = make_grid(qvec, pvec, hbar)
     
     A = 2*grid
@@ -109,11 +111,11 @@ def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
         #here c_L = wig_laguerre_val(L, B, np.diag(rho, L))
         w0 = wig_laguerre_val(L, B, np.diag(rho2, L)) + w0 * A * (L+1)**-0.5
 
-    return math.asnumpy(w0).real * np.exp(-B*0.5) * (hbar*0.5 / np.pi), Q, P
+    return w0.real * np.exp(-B*0.5) * (hbar / np.pi), Q, P
 
-# @njit
+@njit
 def _wigner_discretized_iterative(rho, qvec, pvec, hbar):
-    cutoff = rho.shape[0]
+    cutoff = len(rho)
     Q, P, grid = make_grid(qvec, pvec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
 

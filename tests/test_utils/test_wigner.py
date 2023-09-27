@@ -30,6 +30,30 @@ from mrmustard.lab import (
 )
 from mrmustard.utils.wigner import wigner_discretized
 
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
+def W_test_coherent(q, p, q0, p0, s):
+    r""" Returns the wigner function for a coherent state centered
+    around `(q0, p0)` and with phase `s`. See Eq. 4.12 in arXiv:0406015.
+    """
+    ret = -np.exp(2*s)*(q - q0)**2-np.exp(-2*s)*(p - p0)**2
+    return np.exp(ret)/np.pi
+
+# ~~~~~
+# Tests
+# ~~~~~
+
+class TestWignerDiscretized:
+    @pytest.mark.parametrize("alpha", [0, 3+3j])
+    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    def test_coherent_state(self, alpha, method):
+        state = Vacuum(1) >> Coherent(alpha)
+        
+
+    
+
 
 def multivariate_normal_pdf(qvec, pvec, means, cov):
     """generates the PDF of a multivariate normal distribution"""
@@ -51,7 +75,6 @@ def multivariate_normal_pdf(qvec, pvec, means, cov):
 )
 def test_wigner_gaussian_states(state):
     """test Wigner function for Gaussian states is a standard normal distribution"""
-
     # calculate Wigner from state dm
     qvec = np.arange(-5, 5, 100)
     pvec = qvec
