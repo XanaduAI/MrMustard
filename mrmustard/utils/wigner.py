@@ -18,9 +18,12 @@ import numpy as np
 from numba import njit
 
 from mrmustard import settings
+from mrmustard.math import Math
 
 
 __all__ = ["wigner_discretized"]
+
+math = Math()
 
 # ~~~~~~~
 # Helpers
@@ -88,6 +91,7 @@ def wigner_discretized(rho, qvec, pvec):
         raise ValueError(f"Method `{method}` not supported. Please select one of"
                           "the supported methods, namely 'cleanshaw' and 'iterative'")
 
+# @njit
 def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
     cutoff = rho.shape[0]
     Q, P, grid = make_grid(qvec, pvec, hbar)
@@ -105,11 +109,11 @@ def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
         #here c_L = wig_laguerre_val(L, B, np.diag(rho, L))
         w0 = wig_laguerre_val(L, B, np.diag(rho2, L)) + w0 * A * (L+1)**-0.5
 
-    return w0.real * np.exp(-B*0.5) * (hbar*0.5 / np.pi), Q, P
+    return math.asnumpy(w0).real * np.exp(-B*0.5) * (hbar*0.5 / np.pi), Q, P
 
-@njit
+# @njit
 def _wigner_discretized_iterative(rho, qvec, pvec, hbar):
-    cutoff = rho.shape[-1]
+    cutoff = rho.shape[0]
     Q, P, grid = make_grid(qvec, pvec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
 
