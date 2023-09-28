@@ -20,12 +20,12 @@ from __future__ import annotations
 
 __all__ = ["Circuit"]
 
-from mrmustard.typing import RealMatrix, RealVector
 from typing import List, Optional, Tuple
 
 from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
+from mrmustard.typing import RealMatrix, RealVector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
@@ -62,9 +62,9 @@ class Circuit(Transformation, Parametrized):
             state = op.dual(state)
         return state
 
-    @property
     def XYd(
         self,
+        allow_none: bool = True,
     ) -> Tuple[
         RealMatrix, RealMatrix, RealVector
     ]:  # NOTE: Overriding Transformation.XYd for efficiency
@@ -72,7 +72,7 @@ class Circuit(Transformation, Parametrized):
         Y = XPMatrix(like_0=True)
         d = XPVector()
         for op in self._ops:
-            opx, opy, opd = op.XYd
+            opx, opy, opd = op.XYd(allow_none)
             opX = XPMatrix.from_xxpp(opx, modes=(op.modes, op.modes), like_1=True)
             opY = XPMatrix.from_xxpp(opy, modes=(op.modes, op.modes), like_0=True)
             opd = XPVector.from_xxpp(opd, modes=op.modes)

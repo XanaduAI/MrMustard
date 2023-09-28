@@ -1,9 +1,0 @@
-sphinx
-docutils
-m2r2
-sphinx-autodoc-typehints
-sphinx-copybutton
-sphinx-automodapi
-sphinxcontrib-bibtex
-mistune==0.8.4
-xanadu-sphinx-theme==0.1.0

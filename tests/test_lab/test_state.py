@@ -19,7 +19,7 @@ def test_multiplication_ket():
 
     scaled = 42.0 * G
 
-    assert np.allclose(scaled.ket(G.cutoffs), 42.0 * G.ket())
+    assert np.allclose(scaled.ket(G.shape), 42.0 * G.ket())
 
 
 def test_multiplication_dm():

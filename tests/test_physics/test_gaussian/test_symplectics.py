@@ -17,10 +17,11 @@ from hypothesis import given
 from hypothesis import strategies as st
 from thewalrus.symplectic import beam_splitter, expand, rotation, squeezing, two_mode_squeezing
 
-from mrmustard.lab.gates import (
+from mrmustard.lab import (
     Amplifier,
     Attenuator,
     BSgate,
+    Coherent,
     CXgate,
     CZgate,
     Dgate,
@@ -205,3 +206,9 @@ def test_amplifier_attenuator_on_coherent_coherent(eta, x, y):
     assert Vacuum(1) >> Dgate(x, y) >> Amplifier(1 / eta) >> Attenuator(eta) == Thermal(
         ((1 / eta) - 1) * eta
     ) >> Dgate(x, y)
+
+
+@given(x=st.floats(-2, 2), y=st.floats(-2, 2))
+def test_number_means(x, y):
+    """Tests that the number means of a displaced state are correct"""
+    assert np.allclose(Coherent(x, y).number_means, x * x + y * y)

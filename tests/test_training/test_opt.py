@@ -31,7 +31,7 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import DisplacedSqueezed, SqueezedVacuum, Vacuum
+from mrmustard.lab.states import DisplacedSqueezed, Fock, Gaussian, SqueezedVacuum, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -243,7 +243,7 @@ def test_learning_four_mode_Interferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    X = math.cast(perturbed.XYd[0], "complex128")
+    X = math.cast(perturbed.XYd()[0], "complex128")
     perturbed_U = X[:4, :4] + 1j * X[4:, :4]
 
     ops = [
@@ -283,7 +283,7 @@ def test_learning_four_mode_RealInterferometer():
         >> BSgate(settings.rng.normal(scale=0.01), modes=[1, 2])
         >> BSgate(settings.rng.normal(scale=0.01), modes=[0, 3])
     )
-    perturbed_O = pertubed.XYd[0][:4, :4]
+    perturbed_O = pertubed.XYd()[0][:4, :4]
 
     ops = [
         Sgate(
@@ -406,12 +406,87 @@ def test_dgate_optimization():
     settings.SEED = 24
 
     dgate = Dgate(x_trainable=True, y_trainable=True)
-    target_state = DisplacedSqueezed(r=0.0, x=1.0, y=1.0)
+    target_state = DisplacedSqueezed(r=0.0, x=0.1, y=0.2).ket(cutoffs=[40])
 
     def cost_fn():
         state_out = Vacuum(1) >> dgate
-
-        return 1 - fidelity(state_out, target_state)
+        return -math.abs(math.sum(math.conj(state_out.ket([40])) * target_state)) ** 2
 
     opt = Optimizer()
     opt.minimize(cost_fn, by_optimizing=[dgate])
+
+    assert np.allclose(dgate.x.value, 0.1, atol=0.01)
+    assert np.allclose(dgate.y.value, 0.2, atol=0.01)
+
+
+def test_sgate_optimization():
+    """Test that Sgate is optimized correctly."""
+    settings.SEED = 25
+
+    sgate = Sgate(r=0.2, phi=0.1, r_trainable=True, phi_trainable=True)
+    target_state = SqueezedVacuum(r=0.1, phi=0.2).ket(cutoffs=[40])
+
+    def cost_fn():
+        state_out = Vacuum(1) >> sgate
+
+        return -math.abs(math.sum(math.conj(state_out.ket([40])) * target_state)) ** 2
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[sgate])
+
+    assert np.allclose(sgate.r.value, 0.1, atol=0.01)
+    assert np.allclose(sgate.phi.value, 0.2, atol=0.01)
+
+
+def test_bsgate_optimization():
+    """Test that Sgate is optimized correctly."""
+    settings.SEED = 25
+
+    G = Gaussian(2)
+
+    bsgate = BSgate(0.05, 0.1, theta_trainable=True, phi_trainable=True)
+    target_state = (G >> BSgate(0.1, 0.2)).ket(cutoffs=[40, 40])
+
+    def cost_fn():
+        state_out = G >> bsgate
+
+        return -math.abs(math.sum(math.conj(state_out.ket([40, 40])) * target_state)) ** 2
+
+    opt = Optimizer()
+    opt.minimize(cost_fn, by_optimizing=[bsgate])
+
+    assert np.allclose(bsgate.theta.value, 0.1, atol=0.01)
+    assert np.allclose(bsgate.phi.value, 0.2, atol=0.01)
+
+
+def test_squeezing_grad_from_fock():
+    """Test that the gradient of a squeezing gate is computed from the fock representation."""
+    squeezing = Sgate(r=1, r_trainable=True)
+
+    def cost_fn():
+        return -(Fock(2) >> squeezing << Vacuum(1))
+
+    opt = Optimizer(euclidean_lr=0.05)
+    opt.minimize(cost_fn, by_optimizing=[squeezing], max_steps=100)
+
+
+def test_displacement_grad_from_fock():
+    """Test that the gradient of a displacement gate is computed from the fock representation."""
+    disp = Dgate(x=1.0, y=1.0, x_trainable=True, y_trainable=True)
+
+    def cost_fn():
+        return -(Fock(2) >> disp << Vacuum(1))
+
+    opt = Optimizer(euclidean_lr=0.05)
+    opt.minimize(cost_fn, by_optimizing=[disp], max_steps=100)
+
+
+def test_bsgate_grad_from_fock():
+    """Test that the gradient of a beamsplitter gate is computed from the fock representation."""
+    sq = SqueezedVacuum(r=1.0, r_trainable=True)
+
+    def cost_fn():
+        return -((sq & Fock(1)) >> BSgate(0.5) << (Vacuum(1) & Fock(1)))
+
+    opt = Optimizer(euclidean_lr=0.05)
+    opt.minimize(cost_fn, by_optimizing=[sq], max_steps=100)
