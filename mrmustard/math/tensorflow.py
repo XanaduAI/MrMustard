@@ -133,7 +133,7 @@ class TFMath(MathInterface):
     def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag(array, k=k)
 
-    def diag_part(self, array: tf.Tensor, k = 0: int) -> tf.Tensor:
+    def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag_part(array, k=k)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
