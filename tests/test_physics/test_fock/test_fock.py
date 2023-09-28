@@ -37,10 +37,6 @@ from mrmustard.lab import (
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock
 
-from mrmustard import settings
-
-settings.HBAR = 2
-
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
 

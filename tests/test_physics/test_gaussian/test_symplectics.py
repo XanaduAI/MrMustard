@@ -40,10 +40,6 @@ from mrmustard.lab import (
 from mrmustard.lab.states import TMSV, Thermal, Vacuum
 from mrmustard.physics.gaussian import controlled_X, controlled_Z
 
-from mrmustard import settings
-
-settings.HBAR = 2
-
 
 @given(r=st.floats(0, 2))
 def test_two_mode_squeezing(r):
