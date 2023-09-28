@@ -332,6 +332,7 @@ def test_schwinger_bs_equals_vanilla_bs_for_small_cutoffs(theta, phi):
     assert np.allclose(U_vanilla, U_schwinger, atol=1e-6)
 
 
+# pylint: disable=protected-access
 @given(phase_stdev=medium_float.filter(lambda x: x > 0))
 def test_phasenoise_creates_dm(phase_stdev):
     """test that the phase noise gate is correctly applied"""
