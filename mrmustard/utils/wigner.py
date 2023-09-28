@@ -43,7 +43,7 @@ def make_grid(q_vec, p_vec, hbar):
 
 @njit
 def _wig_laguerre_val(L, x, diag):
-    """Returns the coefficient :math:`c_L = \sum_n \rho_{n,L+n} Z_n^L` used
+    """Returns the coefficient `c_L = sum_n rho_{n,L+n} Z_n^L` used
     by `_wigner_discretized_clenshaw`. The evaluation uses the Clenshaw recursion.
     """
     if len(diag) == 2:
@@ -108,11 +108,9 @@ def wigner_discretized(rho, q_vec, p_vec):
     method = settings.DISCRETIZATION_METHOD
 
     rho = math.asnumpy(rho)
-    if method == "clenshaw":
-        return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
-    elif method == "iterative":
+    if method == "iterative":
         return _wigner_discretized_iterative(rho, q_vec, p_vec, hbar)
-
+    return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
 
 @njit
 def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):
