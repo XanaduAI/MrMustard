@@ -918,7 +918,7 @@ class PhaseNoise(Parametrized, Transformation):
         phase_stdev: Union[Optional[float], Optional[List[float]]] = 0.0,
         phase_stdev_trainable: bool = False,
         phase_stdev_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
-        modes: Optional[List[int]] = [0],
+        modes: Optional[List[int]] = None,
     ):
         super().__init__(
             phase_stdev=phase_stdev,
