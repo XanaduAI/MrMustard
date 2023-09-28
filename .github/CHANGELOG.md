@@ -2,6 +2,10 @@
 
 ### New features
 
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
+
 ### Breaking changes
 
 ### Improvements
