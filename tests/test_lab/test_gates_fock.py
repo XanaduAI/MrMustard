@@ -341,6 +341,7 @@ def test_phasenoise_creates_dm(phase_stdev):
 
 @given(phase_stdev=medium_float.filter(lambda x: x > 0))
 def test_phasenoise_symmetry(phase_stdev):
+    "tests that symmetric states are not affected by phase noise"
     assert (Fock(1) >> PhaseNoise(phase_stdev)) == Fock(1)
     settings.AUTOCUTOFF_MIN_CUTOFF = 100
     assert (Thermal(1) >> PhaseNoise(phase_stdev)) == Thermal(1)
@@ -349,6 +350,7 @@ def test_phasenoise_symmetry(phase_stdev):
 
 @given(phase_stdev=medium_float.filter(lambda x: x > 0))
 def test_phasenoise_on_multimode(phase_stdev):
+    "tests that phase noise can be used on multimode states"
     G2 = Gaussian(2) >> Attenuator(0.1, modes=[0, 1])
     P = PhaseNoise(phase_stdev, modes=[1])
     settings.AUTOCUTOFF_MIN_CUTOFF = 20
@@ -358,12 +360,14 @@ def test_phasenoise_on_multimode(phase_stdev):
 
 
 def test_phasenoise_large_noise():
+    "tests that large phase noise kills the off-diagonal elements"
     G1 = Gaussian(1)
     P = PhaseNoise(1000)
     assert (G1 >> P) == State(dm=math.diag(math.diag_part(G1.dm())))
 
 
 def test_phasenoise_zero_noise():
+    "tests that zero phase noise is equal to the identity"
     G1 = Gaussian(1)
     P = PhaseNoise(0.0)
     assert (G1 >> P) == State(dm=G1.dm())
