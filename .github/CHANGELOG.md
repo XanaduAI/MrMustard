@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
+  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+
 ### Improvements
 
 ### Bug fixes
@@ -13,7 +16,7 @@
 ### Documentation
 
 ### Contributors
-[Yuan Yao](https://github.com/sylviemonet)
+[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)
@@ -394,7 +397,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Contributors
 
 This release contains contributions from (in alphabetical order):
-[Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa), [Samuele Ferracin] (https://github.com/SamFerracin),
+[Robbe De Prins](https://github.com/rdprins), [Sebastian Duque Mesa](https://github.com/sduquemesa),
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN),
 [Yuan Yao](https://github.com/sylviemonet)
 
@@ -501,9 +504,6 @@ This release contains contributions from (in alphabetical order):
   [(#133)](https://github.com/XanaduAI/MrMustard/pull/133),
   patch [(#144)](https://github.com/XanaduAI/MrMustard/pull/144)
   and [(#158)](https://github.com/XanaduAI/MrMustard/pull/158).
-
-* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
-  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
 
 ### Improvements
 
