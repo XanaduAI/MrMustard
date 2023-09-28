@@ -111,7 +111,7 @@ def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
         #here c_L = wig_laguerre_val(L, B, np.diag(rho, L))
         w0 = wig_laguerre_val(L, B, np.diag(rho2, L)) + w0 * A * (L+1)**-0.5
 
-    return w0.real * np.exp(-B*0.5) * (hbar / np.pi), Q, P
+    return w0.real * np.exp(-B*0.5) / np.pi / hbar, Q, P
 
 @njit
 def _wigner_discretized_iterative(rho, qvec, pvec, hbar):
