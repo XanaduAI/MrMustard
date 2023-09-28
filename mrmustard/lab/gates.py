@@ -925,7 +925,7 @@ class PhaseNoise(Parametrized, Transformation):
             phase_stdev_trainable=phase_stdev_trainable,
             phase_stdev_bounds=phase_stdev_bounds,
         )
-        self._modes = modes
+        self._modes = modes or [0]
         self.is_unitary = False
         self.is_gaussian = False
         self.short_name = "P~"
