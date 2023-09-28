@@ -34,10 +34,8 @@ from mrmustard.typing import Tensor, Trainable
 
 # import Julia functions
 from julia.api import Julia
-
-jl = Julia(compiled_modules=False)  # don't move this line down
-from julia import Main as Main_julia  # don't move this line up
-
+jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
+from julia import Main as Main_julia  # must be run after "jl = Julia(compiled_modules=False)"
 math_directory = os.path.dirname(__file__)
 Main_julia.cd(math_directory)
 Main_julia.include("lattice/strategies/vanilla.jl")
