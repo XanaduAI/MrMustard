@@ -36,8 +36,10 @@ from .math_interface import MathInterface
 # import Julia functions
 import os
 from julia.api import Julia
-jl = Julia(compiled_modules=False) # don't move this line down
-from julia import Main as Main_julia # don't move this line up
+
+jl = Julia(compiled_modules=False)  # don't move this line down
+from julia import Main as Main_julia  # don't move this line up
+
 math_directory = os.path.dirname(__file__)
 Main_julia.cd(math_directory)
 Main_julia.include("lattice/strategies/vanilla.jl")
