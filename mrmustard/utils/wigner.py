@@ -42,24 +42,21 @@ def make_grid(q_vec, p_vec, hbar):
 
 
 @njit
-def _wig_laguerre_val(L, x, c):
+def _wig_laguerre_val(L, x, diag):
     """Returns the coefficient :math:`c_L = \sum_n \rho_{n,L+n} Z_n^L` used
     by `_wigner_discretized_clenshaw`. The evaluation uses the Clenshaw recursion.
     """
-    if len(c) == 1:
-        y0 = np.array([[c[0]]]).astype(np.complex128)
-        y1 = np.array([[0]]).astype(np.complex128)
-    elif len(c) == 2:
-        y0 = np.array([[c[0]]]).astype(np.complex128)
-        y1 = np.array([[c[1]]]).astype(np.complex128)
+    if len(diag) == 2:
+        y0 = np.array([[diag[0]]]).astype(np.complex128)
+        y1 = np.array([[diag[1]]]).astype(np.complex128)
     else:
-        k = len(c)
-        y0 = np.array([[c[-2]]]).astype(np.complex128)
-        y1 = np.array([[c[-1]]]).astype(np.complex128)
-        for i in range(3, len(c) + 1):
+        k = len(diag)
+        y0 = np.array([[diag[-2]]]).astype(np.complex128)
+        y1 = np.array([[diag[-1]]]).astype(np.complex128)
+        for i in range(3, len(diag) + 1):
             k -= 1
             temp_y0 = y0
-            y0 = c[-i] - y1 * (float((k - 1) * (L + k - 1)) / ((L + k) * k)) ** 0.5
+            y0 = diag[-i] - y1 * (float((k - 1) * (L + k - 1)) / ((L + k) * k)) ** 0.5
             y1 = temp_y0 - y1 * ((L + 2 * k - 1) - x) * ((L + k) * k) ** -0.5
 
     return y0 - y1 * ((L + 1) - x) * (L + 1) ** -0.5
