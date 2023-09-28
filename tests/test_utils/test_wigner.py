@@ -16,18 +16,14 @@
 
 import numpy as np
 import pytest
-# from scipy.stats import multivariate_normal
+from scipy.special import assoc_laguerre
 
 from mrmustard import settings
 from mrmustard.lab import (
     Coherent,
-    # DisplacedSqueezed,
-    # Fock,
-    # Gaussian,
+    Fock,
     SqueezedVacuum,
     State,
-    # Thermal,
-    # Vacuum,
 )
 from mrmustard.utils.wigner import wigner_discretized
 
@@ -51,9 +47,12 @@ def reset_settings():
 
 def distance(W_mm, W_th):
     r""" Calculates the distance between the discretized Wigner functions W_mm (generated
-    by `mrmustard`) and W_th (computed analytically) as `(np.abs(W_mm-W_th)/W_th).max()`.
+    by `mrmustard`) and W_th (computed analytically) as the maximum of `|W_mm-W_th|/|W_th|`,
+    where .
     """
-    return (np.abs(W_mm-W_th)/W_th).max()
+    num = np.abs(W_mm - W_th)
+    den = np.abs(W_th)
+    return (num/den).max()
 
 
 def W_cat(q_vec, p_vec, q0):
@@ -88,13 +87,27 @@ def W_coherent(q_vec, p_vec, alpha, s):
 
     return np.array([[generator(i, j, alpha, s) for j in p] for i in q])
 
+def W_fock(q_vec, p_vec, n):
+    r""" Calculates the discretized Wigner function for a fock state.
+    See Eq. 4.10 in arXiv:0406015.
+    """    
+    def generator(q, p, n):
+        alpha2 = (q**2+p**2)
+        ret = (-1)**n*np.exp(-alpha2)*assoc_laguerre(2*alpha2, n)
+        return ret/np.pi/settings.HBAR
+
+    q = q_vec/(settings.HBAR)**0.5
+    p = p_vec/(settings.HBAR)**0.5
+
+    return np.array([[generator(i, j, n) for j in p] for i in q])
+
 # ~~~~~
 # Tests
 # ~~~~~
 
 class TestWignerDiscretized:
     @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
-    @pytest.mark.parametrize("hbar", [2, 3])
+    @pytest.mark.parametrize("hbar", [1, 2])
     def test_cat_state(self, method, hbar):
         settings.DISCRETIZATION_METHOD = method
         settings.HBAR = hbar
@@ -132,6 +145,24 @@ class TestWignerDiscretized:
         state = Coherent(np.real(alpha), np.imag(alpha))
         W_mm, _, _ = wigner_discretized(state.dm(), q_vec, p_vec)
         W_th = W_coherent(q_vec, p_vec, alpha, 0)
+
+        assert np.allclose(distance(W_mm, W_th), 0)
+
+        reset_settings()
+
+    @pytest.mark.parametrize("n", [2, 6])
+    @pytest.mark.parametrize("hbar", [2, 3])
+    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    def test_fock_state(self, n, hbar, method):
+        settings.DISCRETIZATION_METHOD = method
+        settings.HBAR = hbar
+
+        q_vec = np.linspace(-1, 1, 20)
+        p_vec = np.linspace(-1, 1, 20)
+
+        state = Fock(n)
+        W_mm, q, p = wigner_discretized(state.dm(), q_vec, p_vec)
+        W_th = W_fock(q_vec, p_vec, n)
 
         assert np.allclose(distance(W_mm, W_th), 0)
 
