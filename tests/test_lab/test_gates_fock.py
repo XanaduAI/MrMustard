@@ -23,6 +23,7 @@ from thewalrus.fock_gradients import (
     two_mode_squeezing,
 )
 
+from mrmustard import settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -34,6 +35,9 @@ from mrmustard.lab import (
     Rgate,
     S2gate,
     Sgate,
+    Gaussian,
+    PhaseNoise,
+    Thermal,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
 from mrmustard.math import Math
@@ -326,3 +330,40 @@ def test_schwinger_bs_equals_vanilla_bs_for_small_cutoffs(theta, phi):
     U_schwinger = BSgate(theta, phi).U([10, 10, 10, 10], method="schwinger")
 
     assert np.allclose(U_vanilla, U_schwinger, atol=1e-6)
+
+
+@given(phase_stdev=medium_float.filter(lambda x: x > 0))
+def test_phasenoise_creates_dm(phase_stdev):
+    """test that the phase noise gate is correctly applied"""
+    assert (Coherent(1.0) >> PhaseNoise(phase_stdev))._dm is not None
+    assert (Fock(10) >> PhaseNoise(phase_stdev))._dm is not None
+
+
+@given(phase_stdev=medium_float.filter(lambda x: x > 0))
+def test_phasenoise_symmetry(phase_stdev):
+    assert (Fock(1) >> PhaseNoise(phase_stdev)) == Fock(1)
+    settings.AUTOCUTOFF_MIN_CUTOFF = 100
+    assert (Thermal(1) >> PhaseNoise(phase_stdev)) == Thermal(1)
+    settings.AUTOCUTOFF_MIN_CUTOFF = 1
+
+
+@given(phase_stdev=medium_float.filter(lambda x: x > 0))
+def test_phasenoise_on_multimode(phase_stdev):
+    G2 = Gaussian(2) >> Attenuator(0.1, modes=[0, 1])
+    P = PhaseNoise(phase_stdev, modes=[1])
+    settings.AUTOCUTOFF_MIN_CUTOFF = 20
+    assert (G2 >> P).get_modes(0) == G2.get_modes(0)
+    assert (G2 >> P).get_modes(1) == G2.get_modes(1) >> P
+    settings.AUTOCUTOFF_MIN_CUTOFF = 1
+
+
+def test_phasenoise_large_noise():
+    G1 = Gaussian(1)
+    P = PhaseNoise(1000)
+    assert (G1 >> P) == State(dm=math.diag(math.diag_part(G1.dm())))
+
+
+def test_phasenoise_zero_noise():
+    G1 = Gaussian(1)
+    P = PhaseNoise(0.0)
+    assert (G1 >> P) == State(dm=G1.dm())
