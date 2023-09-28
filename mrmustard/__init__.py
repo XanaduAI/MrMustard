@@ -78,7 +78,7 @@ class Settings:
     @DISCRETIZATION_METHOD.setter
     def DISCRETIZATION_METHOD(self, discretization_method: str):
         if discretization_method not in ["iterative", "clenshaw"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'iterative' or 'clenshaw'")
+            raise ValueError("Discretization method must be either 'iterative' or 'clenshaw'")
         self._discretization_method = discretization_method
 
     @property

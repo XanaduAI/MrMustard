@@ -115,11 +115,6 @@ def wigner_discretized(rho, q_vec, p_vec):
         return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
     elif method == "iterative":
         return _wigner_discretized_iterative(rho, q_vec, p_vec, hbar)
-    else:
-        raise ValueError(
-            f"Method `{method}` not supported. Please select one of"
-            "the supported methods, namely 'clenshaw' and 'iterative'"
-        )
 
 
 @njit
