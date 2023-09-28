@@ -113,14 +113,12 @@ def W_fock(q_vec, p_vec, n):
 
 
 class TestWignerDiscretized:
-    r""" Tests discretized Wigner functions (DWF) for various states
-    """
+    r"""Tests discretized Wigner functions (DWF) for various states"""
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     @pytest.mark.parametrize("hbar", [1, 2])
     def test_cat_state(self, method, hbar):
-        r""" Tests DWF for cat states
-        """
+        r"""Tests DWF for cat states"""
         settings.DISCRETIZATION_METHOD = method
         settings.HBAR = hbar
 
@@ -144,8 +142,7 @@ class TestWignerDiscretized:
     @pytest.mark.parametrize("hbar", [2, 3])
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_coherent_state(self, alpha, hbar, method):
-        r""" Tests DWF for coherent states
-        """
+        r"""Tests DWF for coherent states"""
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
         settings.DISCRETIZATION_METHOD = method
@@ -172,8 +169,7 @@ class TestWignerDiscretized:
     @pytest.mark.parametrize("hbar", [2, 3])
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_fock_state(self, n, hbar, method):
-        r""" Tests DWF for fock states
-        """
+        r"""Tests DWF for fock states"""
         settings.DISCRETIZATION_METHOD = method
         settings.HBAR = hbar
 
@@ -192,7 +188,7 @@ class TestWignerDiscretized:
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_both_method_succeed(self, method):
-        r""" Tests DWF for a squeezed vacuum state with squeezing s=1.
+        r"""Tests DWF for a squeezed vacuum state with squeezing s=1.
         Both discretization methods are expected to pass successfully.
         """
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
@@ -215,7 +211,7 @@ class TestWignerDiscretized:
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_iterative_fails(self, method):
-        r""" Tests DWF for a squeezed vacuum state with squeezing s=2.
+        r"""Tests DWF for a squeezed vacuum state with squeezing s=2.
         The iterative method cannot produce a DWF that matched with the analytical one.
         """
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
