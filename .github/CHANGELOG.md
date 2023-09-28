@@ -11,6 +11,7 @@ that result from repeatedly applying the recurrence relation are now postponed t
 This is done by representing Fock amplitudes with a higher precision than complex128 
 (which counters the accumulation of floating-point errors). 
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+[(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
 
 ### Bug fixes
 
@@ -20,6 +21,7 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 
 ### Contributors
 [Yuan Yao](https://github.com/sylviemonet)
+[Robbe De Prins](https://github.com/rdprins)
 
 
 # Release 0.5.0 (current release)
