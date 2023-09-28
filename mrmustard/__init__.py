@@ -35,7 +35,7 @@ class Settings:
         self.HBAR = 2.0
         self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
         self.DEBUG = False
-        self._discretization_method = "cleanshaw"
+        self._discretization_method = "iterative"
         self.AUTOCUTOFF_PROBABILITY = 0.999  # capture at least 99.9% of the probability
         self.AUTOCUTOFF_MAX_CUTOFF = 100
         self.AUTOCUTOFF_MIN_CUTOFF = 1
@@ -71,14 +71,14 @@ class Settings:
     def DISCRETIZATION_METHOD(self):
         """The method used to discretize the Wigner function.
 
-        Can be either ``'iterative'``  (default) or ``'cleanshaw'``.
+        Can be either ``'iterative'``  (default) or ``'clenshaw'``.
         """
         return self._discretization_method
 
     @DISCRETIZATION_METHOD.setter
     def DISCRETIZATION_METHOD(self, discretization_method: str):
-        if discretization_method not in ["iterative", "cleanshaw"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'iterative' or 'cleanshaw'")
+        if discretization_method not in ["iterative", "clenshaw"]:  # pragma: no cover
+            raise ValueError("Backend must be either 'iterative' or 'clenshaw'")
         self._discretization_method = discretization_method
 
     @property

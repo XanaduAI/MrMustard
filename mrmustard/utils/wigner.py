@@ -30,20 +30,19 @@ math = Math()
 # ~~~~~~~
 
 @njit
-def make_grid(qvec, pvec, hbar):
-    Q = np.outer(qvec, np.ones_like(pvec))
-    P = np.outer(np.ones_like(qvec), pvec)
+def make_grid(q_vec, p_vec, hbar):
+    r""" Returns two coordinate matrices `Q` and `P` from coordinate vectors
+    `q_vec` and `p_vec`, along with the grid over which Wigner functions can be
+    discretized.
+    """
+    Q = np.outer(q_vec, np.ones_like(p_vec))
+    P = np.outer(np.ones_like(q_vec), p_vec)
     return Q, P, (Q + P * 1.0j) / np.sqrt(2 * hbar)
 
 @njit
-def wig_laguerre_val(L, x, c):
-    """
-    this is evaluation of polynomial series inspired by hermval from numpy.    
-    Returns polynomial series
-    \sum_n b_n LL_n^L,
-    where
-    LL_n^L = (-1)^n sqrt(L!n!/(L+n)!) LaguerreL[n,L,x]    
-    The evaluation uses Clenshaw recursion
+def _wig_laguerre_val(L, x, c):
+    """ Returns the coefficient :math:`c_L = \sum_n \\rho_{n,L+n} Z_n^L` used
+    by `_wigner_discretized_clenshaw`. The evaluation uses the Clenshaw recursion.
     """
     if len(c) == 1:
         y0 = np.array([[c[0]]]).astype(np.complex128)
@@ -67,15 +66,38 @@ def wig_laguerre_val(L, x, c):
 # Methods
 # ~~~~~~~
 
-def wigner_discretized(rho, qvec, pvec):
+def wigner_discretized(rho, q_vec, p_vec):
     r"""Calculates the discretized Wigner function for a single mode.
 
-    Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
+    The supported discretization methods are:
+
+    * ``iterative`` (default): Uses an iterative method to calculate the Wigner
+    coefficients :math:`W_{mn}` in :math:`W = \sum_{mn} W_{mn} |m\rangle\langle n|`.
+    This method is recommended for systems with low numbers of excitations (``n\leq50``). 
+    * ``clenshaw``: Uses Clenshaw summations to improve the performance for systems
+    with large numbers of excitations (``n\leq50``).
+
+    The discretization method can be changed by moodifying the `Settings` object.
+
+    .. code::
+
+        >>> settings.DISCRETIZATION_METHOD  # default method
+        "iterative"
+
+        >>> settings.DISCRETIZATION_METHOD = "clenshaw"  # change method
+
+    These methods are adapted versions of the 'iterative' and 'clenshaw' methods of the
+    Wigner function discretization routine provided in
+    QuTiP <http://qutip.org/docs/4.0.2/apidoc/functions.html?highlight=wigner#qutip.wigner.wigner>`_,
+    which is released under the BSD license, with the following copyright notice:
+
+    Copyright (C) 2011 and later, P.D. Nation, J.R. Johansson,
+    A.J.G. Pitchford, C. Granade, and A.L. Grimsmo. All rights reserved.
 
     Args:
         rho (complex array): the density matrix of the state in Fock representation
-        qvec (array): array of discretized :math:`q` quadrature values
-        pvec (array): array of discretized :math:`p` quadrature values
+        q_vec (array): array of discretized :math:`q` quadrature values
+        p_vec (array): array of discretized :math:`p` quadrature values
 
     Returns:
         tuple(array, array, array): array containing the discretized Wigner function, and the Q and
@@ -84,19 +106,30 @@ def wigner_discretized(rho, qvec, pvec):
     hbar = settings.HBAR
     method = settings.DISCRETIZATION_METHOD
 
-    rho_np = math.asnumpy(rho)
-    if method == "cleanshaw":
-        return _wigner_discretized_cleanshaw(rho_np, qvec, pvec, hbar)
+    rho = math.asnumpy(rho)
+    if method == "clenshaw":
+        return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
     elif method == "iterative":
-        return _wigner_discretized_iterative(rho_np, qvec, pvec, hbar)
+        return _wigner_discretized_iterative(rho, q_vec, p_vec, hbar)
     else:
         raise ValueError(f"Method `{method}` not supported. Please select one of"
-                          "the supported methods, namely 'cleanshaw' and 'iterative'")
+                          "the supported methods, namely 'clenshaw' and 'iterative'")
 
 @njit
-def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
+def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):
+    r""" Calculates the Wigner function as
+    :math:`W = C(x) \sum_L c_L (2x)^L / sqrt(L!)`, where:
+
+    * :math:`x = (q + ip)`, for ``q`` and ``p`` in ``q_vec`` and ``p_vec``
+      respectively
+    * :math:`C(x) = e^{-x**2/(2\pi)}`
+    * :math:`L` is the dimension of ``rho``
+    * :math:`c_L = \sum_n \\rho_{n,L+n} Z_n^L`
+    * :math:`Z_n^L = (-1)^n sqrt(L!n!/(L+n)!) Lag(n,L,x)`
+    * :math:`LaguerreL(n,L,x)`
+    """
     cutoff = len(rho)
-    Q, P, grid = make_grid(qvec, pvec, hbar)
+    Q, P, grid = make_grid(q_vec, p_vec, hbar)
     
     A = 2*grid
     B = np.abs(A)
@@ -105,18 +138,18 @@ def _wigner_discretized_cleanshaw(rho, qvec, pvec, hbar):
     w0 = (2*rho[0,-1])*np.ones_like(A)
     
     rho2 = rho * (2*np.ones((cutoff, cutoff)) - np.diag(np.ones(cutoff)))
-    L = cutoff - 1 
-    while L > 0:
-        L -= 1
-        #here c_L = wig_laguerre_val(L, B, np.diag(rho, L))
-        w0 = wig_laguerre_val(L, B, np.diag(rho2, L)) + w0 * A * (L+1)**-0.5
+    
+    L = cutoff - 1
+    for j in range(1, cutoff):
+        c_L = _wig_laguerre_val(L - j, B, np.diag(rho2, L - j))
+        w0 = c_L + w0 * A * (L - j + 1)**-0.5
 
     return w0.real * np.exp(-B*0.5) / np.pi / hbar, Q, P
 
 @njit
-def _wigner_discretized_iterative(rho, qvec, pvec, hbar):
+def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):
     cutoff = len(rho)
-    Q, P, grid = make_grid(qvec, pvec, hbar)
+    Q, P, grid = make_grid(q_vec, p_vec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
 
     # W = rho(0,0)W(|0><0|)

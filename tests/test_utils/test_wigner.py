@@ -106,7 +106,7 @@ def W_fock(q_vec, p_vec, n):
 # ~~~~~
 
 class TestWignerDiscretized:
-    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     @pytest.mark.parametrize("hbar", [1, 2])
     def test_cat_state(self, method, hbar):
         settings.DISCRETIZATION_METHOD = method
@@ -128,7 +128,7 @@ class TestWignerDiscretized:
 
     @pytest.mark.parametrize("alpha", [0+0j, 3+3j])
     @pytest.mark.parametrize("hbar", [2, 3])
-    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_coherent_state(self, alpha, hbar, method):
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
@@ -152,7 +152,7 @@ class TestWignerDiscretized:
 
     @pytest.mark.parametrize("n", [2, 6])
     @pytest.mark.parametrize("hbar", [2, 3])
-    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_fock_state(self, n, hbar, method):
         settings.DISCRETIZATION_METHOD = method
         settings.HBAR = hbar
@@ -168,7 +168,7 @@ class TestWignerDiscretized:
 
         reset_settings()
 
-    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_both_method_succeed(self, method):
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
@@ -186,7 +186,7 @@ class TestWignerDiscretized:
 
         reset_settings()
 
-    @pytest.mark.parametrize("method", ["iterative", "cleanshaw"])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_iterative_fails(self, method):
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
@@ -204,96 +204,4 @@ class TestWignerDiscretized:
         assert success is False if method == "iterative" else True
 
         reset_settings()
-          
-
-
-# def multivariate_normal_pdf(q_vec, p_vec, means, cov):
-#     """generates the PDF of a multivariate normal distribution"""
-#     mvn = multivariate_normal(means, cov, allow_singular=True)
-#     grid = np.meshgrid(q_vec, p_vec)
-#     return mvn.pdf(grid)
-
-
-# @pytest.mark.parametrize(
-#     "state",
-#     [
-#         Vacuum(1),
-#         Coherent(0.3, -0.5),
-#         SqueezedVacuum(0.5, 0.45),
-#         Thermal(0.25),
-#         DisplacedSqueezed(0.3, 0.1, -0.1, 0.1),
-#         Gaussian(1),
-#     ],
-# )
-# def test_wigner_gaussian_states(state):
-#     """test Wigner function for Gaussian states is a standard normal distribution"""
-#     # calculate Wigner from state dm
-#     q_vec = np.arange(-5, 5, 100)
-#     p_vec = q_vec
-#     dm = state.dm(cutoffs=[5]).numpy()
-#     W_calc, _, _ = wigner_discretized(dm, q_vec, p_vec)
-
-#     # calculate exact
-#     cov = state.cov.numpy()
-#     means = state.means.numpy()
-#     W_exact = multivariate_normal_pdf(q_vec, p_vec, means, cov)
-
-#     assert np.allclose(W_calc, W_exact, atol=0.001, rtol=0)
-
-
-# # Exact marginal probability distributions for various states
-# hbar = settings.HBAR
-
-
-# def fock1_marginal(q_vec):
-#     """q and p marginal distributions for the Fock state |1>"""
-#     x = (
-#         0.5
-#         * np.sqrt(1 / (np.pi * hbar))
-#         * np.exp(-1 * (q_vec**2) / hbar)
-#         * (4 / hbar)
-#         * (q_vec**2)
-#     )
-#     p = x
-#     return x, p
-
-
-# def vacuum_marginal(q_vec):
-#     """q and p marginal distributions for the vacuum state"""
-#     x = np.sqrt(1 / (np.pi * hbar)) * np.exp(-1 * (q_vec**2) / hbar)
-#     p = x
-#     return x, p
-
-
-# def coherent_marginal(q_vec):
-#     r"""q and p marginal distributions for the coherent state with `\alpha=1`"""
-#     x = np.sqrt(1 / (np.pi * hbar)) * np.exp(-1 * ((q_vec - 0.5 * np.sqrt(2 * hbar)) ** 2) / hbar)
-#     p = np.sqrt(1 / (np.pi * hbar)) * np.exp(-1 * (q_vec**2) / hbar)
-#     return x, p
-
-
-# @pytest.mark.parametrize(
-#     "state, f_marginal",
-#     [
-#         (Vacuum(1), vacuum_marginal),
-#         (Coherent(1.0, 0.0), coherent_marginal),
-#         (Fock([1]), fock1_marginal),
-#     ],
-# )
-# def test_marginal_wigner(state, f_marginal):
-#     """test marginals of Wigner function agree with the expected ones"""
-
-#     # calculate Wigner from state dm
-#     q_vec = np.arange(-5, 5, 100)
-#     p_vec = q_vec
-#     dm = state.dm(cutoffs=[5]).numpy()
-#     W_calc, _, _ = wigner_discretized(dm, q_vec, p_vec)
-
-#     # calculate marginals
-#     q_marginal = np.sum(W_calc, axis=1)
-#     p_marginal = np.sum(W_calc, axis=0)
-
-#     expected_q_marginal, expected_p_marginal = f_marginal(q_vec)
-
-#     assert np.allclose(q_marginal, expected_q_marginal, atol=0.001, rtol=0)
-#     assert np.allclose(p_marginal, expected_p_marginal, atol=0.001, rtol=0)
+      
