@@ -112,6 +112,7 @@ def wigner_discretized(rho, q_vec, p_vec):
         return _wigner_discretized_iterative(rho, q_vec, p_vec, hbar)
     return _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar)
 
+
 @njit
 def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):
     r"""Calculates the Wigner function as
