@@ -20,7 +20,7 @@ ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
 	poetry install
-	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add("MultiFloats")"
+	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
 
 .PHONY: install-all
 install-all:
@@ -28,7 +28,7 @@ ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
 	poetry install --all-extras --with dev,doc
-	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add("MultiFloats")"
+	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
 
 .PHONY: dist
 dist:
