@@ -37,73 +37,80 @@ hbar0 = settings.HBAR
 # Helpers
 # ~~~~~~~
 
+
 def reset_settings():
-    r""" Resets `Settings`
-    """
+    r"""Resets `Settings`"""
     settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
     settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
     settings.DISCRETIZATION_METHOD = method0
     settings.HBAR = hbar0
 
+
 def distance(W_mm, W_th):
-    r""" Calculates the distance between the discretized Wigner functions W_mm (generated
+    r"""Calculates the distance between the discretized Wigner functions W_mm (generated
     by `mrmustard`) and W_th (computed analytically) as the maximum of `|W_mm-W_th|/|W_th|`,
     where .
     """
     num = np.abs(W_mm - W_th)
     den = np.abs(W_th)
-    return (num/den).max()
+    return (num / den).max()
 
 
 def W_cat(q_vec, p_vec, q0):
-    r""" Calculates the discretized Wigner function for a cat state with
+    r"""Calculates the discretized Wigner function for a cat state with
     coherent states centered in `(q0, 0)`. See Eq. 3.3 in arXiv:0406015.
     """
+
     def generator(q, p, q0):
-        norm = (1 + np.exp(-q0**2))**-0.5
-        W_plus = np.exp(-(q+q0)**2-p**2)
-        W_minus = np.exp(-(q-q0)**2-p**2)
-        W_int = np.cos(2*p*q0)*np.exp(-q**2-p**2)
-        return (W_plus/2 + W_minus/2 + W_int)*norm**2/np.pi/settings.HBAR
+        norm = (1 + np.exp(-(q0**2))) ** -0.5
+        W_plus = np.exp(-((q + q0) ** 2) - p**2)
+        W_minus = np.exp(-((q - q0) ** 2) - p**2)
+        W_int = np.cos(2 * p * q0) * np.exp(-(q**2) - p**2)
+        return (W_plus / 2 + W_minus / 2 + W_int) * norm**2 / np.pi / settings.HBAR
 
-    q = q_vec/(settings.HBAR)**0.5
-    p = p_vec/(settings.HBAR)**0.5
+    q = q_vec / (settings.HBAR) ** 0.5
+    p = p_vec / (settings.HBAR) ** 0.5
 
-    return np.array([[generator(i, j, q0*2**0.5) for j in p] for i in q])
+    return np.array([[generator(i, j, q0 * 2**0.5) for j in p] for i in q])
 
 
 def W_coherent(q_vec, p_vec, alpha, s):
-    r""" Calculates the discretized Wigner function for a coherent state centered
+    r"""Calculates the discretized Wigner function for a coherent state centered
     around `alpha` and with squeezing `s`. See Eq. 4.12 in arXiv:0406015.
     """
-    def generator(q, p, alpha, s):
-        q0 = np.real(alpha)*2**0.5
-        p0 = np.imag(alpha)*2**0.5
-        ret = -np.exp(2*s)*(q - q0)**2-np.exp(-2*s)*(p - p0)**2
-        return np.exp(ret)/np.pi/settings.HBAR
 
-    q = q_vec/(settings.HBAR)**0.5
-    p = p_vec/(settings.HBAR)**0.5
+    def generator(q, p, alpha, s):
+        q0 = np.real(alpha) * 2**0.5
+        p0 = np.imag(alpha) * 2**0.5
+        ret = -np.exp(2 * s) * (q - q0) ** 2 - np.exp(-2 * s) * (p - p0) ** 2
+        return np.exp(ret) / np.pi / settings.HBAR
+
+    q = q_vec / (settings.HBAR) ** 0.5
+    p = p_vec / (settings.HBAR) ** 0.5
 
     return np.array([[generator(i, j, alpha, s) for j in p] for i in q])
 
-def W_fock(q_vec, p_vec, n):
-    r""" Calculates the discretized Wigner function for a fock state.
-    See Eq. 4.10 in arXiv:0406015.
-    """    
-    def generator(q, p, n):
-        alpha2 = (q**2+p**2)
-        ret = (-1)**n*np.exp(-alpha2)*assoc_laguerre(2*alpha2, n)
-        return ret/np.pi/settings.HBAR
 
-    q = q_vec/(settings.HBAR)**0.5
-    p = p_vec/(settings.HBAR)**0.5
+def W_fock(q_vec, p_vec, n):
+    r"""Calculates the discretized Wigner function for a fock state.
+    See Eq. 4.10 in arXiv:0406015.
+    """
+
+    def generator(q, p, n):
+        alpha2 = q**2 + p**2
+        ret = (-1) ** n * np.exp(-alpha2) * assoc_laguerre(2 * alpha2, n)
+        return ret / np.pi / settings.HBAR
+
+    q = q_vec / (settings.HBAR) ** 0.5
+    p = p_vec / (settings.HBAR) ** 0.5
 
     return np.array([[generator(i, j, n) for j in p] for i in q])
+
 
 # ~~~~~
 # Tests
 # ~~~~~
+
 
 class TestWignerDiscretized:
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
@@ -126,7 +133,7 @@ class TestWignerDiscretized:
 
         reset_settings()
 
-    @pytest.mark.parametrize("alpha", [0+0j, 3+3j])
+    @pytest.mark.parametrize("alpha", [0 + 0j, 3 + 3j])
     @pytest.mark.parametrize("hbar", [2, 3])
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_coherent_state(self, alpha, hbar, method):
@@ -137,8 +144,8 @@ class TestWignerDiscretized:
 
         # centering the intervals around alpha--away from the center,
         # the values are small and unstable.
-        left = (np.real(alpha)*2**0.5-1)*(settings.HBAR)**0.5
-        right = (np.real(alpha)*2**0.5+1)*(settings.HBAR)**0.5
+        left = (np.real(alpha) * 2**0.5 - 1) * (settings.HBAR) ** 0.5
+        right = (np.real(alpha) * 2**0.5 + 1) * (settings.HBAR) ** 0.5
         q_vec = np.linspace(left, right, 50)
         p_vec = np.linspace(left, right, 50)
 
@@ -174,7 +181,7 @@ class TestWignerDiscretized:
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
         settings.DISCRETIZATION_METHOD = method
 
-        q_vec = np.linspace(-.5, .5, 50)
+        q_vec = np.linspace(-0.5, 0.5, 50)
         p_vec = np.linspace(-5, 5, 50)
 
         s = 1
@@ -192,7 +199,7 @@ class TestWignerDiscretized:
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
         settings.DISCRETIZATION_METHOD = method
 
-        q_vec = np.linspace(-.2, .2, 50)
+        q_vec = np.linspace(-0.2, 0.2, 50)
         p_vec = np.linspace(-5, 5, 50)
 
         s = 2
@@ -204,4 +211,3 @@ class TestWignerDiscretized:
         assert success is False if method == "iterative" else True
 
         reset_settings()
-      
