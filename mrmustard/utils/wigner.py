@@ -43,7 +43,7 @@ def make_grid(q_vec, p_vec, hbar):
 
 @njit
 def _wig_laguerre_val(L, x, c):
-    """Returns the coefficient :math:`c_L = \sum_n \\rho_{n,L+n} Z_n^L` used
+    """Returns the coefficient :math:`c_L = \sum_n \rho_{n,L+n} Z_n^L` used
     by `_wigner_discretized_clenshaw`. The evaluation uses the Clenshaw recursion.
     """
     if len(c) == 1:
@@ -126,7 +126,7 @@ def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):
       respectively
     * :math:`C(x) = e^{-x**2/(2\pi)}`
     * :math:`L` is the dimension of ``rho``
-    * :math:`c_L = \sum_n \\rho_{n,L+n} Z_n^L`
+    * :math:`c_L = \sum_n \rho_{n,L+n} Z_n^L`
     * :math:`Z_n^L = (-1)^n sqrt(L!n!/(L+n)!) Lag(n,L,x)`
     * :math:`LaguerreL(n,L,x)`
     """
