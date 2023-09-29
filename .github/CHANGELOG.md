@@ -7,6 +7,10 @@ reliable for systems with high number of excitations, for which the pre-existing
 can select their preferred methods by setting the value of `Settings.DISCRETIZATION_METHOD` to either `interactive` (default) or
 `clenshaw`.
 
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
+
 ### Breaking changes
 
 ### Improvements
@@ -18,7 +22,7 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 ### Documentation
 
 ### Contributors
-[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)
