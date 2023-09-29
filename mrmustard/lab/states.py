@@ -426,10 +426,7 @@ class Gaussian(Parametrized, State):
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
-        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (
-            settings.HBAR / 2,
-            None,
-        ),
+        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: List[int] = None,
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
@@ -448,7 +445,9 @@ class Gaussian(Parametrized, State):
             eigenvalues=eigenvalues,
             eigenvalues_trainable=eigenvalues_trainable,
             symplectic_trainable=symplectic_trainable,
-            eigenvalues_bounds=eigenvalues_bounds,
+            eigenvalues_bounds=(settings.HBAR / 2, None)
+            if eigenvalues_bounds == (None, None)
+            else eigenvalues_bounds,
             symplectic_bounds=(None, None),
         )
         self._modes = modes
