@@ -17,7 +17,7 @@
 ### Documentation
 
 ### Contributors
-[Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)
