@@ -8,6 +8,9 @@
 
 ### Breaking changes
 
+* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
+  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+
 ### Improvements
 
 ### Bug fixes
@@ -17,7 +20,8 @@
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil), 
+[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)
