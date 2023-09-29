@@ -38,6 +38,7 @@ class TestImmutableSettings:
 
 class TestSettings:
     def test_init(self):
+        """ Test the default values of the settings"""
         settings = Settings()
 
         assert settings.BACKEND == "tensorflow"
