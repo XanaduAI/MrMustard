@@ -2,15 +2,22 @@
 
 ### New features
 
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
+
 ### Breaking changes
 
 ### Improvements
 
 ### Bug fixes
 
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
 ### Documentation
 
 ### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Yuan Yao](https://github.com/sylviemonet)
 
 
 # Release 0.5.0 (current release)

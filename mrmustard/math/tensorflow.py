@@ -134,8 +134,8 @@ class TFMath(MathInterface):
     def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag(array, k=k)
 
-    def diag_part(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.diag_part(array)
+    def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
+        return tf.linalg.diag_part(array, k=k)
 
     def einsum(self, string: str, *tensors, **kwargs) -> tf.Tensor:
         if isinstance(string, str):
@@ -261,6 +261,9 @@ class TFMath(MathInterface):
 
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
+
+    def set_diag(self, array: tf.Tensor, diag: tf.Tensor, k: int) -> tf.Tensor:
+        return tf.linalg.set_diag(array, diag, k=k)
 
     def sin(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sin(array)

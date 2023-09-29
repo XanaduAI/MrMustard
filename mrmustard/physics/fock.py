@@ -358,7 +358,7 @@ def validate_contraction_indices(in_idx, out_idx, M, name):
         )
 
 
-def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
+def apply_kraus_to_ket(kraus, ket, kraus_in_modes, kraus_out_modes=None):
     r"""Applies a kraus operator to a ket.
     It assumes that the ket is indexed as left_1, ..., left_n.
 
@@ -369,30 +369,30 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     Args:
         kraus (array): the kraus operator to be applied
         ket (array): the ket to which the operator is applied
-        kraus_in_idx (list of ints): the indices (counting from 0) of the kraus operator that contract with the ket
-        kraus_out_idx (list of ints): the indices (counting from 0) of the kraus operator that are leftover
+        kraus_in_modes (list of ints): the indices (counting from 0) of the kraus operator that contract with the ket
+        kraus_out_modes (list of ints): the indices (counting from 0) of the kraus operator that are leftover
 
     Returns:
-        array: the resulting ket with indices as kraus_out_idx + uncontracted ket indices
+        array: the resulting ket with indices as kraus_out_modes + uncontracted ket indices
     """
-    if kraus_out_idx is None:
-        kraus_out_idx = kraus_in_idx
+    if kraus_out_modes is None:
+        kraus_out_modes = kraus_in_modes
 
-    if not set(kraus_in_idx).issubset(range(ket.ndim)):
-        raise ValueError("kraus_in_idx should be a subset of the ket indices.")
+    if not set(kraus_in_modes).issubset(range(ket.ndim)):
+        raise ValueError("kraus_in_modes should be a subset of the ket indices.")
 
-    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
-    validate_contraction_indices(kraus_in_idx, kraus_out_idx, ket.ndim, "kraus")
+    # check that there are no repeated indices in kraus_in_modes and kraus_out_modes (separately)
+    validate_contraction_indices(kraus_in_modes, kraus_out_modes, ket.ndim, "kraus")
 
     ket = MMTensor(ket, axis_labels=[f"in_left_{i}" for i in range(ket.ndim)])
     kraus = MMTensor(
         kraus,
-        axis_labels=[f"out_left_{i}" for i in kraus_out_idx]
-        + [f"in_left_{i}" for i in kraus_in_idx],
+        axis_labels=[f"out_left_{i}" for i in kraus_out_modes]
+        + [f"in_left_{i}" for i in kraus_in_modes],
     )
 
     # contract the operator with the ket.
-    # now the leftover indices are in the order kraus_out_idx + uncontracted ket indices
+    # now the leftover indices are in the order kraus_out_modes + uncontracted ket indices
     kraus_ket = kraus @ ket
 
     # sort kraus_ket.axis_labels by the int at the end of each label.
@@ -402,7 +402,7 @@ def apply_kraus_to_ket(kraus, ket, kraus_in_idx, kraus_out_idx=None):
     return kraus_ket.transpose(new_axis_labels).tensor
 
 
-def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
+def apply_kraus_to_dm(kraus, dm, kraus_in_modes, kraus_out_modes=None):
     r"""Applies a kraus operator to a density matrix.
     It assumes that the density matrix is indexed as left_1, ..., left_n, right_1, ..., right_n.
 
@@ -413,20 +413,20 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     Args:
         kraus (array): the operator to be applied
         dm (array): the density matrix to which the operator is applied
-        kraus_in_idx (list of ints): the indices (counting from 0) of the kraus operator that contract with the density matrix
-        kraus_out_idx (list of ints): the indices (counting from 0) of the kraus operator that are leftover (default None, in which case kraus_out_idx = kraus_in_idx)
+        kraus_in_modes (list of ints): the indices (counting from 0) of the kraus operator that contract with the density matrix
+        kraus_out_modes (list of ints): the indices (counting from 0) of the kraus operator that are leftover (default None, in which case kraus_out_modes = kraus_in_modes)
 
     Returns:
         array: the resulting density matrix
     """
-    if kraus_out_idx is None:
-        kraus_out_idx = kraus_in_idx
+    if kraus_out_modes is None:
+        kraus_out_modes = kraus_in_modes
 
-    if not set(kraus_in_idx).issubset(range(dm.ndim // 2)):
-        raise ValueError("kraus_in_idx should be a subset of the density matrix indices.")
+    if not set(kraus_in_modes).issubset(range(dm.ndim // 2)):
+        raise ValueError("kraus_in_modes should be a subset of the density matrix indices.")
 
-    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
-    validate_contraction_indices(kraus_in_idx, kraus_out_idx, dm.ndim // 2, "kraus")
+    # check that there are no repeated indices in kraus_in_modes and kraus_out_modes (separately)
+    validate_contraction_indices(kraus_in_modes, kraus_out_modes, dm.ndim // 2, "kraus")
 
     dm = MMTensor(
         dm,
@@ -435,18 +435,19 @@ def apply_kraus_to_dm(kraus, dm, kraus_in_idx, kraus_out_idx=None):
     )
     kraus = MMTensor(
         kraus,
-        axis_labels=[f"out_left_{i}" for i in kraus_out_idx] + [f"left_{i}" for i in kraus_in_idx],
+        axis_labels=[f"out_left_{i}" for i in kraus_out_modes]
+        + [f"left_{i}" for i in kraus_in_modes],
     )
     kraus_conj = MMTensor(
         math.conj(kraus.tensor),
-        axis_labels=[f"out_right_{i}" for i in kraus_out_idx]
-        + [f"right_{i}" for i in kraus_in_idx],
+        axis_labels=[f"out_right_{i}" for i in kraus_out_modes]
+        + [f"right_{i}" for i in kraus_in_modes],
     )
 
     # contract the kraus operator with the density matrix from the left and from the right.
     k_dm_k = kraus @ dm @ kraus_conj
     # now the leftover indices are in the order:
-    # out_left_idx + uncontracted left indices + uncontracted right indices + out_right_idx
+    # out_left_modes + uncontracted left indices + uncontracted right indices + out_right_modes
 
     # sort k_dm_k.axis_labels by the int at the end of each label, first left, then right
     N = k_dm_k.tensor.ndim // 2
@@ -482,9 +483,9 @@ def apply_choi_to_dm(
     if choi_out_modes is None:
         choi_out_modes = choi_in_modes
     if not set(choi_in_modes).issubset(range(dm.ndim // 2)):
-        raise ValueError("choi_in_idx should be a subset of the density matrix indices.")
+        raise ValueError("choi_in_modes should be a subset of the density matrix indices.")
 
-    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
+    # check that there are no repeated indices in kraus_in_modes and kraus_out_modes (separately)
     validate_contraction_indices(choi_in_modes, choi_out_modes, dm.ndim // 2, "choi")
 
     dm = MMTensor(
@@ -501,7 +502,7 @@ def apply_choi_to_dm(
     )
 
     # contract the choi matrix with the density matrix.
-    # now the leftover indices are in the order out_left_idx + out_right_idx + uncontracted left indices + uncontracted right indices
+    # now the leftover indices are in the order out_left_modes + out_right_modes + uncontracted left indices + uncontracted right indices
     choi_dm = choi @ dm
 
     # sort choi_dm.axis_labels by the int at the end of each label, first left, then right
@@ -513,7 +514,7 @@ def apply_choi_to_dm(
     return choi_dm.transpose(left + right).tensor
 
 
-def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx=None):
+def apply_choi_to_ket(choi, ket, choi_in_modes, choi_out_modes=None):
     r"""Applies a choi operator to a ket.
     It assumes that the ket is indexed as out_left_1, ..., out_left_n.
     It assumes that the choi operator is indexed as:
@@ -525,33 +526,33 @@ def apply_choi_to_ket(choi, ket, choi_in_idx, choi_out_idx=None):
     Args:
         choi (array): the choi operator to be applied
         ket (array): the ket to which the choi operator is applied
-        choi_in_idx (list of ints): the indices of the choi operator that contract with the ket
-        choi_out_idx (list of ints): the indices of the choi operator that re leftover
+        choi_in_modes (list of ints): the indices of the choi operator that contract with the ket
+        choi_out_modes (list of ints): the indices of the choi operator that re leftover
 
     Returns:
         array: the resulting ket
     """
-    if choi_out_idx is None:
-        choi_out_idx = choi_in_idx
+    if choi_out_modes is None:
+        choi_out_modes = choi_in_modes
 
-    if not set(choi_in_idx).issubset(range(ket.ndim)):
-        raise ValueError("choi_in_idx should be a subset of the ket indices.")
+    if not set(choi_in_modes).issubset(range(ket.ndim)):
+        raise ValueError("choi_in_modes should be a subset of the ket indices.")
 
-    # check that there are no repeated indices in kraus_in_idx and kraus_out_idx (separately)
-    validate_contraction_indices(choi_in_idx, choi_out_idx, ket.ndim, "choi")
+    # check that there are no repeated indices in kraus_in_modes and kraus_out_modes (separately)
+    validate_contraction_indices(choi_in_modes, choi_out_modes, ket.ndim, "choi")
 
     ket = MMTensor(ket, axis_labels=[f"left_{i}" for i in range(ket.ndim)])
     ket_dual = MMTensor(math.conj(ket.tensor), axis_labels=[f"right_{i}" for i in range(ket.ndim)])
     choi = MMTensor(
         choi,
-        axis_labels=[f"out_left_{i}" for i in choi_out_idx]
-        + [f"left_{i}" for i in choi_in_idx]
-        + [f"out_right_{i}" for i in choi_out_idx]
-        + [f"right_{i}" for i in choi_in_idx],
+        axis_labels=[f"out_left_{i}" for i in choi_out_modes]
+        + [f"left_{i}" for i in choi_in_modes]
+        + [f"out_right_{i}" for i in choi_out_modes]
+        + [f"right_{i}" for i in choi_in_modes],
     )
 
     # contract the choi matrix with the ket and its dual, like choi @ |ket><ket|
-    # now the leftover indices are in the order out_left_idx + out_right_idx + uncontracted left indices + uncontracted right indices
+    # now the leftover indices are in the order out_left_modes + out_right_modes + uncontracted left indices + uncontracted right indices
     choi_ket = choi @ ket @ ket_dual
 
     # sort choi_ket.axis_labels by the int at the end of each label, first left, then right
@@ -583,19 +584,19 @@ def contract_states(
 
     if a_is_dm:
         if b_is_dm:  # a DM, b DM
-            dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_idx=modes, choi_out_idx=[])
+            dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_modes=modes, choi_out_modes=[])
         else:  # a DM, b ket
             dm = apply_kraus_to_dm(
-                kraus=math.conj(stateB), dm=stateA, kraus_in_idx=modes, kraus_out_idx=[]
+                kraus=math.conj(stateB), dm=stateA, kraus_in_modes=modes, kraus_out_modes=[]
             )
     else:
         if b_is_dm:  # a ket, b DM
             dm = apply_kraus_to_dm(
-                kraus=math.conj(stateA), dm=stateB, kraus_in_idx=modes, kraus_out_idx=[]
+                kraus=math.conj(stateA), dm=stateB, kraus_in_modes=modes, kraus_out_modes=[]
             )
         else:  # a ket, b ket
             ket = apply_kraus_to_ket(
-                kraus=math.conj(stateB), ket=stateA, kraus_in_idx=modes, kraus_out_idx=[]
+                kraus=math.conj(stateB), ket=stateA, kraus_in_modes=modes, kraus_out_modes=[]
             )
 
     try:
