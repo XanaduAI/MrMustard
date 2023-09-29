@@ -58,7 +58,7 @@ def get_dimension(wire: Wire, probability: Optional[float] = None) -> Optional[i
     Arguments:
         wire (Wire): the wire
     Returns:
-        (int) the dimension of the wire if it is a State, None otherwisee
+        (int) the dimension of the wire if it is a State, None otherwise
     """
     if isinstance(wire.owner, State):
         i = wire.owner.modes.index(wire.mode)

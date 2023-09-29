@@ -978,7 +978,7 @@ class AdditiveNoise(Parametrized, Channel):
         return gaussian.noise_Y(self.noise.value, settings.HBAR)
 
 
-class PhaseNoise(Parametrized, Transformation):
+class PhaseNoise(Parametrized, Channel):
     r"""The phase noise channel.
 
     The phase noise channel is a non-Gaussian transformation that is equivalent to
