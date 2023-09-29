@@ -171,9 +171,6 @@ def test_hbar():
     # restoring hbar to its original value
     settings._force_immutable("_hbar", hbar0)
 
-    # restoring hbar to its original value
-    settings.HBAR = hbar0
-
 
 def test_get_single_mode():
     """Test get_modes leaves a single-mode state untouched."""
