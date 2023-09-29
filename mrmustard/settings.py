@@ -21,12 +21,13 @@ from rich import print
 
 
 class ImmutableSetting:
-    r""" A setting that becomes immutable after the first time its value is queried.
+    r"""A setting that becomes immutable after the first time its value is queried.
 
     Args:
         value (any): the default value of this ImmutableSetting
         name (str): the name of this ImmutableSetting
     """
+
     def __init__(self, value: any, name: str) -> None:
         self._value = value
         self._name = name
@@ -43,9 +44,10 @@ class ImmutableSetting:
             raise ValueError(f"Cannot change the value of `settings.{self._name}`.")
         self._value = value
 
+
 # pylint: disable=too-many-instance-attributes
 class Settings:
-    r""" A class containing various settings that are used by Mr Mustard throughout a session.
+    r"""A class containing various settings that are used by Mr Mustard throughout a session.
 
     Some of these settings (such as those representing cutoff values) can be changed at any time,
     while others (such as the value of the Planck constant) can only be changed before being
@@ -54,7 +56,7 @@ class Settings:
     .. code-block::
 
         from mrmustard import settings
-        
+
         >>> settings.AUTOCUTOFF_MAX_CUTOFF  # check the default values
         100
 
@@ -62,6 +64,7 @@ class Settings:
         >>> settings.AUTOCUTOFF_MAX_CUTOFF
         150
     """
+
     def __new__(cls):  # singleton
         if not hasattr(cls, "instance"):
             cls.instance = super(Settings, cls).__new__(cls)
@@ -77,7 +80,9 @@ class Settings:
         self._autocutoff_min_cutoff = 1
         self._circuit_decimals = 3
         # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
-        self._eq_transformation_cutoff = 3  # 3 is enough to include a full step of the rec relations
+        self._eq_transformation_cutoff = (
+            3  # 3 is enough to include a full step of the rec relations
+        )
         self._eq_transformation_rtol_fock = 1e-3
         self._eq_transformation_rtol_gauss = 1e-6
         # for the detectors
@@ -90,14 +95,12 @@ class Settings:
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
 
     def _force_immutable(self, name, value):
-        r""" Updates the value of immutable settings. To be used exclusively in tests.
-        """
+        r"""Updates the value of immutable settings. To be used exclusively in tests."""
         getattr(self, name)._value = value
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
-        r""" The maximum value for autocutoff. Default is ``100``.
-        """
+        r"""The maximum value for autocutoff. Default is ``100``."""
         return self._autocutoff_max_cutoff
 
     @AUTOCUTOFF_MAX_CUTOFF.setter
@@ -106,8 +109,7 @@ class Settings:
 
     @property
     def AUTOCUTOFF_MIN_CUTOFF(self):
-        r""" The minimum value for autocutoff. Default is ``1``.
-        """
+        r"""The minimum value for autocutoff. Default is ``1``."""
         return self._autocutoff_min_cutoff
 
     @AUTOCUTOFF_MIN_CUTOFF.setter
@@ -116,8 +118,7 @@ class Settings:
 
     @property
     def AUTOCUTOFF_PROBABILITY(self):
-        r""" The autocutoff probability. Default is ``0.999``.
-        """
+        r"""The autocutoff probability. Default is ``0.999``."""
         return self._autocutoff_probability
 
     @AUTOCUTOFF_PROBABILITY.setter
@@ -126,7 +127,7 @@ class Settings:
 
     @property
     def BACKEND(self):
-        r""" The backend which is used. Default is ``tensorflow``.
+        r"""The backend which is used. Default is ``tensorflow``.
 
         Can be either ``'tensorflow'`` or ``'torch'``.
         """
@@ -140,8 +141,7 @@ class Settings:
 
     @property
     def CHOI_R(self):
-        r""" The value of ?? . Default is ``np.arcsinh(1.0)``.
-        """
+        r"""The value of squeezing used for the Choi-Jamilkowski isom. Default is ``np.arcsinh(1.0)``."""
         return self._choi_r
 
     @CHOI_R.setter
@@ -150,8 +150,7 @@ class Settings:
 
     @property
     def CIRCUIT_DECIMALS(self):
-        r""" The value of ?? . Default is ``3``.
-        """
+        r"""The number of decimals displayed when drawing a circuit with parameters. Default is ``3``."""
         return self._circuit_decimals
 
     @CIRCUIT_DECIMALS.setter
@@ -160,7 +159,7 @@ class Settings:
 
     @property
     def DEBUG(self):
-        r""" Whether or not to print the vector of means and the covariance matrix alongside the
+        r"""Whether or not to print the vector of means and the covariance matrix alongside the
         html representation of a state. Default is ``False``.
         """
         return self._debug
@@ -171,7 +170,8 @@ class Settings:
 
     @property
     def DEFAULT_BS_METHOD(self):
-        r""" The default method for ?? . Default is ``vanilla``.
+        r"""The default method for computing the transformation operated by a beam splitter in
+         the Fock basis . Default is ``vanilla``.
 
         Can be either ``'vanilla'`` or ``'schwinger'``.
         """
@@ -183,8 +183,8 @@ class Settings:
 
     @property
     def EQ_TRANSFORMATION_CUTOFF(self):
-        r""" The value of ?? . Default is ``3``.
-        """
+        r"""The cutoff used when comparing two transformations via the Choi–Jamiolkowski
+        isomorphism. Default is ``3``."""
         return self._eq_transformation_cutoff
 
     @EQ_TRANSFORMATION_CUTOFF.setter
@@ -193,8 +193,8 @@ class Settings:
 
     @property
     def EQ_TRANSFORMATION_RTOL_FOCK(self):
-        r""" The value of ?? . Default is ``1e-3``.
-        """
+        r"""The relative tolerance used when comparing two transformations via the Choi–Jamiolkowski
+        isomorphism. Default is ``1e-3``."""
         return self._eq_transformation_rtol_fock
 
     @EQ_TRANSFORMATION_RTOL_FOCK.setter
@@ -203,8 +203,8 @@ class Settings:
 
     @property
     def EQ_TRANSFORMATION_RTOL_GAUSS(self):
-        r""" The value of ?? . Default is ``1e-6``.
-        """
+        r"""The relative tolerance used when comparing two transformations on Gaussian states.
+        Default is ``1e-6``."""
         return self._eq_transformation_rtol_gauss
 
     @EQ_TRANSFORMATION_RTOL_GAUSS.setter
@@ -213,7 +213,7 @@ class Settings:
 
     @property
     def HBAR(self):
-        r""" The value of the Planck constant. Default is ``2``.
+        r"""The value of the Planck constant. Default is ``2``.
 
         Cannot be changed after its value is queried for the first time.
         """
@@ -225,8 +225,7 @@ class Settings:
 
     @property
     def HOMODYNE_SQUEEZING(self):
-        r""" The value of squeezing for homodyne measurements. Default is ``10``.
-        """
+        r"""The value of squeezing for homodyne measurements. Default is ``10``."""
         return self._homodyne_squeezing
 
     @HOMODYNE_SQUEEZING.setter
@@ -235,8 +234,7 @@ class Settings:
 
     @property
     def PNR_INTERNAL_CUTOFF(self):
-        r""" The value of ?? . Default is ``50``.
-        """
+        r"""The cutoff used when computing the output of a PNR detection. Default is ``50``."""
         return self._pnr_internal_cutoff
 
     @PNR_INTERNAL_CUTOFF.setter
@@ -245,8 +243,7 @@ class Settings:
 
     @property
     def PROGRESSBAR(self):
-        r""" Whether or not to display the progress bar when ?? . Default is ``True``.
-        """
+        r"""Whether or not to display the progress bar when performing training. Default is ``True``."""
         return self._progressbar
 
     @PROGRESSBAR.setter
@@ -255,7 +252,7 @@ class Settings:
 
     @property
     def SEED(self):
-        r""" Returns the seed value if set, otherwise returns a random seed."""
+        r"""Returns the seed value if set, otherwise returns a random seed."""
         if self._seed is None:
             self._seed = np.random.randint(0, 2**31 - 1)
             self.rng = np.random.default_rng(self._seed)
@@ -268,15 +265,15 @@ class Settings:
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
-        r""" Returns a string representation of the settings."""
-        
+        r"""Returns a string representation of the settings."""
+
         # attributes that should not be displayed in the table
         not_displayed = ["rng"]
 
         table = rich.table.Table(title="MrMustard Settings")
         table.add_column("Setting")
         table.add_column("Value")
-        
+
         for key, val in self.__dict__.items():
             if key in not_displayed:
                 continue

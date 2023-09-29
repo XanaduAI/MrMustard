@@ -19,6 +19,7 @@ Tests for the Settings class.
 from mrmustard.settings import Settings, ImmutableSetting
 import pytest
 
+
 class TestImmutableSettings:
     def test_init(self):
         s = ImmutableSetting("foo", "bar")
@@ -30,9 +31,10 @@ class TestImmutableSettings:
 
         s.value = 2
         assert s.value == 2
-        
+
         with pytest.raises(ValueError, match="value of `settings.my_name`"):
             s.value = 3
+
 
 class TestSettings:
     def test_init(self):
@@ -65,7 +67,6 @@ class TestSettings:
         settings = Settings()
         seed1 = settings.SEED
         assert seed0 != seed1
-
 
     def test_reproducibility(self):
         """Test that the random state is reproducible."""
