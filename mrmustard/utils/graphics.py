@@ -118,7 +118,10 @@ def mikkel_plot(
     ### PLOTTING ###
 
     fig, ax = plt.subplots(
-        2, 2, figsize=(6, 6), gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]}
+        2,
+        2,
+        figsize=(6, 6),
+        gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]},
     )
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
