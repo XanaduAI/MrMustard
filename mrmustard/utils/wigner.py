@@ -31,7 +31,7 @@ math = Math()
 
 
 @njit
-def make_grid(q_vec, p_vec, hbar):
+def make_grid(q_vec, p_vec, hbar):  # pragma: no cover
     r"""Returns two coordinate matrices `Q` and `P` from coordinate vectors
     `q_vec` and `p_vec`, along with the grid over which Wigner functions can be
     discretized.
@@ -42,7 +42,7 @@ def make_grid(q_vec, p_vec, hbar):
 
 
 @njit
-def _wig_laguerre_val(L, x, diag):
+def _wig_laguerre_val(L, x, diag):  # pragma: no cover
     """Returns the coefficient `c_L = sum_n rho_{n,L+n} Z_n^L` used
     by `_wigner_discretized_clenshaw`. The evaluation uses the Clenshaw recursion.
     """
@@ -114,7 +114,7 @@ def wigner_discretized(rho, q_vec, p_vec):
 
 
 @njit
-def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):
+def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):  # pragma: no cover
     r"""Calculates the Wigner function as
     :math:`W = C(x) \sum_L c_L (2x)^L / sqrt(L!)`, where:
 
@@ -146,7 +146,7 @@ def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):
 
 
 @njit
-def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):
+def _wigner_discretized_iterative(rho, q_vec, p_vec, hbar):  # pragma: no cover
     cutoff = len(rho)
     Q, P, grid = make_grid(q_vec, p_vec, hbar)
     Wmat = np.zeros((2, cutoff) + grid.shape, dtype=np.complex128)
