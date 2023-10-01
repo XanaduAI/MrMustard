@@ -11,6 +11,9 @@
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
   methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
 
+* Certain attributes of `Settings` can no longer be changed after their value is queried for the
+  first time.
+
 ### Improvements
 
 ### Bug fixes
