@@ -19,6 +19,8 @@ import numpy as np
 import rich.table
 from rich import print
 
+__all__ = ["Settings", "settings"]
+
 
 class ImmutableSetting:
     r"""A setting that becomes immutable after the first time its value is queried.
@@ -45,7 +47,6 @@ class ImmutableSetting:
         self._value = value
 
 
-# pylint: disable=too-many-instance-attributes
 class Settings:
     r"""A class containing various settings that are used by Mr Mustard throughout a session.
 
@@ -80,9 +81,8 @@ class Settings:
         self._autocutoff_min_cutoff = 1
         self._circuit_decimals = 3
         # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
-        self._eq_transformation_cutoff = (
-            3  # 3 is enough to include a full step of the rec relations
-        )
+        # 3 is enough to include a full step of the rec relations
+        self._eq_transformation_cutoff = 3
         self._eq_transformation_rtol_fock = 1e-3
         self._eq_transformation_rtol_gauss = 1e-6
         # for the detectors
@@ -93,10 +93,6 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
-
-    def _force_immutable(self, name, value):
-        r"""Updates the value of immutable settings. To be used exclusively in tests."""
-        getattr(self, name)._value = value
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -283,3 +279,7 @@ class Settings:
 
         print(table)
         return ""
+
+
+settings = Settings()
+"""Settings object."""

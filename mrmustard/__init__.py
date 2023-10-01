@@ -18,10 +18,7 @@
 from rich import print
 
 from ._version import __version__
-from .settings import Settings
-
-settings = Settings()
-"""Settings object."""
+from .settings import *
 
 
 def version():

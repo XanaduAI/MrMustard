@@ -97,6 +97,24 @@ gain_bounds = st.tuples(none_or_(gain), none_or_(gain)).filter(bounds_check)
 prob_bounds = st.tuples(none_or_(prob), none_or_(prob)).filter(bounds_check)
 
 
+# settings
+def force_settings(name, value):
+    r"""Updates the value of immutable settings.
+
+    .. code::
+        >>> settings.HBAR
+        2.0
+
+        >>> settings.HBAR = 1.0
+        ValueError: Cannot change the value of `settings.HBAR`.
+
+        >>> settings.force_settings("_hbar", 1.0)
+        >>> settings.HBAR
+        1.0
+    """
+    getattr(settings, name)._value = value
+
+
 # gates
 @st.composite
 def random_Rgate(draw, trainable=False):

@@ -32,7 +32,7 @@ from mrmustard.lab.states import (
 )
 from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
-from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
+from tests.random import angle, force_settings, medium_float, n_mode_pure_state, nmodes, r
 
 math = Math()
 hbar0 = settings.HBAR
@@ -46,13 +46,13 @@ def xy_arrays(draw):
 
 @given(nmodes, st.floats(0.1, 5.0))
 def test_vacuum_state(nmodes, hbar):
-    settings._force_immutable("_hbar", hbar)
+    force_settings("_hbar", hbar)
     cov, disp = gp.vacuum_cov(nmodes), gp.vacuum_means(nmodes)
     assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
     assert np.allclose(disp, np.zeros_like(disp))
 
     # restoring hbar to its original value
-    settings._force_immutable("_hbar", hbar0)
+    force_settings("_hbar", hbar0)
 
 
 @given(x=medium_float, y=medium_float)
@@ -64,23 +64,23 @@ def test_coherent_state_single(x, y):
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_list(hbar, x, y):
-    settings._force_immutable("_hbar", hbar)
+    force_settings("_hbar", hbar)
     assert np.allclose(gp.displacement([x], [y]), np.array([x, y]) * np.sqrt(2 * hbar))
 
     # restoring hbar to its original value
-    settings._force_immutable("_hbar", hbar0)
+    force_settings("_hbar", hbar0)
 
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_array(hbar, x, y):
-    settings._force_immutable("_hbar", hbar)
+    force_settings("_hbar", hbar)
     assert np.allclose(
         gp.displacement(np.array([x]), np.array([y])),
         np.array([x, y]) * np.sqrt(2 * hbar),
     )
 
     # restoring hbar to its original value
-    settings._force_immutable("_hbar", hbar0)
+    force_settings("_hbar", hbar0)
 
 
 @given(xy=xy_arrays())
@@ -92,7 +92,7 @@ def test_coherent_state_multiple(xy):
     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
     # restoring hbar to its original value
-    settings._force_immutable("_hbar", hbar0)
+    force_settings("_hbar", hbar0)
 
 
 @given(state=n_mode_pure_state(num_modes=1))
@@ -165,11 +165,11 @@ def test_hbar():
     """Test cov matrix is linear in hbar."""
     g = Gaussian(2)
     p = g.purity
-    settings._force_immutable("_hbar", 1.234)
+    force_settings("_hbar", 1.234)
     assert g.purity == p
 
     # restoring hbar to its original value
-    settings._force_immutable("_hbar", hbar0)
+    force_settings("_hbar", hbar0)
 
 
 def test_get_single_mode():
