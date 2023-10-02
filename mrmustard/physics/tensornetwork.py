@@ -18,11 +18,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from opt_einsum import contract as opt_contract
 from typing import List
-from mrmustard.math import Math
-
-math = Math()
-
 
 @dataclass
 class Wire:
@@ -35,7 +32,6 @@ class Wire:
         is_ket: Whether this wire is on the ket or on the bra side ??.
         connection_id: A numerical identifier for the contraction involving this wire, or ``None``
             if this wire is not contracted.
-        dimension: The dimension of this wire.
         connected_to: The identifier of the tensor connected to this wire, or ``None`` if this wire
             is not connected.
 
@@ -44,10 +40,9 @@ class Wire:
     mode: int
     is_input: bool
     is_ket: bool
+    contraction_id: int
 
     def __post_init__(self):
-        self._contraction_id: int | None = None
-        self._dimension: int | None = None
         self._connected_to: int | None = None
 
 
@@ -95,13 +90,13 @@ class Tensor(ABC):
 
         # initialize wires by updating the ket and bra dicts
         for mode in input_legs_ket:
-            self._in.ket |= {mode: Wire(self._new_id(), mode, True, True)}
+            self._in.ket |= {mode: Wire(self._new_id(), mode, True, True, self._new_id())}
         for mode in output_legs_ket:
-            self._out.ket |= {mode: Wire(self._new_id(), mode, False, True)}
+            self._out.ket |= {mode: Wire(self._new_id(), mode, False, True, self._new_id())}
         for mode in input_legs_bra:
-            self._in.bra |= {mode: Wire(self._new_id(), mode, True, False)}
+            self._in.bra |= {mode: Wire(self._new_id(), mode, True, False, self._new_id())}
         for mode in output_legs_bra:
-            self._out.bra |= {mode: Wire(self._new_id(), mode, False, False)}
+            self._out.bra |= {mode: Wire(self._new_id(), mode, False, False, self._new_id())}
 
     @property
     def wires(self) -> List[Wire]:
@@ -270,35 +265,27 @@ class AdjointView(TensorView):
         return self._original.view
 
 
-def connect(wire1: Wire, wire2: Wire, dim: int):
+def connect(wire1: Wire, wire2: Wire):
     r"""Connects two wires in a tensor network.
     Arguments:
         wire1: the first wire
         wire2: the second wire
-        dim (int): the dimension of the contraction
     """
     wire1._connected_to = wire2
     wire2._connected_to = wire1
 
-    wire1._dimension = dim
-    wire2._dimension = dim
-
-    wire1._contraction_id = 1
-    wire2._contraction_id = 1
+    wire1.contraction_id = wire2.contraction_id
 
 
-def contract(tensors: list[Tensor], default_dim):
+def contract(tensors: list[Tensor]):
     r"""Contract a list of tensors.
     Arguments:
         tensors: the tensors to contract
-        default_dim: the default dimension to use for the contraction
     Returns:
         (tensor) the contracted tensor
     """
     opt_einsum_args = []
     for t in tensors:
-        for w in t.wires:
-            w._dimension = w._dimension or default_dim
         opt_einsum_args.append(t.fock)
-        opt_einsum_args.append([w._contraction_id for w in t.wires])
-    return math.einsum(*opt_einsum_args)
+        opt_einsum_args.append([w.contraction_id for w in t.wires])
+    return opt_contract(*opt_einsum_args)
