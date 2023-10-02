@@ -24,7 +24,7 @@ import tensorflow_probability as tfp
 from mrmustard import settings
 from mrmustard.math.autocast import Autocast
 from mrmustard.math.lattice import strategies
-from mrmustard.math.numba.compactFock_inputValidation import (
+from mrmustard.math.compactFock.compactFock_inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
@@ -441,7 +441,7 @@ class TFMath(MathInterface):
         return G, grad
 
     def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
-        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        r"""In mrmustard.math.compactFock.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
         ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
@@ -453,7 +453,7 @@ class TFMath(MathInterface):
     def hermite_renormalized_diagonal(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
