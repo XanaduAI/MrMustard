@@ -28,7 +28,9 @@ from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.lattice import strategies
 from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.numba.compactFock_diagonal_amps import fock_representation_diagonal_amps
+from mrmustard.math.numba.compactFock_diagonal_amps import (
+    fock_representation_diagonal_amps,
+)
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
@@ -290,7 +292,8 @@ def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:
     min_cutoffs = [
         slice(min(a, b))
         for a, b in zip(
-            state_a.shape[: len(state_a.shape) // 2], state_b.shape[: len(state_b.shape) // 2]
+            state_a.shape[: len(state_a.shape) // 2],
+            state_b.shape[: len(state_b.shape) // 2],
         )
     ]
     state_a = state_a[tuple(min_cutoffs * 2)]
@@ -581,16 +584,25 @@ def contract_states(
             dm = apply_choi_to_dm(choi=stateB, dm=stateA, choi_in_modes=modes, choi_out_modes=[])
         else:  # a DM, b ket
             dm = apply_kraus_to_dm(
-                kraus=math.conj(stateB), dm=stateA, kraus_in_modes=modes, kraus_out_modes=[]
+                kraus=math.conj(stateB),
+                dm=stateA,
+                kraus_in_modes=modes,
+                kraus_out_modes=[],
             )
     else:
         if b_is_dm:  # a ket, b DM
             dm = apply_kraus_to_dm(
-                kraus=math.conj(stateA), dm=stateB, kraus_in_modes=modes, kraus_out_modes=[]
+                kraus=math.conj(stateA),
+                dm=stateB,
+                kraus_in_modes=modes,
+                kraus_out_modes=[],
             )
         else:  # a ket, b ket
             ket = apply_kraus_to_ket(
-                kraus=math.conj(stateB), ket=stateA, kraus_in_modes=modes, kraus_out_modes=[]
+                kraus=math.conj(stateB),
+                ket=stateA,
+                kraus_in_modes=modes,
+                kraus_out_modes=[],
             )
 
     try:
@@ -662,7 +674,6 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     Args:
         q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
         cutoff (int): maximum number of photons
-        hbar (optional): value of `\hbar`, defaults to Mr Mustard's internal value
 
     Returns:
         Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
@@ -780,7 +791,9 @@ def estimate_quadrature_axis(cutoff, minimum=5, period_resolution=20):
 
 
 def quadrature_distribution(
-    state: Tensor, quadrature_angle: float = 0.0, x: Vector = None, hbar: Optional[float] = None
+    state: Tensor,
+    quadrature_angle: float = 0.0,
+    x: Vector = None,
 ):
     r"""Given the ket or density matrix of a single-mode state, it generates the probability
     density distribution :math:`\tr [ \rho |x_\phi><x_\phi| ]`  where `\rho` is the
@@ -815,8 +828,7 @@ def quadrature_distribution(
         )
 
     if x is None:
-        hbar = hbar or settings.HBAR
-        x = np.sqrt(hbar) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (
@@ -828,9 +840,7 @@ def quadrature_distribution(
     return x, math.cast(pdf, "float64")
 
 
-def sample_homodyne(
-    state: Tensor, quadrature_angle: float = 0.0, hbar: Optional[float] = None
-) -> Tuple[float, float]:
+def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
     r"""Given a single-mode state, it generates the pdf of :math:`\tr [ \rho |x_\phi><x_\phi| ]`
     where `\rho` is the reduced density matrix of the state.
 
@@ -847,7 +857,7 @@ def sample_homodyne(
             "Input state has dimension {state.shape}. Make sure is either a single-mode ket or dm."
         )
 
-    x, pdf = quadrature_distribution(state, quadrature_angle, hbar=hbar or settings.HBAR)
+    x, pdf = quadrature_distribution(state, quadrature_angle)
     probs = pdf * (x[1] - x[0])
 
     # draw a sample from the distribution
