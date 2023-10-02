@@ -16,8 +16,9 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 from mrmustard.math import Math
 
 math = Math()
@@ -63,7 +64,7 @@ class WireGroup:
     bra: dict = field(default_factory=dict)
 
 
-class Tensor:
+class Tensor(ABC):
     r"""A tensor in a tensor network.
 
     Args:
@@ -182,6 +183,11 @@ class Tensor:
         r"""Returns a view of this Tensor with new ids."""
         return TensorView(self)
 
+    @property
+    @abstractmethod
+    def fock(self):
+        r""" """
+
 
 class TensorView(Tensor):
     r"""Base class for Tensor views. It remaps the ids of the original Tensor."""
@@ -277,8 +283,8 @@ def connect(wire1: Wire, wire2: Wire, dim: int):
     wire1._dimension = dim
     wire2._dimension = dim
 
-    wire1._connection_id = 1
-    wire2._connection_id = 1
+    wire1._contraction_id = 1
+    wire2._contraction_id = 1
 
 
 def contract(tensors: list[Tensor], default_dim):
@@ -294,5 +300,5 @@ def contract(tensors: list[Tensor], default_dim):
         for w in t.wires:
             w._dimension = w._dimension or default_dim
         opt_einsum_args.append(t.fock)
-        opt_einsum_args.append([w._connection_id for w in t.wires])
+        opt_einsum_args.append([w._contraction_id for w in t.wires])
     return math.einsum(*opt_einsum_args)
