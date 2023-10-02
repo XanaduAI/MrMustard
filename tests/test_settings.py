@@ -22,6 +22,7 @@ import pytest
 
 class TestImmutableSettings:
     """Tests the ImmutableSettings class"""
+
     def test_init(self):
         """Tests the default values of the immutable settings"""
         s = ImmutableSetting("foo", "bar")
@@ -41,6 +42,7 @@ class TestImmutableSettings:
 
 class TestSettings:
     """Tests the Settings class"""
+
     def test_init(self):
         """Test the default values of the settings"""
         settings = Settings()

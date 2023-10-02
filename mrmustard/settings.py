@@ -37,14 +37,12 @@ class ImmutableSetting:
 
     @property
     def name(self):
-        r""" The name of this setting.
-        """
+        r"""The name of this setting."""
         return self._name
 
     @property
     def value(self):
-        r""" The value of this setting.
-        """
+        r"""The value of this setting."""
         self._is_immutable = True
         return self._value
 
@@ -55,11 +53,10 @@ class ImmutableSetting:
         self._value = value
 
     def force_setting(self, value):
-        r""" Updates the value of this setting even if its value has already been
-            queried.
+        r"""Updates the value of this setting even if its value has already been
+        queried.
         """
         self._value = value
-
 
 
 # pylint: disable=too-many-instance-attributes
