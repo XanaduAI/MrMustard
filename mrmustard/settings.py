@@ -52,12 +52,6 @@ class ImmutableSetting:
             raise ValueError(f"Cannot change the value of `settings.{self.name}`.")
         self._value = value
 
-    def force_setting(self, value):
-        r"""Updates the value of this setting even if its value has already been
-        queried.
-        """
-        self._value = value
-
 
 # pylint: disable=too-many-instance-attributes
 class Settings:
