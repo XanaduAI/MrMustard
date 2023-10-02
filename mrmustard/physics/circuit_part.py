@@ -22,7 +22,7 @@ from typing import Optional
 
 @dataclass
 class Wire:
-    r""" Represents a wire in a tensor network.
+    r"""Represents a wire in a tensor network.
 
     Args:
         id: A numerical identifier for this wire.
@@ -45,7 +45,7 @@ class Wire:
 
 @dataclass
 class WireGroup:
-    r""" A group of wires in a tensor network.
+    r"""A group of wires in a tensor network.
 
     Args:
         ket: ??
