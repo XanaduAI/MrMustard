@@ -52,8 +52,8 @@ class Vacuum(Parametrized, State):
         modes: Optional[Sequence[int]] = None,
         **kwargs,
     ):
-        cov = gaussian.vacuum_cov(num_modes, settings.HBAR)
-        means = gaussian.vacuum_means(num_modes, settings.HBAR)
+        cov = gaussian.vacuum_cov(num_modes)
+        means = gaussian.vacuum_means(num_modes)
         super().__init__(cov=cov, means=means, modes=modes, name="Vacuum", **kwargs)
 
 
@@ -108,8 +108,8 @@ class Coherent(Parametrized, State):
         normalize: bool = False,
         **kwargs,
     ):
-        means = gaussian.displacement(x, y, settings.HBAR)
-        cov = gaussian.vacuum_cov(means.shape[-1] // 2, settings.HBAR)
+        means = gaussian.displacement(x, y)
+        cov = gaussian.vacuum_cov(means.shape[-1] // 2)
         super().__init__(
             x=x,
             y=y,
@@ -180,8 +180,8 @@ class SqueezedVacuum(Parametrized, State):
         normalize: bool = False,
         **kwargs,
     ):
-        cov = gaussian.squeezed_vacuum_cov(r, phi, settings.HBAR)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
+        cov = gaussian.squeezed_vacuum_cov(r, phi)
+        means = gaussian.vacuum_means(cov.shape[-1] // 2)
         super().__init__(
             cov=cov,
             means=means,
@@ -241,8 +241,8 @@ class TMSV(Parametrized, State):
         normalize: bool = False,
         **kwargs,
     ):
-        cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi, settings.HBAR)
-        means = gaussian.vacuum_means(2, settings.HBAR)
+        cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi)
+        means = gaussian.vacuum_means(2)
         super().__init__(
             cov=cov,
             means=means,
@@ -302,8 +302,8 @@ class Thermal(Parametrized, State):
         normalize: bool = False,
         **kwargs,
     ):
-        cov = gaussian.thermal_cov(nbar, settings.HBAR)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
+        cov = gaussian.thermal_cov(nbar)
+        means = gaussian.vacuum_means(cov.shape[-1] // 2)
         super().__init__(
             cov=cov,
             means=means,
@@ -386,8 +386,8 @@ class DisplacedSqueezed(Parametrized, State):
         normalize: bool = False,
         **kwargs,
     ):
-        cov = gaussian.squeezed_vacuum_cov(r, phi, settings.HBAR)
-        means = gaussian.displacement(x, y, settings.HBAR)
+        cov = gaussian.squeezed_vacuum_cov(r, phi)
+        means = gaussian.displacement(x, y)
         super().__init__(
             cov=cov,
             means=means,
@@ -474,7 +474,7 @@ class Gaussian(Parametrized, State):
                 f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2 = {settings.HBAR/2}"
             )
         cov = gaussian.gaussian_cov(symplectic, eigenvalues)
-        means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
+        means = gaussian.vacuum_means(cov.shape[-1] // 2)
         super().__init__(
             cov=cov,
             means=means,
