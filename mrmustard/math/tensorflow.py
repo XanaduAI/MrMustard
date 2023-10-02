@@ -388,7 +388,7 @@ class TFMath(MathInterface):
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
         # G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        G = Main_julia.vanilla(_A, _B, np.complex128(_C.item()), tuple(shape))
+        G = Main_julia.vanilla(_A, _B, np.complex128(_C.item()), np.array(shape,dtype=np.int64))
 
 
         def grad(dLdGconj):

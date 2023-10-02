@@ -7,7 +7,8 @@ function vanilla(
     A::AbstractMatrix{Complex{Float64}},
     b::AbstractVector{Complex{Float64}},
     c::Complex{Float64},
-    shape::Tuple{Vararg{Int64}}
+    shape::AbstractVector{Int64}
+#     shape::Tuple{Vararg{Int64}}
     )
     """Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
     in ndindex (i.e. CartesianIndices) order.
@@ -16,14 +17,16 @@ function vanilla(
     that results from the instable recurrence relation.
 
     Args:
-        shape: shape of the output tensor
         A: A matrix of the Fock-Bargmann representation
         b: B vector of the Fock-Bargmann representation
         c: vacuum amplitude
+        shape: shape of the output tensor
 
     Returns:
         Array{Complex{Float64}}: Fock representation of the Gaussian tensor with shape ``shape``
     """
+
+    shape = Tuple(shape)
 
     path = CartesianIndices(shape)
 
