@@ -398,7 +398,7 @@ class TFMath(MathInterface):
             _A, _B, _C = _A.astype(np.complex128), _B.astype(np.complex128), _C.astype(np.complex128)
             G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape,dtype=np.int64))
         else:
-            raise ValueError('precision_bits should be 128 or 512')
+            raise NotImplementedError('Currently allowed values for precision_bits: 128, 512')
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))

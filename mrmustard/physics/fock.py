@@ -124,7 +124,7 @@ def wigner_to_fock_state(
         Tensor: the fock representation
     """
     if return_dm:
-        A, B, C = wigner_to_bargmann_rho(cov, means, precision_bits=128)
+        A, B, C = wigner_to_bargmann_rho(cov, means)
         return math.hermite_renormalized(A, B, C, shape=shape, precision_bits=precision_bits)
     else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
@@ -672,13 +672,12 @@ def trace(dm, keep: List[int]):
 
 
 @tensor_int_cache
-def oscillator_eigenstate(q: Vector, cutoff: int, precision_bits=128) -> Tensor:
+def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
 
     Args:
         q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
         cutoff (int): maximum number of photons
-        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
     Returns:
         Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
@@ -709,7 +708,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int, precision_bits=128) -> Tensor:
 
     def f_hermite_polys(xi):
         poly = math.hermite_renormalized(
-            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,), precision_bits=precision_bits
+            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
         )
         return math.cast(poly, "float64")
 

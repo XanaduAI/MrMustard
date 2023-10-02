@@ -20,10 +20,19 @@ from mrmustard.lab import Gaussian
 
 
 def test_vanilla_vs_binomial():
-    """Test that the vanilla and binomial methods give the same result"""
+    """Test that the binomial method and the vanilla method written in numba give the same result"""
     G = Gaussian(2)
 
     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
     ket_binomial = G.ket(max_photons=10)[:5, :5]
+
+    assert np.allclose(ket_vanilla, ket_binomial)
+
+def test_vanilla_iulia():
+    """Test that the binomial method and the vanilla method written in julia give the same result"""
+    G = Gaussian(2)
+
+    ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
+    ket_binomial = G.ket(max_photons=10, precision_bits=512)[:5, :5]
 
     assert np.allclose(ket_vanilla, ket_binomial)

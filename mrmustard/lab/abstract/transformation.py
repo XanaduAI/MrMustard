@@ -223,8 +223,11 @@ class Transformation:
         ddual = math.zeros_like(Xdual[:, 0]) if self.d_vector_dual is None else self.d_vector_dual
         return Xdual, Ydual, ddual
 
-    def U(self, cutoffs: Sequence[int]):
-        r"""Returns the unitary representation of the transformation."""
+    def U(self, cutoffs: Sequence[int], precision_bits=128):
+        r"""
+        Returns the unitary representation of the transformation.
+        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
+        """
         if not self.is_unitary:
             return None
         X, _, d = self.XYd(allow_none=False)
@@ -237,10 +240,13 @@ class Transformation:
             raise ValueError(
                 f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {2*self.num_modes})"
             )
-        return fock.wigner_to_fock_U(X, d, shape=shape)
+        return fock.wigner_to_fock_U(X, d, shape=shape, precision_bits=precision_bits)
 
-    def choi(self, cutoffs: Sequence[int]):
-        r"""Returns the Choi representation of the transformation."""
+    def choi(self, cutoffs: Sequence[int], precision_bits=128):
+        r"""
+        Returns the Choi representation of the transformation.
+        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
+        """
         if len(cutoffs) == self.num_modes:
             shape = tuple(cutoffs) * 4
         elif len(cutoffs) == 4 * self.num_modes:
@@ -255,7 +261,7 @@ class Transformation:
             return fock.U_to_choi(U, Udual)
         X, Y, d = self.XYd(allow_none=False)
 
-        return fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
+        return fock.wigner_to_fock_Choi(X, Y, d, shape=shape, precision_bits=precision_bits)
 
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.
