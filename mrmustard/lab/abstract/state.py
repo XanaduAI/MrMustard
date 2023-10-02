@@ -258,7 +258,6 @@ class State:  # pylint: disable=too-many-public-methods
         cutoffs: List[int] = None,
         max_prob: float = 1.0,
         max_photons: int = None,
-        precision_bits: int = 128,
     ) -> Optional[ComplexTensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
@@ -269,7 +268,6 @@ class State:  # pylint: disable=too-many-public-methods
                 (used to stop the calculation of the amplitudes early)
             max_photons (int): The maximum number of photons in the state, summing over all modes
                 (used to stop the calculation of the amplitudes early)
-            precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
         Returns:
             Tensor: the ket
@@ -291,7 +289,6 @@ class State:  # pylint: disable=too-many-public-methods
                 return_dm=False,
                 max_prob=max_prob,
                 max_photons=max_photons,
-                precision_bits=precision_bits,
             )
         else:  # only fock representation is available
             if self._ket is None:
@@ -308,13 +305,12 @@ class State:  # pylint: disable=too-many-public-methods
                 return padded[tuple(slice(s) for s in cutoffs)]
         return self._ket[tuple(slice(s) for s in cutoffs)]
 
-    def dm(self, cutoffs: Optional[List[int]] = None, precision_bits=128) -> ComplexTensor:
+    def dm(self, cutoffs: Optional[List[int]] = None) -> ComplexTensor:
         r"""Returns the density matrix of the state in Fock representation.
 
         Args:
             cutoffs List[int]: The cutoff dimensions for each mode. If a mode cutoff is ``None``,
                 it's automatically computed.
-            precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
         Returns:
             Tensor: the density matrix
@@ -334,7 +330,6 @@ class State:  # pylint: disable=too-many-public-methods
                     self.means,
                     shape=cutoffs + cutoffs,
                     return_dm=True,
-                    precision_bits=precision_bits,
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
