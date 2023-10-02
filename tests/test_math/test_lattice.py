@@ -28,6 +28,7 @@ def test_vanilla_vs_binomial():
 
     assert np.allclose(ket_vanilla, ket_binomial)
 
+
 def test_vanilla_iulia():
     """Test that the binomial method and the vanilla method written in julia give the same result"""
     G = Gaussian(2)

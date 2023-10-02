@@ -98,7 +98,7 @@ def wigner_to_fock_state(
     max_prob: float = 1.0,
     max_photons: Optional[int] = None,
     return_dm: bool = True,
-    precision_bits=128
+    precision_bits=128,
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
     Use with caution: if the cov matrix is that of a mixed state,

@@ -33,17 +33,17 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
 from mrmustard.typing import Tensor, Trainable
 
 
-
 # import Julia functions
 # from julia.api import Julia
 # jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
-from julia import Main as Main_julia  # must be run after "jl = Julia(compiled_modules=False)"
+from julia import (
+    Main as Main_julia,
+)  # must be run after "jl = Julia(compiled_modules=False)", which is don in math/__init__.py
 from .math_interface import MathInterface
+
 math_directory = os.path.dirname(__file__)
 Main_julia.cd(math_directory)
 Main_julia.include("lattice/strategies/vanilla.jl")
-
-
 
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
@@ -395,13 +395,17 @@ class TFMath(MathInterface):
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
-        if precision_bits == 128: # numba
+        if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        elif precision_bits == 512: # julia
-            _A, _B, _C = _A.astype(np.complex128), _B.astype(np.complex128), _C.astype(np.complex128)
-            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape,dtype=np.int64))
+        elif precision_bits == 512:  # julia
+            _A, _B, _C = (
+                _A.astype(np.complex128),
+                _B.astype(np.complex128),
+                _C.astype(np.complex128),
+            )
+            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
         else:
-            raise NotImplementedError('Currently allowed values for precision_bits: 128, 512')
+            raise NotImplementedError("Currently allowed values for precision_bits: 128, 512")
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))

@@ -44,8 +44,10 @@ if importlib.util.find_spec("tensorflow"):
 #     from mrmustard.math.torch import TorchMath
 
 # initialize Julia
+jl = Julia(
+    compiled_modules=False
+)  # must be run before "from julia import Main as Main_julia", which is done in math/tensorflow.py
 
-jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
 
 class Math:
     r"""

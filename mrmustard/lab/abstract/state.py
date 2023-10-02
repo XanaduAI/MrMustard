@@ -258,7 +258,7 @@ class State:  # pylint: disable=too-many-public-methods
         cutoffs: List[int] = None,
         max_prob: float = 1.0,
         max_photons: int = None,
-        precision_bits: int = 128
+        precision_bits: int = 128,
     ) -> Optional[ComplexTensor]:
         r"""Returns the ket of the state in Fock representation or ``None`` if the state is mixed.
 
@@ -291,7 +291,7 @@ class State:  # pylint: disable=too-many-public-methods
                 return_dm=False,
                 max_prob=max_prob,
                 max_photons=max_photons,
-                precision_bits=precision_bits
+                precision_bits=precision_bits,
             )
         else:  # only fock representation is available
             if self._ket is None:
@@ -330,7 +330,11 @@ class State:  # pylint: disable=too-many-public-methods
         else:
             if self.is_gaussian:
                 self._dm = fock.wigner_to_fock_state(
-                    self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True, precision_bits=precision_bits
+                    self.cov,
+                    self.means,
+                    shape=cutoffs + cutoffs,
+                    return_dm=True,
+                    precision_bits=precision_bits,
                 )
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
