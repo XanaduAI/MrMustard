@@ -171,7 +171,10 @@ class TestHomodyneDetector:
             x_outcome = detector.outcome.numpy()[:2]
             assert np.allclose(x_outcome, outcome)
 
-    @given(s=st.floats(min_value=0.0, max_value=10.0), outcome=none_or_(st.floats(-10.0, 10.0)))
+    @given(
+        s=st.floats(min_value=0.0, max_value=10.0),
+        outcome=none_or_(st.floats(-10.0, 10.0)),
+    )
     def test_homodyne_on_2mode_squeezed_vacuum(self, s, outcome):
         """Check that homodyne detection on TMSV for q-quadrature (``quadrature_angle=0.0``)"""
         r = settings.HOMODYNE_SQUEEZING
@@ -195,7 +198,11 @@ class TestHomodyneDetector:
             )
             assert np.allclose(remaining_state.means.numpy(), means)
 
-    @given(s=st.floats(1.0, 10.0), outcome=none_or_(st.floats(-2, 2)), angle=st.floats(0, np.pi))
+    @given(
+        s=st.floats(1.0, 10.0),
+        outcome=none_or_(st.floats(-2, 2)),
+        angle=st.floats(0, np.pi),
+    )
     def test_homodyne_on_2mode_squeezed_vacuum_with_angle(self, s, outcome, angle):
         """Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
         r = settings.HOMODYNE_SQUEEZING

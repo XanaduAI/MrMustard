@@ -99,7 +99,7 @@ class Dgate(Parametrized, Unitary):
 
     @property
     def d_vector(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value)
 
     def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the Displacement gate using
@@ -857,11 +857,11 @@ class Attenuator(Parametrized, Channel):
 
     @property
     def X_matrix(self):
-        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[0]
+        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[1]
+        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value)[1]
 
 
 class Amplifier(Parametrized, Channel):
@@ -918,11 +918,11 @@ class Amplifier(Parametrized, Channel):
 
     @property
     def X_matrix(self):
-        return gaussian.amp_XYd(self.gain.value, self.nbar.value, settings.HBAR)[0]
+        return gaussian.amp_XYd(self.gain.value, self.nbar.value)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.amp_XYd(self.gain.value, self.nbar.value, settings.HBAR)[1]
+        return gaussian.amp_XYd(self.gain.value, self.nbar.value)[1]
 
 
 # pylint: disable=no-member
@@ -975,7 +975,7 @@ class AdditiveNoise(Parametrized, Channel):
 
     @property
     def Y_matrix(self):
-        return gaussian.noise_Y(self.noise.value, settings.HBAR)
+        return gaussian.noise_Y(self.noise.value)
 
 
 class PhaseNoise(Parametrized, Channel):
@@ -1040,5 +1040,4 @@ class PhaseNoise(Parametrized, Channel):
             dm = math.set_diag(dm, diagonal, k=k)
 
         # transpose dm back to the original order
-
         return State(dm=math.transpose(dm, np.argsort(indices)), modes=state.modes)

@@ -127,7 +127,7 @@ class Coherent(Parametrized, State):
 
     @property
     def means(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value)
 
 
 class SqueezedVacuum(Parametrized, State):
@@ -200,7 +200,7 @@ class SqueezedVacuum(Parametrized, State):
 
     @property
     def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
 
 
 class TMSV(Parametrized, State):
@@ -260,7 +260,7 @@ class TMSV(Parametrized, State):
 
     @property
     def cov(self):
-        return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value)
 
 
 class Thermal(Parametrized, State):
@@ -319,7 +319,7 @@ class Thermal(Parametrized, State):
 
     @property
     def cov(self):
-        return gaussian.thermal_cov(self.nbar.value, settings.HBAR)
+        return gaussian.thermal_cov(self.nbar.value)
 
 
 class DisplacedSqueezed(Parametrized, State):
@@ -412,11 +412,11 @@ class DisplacedSqueezed(Parametrized, State):
 
     @property
     def cov(self):
-        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value, settings.HBAR)
+        return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
 
     @property
     def means(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value)
 
 
 class Gaussian(Parametrized, State):
@@ -459,7 +459,7 @@ class Gaussian(Parametrized, State):
         eigenvalues: Vector = None,
         symplectic_trainable: bool = False,
         eigenvalues_trainable: bool = False,
-        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (settings.HBAR / 2, None),
+        eigenvalues_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: List[int] = None,
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
@@ -484,7 +484,9 @@ class Gaussian(Parametrized, State):
             eigenvalues=eigenvalues,
             eigenvalues_trainable=eigenvalues_trainable,
             symplectic_trainable=symplectic_trainable,
-            eigenvalues_bounds=eigenvalues_bounds,
+            eigenvalues_bounds=(settings.HBAR / 2, None)
+            if eigenvalues_bounds == (None, None)
+            else eigenvalues_bounds,
             symplectic_bounds=(None, None),
             name="Gaussian",
             **kwargs,
