@@ -112,7 +112,7 @@ def force_settings(name, value):
         >>> settings.HBAR
         1.0
     """
-    getattr(settings, name)._value = value   # pylint: disable=protected-access
+    getattr(settings, name)._value = value  # pylint: disable=protected-access
 
 
 # gates

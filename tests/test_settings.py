@@ -49,7 +49,6 @@ class TestSettings:
 
         assert settings.BACKEND == "tensorflow"
         assert settings.HBAR == 2.0
-        assert settings.CHOI_R == 0.881373587019543  # np.arcsinh(1.0)
         assert settings.DEBUG is False
         assert settings.AUTOCUTOFF_PROBABILITY == 0.999  # capture at least 99.9% of the probability
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100

@@ -81,7 +81,6 @@ class Settings:
     def __init__(self):
         self._backend = "tensorflow"
         self._hbar = ImmutableSetting(2.0, "HBAR")
-        self._choi_r = 0.881373587019543  # np.arcsinh(1.0)
         self._debug = False
         self._autocutoff_probability = 0.999  # capture at least 99.9% of the probability
         self._autocutoff_max_cutoff = 100
@@ -141,15 +140,6 @@ class Settings:
         if value not in ["tensorflow", "torch"]:  # pragma: no cover
             raise ValueError("Backend must be either 'tensorflow' or 'torch'")
         self._backend = value
-
-    @property
-    def CHOI_R(self):
-        r"""The value of squeezing used for the Choi-Jamilkowski isom. Default is ``np.arcsinh(1.0)``."""
-        return self._choi_r
-
-    @CHOI_R.setter
-    def CHOI_R(self, value: str):
-        self._choi_r = value
 
     @property
     def CIRCUIT_DECIMALS(self):
