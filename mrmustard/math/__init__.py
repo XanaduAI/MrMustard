@@ -34,19 +34,18 @@ greater degree of flexibility and code reuse.
 
     math.cos(x)  # torch backend
 """
-# initialize Julia
-from julia.api import Julia
-jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
-
 import importlib
-from mrmustard import settings
 
+from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
 # if importlib.util.find_spec("torch"):
 #     from mrmustard.math.torch import TorchMath
 
+# initialize Julia
+from julia.api import Julia
+jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
 
 class Math:
     r"""
