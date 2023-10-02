@@ -17,10 +17,22 @@
 import numpy as np
 
 from mrmustard.lab import Gaussian
+from mrmustard import settings
 
 
-def test_vanilla_vs_binomial():
-    """Test that the binomial and vanilla method give the same result"""
+def test_vanillaNumba_vs_binomial():
+    """Test that the vanilla method (Numba with precision of complex128) and the binomial method give the same result"""
+    settings.precision_bits_hermite_poly = 128
+    G = Gaussian(2)
+
+    ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
+    ket_binomial = G.ket(max_photons=10)[:5, :5]
+
+    assert np.allclose(ket_vanilla, ket_binomial)
+
+def test_vanillaJulia_vs_binomial():
+    """Test that the vanilla method (Julia with precision of complex512) and the binomial method give the same result"""
+    settings.precision_bits_hermite_poly = 512
     G = Gaussian(2)
 
     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
