@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" CircuitPart class for constructing circuits out of components."""
+""" Tensor class for constructing circuits out of components."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 
 @dataclass
@@ -27,7 +27,8 @@ class Wire:
     Args:
         id: A numerical identifier for this wire.
         mode: The mode represented by this wire.
-        direction: The direction of this wire.
+        is_input: Whether this wire is an input to a tensor or an output.
+        is_ket: Whether this wire is on the ket or on the bra side ??.
         contraction_id: ??
         owner: The ??
         dimension: The dimension of this wire.
@@ -35,10 +36,10 @@ class Wire:
     """
     id: int
     mode: int
-    direction: str
-    type: str
+    is_input: bool
+    is_ket: bool
     contraction_id: int
-    owner: CircuitPart
+    owner: Tensor
     dimension: Optional[int] = None
     connected_to: Optional[Wire] = None
 
@@ -56,28 +57,27 @@ class WireGroup:
     bra: dict = field(default_factory=dict)
 
 
-class CircuitPart:
-    r"""CircuitPart class for handling modes and wire ids."""
-    _id_counter: int = 0  # to give a unique id to all CircuitParts and Wires
+class Tensor:
+    r"""A tensor in a tensor network.
+
+    Args:
+        name (str): The name of this tensor.
+        input_legs_ket (List[int]): The indeces labelling the input legs on the bra side.
+        output_legs_ket (List[int]): The indeces labelling the output legs on the ket side.
+        input_legs_bra (List[int]): The indeces labelling the input legs on the bra side.
+        output_legs_bra (List[int]): The indeces labelling the output legs on the ket side.
+    """
+    _id_counter: int = 0  # to give a unique id to all Tensors and Wires
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
     def __init__(
         self,
         name: str,
-        modes_output_ket: list[int] = [],
-        modes_input_ket: list[int] = [],
-        modes_output_bra: list[int] = [],
-        modes_input_bra: list[int] = [],
-    ):
-        r"""
-        Initializes a CircuitPart instance.
-        Arguments:
-            name: A string name for this circuit part.
-            modes_output_ket: the output modes on the ket side
-            modes_input_ket: the input modes on the ket side
-            modes_output_bra: the output modes on the bra side
-            modes_input_bra: the input modes on the bra side
-        """
+        output_legs_ket: list[int] = [],
+        input_legs_ket: list[int] = [],
+        output_legs_bra: list[int] = [],
+        input_legs_bra: list[int] = [],
+    ) -> None:
         # set unique self.id and name
         self.id: int = self._new_id()
         self.name: str = name + "_" + str(self.id)
@@ -87,18 +87,18 @@ class CircuitPart:
         self._out = WireGroup()
 
         # initialize wires by updating the ket and bra dicts
-        for mode in modes_output_ket:
-            self._out.ket |= {mode: Wire(self._new_id(), mode, "out", "ket", self._new_id(), self)}
-        for mode in modes_input_ket:
-            self._in.ket |= {mode: Wire(self._new_id(), mode, "in", "ket", self._new_id(), self)}
-        for mode in modes_output_bra:
-            self._out.bra |= {mode: Wire(self._new_id(), mode, "out", "bra", self._new_id(), self)}
-        for mode in modes_input_bra:
-            self._in.bra |= {mode: Wire(self._new_id(), mode, "in", "bra", self._new_id(), self)}
+        for mode in input_legs_ket:
+            self._in.ket |= {mode: Wire(self._new_id(), mode, True, True, self._new_id(), self)}
+        for mode in output_legs_ket:
+            self._out.ket |= {mode: Wire(self._new_id(), mode, False, True, self._new_id(), self)}
+        for mode in input_legs_bra:
+            self._in.bra |= {mode: Wire(self._new_id(), mode, True, False, self._new_id(), self)}
+        for mode in output_legs_bra:
+            self._out.bra |= {mode: Wire(self._new_id(), mode, False, False, self._new_id(), self)}
 
     @property
-    def wires(self):
-        r"""Returns a list of all wires in this CircuitPart.
+    def wires(self) -> List[Wire]:
+        r"""Returns a list of all wires in this tensor.
         The order is MM default: [ket_out, ket_in, bra_out, bra_in].
         However, minimize reliance on ordering in favour of ids and direction/type.
         """
@@ -111,7 +111,7 @@ class CircuitPart:
 
     @property
     def contraction_ids(self) -> list[int]:
-        r"""Returns a list of all contraction_ids in this CircuitPart."""
+        r"""Returns a list of all contraction_ids in this Tensor."""
         return [wire.contraction_id for wire in self.wires]
 
     def wire(self, id: int) -> Wire:
@@ -121,8 +121,8 @@ class CircuitPart:
                 return wire
 
     def _new_id(self) -> int:
-        id = CircuitPart._id_counter
-        CircuitPart._id_counter += 1
+        id = Tensor._id_counter
+        Tensor._id_counter += 1
         return id
 
     @property
@@ -136,7 +136,7 @@ class CircuitPart:
     @property
     def modes(self) -> list[int]:
         r"""For backward compatibility. Don't overuse.
-        It returns a list of modes for this CircuitPart, unless it's ambiguous."""
+        It returns a list of modes for this Tensor, unless it's ambiguous."""
         if self.modes_in == self.modes_out:  # transformation on same modes
             return self.modes_in
         elif len(self.modes_in) == 0:  # state
@@ -144,41 +144,41 @@ class CircuitPart:
         elif len(self.modes_out) == 0:  # measurement
             return self.modes_in
         else:
-            raise ValueError("modes are ambiguous for this CircuitPart.")
+            raise ValueError("modes are ambiguous for this Tensor.")
 
     @property
     def modes_in(self) -> set[int]:
-        "Returns the set of input modes that are used by this CircuitPart."
+        "Returns the set of input modes that are used by this Tensor."
         return set(self.input.ket | self.input.bra)
 
     @property
     def modes_out(self) -> set[int]:
-        "Returns the set of output modes that are used by this CircuitPart."
+        "Returns the set of output modes that are used by this Tensor."
         return set(self.output.ket | self.output.bra)
 
     @property
     def all_modes(self) -> set[int]:
-        "Returns a set of all the modes spanned by this CircuitPart."
+        "Returns a set of all the modes spanned by this Tensor."
         return self.modes_out + self.modes_in
 
     @property
     def adjoint(self) -> AdjointView:
-        r"""Returns the adjoint view of this CircuitPart (with new ids). That is, ket <-> bra."""
+        r"""Returns the adjoint view of this Tensor (with new ids). That is, ket <-> bra."""
         return AdjointView(self)
 
     @property
     def dual(self) -> DualView:
-        r"""Returns the dual view of this CircuitPart (with new ids). That is, in <-> out."""
+        r"""Returns the dual view of this Tensor (with new ids). That is, in <-> out."""
         return DualView(self)
 
     @property
-    def view(self) -> CircuitPartView:
-        r"""Returns a view of this CircuitPart with new ids."""
-        return CircuitPartView(self)
+    def view(self) -> TensorView:
+        r"""Returns a view of this Tensor with new ids."""
+        return TensorView(self)
 
 
-class CircuitPartView(CircuitPart):
-    r"""Base class for CircuitPart views. It remaps the ids of the original CircuitPart."""
+class TensorView(Tensor):
+    r"""Base class for Tensor views. It remaps the ids of the original Tensor."""
 
     def __init__(self, circuit_part):
         self._original = circuit_part  # MM object
@@ -210,13 +210,13 @@ class CircuitPartView(CircuitPart):
         return orig_attr
 
 
-class DualView(CircuitPartView):
-    r"""Dual view of a CircuitPart. It is used to implement the dual.
-    It swaps the input and output wires of a CircuitPart.
+class DualView(TensorView):
+    r"""Dual view of a Tensor. It is used to implement the dual.
+    It swaps the input and output wires of a Tensor.
     """
 
-    def __new__(cls, circuit_part: CircuitPart):
-        "makes sure that DualView(DualView(circuit_part)) == CircuitPartView(circuit_part)"
+    def __new__(cls, circuit_part: Tensor):
+        "makes sure that DualView(DualView(circuit_part)) == TensorView(circuit_part)"
         if isinstance(circuit_part, DualView):
             return circuit_part._original
         return super().__new__(cls)
@@ -234,13 +234,13 @@ class DualView(CircuitPartView):
         return self._original.view
 
 
-class AdjointView(CircuitPartView):
-    r"""Adjoint view of a CircuitPart. It is used to implement the adjoint.
-    It swaps the ket and bra wires of a CircuitPart.
+class AdjointView(TensorView):
+    r"""Adjoint view of a Tensor. It is used to implement the adjoint.
+    It swaps the ket and bra wires of a Tensor.
     """
 
-    def __new__(cls, circuit_part: CircuitPart):
-        "makes sure that AdjointView(AdjointView(circuit_part)) == CircuitPartView(circuit_part)"
+    def __new__(cls, circuit_part: Tensor):
+        "makes sure that AdjointView(AdjointView(circuit_part)) == TensorView(circuit_part)"
         if isinstance(circuit_part, AdjointView):
             return circuit_part._original
         return super().__new__(cls)
