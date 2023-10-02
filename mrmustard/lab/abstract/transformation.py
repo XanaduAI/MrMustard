@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -307,11 +307,10 @@ class Unitary(CircuitPart, Transformation):
         self,
         cutoffs: Optional[Sequence[int]] = None,
         shape: Optional[Sequence[int]] = None,
-        dual: bool = False,
     ):
         r"""Returns the unitary representation of the transformation.
         If specified, shape takes precedence over cutoffs.
-        shape is in the order (out_L, in_L) or (out_R, in_R).
+        shape is in the order (out, in).
 
         Note that for a Unitary transformation on N modes, len(cutoffs) is N
         and len(shape) is 2N.
@@ -319,7 +318,6 @@ class Unitary(CircuitPart, Transformation):
         Arguments:
             cutoffs (Sequence[int]): the cutoffs of the input and output modes
             shape (Optional[Sequence[int]]): the shape of the unitary matrix
-            dual (bool): whether to return the dual unitary
 
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
@@ -328,10 +326,7 @@ class Unitary(CircuitPart, Transformation):
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
         shape = shape or tuple(cutoffs) * 2
         X, _, d = self.XYd(allow_none=False)
-        U = fock.wigner_to_fock_U(X, d, shape=shape)
-        if dual:
-            return math.dagger(U)
-        return U
+        return fock.wigner_to_fock_U(X, d, shape=shape)
 
     def choi(
         self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False
