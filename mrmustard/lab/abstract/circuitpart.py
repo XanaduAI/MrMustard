@@ -41,7 +41,7 @@ class WireGroup:
 class CircuitPart:
     r"""CircuitPart class for handling modes and wire ids."""
     _id_counter: int = 0  # to give a unique id to all CircuitParts and Wires
-    # _repr_markdown_ = None  # otherwise it takes over the repr due to mro
+    _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
     def __init__(
         self,
@@ -103,7 +103,7 @@ class CircuitPart:
             if wire.id == id:
                 return wire
 
-    def _new_id(self):
+    def _new_id(self) -> int:
         id = CircuitPart._id_counter
         CircuitPart._id_counter += 1
         return id
@@ -132,12 +132,12 @@ class CircuitPart:
     @property
     def modes_in(self) -> set[int]:
         "Returns the set of input modes that are used by this CircuitPart."
-        return list(self.input.ket | self.input.bra)
+        return set(self.input.ket | self.input.bra)
 
     @property
     def modes_out(self) -> set[int]:
         "Returns the set of output modes that are used by this CircuitPart."
-        return list(self.output.ket | self.output.bra)
+        return set(self.output.ket | self.output.bra)
 
     @property
     def all_modes(self) -> set[int]:
@@ -173,7 +173,7 @@ class CircuitPartView(CircuitPart):
             self._original.input.bra.keys(),
         )
 
-        # note that to do the zip reliably we are relying on wire ordering, which is not ideal
+        # note that for the zip we are relying on wire ordering, which is not ideal
         self._id_map = {
             wire.id: wire_orig.id for wire, wire_orig in zip(self.wires, self._original.wires)
         }
