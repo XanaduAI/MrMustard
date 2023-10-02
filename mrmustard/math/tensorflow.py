@@ -32,12 +32,13 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
 )
 from mrmustard.typing import Tensor, Trainable
 
-from .math_interface import MathInterface
+
 
 # import Julia functions
 # from julia.api import Julia
 # jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
 from julia import Main as Main_julia  # must be run after "jl = Julia(compiled_modules=False)"
+from .math_interface import MathInterface
 math_directory = os.path.dirname(__file__)
 Main_julia.cd(math_directory)
 Main_julia.include("lattice/strategies/vanilla.jl")

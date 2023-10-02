@@ -205,18 +205,14 @@ class State:  # pylint: disable=too-many-public-methods
         return self.cutoffs if self.is_hilbert_vector else self.cutoffs + self.cutoffs
 
     @property
-    def fock(self,precision_bits=128) -> ComplexTensor:
-        r"""
-        Returns the Fock representation of the state.
-        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
-        """
+    def fock(self) -> ComplexTensor:
+        r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
                 self.cov,
                 self.means,
                 shape=self.shape,
                 return_dm=not self.is_hilbert_vector,
-                precision_bits=precision_bits
             )
             if self.is_mixed:
                 self._dm = _fock
