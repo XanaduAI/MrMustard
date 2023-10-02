@@ -388,7 +388,8 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        # _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), np.array(C,dtype=np.float64)
         G = Main_julia.vanilla(tuple(shape), _A, _B, _C.item())
 
         def grad(dLdGconj):
