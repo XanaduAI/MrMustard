@@ -62,8 +62,7 @@ class CircuitPart:
             modes_input_bra: the input modes on the bra side
         """
         # set unique self.id and name
-        self.id: int = CircuitPart._id_counter
-        CircuitPart._id_counter += 1
+        self.id: int = self._new_id()
         self.name: str = name + "_" + str(self.id)
 
         # initialize ket and bra wire dicts
@@ -84,6 +83,7 @@ class CircuitPart:
     def wires(self):
         r"""Returns a list of all wires in this CircuitPart.
         The order is MM default: [ket_out, ket_in, bra_out, bra_in].
+        However, minimize reliance on ordering in favour of ids and direction/type.
         """
         return (
             list(self.output.ket.values())
@@ -93,7 +93,7 @@ class CircuitPart:
         )
 
     @property
-    def contraction_ids(self):
+    def contraction_ids(self) -> list[int]:
         r"""Returns a list of all contraction_ids in this CircuitPart."""
         return [wire.contraction_id for wire in self.wires]
 
@@ -117,13 +117,8 @@ class CircuitPart:
         return self._out
 
     @property
-    def ids(self) -> list[int]:
-        r"""Returns the list of wire ids for this CircuitPart."""
-        return [wire.id for wire in self.wires]
-
-    @property
     def modes(self) -> list[int]:
-        r"""For backward compatibility.
+        r"""For backward compatibility. Don't overuse.
         It returns a list of modes for this CircuitPart, unless it's ambiguous."""
         if self.modes_in == self.modes_out:  # transformation on same modes
             return self.modes_in
@@ -135,7 +130,7 @@ class CircuitPart:
             raise ValueError("modes are ambiguous for this CircuitPart.")
 
     @property
-    def modes_in(self) -> list[int]:
+    def modes_in(self) -> set[int]:
         "Returns the set of input modes that are used by this CircuitPart."
         return list(self.input.ket | self.input.bra)
 
@@ -146,7 +141,7 @@ class CircuitPart:
 
     @property
     def all_modes(self) -> set[int]:
-        "Returns a list of all the modes spanned by this CircuitPart."
+        "Returns a set of all the modes spanned by this CircuitPart."
         return self.modes_out + self.modes_in
 
     @property
@@ -178,7 +173,10 @@ class CircuitPartView(CircuitPart):
             self._original.input.bra.keys(),
         )
 
-        self._id_map = {id: orig_id for id, orig_id in zip(self.ids, self._original.ids)}
+        # note that to do the zip reliably we are relying on wire ordering, which is not ideal
+        self._id_map = {
+            wire.id: wire_orig.id for wire, wire_orig in zip(self.wires, self._original.wires)
+        }
 
     def _original_id(self, id):
         return self._id_map[id]
@@ -188,7 +186,6 @@ class CircuitPartView(CircuitPart):
         if callable(orig_attr):
 
             def method(*args, **kwargs):
-                # must use kwarg `id=` if you want to pipe to original id
                 kwargs["id"] = self._original_id(kwargs["id"])
                 return orig_attr(*args, **kwargs)
 
@@ -209,11 +206,11 @@ class DualView(CircuitPartView):
 
     @property
     def input(self):
-        return self._original.output  # namedtuple name is still output
+        return self._original.output
 
     @property
     def output(self):
-        return self._original.input  # namedtuple name is still input
+        return self._original.input
 
     @property
     def dual(self):
