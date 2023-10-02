@@ -21,7 +21,6 @@ optimization routine.
 """
 
 from mrmustard.physics import fock, gaussian
-from mrmustard import settings
 
 
 # pylint: disable=protected-access
