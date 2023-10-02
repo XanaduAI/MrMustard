@@ -374,7 +374,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], precision_bits=128
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -386,11 +386,11 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
-            precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
+        precision_bits = settings.precision_bits_hermite_poly # number of bits used to represent a single Fock amplitude (default: complex128)
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
