@@ -4,10 +4,10 @@ T = Float64x4
 SQRT = [0.0; [sqrt(T(i)) for i in 1:100000]]
 
 function vanilla(
-    shape::Tuple,
     A::AbstractMatrix{Complex{Float64}},
     b::AbstractVector{Complex{Float64}},
-    c::Complex{Float64}
+    c::Complex{Float64},
+    shape::Tuple{Vararg{Int64}}
     )
     """Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
     in ndindex (i.e. CartesianIndices) order.

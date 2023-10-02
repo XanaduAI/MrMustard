@@ -34,10 +34,8 @@ from mrmustard.typing import Tensor, Trainable
 
 # import Julia functions
 from julia.api import Julia
-
 jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
 from julia import Main as Main_julia  # must be run after "jl = Julia(compiled_modules=False)"
-
 math_directory = os.path.dirname(__file__)
 Main_julia.cd(math_directory)
 Main_julia.include("lattice/strategies/vanilla.jl")
@@ -388,10 +386,10 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        # _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        # nothing
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), np.array(C,dtype=np.float64)
-        G = Main_julia.vanilla(tuple(shape), _A, _B, _C.item())
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        # G = strategies.vanilla(tuple(shape), _A, _B, _C)
+        G = Main_julia.vanilla(_A, _B, np.complex128(_C.item()), tuple(shape))
+
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
