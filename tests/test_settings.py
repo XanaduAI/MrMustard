@@ -21,22 +21,26 @@ import pytest
 
 
 class TestImmutableSettings:
+    """Tests the ImmutableSettings class"""
     def test_init(self):
+        """Tests the default values of the immutable settings"""
         s = ImmutableSetting("foo", "bar")
         assert s.value == "foo"
-        assert s._name == "bar"
+        assert s.name == "bar"
 
     def test_setting_becomes_immutable(self):
+        """Tests that immutable settings become immutable"""
         s = ImmutableSetting(1, "my_name")
 
         s.value = 2
         assert s.value == 2
 
-        with pytest.raises(ValueError, match="value of `settings.my_name`"):
+        with pytest.raises(ValueError, match=f"value of `settings.{s.name}`"):
             s.value = 3
 
 
 class TestSettings:
+    """Tests the Settings class"""
     def test_init(self):
         """Test the default values of the settings"""
         settings = Settings()

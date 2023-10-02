@@ -15,9 +15,9 @@
 """A module containing the settings.
 """
 
-import numpy as np
-import rich.table
 from rich import print
+import rich.table
+import numpy as np
 
 __all__ = ["Settings", "settings"]
 
@@ -26,8 +26,8 @@ class ImmutableSetting:
     r"""A setting that becomes immutable after the first time its value is queried.
 
     Args:
-        value (any): the default value of this ImmutableSetting
-        name (str): the name of this ImmutableSetting
+        value (any): the default value of this setting
+        name (str): the name of this setting
     """
 
     def __init__(self, value: any, name: str) -> None:
@@ -36,17 +36,33 @@ class ImmutableSetting:
         self._is_immutable = False
 
     @property
+    def name(self):
+        r""" The name of this setting.
+        """
+        return self._name
+
+    @property
     def value(self):
+        r""" The value of this setting.
+        """
         self._is_immutable = True
         return self._value
 
     @value.setter
     def value(self, value):
         if self._is_immutable:
-            raise ValueError(f"Cannot change the value of `settings.{self._name}`.")
+            raise ValueError(f"Cannot change the value of `settings.{self.name}`.")
+        self._value = value
+
+    def force_setting(self, value):
+        r""" Updates the value of this setting even if its value has already been
+            queried.
+        """
         self._value = value
 
 
+
+# pylint: disable=too-many-instance-attributes
 class Settings:
     r"""A class containing various settings that are used by Mr Mustard throughout a session.
 
