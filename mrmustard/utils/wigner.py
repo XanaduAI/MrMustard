@@ -134,7 +134,6 @@ def _wigner_discretized_clenshaw(rho, q_vec, p_vec, hbar):  # pragma: no cover
     B *= B
 
     w0 = (2 * rho[0, -1]) * np.ones_like(A)
-
     rho2 = rho * (2 * np.ones((cutoff, cutoff)) - np.diag(np.ones(cutoff)))
 
     L = cutoff - 1

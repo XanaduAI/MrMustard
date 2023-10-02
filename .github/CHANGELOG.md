@@ -31,6 +31,7 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 [Filippo Miatto](https://github.com/ziofil), 
 [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
 
+---
 
 # Release 0.5.0 (current release)
 
