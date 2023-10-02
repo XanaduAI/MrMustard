@@ -30,6 +30,7 @@ def test_vanillaNumba_vs_binomial():
 
     assert np.allclose(ket_vanilla, ket_binomial)
 
+
 def test_vanillaJulia_vs_binomial():
     """Test that the vanilla method (Julia with precision of complex512) and the binomial method give the same result"""
     settings.precision_bits_hermite_poly = 512

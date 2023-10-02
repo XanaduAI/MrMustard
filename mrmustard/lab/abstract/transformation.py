@@ -240,9 +240,7 @@ class Transformation:
         return fock.wigner_to_fock_U(X, d, shape=shape)
 
     def choi(self, cutoffs: Sequence[int]):
-        r"""
-        Returns the Choi representation of the transformation.
-        """
+        r"""Returns the Choi representation of the transformation."""
         if len(cutoffs) == self.num_modes:
             shape = tuple(cutoffs) * 4
         elif len(cutoffs) == 4 * self.num_modes:
