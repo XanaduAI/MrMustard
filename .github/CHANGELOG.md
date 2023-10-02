@@ -2,7 +2,14 @@
 
 ### New features
 
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
+
 ### Breaking changes
+
+* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
+  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
 
 ### Improvements
 
@@ -20,8 +27,10 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 ### Documentation
 
 ### Contributors
-[Yuan Yao](https://github.com/sylviemonet)
-[Robbe De Prins](https://github.com/rdprins)
+[Filippo Miatto](https://github.com/ziofil), 
+[Yuan Yao](https://github.com/sylviemonet),
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin)
 
 
 # Release 0.5.0 (current release)

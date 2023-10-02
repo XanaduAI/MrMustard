@@ -20,8 +20,7 @@ from numba import njit
 from mrmustard import settings
 
 
-@njit
-def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
+def wigner_discretized(rho, qvec, pvec):
     r"""Calculates the discretized Wigner function for a single mode.
 
     Adapted from `strawberryfields <https://github.com/XanaduAI/strawberryfields/blob/master/strawberryfields/backends/states.py#L725>`
@@ -30,13 +29,18 @@ def wigner_discretized(rho, qvec, pvec, hbar=settings.HBAR):
         rho (complex array): the density matrix of the state in Fock representation
         qvec (array): array of discretized :math:`q` quadrature values
         pvec (array): array of discretized :math:`p` quadrature values
-        hbar (optional float): the value of `\hbar`, defaults to ``settings.HBAR``.
 
     Retunrs:
         tuple(array, array, array): array containing the discretized Wigner function, and the Q and
             P coordinates (in meshgrid form) in which the function is calculated
     """
+    hbar = settings.HBAR
+    return _wigner_discretized(rho, qvec, pvec, hbar)
 
+
+@njit
+def _wigner_discretized(rho, qvec, pvec, hbar):
+    r"""Calculates the discretized Wigner function for a given value of hbar."""
     Q = np.outer(qvec, np.ones_like(pvec))
     P = np.outer(np.ones_like(qvec), pvec)
 

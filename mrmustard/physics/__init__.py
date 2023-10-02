@@ -36,7 +36,7 @@ def fidelity(A, B) -> float:
         float: The fidelity between the two states.
     """
     if A.is_gaussian and B.is_gaussian:
-        return gaussian.fidelity(A.means, A.cov, B.means, B.cov, settings.HBAR)
+        return gaussian.fidelity(A.means, A.cov, B.means, B.cov)
     return fock.fidelity(A.fock, B.fock, a_ket=A._ket is not None, b_ket=B._ket is not None)
 
 
@@ -90,9 +90,6 @@ def overlap(A, B) -> float:
         float: the overlap between the two states
     """
     raise NotImplementedError
-    if A.is_gaussian and B.is_gaussian:
-        return gaussian.overlap(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    return fock.overlap(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
 def von_neumann_entropy(A) -> float:
@@ -105,7 +102,7 @@ def von_neumann_entropy(A) -> float:
         float: the Von Neumann entropy of the state
     """
     if A.is_gaussian:
-        return gaussian.von_neumann_entropy(A.cov, settings.HBAR)
+        return gaussian.von_neumann_entropy(A.cov)
     return fock.von_neumann_entropy(A.fock, a_dm=A.is_mixed)
 
 
@@ -120,9 +117,6 @@ def relative_entropy(A, B) -> float:
         float: the relative entropy between the two states
     """
     raise NotImplementedError
-    if A.is_gaussian and B.is_gaussian:
-        return gaussian.relative_entropy(A.means, A.cov, B.means, B.cov, settings.HBAR)
-    return fock.relative_entropy(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
 
 
 def trace_distance(A, B) -> float:
@@ -136,5 +130,5 @@ def trace_distance(A, B) -> float:
         float: the trace distance between the two states
     """
     if A.is_gaussian and B.is_gaussian:
-        return gaussian.trace_distance(A.means, A.cov, B.means, B.cov, settings.HBAR)
+        return gaussian.trace_distance(A.means, A.cov, B.means, B.cov)
     return fock.trace_distance(A.fock, B.fock, a_dm=A.is_mixed, b_dm=B.is_mixed)
