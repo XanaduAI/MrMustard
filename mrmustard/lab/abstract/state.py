@@ -94,7 +94,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov, settings.HBAR), 1.0)
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -140,7 +140,7 @@ class State:  # pylint: disable=too-many-public-methods
         """Returns the purity of the state."""
         if self._purity is None:
             if self.is_gaussian:
-                self._purity = gaussian.purity(self.cov, settings.HBAR)
+                self._purity = gaussian.purity(self.cov)
             else:
                 self._purity = fock.purity(self._dm)
         return self._purity
@@ -209,7 +209,10 @@ class State:  # pylint: disable=too-many-public-methods
         r"""Returns the Fock representation of the state."""
         if self._dm is None and self._ket is None:
             _fock = fock.wigner_to_fock_state(
-                self.cov, self.means, shape=self.shape, return_dm=not self.is_hilbert_vector
+                self.cov,
+                self.means,
+                shape=self.shape,
+                return_dm=not self.is_hilbert_vector,
             )
             if self.is_mixed:
                 self._dm = _fock
@@ -223,7 +226,7 @@ class State:  # pylint: disable=too-many-public-methods
     def number_means(self) -> RealVector:
         r"""Returns the mean photon number for each mode."""
         if self.is_gaussian:
-            return gaussian.number_means(self.cov, self.means, settings.HBAR)
+            return gaussian.number_means(self.cov, self.means)
 
         return fock.number_means(tensor=self.fock, is_dm=self.is_mixed)
 
@@ -233,7 +236,7 @@ class State:  # pylint: disable=too-many-public-methods
         if not self.is_gaussian:
             raise NotImplementedError("number_cov not yet implemented for non-gaussian states")
 
-        return gaussian.number_cov(self.cov, self.means, settings.HBAR)
+        return gaussian.number_cov(self.cov, self.means)
 
     @property
     def norm(self) -> float:
@@ -508,7 +511,9 @@ class State:  # pylint: disable=too-many-public-methods
         cov = gaussian.join_covs([self.cov, other.cov])
         means = gaussian.join_means([self.means, other.means])
         return State(
-            cov=cov, means=means, modes=self.modes + [m + self.num_modes for m in other.modes]
+            cov=cov,
+            means=means,
+            modes=self.modes + [m + self.num_modes for m in other.modes],
         )
 
     def __getitem__(self, item) -> State:
@@ -581,11 +586,15 @@ class State:  # pylint: disable=too-many-public-methods
             return True
         try:
             return np.allclose(
-                self.ket(cutoffs=other.cutoffs), other.ket(cutoffs=other.cutoffs), atol=1e-6
+                self.ket(cutoffs=other.cutoffs),
+                other.ket(cutoffs=other.cutoffs),
+                atol=1e-6,
             )
         except TypeError:
             return np.allclose(
-                self.dm(cutoffs=other.cutoffs), other.dm(cutoffs=other.cutoffs), atol=1e-6
+                self.dm(cutoffs=other.cutoffs),
+                other.dm(cutoffs=other.cutoffs),
+                atol=1e-6,
             )
 
     def __rshift__(self, other: Transformation) -> State:
@@ -617,7 +626,8 @@ class State:  # pylint: disable=too-many-public-methods
         """
         if self.is_gaussian:
             warnings.warn(
-                "scalar multiplication forces conversion to fock representation", UserWarning
+                "scalar multiplication forces conversion to fock representation",
+                UserWarning,
             )
             if self.is_pure:
                 return State(ket=self.ket() * other)
