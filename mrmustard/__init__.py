@@ -51,6 +51,7 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self.DEFAULT_BS_METHOD = "vanilla"  # can be 'vanilla' or 'schwinger'
+        self.precision_bits_hermite_poly = 128  # number of bits used to represent a single Fock amplitude when calculating Hermite polynomials with recurrence relation (default: complex128)
 
     @property
     def SEED(self):

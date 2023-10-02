@@ -27,4 +27,3 @@ def test_vanilla_vs_binomial():
     ket_binomial = G.ket(max_photons=10)[:5, :5]
 
     assert np.allclose(ket_vanilla, ket_binomial)
-
