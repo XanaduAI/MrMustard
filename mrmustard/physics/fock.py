@@ -98,6 +98,7 @@ def wigner_to_fock_state(
     max_prob: float = 1.0,
     max_photons: Optional[int] = None,
     return_dm: bool = True,
+    precision_bits=128
 ) -> Tensor:
     r"""Returns the Fock representation of a Gaussian state.
     Use with caution: if the cov matrix is that of a mixed state,
@@ -117,13 +118,14 @@ def wigner_to_fock_state(
         max_prob: the maximum probability of a the state (applies only if the ket is returned)
         max_photons: the maximum number of photons in the state (applies only if the ket is returned)
         return_dm: whether to return the density matrix (otherwise it returns the ket)
+        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
     Returns:
         Tensor: the fock representation
     """
     if return_dm:
-        A, B, C = wigner_to_bargmann_rho(cov, means)
-        return math.hermite_renormalized(A, B, C, shape=shape)
+        A, B, C = wigner_to_bargmann_rho(cov, means, precision_bits=128)
+        return math.hermite_renormalized(A, B, C, shape=shape, precision_bits=precision_bits)
     else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
         if max_photons is None:
@@ -132,10 +134,10 @@ def wigner_to_fock_state(
             return math.hermite_renormalized_binomial(
                 A, B, C, shape=shape, max_l2=max_prob, global_cutoff=max_photons + 1
             )
-        return math.hermite_renormalized(A, B, C, shape=tuple(shape))
+        return math.hermite_renormalized(A, B, C, shape=tuple(shape), precision_bits=precision_bits)
 
 
-def wigner_to_fock_U(X, d, shape):
+def wigner_to_fock_U(X, d, shape, precision_bits=128):
     r"""Returns the Fock representation of a Gaussian unitary transformation.
     The index order is out_l, in_l, where in_l is to be contracted with the indices of a ket,
     or with the left indices of a density matrix.
@@ -144,15 +146,16 @@ def wigner_to_fock_U(X, d, shape):
         X: the X matrix
         d: the d vector
         shape: the shape of the tensor
+        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
     Returns:
         Tensor: the fock representation of the unitary transformation
     """
     A, B, C = wigner_to_bargmann_U(X, d)
-    return math.hermite_renormalized(A, B, C, shape=tuple(shape))
+    return math.hermite_renormalized(A, B, C, shape=tuple(shape), precision_bits=precision_bits)
 
 
-def wigner_to_fock_Choi(X, Y, d, shape):
+def wigner_to_fock_Choi(X, Y, d, shape, precision_bits=128):
     r"""Returns the Fock representation of a Gaussian Choi matrix.
     The order of choi indices is :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
     where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of a density matrix.
@@ -162,12 +165,13 @@ def wigner_to_fock_Choi(X, Y, d, shape):
         Y: the Y matrix
         d: the d vector
         shape: the shape of the tensor
+        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
     Returns:
         Tensor: the fock representation of the Choi matrix
     """
     A, B, C = wigner_to_bargmann_Choi(X, Y, d)
-    return math.hermite_renormalized(A, B, C, shape=tuple(shape))
+    return math.hermite_renormalized(A, B, C, shape=tuple(shape), precision_bits=precision_bits)
 
 
 def ket_to_dm(ket: Tensor) -> Tensor:
@@ -668,12 +672,13 @@ def trace(dm, keep: List[int]):
 
 
 @tensor_int_cache
-def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
+def oscillator_eigenstate(q: Vector, cutoff: int, precision_bits=128) -> Tensor:
     r"""Harmonic oscillator eigenstate wavefunction `\psi_n(q) = <n|q>`.
 
     Args:
         q (Vector): a vector containing the q points at which the function is evaluated (units of \sqrt{\hbar})
         cutoff (int): maximum number of photons
+        precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
     Returns:
         Tensor: a tensor of size ``len(q)*cutoff``. Each entry with index ``[i, j]`` represents the eigenstate evaluated
@@ -704,7 +709,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
 
     def f_hermite_polys(xi):
         poly = math.hermite_renormalized(
-            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
+            R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,), precision_bits=precision_bits
         )
         return math.cast(poly, "float64")
 

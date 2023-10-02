@@ -1,6 +1,5 @@
 using MultiFloats
 T = Float64x4
-
 SQRT = [0.0; [sqrt(T(i)) for i in 1:100000]]
 
 function vanilla(
@@ -8,7 +7,6 @@ function vanilla(
     b::AbstractVector{Complex{Float64}},
     c::Complex{Float64},
     shape::AbstractVector{Int64}
-#     shape::Tuple{Vararg{Int64}}
     )
     """Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
     in ndindex (i.e. CartesianIndices) order.

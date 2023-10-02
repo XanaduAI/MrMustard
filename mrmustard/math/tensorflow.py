@@ -373,7 +373,7 @@ class TFMath(MathInterface):
 
     @tf.custom_gradient
     def hermite_renormalized(
-        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int], precision_bits=128
     ) -> tf.Tensor:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
@@ -385,14 +385,20 @@ class TFMath(MathInterface):
             B: The B vector.
             C: The C scalar.
             shape: The shape of the final tensor.
+            precision_bits: number of bits used to represent a single Fock amplitude (default: complex128)
 
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        # G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        G = Main_julia.vanilla(_A, _B, np.complex128(_C.item()), np.array(shape,dtype=np.int64))
 
+        if precision_bits == 128: # numba
+            G = strategies.vanilla(tuple(shape), _A, _B, _C)
+        elif precision_bits == 512: # julia
+            _A, _B, _C = _A.astype(np.complex128), _B.astype(np.complex128), _C.astype(np.complex128)
+            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape,dtype=np.int64))
+        else:
+            raise ValueError('precision_bits should be 128 or 512')
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
