@@ -40,8 +40,8 @@ from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow import TFMath
-# if importlib.util.find_spec("torch"):
-#     from mrmustard.math.torch import TorchMath
+if importlib.util.find_spec("torch"):
+    from mrmustard.math.torch import TorchMath
 
 # initialize Julia
 jl = Julia(
@@ -57,8 +57,8 @@ class Math:
     def __getattribute__(self, name):
         if settings.BACKEND == "tensorflow":
             return object.__getattribute__(TFMath(), name)
-        # elif settings.BACKEND == "torch":
-        #     return object.__getattribute__(TorchMath(), name)
+        elif settings.BACKEND == "torch":
+            return object.__getattribute__(TorchMath(), name)
         else:
             raise ValueError(
                 f"No `{settings.BACKEND}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"

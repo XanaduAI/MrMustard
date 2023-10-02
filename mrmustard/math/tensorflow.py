@@ -34,11 +34,9 @@ from mrmustard.typing import Tensor, Trainable
 
 
 # import Julia functions
-# from julia.api import Julia
-# jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
 from julia import (
     Main as Main_julia,
-)  # must be run after "jl = Julia(compiled_modules=False)", which is don in math/__init__.py
+)  # must be imported after running "jl = Julia(compiled_modules=False)", which is done in math/__init__.py
 from .math_interface import MathInterface
 
 math_directory = os.path.dirname(__file__)
