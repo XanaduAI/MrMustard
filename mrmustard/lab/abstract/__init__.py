@@ -17,4 +17,4 @@
 
 from .state import State
 from .measurement import FockMeasurement, Measurement
-from .transformation import Transformation, Unitary
+from .transformation import Transformation, Unitary, Channel

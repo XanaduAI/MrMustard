@@ -276,8 +276,8 @@ class Unitary(Transformation):
     ):
         super().__init__(
             name=name,
-            modes_input_ket=modes_in,
-            modes_output_ket=modes_out,
+            input_wires_ket=modes_in,
+            output_wires_ket=modes_out,
         )
 
     @property
