@@ -78,7 +78,6 @@ class Tensor(ABC):
         output_wires_ket: list[int] = [],
         input_wires_bra: list[int] = [],
         output_wires_bra: list[int] = [],
-        dimension: Optional[int] = None,
     ) -> None:
         self._id = self._new_id()
         self._name = name

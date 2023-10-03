@@ -22,7 +22,7 @@ from typing import List
 from .tensors import Wire, Tensor
 
 
-def connect(wire1: Wire, wire2: Wire):
+def connect(wire1: Wire, wire2: Wire, dimension: int):
     r"""Connects two wires in a tensor network.
     Arguments:
         wire1: the first wire
@@ -30,6 +30,9 @@ def connect(wire1: Wire, wire2: Wire):
     """
     wire1._connected_to = wire2
     wire2._connected_to = wire1
+
+    wire1.dimension = dimension
+    wire2.dimension = dimension
 
     wire1.contraction_id = wire2.contraction_id
 

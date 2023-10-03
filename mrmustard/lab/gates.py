@@ -192,7 +192,6 @@ class Sgate(Parametrized, Unitary):
             modes_in=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             modes_out=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
-            dimension=2,
         )
 
     def U(self, cutoffs: Sequence[int]):
@@ -470,10 +469,8 @@ class BSgate(Parametrized, Unitary):
         modes: Optional[list[int]] = None,
         **kwargs,
     ):
-        super().__init__(
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
-            name="BSgate",
+        Parametrized.__init__(
+            self,
             theta=theta,
             phi=phi,
             theta_trainable=theta_trainable,
@@ -481,6 +478,12 @@ class BSgate(Parametrized, Unitary):
             theta_bounds=theta_bounds,
             phi_bounds=phi_bounds,
             **kwargs,
+        )
+        Unitary.__init__(
+            self,
+            modes_in=modes or [0, 1],  # type: ignore
+            modes_out=modes or [0, 1],  # type: ignore
+            name="BSgate",
         )
 
     def U(
