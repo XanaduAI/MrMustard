@@ -64,10 +64,10 @@ class Tensor(ABC):
 
     Args:
         name (str): The name of this tensor.
-        input_wires_ket (List[int]): The indeces labelling the input wires on the bra side.
+        input_wires_ket (List[int]): The indeces labelling the input wires on the ket side.
         output_wires_ket (List[int]): The indeces labelling the output wires on the ket side.
         input_wires_bra (List[int]): The indeces labelling the input wires on the bra side.
-        output_wires_bra (List[int]): The indeces labelling the output wires on the ket side.
+        output_wires_bra (List[int]): The indeces labelling the output wires on the bra side.
     """
     _id_counter: int = 0  # to give a unique id to all Tensors and Wires
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
@@ -186,26 +186,23 @@ class Tensor(ABC):
     @property
     @abstractmethod
     def value(self):
-        r""" """
+        r"""The value of this tensor."""
 
 
 class TensorView(Tensor):
-    r"""Base class for Tensor views. It remaps the ids of the original Tensor."""
+    r"""
+    Base class for tensor views. It remaps the ids of the original Tensor.
+    """
 
-    def __init__(self, circuit_part):
-        self._original = circuit_part  # MM object
+    def __init__(self, tensor):
+        self._original = tensor
         super().__init__(
             self._original.name,
-            self._original.output.ket.keys(),
             self._original.input.ket.keys(),
-            self._original.output.bra.keys(),
+            self._original.output.ket.keys(),
             self._original.input.bra.keys(),
+            self._original.output.bra.keys(),
         )
-
-        # note that for the zip we are relying on wire ordering, which is not ideal
-        self._id_map = {
-            wire.id: wire_orig.id for wire, wire_orig in zip(self.wires, self._original.wires)
-        }
 
     def _original_id(self, id):
         return self._id_map[id]
@@ -221,50 +218,49 @@ class TensorView(Tensor):
             return method
         return orig_attr
 
+    @property
+    def value(self):
+        r""" """
+        return self._original.value
 
-class DualView(TensorView):
-    r"""Dual view of a Tensor. It is used to implement the dual.
-    It swaps the input and output wires of a Tensor.
+
+class DualView(Tensor):
+    r"""
+    Dual view of a tensor. It swaps the input and output wires of a tensor.
     """
 
-    def __new__(cls, circuit_part: Tensor):
-        "makes sure that DualView(DualView(circuit_part)) == TensorView(circuit_part)"
-        if isinstance(circuit_part, DualView):
-            return circuit_part._original
-        return super().__new__(cls)
+    def __init__(self, tensor):
+        self._original = tensor
+        super().__init__(
+            self._original.name,
+            self._original.output.ket.keys(),
+            self._original.input.ket.keys(),
+            self._original.output.bra.keys(),
+            self._original.input.bra.keys(),
+        )
 
     @property
-    def input(self):
-        return self._original.output
-
-    @property
-    def output(self):
-        return self._original.input
-
-    @property
-    def dual(self):
-        return self._original.view
+    def value(self):
+        r""" """
+        return self._original.value
 
 
-class AdjointView(TensorView):
-    r"""Adjoint view of a Tensor. It is used to implement the adjoint.
-    It swaps the ket and bra wires of a Tensor.
+class AdjointView(Tensor):
+    r"""
+    Adjoint view of a tensor. It swaps the ket and bra wires of a Tensor.
     """
 
-    def __new__(cls, circuit_part: Tensor):
-        "makes sure that AdjointView(AdjointView(circuit_part)) == TensorView(circuit_part)"
-        if isinstance(circuit_part, AdjointView):
-            return circuit_part._original
-        return super().__new__(cls)
+    def __init__(self, tensor):
+        self._original = tensor
+        super().__init__(
+            self._original.name,
+            self._original.input.bra.keys(),
+            self._original.output.bra.keys(),
+            self._original.input.ket.keys(),
+            self._original.output.ket.keys(),
+        )
 
     @property
-    def input(self):  # swaps ket and bra
-        return WireGroup(ket=self._original.input.bra, bra=self._original.input.ket)
-
-    @property
-    def output(self):  # swaps ket and bra
-        return WireGroup(ket=self._original.output.bra, bra=self._original.output.ket)
-
-    @property
-    def adjoint(self):
-        return self._original.view
+    def value(self):
+        r""" """
+        return self._original.value
