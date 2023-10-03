@@ -43,6 +43,6 @@ def contract(tensors: list[Tensor]):
     """
     opt_einsum_args = []
     for t in tensors:
-        opt_einsum_args.append(t.fock)
+        opt_einsum_args.append(t.value)
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)

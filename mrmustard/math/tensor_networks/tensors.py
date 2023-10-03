@@ -64,10 +64,10 @@ class Tensor(ABC):
 
     Args:
         name (str): The name of this tensor.
-        input_legs_ket (List[int]): The indeces labelling the input legs on the bra side.
-        output_legs_ket (List[int]): The indeces labelling the output legs on the ket side.
-        input_legs_bra (List[int]): The indeces labelling the input legs on the bra side.
-        output_legs_bra (List[int]): The indeces labelling the output legs on the ket side.
+        input_wires_ket (List[int]): The indeces labelling the input wires on the bra side.
+        output_wires_ket (List[int]): The indeces labelling the output wires on the ket side.
+        input_wires_bra (List[int]): The indeces labelling the input wires on the bra side.
+        output_wires_bra (List[int]): The indeces labelling the output wires on the ket side.
     """
     _id_counter: int = 0  # to give a unique id to all Tensors and Wires
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
@@ -75,10 +75,10 @@ class Tensor(ABC):
     def __init__(
         self,
         name: str,
-        input_legs_ket: list[int] = [],
-        output_legs_ket: list[int] = [],
-        input_legs_bra: list[int] = [],
-        output_legs_bra: list[int] = [],
+        input_wires_ket: list[int] = [],
+        output_wires_ket: list[int] = [],
+        input_wires_bra: list[int] = [],
+        output_wires_bra: list[int] = [],
     ) -> None:
         # set unique self.id and name
         self.id: int = self._new_id()
@@ -89,18 +89,19 @@ class Tensor(ABC):
         self._out = WireGroup()
 
         # initialize wires by updating the ket and bra dicts
-        for mode in input_legs_ket:
+        for mode in input_wires_ket:
             self._in.ket |= {mode: Wire(self._new_id(), mode, True, True, self._new_id())}
-        for mode in output_legs_ket:
+        for mode in output_wires_ket:
             self._out.ket |= {mode: Wire(self._new_id(), mode, False, True, self._new_id())}
-        for mode in input_legs_bra:
+        for mode in input_wires_bra:
             self._in.bra |= {mode: Wire(self._new_id(), mode, True, False, self._new_id())}
-        for mode in output_legs_bra:
+        for mode in output_wires_bra:
             self._out.bra |= {mode: Wire(self._new_id(), mode, False, False, self._new_id())}
 
     @property
     def wires(self) -> List[Wire]:
-        r"""Returns a list of all wires in this tensor.
+        r"""
+        The list of all wires in this tensor.
         The order is MM default: [ket_out, ket_in, bra_out, bra_in].
         However, minimize reliance on ordering in favour of ids and direction/type.
         """
@@ -113,14 +114,18 @@ class Tensor(ABC):
 
     @property
     def contraction_ids(self) -> list[int]:
-        r"""Returns a list of all contraction_ids in this Tensor."""
+        r"""
+        The list of all contraction_ids in this Tensor."""
         return [wire.connection_id for wire in self.wires]
 
     def wire(self, id: int) -> Wire:
-        r"""Returns the wire with the given id."""
+        r"""
+        The wire with the given ``id``, or ``None`` if no wire corresponds to the given ``id``.
+        """
         for wire in self.wires:
             if wire.id == id:
                 return wire
+        return None
 
     def _new_id(self) -> int:
         id = Tensor._id_counter
@@ -180,7 +185,7 @@ class Tensor(ABC):
 
     @property
     @abstractmethod
-    def fock(self):
+    def value(self):
         r""" """
 
 

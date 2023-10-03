@@ -16,5 +16,5 @@ r"""
 This package contains the modules implementing base classes for tensors and tensor networks.
 """
 
-from tensors import *
-from networks import *
+from .tensors import *
+from .networks import *
