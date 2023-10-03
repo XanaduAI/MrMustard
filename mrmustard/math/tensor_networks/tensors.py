@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Tensor class for constructing circuits out of components."""
+""" Classes for constructing tensors."""
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from opt_einsum import contract as opt_contract
 from typing import List
+
 
 @dataclass
 class Wire:
@@ -263,29 +263,3 @@ class AdjointView(TensorView):
     @property
     def adjoint(self):
         return self._original.view
-
-
-def connect(wire1: Wire, wire2: Wire):
-    r"""Connects two wires in a tensor network.
-    Arguments:
-        wire1: the first wire
-        wire2: the second wire
-    """
-    wire1._connected_to = wire2
-    wire2._connected_to = wire1
-
-    wire1.contraction_id = wire2.contraction_id
-
-
-def contract(tensors: list[Tensor]):
-    r"""Contract a list of tensors.
-    Arguments:
-        tensors: the tensors to contract
-    Returns:
-        (tensor) the contracted tensor
-    """
-    opt_einsum_args = []
-    for t in tensors:
-        opt_einsum_args.append(t.fock)
-        opt_einsum_args.append([w.contraction_id for w in t.wires])
-    return opt_contract(*opt_einsum_args)
