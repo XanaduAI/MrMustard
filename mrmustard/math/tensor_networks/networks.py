@@ -37,7 +37,7 @@ def connect(wire1: Wire, wire2: Wire, dimension: int):
     wire1.contraction_id = wire2.contraction_id
 
 
-def contract(tensors: list[Tensor]):
+def contract(tensors: list[Tensor], default_dim):
     r"""Contract a list of tensors.
     Arguments:
         tensors: the tensors to contract
@@ -46,6 +46,8 @@ def contract(tensors: list[Tensor]):
     """
     opt_einsum_args = []
     for t in tensors:
+        for w in t.wires:
+            w.dimension = w.dimension or default_dim
         opt_einsum_args.append(t.value)
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)

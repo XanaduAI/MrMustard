@@ -372,10 +372,10 @@ class Channel(Transformation):
     ):
         super().__init__(
             name=name,
-            modes_input_ket=modes_in,
-            modes_output_ket=modes_out,
-            modes_input_bra=modes_in,
-            modes_output_bra=modes_out,
+            input_wires_ket=modes_in,
+            output_wires_ket=modes_out,
+            input_wires_bra=modes_in,
+            output_wires_bra=modes_out,
         )
 
     def bargmann(self, numpy=False):
@@ -395,6 +395,10 @@ class Channel(Transformation):
     @property
     def fock(self):
         return self.choi(shape=self.shape)
+
+    @property
+    def value(self):
+        return self.fock
 
     @property
     def shape(self):

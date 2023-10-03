@@ -39,7 +39,7 @@ class Circuit(Transformation, Parametrized):
 
     def __init__(self, ops: Optional[List] = None):
         self._ops = list(ops) if ops is not None else []
-        super().__init__()
+        Transformation.__init__(self)
         self.reset()
 
     def reset(self):
@@ -112,3 +112,7 @@ class Circuit(Transformation, Parametrized):
         """String representation of the circuit."""
         ops_repr = [repr(op) for op in self._ops]
         return " >> ".join(ops_repr)
+
+    @property
+    def value(self):
+        raise NotImplemented
