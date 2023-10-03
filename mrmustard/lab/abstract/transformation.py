@@ -268,16 +268,9 @@ class Transformation(Tensor):
 
 
 class Unitary(Transformation):
-    def __init__(
-        self,
-        name: str,
-        modes_in: list[int],
-        modes_out: list[int],
-    ):
+    def __init__(self, name: str, modes_in: list[int], modes_out: list[int], dimension: int):
         super().__init__(
-            name=name,
-            input_wires_ket=modes_in,
-            output_wires_ket=modes_out,
+            name=name, input_wires_ket=modes_in, output_wires_ket=modes_out, dimension=dimension
         )
 
     @property

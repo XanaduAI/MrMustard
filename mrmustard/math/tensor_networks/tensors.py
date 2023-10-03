@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
@@ -32,10 +32,9 @@ class Wire:
         mode: The mode represented by this wire.
         is_input: Whether this wire is an input to a tensor or an output.
         is_ket: Whether this wire is on the ket or on the bra side ??.
-        connection_id: A numerical identifier for the contraction involving this wire, or ``None``
+        contraction_id: A numerical identifier for the contraction involving this wire, or ``None``
             if this wire is not contracted.
-        connected_to: The identifier of the tensor connected to this wire, or ``None`` if this wire
-            is not connected.
+        dimension: The dimension of this wire. ??
 
     """
     id: int
@@ -43,9 +42,7 @@ class Wire:
     is_input: bool
     is_ket: bool
     contraction_id: int
-
-    def __post_init__(self):
-        self._connected_to: int | None = None
+    dimension: Optional[int] = None
 
 
 @dataclass
@@ -65,11 +62,11 @@ class Tensor(ABC):
     r"""A tensor in a tensor network.
 
     Args:
-        name (str): The name of this tensor.
-        input_wires_ket (List[int]): The indeces labelling the input wires on the ket side.
-        output_wires_ket (List[int]): The indeces labelling the output wires on the ket side.
-        input_wires_bra (List[int]): The indeces labelling the input wires on the bra side.
-        output_wires_bra (List[int]): The indeces labelling the output wires on the bra side.
+        name: The name of this tensor.
+        input_wires_ket: The indeces labelling the input wires on the ket side.
+        output_wires_ket: The indeces labelling the output wires on the ket side.
+        input_wires_bra: The indeces labelling the input wires on the bra side.
+        output_wires_bra: The indeces labelling the output wires on the bra side.
     """
     _id_counter: int = 0  # to give a unique id to all Tensors and Wires
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
@@ -81,6 +78,7 @@ class Tensor(ABC):
         output_wires_ket: list[int] = [],
         input_wires_bra: list[int] = [],
         output_wires_bra: list[int] = [],
+        dimension: Optional[int] = None,
     ) -> None:
         self._id = self._new_id()
         self._name = name
@@ -142,20 +140,6 @@ class Tensor(ABC):
         The list of all contraction_ids in this Tensor."""
         return [wire.connection_id for wire in self.wires]
 
-    def wire(self, id: int) -> Wire:
-        r"""
-        The wire with the given ``id``, or ``None`` if no wire corresponds to the given ``id``.
-        """
-        for wire in self.wires:
-            if wire.id == id:
-                return wire
-        return None
-
-    def _new_id(self) -> int:
-        id = Tensor._id_counter
-        Tensor._id_counter += 1
-        return id
-
     @property
     def input(self):
         return self._input_wires
@@ -196,6 +180,20 @@ class Tensor(ABC):
     @abstractmethod
     def value(self):
         r"""The value of this tensor."""
+
+    def _new_id(self) -> int:
+        id = Tensor._id_counter
+        Tensor._id_counter += 1
+        return id
+
+    def wire(self, id: int) -> Wire:
+        r"""
+        The wire with the given ``id``, or ``None`` if no wire corresponds to the given ``id``.
+        """
+        for wire in self.wires:
+            if wire.id == id:
+                return wire
+        return None
 
 
 class TensorView(Tensor):

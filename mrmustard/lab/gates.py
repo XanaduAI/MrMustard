@@ -192,6 +192,7 @@ class Sgate(Parametrized, Unitary):
             modes_in=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             modes_out=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
+            dimension=2,
         )
 
     def U(self, cutoffs: Sequence[int]):
