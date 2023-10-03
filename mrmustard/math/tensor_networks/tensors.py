@@ -18,7 +18,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List
+from typing import Callable, List
+
+import numpy as np
 
 
 @dataclass
@@ -80,23 +82,45 @@ class Tensor(ABC):
         input_wires_bra: list[int] = [],
         output_wires_bra: list[int] = [],
     ) -> None:
-        # set unique self.id and name
-        self.id: int = self._new_id()
-        self.name: str = name + "_" + str(self.id)
+        self._id = self._new_id()
+        self._name = name
 
         # initialize ket and bra wire dicts
-        self._in = WireGroup()
-        self._out = WireGroup()
+        self._input_wires = WireGroup()
+        self._output_wires = WireGroup()
 
         # initialize wires by updating the ket and bra dicts
         for mode in input_wires_ket:
-            self._in.ket |= {mode: Wire(self._new_id(), mode, True, True, self._new_id())}
+            self._input_wires.ket |= {mode: Wire(self._new_id(), mode, True, True, self._new_id())}
         for mode in output_wires_ket:
-            self._out.ket |= {mode: Wire(self._new_id(), mode, False, True, self._new_id())}
+            self._output_wires.ket |= {
+                mode: Wire(self._new_id(), mode, False, True, self._new_id())
+            }
         for mode in input_wires_bra:
-            self._in.bra |= {mode: Wire(self._new_id(), mode, True, False, self._new_id())}
+            self._input_wires.bra |= {mode: Wire(self._new_id(), mode, True, False, self._new_id())}
         for mode in output_wires_bra:
-            self._out.bra |= {mode: Wire(self._new_id(), mode, False, False, self._new_id())}
+            self._output_wires.bra |= {
+                mode: Wire(self._new_id(), mode, False, False, self._new_id())
+            }
+
+    @property
+    def adjoint(self) -> AdjointView:
+        r"""Returns the adjoint view of this Tensor (with new ``id``s). That is, ket <-> bra."""
+        return AdjointView(self)
+
+    @property
+    def id(self) -> int:
+        r"""
+        The unique identifier of this tensor.
+        """
+        return self._id
+
+    @property
+    def name(self) -> int:
+        r"""
+        The name of this tensor.
+        """
+        return self._name
 
     @property
     def wires(self) -> List[Wire]:
@@ -134,11 +158,11 @@ class Tensor(ABC):
 
     @property
     def input(self):
-        return self._in
+        return self._input_wires
 
     @property
     def output(self):
-        return self._out
+        return self._output_wires
 
     @property
     def modes(self) -> list[int]:
@@ -169,21 +193,6 @@ class Tensor(ABC):
         return self.modes_out + self.modes_in
 
     @property
-    def adjoint(self) -> AdjointView:
-        r"""Returns the adjoint view of this Tensor (with new ids). That is, ket <-> bra."""
-        return AdjointView(self)
-
-    @property
-    def dual(self) -> DualView:
-        r"""Returns the dual view of this Tensor (with new ids). That is, in <-> out."""
-        return DualView(self)
-
-    @property
-    def view(self) -> TensorView:
-        r"""Returns a view of this Tensor with new ids."""
-        return TensorView(self)
-
-    @property
     @abstractmethod
     def value(self):
         r"""The value of this tensor."""
@@ -202,41 +211,6 @@ class TensorView(Tensor):
             self._original.output.ket.keys(),
             self._original.input.bra.keys(),
             self._original.output.bra.keys(),
-        )
-
-    def _original_id(self, id):
-        return self._id_map[id]
-
-    def __getattr__(self, attr):
-        orig_attr = self._original.__getattribute__(attr)
-        if callable(orig_attr):
-
-            def method(*args, **kwargs):
-                kwargs["id"] = self._original_id(kwargs["id"])
-                return orig_attr(*args, **kwargs)
-
-            return method
-        return orig_attr
-
-    @property
-    def value(self):
-        r""" """
-        return self._original.value
-
-
-class DualView(Tensor):
-    r"""
-    Dual view of a tensor. It swaps the input and output wires of a tensor.
-    """
-
-    def __init__(self, tensor):
-        self._original = tensor
-        super().__init__(
-            self._original.name,
-            self._original.output.ket.keys(),
-            self._original.input.ket.keys(),
-            self._original.output.bra.keys(),
-            self._original.input.bra.keys(),
         )
 
     @property
@@ -263,4 +237,4 @@ class AdjointView(Tensor):
     @property
     def value(self):
         r""" """
-        return self._original.value
+        return np.conj(self._original.value).T
