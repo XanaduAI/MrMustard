@@ -1,4 +1,5 @@
-PYTHON := $(shell which python3 2>/dev/null)
+PYTHON3 := $(shell which python3 2>/dev/null)
+JULIA := $(shell which julia 2>/dev/null)
 TESTRUNNER := -m pytest tests -p no:warnings
 COVERAGE := --cov=mrmustard --cov-report=html:coverage_html_report --cov-append
 
@@ -19,6 +20,9 @@ install:
 ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
 endif
+ifndef JULIA
+	@echo "To use Mr Mustard it is recommended to have Julia installed"
+endif
 	poetry install
 	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
 
@@ -26,6 +30,9 @@ endif
 install-all:
 ifndef PYTHON3
 	@echo "To install Mr Mustard you need to have Python 3 installed"
+endif
+ifndef JULIA
+	@echo "To use Mr Mustard it is recommended to have Julia installed"
 endif
 	poetry install --all-extras --with dev,doc
 	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
