@@ -169,11 +169,11 @@ class Tensor(ABC):
         r"""For backward compatibility. Don't overuse.
         It returns a list of modes for this Tensor, unless it's ambiguous."""
         if self.modes_in == self.modes_out:  # transformation on same modes
-            return self.modes_in
+            return list(self.modes_in)
         elif len(self.modes_in) == 0:  # state
-            return self.modes_out
+            return list(self.modes_out)
         elif len(self.modes_out) == 0:  # measurement
-            return self.modes_in
+            return list(self.modes_in)
         else:
             raise ValueError("modes are ambiguous for this Tensor.")
 
