@@ -15,17 +15,12 @@
 from __future__ import annotations
 
 from itertools import product
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
-import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
 from mrmustard.typing import Batch, ComplexMatrix, ComplexVector, Scalar
-
-# if TYPE_CHECKING: # This is to avoid the circular import issue with GaussianData<>ABCData
-#     from mrmustard.lab.representations.data.gaussian_data import GaussianData
-
 
 math = Math()
 
@@ -104,59 +99,60 @@ class ABCData(MatVecData):
 
     def __matmul__(self, other: ABCData) -> ABCData:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
-        graph = self & other
-        newA = graph.A
-        newb = graph.b
-        newc = graph.c
-        for n, (i, j) in enumerate(zip(self._contract_idxs, other._contract_idxs)):
-            i = i - np.sum(np.array(self._contract_idxs[:n]) < i)
-            j = j + (self.dim - n) - np.sum(np.array(other._contract_idxs[:n]) < j)
-            noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, newA.shape[-1]))
-            Abar = math.gather(math.gather(newA, noij, axis=1), noij, axis=2)
-            bbar = math.gather(newb, noij, axis=1)
-            D = math.gather(
-                math.concat([newA[..., i][..., None], newA[..., j][..., None]], axis=-1),
-                noij,
-                axis=-2,
-            )
-            M = math.concat(
-                [
-                    math.concat(
-                        [
-                            newA[:, i, i][:, None, None],
-                            newA[:, j, i][:, None, None] - 1,
-                        ],
-                        axis=-1,
-                    ),
-                    math.concat(
-                        [
-                            newA[:, i, j][:, None, None] - 1,
-                            newA[:, j, j][:, None, None],
-                        ],
-                        axis=-1,
-                    ),
-                ],
-                axis=-2,
-            )
-            Minv = math.inv(M)
-            b_ = math.concat([newb[:, i][:, None], newb[:, j][:, None]], axis=-1)
+        # Useful for the future, but not for this PR
+        raise NotImplementedError()
+        # graph = self & other
+        # newA = graph.A
+        # newb = graph.b
+        # newc = graph.c
+        # for n, (i, j) in enumerate(zip(self._contract_idxs, other._contract_idxs)):
+        #     i = i - np.sum(np.array(self._contract_idxs[:n]) < i)
+        #     j = j + self.dim - n - np.sum(np.array(other._contract_idxs[:n]) < j)
+        #     noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, newA.shape[-1]))
+        #     Abar = math.gather(math.gather(newA, noij, axis=1), noij, axis=2)
+        #     bbar = math.gather(newb, noij, axis=1)
+        #     D = math.gather(
+        #         math.concat([newA[..., i][..., None], newA[..., j][..., None]], axis=-1),
+        #         noij,
+        #         axis=1,
+        #     )
+        #     M = math.concat(
+        #         [
+        #             math.concat(
+        #                 [
+        #                     newA[:, i, i][:, None, None],
+        #                     newA[:, j, i][:, None, None] - 1,
+        #                 ],
+        #                 axis=-1,
+        #             ),
+        #             math.concat(
+        #                 [
+        #                     newA[:, i, j][:, None, None] - 1,
+        #                     newA[:, j, j][:, None, None],
+        #                 ],
+        #                 axis=-1,
+        #             ),
+        #         ],
+        #         axis=-2,
+        #     )
+        #     Minv = math.inv(M)
+        #     b_ = math.concat([newb[:, i][:, None], newb[:, j][:, None]], axis=-1)
 
-            newA = Abar - math.einsum("bij,bjk,blk->bil", D, Minv, D)
-            newb = bbar - math.einsum("bij,bjk,bk->bi", D, Minv, b_)
-            newc = (
-                newc
-                * math.exp(-math.einsum("bi,bij,bj->b", b_, Minv, b_) / 2)
-                / (math.sqrt(math.det(M)) * np.sqrt(2) * np.pi)
-            )
-        return self.__class__(newA, newb, newc)
+        #     newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
+        #     newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
+        #     newc = (
+        #         newc
+        #         * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
+        #         / math.sqrt(-math.det(M))
+        #     )
+        # return self.__class__(newA, newb, newc)
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i > self.dim:
-                raise IndexError(
-                    f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
-                )
-        new = self.__class__(self.A, self.b, self.c)
-        new._contract_idxs = idx
-        return new
+    # def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
+    #     idx = (idx,) if isinstance(idx, int) else idx
+    #     for i in idx:
+    #         if i > self.dim:
+    #             raise IndexError(
+    #                 f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
+    #             )
+    #     self._contract_idxs = idx
+    #     return self

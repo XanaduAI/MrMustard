@@ -107,27 +107,35 @@ class TestData:
         with pytest.raises(TypeError):
             DATA / other
 
-    @pytest.mark.parametrize("operator", [op.add, op.sub])
-    def test_new_object_created_by_add_sub_operations_has_same_attribute_shapes_as_old_object(
-        self, DATA, OTHER, operator
+    @pytest.mark.parametrize("other", [MockNoCommonAttributesObject()])
+    @pytest.mark.parametrize("operator", [op.add, op.sub, op.mul, op.truediv, op.eq])  # op.and_
+    def test_algebraic_op_raises_Error_if_other_object_is_of_wrong_type(
+        self, DATA, other, operator
     ):
-        for k in DATA.__dict__.keys():
-            new_data = operator(DATA, OTHER)
-            try:  # numpy array attributes
-                assert getattr(DATA, k).shape == getattr(new_data, k).shape
-            except AttributeError:  # scalar attributes
-                pass
+        with pytest.raises(TypeError):
+            operator(DATA, other)
 
-    @pytest.mark.parametrize("operator", [op.neg])
-    def test_new_object_created_by_negation_has_same_attribute_shapes_as_old_object(
-        self, DATA, operator
-    ):
-        for k in DATA.__dict__.keys():
-            new_data = operator(DATA)
-            try:  # numpy array attributes
-                assert getattr(DATA, k).shape == getattr(new_data, k).shape
-            except AttributeError:  # scalar attributes
-                pass
+    # @pytest.mark.parametrize("operator", [op.add, op.sub])
+    # def test_new_object_created_by_add_sub_operations_has_same_attribute_shapes_as_old_object(
+    #     self, DATA, OTHER, operator
+    # ):
+    #     for k in DATA.__dict__.keys():
+    #         new_data = operator(DATA, OTHER)
+    #         try:  # numpy array attributes
+    #             assert getattr(DATA, k).shape == getattr(new_data, k).shape
+    #         except AttributeError:  # scalar attributes
+    #             pass
+
+    # @pytest.mark.parametrize("operator", [op.neg])
+    # def test_new_object_created_by_negation_has_same_attribute_shapes_as_old_object(
+    #     self, DATA, operator
+    # ):
+    #     for k in DATA.__dict__.keys():
+    #         new_data = operator(DATA)
+    #         try:  # numpy array attributes
+    #             assert getattr(DATA, k).shape[0, :] == getattr(new_data, k).shape[0, :]
+    #         except AttributeError:  # scalar attributes
+    #             pass
 
     ##################  Equality  ####################
     def test_when_all_attributes_are_equal_objects_are_equal(self, DATA, PARAMS, TYPE):

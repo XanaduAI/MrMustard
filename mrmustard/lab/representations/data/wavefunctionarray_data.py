@@ -14,8 +14,8 @@
 
 from __future__ import annotations
 
-import numpy as np
 from typing import Union
+import numpy as np
 
 from mrmustard.lab.representations.data.array_data import ArrayData
 from mrmustard.lab.representations.data.data import Data

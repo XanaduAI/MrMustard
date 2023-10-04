@@ -41,10 +41,10 @@ class Data(ABC):
         except AttributeError as e:
             raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
-    @abstractmethod
-    def __call__(self, dom: Any) -> Scalar:
-        r"""Evaluate the function at a point in the domain."""
-        ...
+    # @abstractmethod
+    # def __call__(self, dom: Any) -> Scalar:
+    #     r"""Evaluate the function at a point in the domain."""
+    #     ...
 
     @abstractmethod
     def __truediv__(self, other: Union[Scalar, Data]) -> Data:
