@@ -99,6 +99,8 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
+        self.precision_bits_hermite_poly = 128  # number of bits to represent a single Fock amp (for Hermite poly)
+
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
