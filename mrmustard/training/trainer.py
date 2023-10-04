@@ -71,8 +71,8 @@ Examples:
         cost_fn=cost_fn,
         device_factory=make_circ,
         tasks=[
-            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
-            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50},
+            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2},
         ],
         y_targ=0.35,
         symplectic_lr=0.05,
@@ -313,8 +313,8 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             cost_fn=cost_fn,
             device_factory=make_circ,
             tasks=[
-                {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
-                {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+                {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50},
+                {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2},
             ],
             y_targ=0.35,
             symplectic_lr=0.05,
