@@ -57,10 +57,11 @@ class Wire:
         if this wire is not contracted.
         """
         return self._contraction_id
-    
+
     @contraction_id.setter
     def contraction_id(self, value):
         self._contraction_id = value
+
 
 @dataclass
 class WireGroup:
@@ -119,15 +120,11 @@ class Tensor(ABC):
         for mode in input_modes_ket:
             self._input_wires.ket |= {mode: Wire(uuid.uuid1().int, mode, True, True)}
         for mode in output_modes_ket:
-            self._output_wires.ket |= {
-                mode: Wire(uuid.uuid1().int, mode, False, True)
-            }
+            self._output_wires.ket |= {mode: Wire(uuid.uuid1().int, mode, False, True)}
         for mode in input_modes_bra:
             self._input_wires.bra |= {mode: Wire(uuid.uuid1().int, mode, True, False)}
         for mode in output_modes_bra:
-            self._output_wires.bra |= {
-                mode: Wire(uuid.uuid1().int, mode, False, False)
-            }
+            self._output_wires.bra |= {mode: Wire(uuid.uuid1().int, mode, False, False)}
 
     @property
     def adjoint(self) -> AdjointView:

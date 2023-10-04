@@ -21,6 +21,8 @@ from typing import List
 
 from .tensors import Wire, Tensor
 
+import uuid
+
 
 def connect(wire1: Wire, wire2: Wire):
     r"""Connects two wires in a tensor network.
@@ -31,7 +33,9 @@ def connect(wire1: Wire, wire2: Wire):
     wire1._connected_to = wire2
     wire2._connected_to = wire1
 
-    wire1.contraction_id = wire2.contraction_id
+    unique_id = uuid.uuid1().int
+    wire1.contraction_id = unique_id
+    wire2.contraction_id = unique_id
 
 
 def contract(tensors: list[Tensor], dim: int):
