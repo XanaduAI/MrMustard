@@ -399,9 +399,6 @@ class CXgate(Parametrized, Unitary):
     ):
         Parametrized.__init__(
             self,
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
-            name="CXgate",
             s=s,
             s_trainable=s_trainable,
             s_bounds=s_bounds,
@@ -584,9 +581,6 @@ class MZgate(Parametrized, Unitary):
     ):
         Parametrized.__init__(
             self,
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
-            name="MZgate",
             phi_a=phi_a,
             phi_b=phi_b,
             phi_a_trainable=phi_a_trainable,
@@ -963,9 +957,6 @@ class Amplifier(Parametrized, Channel):
     ):
         Parametrized.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(gain)))),
-            modes_out=modes or list(range(len(math.atleast_1d(gain)))),
-            name="Amplifier",
             gain=gain,
             gain_trainable=gain_trainable,
             gain_bounds=gain_bounds,

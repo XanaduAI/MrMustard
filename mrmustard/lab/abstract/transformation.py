@@ -270,6 +270,7 @@ class Transformation(Tensor):
 class Unitary(Transformation):
     def __init__(self, name: str, modes_in: list[int], modes_out: list[int]):
         super().__init__(name=name, input_wires_ket=modes_in, output_wires_ket=modes_out)
+        self.is_unitary = True
 
     def value(self, cutoff: int):
         return self.U(cutoffs=[cutoff for _ in range(self.num_modes)])
@@ -281,7 +282,7 @@ class Unitary(Transformation):
             return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
 
-    def _transform_fock(self, state: State) -> State:
+    def _transform_fock(self, state: State, dual=False) -> State:
         op_idx = [state.modes.index(m) for m in self.modes]
         U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx] * 2)
         if state.is_hilbert_vector:
@@ -360,6 +361,7 @@ class Channel(Transformation):
             input_wires_bra=modes_in,
             output_wires_bra=modes_out,
         )
+        self.is_unitary = False
 
     def bargmann(self, numpy=False):
         X, Y, d = self.XYd(allow_none=False)

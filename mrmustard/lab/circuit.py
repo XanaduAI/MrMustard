@@ -114,5 +114,5 @@ class Circuit(Transformation, Parametrized):
         return " >> ".join(ops_repr)
 
     @property
-    def value(self):
+    def value(self, cutoff):
         raise NotImplemented
