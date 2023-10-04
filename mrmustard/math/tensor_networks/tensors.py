@@ -48,13 +48,12 @@ class Wire:
     is_ket: bool
 
     def __post_init__(self):
-        self._contraction_id: int = uuid.uuid1()
+        self._contraction_id: int = uuid.uuid1().int
 
     @property
     def contraction_id(self) -> int:
         r"""
-        A numerical identifier for the contraction involving this wire, or ``None``
-        if this wire is not contracted.
+        A numerical identifier for the contraction involving this wire.
         """
         return self._contraction_id
 
@@ -94,37 +93,39 @@ class Tensor(ABC):
 
     Args:
         name: The name of this tensor.
-        input_modes_ket: The input modes on the ket side.
-        output_modes_ket: The output modes on the ket side.
-        input_modes_bra: The input modes on the bra side.
-        output_modes_bra: The output modes on the bra side.
+        modes_in_ket: The input modes on the ket side.
+        modes_out_ket: The output modes on the ket side.
+        modes_in_bra: The input modes on the bra side.
+        modes_out_bra: The output modes on the bra side.
     """
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
     def __init__(
         self,
         name: str,
-        input_modes_ket: list[int] = [],
-        output_modes_ket: list[int] = [],
-        input_modes_bra: list[int] = [],
-        output_modes_bra: list[int] = [],
+        modes_in_ket: list[int] = [],
+        modes_out_ket: list[int] = [],
+        modes_in_bra: list[int] = [],
+        modes_out_bra: list[int] = [],
     ) -> None:
-        self._id = uuid.uuid1().int
         self._name = name
+        self._modes_in_ket = sorted(modes_in_ket)
+        self._modes_in_bra = sorted(modes_in_bra)
+        self._modes_out_ket = sorted(modes_out_ket)
+        self._modes_out_bra = sorted(modes_out_bra)
 
         # initialize ket and bra wire dicts
-        self._input_wires = WireGroup()
-        self._output_wires = WireGroup()
+        self._input = WireGroup()
+        for mode in self._modes_in_ket:
+            self._input.ket |= {mode: Wire(uuid.uuid1().int, mode, True, True)}
+        for mode in self._modes_in_bra:
+            self._input.bra |= {mode: Wire(uuid.uuid1().int, mode, True, False)}
 
-        # initialize wires by updating the ket and bra dicts
-        for mode in input_modes_ket:
-            self._input_wires.ket |= {mode: Wire(uuid.uuid1().int, mode, True, True)}
-        for mode in output_modes_ket:
-            self._output_wires.ket |= {mode: Wire(uuid.uuid1().int, mode, False, True)}
-        for mode in input_modes_bra:
-            self._input_wires.bra |= {mode: Wire(uuid.uuid1().int, mode, True, False)}
-        for mode in output_modes_bra:
-            self._output_wires.bra |= {mode: Wire(uuid.uuid1().int, mode, False, False)}
+        self._output = WireGroup()
+        for mode in self._modes_out_ket:
+            self._output.ket |= {mode: Wire(uuid.uuid1().int, mode, False, True)}
+        for mode in self._modes_out_bra:
+            self._output.bra |= {mode: Wire(uuid.uuid1().int, mode, False, False)}
 
     @property
     def adjoint(self) -> AdjointView:
@@ -132,46 +133,11 @@ class Tensor(ABC):
         return AdjointView(self)
 
     @property
-    def id(self) -> int:
-        r"""
-        The unique identifier of this tensor.
-        """
-        return self._id
-
-    @property
-    def name(self) -> int:
-        r"""
-        The name of this tensor.
-        """
-        return self._name
-
-    @property
-    def wires(self) -> List[Wire]:
-        r"""
-        The list of all wires in this tensor.
-        The order is MM default: [ket_out, ket_in, bra_out, bra_in].
-        However, minimize reliance on ordering in favour of ids and direction/type.
-        """
-        return (
-            list(self.output.ket.values())
-            + list(self.input.ket.values())
-            + list(self.output.bra.values())
-            + list(self.input.bra.values())
-        )
-
-    @property
-    def contraction_ids(self) -> list[int]:
-        r"""
-        The list of all contraction_ids in this Tensor."""
-        return [wire.connection_id for wire in self.wires]
-
-    @property
     def input(self):
-        return self._input_wires
-
-    @property
-    def output(self):
-        return self._output_wires
+        r"""
+        A dictionary mapping the input modes to their respective wires.
+        """
+        return self._input
 
     @property
     def modes(self) -> list[int]:
@@ -189,17 +155,40 @@ class Tensor(ABC):
     @property
     def modes_in(self) -> set[int]:
         "Returns the set of input modes that are used by this Tensor."
-        return set(self.input.ket | self.input.bra)
+        ret = self._modes_in_ket + self._modes_in_bra
+        return set(sorted(ret))
 
     @property
     def modes_out(self) -> set[int]:
         "Returns the set of output modes that are used by this Tensor."
-        return set(self.output.ket | self.output.bra)
+        ret = self._modes_out_ket + self._modes_out_bra
+        return set(sorted(ret))
 
     @property
-    def all_modes(self) -> set[int]:
-        "Returns a set of all the modes spanned by this Tensor."
-        return self.modes_out + self.modes_in
+    def name(self) -> int:
+        r"""
+        The name of this tensor.
+        """
+        return self._name
+
+    @property
+    def output(self):
+        r"""
+        A dictionary mapping the output modes to their respective wires.
+        """
+        return self._output
+
+    @property
+    def wires(self) -> List[Wire]:
+        r"""
+        The list of all wires in this tensor, sorted as ``[ket_in, ket_out, bra_in, bra_out]``.
+        """
+        return (
+            list(self.input.ket.values())
+            + list(self.output.ket.values())
+            + list(self.input.bra.values())
+            + list(self.output.bra.values())
+        )
 
     @abstractmethod
     def value(self, cutoff: int):
@@ -211,15 +200,6 @@ class Tensor(ABC):
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
         """
-
-    def wire(self, id: int) -> Wire:
-        r"""
-        The wire with the given ``id``, or ``None`` if no wire corresponds to the given ``id``.
-        """
-        for wire in self.wires:
-            if wire.id == id:
-                return wire
-        return None
 
 
 class TensorView(Tensor):

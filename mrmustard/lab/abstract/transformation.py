@@ -269,7 +269,7 @@ class Transformation(Tensor):
 
 class Unitary(Transformation):
     def __init__(self, name: str, modes_in: list[int], modes_out: list[int]):
-        super().__init__(name=name, input_modes_ket=modes_in, output_modes_ket=modes_out)
+        super().__init__(name=name, modes_in_ket=modes_in, modes_out_ket=modes_out)
         self.is_unitary = True
 
     def value(self, cutoff: int):
@@ -356,10 +356,10 @@ class Channel(Transformation):
     ):
         super().__init__(
             name=name,
-            input_modes_ket=modes_in,
-            output_modes_ket=modes_out,
-            input_modes_bra=modes_in,
-            output_modes_bra=modes_out,
+            modes_in_ket=modes_in,
+            modes_out_ket=modes_out,
+            modes_in_bra=modes_in,
+            modes_out_bra=modes_out,
         )
         self.is_unitary = False
 
