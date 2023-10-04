@@ -250,13 +250,15 @@ class Tensor(ABC):
             modes_out_ket: The output modes on the ket side.
             modes_in_bra: The input modes on the bra side.
             modes_out_bra: The output modes on the bra side.
-        
+
         Raises:
             ValueError: if one or more wires in this tensor are already connected.
         """
         for wire in self.wires:
             if wire.is_connected:
-                msg = "Cannot change nodes in a tensor when some of its wires are already connected."
+                msg = (
+                    "Cannot change nodes in a tensor when some of its wires are already connected."
+                )
                 raise ValueError(msg)
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
