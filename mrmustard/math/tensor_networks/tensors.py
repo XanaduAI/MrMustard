@@ -18,38 +18,57 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
 import numpy as np
+import uuid
+
+
+__all__ = ["Wire", "Tensor"]
 
 
 @dataclass
 class Wire:
     r"""Represents a wire in a tensor network.
 
+    Each wire is characterized by a unique identifier ``id``, which must different from
+    the identifiers of all the other wires in the tensor network, as well as by a label
+    ``mode`` that represents a mode of light.
+
     Args:
         id: A numerical identifier for this wire.
         mode: The mode represented by this wire.
         is_input: Whether this wire is an input to a tensor or an output.
-        is_ket: Whether this wire is on the ket or on the bra side ??.
-        contraction_id: A numerical identifier for the contraction involving this wire, or ``None``
-            if this wire is not contracted.
+        is_ket: Whether this wire is on the ket or on the bra side.
 
     """
     id: int
     mode: int
     is_input: bool
     is_ket: bool
-    contraction_id: int
 
+    def __post_init__(self):
+        self._contraction_id: int = uuid.uuid1()
+
+    @property
+    def contraction_id(self) -> int:
+        r"""
+        A numerical identifier for the contraction involving this wire, or ``None``
+        if this wire is not contracted.
+        """
+        return self._contraction_id
+    
+    @contraction_id.setter
+    def contraction_id(self, value):
+        self._contraction_id = value
 
 @dataclass
 class WireGroup:
     r"""A group of wires in a tensor network.
 
     Args:
-        ket: ??
-        bra: ??
+        ket: A dictionary containing the wires on the ket side.
+        bra: A dictionary containing the wires on the bra side.
 
     """
     ket: dict = field(default_factory=dict)
@@ -57,27 +76,39 @@ class WireGroup:
 
 
 class Tensor(ABC):
-    r"""A tensor in a tensor network.
+    r"""An abstract class representing a tensor in a tensor network.
+
+    In Mr Mustard, tensors are used to represent a state or a transformation on a given set
+    of modes in the Fock representation. For example, a single-mode unitary matrix
+    :math:`U=\sum_{i,j=1}^Nu_{i,j}|i\rangle\langle{j}|`
+    acting on mode ``3`` N-dimensional Fock basis corresponds to the following ``Tensor`` object:
+
+    .. code-block::
+    class U(Tensor):
+        def value(self, cutoff):
+            # specify the value of the tensor
+            pass
+
+    U("my_unitary", [3], [3], [3], [3])
 
     Args:
         name: The name of this tensor.
-        input_wires_ket: The indeces labelling the input wires on the ket side.
-        output_wires_ket: The indeces labelling the output wires on the ket side.
-        input_wires_bra: The indeces labelling the input wires on the bra side.
-        output_wires_bra: The indeces labelling the output wires on the bra side.
+        input_modes_ket: The input modes on the ket side.
+        output_modes_ket: The output modes on the ket side.
+        input_modes_bra: The input modes on the bra side.
+        output_modes_bra: The output modes on the bra side.
     """
-    _id_counter: int = 0  # to give a unique id to all Tensors and Wires
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
     def __init__(
         self,
         name: str,
-        input_wires_ket: list[int] = [],
-        output_wires_ket: list[int] = [],
-        input_wires_bra: list[int] = [],
-        output_wires_bra: list[int] = [],
+        input_modes_ket: list[int] = [],
+        output_modes_ket: list[int] = [],
+        input_modes_bra: list[int] = [],
+        output_modes_bra: list[int] = [],
     ) -> None:
-        self._id = self._new_id()
+        self._id = uuid.uuid1().int
         self._name = name
 
         # initialize ket and bra wire dicts
@@ -85,17 +116,17 @@ class Tensor(ABC):
         self._output_wires = WireGroup()
 
         # initialize wires by updating the ket and bra dicts
-        for mode in input_wires_ket:
-            self._input_wires.ket |= {mode: Wire(self._new_id(), mode, True, True, self._new_id())}
-        for mode in output_wires_ket:
+        for mode in input_modes_ket:
+            self._input_wires.ket |= {mode: Wire(uuid.uuid1().int, mode, True, True)}
+        for mode in output_modes_ket:
             self._output_wires.ket |= {
-                mode: Wire(self._new_id(), mode, False, True, self._new_id())
+                mode: Wire(uuid.uuid1().int, mode, False, True)
             }
-        for mode in input_wires_bra:
-            self._input_wires.bra |= {mode: Wire(self._new_id(), mode, True, False, self._new_id())}
-        for mode in output_wires_bra:
+        for mode in input_modes_bra:
+            self._input_wires.bra |= {mode: Wire(uuid.uuid1().int, mode, True, False)}
+        for mode in output_modes_bra:
             self._output_wires.bra |= {
-                mode: Wire(self._new_id(), mode, False, False, self._new_id())
+                mode: Wire(uuid.uuid1().int, mode, False, False)
             }
 
     @property
@@ -183,11 +214,6 @@ class Tensor(ABC):
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
         """
-
-    def _new_id(self) -> int:
-        id = Tensor._id_counter
-        Tensor._id_counter += 1
-        return id
 
     def wire(self, id: int) -> Wire:
         r"""
