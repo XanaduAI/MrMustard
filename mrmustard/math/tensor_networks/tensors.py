@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import uuid
@@ -80,16 +80,16 @@ class Tensor(ABC):
 
     In Mr Mustard, tensors are used to represent a state or a transformation on a given set
     of modes in the Fock representation. For example, a single-mode unitary matrix
-    :math:`U=\sum_{i,j=1}^Nu_{i,j}|i\rangle\langle{j}|`
-    acting on mode ``3`` N-dimensional Fock basis corresponds to the following ``Tensor`` object:
+    :math:`U=\sum_{i,j=1}^Nu_{i,j}|i\rangle\langle{j}|` acting on mode ``3`` in an
+    N-dimensional Fock basis corresponds to the following ``Tensor`` object:
 
     .. code-block::
-    class U(Tensor):
-        def value(self, cutoff):
-            # specify the value of the tensor
-            pass
+        class U(Tensor):
+            def value(self, cutoff):
+                # specify the value of the tensor
+                pass
 
-    U("my_unitary", [3], [3], [3], [3])
+        U("my_unitary", [3], [3], [3], [3])
 
     Args:
         name: The name of this tensor.
@@ -103,16 +103,16 @@ class Tensor(ABC):
     def __init__(
         self,
         name: str,
-        modes_in_ket: list[int] = [],
-        modes_out_ket: list[int] = [],
-        modes_in_bra: list[int] = [],
-        modes_out_bra: list[int] = [],
+        modes_in_ket: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_bra: Optional[list[int]] = None,
     ) -> None:
         self._name = name
-        self._modes_in_ket = sorted(modes_in_ket)
-        self._modes_in_bra = sorted(modes_in_bra)
-        self._modes_out_ket = sorted(modes_out_ket)
-        self._modes_out_bra = sorted(modes_out_bra)
+        self._modes_in_ket = sorted(modes_in_ket) if modes_in_ket else []
+        self._modes_in_bra = sorted(modes_in_bra) if modes_in_bra else []
+        self._modes_out_ket = sorted(modes_out_ket) if modes_out_ket else []
+        self._modes_out_bra = sorted(modes_out_bra) if modes_out_bra else []
 
         # initialize ket and bra wire dicts
         self._input = WireGroup()

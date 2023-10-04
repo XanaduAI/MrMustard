@@ -198,25 +198,6 @@ class Sgate(Parametrized, Unitary):
             name="Sgate",
         )
 
-    # def __getitem__(self, items) -> Callable:
-    #     r"""Sets the modes on which the transformation acts.
-
-    #     Allows transformations to be used as: ``output = transf[0,1](input)``,  e.g. acting on
-    #     modes 0 and 1.
-    #     """
-    #     #  TODO: this won't work when we want to reuse the same op for different modes in a circuit.
-    #     # i.e. `psi = op[0](psi); psi = op[1](psi)` is ok, but `circ = Circuit([op[0], op[1]])` won't work.
-    #     if isinstance(items, int):
-    #         modes = [items]
-    #     elif isinstance(items, slice):
-    #         modes = list(range(items.start, items.stop, items.step))
-    #     elif isinstance(items, (Sequence, Iterable)):
-    #         modes = list(items)
-    #     else:
-    #         raise ValueError(f"{items} is not a valid slice or list of modes.")
-    #     ret = Sgate(self.r, self.phi, self.r_trainable, self.phi_trainable, self.r_bounds, self.phi_bounds, modes)
-    #     return ret
-
     def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the Squeezing gate.
         Args:
