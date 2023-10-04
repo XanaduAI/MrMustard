@@ -189,7 +189,9 @@ class Tensor(ABC):
 
     @property
     def modes_in(self) -> List[int]:
-        r"The set of input modes that are used by this Tensor."
+        r"""
+        The list of input modes that are used by this Tensor.
+        """
         # most of our transformations have the same modes_in for bra and ket (channels)
         # or no bra (unitaries)
         if self._modes_in_ket == self._modes_in_bra or self._modes_in_bra == []:
@@ -198,7 +200,9 @@ class Tensor(ABC):
 
     @property
     def modes_out(self) -> List[int]:
-        r"The set of output modes that are used by this Tensor."
+        r"""
+        The list of output modes that are used by this Tensor.
+        """
         if self._modes_out_ket == self._modes_out_bra or self._modes_out_bra == []:
             return self._modes_out_ket
         return list(set(self._modes_out_ket + self._modes_out_bra))
