@@ -32,9 +32,10 @@ from mrmustard.lab.states import (
 )
 from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
-from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
+from tests.random import angle, force_settings, medium_float, n_mode_pure_state, nmodes, r
 
 math = Math()
+hbar0 = settings.HBAR
 
 
 @st.composite
@@ -45,9 +46,13 @@ def xy_arrays(draw):
 
 @given(nmodes, st.floats(0.1, 5.0))
 def test_vacuum_state(nmodes, hbar):
-    cov, disp = gp.vacuum_cov(nmodes, hbar), gp.vacuum_means(nmodes, hbar)
+    force_settings("_hbar", hbar)
+    cov, disp = gp.vacuum_cov(nmodes), gp.vacuum_means(nmodes)
     assert np.allclose(cov, np.eye(2 * nmodes) * hbar / 2)
     assert np.allclose(disp, np.zeros_like(disp))
+
+    # restoring hbar to its original value
+    force_settings("_hbar", hbar0)
 
 
 @given(x=medium_float, y=medium_float)
@@ -59,15 +64,23 @@ def test_coherent_state_single(x, y):
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_list(hbar, x, y):
-    assert np.allclose(gp.displacement([x], [y], hbar), np.array([x, y]) * np.sqrt(2 * hbar))
+    force_settings("_hbar", hbar)
+    assert np.allclose(gp.displacement([x], [y]), np.array([x, y]) * np.sqrt(2 * hbar))
+
+    # restoring hbar to its original value
+    force_settings("_hbar", hbar0)
 
 
 @given(hbar=st.floats(0.5, 2.0), x=medium_float, y=medium_float)
 def test_coherent_state_array(hbar, x, y):
+    force_settings("_hbar", hbar)
     assert np.allclose(
-        gp.displacement(np.array([x]), np.array([y]), hbar),
+        gp.displacement(np.array([x]), np.array([y])),
         np.array([x, y]) * np.sqrt(2 * hbar),
     )
+
+    # restoring hbar to its original value
+    force_settings("_hbar", hbar0)
 
 
 @given(xy=xy_arrays())
@@ -78,10 +91,13 @@ def test_coherent_state_multiple(xy):
     assert len(x) == len(y)
     assert np.allclose(state.means, np.concatenate([x, y], axis=-1) * np.sqrt(2 * settings.HBAR))
 
+    # restoring hbar to its original value
+    force_settings("_hbar", hbar0)
+
 
 @given(state=n_mode_pure_state(num_modes=1))
 def test_the_purity_of_a_pure_state(state):
-    purity = gp.purity(state.cov, settings.HBAR)
+    purity = gp.purity(state.cov)
     expected = 1.0
     assert np.isclose(purity, expected)
 
@@ -89,7 +105,7 @@ def test_the_purity_of_a_pure_state(state):
 @given(nbar=st.floats(0.0, 3.0))
 def test_the_purity_of_a_mixed_state(nbar):
     state = Thermal(nbar)
-    purity = gp.purity(state.cov, settings.HBAR)
+    purity = gp.purity(state.cov)
     expected = 1 / (2 * nbar + 1)
     assert np.isclose(purity, expected)
 
@@ -149,9 +165,11 @@ def test_hbar():
     """Test cov matrix is linear in hbar."""
     g = Gaussian(2)
     p = g.purity
-    settings.HBAR = 1.234
+    force_settings("_hbar", 1.234)
     assert g.purity == p
-    settings.HBAR = 2
+
+    # restoring hbar to its original value
+    force_settings("_hbar", hbar0)
 
 
 def test_get_single_mode():
@@ -197,12 +215,12 @@ def test_random_state_is_entangled():
     """Tests that a Gaussian state generated at random is entangled."""
     state = Vacuum(2) >> Ggate(num_modes=2)
     mat = state.cov
-    assert np.allclose(gp.log_negativity(mat, 2), 0.0)
+    assert np.allclose(gp.log_negativity(mat), 0.0)
     assert np.allclose(
-        gp.log_negativity(gp.physical_partial_transpose(mat, [0, 1]), 2), 0.0, atol=1e-7
+        gp.log_negativity(gp.physical_partial_transpose(mat, [0, 1])), 0.0, atol=1e-7
     )
-    N1 = gp.log_negativity(gp.physical_partial_transpose(mat, [0]), 2)
-    N2 = gp.log_negativity(gp.physical_partial_transpose(mat, [1]), 2)
+    N1 = gp.log_negativity(gp.physical_partial_transpose(mat, [0]))
+    N2 = gp.log_negativity(gp.physical_partial_transpose(mat, [1]))
 
     assert N1 > 0
     assert N2 > 0

@@ -31,7 +31,13 @@ from mrmustard.lab.gates import (
     S2gate,
     Sgate,
 )
-from mrmustard.lab.states import DisplacedSqueezed, Fock, Gaussian, SqueezedVacuum, Vacuum
+from mrmustard.lab.states import (
+    DisplacedSqueezed,
+    Fock,
+    Gaussian,
+    SqueezedVacuum,
+    Vacuum,
+)
 from mrmustard.math import Math
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
@@ -368,7 +374,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
         cov1, _ = trace(state.cov, state.means, [0])
         mean1 = state.number_means[0]
         mean2 = state.number_means[1]
-        entropy = von_neumann_entropy(cov1, settings.HBAR)
+        entropy = von_neumann_entropy(cov1)
         S = thermal_entropy(nbar)
         return (mean1 - nbar) ** 2 + (entropy - S) ** 2 + (mean2 - nbar) ** 2
 

@@ -1,4 +1,33 @@
-# Release 0.5.0 (development release)
+# Release 0.6.0 (development release)
+
+### New features
+
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
+
+### Breaking changes
+
+* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
+  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+
+* Certain attributes of `Settings` can no longer be changed after their value is queried for the
+  first time.
+
+### Improvements
+
+### Bug fixes
+
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), 
+[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
+
+
+# Release 0.5.0 (current release)
 
 ### New features
 
@@ -8,7 +37,7 @@
   of customizing the the optimization progress with schedulers, trackers, heuristics, tricks, etc.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
 
-* Tensorboard based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
+* Tensorboard-based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
   It can automatically track costs as well as all trainable parameters during optimization in realtime.
   Tensorboard can be most conveniently viewed from VScode.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
@@ -19,7 +48,7 @@
 
   def cost_fn():
       ...
-  
+
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -35,7 +64,7 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
-* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+* Gaussian states support a `bargmann` method for returning the bargmann representation.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
@@ -50,7 +79,7 @@
   ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
   ```
 
-* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation.
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
@@ -107,7 +136,8 @@ This bug lead to incorrect results of math.lattice.strategies.vanilla.
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
-[Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli)
+[Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
+[Richard A. Wolf](https://github.com/ryk-wolf)
 
 ---
 
