@@ -49,6 +49,7 @@ class Wire:
 
     def __post_init__(self):
         self._contraction_id: int = uuid.uuid1().int
+        self._is_connected = False
 
     @property
     def contraction_id(self) -> int:
@@ -58,8 +59,19 @@ class Wire:
         return self._contraction_id
 
     @contraction_id.setter
-    def contraction_id(self, value):
+    def contraction_id(self, value: int):
         self._contraction_id = value
+
+    @property
+    def is_connected(self) -> bool:
+        r"""
+        Whether or not this wire is connected with another wire.
+        """
+        return self._is_connected
+
+    @is_connected.setter
+    def is_connected(self, value: bool):
+        self._is_connected = value
 
 
 @dataclass
@@ -109,9 +121,30 @@ class Tensor(ABC):
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
         self._name = name
+        self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+
+    def _update_modes(
+        self,
+        modes_in_ket: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_bra: Optional[list[int]] = None,
+    ) -> None:
+        r"""
+        Updates the modes in this tensor by setting:
+
+          * self._modes_in_ket, a sorted list of input modes on the ket side
+          * self._modes_out_ket, a sorted list of output modes on the ket side
+          * self._modes_in_bra, a sorted list of input modes on the bra side
+          * self._modes_out_bra, a sorted list of output modes on the bra side
+          * self.self._input, a WireGroup containing all the input modes
+          * self.self._output, a WireGroup containing all the output modes
+
+        It computes a new ``id`` for every wire.
+        """
         self._modes_in_ket = sorted(modes_in_ket) if modes_in_ket else []
-        self._modes_in_bra = sorted(modes_in_bra) if modes_in_bra else []
         self._modes_out_ket = sorted(modes_out_ket) if modes_out_ket else []
+        self._modes_in_bra = sorted(modes_in_bra) if modes_in_bra else []
         self._modes_out_bra = sorted(modes_out_bra) if modes_out_bra else []
 
         # initialize ket and bra wire dicts
@@ -200,6 +233,32 @@ class Tensor(ABC):
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
         """
+
+    def change_modes(
+        self,
+        modes_in_ket: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_bra: Optional[list[int]] = None,
+    ) -> None:
+        r"""
+        Changes the modes in this tensor.
+
+        Args:
+            name: The name of this tensor.
+            modes_in_ket: The input modes on the ket side.
+            modes_out_ket: The output modes on the ket side.
+            modes_in_bra: The input modes on the bra side.
+            modes_out_bra: The output modes on the bra side.
+        
+        Raises:
+            ValueError: if one or more wires in this tensor are already connected.
+        """
+        for wire in self.wires:
+            if wire.is_connected:
+                msg = "Cannot change nodes in a tensor when some of its wires are already connected."
+                raise ValueError(msg)
+        self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
 
 class TensorView(Tensor):

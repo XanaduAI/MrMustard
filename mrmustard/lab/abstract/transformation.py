@@ -176,7 +176,7 @@ class Transformation(Tensor):
             modes = list(items)
         else:
             raise ValueError(f"{items} is not a valid slice or list of modes.")
-        self.modes = modes
+        self.change_modes(modes)
         return self
 
     def __rshift__(self, other: Transformation):
