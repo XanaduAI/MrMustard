@@ -22,7 +22,7 @@ from typing import List
 from .tensors import Wire, Tensor
 
 
-def connect(wire1: Wire, wire2: Wire, dimension: int):
+def connect(wire1: Wire, wire2: Wire):
     r"""Connects two wires in a tensor network.
     Arguments:
         wire1: the first wire
@@ -31,23 +31,21 @@ def connect(wire1: Wire, wire2: Wire, dimension: int):
     wire1._connected_to = wire2
     wire2._connected_to = wire1
 
-    wire1.dimension = dimension
-    wire2.dimension = dimension
-
     wire1.contraction_id = wire2.contraction_id
 
 
-def contract(tensors: list[Tensor], default_dim):
+def contract(tensors: list[Tensor], dim: int):
     r"""Contract a list of tensors.
-    Arguments:
+
+    Args:
         tensors: the tensors to contract
+        dim: the dimension of the Fock basis
+
     Returns:
         (tensor) the contracted tensor
     """
     opt_einsum_args = []
     for t in tensors:
-        for w in t.wires:
-            w.dimension = w.dimension or default_dim
-        opt_einsum_args.append(t.value)
+        opt_einsum_args.append(t.value(cutoff=dim))
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)

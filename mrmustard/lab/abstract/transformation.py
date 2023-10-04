@@ -271,20 +271,8 @@ class Unitary(Transformation):
     def __init__(self, name: str, modes_in: list[int], modes_out: list[int]):
         super().__init__(name=name, input_wires_ket=modes_in, output_wires_ket=modes_out)
 
-    @property
-    def fock(self):
-        return self.U(shape=self.shape)
-
-    @property
-    def value(self):
-        return self.fock
-
-    @property
-    def shape(self):
-        try:
-            return [wire.dimension for wire in self.wires]
-        except AttributeError:
-            raise AttributeError("shape is not yet set for this transformation")
+    def value(self, cutoff: int):
+        return self.U(cutoffs=[cutoff for _ in range(self.num_modes)])
 
     def bargmann(self, numpy=False):
         X, _, d = self.XYd(allow_none=False)
@@ -303,27 +291,22 @@ class Unitary(Transformation):
     def U(
         self,
         cutoffs: Optional[Sequence[int]] = None,
-        shape: Optional[Sequence[int]] = None,
     ):
         r"""Returns the unitary representation of the transformation.
-        If specified, shape takes precedence over cutoffs.
-        shape is in the order (out, in).
 
-        Note that for a Unitary transformation on N modes, len(cutoffs) is N
-        and len(shape) is 2N.
+        Note that for a Unitary transformation on N modes, ``len(cutoffs)`` is ``N``.
 
-        Arguments:
+        Args:
             cutoffs (Sequence[int]): the cutoffs of the input and output modes
-            shape (Optional[Sequence[int]]): the shape of the unitary matrix
 
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
         """
         if len(cutoffs) != self.num_modes:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
-        shape = shape or tuple(cutoffs) * 2
+        shape = tuple(cutoffs) * 2
         X, _, d = self.XYd(allow_none=False)
-        return fock.wigner_to_fock_U(X, d, shape=shape)
+        return fock.wigner_to_fock_U(X, d, shape)
 
     def choi(
         self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False
@@ -392,20 +375,8 @@ class Channel(Transformation):
             return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    @property
-    def fock(self):
-        return self.choi(shape=self.shape)
-
-    @property
-    def value(self):
-        return self.fock
-
-    @property
-    def shape(self):
-        try:
-            return [wire.dimension for wire in self.wires]
-        except AttributeError:
-            raise AttributeError("shape is not yet set for this transformation")
+    def value(self, cutoff: int):
+        return self.choi(cutoffs=[cutoff for _ in range(self.num_modes)])
 
     def choi(
         self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False

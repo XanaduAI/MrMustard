@@ -34,7 +34,6 @@ class Wire:
         is_ket: Whether this wire is on the ket or on the bra side ??.
         contraction_id: A numerical identifier for the contraction involving this wire, or ``None``
             if this wire is not contracted.
-        dimension: The dimension of this wire. ??
 
     """
     id: int
@@ -42,7 +41,6 @@ class Wire:
     is_input: bool
     is_ket: bool
     contraction_id: int
-    dimension: Optional[int] = None
 
 
 @dataclass
@@ -175,10 +173,16 @@ class Tensor(ABC):
         "Returns a set of all the modes spanned by this Tensor."
         return self.modes_out + self.modes_in
 
-    @property
     @abstractmethod
-    def value(self):
-        r"""The value of this tensor."""
+    def value(self, cutoff: int):
+        r"""The value of this tensor.
+
+        Args:
+            cutoff: the dimension of the Fock basis
+
+        Returns:
+            ComplexTensor: the unitary matrix in Fock representation
+        """
 
     def _new_id(self) -> int:
         id = Tensor._id_counter
