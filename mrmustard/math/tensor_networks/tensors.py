@@ -133,19 +133,19 @@ class Tensor(ABC):
         r"""
         Updates the modes in this tensor by setting:
 
-          * self._modes_in_ket, a sorted list of input modes on the ket side
-          * self._modes_out_ket, a sorted list of output modes on the ket side
-          * self._modes_in_bra, a sorted list of input modes on the bra side
-          * self._modes_out_bra, a sorted list of output modes on the bra side
+          * self._modes_in_ket, a list of input modes on the ket side
+          * self._modes_out_ket, a list of output modes on the ket side
+          * self._modes_in_bra, a list of input modes on the bra side
+          * self._modes_out_bra, a list of output modes on the bra side
           * self.self._input, a WireGroup containing all the input modes
           * self.self._output, a WireGroup containing all the output modes
 
         It computes a new ``id`` for every wire.
         """
-        self._modes_in_ket = sorted(modes_in_ket) if modes_in_ket else []
-        self._modes_out_ket = sorted(modes_out_ket) if modes_out_ket else []
-        self._modes_in_bra = sorted(modes_in_bra) if modes_in_bra else []
-        self._modes_out_bra = sorted(modes_out_bra) if modes_out_bra else []
+        self._modes_in_ket = modes_in_ket if modes_in_ket else []
+        self._modes_out_ket = modes_out_ket if modes_out_ket else []
+        self._modes_in_bra = modes_in_bra if modes_in_bra else []
+        self._modes_out_bra = modes_out_bra if modes_out_bra else []
 
         # initialize ket and bra wire dicts
         self._input = WireGroup()
@@ -189,13 +189,13 @@ class Tensor(ABC):
     def modes_in(self) -> set[int]:
         "Returns the set of input modes that are used by this Tensor."
         ret = self._modes_in_ket + self._modes_in_bra
-        return set(sorted(ret))
+        return set(ret)
 
     @property
     def modes_out(self) -> set[int]:
         "Returns the set of output modes that are used by this Tensor."
         ret = self._modes_out_ket + self._modes_out_bra
-        return set(sorted(ret))
+        return set(ret)
 
     @property
     def name(self) -> int:

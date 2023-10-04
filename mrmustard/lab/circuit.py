@@ -122,7 +122,6 @@ class Circuit(Transformation, Parametrized):
     # pylint: disable=too-many-branches,too-many-return-statements
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
-        print("ciao")
         if not isinstance(other, Circuit):
             return False
         if not (self.is_gaussian and other.is_gaussian):
