@@ -162,7 +162,7 @@ class Tensor(ABC):
 
     @property
     def adjoint(self) -> AdjointView:
-        r"""Returns the adjoint view of this Tensor (with new ``id``s). That is, ket <-> bra."""
+        r"" r" The adjoint view of this Tensor (with new ``id``s). That is, ket <-> bra." ""
         return AdjointView(self)
 
     @property
@@ -174,8 +174,10 @@ class Tensor(ABC):
 
     @property
     def modes(self) -> list[int]:
-        r"""For backward compatibility. Don't overuse.
-        It returns a list of modes for this Tensor, unless it's ambiguous."""
+        r"""
+        For backward compatibility. Don't overuse.
+        It returns a list of modes for this Tensor, unless it's ambiguous.
+        """
         if self.modes_in == self.modes_out:  # transformation on same modes
             return list(self.modes_in)
         elif len(self.modes_in) == 0:  # state
@@ -186,16 +188,20 @@ class Tensor(ABC):
             raise ValueError("modes are ambiguous for this Tensor.")
 
     @property
-    def modes_in(self) -> set[int]:
-        "Returns the set of input modes that are used by this Tensor."
-        ret = self._modes_in_ket + self._modes_in_bra
-        return set(ret)
+    def modes_in(self) -> List[int]:
+        r"The set of input modes that are used by this Tensor."
+        # most of our transformations have the same modes_in for bra and ket (channels)
+        # or no bra (unitaries)
+        if self._modes_in_ket == self._modes_in_bra or self._modes_in_bra == []:
+            return self._modes_in_ket
+        return list(set(self._modes_in_ket + self._modes_in_bra))
 
     @property
-    def modes_out(self) -> set[int]:
-        "Returns the set of output modes that are used by this Tensor."
-        ret = self._modes_out_ket + self._modes_out_bra
-        return set(ret)
+    def modes_out(self) -> List[int]:
+        r"The set of output modes that are used by this Tensor."
+        if self._modes_out_ket == self._modes_out_bra or self._modes_out_bra == []:
+            return self._modes_out_ket
+        return list(set(self._modes_out_ket + self._modes_out_bra))
 
     @property
     def name(self) -> int:
@@ -278,10 +284,8 @@ class TensorView(Tensor):
             self._original.output.bra.keys(),
         )
 
-    @property
-    def value(self):
-        r""" """
-        return self._original.value
+    def value(self, cutoff):
+        return self._original.value(cutoff)
 
 
 class AdjointView(Tensor):
@@ -299,7 +303,5 @@ class AdjointView(Tensor):
             self._original.output.ket.keys(),
         )
 
-    @property
-    def value(self):
-        r""" """
-        return np.conj(self._original.value).T
+    def value(self, cutoff):
+        return np.conj(self._original.value(cutoff)).T
