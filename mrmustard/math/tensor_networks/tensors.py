@@ -191,6 +191,10 @@ class Tensor(ABC):
     def modes_in(self) -> List[int]:
         r"""
         The list of input modes that are used by this Tensor.
+
+        If this tensor has no input modes on the bra side, or if the input modes are equal
+        on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
+        ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
         # most of our transformations have the same modes_in for bra and ket (channels)
         # or no bra (unitaries)
@@ -202,7 +206,13 @@ class Tensor(ABC):
     def modes_out(self) -> List[int]:
         r"""
         The list of output modes that are used by this Tensor.
+
+        If this tensor has no output modes on the bra side, or if the output modes are equal
+        on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
+        ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
+        # most of our transformations have the same modes_in for bra and ket (channels)
+        # or no bra (unitaries)
         if self._modes_out_ket == self._modes_out_bra or self._modes_out_bra == []:
             return self._modes_out_ket
         return list(set(self._modes_out_ket + self._modes_out_bra))
@@ -308,4 +318,4 @@ class AdjointView(Tensor):
         )
 
     def value(self, cutoff):
-        return np.conj(self._original.value(cutoff)).T
+        return self._original.value(cutoff)
