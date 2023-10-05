@@ -17,11 +17,8 @@
 from __future__ import annotations
 
 from opt_einsum import contract as opt_contract
-from typing import List
 
 from .tensors import Wire, Tensor
-
-import uuid
 
 
 def connect(wire1: Wire, wire2: Wire):
@@ -33,9 +30,7 @@ def connect(wire1: Wire, wire2: Wire):
     wire1.is_connected = True
     wire2.is_connected = True
 
-    unique_id = uuid.uuid1().int
-    wire1.contraction_id = unique_id
-    wire2.contraction_id = unique_id
+    wire1.contraction_id = wire2.contraction_id
 
 
 def contract(tensors: list[Tensor], dim: int):

@@ -27,6 +27,13 @@ import uuid
 __all__ = ["Wire", "Tensor"]
 
 
+def random_int() -> int:
+    r"""
+    Returns a random integer obtained from a UUID
+    """
+    return uuid.uuid1().int
+
+
 @dataclass
 class Wire:
     r"""Represents a wire in a tensor network.
@@ -48,7 +55,7 @@ class Wire:
     is_ket: bool
 
     def __post_init__(self):
-        self._contraction_id: int = uuid.uuid1().int
+        self._contraction_id: int = random_int()
         self._is_connected = False
 
     @property
@@ -150,15 +157,15 @@ class Tensor(ABC):
         # initialize ket and bra wire dicts
         self._input = WireGroup()
         for mode in self._modes_in_ket:
-            self._input.ket |= {mode: Wire(uuid.uuid1().int, mode, True, True)}
+            self._input.ket |= {mode: Wire(random_int(), mode, True, True)}
         for mode in self._modes_in_bra:
-            self._input.bra |= {mode: Wire(uuid.uuid1().int, mode, True, False)}
+            self._input.bra |= {mode: Wire(random_int(), mode, True, False)}
 
         self._output = WireGroup()
         for mode in self._modes_out_ket:
-            self._output.ket |= {mode: Wire(uuid.uuid1().int, mode, False, True)}
+            self._output.ket |= {mode: Wire(random_int(), mode, False, True)}
         for mode in self._modes_out_bra:
-            self._output.bra |= {mode: Wire(uuid.uuid1().int, mode, False, False)}
+            self._output.bra |= {mode: Wire(random_int(), mode, False, False)}
 
     @property
     def adjoint(self) -> AdjointView:
