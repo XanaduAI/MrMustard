@@ -27,6 +27,10 @@ def connect(wire1: Wire, wire2: Wire):
         wire1: the first wire
         wire2: the second wire
     """
+    if wire1.is_connected or wire2.is_connected:
+        msg = "Tried to connect wires that are already connected."
+        raise ValueError(msg)
+
     wire1.is_connected = True
     wire2.is_connected = True
 

@@ -19,6 +19,10 @@ from mrmustard.math.tensor_networks import *
 import numpy as np
 import pytest
 
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
+
 
 class TBad(Tensor):
     r"""
@@ -43,6 +47,11 @@ class TComplex(Tensor):
 
     def value(self, cutoff):
         return np.arange(cutoff) + 1j * np.arange(2, cutoff + 2)
+
+
+# ~~~~~~~
+# Tests
+# ~~~~~~~
 
 
 class TestWire:
