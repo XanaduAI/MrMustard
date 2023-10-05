@@ -91,12 +91,52 @@ class TestTensor:
         assert len(t.input.bra.items()) == 0 if modes_in_bra is None else len(modes_in_bra)
         assert len(t.output.bra.items()) == 0 if modes_out_bra is None else len(modes_out_bra)
 
+    @pytest.mark.parametrize("modes_in_ket", [None, [1, 2, 3]])
+    @pytest.mark.parametrize("modes_out_ket", [None, [4, 5, 6]])
+    @pytest.mark.parametrize("modes_in_bra", [None, [7, 8]])
+    @pytest.mark.parametrize("modes_out_bra", [None, [9]])
+    def test_ids_in_same_tensor(self, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra):
+        r"""
+        Tests that tensors generate wires with different ``id``s.
+        """
+        t = TId("t", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+
+        all_ids = [w.id for w in t.input.ket.values()]
+        all_ids += [w.id for w in t.output.ket.values()]
+        all_ids += [w.id for w in t.input.bra.values()]
+        all_ids += [w.id for w in t.output.bra.values()]
+
+        assert len(all_ids) == len(set(all_ids))
+
+    @pytest.mark.parametrize("modes_in_ket", [None, [1, 2, 3]])
+    @pytest.mark.parametrize("modes_out_ket", [None, [4, 5, 6]])
+    @pytest.mark.parametrize("modes_in_bra", [None, [7, 8]])
+    @pytest.mark.parametrize("modes_out_bra", [None, [9]])
+    def test_ids_in_same_tensor(self, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra):
+        r"""
+        Tests that different tensors generate wires with different ``id``s.
+        """
+        t1 = TId("t1", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        t2 = TId("t2", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+
+        all_ids1 = [w.id for w in t1.input.ket.values()]
+        all_ids1 += [w.id for w in t1.output.ket.values()]
+        all_ids1 += [w.id for w in t1.input.bra.values()]
+        all_ids1 += [w.id for w in t1.output.bra.values()]
+
+        all_ids2 = [w.id for w in t2.input.ket.values()]
+        all_ids2 += [w.id for w in t2.output.ket.values()]
+        all_ids2 += [w.id for w in t2.input.bra.values()]
+        all_ids2 += [w.id for w in t2.output.bra.values()]
+
+        assert len(all_ids1 + all_ids2) == len(set(all_ids1 + all_ids2))
+
     def test_adjoint(self):
         t = TComplex("t", [1], [2], [3])
         t_adj = t.adjoint
 
         cutoff = 12
-        assert np.allclose(t.value(cutoff), t_adj.value(cutoff).T)
+        assert np.allclose(np.conj(t.value(cutoff)).T, t_adj.value(cutoff))
         assert t.input.ket.keys() == t_adj.input.bra.keys()
         assert t.input.bra.keys() == t_adj.input.ket.keys()
         assert t.output.ket.keys() == t_adj.output.bra.keys()
@@ -152,3 +192,30 @@ class TestTensor:
 
         with pytest.raises(TypeError, match="abstract method value"):
             TBad("t_bad")
+
+    def test_change_modes(self):
+        r"""
+        Tests the function to change modes.
+        """
+        t = TId("t")
+
+        modes_in_ket = [1]
+        modes_out_ket = [2, 3]
+        modes_in_bra = [4]
+        t.change_modes(modes_in_ket, modes_out_ket, modes_in_bra)
+
+        assert list(t.input.ket.keys()) == modes_in_ket
+        assert list(t.input.bra.keys()) == modes_in_bra
+        assert list(t.output.ket.keys()) == modes_out_ket
+        assert t.output.bra == {}
+
+    def test_change_modes_error(self):
+        r"""
+        Tests the function to change modes.
+        """
+        t1 = TId("t1", [1])
+        t2 = TId("t2", None, [1])
+        connect(t1.input.ket[1], t2.output.ket[1])
+
+        with pytest.raises(ValueError, match="already connected"):
+            t1.change_modes([2])

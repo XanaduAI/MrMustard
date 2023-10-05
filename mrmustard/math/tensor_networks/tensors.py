@@ -20,8 +20,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-import numpy as np
 import uuid
+
+from mrmustard.math import Math
+
+math = Math()
 
 
 __all__ = ["Wire", "Tensor"]
@@ -325,4 +328,4 @@ class AdjointView(Tensor):
         )
 
     def value(self, cutoff):
-        return self._original.value(cutoff)
+        return math.conj(self._original.value(cutoff))
