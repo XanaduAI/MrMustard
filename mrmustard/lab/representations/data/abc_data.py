@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from itertools import product
 from typing import Optional, Union
-
+import numpy as np
 
 from mrmustard.lab.representations.data.matvec_data import MatVecData
 from mrmustard.math import Math
@@ -44,6 +44,7 @@ class ABCData(MatVecData):
         self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Optional[Batch[Scalar]] = None
     ) -> None:
         super().__init__(mat=A, vec=b, coeffs=c)
+        self._contract_idxs = []
 
     def value(self, x: ComplexVector) -> Scalar:
         r"""Value of this function at x.
@@ -100,59 +101,70 @@ class ABCData(MatVecData):
     def __matmul__(self, other: ABCData) -> ABCData:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
         # Useful for the future, but not for this PR
-        raise NotImplementedError()
-        # graph = self & other
-        # newA = graph.A
-        # newb = graph.b
-        # newc = graph.c
-        # for n, (i, j) in enumerate(zip(self._contract_idxs, other._contract_idxs)):
-        #     i = i - np.sum(np.array(self._contract_idxs[:n]) < i)
-        #     j = j + self.dim - n - np.sum(np.array(other._contract_idxs[:n]) < j)
-        #     noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, newA.shape[-1]))
-        #     Abar = math.gather(math.gather(newA, noij, axis=1), noij, axis=2)
-        #     bbar = math.gather(newb, noij, axis=1)
-        #     D = math.gather(
-        #         math.concat([newA[..., i][..., None], newA[..., j][..., None]], axis=-1),
-        #         noij,
-        #         axis=1,
-        #     )
-        #     M = math.concat(
-        #         [
-        #             math.concat(
-        #                 [
-        #                     newA[:, i, i][:, None, None],
-        #                     newA[:, j, i][:, None, None] - 1,
-        #                 ],
-        #                 axis=-1,
-        #             ),
-        #             math.concat(
-        #                 [
-        #                     newA[:, i, j][:, None, None] - 1,
-        #                     newA[:, j, j][:, None, None],
-        #                 ],
-        #                 axis=-1,
-        #             ),
-        #         ],
-        #         axis=-2,
-        #     )
-        #     Minv = math.inv(M)
-        #     b_ = math.concat([newb[:, i][:, None], newb[:, j][:, None]], axis=-1)
+        # raise NotImplementedError()
 
-        #     newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
-        #     newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
-        #     newc = (
-        #         newc
-        #         * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
-        #         / math.sqrt(-math.det(M))
-        #     )
-        # return self.__class__(newA, newb, newc)
+        graph = self & other
+        newA = graph.A
+        newb = graph.b
+        newc = graph.c
+        for n, (i, j) in enumerate(zip(self._contract_idxs, other._contract_idxs)):
+            i = i - np.sum(np.array(self._contract_idxs[:n]) < i)
+            j = j + self.dim - n - np.sum(np.array(other._contract_idxs[:n]) < j)
+            noij = list(range(i)) + list(range(i + 1, j)) + list(range(j + 1, newA.shape[-1]))
+            Abar = math.gather(math.gather(newA, noij, axis=1), noij, axis=2)
+            bbar = math.gather(newb, noij, axis=1)
+            D = math.gather(
+                math.concat([newA[..., i][..., None], newA[..., j][..., None]], axis=-1),
+                noij,
+                axis=1,
+            )
+            M = math.concat(
+                [
+                    math.concat(
+                        [
+                            newA[:, i, i][:, None, None],
+                            newA[:, j, i][:, None, None] - 1,
+                        ],
+                        axis=-1,
+                    ),
+                    math.concat(
+                        [
+                            newA[:, i, j][:, None, None] - 1,
+                            newA[:, j, j][:, None, None],
+                        ],
+                        axis=-1,
+                    ),
+                ],
+                axis=-2,
+            )
+            Minv = math.inv(M)
+            b_ = math.concat([newb[:, i][:, None], newb[:, j][:, None]], axis=-1)
 
-    # def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
-    #     idx = (idx,) if isinstance(idx, int) else idx
-    #     for i in idx:
-    #         if i > self.dim:
-    #             raise IndexError(
-    #                 f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
-    #             )
-    #     self._contract_idxs = idx
-    #     return self
+            newA = Abar - math.einsum("bij,bjk,blk", D, Minv, D)
+            newb = bbar - math.einsum("bij,bjk,bk", D, Minv, b_)
+            newc = (
+                newc
+                * math.exp(-math.einsum("bi,bij,bj", b_, Minv, b_) / 2)
+                / math.sqrt(-math.det(M))
+            )
+        return self.__class__(newA, newb, newc)
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> ABCData:
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
+            if i > self.dim:
+                raise IndexError(
+                    f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
+                )
+        new = self.__class__(self.A, self.b, self.c)
+        new._contract_idxs = idx
+        return new
+
+    def transpose(self, order: tuple[int, ...] | list[int]) -> ABCData:
+        new = self.__class__(
+            A=math.gather(math.gather(self.A, order, -1), order, -2),
+            b=math.gather(self.b, order, -1),
+            c=self.c,
+        )
+        new._contract_idxs = self._contract_idxs
+        return new
