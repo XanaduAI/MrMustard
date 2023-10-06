@@ -90,7 +90,7 @@ class TestTrainer:
 
     @pytest.mark.parametrize(
         "tasks",
-        [[{"x": 0.1}, {"y_targ": 0.2}], {"c0": {}, "c1": {"euclidean_lr": 0.02, "HBAR": 1.0}}],
+        [[{"x": 0.1}, {"y_targ": 0.2}], {"c0": {}, "c1": {"euclidean_lr": 0.02}}],
     )
     @pytest.mark.parametrize(
         "return_type",

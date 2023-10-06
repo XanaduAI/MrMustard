@@ -19,9 +19,9 @@ This module defines gates and operations that can be applied to quantum modes to
 """
 
 from typing import List, Optional, Sequence, Tuple, Union
-
+import numpy as np
 from mrmustard import settings
-from mrmustard.lab.abstract import Transformation
+from mrmustard.lab.abstract import State, Transformation
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
@@ -45,6 +45,7 @@ __all__ = [
     "Attenuator",
     "Amplifier",
     "AdditiveNoise",
+    "PhaseNoise",
 ]
 
 
@@ -92,7 +93,7 @@ class Dgate(Parametrized, Transformation):
 
     @property
     def d_vector(self):
-        return gaussian.displacement(self.x.value, self.y.value, settings.HBAR)
+        return gaussian.displacement(self.x.value, self.y.value)
 
     def U(self, cutoffs: Sequence[int]):
         r"""Returns the unitary representation of the Displacement gate using
@@ -787,11 +788,11 @@ class Attenuator(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[0]
+        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value, settings.HBAR)[1]
+        return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value)[1]
 
 
 class Amplifier(Parametrized, Transformation):
@@ -844,11 +845,11 @@ class Amplifier(Parametrized, Transformation):
 
     @property
     def X_matrix(self):
-        return gaussian.amp_XYd(self.gain.value, self.nbar.value, settings.HBAR)[0]
+        return gaussian.amp_XYd(self.gain.value, self.nbar.value)[0]
 
     @property
     def Y_matrix(self):
-        return gaussian.amp_XYd(self.gain.value, self.nbar.value, settings.HBAR)[1]
+        return gaussian.amp_XYd(self.gain.value, self.nbar.value)[1]
 
 
 # pylint: disable=no-member
@@ -897,4 +898,69 @@ class AdditiveNoise(Parametrized, Transformation):
 
     @property
     def Y_matrix(self):
-        return gaussian.noise_Y(self.noise.value, settings.HBAR)
+        return gaussian.noise_Y(self.noise.value)
+
+
+class PhaseNoise(Parametrized, Transformation):
+    r"""The phase noise channel.
+
+    The phase noise channel is a non-Gaussian transformation that is equivalent to
+    a random phase rotation.
+
+    Args:
+        phase_stdev (float or List[float]): the standard deviation of the (wrapped) normal
+            distribution for the angle of the rotation
+        modes (optional, list(int)): the single mode this gate is applied to (default [0])
+    """
+
+    def __init__(
+        self,
+        phase_stdev: Union[Optional[float], Optional[List[float]]] = 0.0,
+        phase_stdev_trainable: bool = False,
+        phase_stdev_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        modes: Optional[List[int]] = None,
+    ):
+        super().__init__(
+            phase_stdev=phase_stdev,
+            phase_stdev_trainable=phase_stdev_trainable,
+            phase_stdev_bounds=phase_stdev_bounds,
+        )
+        self._modes = modes or [0]
+        self.is_unitary = False
+        self.is_gaussian = False
+        self.short_name = "P~"
+
+    # need to override primal because of the unconventional way
+    # the channel is defined in Fock representation
+    def primal(self, state):
+        idx = state.modes.index(self.modes[0])
+        if state.is_pure:
+            ket = state.ket()
+            dm = fock.ket_to_dm(ket)
+        else:
+            dm = state.dm()
+
+        # transpose dm so that the modes of interest are at the end
+        M = state.num_modes
+        indices = list(range(2 * M))
+        indices.remove(idx)
+        indices.remove(idx + M)
+        indices += [idx, idx + M]
+        dm = math.transpose(dm, indices)
+
+        coeff = math.cast(
+            math.exp(
+                -0.5
+                * self.phase_stdev.value**2
+                * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
+            ),
+            dm.dtype,
+        )
+
+        for k in range(-dm.shape[-2] + 1, dm.shape[-1]):
+            diagonal = math.diag_part(dm, k=k)
+            diagonal *= coeff[k + dm.shape[-2] - 1]
+            dm = math.set_diag(dm, diagonal, k=k)
+
+        # transpose dm back to the original order
+        return State(dm=math.transpose(dm, np.argsort(indices)), modes=state.modes)
