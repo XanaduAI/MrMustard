@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import uuid
 
@@ -39,23 +39,25 @@ def random_int() -> int:
 
 @dataclass
 class Wire:
-    r"""Represents a wire in a tensor network.
+    r""" Represents a wire in a tensor network.
 
-    Each wire is characterized by a unique identifier ``id``, which must different from
-    the identifiers of all the other wires in the tensor network, as well as by a label
-    ``mode`` that represents a mode of light.
+    Each wire is characterized by a unique identifier ``id``, which must be different from
+    the identifiers of all the other wires in the tensor network. Additionally, it owns a
+    label ``mode`` that represents the mode of light that this wire is acting on.
 
     Args:
         id: A numerical identifier for this wire.
-        mode: The mode represented by this wire.
+        mode: The mode of light that this wire is acting on.
         is_input: Whether this wire is an input to a tensor or an output.
         is_ket: Whether this wire is on the ket or on the bra side.
+        dim: The dimension of this wire.
 
     """
     id: int
     mode: int
     is_input: bool
     is_ket: bool
+    dim: Optional[int] = None
 
     def __post_init__(self):
         self._contraction_id: int = random_int()
@@ -107,7 +109,7 @@ class Tensor(ABC):
 
     .. code-block::
         class U(Tensor):
-            def value(self, cutoff):
+            def value(self, shape):
                 # specify the value of the tensor
                 pass
 
@@ -254,10 +256,18 @@ class Tensor(ABC):
         return self._output
 
     @property
-    def wires(self) -> List[Wire]:
+    def wires(self, swap=False) -> List[Wire]:
         r"""
         The list of all wires in this tensor, sorted as ``[ket_in, ket_out, bra_in, bra_out]``.
+        If ``swap`` is ``True``, sorts them as ``[ket_out, ket_in, bra_out, bra_in]`` instead.
         """
+        if swap:
+            return (
+                list(self.output.ket.values())
+                + list(self.input.ket.values())
+                + list(self.output.bra.values())
+                + list(self.input.bra.values())
+            )
         return (
             list(self.input.ket.values())
             + list(self.output.ket.values())
@@ -266,11 +276,11 @@ class Tensor(ABC):
         )
 
     @abstractmethod
-    def value(self, cutoff: int):
+    def value(self, shape: Tuple[int]):
         r"""The value of this tensor.
 
         Args:
-            cutoff: the dimension of the Fock basis
+            shape: the shape of this tensor
 
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
@@ -304,6 +314,27 @@ class Tensor(ABC):
                 raise ValueError(msg)
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
+    def shape(self, default_dim: Optional[int] = None, swap=False):
+        r"""
+        Returns the shape of the underlying tensor, as inferred from the dimensions of the individual
+        wires.
+        
+        If ``swap`` is ``False``, the shape returned is in the order ``(in_ket, in_bra, out_ket, out_bra)``.
+        Otherwise, it is in the order ``(out_ket, out_bra, in_ket, in_bra)``.
+
+        Args:
+            default_dim: The default dimension of wires with unspecified dimension.
+            swap: Whether to swap input and output shapes.
+        """
+        shape_in_ket = [w.dim or default_dim for w in self.input.ket.values()]
+        shape_out_ket = [w.dim or default_dim for w in self.output.ket.values()]
+        shape_in_bra = [w.dim or default_dim for w in self.input.bra.values()]
+        shape_out_bra = [w.dim or default_dim for w in self.output.bra.values()]
+
+        if swap:
+            return [shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra]
+        return [shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra]
+
 
 class TensorView(Tensor):
     r"""
@@ -320,8 +351,8 @@ class TensorView(Tensor):
             self._original.output.bra.keys(),
         )
 
-    def value(self, cutoff):
-        return self._original.value(cutoff)
+    def value(self, shape: Tuple[int]):
+        return self._original.value(shape)
 
 
 class AdjointView(Tensor):
@@ -339,5 +370,5 @@ class AdjointView(Tensor):
             self._original.output.ket.keys(),
         )
 
-    def value(self, cutoff):
-        return math.conj(self._original.value(cutoff))
+    def value(self, shape: Tuple[int]):
+        return math.conj(self._original.value(shape))

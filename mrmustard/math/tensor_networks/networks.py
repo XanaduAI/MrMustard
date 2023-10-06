@@ -17,19 +17,36 @@
 from __future__ import annotations
 
 from opt_einsum import contract as opt_contract
+from typing import Optional
 
 from .tensors import Wire, Tensor
 
 
-def connect(wire1: Wire, wire2: Wire):
+def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     r"""Connects two wires in a tensor network.
-    Arguments:
-        wire1: the first wire
-        wire2: the second wire
+    
+    Args:
+        wire1: The first wire.
+        wire2: The second wire.
+        dim: The dimension of the Fock space. Used when the two wires are contracted.
+            If ``None``, it sets it to the maximum between ``wire1.dimension`` and
+            ``wire2.dimension``.
+
+    Raises:
+        ValueError: If one or both of the wires are already connected.
+        ValueError: If given ``dim`` is ``None``, and both wires have an unspecified dimension.
     """
     if wire1.is_connected or wire2.is_connected:
         msg = "Tried to connect wires that are already connected."
         raise ValueError(msg)
+    
+    if dim is None:
+        dim = max(wire1.dim, wire2.dim, key=lambda x: x or 0)
+        if dim is None:
+            msg = "Dimension cannot be inferred from wires. Please set it manually."
+            raise ValueError(msg)
+    wire1.dim = dim
+    wire2.dim = dim
 
     wire1.is_connected = True
     wire2.is_connected = True
@@ -37,7 +54,7 @@ def connect(wire1: Wire, wire2: Wire):
     wire1.contraction_id = wire2.contraction_id
 
 
-def contract(tensors: list[Tensor], dim: int):
+def contract(tensors: list[Tensor], default_dim: int):
     r"""Contract a list of tensors.
 
     Args:
@@ -49,6 +66,7 @@ def contract(tensors: list[Tensor], dim: int):
     """
     opt_einsum_args = []
     for t in tensors:
-        opt_einsum_args.append(t.value(cutoff=dim))
+        shape = t.shape(default_dim=default_dim, swap=True)
+        opt_einsum_args.append(t.value(shape=shape))
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)

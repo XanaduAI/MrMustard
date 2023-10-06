@@ -36,8 +36,8 @@ class TestTransformations:
         g2 = Dgate(0.2, modes=modes)
 
         for mode in modes:
-            connect(g1.output.ket[mode], g2.input.ket[mode])
-        contraction = contract([g1, g2], dim=cutoff)
+            connect(g1.output.ket[mode], g2.input.ket[mode], cutoff)
+        contraction = contract([g1, g2], cutoff)
 
         smat = Sgate(0.1).U(cutoffs=[cutoff])
         dmat = Dgate(0.2).U(cutoffs=[cutoff])

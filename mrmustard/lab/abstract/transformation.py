@@ -142,17 +142,21 @@ class Transformation(Tensor):
             return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
 
-    def choi(self, cutoffs: Sequence[int], dual: bool = False):
+    def choi(self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False):
         r"""Returns the Choi representation of the transformation.
 
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        The ``shape`` is in the order ``(out_L, in_L, out_R, in_R)``.
+
         Args:
-            cutoffs (Sequence[int]): the cutoffs of the input and output modes
-            dual (bool): whether to return the dual Choi
+            cutoffs: the cutoffs of the input and output modes
+            shape: the shape of the Choi matrix
+            dual: whether to return the dual Choi
         """
         if len(cutoffs) != self.num_modes:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
 
-        shape = tuple(cutoffs) * 4
+        shape = shape or tuple(cutoffs) * 4
 
         if self.is_unitary:
             U = self.U(shape[: self.num_modes])
@@ -315,8 +319,9 @@ class Unitary(Transformation):
         super().__init__(name=name, modes_in_ket=modes, modes_out_ket=modes)
         self.is_unitary = True
 
-    def value(self, cutoff: int):
-        return self.U(cutoffs=[cutoff for _ in range(self.num_modes)])
+    def value(self, shape: Tuple[int]):
+        print(self.U)
+        return self.U(shape=shape)
 
     def _transform_fock(self, state: State, dual=False) -> State:
         op_idx = [state.modes.index(m) for m in self.modes]
@@ -328,22 +333,28 @@ class Unitary(Transformation):
     def U(
         self,
         cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
     ):
         r"""Returns the unitary representation of the transformation.
 
-        Note that for a Unitary transformation on N modes, ``len(cutoffs)`` is ``N``.
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
 
         Args:
-            cutoffs (Sequence[int]): the cutoffs of the input and output modes
+            cutoffs: the cutoffs of the input and output modes
+            shape: the shape of the unitary matrix
 
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
-        """
+        """        
         if len(cutoffs) != self.num_modes:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
-        shape = tuple(cutoffs) * 2
+        shape = shape or tuple(cutoffs) * 2
         X, _, d = self.XYd(allow_none=False)
-        return fock.wigner_to_fock_U(X, d, shape)
+        return fock.wigner_to_fock_U(X, d, shape=shape)
 
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
@@ -380,8 +391,8 @@ class Channel(Transformation):
             return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
-    def value(self, cutoff: int):
-        return self.choi(cutoffs=[cutoff for _ in range(self.num_modes)])
+    def value(self, shape: Tuple[int]):
+        return self.choi(shape)
 
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""
