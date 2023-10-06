@@ -47,12 +47,12 @@ def _wig_laguerre_val(L, x, diag):  # pragma: no cover
     by `_wigner_discretized_clenshaw`. The evaluation uses the Clenshaw recursion.
     """
     if len(diag) == 2:
-        y0 = np.array([[diag[0]]]).astype(np.complex128)
-        y1 = np.array([[diag[1]]]).astype(np.complex128)
+        y0 = np.array([[diag[0]]], dtype=np.complex128)
+        y1 = np.array([[diag[1]]], dtype=np.complex128)
     else:
         k = len(diag)
-        y0 = np.array([[diag[-2]]]).astype(np.complex128)
-        y1 = np.array([[diag[-1]]]).astype(np.complex128)
+        y0 = np.array([[diag[-2]]], dtype=np.complex128)
+        y1 = np.array([[diag[-1]]], dtype=np.complex128)
         for i in range(3, len(diag) + 1):
             k -= 1
             temp_y0 = y0
