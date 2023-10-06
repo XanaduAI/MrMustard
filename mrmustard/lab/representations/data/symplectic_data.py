@@ -20,8 +20,9 @@ from mrmustard.typing import RealMatrix, Scalar, RealVector
 from typing import Optional
 from thewalrus.quantum.gaussian_checks import is_symplectic
 
+
 class SymplecticData(MatVecData):
-    """ Symplectic matrix-like data for certain Representation objects.
+    """Symplectic matrix-like data for certain Representation objects.
 
     Args:
         symplectic (Matrix): symplectic matrix with qqpp-ordering
@@ -29,29 +30,28 @@ class SymplecticData(MatVecData):
         coeffs (Scalar) : default to be 1.
     """
 
-    def __init__(self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0) -> None:
-        #Check if it is a symplectic matrix
+    def __init__(
+        self, symplectic: RealMatrix, displacement: RealVector, coeffs: Scalar = 1.0
+    ) -> None:
+        # Check if it is a symplectic matrix
         if is_symplectic(symplectic.numpy()):
             super().__init__(mat=symplectic, vec=displacement, coeffs=coeffs)
         else:
             raise ValueError("The matrix given is not symplectic.")
 
-
     @property
     def symplectic(self) -> np.array:
         return self.mat
-    
 
     @property
     def displacement(self) -> np.array:
         return self.vec
 
-
-
-    def __mul__(self, other:Scalar) -> SymplecticData:
+    def __mul__(self, other: Scalar) -> SymplecticData:
         if isinstance(other, SymplecticData):
             raise TypeError("Symplectic can only be multiplied by a scalar")
         else:
             new_coeffs = self.coeffs * other
-            return self.__class__(symplectic= self.symplectic, displacement= self.displacement, 
-                                  coeffs= new_coeffs)
+            return self.__class__(
+                symplectic=self.symplectic, displacement=self.displacement, coeffs=new_coeffs
+            )
