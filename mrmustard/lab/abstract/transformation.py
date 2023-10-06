@@ -216,7 +216,10 @@ class Transformation(Tensor):
             modes = list(items)
         else:
             raise ValueError(f"{items} is not a valid slice or list of modes.")
-        self.change_modes(modes)
+        if self.is_unitary:
+            self.change_modes(modes, modes)
+        else:
+            self.change_modes(modes, modes, modes, modes)
         return self
 
     def __rshift__(self, other: Transformation):
@@ -308,8 +311,8 @@ class Transformation(Tensor):
 
 
 class Unitary(Transformation):
-    def __init__(self, name: str, modes_in: list[int], modes_out: list[int]):
-        super().__init__(name=name, modes_in_ket=modes_in, modes_out_ket=modes_out)
+    def __init__(self, name: str, modes: list[int]):
+        super().__init__(name=name, modes_in_ket=modes, modes_out_ket=modes)
         self.is_unitary = True
 
     def value(self, cutoff: int):
@@ -360,18 +363,13 @@ class Unitary(Transformation):
 
 
 class Channel(Transformation):
-    def __init__(
-        self,
-        name: str,
-        modes_out: list[int],
-        modes_in: list[int],
-    ):
+    def __init__(self, name: str, modes: list[int]):
         super().__init__(
             name=name,
-            modes_in_ket=modes_in,
-            modes_out_ket=modes_out,
-            modes_in_bra=modes_in,
-            modes_out_bra=modes_out,
+            modes_in_ket=modes,
+            modes_out_ket=modes,
+            modes_in_bra=modes,
+            modes_out_bra=modes,
         )
         self.is_unitary = False
 

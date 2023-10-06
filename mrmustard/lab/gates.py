@@ -96,8 +96,7 @@ class Dgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(m)),
-            modes_out=modes or list(range(m)),
+            modes=modes or list(range(m)),
             name="Dgate",
         )
 
@@ -193,8 +192,7 @@ class Sgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
-            modes_out=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
+            modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
         )
 
@@ -278,8 +276,7 @@ class Rgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
-            modes_out=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
+            modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
             name="Rgate",
         )
 
@@ -363,8 +360,7 @@ class Pgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(shearing)))),
-            modes_out=modes or list(range(len(math.atleast_1d(shearing)))),
+            modes=modes or list(range(len(math.atleast_1d(shearing)))),
             name="Pgate",
         )
 
@@ -406,8 +402,7 @@ class CXgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
+            modes=modes or [0, 1],
             name="CXgate",
         )
 
@@ -449,8 +444,7 @@ class CZgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
+            modes=modes or [0, 1],
             name="CZgate",
         )
 
@@ -501,8 +495,7 @@ class BSgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or [0, 1],  # type: ignore
-            modes_out=modes or [0, 1],  # type: ignore
+            modes=modes or [0, 1],  # type: ignore
             name="BSgate",
         )
 
@@ -591,8 +584,7 @@ class MZgate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
+            modes=modes or [0, 1],
             name="MZgate",
         )
         self._internal = internal
@@ -649,8 +641,7 @@ class S2gate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or [0, 1],
-            modes_out=modes or [0, 1],
+            modes=modes or [0, 1],
             name="S2gate",
         )
 
@@ -698,8 +689,7 @@ class Interferometer(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(num_modes)),
-            modes_out=modes or list(range(num_modes)),
+            modes=modes or list(range(num_modes)),
             name="Interferometer",
         )
 
@@ -758,8 +748,7 @@ class RealInterferometer(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(num_modes)),
-            modes_out=modes or list(range(num_modes)),
+            modes=modes or list(range(num_modes)),
             name="RealInterferometer",
         )
 
@@ -819,8 +808,7 @@ class Ggate(Parametrized, Unitary):
         )
         Unitary.__init__(
             self,
-            modes_in=modes or list(range(num_modes)),
-            modes_out=modes or list(range(num_modes)),
+            modes=modes or list(range(num_modes)),
             name="Ggate",
         )
 
@@ -902,8 +890,7 @@ class Attenuator(Parametrized, Channel):
         )
         Channel.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(transmissivity)))),
-            modes_out=modes or list(range(len(math.atleast_1d(transmissivity)))),
+            modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
             name="Attenuator",
         )
 
@@ -967,8 +954,7 @@ class Amplifier(Parametrized, Channel):
         )
         Channel.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(gain)))),
-            modes_out=modes or list(range(len(math.atleast_1d(gain)))),
+            modes=modes or list(range(len(math.atleast_1d(gain)))),
             name="Amplifier",
         )
 
@@ -1028,8 +1014,7 @@ class AdditiveNoise(Parametrized, Channel):
         )
         Channel.__init__(
             self,
-            modes_in=modes or list(range(len(math.atleast_1d(noise)))),
-            modes_out=modes or list(range(len(math.atleast_1d(noise)))),
+            modes=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
         )
 
@@ -1065,8 +1050,7 @@ class PhaseNoise(Parametrized, Channel):
         )
         Channel.__init__(
             self,
-            modes_in=modes or [0],
-            modes_out=modes or [0],
+            modes=modes or [0],
             name="AddNoise",
         )
         self._modes = modes or [0]
