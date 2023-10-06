@@ -34,11 +34,11 @@ thewalrus = "0.19.0"
 # tensorflow-cpu-aws = { version = "2.10.0", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'" }
 tensorflow = [
     {version = "2.10.1", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'"},
-    {version = "^2.12.0", markers = "platform_machine == 'amd64'"}
+    {version = "~2.12.0", markers = "platform_machine == 'x86_64'"}
 ]
 tensorflow-cpu-aws = [
     {version = "2.10.0", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'"},
-    {version = "^2.12.0", markers = "platform_machine == 'amd64'"}
+    {version = "~2.12.0", markers = "platform_machine == 'x86_64'", optional = true}
 ]
 tensorflow-probability = "0.18.0"
 rich = "10.15.1"
@@ -49,6 +49,7 @@ scikit-optimize = { version = "^0.9.0", optional = true }
 
 [tool.poetry.extras]
 ray = ["ray", "scikit-optimize"]
+arm64 = ["tensorflow-cpu-aws"]
 
 [tool.poetry.group.dev]
 optional = true
