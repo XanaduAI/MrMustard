@@ -30,8 +30,16 @@ numpy = "1.23.5"
 scipy = "1.8.0"
 numba = "0.56.4"
 thewalrus = "0.19.0"
-tensorflow = "<=2.10.1"
-tensorflow-cpu-aws = { version = "2.10.0", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'" }
+# tensorflow = "<=2.10.1"
+# tensorflow-cpu-aws = { version = "2.10.0", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'" }
+tensorflow = [
+    {version = "2.10.1", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'"},
+    {version = "^2.12.0", markers = "platform_machine == 'amd64'"}
+]
+tensorflow-cpu-aws = [
+    {version = "2.10.0", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'"},
+    {version = "^2.12.0", markers = "platform_machine == 'amd64'"}
+]
 tensorflow-probability = "0.18.0"
 rich = "10.15.1"
 matplotlib = "3.5.0"
