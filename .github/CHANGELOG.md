@@ -1,20 +1,29 @@
-# Release 0.6.0 (future)
+# Release 0.6.0 (development release)
 
 ### New features
-* A general factory method and a duck style type-checker.
-[(#256)](https://github.com/XanaduAI/MrMustard/pull/256)
 
-* Data classes for the representations project. Includes `WavefunctionArrayData`, `GaussianData`, 
-`QpolyData` and `SymplecticData`.
-[(#258)](https://github.com/XanaduAI/MrMustard/pull/258)
+* A general factory method and a duck style type-checker.
+  [#256](https://github.com/XanaduAI/MrMustard/pull/256)
+  
+* Data classes for the representations project. Includes `WavefunctionArrayData`, `GaussianData`, `ABCData` and `SymplecticData`.
+  [(#258)](https://github.com/XanaduAI/MrMustard/pull/258)
 
 ### Breaking changes
+
 ### Improvements
+
 ### Bug fixes
+
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm).
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
 ### Documentation
+
 ### Contributors
-[Richard A. Wolf](https://github.com/ryk-wolf)
-# Release 0.5.0 (development release)
+[Yuan Yao](https://github.com/sylviemonet), [Richard A. Wolf](https://github.com/ryk-wolf)
+
+
+# Release 0.5.0 (current release)
 
 ### New features
 
@@ -24,7 +33,7 @@
   of customizing the the optimization progress with schedulers, trackers, heuristics, tricks, etc.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
 
-* Tensorboard based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
+* Tensorboard-based optimization tracking is added as a builtin `Callback` class: `TensorboardCallback`.
   It can automatically track costs as well as all trainable parameters during optimization in realtime.
   Tensorboard can be most conveniently viewed from VScode.
   [(#219)](https://github.com/XanaduAI/MrMustard/pull/219)
@@ -35,7 +44,7 @@
 
   def cost_fn():
       ...
-  
+
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -51,7 +60,7 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
-* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+* Gaussian states support a `bargmann` method for returning the bargmann representation.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
@@ -66,7 +75,7 @@
   ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
   ```
 
-* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation.
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
@@ -118,7 +127,8 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
-[Robbe De Prins](https://github.com/rdprins)
+[Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
+[Richard A. Wolf](https://github.com/ryk-wolf)
 
 ---
 

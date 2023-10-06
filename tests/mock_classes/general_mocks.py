@@ -15,7 +15,7 @@
 This module provides general mock classes.
 """
 
-all = ["MockAnimal", "MockFruit", "MockNoDefaultParams"]
+__all__ = ["MockAnimal", "MockFruit", "MockNoDefaultParams"]
 
 
 class MockAnimal:

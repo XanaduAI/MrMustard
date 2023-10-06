@@ -36,6 +36,8 @@ RUN sh -c "$(wget -nv -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/mast
 
 # upgrade pip and install package manager
 RUN python -m pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir poetry==1.4.0
+RUN poetry config virtualenvs.create false
 
 ### TEAR DOWN IMAGE SETUP ###
 # switch back to dialog for any ad-hoc use of apt-get
