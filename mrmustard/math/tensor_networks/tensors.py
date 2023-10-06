@@ -151,7 +151,23 @@ class Tensor(ABC):
           * self.self._output, a WireGroup containing all the output modes
 
         It computes a new ``id`` for every wire.
+
+        Raises:
+            ValueError: if `modes_in_ket` and `modes_in_bra` are not equal, and neither
+                of them is `None`.
+            ValueError: if `modes_out_ket` and `modes_out_bra` are not equal, and neither
+                of them is `None`.
         """
+        msg = "modes on ket and bra sides must be equal, unless either of them is `None`."
+        if modes_in_ket and modes_in_bra:
+            if modes_in_ket != modes_in_bra:
+                msg = f"Input {msg}"
+                raise ValueError(msg)
+        if modes_out_ket and modes_out_bra:
+            if modes_out_ket != modes_out_bra:
+                msg = f"Output {msg}"
+                raise ValueError(msg)
+
         self._modes_in_ket = modes_in_ket if modes_in_ket else []
         self._modes_out_ket = modes_out_ket if modes_out_ket else []
         self._modes_in_bra = modes_in_bra if modes_in_bra else []
@@ -206,11 +222,9 @@ class Tensor(ABC):
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        # most of our transformations have the same modes_in for bra and ket (channels)
-        # or no bra (unitaries)
-        if self._modes_in_ket == self._modes_in_bra or self._modes_in_bra == []:
+        if self._modes_in_ket != []:
             return self._modes_in_ket
-        return list(set(self._modes_in_ket + self._modes_in_bra))
+        return self._modes_in_bra
 
     @property
     def modes_out(self) -> List[int]:
@@ -221,11 +235,9 @@ class Tensor(ABC):
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        # most of our transformations have the same modes_in for bra and ket (channels)
-        # or no bra (unitaries)
-        if self._modes_out_ket == self._modes_out_bra or self._modes_out_bra == []:
+        if self._modes_out_ket != []:
             return self._modes_out_ket
-        return list(set(self._modes_out_ket + self._modes_out_bra))
+        return self._modes_out_bra
 
     @property
     def name(self) -> int:
