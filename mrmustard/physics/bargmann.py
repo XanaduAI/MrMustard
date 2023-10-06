@@ -46,18 +46,14 @@ def wigner_to_bargmann_rho(cov, means):
     for a density matrix (i.e. for `M` modes, `A` has shape `2M x 2M` and `B` has shape `2M`).
     The order of the rows/columns of A and B corresponds to a density matrix with the usual ordering of the indices.
 
-    Note that here A and B are defined with inverted blocks with respect to the literature,
-    otherwise the density matrix would have the left and the right indices swapped once we convert to Fock.
-    By inverted blocks we mean that if A is normally defined as `A = [[A_00, A_01], [A_10, A_11]]`,
-    here we define it as `A = [[A_11, A_10], [A_01, A_00]]`. For `B` we have `B = [B_0, B_1] -> B = [B_1, B_0]`.
+    Note that here A and B are defined with respect to the literature.
     """
     N = cov.shape[-1] // 2
-    A = math.matmul(
-        cayley(pq_to_aadag(cov), c=0.5), math.Xmat(N)
-    )  # X on the right, so the index order will be rho_{left,right}:
+    A = math.matmul(math.Xmat(N), cayley(pq_to_aadag(cov), c=0.5))
     Q, beta = wigner_to_husimi(cov, means)
-    B = math.solve(Q, beta)  # no conjugate, so that the index order will be rho_{left,right}
-    C = math.exp(-0.5 * math.sum(math.conj(beta) * B)) / math.sqrt(math.det(Q))
+    b = math.solve(Q, beta)
+    B = math.conj(b)
+    C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
     return A, B, C
 
 
@@ -67,16 +63,16 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    # NOTE: with A_rho and B_rho defined with inverted blocks, we now keep the first half rather than the second
-    return A[:N, :N], B[:N], math.sqrt(C)
+    return (
+        A[N:, N:],
+        B[N:],
+        math.sqrt(C),
+    )  # NOTE: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):
     r"""Converts the wigner representation in terms of covariance matrix and mean vector into the Bargmann `A,B,C` triple
-    for a channel (i.e. for M modes, A has shape 4M x 4M and B has shape 4M).
-    We have freedom to choose the order of the indices of the Choi matrix by rearranging the `MxM` blocks of A and the M-subvectors of B.
-    Here we choose the order `[out_l, in_l out_r, in_r]` (`in_l` and `in_r` to be contracted with the left and right indices of the density matrix)
-    so that after the contraction the result has the right order `[out_l, out_r]`."""
+    for a channel (i.e. for M modes, A has shape 4M x 4M and B has shape 4M)."""
     N = X.shape[-1] // 2
     I2 = math.eye(2 * N, dtype=X.dtype)
     XT = math.transpose(X)
@@ -94,14 +90,13 @@ def wigner_to_bargmann_Choi(X, Y, d):
         [[I, 1j * I, o, o], [o, o, I, -1j * I], [I, -1j * I, o, o], [o, o, I, 1j * I]]
     ) / np.sqrt(2)
     A = math.matmul(math.matmul(R, A), math.dagger(R))
-    A = math.matmul(A, math.Xmat(2 * N))  # yes: X on the right
+    A = math.matmul(math.Xmat(2 * N), A)
     b = math.matvec(xi_inv, d)
     B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
         settings.HBAR, dtype=R.dtype
     )
-    B = math.concat([B[2 * N :], B[: 2 * N]], axis=-1)  # yes: opposite order
     C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
-    # now A and B have order [out_l, in_l out_r, in_r].
+    # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
 
 
@@ -111,5 +106,4 @@ def wigner_to_bargmann_U(X, d):
     """
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
-    # NOTE: with A_Choi and B_Choi defined with inverted blocks, we now keep the first half rather than the second
-    return A[: 2 * N, : 2 * N], B[: 2 * N], math.sqrt(C)
+    return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
