@@ -39,7 +39,7 @@ def random_int() -> int:
 
 @dataclass
 class Wire:
-    r""" Represents a wire in a tensor network.
+    r"""Represents a wire in a tensor network.
 
     Each wire is characterized by a unique identifier ``id``, which must be different from
     the identifiers of all the other wires in the tensor network. Additionally, it owns a
@@ -318,7 +318,7 @@ class Tensor(ABC):
         r"""
         Returns the shape of the underlying tensor, as inferred from the dimensions of the individual
         wires.
-        
+
         If ``swap`` is ``False``, the shape returned is in the order ``(in_ket, in_bra, out_ket, out_bra)``.
         Otherwise, it is in the order ``(out_ket, out_bra, in_ket, in_bra)``.
 

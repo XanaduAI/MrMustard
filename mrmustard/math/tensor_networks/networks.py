@@ -24,7 +24,7 @@ from .tensors import Wire, Tensor
 
 def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     r"""Connects two wires in a tensor network.
-    
+
     Args:
         wire1: The first wire.
         wire2: The second wire.
@@ -39,7 +39,7 @@ def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     if wire1.is_connected or wire2.is_connected:
         msg = "Tried to connect wires that are already connected."
         raise ValueError(msg)
-    
+
     if dim is None:
         dim = max(wire1.dim, wire2.dim, key=lambda x: x or 0)
         if dim is None:

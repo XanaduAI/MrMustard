@@ -142,7 +142,9 @@ class Transformation(Tensor):
             return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
         return A, B, C
 
-    def choi(self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False):
+    def choi(
+        self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False
+    ):
         r"""Returns the Choi representation of the transformation.
 
         If specified, ``shape`` takes precedence over ``cutoffs``.
@@ -349,7 +351,7 @@ class Unitary(Transformation):
 
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
-        """        
+        """
         if len(cutoffs) != self.num_modes:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
         shape = shape or tuple(cutoffs) * 2
