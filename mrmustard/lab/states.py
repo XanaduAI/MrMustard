@@ -25,7 +25,7 @@ from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
 from mrmustard.typing import RealMatrix, Scalar, Vector
 
-from .abstract import State
+from .abstract import Ket, DM
 
 math = Math()
 
@@ -38,33 +38,25 @@ __all__ = [
     "DisplacedSqueezed",
     "TMSV",
     "Gaussian",
+    "GaussianMixed",
     "Fock",
 ]
 
 
-class Vacuum(State):
-    r"""The N-mode vacuum state. WignerKet representation with a symplectic matrix and a displacement.
-    """
+class Vacuum(Ket):
+    r"""The N-mode vacuum state. WignerKet representation with a symplectic matrix and a displacement."""
 
-    def __init__(self, num_modes: int, hbar: float = settings.HBAR):
-        self.hbar = hbar
+    def __init__(self, num_modes: int):
         symplectic = math.eye(num_modes * 2, dtype=math.float64)
         displacement = gaussian.displacement(
-        math.zeros(num_modes, dtype="float64"),
-        math.zeros(num_modes, dtype="float64"),
-        hbar,
+            math.zeros(num_modes, dtype="float64"),
+            math.zeros(num_modes, dtype="float64"),
+            settings.HBAR,
         )
-        State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
+        super().__init__(self, symplectic=symplectic, displacement=displacement)
 
-    @property
-    def cov(self):
-        return self.hbar / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
-    
-    @property
-    def means(self):
-        return self.representation.data.displacement
 
-class Coherent(Parametrized, State):
+class Coherent(Parametrized, Ket):
     r"""The N-mode coherent state.
         WignerKet representation with a symplectic matrix and a displacement.
 
@@ -123,7 +115,7 @@ class Coherent(Parametrized, State):
             self._modes = modes
         self._normalize = normalize
 
-        #Make sure the size of the x and y is the same if they are both List
+        # Make sure the size of the x and y is the same if they are both List
         if isinstance(x, List) and isinstance(y, List):
             num_modes = len(x)
             if len(x) != len(y):
@@ -131,24 +123,15 @@ class Coherent(Parametrized, State):
         elif isinstance(x, float) and isinstance(y, float):
             num_modes = 1
         else:
-            #One List and another float is also not acceptable, or one of them is None
+            # One List and another float is also not acceptable, or one of them is None
             raise AttributeError("Both parameters x and y don't have the same size!")
 
         displacement = gaussian.displacement(x, y, settings.HBAR)
-        symplectic =  math.eye(2 * num_modes, dtype=math.float64)
-        State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
-    
-    
-    @property
-    def cov(self):
-        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
-        
-    @property
-    def means(self):
-        return self.representation.data.displacement
+        symplectic = math.eye(2 * num_modes, dtype=math.float64)
+        Ket.__init__(self, symplectic=symplectic, displacement=displacement)
 
 
-class SqueezedVacuum(Parametrized, State):
+class SqueezedVacuum(Parametrized, Ket):
     r"""The N-mode squeezed vacuum state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a squeezing gate to the vacuum state:
@@ -204,7 +187,7 @@ class SqueezedVacuum(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        #Make sure the size of the r and phi is the same if they are both List
+        # Make sure the size of the r and phi is the same if they are both List
         if isinstance(r, List) and isinstance(phi, List):
             num_modes = len(r)
             if len(r) != len(phi):
@@ -212,7 +195,7 @@ class SqueezedVacuum(Parametrized, State):
         elif isinstance(r, float) and isinstance(phi, float):
             num_modes = 1
         else:
-            #One List and another float is also not acceptable
+            # One List and another float is also not acceptable
             raise AttributeError("Both parameters r and phi don't have the same size!")
 
         symplectic = gaussian.squeezing_symplectic(r, phi)
@@ -220,22 +203,12 @@ class SqueezedVacuum(Parametrized, State):
             math.zeros(num_modes, dtype="float64"),
             math.zeros(num_modes, dtype="float64"),
             settings.HBAR,
-            )
-        
-        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
+        )
+
+        Ket.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes)
 
 
-    @property
-    def cov(self):
-        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
-    
-
-    @property
-    def means(self):
-        return self.representation.data.displacement
-
-
-class TMSV(Parametrized, State):
+class TMSV(Parametrized, Ket):
     r"""The 2-mode squeezed vacuum state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
@@ -284,20 +257,11 @@ class TMSV(Parametrized, State):
             math.zeros(2, dtype="float64"),
             math.zeros(2, dtype="float64"),
             settings.HBAR,
-            )
-        State.__init__(self, symplectic=symplectic, displacement=displacement, flag_ket=True)
-
-    @property
-    def cov(self):
-        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
-    
-
-    @property
-    def means(self):
-        return self.representation.data.displacement
+        )
+        Ket.__init__(self, symplectic=symplectic, displacement=displacement)
 
 
-class Thermal(Parametrized, State):
+class Thermal(Parametrized, DM):
     r"""The N-mode thermal state. WignerDM representation with a density matrix and a mean vector.
 
     Equivalent to applying additive noise to the vacuum:
@@ -341,19 +305,10 @@ class Thermal(Parametrized, State):
 
         cov = gaussian.thermal_cov(nbar, settings.HBAR)
         means = gaussian.vacuum_means(cov.shape[-1] // 2, settings.HBAR)
-        State.__init__(self, cov=cov, means=means, flag_ket=False)
-
-    @property
-    def cov(self):
-        return self.representation.data.cov
-    
-
-    @property
-    def means(self):
-        return self.representation.data.means
+        DM.__init__(self, cov=cov, means=means)
 
 
-class DisplacedSqueezed(Parametrized, State):
+class DisplacedSqueezed(Parametrized, Ket):
     r"""The N-mode displaced squeezed state. WignerKet representation with a symplectic matrix and a displacement.
 
     Equivalent to applying a displacement to the squeezed vacuum state:
@@ -409,7 +364,7 @@ class DisplacedSqueezed(Parametrized, State):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[Sequence[int]] = None,
-        normalize: bool = False,
+        normalize: bool = False,  # TODO remove this
     ):
         Parametrized.__init__(
             self,
@@ -429,42 +384,67 @@ class DisplacedSqueezed(Parametrized, State):
         self._modes = modes
         self._normalize = normalize
 
-        #Make sure the size of the x and y is the same if they are both List
-        if isinstance(x, List) and isinstance(y, List):
-            if len(x) != len(y):
-                raise AttributeError("Both parameters x and y don't have the same size!")
-        elif isinstance(x, float) and isinstance(y, float):
-            pass
-        else:
-            #One List and another float is also not acceptable
-            raise AttributeError("Both parameters x and y don't have the same size!")
-        
-        #Make sure the size of the r and phi is the same if they are both List
-        if isinstance(r, List) and isinstance(phi, List):
-            if len(r) != len(phi):
-                raise AttributeError("Both parameters r and phi don't have the same size!")
-        elif isinstance(r, float) and isinstance(phi, float):
-            pass
-        else:
-            #One List and another float is also not acceptable
-            raise AttributeError("Both parameters r and phi don't have the same size!")
-
         symplectic = gaussian.squeezing_symplectic(r, phi)
         displacement = gaussian.displacement(x, y, settings.HBAR)
-        State.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes, flag_ket=True)
-
-    @property
-    def cov(self):
-        return settings.HBAR / 2 * math.matmul(self.representation.data.symplectic, math.transpose(self.representation.data.symplectic))
-    
-
-    @property
-    def means(self):
-        return self.representation.data.displacement
+        Ket.__init__(self, symplectic=symplectic, displacement=displacement, modes=modes)
 
 
-class Gaussian(Parametrized, State):
-    r"""The N-mode Gaussian state parametrized by a symplectic matrix and N symplectic eigenvalues. 
+class Gaussian(Parametrized, Ket):
+    r"""The N-mode Gaussian state parametrized by a symplectic matrix.
+        WignerKet representation with a density matrix and a mean vector.
+
+    The (pure) Gaussian state is equivalent to applying a Gaussian symplectic transformation to the vacuum:
+
+    .. code::
+
+        >>> G = Gaussian(num_modes=1)
+        >>> G == Vacuum(num_modes=1) >> Ggate(1, symplectic=G.symplectic)
+        True
+
+    Note that the 1st moments are zero unless a Dgate is applied to the Gaussian state:
+
+    .. code::
+
+        >>> np.allclose(Gaussian(num_modes=1).means, 0.0)
+        True
+
+    Args:
+        num_modes (int): the number of modes
+        symplectic (np.ndarray or List[np.ndarray]): the symplectic matrix of the Gaussian state. Defaults to random.
+        symplectic_trainable (bool): whether the symplectic matrix is trainable.
+        modes (optional, List[int]): the modes of the Gaussian state.
+        normalize (bool, default False): whether to normalize the leftover state when projecting onto Gaussian.  # we should remove this
+    """
+
+    def __init__(
+        self,
+        num_modes: int,
+        symplectic: RealMatrix = None,
+        symplectic_trainable: bool = False,
+        modes: List[int] = None,
+        normalize: bool = False,
+    ):
+        if symplectic is None:
+            symplectic = math.random_symplectic(num_modes=num_modes)
+        Parametrized.__init__(
+            self,
+            symplectic=symplectic,
+            symplectic_trainable=symplectic_trainable,
+        )
+        self._modes = modes
+        self._normalize = normalize
+
+        cov = gaussian.gaussian_cov(symplectic)
+        means = gaussian.displacement(
+            math.zeros(cov.shape[-1] // 2, dtype="float64"),
+            math.zeros(cov.shape[-1] // 2, dtype="float64"),
+            settings.HBAR,
+        )
+        Ket.__init__(self, cov=cov, means=means)
+
+
+class GaussianMixed(Parametrized, DM):
+    r"""The N-mode Gaussian state (DM version) parametrized by a symplectic matrix and N symplectic eigenvalues.
         WignerDM representation with a density matrix and a mean vector.
 
     The (mixed) Gaussian state is equivalent to applying a Gaussian symplectic transformation to a Thermal state:
@@ -526,27 +506,14 @@ class Gaussian(Parametrized, State):
 
         cov = gaussian.gaussian_cov(symplectic, eigenvalues)
         means = gaussian.displacement(
-        math.zeros(cov.shape[-1]//2, dtype="float64"),
-        math.zeros(cov.shape[-1]//2, dtype="float64"),
-        settings.HBAR,
+            math.zeros(cov.shape[-1] // 2, dtype="float64"),
+            math.zeros(cov.shape[-1] // 2, dtype="float64"),
+            settings.HBAR,
         )
-        State.__init__(self, cov=cov, means=means, flag_ket=False)
-
-    @property
-    def cov(self):
-        return self.representation.data.cov
-    
-
-    @property
-    def means(self):
-        return self.representation.data.means
-
-    @property
-    def is_mixed(self):
-        return self.is_mixed
+        DM.__init__(self, cov=cov, means=means)
 
 
-class Fock(Parametrized, State):
+class Fock(Parametrized, Ket):
     r"""The N-mode Fock state. FockrKet representation with an array.
 
     Args:
@@ -563,14 +530,14 @@ class Fock(Parametrized, State):
         cutoffs: Sequence[int] = None,
         normalize: bool = False,
     ):
-        State.__init__(self, fock=fock.fock_state(n, cutoffs=cutoffs), modes=modes, flag_ket=True)
         Parametrized.__init__(self)
+        Ket.__init__(self, fock_array=fock.fock_state(n, cutoffs=cutoffs), modes=modes)
 
         self._n = [n] if isinstance(n, int) else n
         self._modes = modes
         self._normalize = normalize
 
-    def _preferred_projection(self, other: State, mode_indices: Sequence[int]):
+    def _preferred_projection(self, other: Ket or DM, mode_indices: Sequence[int]):
         r"""Preferred method to perform a projection onto this state (rather than the default one).
 
         E.g. ``ket << Fock(1, modes=[3])`` is equivalent to ``ket[:,:,:,1]`` if ``ket`` has 4 modes
