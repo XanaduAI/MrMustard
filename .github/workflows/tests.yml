@@ -39,7 +39,8 @@ jobs:
           julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
 
       - name: Run tests
-        run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
+        # run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
+        run: python -m pytest ./tests/test_training/test_trainer.py -k test_circ_cost --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native -s
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

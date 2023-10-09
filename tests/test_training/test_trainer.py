@@ -21,11 +21,13 @@ import numpy as np
 import pytest
 
 try:
+    print("TRYING RAY")
     import ray
+    print("GOT RAY")
 
     ray_available = True
 
-    NUM_CPUS = 1
+    NUM_CPUS = 2
     ray.init(num_cpus=NUM_CPUS)
 except ImportError:
     ray_available = False
