@@ -31,8 +31,8 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
     hermite_multidimensional_diagonal,
 )
 from mrmustard.typing import Tensor, Trainable
-# from mrmustard.math.math_interface import MathInterface
-from .math_interface import MathInterface
+from mrmustard.math.math_interface import MathInterface
+# from .math_interface import MathInterface
 
 from julia import (
     Main as Main_julia,

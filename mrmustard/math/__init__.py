@@ -39,7 +39,7 @@ from julia.api import Julia
 from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
-    from mrmustard.math.tensorflow import TFMath
+    from mrmustard.math.tensorflow_wrapper import TFMath
 # if importlib.util.find_spec("torch"):
 #     from mrmustard.math.torch import TorchMath
 
