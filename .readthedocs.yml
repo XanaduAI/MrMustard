@@ -11,7 +11,7 @@ build:
     post_install:
       - "curl -fsSL https://install.julialang.org | sh -s -- --yes"
       - export PATH=/home/docs/.juliaup/bin:$PATH
-      - '/home/docs/.juliaup/bin/julia -e "using Pkg; Pkg.add("PyCall"); Pkg.add("MultiFloats")"'
+      - '/home/docs/.juliaup/bin/julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"'
       - pip install --no-cache-dir poetry==1.4.0
       - poetry config virtualenvs.create false
       - poetry install --with doc
