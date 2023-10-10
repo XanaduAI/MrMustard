@@ -325,12 +325,7 @@ class State:  # pylint: disable=too-many-public-methods
                 return fock.ket_to_dm(ket)
         else:
             if self.is_gaussian:
-                self._dm = fock.wigner_to_fock_state(
-                    self.cov,
-                    self.means,
-                    shape=cutoffs + cutoffs,
-                    return_dm=True,
-                )
+                self._dm = fock.wigner_to_fock_state(self.cov, self.means, shape=cutoffs + cutoffs, return_dm=True)
             elif cutoffs != (current_cutoffs := list(self._dm.shape[: self.num_modes])):
                 paddings = [(0, max(0, new - old)) for new, old in zip(cutoffs, current_cutoffs)]
                 if any(p != (0, 0) for p in paddings):
