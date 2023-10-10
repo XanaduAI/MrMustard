@@ -41,7 +41,7 @@ from mrmustard import settings
 if importlib.util.find_spec("tensorflow"):
     from mrmustard.math.tensorflow_wrapper import TFMath
 if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch import TorchMath
+    from mrmustard.math.torch_wrapper import TorchMath
 
 # initialize Julia
 jl = Julia(

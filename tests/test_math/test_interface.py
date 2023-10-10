@@ -35,7 +35,9 @@ def test_backend_redirection_tf():
     math = Math()
 
     settings.BACKEND = "tensorflow"
-    assert math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow_wrapper"
+    assert (
+        math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow_wrapper"
+    )
 
 
 @pytest.mark.skipif(not torch_available, reason="Test only works if Torch is installed")
@@ -44,7 +46,7 @@ def test_backend_redirection_torch():
     math = Math()
 
     settings.BACKEND = "torch"
-    assert math._MathInterface__instance.__module__ == "mrmustard.math.torch"
+    assert math._MathInterface__instance.__module__ == "mrmustard.math.torch_wrapper"
 
 
 def test_error_for_wrong_backend():
@@ -52,7 +54,10 @@ def test_error_for_wrong_backend():
     backend = settings.BACKEND
     with pytest.raises(ValueError) as exception_info:
         settings.BACKEND = "unexisting_backend"
-        assert exception_info.value.args[0] == "Backend must be either 'tensorflow' or 'torch'"
+        assert (
+            exception_info.value.args[0]
+            == "Backend must be either 'tensorflow' or 'torch'"
+        )
 
     # set back to initial value to avoid side effects
     settings.BACKEND = backend

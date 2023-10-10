@@ -21,8 +21,7 @@ import torch
 
 from mrmustard.math.autocast import Autocast
 from mrmustard.typing import Tensor, Trainable
-
-from .math_interface import MathInterface
+from mrmustard.math.math_interface import MathInterface
 
 
 # pylint: disable=too-many-public-methods,no-self-use
@@ -44,7 +43,9 @@ class TorchMath(MathInterface):
     def atleast_1d(self, array: torch.Tensor, dtype=None) -> torch.Tensor:
         return self.cast(torch.reshape(self.astensor(array), [-1]), dtype)
 
-    def astensor(self, array: Union[np.ndarray, torch.Tensor], dtype=None) -> torch.Tensor:
+    def astensor(
+        self, array: Union[np.ndarray, torch.Tensor], dtype=None
+    ) -> torch.Tensor:
         return self.cast(torch.tensor(array), dtype)
 
     def conj(self, array: torch.Tensor) -> torch.Tensor:
@@ -122,7 +123,9 @@ class TorchMath(MathInterface):
         return torch.mv(a, b)
 
     @Autocast()
-    def tensordot(self, a: torch.Tensor, b: torch.Tensor, axes: List[int]) -> torch.Tensor:
+    def tensordot(
+        self, a: torch.Tensor, b: torch.Tensor, axes: List[int]
+    ) -> torch.Tensor:
         return torch.tensordot(a, b, axes)
 
     def einsum(self, string: str, *tensors) -> torch.Tensor:
@@ -153,7 +156,9 @@ class TorchMath(MathInterface):
         mode="constant",
         constant_values=0,
     ) -> torch.Tensor:
-        return torch.nn.functional.pad(array, paddings, mode=mode, value=constant_values)
+        return torch.nn.functional.pad(
+            array, paddings, mode=mode, value=constant_values
+        )
 
     @Autocast()
     def convolution(
@@ -244,7 +249,9 @@ class TorchMath(MathInterface):
     def ones_like(self, array: torch.Tensor) -> torch.Tensor:
         return torch.ones_like(array)
 
-    def gather(self, array: torch.Tensor, indices: torch.Tensor, axis: int = None) -> torch.Tensor:
+    def gather(
+        self, array: torch.Tensor, indices: torch.Tensor, axis: int = None
+    ) -> torch.Tensor:
         # TODO: gather works differently in Pytorch vs Tensorflow.
 
         return torch.gather(array, axis, indices)
@@ -256,14 +263,22 @@ class TorchMath(MathInterface):
         return torch.cat(values, axis)
 
     def update_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+        self,
+        tensor: torch.Tensor,
+        indices: torch.Tensor,
+        values: torch.Tensor,
+        dims: int = 0,
     ):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
         return tensor.scatter_(dims, indices, values)
 
     def update_add_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+        self,
+        tensor: torch.Tensor,
+        indices: torch.Tensor,
+        values: torch.Tensor,
+        dims: int = 0,
     ):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
@@ -286,7 +301,11 @@ class TorchMath(MathInterface):
         return constraint
 
     def new_variable(
-        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64
+        self,
+        value,
+        bounds: Tuple[Optional[float], Optional[float]],
+        name: str,
+        dtype=torch.float64,
     ):
         return torch.tensor(value, dtype=dtype, requires_grad=True)
 
