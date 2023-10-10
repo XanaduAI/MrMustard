@@ -133,6 +133,8 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 * When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
   [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
 
+* Fixed the internal function to calculate ABC of Bargmann representation (now corresponds to the literature) and other fixes to get the correct Fock tensor. [(#255)](https://github.com/XanaduAI/MrMustard/pull/255)
+
 * Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
 cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
 
@@ -141,7 +143,8 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
-[Richard A. Wolf](https://github.com/ryk-wolf)
+[Richard A. Wolf](https://github.com/ryk-wolf), [Yuan YAO](https://github.com/sylviemonet)
+
 
 ---
 
