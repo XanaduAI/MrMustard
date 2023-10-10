@@ -43,7 +43,6 @@ Main_julia.cd(math_directory)
 Main_julia.include("lattice/strategies/vanilla.jl")
 
 
-
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
     r"""Tensorflow implemantion of the :class:`Math` interface."""
