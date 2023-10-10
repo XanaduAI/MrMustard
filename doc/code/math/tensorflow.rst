@@ -1,8 +1,8 @@
 Tensorflow
 ==========
 
-.. currentmodule:: mrmustard.math.tensorflow
+.. currentmodule:: mrmustard.math.tensorflow_wrapper
 
-.. automodapi:: mrmustard.math.tensorflow
+.. automodapi:: mrmustard.math.tensorflow_wrapper
     :no-heading:
     :include-all-objects:
