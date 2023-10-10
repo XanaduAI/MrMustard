@@ -74,7 +74,18 @@ class TestWire:
         assert wire.is_input is is_input
         assert wire.is_ket is is_ket
         assert wire.is_connected is False
+        assert wire.dim is None
         assert isinstance(wire.contraction_id, int)
+
+    def test_dim_error(self):
+        r"""
+        Tests that ``dim`` cannot be set more than once.
+        """
+        wire = Wire(0, 0, True, True)
+        wire.dim = 18
+
+        with pytest.raises(ValueError, match="Cannot change"):
+            wire.dim = 20
 
 
 class TestTensor:
@@ -226,7 +237,6 @@ class TestTensor:
         with pytest.raises(ValueError, match="Output modes"):
             t1.change_modes(None, [2], None, [1])
 
-        connect(t1.input.ket[1], t2.output.ket[1])
-
+        connect(t1.input.ket[1], t2.output.ket[1], 1)
         with pytest.raises(ValueError, match="already connected"):
             t1.change_modes([2])

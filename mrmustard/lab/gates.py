@@ -104,7 +104,7 @@ class Dgate(Parametrized, Unitary):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value)
 
-    def U(self, cutoffs: Sequence[int]):
+    def U(self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
@@ -115,18 +115,23 @@ class Dgate(Parametrized, Unitary):
            Raises:
                ValueError: if the length of the cutoffs array is different from N and 2N
         """
-
         N = self.num_modes
-        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
-        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
-        if len(cutoffs) == N:
-            shape = tuple(cutoffs) * 2
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            cutoffs = tuple(cutoffs) * 2
         elif len(cutoffs) == 2 * N:
-            shape = tuple(cutoffs)
+            cutoffs = tuple(cutoffs)
         else:
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
+        shape = shape or cutoffs
+        if shape is None:
+            raise ValueError
+
+        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
 
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product
@@ -196,7 +201,7 @@ class Sgate(Parametrized, Unitary):
             name="Sgate",
         )
 
-    def U(self, cutoffs: Sequence[int]):
+    def U(self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
         Args:
             cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
@@ -205,14 +210,20 @@ class Sgate(Parametrized, Unitary):
             array[complex]: the unitary matrix
         """
         N = self.num_modes
-        if len(cutoffs) == N:
-            shape = tuple(cutoffs) * 2
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            cutoffs = tuple(cutoffs) * 2
         elif len(cutoffs) == 2 * N:
-            shape = tuple(cutoffs)
+            cutoffs = tuple(cutoffs)
         else:
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
+        shape = shape or cutoffs
+        if shape is None:
+            raise ValueError
+
         # this works both or scalar r/phi and vector r/phi:
         r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
         phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
@@ -284,7 +295,9 @@ class Rgate(Parametrized, Unitary):
     def X_matrix(self):
         return gaussian.rotation_symplectic(self.angle.value)
 
-    def U(self, cutoffs: Sequence[int], diag_only=False):
+    def U(
+        self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None, diag_only=False
+    ):
         r"""Returns the unitary representation of the Rotation gate.
 
         Args:
@@ -296,15 +309,20 @@ class Rgate(Parametrized, Unitary):
         """
         if diag_only:
             raise NotImplementedError("Rgate does not support diag_only=True yet")
-        N = self.num_modes
-        if len(cutoffs) == N:
-            shape = tuple(cutoffs) * 2
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            cutoffs = tuple(cutoffs) * 2
         elif len(cutoffs) == 2 * N:
-            shape = tuple(cutoffs)
+            cutoffs = tuple(cutoffs)
         else:
             raise ValueError(
                 "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
             )
+        shape = shape or cutoffs
+        if shape is None:
+            raise ValueError
+
         angles = self.angle.value * math.ones(self.num_modes, dtype=self.angle.value.dtype)
 
         # calculate rotation unitary for each mode and concatenate with outer product
@@ -499,7 +517,12 @@ class BSgate(Parametrized, Unitary):
             name="BSgate",
         )
 
-    def U(self, cutoffs: Optional[List[int]], method=None):
+    def U(
+        self,
+        cutoffs: Optional[List[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        method=None,
+    ):
         r"""Returns the symplectic transformation matrix for the beam splitter.
 
         Args:
@@ -513,12 +536,17 @@ class BSgate(Parametrized, Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        if len(cutoffs) == 4:
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == 4:
             shape = tuple(cutoffs)
         elif len(cutoffs) == 2:
             shape = tuple(cutoffs) + tuple(cutoffs)
         else:
             raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
+
+        shape = shape or cutoffs
+
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,

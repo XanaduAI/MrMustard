@@ -322,7 +322,6 @@ class Unitary(Transformation):
         self.is_unitary = True
 
     def value(self, shape: Tuple[int]):
-        print(self.U)
         return self.U(shape=shape)
 
     def _transform_fock(self, state: State, dual=False) -> State:

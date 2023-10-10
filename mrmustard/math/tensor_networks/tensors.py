@@ -50,17 +50,16 @@ class Wire:
         mode: The mode of light that this wire is acting on.
         is_input: Whether this wire is an input to a tensor or an output.
         is_ket: Whether this wire is on the ket or on the bra side.
-        dim: The dimension of this wire.
 
     """
     id: int
     mode: int
     is_input: bool
     is_ket: bool
-    dim: Optional[int] = None
 
     def __post_init__(self):
         self._contraction_id: int = random_int()
+        self._dim = None
         self._is_connected = False
 
     @property
@@ -73,6 +72,19 @@ class Wire:
     @contraction_id.setter
     def contraction_id(self, value: int):
         self._contraction_id = value
+
+    @property
+    def dim(self):
+        r"""
+        The dimension of this wire.
+        """
+        return self._dim
+
+    @dim.setter
+    def dim(self, value: int):
+        if self._dim:
+            raise ValueError("Cannot change the dimension of wire with specified dimension.")
+        self._dim = value
 
     @property
     def is_connected(self) -> bool:
@@ -326,14 +338,22 @@ class Tensor(ABC):
             default_dim: The default dimension of wires with unspecified dimension.
             swap: Whether to swap input and output shapes.
         """
-        shape_in_ket = [w.dim or default_dim for w in self.input.ket.values()]
-        shape_out_ket = [w.dim or default_dim for w in self.output.ket.values()]
-        shape_in_bra = [w.dim or default_dim for w in self.input.bra.values()]
-        shape_out_bra = [w.dim or default_dim for w in self.output.bra.values()]
+
+        def _sort_shapes(*args):
+            for arg in args:
+                if arg != []:
+                    yield arg
+
+        shape_in_ket = [w.dim if w.dim else default_dim for w in self.input.ket.values()]
+        shape_out_ket = [w.dim if w.dim else default_dim for w in self.output.ket.values()]
+        shape_in_bra = [w.dim if w.dim else default_dim for w in self.input.bra.values()]
+        shape_out_bra = [w.dim if w.dim else default_dim for w in self.output.bra.values()]
 
         if swap:
-            return [shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra]
-        return [shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra]
+            ret = _sort_shapes(shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra)
+        ret = _sort_shapes(shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra)
+
+        return tuple([item for sublist in ret for item in sublist])
 
 
 class TensorView(Tensor):

@@ -28,25 +28,18 @@ def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     Args:
         wire1: The first wire.
         wire2: The second wire.
-        dim: The dimension of the Fock space. Used when the two wires are contracted.
-            If ``None``, it sets it to the maximum between ``wire1.dimension`` and
-            ``wire2.dimension``.
+        dim: The dimension of the contraction.
 
     Raises:
         ValueError: If one or both of the wires are already connected.
-        ValueError: If given ``dim`` is ``None``, and both wires have an unspecified dimension.
     """
     if wire1.is_connected or wire2.is_connected:
         msg = "Tried to connect wires that are already connected."
         raise ValueError(msg)
 
-    if dim is None:
-        dim = max(wire1.dim, wire2.dim, key=lambda x: x or 0)
-        if dim is None:
-            msg = "Dimension cannot be inferred from wires. Please set it manually."
-            raise ValueError(msg)
-    wire1.dim = dim
-    wire2.dim = dim
+    if dim:
+        wire1.dim = dim
+        wire2.dim = dim
 
     wire1.is_connected = True
     wire2.is_connected = True
@@ -58,8 +51,8 @@ def contract(tensors: list[Tensor], default_dim: int):
     r"""Contract a list of tensors.
 
     Args:
-        tensors: the tensors to contract
-        dim: the dimension of the Fock basis
+        tensors: the tensors to contract.
+        dim: the default dimension of the contractions.
 
     Returns:
         (tensor) the contracted tensor
