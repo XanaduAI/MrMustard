@@ -161,9 +161,7 @@ class Transformation(Tensor):
         N = self.num_modes
         if cutoffs is None:
             pass
-        elif len(cutoffs) == N:
-            shape = shape or tuple(cutoffs) * 2
-        else:
+        elif len(cutoffs) != N:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
 
         shape = shape or tuple(cutoffs) * 4
