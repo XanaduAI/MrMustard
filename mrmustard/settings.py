@@ -86,6 +86,7 @@ class Settings:
         self._autocutoff_max_cutoff = 100
         self._autocutoff_min_cutoff = 1
         self._circuit_decimals = 3
+        self._discretization_method = "iterative"
         # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
         # 3 is enough to include a full step of the rec relations
         self._eq_transformation_cutoff = 3
@@ -162,6 +163,18 @@ class Settings:
     @DEBUG.setter
     def DEBUG(self, value: str):
         self._debug = value
+
+    @property
+    def DISCRETIZATION_METHOD(self):
+        r"""The method used to discretize the Wigner function. Default is ``iterative``.
+
+        Can be either ``'iterative'`` or ``'clenshaw'``.
+        """
+        return self._discretization_method
+
+    @DISCRETIZATION_METHOD.setter
+    def DISCRETIZATION_METHOD(self, value: str):
+        self._discretization_method = value
 
     @property
     def DEFAULT_BS_METHOD(self):

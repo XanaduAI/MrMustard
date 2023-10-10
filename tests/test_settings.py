@@ -54,6 +54,7 @@ class TestSettings:
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
         assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
         assert settings.CIRCUIT_DECIMALS == 3
+        assert settings.DISCRETIZATION_METHOD == "iterative"
         assert settings.EQ_TRANSFORMATION_CUTOFF == 3
         assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 1e-3
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6

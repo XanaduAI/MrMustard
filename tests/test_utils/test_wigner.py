@@ -16,109 +16,218 @@
 
 import numpy as np
 import pytest
-from scipy.stats import multivariate_normal
+from scipy.special import assoc_laguerre
 
 from mrmustard import settings
 from mrmustard.lab import (
     Coherent,
-    DisplacedSqueezed,
     Fock,
-    Gaussian,
     SqueezedVacuum,
-    Thermal,
-    Vacuum,
+    State,
 )
 from mrmustard.utils.wigner import wigner_discretized
+from tests.random import force_settings
+
+# original settings
+autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
+autocutoff_min0 = settings.AUTOCUTOFF_MIN_CUTOFF
+method0 = settings.DISCRETIZATION_METHOD
+hbar0 = settings.HBAR
+
+# ~~~~~~~
+# Helpers
+# ~~~~~~~
 
 
-def multivariate_normal_pdf(qvec, pvec, means, cov):
-    """generates the PDF of a multivariate normal distribution"""
-    mvn = multivariate_normal(means, cov, allow_singular=True)
-    grid = np.meshgrid(qvec, pvec)
-    return mvn.pdf(grid)
+def reset_settings():
+    r"""Resets `Settings`"""
+    settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
+    settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
+    settings.DISCRETIZATION_METHOD = method0
+    force_settings("_hbar", hbar0)
 
 
-@pytest.mark.parametrize(
-    "state",
-    [
-        Vacuum(1),
-        Coherent(0.3, -0.5),
-        SqueezedVacuum(0.5, 0.45),
-        Thermal(0.25),
-        DisplacedSqueezed(0.3, 0.1, -0.1, 0.1),
-        Gaussian(1),
-    ],
-)
-def test_wigner_gaussian_states(state):
-    """test Wigner function for Gaussian states is a standard normal distribution"""
-
-    # calculate Wigner from state dm
-    qvec = np.arange(-5, 5, 100)
-    pvec = qvec
-    dm = state.dm(cutoffs=[5]).numpy()
-    W_calc, _, _ = wigner_discretized(dm, qvec, pvec)
-
-    # calculate exact
-    cov = state.cov.numpy()
-    means = state.means.numpy()
-    W_exact = multivariate_normal_pdf(qvec, pvec, means, cov)
-
-    assert np.allclose(W_calc, W_exact, atol=0.001, rtol=0)
+def distance(W_mm, W_th):
+    r"""Calculates the distance between the discretized Wigner functions W_mm (generated
+    by `mrmustard`) and W_th (computed analytically) as the maximum of `|W_mm-W_th|/|W_th|`,
+    where .
+    """
+    num = np.abs(W_mm - W_th)
+    den = np.abs(W_th)
+    return (num / den).max()
 
 
-# Exact marginal probability distributions for various states
-hbar = settings.HBAR
+def W_cat(q_vec, p_vec, q0):
+    r"""Calculates the discretized Wigner function for a cat state with
+    coherent states centered in `(q0, 0)`. See Eq. 3.3 in arXiv:0406015.
+    """
+
+    def generator(q, p, q0):
+        norm = (1 + np.exp(-(q0**2))) ** -0.5
+        W_plus = np.exp(-((q + q0) ** 2) - p**2)
+        W_minus = np.exp(-((q - q0) ** 2) - p**2)
+        W_int = np.cos(2 * p * q0) * np.exp(-(q**2) - p**2)
+        return (W_plus / 2 + W_minus / 2 + W_int) * norm**2 / np.pi / settings.HBAR
+
+    q = q_vec / (settings.HBAR) ** 0.5
+    p = p_vec / (settings.HBAR) ** 0.5
+
+    return np.array([[generator(i, j, q0 * 2**0.5) for j in p] for i in q])
 
 
-def fock1_marginal(qvec):
-    """q and p marginal distributions for the Fock state |1>"""
-    x = (
-        0.5
-        * np.sqrt(1 / (np.pi * hbar))
-        * np.exp(-1 * (qvec**2) / hbar)
-        * (4 / hbar)
-        * (qvec**2)
-    )
-    p = x
-    return x, p
+def W_coherent(q_vec, p_vec, alpha, s):
+    r"""Calculates the discretized Wigner function for a coherent state centered
+    around `alpha` and with squeezing `s`. See Eq. 4.12 in arXiv:0406015.
+    """
+
+    def generator(q, p, alpha, s):
+        q0 = np.real(alpha) * 2**0.5
+        p0 = np.imag(alpha) * 2**0.5
+        ret = -np.exp(2 * s) * (q - q0) ** 2 - np.exp(-2 * s) * (p - p0) ** 2
+        return np.exp(ret) / np.pi / settings.HBAR
+
+    q = q_vec / (settings.HBAR) ** 0.5
+    p = p_vec / (settings.HBAR) ** 0.5
+
+    return np.array([[generator(i, j, alpha, s) for j in p] for i in q])
 
 
-def vacuum_marginal(qvec):
-    """q and p marginal distributions for the vacuum state"""
-    x = np.sqrt(1 / (np.pi * hbar)) * np.exp(-1 * (qvec**2) / hbar)
-    p = x
-    return x, p
+def W_fock(q_vec, p_vec, n):
+    r"""Calculates the discretized Wigner function for a fock state.
+    See Eq. 4.10 in arXiv:0406015.
+    """
+
+    def generator(q, p, n):
+        alpha2 = q**2 + p**2
+        ret = (-1) ** n * np.exp(-alpha2) * assoc_laguerre(2 * alpha2, n)
+        return ret / np.pi / settings.HBAR
+
+    q = q_vec / (settings.HBAR) ** 0.5
+    p = p_vec / (settings.HBAR) ** 0.5
+
+    return np.array([[generator(i, j, n) for j in p] for i in q])
 
 
-def coherent_marginal(qvec):
-    r"""q and p marginal distributions for the coherent state with `\alpha=1`"""
-    x = np.sqrt(1 / (np.pi * hbar)) * np.exp(-1 * ((qvec - 0.5 * np.sqrt(2 * hbar)) ** 2) / hbar)
-    p = np.sqrt(1 / (np.pi * hbar)) * np.exp(-1 * (qvec**2) / hbar)
-    return x, p
+# ~~~~~
+# Tests
+# ~~~~~
 
 
-@pytest.mark.parametrize(
-    "state, f_marginal",
-    [
-        (Vacuum(1), vacuum_marginal),
-        (Coherent(1.0, 0.0), coherent_marginal),
-        (Fock([1]), fock1_marginal),
-    ],
-)
-def test_marginal_wigner(state, f_marginal):
-    """test marginals of Wigner function agree with the expected ones"""
+class TestWignerDiscretized:
+    r"""Tests discretized Wigner functions (DWF) for various states"""
 
-    # calculate Wigner from state dm
-    qvec = np.arange(-5, 5, 100)
-    pvec = qvec
-    dm = state.dm(cutoffs=[5]).numpy()
-    W_calc, _, _ = wigner_discretized(dm, qvec, pvec)
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
+    @pytest.mark.parametrize("hbar", [1, 2])
+    def test_cat_state(self, method, hbar):
+        r"""Tests DWF for cat states"""
+        settings.DISCRETIZATION_METHOD = method
+        force_settings("_hbar", hbar)
 
-    # calculate marginals
-    q_marginal = np.sum(W_calc, axis=1)
-    p_marginal = np.sum(W_calc, axis=0)
+        q_vec = np.linspace(-4, 4, 100)
+        p_vec = np.linspace(-1.5, 1.5, 100)
 
-    expected_q_marginal, expected_p_marginal = f_marginal(qvec)
+        q0 = 2.0
+        cat_amps = Coherent(q0).ket([20]) + Coherent(-q0).ket([20])
+        cat_amps = cat_amps / np.linalg.norm(cat_amps)
+        state = State(ket=cat_amps)
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        W_th = W_cat(q_vec, p_vec, q0)
 
-    assert np.allclose(q_marginal, expected_q_marginal, atol=0.001, rtol=0)
-    assert np.allclose(p_marginal, expected_p_marginal, atol=0.001, rtol=0)
+        assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+        assert np.allclose(q_mat.T, q_vec)
+        assert np.allclose(p_mat, p_vec)
+
+        reset_settings()
+
+    @pytest.mark.parametrize("alpha", [0 + 0j, 3 + 3j])
+    @pytest.mark.parametrize("hbar", [2, 3])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
+    def test_coherent_state(self, alpha, hbar, method):
+        r"""Tests DWF for coherent states"""
+        settings.AUTOCUTOFF_MIN_CUTOFF = 100
+        settings.AUTOCUTOFF_MAX_CUTOFF = 150
+        settings.DISCRETIZATION_METHOD = method
+        force_settings("_hbar", hbar)
+
+        # centering the intervals around alpha--away from the center,
+        # the values are small and unstable.
+        left = (np.real(alpha) * 2**0.5 - 1) * (settings.HBAR) ** 0.5
+        right = (np.real(alpha) * 2**0.5 + 1) * (settings.HBAR) ** 0.5
+        q_vec = np.linspace(left, right, 50)
+        p_vec = np.linspace(left, right, 50)
+
+        state = Coherent(np.real(alpha), np.imag(alpha))
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        W_th = W_coherent(q_vec, p_vec, alpha, 0)
+
+        assert np.allclose(distance(W_mm, W_th), 0)
+        assert np.allclose(q_mat.T, q_vec)
+        assert np.allclose(p_mat, p_vec)
+
+        reset_settings()
+
+    @pytest.mark.parametrize("n", [2, 6])
+    @pytest.mark.parametrize("hbar", [2, 3])
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
+    def test_fock_state(self, n, hbar, method):
+        r"""Tests DWF for fock states"""
+        settings.DISCRETIZATION_METHOD = method
+        force_settings("_hbar", hbar)
+
+        q_vec = np.linspace(-1, 1, 20)
+        p_vec = np.linspace(-1, 1, 20)
+
+        state = Fock(n)
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        W_th = W_fock(q_vec, p_vec, n)
+
+        assert np.allclose(distance(W_mm, W_th), 0)
+        assert np.allclose(q_mat.T, q_vec)
+        assert np.allclose(p_mat, p_vec)
+
+        reset_settings()
+
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
+    def test_squeezed_vacuum_both_method_succeed(self, method):
+        r"""Tests DWF for a squeezed vacuum state with squeezing s=1.
+        Both discretization methods are expected to pass successfully.
+        """
+        settings.AUTOCUTOFF_MIN_CUTOFF = 100
+        settings.AUTOCUTOFF_MAX_CUTOFF = 150
+        settings.DISCRETIZATION_METHOD = method
+
+        q_vec = np.linspace(-0.5, 0.5, 50)
+        p_vec = np.linspace(-5, 5, 50)
+
+        s = 1
+        state = SqueezedVacuum(s)
+        W_mm, q_mat, p_mat = wigner_discretized(state.dm(), q_vec, p_vec)
+        W_th = W_coherent(q_vec, p_vec, 0j, s)
+
+        assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+        assert np.allclose(q_mat.T, q_vec)
+        assert np.allclose(p_mat, p_vec)
+
+        reset_settings()
+
+    @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
+    def test_squeezed_vacuum_iterative_fails(self, method):
+        r"""Tests DWF for a squeezed vacuum state with squeezing s=2.
+        The iterative method cannot produce a DWF that matched with the analytical one.
+        """
+        settings.AUTOCUTOFF_MIN_CUTOFF = 100
+        settings.AUTOCUTOFF_MAX_CUTOFF = 150
+        settings.DISCRETIZATION_METHOD = method
+
+        q_vec = np.linspace(-0.2, 0.2, 50)
+        p_vec = np.linspace(-5, 5, 50)
+
+        s = 2
+        state = SqueezedVacuum(s)
+        W_mm, _, _ = wigner_discretized(state.dm(), q_vec, p_vec)
+        W_th = W_coherent(q_vec, p_vec, 0j, s)
+
+        success = np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
+        assert success is False if method == "iterative" else True
+
+        reset_settings()
