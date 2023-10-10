@@ -104,7 +104,7 @@ class Dgate(Parametrized, Unitary):
     def d_vector(self):
         return gaussian.displacement(self.x.value, self.y.value)
 
-    def U(self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None):
+    def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
@@ -208,7 +208,7 @@ class Sgate(Parametrized, Unitary):
             name="Sgate",
         )
 
-    def U(self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None):
+    def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
 
         If specified, ``shape`` takes precedence over ``cutoffs``.
@@ -311,7 +311,10 @@ class Rgate(Parametrized, Unitary):
         return gaussian.rotation_symplectic(self.angle.value)
 
     def U(
-        self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None, diag_only=False
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        diag_only=False,
     ):
         r"""Returns the unitary representation of the Rotation gate.
 

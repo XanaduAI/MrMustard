@@ -16,13 +16,11 @@
 
 from mrmustard.math.tensor_networks import *
 from mrmustard.lab.gates import (
-    Amplifier,
     BSgate,
     CXgate,
     CZgate,
     Dgate,
     MZgate,
-    PhaseNoise,
     Rgate,
     Sgate,
 )
