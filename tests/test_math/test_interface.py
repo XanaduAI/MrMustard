@@ -35,7 +35,7 @@ def test_backend_redirection_tf():
     math = Math()
 
     settings.BACKEND = "tensorflow"
-    assert math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow"
+    assert math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow_wrapper"
 
 
 @pytest.mark.skipif(not torch_available, reason="Test only works if Torch is installed")
