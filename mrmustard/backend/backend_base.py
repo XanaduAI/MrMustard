@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The point of entry for the backend.
-"""
 
-from .backend import Backend
+class BackendBase:
+    r"""
+    A base class for backends.
+    """
 
-import sys
+    def __init__(self, name):
+        self._name = name
 
-sys.modules[__name__] = Backend()
+    def hello(self):
+        raise NotImplemented
+
+    def sum(self, x, y):
+        raise NotImplemented

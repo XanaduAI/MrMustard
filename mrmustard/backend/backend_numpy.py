@@ -12,12 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The point of entry for the backend.
-"""
+import numpy as np
 
-from .backend import Backend
+from .backend_base import BackendBase
 
-import sys
 
-sys.modules[__name__] = Backend()
+class BackendNumpy(BackendBase):
+    r"""
+    A numpy backend.
+    """
+
+    def __init__(self):
+        super().__init__(name="numpy")
+
+    def hello(self):
+        print(f"Hello from {self._name}")
+
+    def sum(self, x, y):
+        raise NotImplemented
