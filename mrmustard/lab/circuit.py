@@ -99,7 +99,6 @@ class Circuit(Transformation, Parametrized):
         """Returns `true` if all operations in the circuit are unitary."""
         return all(op.is_unitary for op in self._ops)
 
-    @property
     def value(self, shape: Tuple[int]):
         raise NotImplemented
 

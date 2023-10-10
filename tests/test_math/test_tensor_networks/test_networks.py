@@ -51,13 +51,28 @@ class TestConnect:
         t2 = TId("t2", None, None, [7, 8, 9])
         t3 = TId("t3", None, None, None, [10])
 
-        connect(t1.input.ket[1], t1.output.ket[4], 2)
+        connect(t1.input.ket[1], t1.output.ket[4])
         connect(t1.output.ket[5], t2.input.bra[8])
         connect(t1.input.ket[3], t3.output.bra[10])
 
         assert t1.input.ket[1].contraction_id == t1.output.ket[4].contraction_id
         assert t1.output.ket[5].contraction_id == t2.input.bra[8].contraction_id
         assert t1.input.ket[3].contraction_id == t3.output.bra[10].contraction_id
+
+    def test_dim(self):
+        r"""
+        Tests that the dim is handled correctly.
+        """
+        t1 = TId("t1", modes_in_ket=[1, 2])
+        t2 = TId("t2", modes_out_ket=[1, 2])
+
+        connect(t1.input.ket[1], t2.output.ket[1])
+        connect(t1.input.ket[2], t2.output.ket[2], dim=10)
+
+        assert t1.input.ket[1].dim is None
+        assert t1.input.ket[2].dim == 10
+        assert t2.output.ket[1].dim is None
+        assert t2.output.ket[2].dim == 10
 
     def test_error(self):
         r"""

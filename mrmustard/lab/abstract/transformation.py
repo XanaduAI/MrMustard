@@ -143,7 +143,10 @@ class Transformation(Tensor):
         return A, B, C
 
     def choi(
-        self, cutoffs: Sequence[int], shape: Optional[Sequence[int]] = None, dual: bool = False
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        dual: bool = False,
     ):
         r"""Returns the Choi representation of the transformation.
 
@@ -155,7 +158,12 @@ class Transformation(Tensor):
             shape: the shape of the Choi matrix
             dual: whether to return the dual Choi
         """
-        if len(cutoffs) != self.num_modes:
+        N = self.num_modes
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) == N:
+            shape = shape or tuple(cutoffs) * 2
+        else:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
 
         shape = shape or tuple(cutoffs) * 4
@@ -351,7 +359,10 @@ class Unitary(Transformation):
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
         """
-        if len(cutoffs) != self.num_modes:
+        N = self.num_modes
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) != self.num_modes:
             raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
         shape = shape or tuple(cutoffs) * 2
         X, _, d = self.XYd(allow_none=False)
@@ -393,7 +404,7 @@ class Channel(Transformation):
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
 
     def value(self, shape: Tuple[int]):
-        return self.choi(shape)
+        return self.choi(shape=shape)
 
     def __eq__(self, other):
         r"""Returns ``True`` if the two transformations are equal."""

@@ -108,8 +108,15 @@ class Dgate(Parametrized, Unitary):
         r"""Returns the unitary representation of the Displacement gate using
         the Laguerre polynomials.
 
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
         Arguments:
-            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
+            cutoffs: the Hilbert space dimension cutoff for each mode.
+            shape: the shape of the unitary matrix.
 
         Returns:
            Raises:
@@ -203,8 +210,16 @@ class Sgate(Parametrized, Unitary):
 
     def U(self, cutoffs: Sequence[int] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
+
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
         Args:
-            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
+            cutoffs: the Hilbert space dimension cutoff for each mode.
+            shape: the shape of the unitary matrix.
 
         Returns:
             array[complex]: the unitary matrix
@@ -300,13 +315,21 @@ class Rgate(Parametrized, Unitary):
     ):
         r"""Returns the unitary representation of the Rotation gate.
 
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
         Args:
-            cutoffs (Sequence[int]): cutoff dimension for each mode.
-            diag_only (bool): if True, only return the diagonal of the unitary matrix.
+            cutoffs: cutoff dimension for each mode.
+            shape: the shape of the unitary matrix
+            diag_only: if True, only return the diagonal of the unitary matrix.
 
         Returns:
             array[complex]: the unitary matrix
         """
+        N = self.num_modes
         if diag_only:
             raise NotImplementedError("Rgate does not support diag_only=True yet")
         if cutoffs is None:
@@ -523,12 +546,19 @@ class BSgate(Parametrized, Unitary):
         shape: Optional[Sequence[int]] = None,
         method=None,
     ):
-        r"""Returns the symplectic transformation matrix for the beam splitter.
+        r"""Returns the unitary representation of the beam splitter.
+
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
 
         Args:
-            cutoffs (List[int]): the list of cutoff dimensions for each mode
+            cutoffs: the list of cutoff dimensions for each mode
                 in the order (out_0, out_1, in_0, in_1).
-            method (str): the method used to compute the unitary matrix. Options are:
+            shape: the shape of the unitary matrix
+            method: the method used to compute the unitary matrix. Options are:
                 * 'vanilla': uses the standard method
                 * 'schwinger': slower, but numerically stable
             default is set in settings.DEFAULT_BS_METHOD (with 'vanilla' by default)
@@ -536,6 +566,7 @@ class BSgate(Parametrized, Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
+        N = self.num_modes
         if cutoffs is None:
             pass
         elif len(cutoffs) == 4:
