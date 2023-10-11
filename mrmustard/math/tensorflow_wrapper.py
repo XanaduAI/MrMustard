@@ -390,7 +390,7 @@ class TFMath(MathInterface):
             The renormalized Hermite polynomial of given shape.
         """
         precision_bits = (
-            settings.precision_bits_hermite_poly
+            settings._precision_bits_hermite_poly
         )  # number of bits used to represent a single Fock amplitude (default: complex128)
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
