@@ -344,9 +344,9 @@ class TFMath(MathInterface):
 
     # TODO: is a wrapper class better?
     @staticmethod
-    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.Optimizer:
+    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.legacy.Optimizer:
         r"""Default optimizer for the Euclidean parameters."""
-        return tf.keras.optimizers.Adam(learning_rate=0.001)
+        return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: List[Trainable]
