@@ -250,6 +250,7 @@ class Transformation:
                 f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {4*self.num_modes})"
             )
         if self.is_unitary:
+            shape = shape[: 2 * self.num_modes]
             U = self.U(shape[: self.num_modes])
             Udual = self.U(shape[self.num_modes :])
             return fock.U_to_choi(U, Udual)
