@@ -100,9 +100,7 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
-        self._precision_bits_hermite_poly = (
-            128  # number of bits to represent a single Fock amp (for Hermite poly)
-        )
+        self._precision_bits_hermite_poly = 128
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -271,6 +269,18 @@ class Settings:
     def SEED(self, value):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
+
+    @property
+    def PRECISION_BITS_HERMITE_POLY(self):
+        r"""
+        The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
+        Default is 128 (i.e. the Fock representation has dtype complex128).
+        """
+        return self._precision_bits_hermite_poly
+
+    @PRECISION_BITS_HERMITE_POLY.setter
+    def PRECISION_BITS_HERMITE_POLY(self, value: str):
+        self._precision_bits_hermite_poly = value
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
