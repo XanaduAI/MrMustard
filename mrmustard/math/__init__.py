@@ -46,7 +46,7 @@ if importlib.util.find_spec("torch"):
 # initialize Julia
 jl = Julia(
     compiled_modules=False
-)  # must be run before "from julia import Main as Main_julia", which is done in math/tensorflow.py
+)  # must be run before "from julia import Main as Main_julia", which is done in math/tensorflow_wrapper.py
 
 
 class Math:
