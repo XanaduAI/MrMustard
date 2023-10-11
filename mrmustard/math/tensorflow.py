@@ -81,7 +81,10 @@ class TFMath(MathInterface):
         return tf.clip_by_value(array, a_min, a_max)
 
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
-        return tf.concat(values, axis)
+        try:
+            return tf.concat(values, axis)
+        except tf.errors.InvalidArgumentError:
+            return tf.stack(values, axis)
 
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
