@@ -16,7 +16,8 @@ r"""
 The point of entry for the backend.
 """
 
-from .backend import Backend
+from .backend_base import *
+from .backend_manager import Backend
 
 import sys
 

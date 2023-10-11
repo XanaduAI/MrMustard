@@ -29,4 +29,4 @@ class BackendNumpy(BackendBase):
         print(f"Hello from {self._name}")
 
     def sum(self, x, y):
-        raise NotImplemented
+        return x + y
