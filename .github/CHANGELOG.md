@@ -25,6 +25,8 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 * Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
 
+* Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
+
 ### Documentation
 
 ### Contributors
