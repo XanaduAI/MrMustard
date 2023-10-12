@@ -16,7 +16,6 @@
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-import os
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -33,8 +32,7 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
 from mrmustard.typing import Tensor, Trainable
 from mrmustard.math.math_interface import MathInterface
 
-if settings.PRECISION_BITS_HERMITE_POLY != 128:
-    from julia import Main as Main_julia
+from julia import Main as Main_julia  # must be imported after running "jl = Julia(compiled_modules=False)"
 
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ

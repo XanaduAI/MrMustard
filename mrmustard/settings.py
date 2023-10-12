@@ -15,10 +15,11 @@
 """A module containing the settings.
 """
 
+import os
+from julia.api import Julia
 from rich import print
 import rich.table
 import numpy as np
-from julia.api import Julia
 
 __all__ = ["Settings", "settings"]
 
@@ -281,18 +282,19 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = [128,256]
+        allowed_values = [128,512]
         if value not in allowed_values:
             raise ValueError(f"precision_bits_hermite_poly must be one of the following values: {allowed_values}")
         self._precision_bits_hermite_poly = value
 
-        # initialize Julia
-        jl = Julia(compiled_modules=False) # must be run before "from julia import Main as Main_julia"
-        from julia import Main as Main_julia # must be imported after running "jl = Julia(compiled_modules=False)"
-        # import Julia functions
-        math_directory = os.path.dirname(__file__)
-        Main_julia.cd(math_directory)
-        Main_julia.include("math/lattice/strategies/vanilla.jl")
+        if value != 128:
+            jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
+            from julia import Main as Main_julia  # must be imported after running "jl = Julia(compiled_modules=False)"
+            # import Julia functions
+            math_directory = os.path.dirname(__file__)
+            Main_julia.cd(math_directory)
+            Main_julia.include("math/lattice/strategies/vanilla.jl")
+
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
