@@ -19,7 +19,7 @@ used within Mr Mustard.
 from itertools import chain, groupby
 from typing import List, Callable, Sequence, Union, Mapping, Dict
 from mrmustard.training.callbacks import Callback
-from mrmustard.utils import graphics
+from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.logger import create_logger
 from mrmustard.math import Math
 from .parameter import Parameter, Trainable, create_parameter
@@ -98,7 +98,7 @@ class Optimizer:
         cost_fn_modified = False
         orig_cost_fn = cost_fn
 
-        bar = graphics.Progressbar(max_steps)
+        bar = ProgressBar(max_steps)
         with bar:
             while not self.should_stop(max_steps):
                 cost, grads = self.compute_loss_and_gradients(cost_fn, trainable_params.values())
