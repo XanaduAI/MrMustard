@@ -167,6 +167,7 @@ class Transformation(Tensor):
         shape = shape or tuple(cutoffs) * 4
 
         if self.is_unitary:
+            shape = shape[: 2 * self.num_modes]
             U = self.U(shape[: self.num_modes])
             Udual = self.U(shape[self.num_modes :])
             if dual:
