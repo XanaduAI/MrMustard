@@ -21,6 +21,10 @@ from typing import Optional
 
 from .tensors import Wire, Tensor
 
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     r"""Connects two wires in a tensor network.
@@ -63,3 +67,104 @@ def contract(tensors: list[Tensor], default_dim: int):
         opt_einsum_args.append(t.value(shape=shape))
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)
+
+
+def draw(
+    tensors: list[Tensor], layout: str = "spring_layout", figsize: Optional[tuple[int, int]] = None
+):
+    r"""Draws a tensor network.
+
+    Args:
+        tensors: The tensors to draw.
+        layout: The layout method. Must be one of the methods in ``nx.drawing.layout``.
+        figsize: The size of the returned figure.
+
+    Returns:
+        (fig): A figure showing the tensor network.
+    """
+    try:
+        fn_layout = getattr(nx.drawing.layout, layout)
+    except AttributeError:
+        msg = f"Invalid layout {layout}."
+        raise ValueError(msg)
+
+    # initialize empty lists and dictionaries used to store metadata
+    tensor_labels = {}
+    mode_labels = {}
+    node_size = []
+    node_color = []
+
+    # initialize three graphs--one to store nodes and edges, two to keep track of arrows
+    graph = nx.Graph()
+    arrows_in = nx.Graph()
+    arrows_out = nx.Graph()
+
+    for idx, tensor in enumerate(tensors):
+        tensor_id = tensor.name + str(idx)
+        graph.add_node(tensor_id)
+        tensor_labels[tensor_id] = tensor.name
+        mode_labels[tensor_id] = ""
+        node_size.append(150)
+        node_color.append("red")
+
+        for wire in tensor.wires:
+            wire_id = wire.contraction_id
+            if wire_id not in graph.nodes:
+                node_size.append(0)
+                node_color.append("white")
+                tensor_labels[wire_id] = ""
+                mode_labels[wire_id] = wire.mode
+
+            graph.add_node(wire_id)
+            graph.add_edge(wire_id, tensor_id)
+            if wire.is_input:
+                arrows_in.add_edge(tensor_id, wire_id)
+            else:
+                arrows_out.add_edge(tensor_id, wire_id)
+
+    pos = fn_layout(graph)
+    pos_labels = {k: v + np.array([0.0, 0.05]) for k, v in pos.items()}
+
+    fig = plt.figure(figsize=(10, 6))
+    nx.draw_networkx_nodes(
+        graph, pos, edgecolors="gray", alpha=0.9, node_size=node_size, node_color=node_color
+    )
+    nx.draw_networkx_edges(graph, pos, edge_color="lightgreen", width=4, alpha=0.6)
+    nx.draw_networkx_edges(
+        arrows_in,
+        pos,
+        edge_color="darkgreen",
+        width=0.5,
+        arrows=True,
+        arrowsize=10,
+        arrowstyle="<|-",
+    )
+    nx.draw_networkx_edges(
+        arrows_out,
+        pos,
+        edge_color="darkgreen",
+        width=0.5,
+        arrows=True,
+        arrowsize=10,
+        arrowstyle="-|>",
+    )
+    nx.draw_networkx_labels(
+        graph,
+        pos=pos_labels,
+        labels=tensor_labels,
+        font_size=12,
+        font_color="black",
+        font_family="serif",
+    )
+    nx.draw_networkx_labels(
+        graph,
+        pos=pos_labels,
+        labels=mode_labels,
+        font_size=12,
+        font_color="black",
+        font_family="FreeMono",
+    )
+
+    plt.title("Mr Mustard Network")
+    plt.show()
+    return fig
