@@ -33,14 +33,8 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
 from mrmustard.typing import Tensor, Trainable
 from mrmustard.math.math_interface import MathInterface
 
-from julia import (
-    Main as Main_julia,
-)  # must be imported after running "jl = Julia(compiled_modules=False)", which is done in math/__init__.py
-
-# import Julia functions
-math_directory = os.path.dirname(__file__)
-Main_julia.cd(math_directory)
-Main_julia.include("lattice/strategies/vanilla.jl")
+if settings.PRECISION_BITS_HERMITE_POLY != 128:
+    from julia import Main as Main_julia
 
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
@@ -396,15 +390,13 @@ class TFMath(MathInterface):
 
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        elif precision_bits == 512:  # julia
+        else:  # julia (with precision_bits = 512)
             _A, _B, _C = (
                 _A.astype(np.complex128),
                 _B.astype(np.complex128),
                 _C.astype(np.complex128),
             )
             G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
-        else:
-            raise NotImplementedError("Currently allowed values for precision_bits: 128, 512")
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))

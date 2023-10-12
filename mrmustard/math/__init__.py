@@ -35,7 +35,6 @@ greater degree of flexibility and code reuse.
     math.cos(x)  # torch backend
 """
 import importlib
-from julia.api import Julia
 from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
@@ -43,10 +42,6 @@ if importlib.util.find_spec("tensorflow"):
 if importlib.util.find_spec("torch"):
     from mrmustard.math.torch_wrapper import TorchMath
 
-# initialize Julia
-jl = Julia(
-    compiled_modules=False
-)  # must be run before "from julia import Main as Main_julia", which is done in math/tensorflow_wrapper.py
 
 
 class Math:
