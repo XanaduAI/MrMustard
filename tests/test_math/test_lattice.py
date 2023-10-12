@@ -22,7 +22,7 @@ from mrmustard import settings
 
 def test_vanillaNumba_vs_binomial():
     """Test that the vanilla method (Numba with precision of complex128) and the binomial method give the same result"""
-    settings._precision_bits_hermite_poly = 128
+    settings.PRECISION_BITS_HERMITE_POLY = 128
     G = Gaussian(2)
 
     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
@@ -33,7 +33,7 @@ def test_vanillaNumba_vs_binomial():
 
 def test_vanillaJulia_vs_binomial():
     """Test that the vanilla method (Julia with precision of complex512) and the binomial method give the same result"""
-    settings._precision_bits_hermite_poly = 512
+    settings.PRECISION_BITS_HERMITE_POLY = 512
     G = Gaussian(2)
 
     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
