@@ -32,8 +32,6 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
 from mrmustard.typing import Tensor, Trainable
 from mrmustard.math.math_interface import MathInterface
 
-from julia import Main as Main_julia  # must be imported after running "jl = Julia(compiled_modules=False)"
-
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
@@ -389,6 +387,7 @@ class TFMath(MathInterface):
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
         else:  # julia (with precision_bits = 512)
+            from julia import Main as Main_julia
             _A, _B, _C = (
                 _A.astype(np.complex128),
                 _B.astype(np.complex128),

@@ -16,7 +16,6 @@
 """
 
 import os
-from julia.api import Julia
 from rich import print
 import rich.table
 import numpy as np
@@ -288,6 +287,8 @@ class Settings:
         self._precision_bits_hermite_poly = value
 
         if value != 128:
+            # initialize Julia
+            from julia.api import Julia
             jl = Julia(compiled_modules=False)  # must be run before "from julia import Main as Main_julia"
             from julia import Main as Main_julia  # must be imported after running "jl = Julia(compiled_modules=False)"
             # import Julia functions
