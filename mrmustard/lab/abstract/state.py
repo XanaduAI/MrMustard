@@ -42,7 +42,7 @@ from mrmustard.utils.typing import (
     RealTensor,
     RealVector,
 )
-from mrmustard.utils.wigner import wigner_discretized
+from mrmustard.physics.wigner import wigner_discretized
 
 
 if TYPE_CHECKING:

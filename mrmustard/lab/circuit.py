@@ -26,7 +26,7 @@ from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
 from mrmustard.utils.typing import RealMatrix, RealVector
-from mrmustard.utils.circdrawer import circuit_text
+from mrmustard.lab.circuit_drawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
 

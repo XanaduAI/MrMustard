@@ -25,7 +25,7 @@ from mrmustard.lab import (
     SqueezedVacuum,
     State,
 )
-from mrmustard.utils.wigner import wigner_discretized
+from mrmustard.physics.wigner import wigner_discretized
 from tests.random import force_settings
 
 # original settings
