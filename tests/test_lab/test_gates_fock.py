@@ -305,6 +305,25 @@ def test_choi_cutoffs():
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
 
 
+@pytest.mark.parametrize("gate", [Sgate(1), Rgate(0.1), Dgate(0.1)])
+@pytest.mark.parametrize("cutoff", [2, 5])
+@pytest.mark.parametrize("modes", [[0], [1, 2]])
+def test_choi_for_unitary(gate, cutoff, modes):
+    """tests the `choi` method for unitary transformations"""
+    gate = gate[modes]
+    N = gate.num_modes
+    cutoffs = [cutoff] * N
+
+    choi = gate.choi(cutoffs=cutoffs).numpy().reshape(cutoff ** (2 * N), cutoff ** (2 * N))
+
+    t = gate.U(cutoffs=cutoffs).numpy()
+    row = t.flatten().reshape(1, cutoff ** (2 * N))
+    col = t.flatten().reshape(cutoff ** (2 * N), 1)
+    expected = np.dot(col, row)
+
+    assert np.allclose(expected, choi)
+
+
 def test_measure_with_fock():
     "tests that the autocutoff respects the fock projection cutoff"
     cov = np.array(
