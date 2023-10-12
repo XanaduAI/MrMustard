@@ -25,7 +25,7 @@ from mrmustard.lab.abstract import State, Transformation
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
-from mrmustard.typing import ComplexMatrix, RealMatrix
+from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
 math = Math()
 

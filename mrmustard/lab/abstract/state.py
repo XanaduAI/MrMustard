@@ -32,7 +32,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
-from mrmustard.typing import (
+from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,

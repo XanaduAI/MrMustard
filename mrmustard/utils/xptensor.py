@@ -27,7 +27,7 @@ from typing import (
 )
 
 from mrmustard.math import Math
-from mrmustard.typing import Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
 

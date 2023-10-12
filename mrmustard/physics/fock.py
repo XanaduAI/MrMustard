@@ -37,7 +37,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
 
 math = Math()
 SQRT = np.sqrt(np.arange(1e6))

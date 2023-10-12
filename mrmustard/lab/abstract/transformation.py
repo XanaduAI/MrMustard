@@ -27,7 +27,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
-from mrmustard.typing import RealMatrix, RealVector
+from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .state import State
 
