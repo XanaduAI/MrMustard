@@ -29,7 +29,7 @@ from mrmustard.math.numba.compactFock_inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
 )
-from mrmustard.typing import Tensor, Trainable
+from mrmustard.utils.typing import Tensor, Trainable
 
 from .math_interface import MathInterface
 

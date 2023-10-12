@@ -29,7 +29,7 @@ from mrmustard.training.parameter import (
     Trainable,
     create_parameter,
 )
-from mrmustard.typing import Tensor
+from mrmustard.utils.typing import Tensor
 
 math = Math()
 

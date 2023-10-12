@@ -16,7 +16,7 @@
 Tests for the Settings class.
 """
 
-from mrmustard.settings import Settings, ImmutableSetting
+from mrmustard.utils.settings import Settings, ImmutableSetting
 import pytest
 
 
