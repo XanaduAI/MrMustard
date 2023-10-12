@@ -16,6 +16,7 @@
 """
 
 import os
+from julia.api import Julia
 from rich import print
 import rich.table
 import numpy as np
@@ -290,9 +291,7 @@ class Settings:
 
         if value != 128:
             # initialize Julia
-            from julia.api import Julia
-
-            jl = Julia(
+            _ = Julia(
                 compiled_modules=False
             )  # must be run before "from julia import Main as Main_julia"
             from julia import (
