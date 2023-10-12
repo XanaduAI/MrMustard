@@ -16,6 +16,8 @@
 
 from mrmustard.math.tensor_networks import *
 
+from matplotlib.figure import Figure
+
 import numpy as np
 import pytest
 
@@ -84,3 +86,23 @@ class TestConnect:
 
         with pytest.raises(ValueError, match="already connected"):
             connect(t1.output.ket[5], t2.input.bra[8])
+
+
+class TestDraw:
+    r"""
+    Tests the function to draw tensor networks.
+    """
+
+    @pytest.mark.parametrize("layout", ["spring_layout", "circular_layout"])
+    @pytest.mark.parametrize("figsize", [None, (4, 4)])
+    def test_draw(self, layout, figsize):
+        t1 = TId("tensor 1", [0, 1, 2], [0, 1, 2])
+        t2 = TId("tensor 2", [1], [1])
+        t3 = TId("tensor 3", [0, 2], [0, 2])
+
+        connect(t1.output.ket[0], t3.input.ket[0])
+        connect(t1.output.ket[2], t3.input.ket[2])
+        connect(t1.output.ket[1], t2.input.ket[1])
+
+        fig = draw([t1, t2, t3], layout, figsize)
+        assert isinstance(fig, Figure)
