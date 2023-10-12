@@ -106,8 +106,7 @@ from typing import Mapping, Sequence
 import numpy as np
 from rich.progress import track
 
-import mrmustard as mm
-
+from mrmustard import settings
 from .optimizer import Optimizer
 
 
@@ -158,7 +157,7 @@ def train_device(
 
     """
 
-    setting_updates, kwargs = update_pop(mm.settings, **kwargs)
+    setting_updates, kwargs = update_pop(settings, **kwargs)
 
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
