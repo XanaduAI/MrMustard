@@ -21,6 +21,8 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
+* Updated Tensorflow to v2.14 with poetry installation working on both linux and Mac.
+
 ### Bug fixes
 
 * Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
