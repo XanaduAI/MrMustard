@@ -43,7 +43,6 @@ if importlib.util.find_spec("torch"):
     from mrmustard.math.torch_wrapper import TorchMath
 
 
-
 class Math:
     r"""
     This class is a switcher for performing math operations on the currently active backend.

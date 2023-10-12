@@ -388,6 +388,7 @@ class TFMath(MathInterface):
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
         else:  # julia (with precision_bits = 512)
             from julia import Main as Main_julia
+
             _A, _B, _C = (
                 _A.astype(np.complex128),
                 _B.astype(np.complex128),
