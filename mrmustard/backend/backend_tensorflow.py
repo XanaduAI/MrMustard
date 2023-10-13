@@ -36,6 +36,11 @@ class BackendTensorflow(BackendBase):
     A base class for backends.
     """
 
+    float64 = tf.float64
+    float32 = tf.float32
+    complex64 = tf.complex64
+    complex128 = tf.complex128
+
     def __init__(self):
         super().__init__(name="tensorflow")
 
@@ -142,7 +147,8 @@ class BackendTensorflow(BackendBase):
     def expm(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.expm(matrix)
 
-    def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
+    def eye(self, size: int, dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.eye(size, dtype=dtype)
 
     def eye_like(self, array: tf.Tensor) -> Tensor:
@@ -208,18 +214,19 @@ class BackendTensorflow(BackendBase):
         dtype=tf.float64,
     ):
         bounds = bounds or (None, None)
-        value = self.convert_to_tensor(value, dtype)
+        value = self.astensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=tf.float64):
-        value = self.convert_to_tensor(value, dtype)
+        value = self.astensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
         """Note that the norm preserves the type of array."""
         return tf.linalg.norm(array)
 
-    def ones(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
+    def ones(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.ones(shape, dtype=dtype)
 
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:

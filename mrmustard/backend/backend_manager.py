@@ -76,9 +76,13 @@ class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
+    float32 = None
+    float64 = None
+    complex64 = None
+    complex128 = None
 
     @property
-    def backend(self):
+    def backend(cls):
         r"""
         The backend that is being used.
         """
@@ -91,6 +95,12 @@ class BackendManager:
             loader = all_modules[backend]["loader"]
             loader.exec_module(module)
             ret = getattr(module, object)()
+
+        cls.float32 = ret.float32
+        cls.float64 = ret.float64
+        cls.complex64 = ret.complex64
+        cls.complex128 = ret.complex128
+
         return ret
 
     def __new__(cls):
@@ -248,7 +258,7 @@ class BackendManager:
         Returns:
             The complex conjugate of the given ``array``.
         """
-        return self._apply("conj", (array))
+        return self._apply("conj", (array,))
 
     def constraint_func(
         self, bounds: Tuple[Optional[float], Optional[float]]
@@ -299,7 +309,7 @@ class BackendManager:
         Returns:
             array: cosine of array
         """
-        return self._apply("cos", (array))
+        return self._apply("cos", (array,))
 
     def cosh(self, array: Tensor) -> Tensor:
         r"""The hyperbolic cosine of array.
@@ -310,7 +320,7 @@ class BackendManager:
         Returns:
             array: hyperbolic cosine of array
         """
-        return self._apply("cosh", (array))
+        return self._apply("cosh", (array,))
 
     def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
         """Given two real tensors representing the real and imaginary part of a complex number,
@@ -346,9 +356,9 @@ class BackendManager:
         Returns:
             determinant of matrix
         """
-        return self._apply("det", (matrix))
+        return self._apply("det", (matrix,))
 
-    def diag(self, array: Tensor, k: int) -> Tensor:
+    def diag(self, array: Tensor, k: int = 0) -> Tensor:
         r"""The array made by inserting the given array along the :math:`k`-th diagonal.
 
         Args:
@@ -397,7 +407,7 @@ class BackendManager:
         Returns:
             array: exponential of array
         """
-        return self._apply("exp", (array))
+        return self._apply("exp", (array,))
 
     def expand_dims(self, array: Tensor, axis: int) -> Tensor:
         r"""The array with an additional dimension inserted at the given axis.
@@ -422,7 +432,7 @@ class BackendManager:
         """
         return self._apply("expm", (matrix,))
 
-    def eye(self, size: int, dtype) -> Tensor:
+    def eye(self, size: int, dtype=None) -> Tensor:
         r"""The identity matrix of size.
 
         Args:
@@ -646,7 +656,7 @@ class BackendManager:
         """
         return self._apply("new_variable", (value, bounds, name, dtype))
 
-    def new_constant(self, value: Tensor, name: str, dtype: Any) -> Tensor:
+    def new_constant(self, value: Tensor, name: str, dtype: Any = None) -> Tensor:
         r"""Returns a new constant with the given value.
 
         Args:
@@ -670,7 +680,7 @@ class BackendManager:
         """
         return self._apply("norm", (array,))
 
-    def ones(self, shape: Sequence[int], dtype) -> Tensor:
+    def ones(self, shape: Sequence[int], dtype=None) -> Tensor:
         r"""Returns an array of ones with the given ``shape`` and ``dtype``.
 
         Args:
@@ -1028,6 +1038,9 @@ class BackendManager:
     @staticmethod
     def custom_gradient(func, args, kwargs):
         """Decorator to define a function with a custom gradient."""
+        import tensorflow as tf
+
+        tf.custom_gradient(func, *args, **kwargs)
         return BackendManager()._apply("custom_gradient", (func, args, kwargs))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

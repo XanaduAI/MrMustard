@@ -150,7 +150,8 @@ class TFMath(MathInterface):
     def expm(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.expm(matrix)
 
-    def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
+    def eye(self, size: int, dtype: any = None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.eye(size, dtype=dtype)
 
     def eye_like(self, array: tf.Tensor) -> Tensor:
