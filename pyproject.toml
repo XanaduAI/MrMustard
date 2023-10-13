@@ -30,14 +30,34 @@ numpy = "1.23.5"
 scipy = "1.8.0"
 numba = "0.56.4"
 thewalrus = "0.19.0"
-tensorflow = "<=2.10.1"
-tensorflow-cpu-aws = { version = "2.10.0", markers = "platform_machine == 'aarch64' or platform_machine == 'arm64'" }
-tensorflow-probability = "0.18.0"
 rich = "10.15.1"
 matplotlib = "3.5.0"
 tqdm = "^4.65.0"
 ray = { version = "2.5.0", extras = ["tune"], optional = true }
 scikit-optimize = { version = "^0.9.0", optional = true }
+
+######################  The Tensorflow Section ###################### 
+# Dedicated for making sure that poetry can install tensorflow on all platforms.
+# This hopefully is a temporary workaround, pending TF starting doing a good job with their pypi release metadata.
+
+# Issue between poetry and tensorflow metadata since >=2.11
+# related to https://github.com/python-poetry/poetry/issues/8271
+# Inspired from https://github.com/tensorflow/tensorflow/blob/adb39b04e9cb116df4659a7e2de9eea27e62f25c/tensorflow/tools/pip_package/setup.py#L148-L162
+tensorflow = {version = "^2.14.0" }
+tensorflow-macos = { version = "^2.14.0", platform = "darwin", markers = "platform_machine=='arm64'" }
+tensorflow-intel = { version = "^2.14.0", platform = "win32" }
+# Disabled to prevent taking over GPU:
+# tensorflow-cpu = [
+#     { version = "^2.14.0", platform = "linux", markers = "platform_machine!='arm64' and platform_machine!='aarch64'" },
+#     { version = "^2.14.0", platform = "darwin", markers = "platform_machine!='arm64' and platform_machine!='aarch64'" },]
+tensorflow-cpu-aws = { version = "^2.14.0", platform = "linux", markers = "platform_machine=='arm64' or platform_machine=='aarch64'" }
+# https://github.com/tensorflow/tensorflow/blob/adb39b04e9cb116df4659a7e2de9eea27e62f25c/tensorflow/tools/pip_package/setup.py#L107-L108
+# https://github.com/python-poetry/poetry/issues/8271#issuecomment-1697740447
+tensorflow-io-gcs-filesystem = [
+    { version = ">= 0.23.1", markers = "platform_machine!='arm64' or platform_system!='Darwin'" },
+    { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
+]
+tensorflow-probability = "^0.22.0"
 
 [tool.poetry.extras]
 ray = ["ray", "scikit-optimize"]
