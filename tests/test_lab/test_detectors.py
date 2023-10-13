@@ -37,10 +37,11 @@ from mrmustard.lab import (
     State,
     Vacuum,
 )
-from mrmustard.math import Math
 from tests.random import none_or_
 
-math = Math()
+
+import mrmustard.backend as math
+
 hbar = settings.HBAR
 
 

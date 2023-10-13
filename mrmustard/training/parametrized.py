@@ -22,7 +22,6 @@ from typing import Any, Generator, List, Sequence, Tuple, Mapping
 
 import numpy as np
 
-from mrmustard.math import Math
 from mrmustard.training.parameter import (
     Constant,
     Parameter,
@@ -31,7 +30,7 @@ from mrmustard.training.parameter import (
 )
 from mrmustard.utils.typing import Tensor
 
-math = Math()
+import mrmustard.backend as math
 
 __all__ = ["Parametrized"]
 

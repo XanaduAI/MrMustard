@@ -22,12 +22,10 @@ from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
-from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
-
-math = Math()
+import mrmustard.backend as math
 
 __all__ = [
     "Dgate",

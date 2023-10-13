@@ -32,7 +32,7 @@ many-photon setting.
     from mrmustard.lab.states import Vacuum
     from mrmustard.lab.circuit import Circuit
     from mrmustard.training import Optimizer
-    from mrmustard.math import Math
+    import mrmustard.backend as math
 
     math = Math()
 

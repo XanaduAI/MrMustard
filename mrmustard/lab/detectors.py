@@ -19,7 +19,6 @@ This module implements the set of detector classes that perform measurements on 
 from typing import Iterable, List, Optional, Tuple, Union
 
 from mrmustard import settings
-from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
 from mrmustard.utils.typing import RealMatrix, RealVector
@@ -28,7 +27,7 @@ from .abstract import FockMeasurement, Measurement, State
 from .gates import Rgate
 from .states import Coherent, DisplacedSqueezed
 
-math = Math()
+import mrmustard.backend as math
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heterodyne"]
 

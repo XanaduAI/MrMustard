@@ -26,10 +26,9 @@ from typing import (
     Union,
 )
 
-from mrmustard.math import Math
 from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
 
-math = Math()
+import mrmustard.backend as math
 
 
 class XPTensor(ABC):

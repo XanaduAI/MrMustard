@@ -5,12 +5,11 @@ from thewalrus.random import random_covariance
 
 from mrmustard import physics, settings
 from mrmustard.lab import Coherent, Fock, State
-from mrmustard.math import Math
 from mrmustard.physics import fock as fp
 from mrmustard.physics import gaussian as gp
 from tests.random import force_settings
+import mrmustard.backend as math
 
-math = Math()
 hbar0 = settings.HBAR
 
 

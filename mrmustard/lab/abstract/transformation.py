@@ -24,14 +24,13 @@ from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .state import State
 
-math = Math()
+import mrmustard.backend as math
 
 
 class Transformation:

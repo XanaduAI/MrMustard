@@ -30,11 +30,11 @@ from mrmustard.lab.states import (
     Thermal,
     Vacuum,
 )
-from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
 from tests.random import angle, force_settings, medium_float, n_mode_pure_state, nmodes, r
 
-math = Math()
+import mrmustard.backend as math
+
 hbar0 = settings.HBAR
 
 

@@ -25,7 +25,7 @@ greater degree of flexibility and code reuse.
 
 .. code-block::
 
-    from mrmustard.math import Math
+    import mrmustard.backend as math
     math = Math()
     math.cos(x)  # tensorflow backend
 

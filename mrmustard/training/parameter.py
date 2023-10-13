@@ -88,10 +88,9 @@ There are three basic types of parameters:
 from abc import ABC, abstractmethod
 
 from typing import Optional, Sequence, Any
-from mrmustard.math import Math
 from mrmustard.utils.typing import Tensor
 
-math = Math()
+import mrmustard.backend as math
 
 __all__ = [
     "Parameter",

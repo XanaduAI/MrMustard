@@ -20,12 +20,11 @@ from abc import ABC, abstractmethod
 from typing import Iterable, Sequence, Union
 
 from mrmustard import settings
-from mrmustard.math import Math
 from mrmustard.utils.typing import Tensor
 
 from .state import State
 
-math = Math()
+import mrmustard.backend as math
 
 
 class Measurement(ABC):

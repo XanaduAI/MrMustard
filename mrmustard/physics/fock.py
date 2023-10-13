@@ -24,7 +24,6 @@ from typing import List, Optional, Sequence, Tuple
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.lattice import strategies
 from mrmustard.math.mmtensor import MMTensor
@@ -38,8 +37,8 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
 )
 from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
+import mrmustard.backend as math
 
-math = Math()
 SQRT = np.sqrt(np.arange(1e6))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

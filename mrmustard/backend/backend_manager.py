@@ -1025,6 +1025,11 @@ class BackendManager:
         """
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
+    @staticmethod
+    def custom_gradient(func, args, kwargs):
+        """Decorator to define a function with a custom gradient."""
+        return BackendManager()._apply("custom_gradient", (func, args, kwargs))
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

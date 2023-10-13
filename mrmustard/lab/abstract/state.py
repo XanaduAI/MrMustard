@@ -32,7 +32,6 @@ from typing import (
 from matplotlib import cm
 
 from mrmustard import settings
-from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -43,12 +42,11 @@ from mrmustard.utils.typing import (
     RealVector,
 )
 from mrmustard.physics.wigner import wigner_discretized
+import mrmustard.backend as math
 
 
 if TYPE_CHECKING:
     from .transformation import Transformation
-
-math = Math()
 
 
 # pylint: disable=too-many-instance-attributes

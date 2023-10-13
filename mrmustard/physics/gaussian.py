@@ -21,11 +21,9 @@ from typing import Any, Optional, Sequence, Tuple, Union
 from thewalrus.quantum import is_pure_cov
 
 from mrmustard import settings
-from mrmustard.math import Math
 from mrmustard.utils.typing import Matrix, Scalar, Vector
 from mrmustard.math.xptensor import XPMatrix, XPVector
-
-math = Math()
+import mrmustard.backend as math
 
 
 #  ~~~~~~

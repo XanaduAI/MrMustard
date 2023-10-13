@@ -21,12 +21,11 @@ from typing import List, Callable, Sequence, Union, Mapping, Dict
 from mrmustard.training.callbacks import Callback
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from mrmustard.math import Math
 from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
 
-math = Math()
+import mrmustard.backend as math
 
 __all__ = ["Optimizer"]
 
