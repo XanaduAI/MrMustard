@@ -21,8 +21,9 @@ class BackendBase:
     def __init__(self, name):
         self._name = name
 
-    def hello(self):
-        raise NotImplemented
-
-    def sum(self, x, y):
-        raise NotImplemented
+    @property
+    def name(self):
+        r"""
+        The name of this backend.
+        """
+        return self._name

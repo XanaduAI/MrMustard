@@ -28,5 +28,5 @@ class BackendNumpy(BackendBase):
     def hello(self):
         print(f"Hello from {self._name}")
 
-    def sum(self, x, y):
-        return x + y
+    # def sum(self, x, y):
+    #     return x + y
