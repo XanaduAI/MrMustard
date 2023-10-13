@@ -3072,51 +3072,6 @@ wrapt = ">=1.11.0,<1.15"
 and-cuda = ["nvidia-cublas-cu11 (==11.11.3.6)", "nvidia-cuda-cupti-cu11 (==11.8.87)", "nvidia-cuda-nvcc-cu11 (==11.8.89)", "nvidia-cuda-runtime-cu11 (==11.8.89)", "nvidia-cudnn-cu11 (==8.7.0.84)", "nvidia-cufft-cu11 (==10.9.0.58)", "nvidia-curand-cu11 (==10.3.0.86)", "nvidia-cusolver-cu11 (==11.4.1.48)", "nvidia-cusparse-cu11 (==11.7.5.86)", "nvidia-nccl-cu11 (==2.16.5)", "tensorrt (==8.5.3.1)"]
 
 [[package]]
-name = "tensorflow-cpu"
-version = "2.14.0"
-description = "TensorFlow is an open source machine learning framework for everyone."
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "tensorflow_cpu-2.14.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:d5cf976bff9b03123a4810883a1879ed1a3da9d955428bbeef419da99ef6424e"},
-    {file = "tensorflow_cpu-2.14.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f2e5b562a7abe3ec65e678f54690b970df59238b9dd3f29fe499fc689becb050"},
-    {file = "tensorflow_cpu-2.14.0-cp310-cp310-win_amd64.whl", hash = "sha256:ee31157d5c5ee7c6a077a5942258f8dfa09e9ab6b4cb422ff82dd666e8982f9b"},
-    {file = "tensorflow_cpu-2.14.0-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:c1f916d2ffa8cc2f6c3e879a2dfde0967d821e22306fbb614880e744101cd77d"},
-    {file = "tensorflow_cpu-2.14.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8886642da74839b6cadcbc2f748ebdfc20e83b71f2069686485f9a186bff1b07"},
-    {file = "tensorflow_cpu-2.14.0-cp311-cp311-win_amd64.whl", hash = "sha256:f8159ee08ac50b7e88073820919cbdf259813e8c4617c903c90aa94f9ee4f9a7"},
-    {file = "tensorflow_cpu-2.14.0-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:2655d71d0353924040f603ece88330c713dc8adc9ebc4c58e9d356bb61fb6c14"},
-    {file = "tensorflow_cpu-2.14.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bf7f3d192941560fab0993d102917bc6bf00b1b02ea30b67e52f7a15233468bb"},
-    {file = "tensorflow_cpu-2.14.0-cp39-cp39-win_amd64.whl", hash = "sha256:0ec35d64ffe0f8dc0aba38ce56c8df7d2e9d3ef69bc6d04d1c4f465e0fde8eac"},
-]
-
-[package.dependencies]
-absl-py = ">=1.0.0"
-astunparse = ">=1.6.0"
-flatbuffers = ">=23.5.26"
-gast = ">=0.2.1,<0.5.0 || >0.5.0,<0.5.1 || >0.5.1,<0.5.2 || >0.5.2"
-google-pasta = ">=0.1.1"
-grpcio = ">=1.24.3,<2.0"
-h5py = ">=2.9.0"
-keras = ">=2.14.0,<2.15"
-libclang = ">=13.0.0"
-ml-dtypes = "0.2.0"
-numpy = ">=1.23.5"
-opt-einsum = ">=2.3.2"
-packaging = "*"
-protobuf = ">=3.20.3,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
-setuptools = "*"
-six = ">=1.12.0"
-tensorboard = ">=2.14,<2.15"
-tensorflow-estimator = ">=2.14.0,<2.15"
-tensorflow-io-gcs-filesystem = ">=0.23.1"
-termcolor = ">=1.1.0"
-typing-extensions = ">=3.6.6"
-wrapt = ">=1.11.0,<1.15"
-
-[package.extras]
-and-cuda = ["nvidia-cublas-cu11 (==11.11.3.6)", "nvidia-cuda-cupti-cu11 (==11.8.87)", "nvidia-cuda-nvcc-cu11 (==11.8.89)", "nvidia-cuda-runtime-cu11 (==11.8.89)", "nvidia-cudnn-cu11 (==8.7.0.84)", "nvidia-cufft-cu11 (==10.9.0.58)", "nvidia-curand-cu11 (==10.3.0.86)", "nvidia-cusolver-cu11 (==11.4.1.48)", "nvidia-cusparse-cu11 (==11.7.5.86)", "nvidia-nccl-cu11 (==2.16.5)", "tensorrt (==8.5.3.1)"]
-
-[[package]]
 name = "tensorflow-cpu-aws"
 version = "2.14.0"
 description = "TensorFlow is an open source machine learning framework for everyone."
@@ -3550,4 +3505,4 @@ ray = ["ray", "scikit-optimize"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.11"
-content-hash = "93e7032fb2481f38022080b1e967af2de78128aee9f1417d6dc2fe43683e8f54"
+content-hash = "56fb878d0d037e87a530b1fc5b5579445e1f29ad525f80decf6a596d738a942e"

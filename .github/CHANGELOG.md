@@ -21,7 +21,8 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
-* Updated Tensorflow to v2.14 with poetry installation working on both linux and Mac.
+* Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
+  [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
 
 ### Bug fixes
 
