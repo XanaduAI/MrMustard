@@ -12,16 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-The point of entry for the backend.
-"""
-
-from .autocast import *
-from .backend_base import *
-from .backend_manager import Backend
-from .lattice import *
-from .numba import *
-
-import sys
-
-sys.modules[__name__] = Backend()
+from .beamsplitter import *
+from .binomial import *
+from .displacement import *
+from .squeezer import *
+from .vanilla import *
