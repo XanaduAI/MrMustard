@@ -44,7 +44,7 @@ def lazy_import(module_name: str):
         module_name: The name of the module to import.
     """
     try:
-        return sys.modules[module_name]
+        return sys.modules[module_name], None
     except KeyError:
         spec = importlib.util.find_spec(module_name)
         module = importlib.util.module_from_spec(spec)
@@ -52,48 +52,49 @@ def lazy_import(module_name: str):
         return module, loader
 
 
-# lazy impost for tensorflow
+# lazy import for numpy
+module_name_np = "mrmustard.backend.backend_numpy"
+module_np, loader_np = lazy_import(module_name_np)
+
+# lazy import for tensorflow
 module_name_tf = "mrmustard.backend.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
+
+all_modules = {
+    "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
+    "tensorflow": {"module": module_tf, "loader": loader_tf, "object": "BackendTensorflow"},
+}
 
 # ~~~~~~~
 # Classes
 # ~~~~~~~
 
 
-class Backend:
-    _backend = BackendNumpy()
+class BackendManager:
+    r"""
+    A class to manage backends.
+    """
 
     @property
-    def backend(cls):
+    def backend(self):
         r"""
         The backend that is being used.
         """
-        return cls._backend
-
-    def change_backend(cls, new_backend: str):
-        r"""
-        Changes backend.
-
-        Args:
-            new_backend: Must be one of ``numpy`` and ``tensorflow``.
-
-        Raises:
-            ValueError: If ``new_backend`` is not one of ``numpy`` and ``tensorflow``.
-        """
-        if new_backend == "numpy":
-            cls._backend = BackendNumpy()
-        elif new_backend == "tensorflow":
-            loader_tf.exec_module(module_tf)
-            cls._backend = module_tf.BackendTensorflow()
-        else:
-            msg = f"Backend {new_backend} not supported"
-            raise ValueError(msg)
+        backend = settings.BACKEND
+        module = all_modules[backend]["module"]
+        object = all_modules[backend]["object"]
+        try:
+            ret = getattr(module, object)()
+        except:
+            loader = all_modules[backend]["loader"]
+            loader.exec_module(module)
+            ret = getattr(module, object)()
+        return ret
 
     def __new__(cls):
         # singleton
         if not hasattr(cls, "instance"):
-            cls.instance = super(Backend, cls).__new__(cls)
+            cls.instance = super(BackendManager, cls).__new__(cls)
         return cls.instance
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):

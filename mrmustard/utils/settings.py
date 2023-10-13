@@ -132,14 +132,14 @@ class Settings:
     def BACKEND(self):
         r"""The backend which is used. Default is ``tensorflow``.
 
-        Can be either ``'tensorflow'`` or ``'torch'``.
+        Can be either ``'numpy'`` or ``'tensorflow'``.
         """
         return self._backend
 
     @BACKEND.setter
     def BACKEND(self, value: str):
-        if value not in ["tensorflow", "torch"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
+        if value not in ["numpy", "tensorflow"]:  # pragma: no cover
+            raise ValueError("Backend must be either 'numpy' or 'tensorflow'")
         self._backend = value
 
     @property

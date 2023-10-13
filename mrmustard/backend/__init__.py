@@ -18,10 +18,10 @@ The point of entry for the backend.
 
 from .autocast import *
 from .backend_base import *
-from .backend_manager import Backend
+from .backend_manager import BackendManager
 from .lattice import *
 from .numba import *
 
 import sys
 
-sys.modules[__name__] = Backend()
+sys.modules[__name__] = BackendManager()
