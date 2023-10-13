@@ -31,6 +31,8 @@ from ..utils.typing import (
     Vector,
 )
 
+__all__ = ("BackendManager",)
+
 # ~~~~~~~
 # Helpers
 # ~~~~~~~
@@ -72,7 +74,7 @@ all_modules = {
 
 class BackendManager:
     r"""
-    A class to manage backends.
+    A class to manage the different backends supported by Mr Mustard.
     """
 
     @property
@@ -115,10 +117,6 @@ class BackendManager:
     def hello(self):
         r"""A function to say hello."""
         self._apply("hello")
-
-    def sum(self, x, y):
-        r"""A function to sum two numbers."""
-        return self._apply("sum", (x, y))
 
     def abs(self, array: Tensor) -> Tensor:
         r"""The absolute value of array.
