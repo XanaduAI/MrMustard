@@ -64,12 +64,13 @@ class BackendTensorflow(BackendBase):
         return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
-    def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+    def cast(self, array: tf.Tensor, dtype) -> tf.Tensor:
         if dtype is None:
             return array
         return tf.cast(array, dtype)
@@ -78,6 +79,8 @@ class BackendTensorflow(BackendBase):
         return tf.clip_by_value(array, a_min, a_max)
 
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
+        if any(tf.rank(v) == 0 for v in values):
+            return tf.stack(values, axis)
         return tf.concat(values, axis)
 
     def conj(self, array: tf.Tensor) -> tf.Tensor:
@@ -288,6 +291,7 @@ class BackendTensorflow(BackendBase):
         return tf.tile(array, repeats)
 
     def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return self.cast(tf.linalg.trace(array), dtype)
 
     def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:

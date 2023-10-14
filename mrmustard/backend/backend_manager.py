@@ -188,36 +188,39 @@ class BackendManager:
         """
         return self._apply("assign", (tensor, value))
 
-    def astensor(self, array: Tensor, dtype: str):
+    def astensor(self, array: Tensor, dtype=None):
         r"""Converts a numpy array to a tensor.
 
         Args:
             array: The numpy array to convert.
-            dtype: The dtype of the tensor.
+            dtype: The dtype of the tensor.  If ``None``, the returned tensor
+                is of type ``float``.
 
         Returns:
             The tensor with dtype.
         """
         return self._apply("astensor", (array, dtype))
 
-    def atleast_1d(self, array: Tensor, dtype: str = None) -> Tensor:
+    def atleast_1d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least one dimension.
 
         Args:
             array: The array to convert.
-            dtype: The data type of the array.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
 
         Returns:
             array: The array with at least one dimension.
         """
         return self._apply("atleast_1d", (array, dtype))
 
-    def cast(self, array: Tensor, dtype) -> Tensor:
+    def cast(self, array: Tensor, dtype=None) -> Tensor:
         r"""Casts ``array`` to ``dtype``.
 
         Args:
             array: The array to cast.
-            dtype: The data type to cast to.
+            dtype: The data type to cast to. If ``None``, the returned array
+                is the same as the given one.
 
         Returns:
             The array cast to dtype.
@@ -370,12 +373,12 @@ class BackendManager:
         """
         return self._apply("diag", (array, k))
 
-    def diag_part(self, array: Tensor, k: int) -> Tensor:
+    def diag_part(self, array: Tensor, k: int = 0) -> Tensor:
         r"""The array of the main diagonal of array.
 
         Args:
-            array (array): array to extract the main diagonal of
-            k (int): diagonal to extract
+            array: The array to extract the main diagonal of.
+            k: The diagonal to extract.
 
         Returns:
             array: array of the main diagonal of array
@@ -437,7 +440,8 @@ class BackendManager:
 
         Args:
             size (int): size of the identity matrix
-            dtype (dtype): data type of the identity matrix
+            dtype (dtype): data type of the identity matrix. If ``None``,
+                the returned matrix is of type ``float``.
 
         Returns:
             matrix: identity matrix
@@ -459,7 +463,7 @@ class BackendManager:
         r"""Whether the given tensor is a tensor of the concrete backend."""
         return self._apply("from_backend", (value,))
 
-    def gather(self, array: Tensor, indices: Tensor, axis: int) -> Tensor:
+    def gather(self, array: Tensor, indices: Tensor, axis: Optional[int] = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
@@ -685,7 +689,8 @@ class BackendManager:
 
         Args:
             shape (tuple): shape of the array
-            dtype (type): dtype of the array
+            dtype (type): dtype of the array. If ``None``, the returned array is
+                of type ``float``.
 
         Returns:
             array: array of ones
@@ -829,7 +834,7 @@ class BackendManager:
 
         Args:
             x (array): array to take the square root of
-            dtype (type): ``dtype`` of the output array
+            dtype (type): ``dtype`` of the output array.
 
         Returns:
             array: square root of ``x``

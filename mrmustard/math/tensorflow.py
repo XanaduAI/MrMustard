@@ -67,6 +67,7 @@ class TFMath(MathInterface):
         return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
