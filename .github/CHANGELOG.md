@@ -6,6 +6,7 @@
 reliable for systems with high number of excitations, for which the pre-existing iterative method is known to be unstable. Users
 can select their preferred methods by setting the value of `Settings.DISCRETIZATION_METHOD` to either `interactive` (default) or
 `clenshaw`.
+  [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
 
 * Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
   It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
@@ -15,9 +16,11 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
   methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+  [(#278)](https://github.com/XanaduAI/MrMustard/pull/278)
 
 * Certain attributes of `Settings` can no longer be changed after their value is queried for the
   first time.
+  [(#278)](https://github.com/XanaduAI/MrMustard/pull/278)
 
 ### Improvements
 
@@ -26,9 +29,14 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Bug fixes
 
-* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm).
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
 
 * Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
+  [(#283)](https://github.com/XanaduAI/MrMustard/pull/283)
+
+* Fixed the internal function to calculate ABC of Bargmann representation (now corresponds to the literature) and other fixes to get the correct Fock tensor.
+  [(#255)](https://github.com/XanaduAI/MrMustard/pull/255)
 
 ### Documentation
 
@@ -136,8 +144,6 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 * When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
   [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
-
-* Fixed the internal function to calculate ABC of Bargmann representation (now corresponds to the literature) and other fixes to get the correct Fock tensor. [(#255)](https://github.com/XanaduAI/MrMustard/pull/255)
 
 * Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
 cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
