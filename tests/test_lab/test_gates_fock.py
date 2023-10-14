@@ -23,6 +23,7 @@ from thewalrus.fock_gradients import (
     two_mode_squeezing,
 )
 
+from mrmustard import settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -34,6 +35,9 @@ from mrmustard.lab import (
     Rgate,
     S2gate,
     Sgate,
+    Gaussian,
+    PhaseNoise,
+    Thermal,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
 from mrmustard.math import Math
@@ -301,6 +305,25 @@ def test_choi_cutoffs():
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
 
 
+@pytest.mark.parametrize("gate", [Sgate(1), Rgate(0.1), Dgate(0.1)])
+@pytest.mark.parametrize("cutoff", [2, 5])
+@pytest.mark.parametrize("modes", [[0], [1, 2]])
+def test_choi_for_unitary(gate, cutoff, modes):
+    """tests the `choi` method for unitary transformations"""
+    gate = gate[modes]
+    N = gate.num_modes
+    cutoffs = [cutoff] * N
+
+    choi = gate.choi(cutoffs=cutoffs).numpy().reshape(cutoff ** (2 * N), cutoff ** (2 * N))
+
+    t = gate.U(cutoffs=cutoffs).numpy()
+    row = t.flatten().reshape(1, cutoff ** (2 * N))
+    col = t.flatten().reshape(cutoff ** (2 * N), 1)
+    expected = np.dot(col, row)
+
+    assert np.allclose(expected, choi)
+
+
 def test_measure_with_fock():
     "tests that the autocutoff respects the fock projection cutoff"
     cov = np.array(
@@ -326,3 +349,45 @@ def test_schwinger_bs_equals_vanilla_bs_for_small_cutoffs(theta, phi):
     U_schwinger = BSgate(theta, phi).U([10, 10, 10, 10], method="schwinger")
 
     assert np.allclose(U_vanilla, U_schwinger, atol=1e-6)
+
+
+# pylint: disable=protected-access
+@given(phase_stdev=medium_float.filter(lambda x: x > 0))
+def test_phasenoise_creates_dm(phase_stdev):
+    """test that the phase noise gate is correctly applied"""
+    assert (Coherent(1.0) >> PhaseNoise(phase_stdev))._dm is not None
+    assert (Fock(10) >> PhaseNoise(phase_stdev))._dm is not None
+
+
+@given(phase_stdev=medium_float.filter(lambda x: x > 0))
+def test_phasenoise_symmetry(phase_stdev):
+    "tests that symmetric states are not affected by phase noise"
+    assert (Fock(1) >> PhaseNoise(phase_stdev)) == Fock(1)
+    settings.AUTOCUTOFF_MIN_CUTOFF = 100
+    assert (Thermal(1) >> PhaseNoise(phase_stdev)) == Thermal(1)
+    settings.AUTOCUTOFF_MIN_CUTOFF = 1
+
+
+@given(phase_stdev=medium_float.filter(lambda x: x > 0))
+def test_phasenoise_on_multimode(phase_stdev):
+    "tests that phase noise can be used on multimode states"
+    G2 = Gaussian(2) >> Attenuator(0.1, modes=[0, 1])
+    P = PhaseNoise(phase_stdev, modes=[1])
+    settings.AUTOCUTOFF_MIN_CUTOFF = 20
+    assert (G2 >> P).get_modes(0) == G2.get_modes(0)
+    assert (G2 >> P).get_modes(1) == G2.get_modes(1) >> P
+    settings.AUTOCUTOFF_MIN_CUTOFF = 1
+
+
+def test_phasenoise_large_noise():
+    "tests that large phase noise kills the off-diagonal elements"
+    G1 = Gaussian(1)
+    P = PhaseNoise(1000)
+    assert (G1 >> P) == State(dm=math.diag(math.diag_part(G1.dm())))
+
+
+def test_phasenoise_zero_noise():
+    "tests that zero phase noise is equal to the identity"
+    G1 = Gaussian(1)
+    P = PhaseNoise(0.0)
+    assert (G1 >> P) == State(dm=G1.dm())

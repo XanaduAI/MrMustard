@@ -1,3 +1,50 @@
+# Release 0.6.0 (current release)
+
+### New features
+
+* Added a new method to discretize Wigner functions that revolves Clenshaw summations. This method is expected to be fast and
+reliable for systems with high number of excitations, for which the pre-existing iterative method is known to be unstable. Users
+can select their preferred methods by setting the value of `Settings.DISCRETIZATION_METHOD` to either `interactive` (default) or
+`clenshaw`.
+  [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
+
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
+  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+  [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
+
+### Breaking changes
+
+* The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
+  methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+  [(#278)](https://github.com/XanaduAI/MrMustard/pull/278)
+
+* Certain attributes of `Settings` can no longer be changed after their value is queried for the
+  first time.
+  [(#278)](https://github.com/XanaduAI/MrMustard/pull/278)
+
+### Improvements
+
+* Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
+  [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
+
+### Bug fixes
+
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm).
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
+* Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
+  [(#283)](https://github.com/XanaduAI/MrMustard/pull/283)
+
+* Fixed the internal function to calculate ABC of Bargmann representation (now corresponds to the literature) and other fixes to get the correct Fock tensor.
+  [(#255)](https://github.com/XanaduAI/MrMustard/pull/255)
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
+---
+
 # Release 0.5.0
 
 ### New features
@@ -35,7 +82,7 @@
   # Or, in command line: `tensorboard --logdir={tb_cb.logdir}` and open link in browser.
   ```
 
-* Gaussian states support a `bargmann` method for returning the bargmann representation. 
+* Gaussian states support a `bargmann` method for returning the bargmann representation.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * The `ket` method of `State` now supports new keyword arguments `max_prob` and `max_photons`.
@@ -50,7 +97,7 @@
   ket = Gaussian(2).ket(max_prob=0.99, max_photons=3)
   ```
 
-* Gaussian transformations support a `bargmann` method for returning the bargmann representation. 
+* Gaussian transformations support a `bargmann` method for returning the bargmann representation.
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * BSGate.U now supports method='vanilla' (default) and 'schwinger' (slower, but stable to any cutoff)
@@ -82,10 +129,11 @@
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * More robust implementation of cutoffs for States.
-[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * Dependencies and versioning are now managed using Poetry.
-[(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
+  [(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
 
 ### Bug fixes
 

@@ -81,7 +81,10 @@ class TFMath(MathInterface):
         return tf.clip_by_value(array, a_min, a_max)
 
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
-        return tf.concat(values, axis)
+        if any(tf.rank(v) == 0 for v in values):
+            return tf.stack(values, axis)
+        else:
+            return tf.concat(values, axis)
 
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
@@ -133,8 +136,8 @@ class TFMath(MathInterface):
     def diag(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag(array, k=k)
 
-    def diag_part(self, array: tf.Tensor) -> tf.Tensor:
-        return tf.linalg.diag_part(array)
+    def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
+        return tf.linalg.diag_part(array, k=k)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
         if type(string) is str:
@@ -260,6 +263,9 @@ class TFMath(MathInterface):
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
+    def set_diag(self, array: tf.Tensor, diag: tf.Tensor, k: int) -> tf.Tensor:
+        return tf.linalg.set_diag(array, diag, k=k)
+
     def sin(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.sin(array)
 
@@ -338,9 +344,9 @@ class TFMath(MathInterface):
 
     # TODO: is a wrapper class better?
     @staticmethod
-    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.Optimizer:
+    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.legacy.Optimizer:
         r"""Default optimizer for the Euclidean parameters."""
-        return tf.keras.optimizers.Adam(learning_rate=0.001)
+        return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: List[Trainable]
