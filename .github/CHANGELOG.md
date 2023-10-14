@@ -66,7 +66,7 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
   def cost_fn():
       ...
-
+  
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -129,6 +129,7 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * More robust implementation of cutoffs for States.
+
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * Dependencies and versioning are now managed using Poetry.
@@ -153,8 +154,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
-[Richard A. Wolf](https://github.com/ryk-wolf), [Yuan YAO](https://github.com/sylviemonet)
-
+[Richard A. Wolf](https://github.com/ryk-wolf)
 
 ---
 
