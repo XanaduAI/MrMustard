@@ -20,6 +20,7 @@ from rich import print
 from ._version import __version__
 from .settings import *
 
+
 def version():
     r"""Version number of Mr Mustard.
 

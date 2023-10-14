@@ -323,7 +323,7 @@ def test_choi_for_unitary(gate, cutoff, modes):
 
     assert np.allclose(expected, choi)
 
-    
+
 def test_measure_with_fock():
     "tests that the autocutoff respects the fock projection cutoff"
     cov = np.array(
