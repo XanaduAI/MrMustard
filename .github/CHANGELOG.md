@@ -1,4 +1,4 @@
-# Release 0.6.0 (development release)
+# Release 0.6.0 (current release)
 
 ### New features
 
@@ -33,12 +33,11 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 ### Documentation
 
 ### Contributors
-[Filippo Miatto](https://github.com/ziofil), 
-[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
 
 ---
 
-# Release 0.5.0 (current release)
+# Release 0.5.0
 
 ### New features
 
@@ -122,10 +121,10 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * More robust implementation of cutoffs for States.
-[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * Dependencies and versioning are now managed using Poetry.
-[(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
+  [(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
 
 ### Bug fixes
 
