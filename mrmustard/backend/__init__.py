@@ -17,10 +17,12 @@ The point of entry for the backend.
 """
 
 from .autocast import *
+from .caching import *
 from .backend_base import *
 from .backend_manager import BackendManager
 from .lattice import *
 from .numba import *
+from .tensor_wrappers import *
 
 import sys
 

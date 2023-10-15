@@ -389,6 +389,12 @@ class BackendManager:
         r"""The eigenvalues of a matrix."""
         return self._apply("eigvals", (tensor,))
 
+    def eigh(self, tensor: Tensor) -> Tensor:
+        """
+        The eigenvalues and eigenvectors of a matrix.
+        """
+        return self._apply("eigh", (tensor,))
+
     def einsum(self, string: str, *tensors) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
@@ -882,7 +888,7 @@ class BackendManager:
         """
         return self._apply("tile", (array, repeats))
 
-    def trace(self, array: Tensor, dtype: Any = None) -> Tensor:
+    def trace(self, array: Tensor, dtype=None) -> Tensor:
         r"""The trace of array.
 
         Args:
@@ -1041,12 +1047,12 @@ class BackendManager:
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
     @staticmethod
-    def custom_gradient(func, args, kwargs):
+    def custom_gradient(func, *args, **kwargs):
         """Decorator to define a function with a custom gradient."""
-        import tensorflow as tf
+        if settings.BACKEND == "tensorflow":
+            from tensorflow import custom_gradient
 
-        tf.custom_gradient(func, *args, **kwargs)
-        return BackendManager()._apply("custom_gradient", (func, args, kwargs))
+            return custom_gradient(func, *args, **kwargs)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation

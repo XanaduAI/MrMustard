@@ -34,8 +34,6 @@ many-photon setting.
     from mrmustard.training import Optimizer
     import mrmustard.backend as math
 
-    math = Math()
-
     r = np.arcsinh(1.0)
     s2_0 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
     s2_1 = S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3]

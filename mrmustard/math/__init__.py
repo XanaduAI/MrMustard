@@ -26,12 +26,11 @@ greater degree of flexibility and code reuse.
 .. code-block::
 
     import mrmustard.backend as math
-    math = Math()
+    from mrmustard import settings
+    
     math.cos(x)  # tensorflow backend
 
-    from mrmustard import settings
     settings.BACKEND = 'torch'
-
     math.cos(x)  # torch backend
 """
 

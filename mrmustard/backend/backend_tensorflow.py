@@ -291,7 +291,6 @@ class BackendTensorflow(BackendBase):
         return tf.tile(array, repeats)
 
     def trace(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
         return self.cast(tf.linalg.trace(array), dtype)
 
     def transpose(self, a: tf.Tensor, perm: Sequence[int] = None) -> tf.Tensor:
@@ -549,6 +548,12 @@ class BackendTensorflow(BackendBase):
     def eigvalsh(tensor: tf.Tensor) -> Tensor:
         """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return tf.linalg.eigvalsh(tensor)
+
+    def eigh(tensor: tf.Tensor) -> Tensor:
+        """
+        The eigenvalues and eigenvectors of a matrix.
+        """
+        return tf.linalg.eigh(tensor)
 
     @staticmethod
     def svd(tensor: tf.Tensor) -> Tensor:
