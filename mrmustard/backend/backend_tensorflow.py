@@ -53,7 +53,8 @@ class BackendTensorflow(BackendBase):
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
@@ -108,12 +109,10 @@ class BackendTensorflow(BackendBase):
         self,
         array: tf.Tensor,
         filters: tf.Tensor,
-        strides: Optional[List[int]] = None,
         padding="VALID",
         data_format="NWC",
-        dilations: Optional[List[int]] = None,
     ) -> tf.Tensor:
-        return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
+        return tf.nn.convolution(array, filters=filters, padding=padding, data_format=data_format)
 
     def cos(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cos(array)
@@ -214,13 +213,15 @@ class BackendTensorflow(BackendBase):
         value,
         bounds: Union[Tuple[Optional[float], Optional[float]], None],
         name: str,
-        dtype=tf.float64,
+        dtype=None,
     ):
         bounds = bounds or (None, None)
+        dtype = dtype or tf.float64
         value = self.astensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
-    def new_constant(self, value, name: str, dtype=tf.float64):
+    def new_constant(self, value, name: str, dtype=None):
+        dtype = dtype or tf.float64
         value = self.astensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
@@ -316,7 +317,8 @@ class BackendTensorflow(BackendBase):
                 continue
         return list(hash_dict.values())
 
-    def zeros(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
+    def zeros(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
@@ -578,15 +580,15 @@ class BackendTensorflow(BackendBase):
             return self.zeros_like(tensor)
         return tf.linalg.sqrtm(tensor)
 
-    @staticmethod
-    def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
-        """Returns a tensor based on the truth value of the boolean mask."""
-        return tf.boolean_mask(tensor, mask)
+    # @staticmethod
+    # def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
+    #     """Returns a tensor based on the truth value of the boolean mask."""
+    #     return tf.boolean_mask(tensor, mask)
 
-    @staticmethod
-    def custom_gradient(func, *args, **kwargs):
-        """Decorator to define a function with a custom gradient."""
-        return tf.custom_gradient(func, *args, **kwargs)
+    # @staticmethod
+    # def custom_gradient(func, *args, **kwargs):
+    #     """Decorator to define a function with a custom gradient."""
+    #     return tf.custom_gradient(func, *args, **kwargs)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)
