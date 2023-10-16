@@ -28,7 +28,8 @@ This is done by representing Fock amplitudes with a higher precision than comple
 (which counters the accumulation of floating-point errors). 
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
 [(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
-* 
+
+
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
 

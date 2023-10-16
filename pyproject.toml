@@ -60,6 +60,29 @@ tensorflow-io-gcs-filesystem = [
 ]
 tensorflow-probability = "^0.22.0"
 
+######################  The Tensorflow Section ###################### 
+# Dedicated for making sure that poetry can install tensorflow on all platforms.
+# This hopefully is a temporary workaround, pending TF starting doing a good job with their pypi release metadata.
+
+# Issue between poetry and tensorflow metadata since >=2.11
+# related to https://github.com/python-poetry/poetry/issues/8271
+# Inspired from https://github.com/tensorflow/tensorflow/blob/adb39b04e9cb116df4659a7e2de9eea27e62f25c/tensorflow/tools/pip_package/setup.py#L148-L162
+tensorflow = {version = "^2.14.0" }
+tensorflow-macos = { version = "^2.14.0", platform = "darwin", markers = "platform_machine=='arm64'" }
+tensorflow-intel = { version = "^2.14.0", platform = "win32" }
+# Disabled to prevent taking over GPU:
+# tensorflow-cpu = [
+#     { version = "^2.14.0", platform = "linux", markers = "platform_machine!='arm64' and platform_machine!='aarch64'" },
+#     { version = "^2.14.0", platform = "darwin", markers = "platform_machine!='arm64' and platform_machine!='aarch64'" },]
+tensorflow-cpu-aws = { version = "^2.14.0", platform = "linux", markers = "platform_machine=='arm64' or platform_machine=='aarch64'" }
+# https://github.com/tensorflow/tensorflow/blob/adb39b04e9cb116df4659a7e2de9eea27e62f25c/tensorflow/tools/pip_package/setup.py#L107-L108
+# https://github.com/python-poetry/poetry/issues/8271#issuecomment-1697740447
+tensorflow-io-gcs-filesystem = [
+    { version = ">= 0.23.1", markers = "platform_machine!='arm64' or platform_system!='Darwin'" },
+    { version = "< 0.32.0", markers = "platform_system == 'Windows'" }
+]
+tensorflow-probability = "^0.22.0"
+
 [tool.poetry.extras]
 ray = ["ray", "scikit-optimize"]
 
