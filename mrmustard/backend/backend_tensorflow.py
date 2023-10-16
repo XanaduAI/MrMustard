@@ -76,6 +76,10 @@ class BackendTensorflow(BackendBase):
             return array
         return tf.cast(array, dtype)
 
+    def custom_gradient(self, func, args, kwargs):
+        """Decorator to define a function with a custom gradient."""
+        return tf.custom_gradient(func, *args, **kwargs)
+
     def clip(self, array, a_min, a_max) -> tf.Tensor:
         return tf.clip_by_value(array, a_min, a_max)
 

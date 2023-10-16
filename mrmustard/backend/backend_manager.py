@@ -1070,13 +1070,14 @@ class BackendManager:
     @staticmethod
     def custom_gradient(func, *args, **kwargs):
         """Decorator to define a function with a custom gradient."""
-        print("func", func)
-        print("args", *args)
-        print("kwargs", **kwargs)
         if settings.BACKEND == "tensorflow":
             from tensorflow import custom_gradient
 
             return custom_gradient(func, *args, **kwargs)
+
+    # def custom_gradient(self, func, *args, **kwargs):
+    #     """Decorator to define a function with a custom gradient."""
+    #     return self._apply("custom_gradient", (func, args, kwargs))
 
     # TODO: is a wrapper class better?
     @staticmethod

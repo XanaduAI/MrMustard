@@ -93,8 +93,8 @@ def test_hong_ou_mandel_optimizer(i, k):
         BSgate(
             theta=np.arccos(np.sqrt(k / (i + k))) + 0.1 * settings.rng.normal(),
             phi=settings.rng.normal(),
-            theta_trainable=True,
-            phi_trainable=True,
+            theta_trainable=False,
+            phi_trainable=False,
         )[1, 2],
     )
     circ = Circuit([s2_0, s2_1, bs])
