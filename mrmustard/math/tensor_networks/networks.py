@@ -19,11 +19,11 @@ from __future__ import annotations
 from typing import Optional
 from opt_einsum import contract as opt_contract
 
-from .tensors import Wire, Tensor
-
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+
+from .tensors import Wire, Tensor
 
 
 def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
@@ -69,9 +69,7 @@ def contract(tensors: list[Tensor], default_dim: int):
     return opt_contract(*opt_einsum_args)
 
 
-def draw(
-    tensors: list[Tensor], layout: str = "spring_layout", figsize: Optional[tuple[int, int]] = None
-):
+def draw(tensors: list[Tensor], layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
     r"""Draws a tensor network.
 
     Args:
@@ -86,7 +84,7 @@ def draw(
         fn_layout = getattr(nx.drawing.layout, layout)
     except AttributeError:
         msg = f"Invalid layout {layout}."
-        raise ValueError(msg)
+        raise AttributeError(msg)
 
     # initialize empty lists and dictionaries used to store metadata
     tensor_labels = {}
@@ -125,7 +123,7 @@ def draw(
     pos = fn_layout(graph)
     pos_labels = {k: v + np.array([0.0, 0.05]) for k, v in pos.items()}
 
-    fig = plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=figsize)
     nx.draw_networkx_nodes(
         graph, pos, edgecolors="gray", alpha=0.9, node_size=node_size, node_color=node_color
     )

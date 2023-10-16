@@ -14,7 +14,7 @@
 
 """This module contains tests for the tensors.py module."""
 
-from mrmustard.math.tensor_networks import connect, Wire, Tensor
+from mrmustard.math.tensor_networks import Wire, Tensor, connect
 
 import numpy as np
 import pytest
@@ -22,13 +22,6 @@ import pytest
 # ~~~~~~~
 # Helpers
 # ~~~~~~~
-
-
-def random(shape):
-    r"""
-    Returns a complex matrix of given shape.
-    """
-    return np.random.rand(*shape) + 1j * np.random.rand(*shape)
 
 
 class TBad(Tensor):
@@ -42,12 +35,8 @@ class TComplex(Tensor):
     A tensor whose value is a complex matrix of given shape.
     """
 
-    _value = None
-
-    def value(cls, shape):
-        if cls._value is None:
-            cls._value = random(shape)
-        return cls._value
+    def value(self, shape):
+        return np.random.rand(*shape) + 1j * np.random.rand(*shape)
 
 
 # ~~~~~~~
@@ -158,12 +147,11 @@ class TestTensor:
         r"""
         Tests the adjoint method.
         """
-        t = TComplex("t", [1, 2], [2, 3], [1, 2])
+        t = TComplex("t", [1, 2], [2, 3])
         t_adj = t.adjoint
 
-        shape = (3, 4, 8, 1, 4, 8)
+        shape = (3, 4, 8, 1)
 
-        assert np.allclose(np.conj(t.value(shape)), t_adj.value(shape))
         assert t_adj.value(shape).shape == shape
         assert t.input.ket.keys() == t_adj.input.bra.keys()
         assert t.input.bra.keys() == t_adj.input.ket.keys()

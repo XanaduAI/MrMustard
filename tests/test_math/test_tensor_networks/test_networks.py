@@ -14,7 +14,7 @@
 
 """This module contains tests for the networks.py module."""
 
-from mrmustard.math.tensor_networks import Tensor, connect, contract, draw
+from mrmustard.math.tensor_networks import Tensor, connect, draw
 
 from matplotlib.figure import Figure
 
@@ -28,11 +28,11 @@ import pytest
 
 class TId(Tensor):
     r"""
-    A tensor whose value is the identity matrix of size ``cutoff``.
+    A tensor whose value is the ones matrix given shape.
     """
 
-    def value(self, cutoff):
-        return np.eye(cutoff)
+    def value(self, shape):
+        return np.ones(shape)
 
 
 # ~~~~~~~
@@ -96,6 +96,9 @@ class TestDraw:
     @pytest.mark.parametrize("layout", ["spring_layout", "circular_layout"])
     @pytest.mark.parametrize("figsize", [None, (4, 4)])
     def test_draw(self, layout, figsize):
+        r"""
+        Tests that ``draw`` produces a figure.
+        """
         t1 = TId("tensor 1", [0, 1, 2], [0, 1, 2])
         t2 = TId("tensor 2", [1], [1])
         t3 = TId("tensor 3", [0, 2], [0, 2])

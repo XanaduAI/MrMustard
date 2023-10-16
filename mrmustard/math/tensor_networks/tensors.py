@@ -300,18 +300,10 @@ class Tensor(ABC):
         return shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra
 
     @property
-    def wires(self, swap=False) -> List[Wire]:
+    def wires(self) -> List[Wire]:
         r"""
         The list of all wires in this tensor, sorted as ``[ket_in, ket_out, bra_in, bra_out]``.
-        If ``swap`` is ``True``, sorts them as ``[ket_out, ket_in, bra_out, bra_in]`` instead.
         """
-        if swap:
-            return (
-                list(self.output.ket.values())
-                + list(self.input.ket.values())
-                + list(self.output.bra.values())
-                + list(self.input.bra.values())
-            )
         return (
             list(self.input.ket.values())
             + list(self.output.ket.values())
@@ -385,9 +377,8 @@ class Tensor(ABC):
             ret = _sort_shapes(shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra)
         ret = _sort_shapes(shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra)
 
-        return tuple(
-            [item for sublist in ret for item in sublist]
-        )  # pylint: disable=consider-using-generator
+        # pylint: disable=consider-using-generator
+        return tuple([item for sublist in ret for item in sublist])
 
 
 class AdjointView(Tensor):
