@@ -259,7 +259,7 @@ def U_to_choi(U: Tensor, Udual: Optional[Tensor] = None) -> Tensor:
         Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
         where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
     """
-    return math.outer(U, Udual or math.conj(U))
+    return math.outer(U, math.conj(U) if Udual is None else Udual)
 
 
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:

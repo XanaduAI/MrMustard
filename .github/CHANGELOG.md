@@ -21,16 +21,22 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
+
 * Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
 that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
 This is done by representing Fock amplitudes with a higher precision than complex128 
 (which counters the accumulation of floating-point errors). 
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
 [(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
+* 
+* Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
+  [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
 
 ### Bug fixes
 
 * Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
+* Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
 
 ### Documentation
 
