@@ -580,16 +580,6 @@ class BackendTensorflow(BackendBase):
             return self.zeros_like(tensor)
         return tf.linalg.sqrtm(tensor)
 
-    # @staticmethod
-    # def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
-    #     """Returns a tensor based on the truth value of the boolean mask."""
-    #     return tf.boolean_mask(tensor, mask)
-
-    # @staticmethod
-    # def custom_gradient(func, *args, **kwargs):
-    #     """Decorator to define a function with a custom gradient."""
-    #     return tf.custom_gradient(func, *args, **kwargs)
-
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Extras (not in the Interface)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

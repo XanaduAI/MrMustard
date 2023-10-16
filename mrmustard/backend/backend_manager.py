@@ -81,6 +81,9 @@ class BackendManager:
     complex64 = None
     complex128 = None
 
+    r"""The interface that all backends must implement."""
+    _euclidean_opt: type = None  # NOTE this is an object that
+
     @property
     def backend(cls):
         r"""
@@ -1067,10 +1070,22 @@ class BackendManager:
     @staticmethod
     def custom_gradient(func, *args, **kwargs):
         """Decorator to define a function with a custom gradient."""
+        print("func", func)
+        print("args", *args)
+        print("kwargs", **kwargs)
         if settings.BACKEND == "tensorflow":
             from tensorflow import custom_gradient
 
             return custom_gradient(func, *args, **kwargs)
+
+    # TODO: is a wrapper class better?
+    @staticmethod
+    def DefaultEuclideanOptimizer():
+        r"""Default optimizer for the Euclidean parameters."""
+        if settings.BACKEND == "tensorflow":
+            from tensorflow.keras.optimizers import Adam
+
+            return Adam(learning_rate=0.001)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation

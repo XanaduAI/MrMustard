@@ -39,6 +39,9 @@ from mrmustard.physics.bargmann import (
 from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
 import mrmustard.backend as math
 
+# from mrmustard.math import Math
+# math = Math()
+
 SQRT = np.sqrt(np.arange(1e6))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
