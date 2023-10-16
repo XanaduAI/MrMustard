@@ -16,9 +16,9 @@
 """
 
 import os
-from julia.api import Julia
 from rich import print
 import rich.table
+from julia.api import Julia
 import numpy as np
 
 __all__ = ["Settings", "settings"]
