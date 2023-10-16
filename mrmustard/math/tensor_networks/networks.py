@@ -84,7 +84,8 @@ def draw(tensors: list[Tensor], layout: str = "spring_layout", figsize: tuple[in
         fn_layout = getattr(nx.drawing.layout, layout)
     except AttributeError:
         msg = f"Invalid layout {layout}."
-        raise AttributeError(msg)
+        # pylint: disable=raise-missing-from
+        raise ValueError(msg)
 
     # initialize empty lists and dictionaries used to store metadata
     tensor_labels = {}
