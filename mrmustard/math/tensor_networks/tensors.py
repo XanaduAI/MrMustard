@@ -267,6 +267,37 @@ class Tensor(ABC):
         """
         return self._output
 
+    def unpack_shape(self, shape: Tuple[int]):
+        r"""
+        Unpack the given ``shape`` into the shapes of the input and output wires on ket and bra sides.
+
+        Args:
+            shape: A shape.
+
+        Returns:
+            shape_in_ket: The shape of the input wires on the ket side.
+            shape_out_ket: The shape of the output wires on the ket side.
+            shape_in_bra: The shape of the input wires on the bra side.
+            shape_out_bra: The shape of the output wires on the bra side.
+        """
+        idx1 = 0
+        idx2 = len(self._modes_in_ket)
+        shape_in_ket = shape[idx1:idx2]
+
+        idx1 = idx2
+        idx2 += len(self._modes_out_ket)
+        shape_out_ket = shape[idx1:idx2]
+
+        idx1 = idx2
+        idx2 += len(self._modes_in_bra)
+        shape_in_bra = shape[idx1:idx2]
+
+        idx1 = idx2
+        idx2 += len(self._modes_out_bra)
+        shape_out_bra = shape[idx1:idx2]
+
+        return shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra
+
     @property
     def wires(self, swap=False) -> List[Wire]:
         r"""
@@ -356,23 +387,37 @@ class Tensor(ABC):
         return tuple([item for sublist in ret for item in sublist])
 
 
-class TensorView(Tensor):
+class AdjointView(Tensor):
     r"""
-    Base class for tensor views. It remaps the ids of the original Tensor.
+    Adjoint view of a tensor. It swaps the ket and bra wires of a Tensor.
     """
 
     def __init__(self, tensor):
         self._original = tensor
         super().__init__(
-            self._original.name,
-            self._original.input.ket.keys(),
-            self._original.output.ket.keys(),
-            self._original.input.bra.keys(),
-            self._original.output.bra.keys(),
+            name=self._original.name,
+            modes_in_ket=self._original.input.bra.keys(),
+            modes_out_ket=self._original.output.bra.keys(),
+            modes_in_bra=self._original.input.ket.keys(),
+            modes_out_bra=self._original.output.ket.keys(),
         )
 
     def value(self, shape: Tuple[int]):
-        return self._original.value(shape)
+        r"""The value of this tensor.
+
+        Args:
+            shape: the shape of the adjoint tensor.
+
+        Returns:
+            ComplexTensor: the unitary matrix in Fock representation
+        """
+        # converting the given shape into a shape for the original tensor
+        shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra = self._original.unpack_shape(
+            shape
+        )
+        shape_ret = shape_in_bra + shape_out_bra + shape_in_ket + shape_out_ket
+
+        return math.conj(math.astensor(self._original.value(shape_ret)))
 
 
 class DualView(Tensor):
@@ -383,7 +428,7 @@ class DualView(Tensor):
     def __init__(self, tensor):
         self._original = tensor
         super().__init__(
-            self._original.name,
+            name=self._original.name,
             modes_in_ket=self._original.output.ket.keys(),
             modes_out_ket=self._original.input.ket.keys(),
             modes_in_bra=self._original.output.bra.keys(),
@@ -391,31 +436,16 @@ class DualView(Tensor):
         )
 
     def value(self, shape: Tuple[int]):
-        r"""
-        shape: The shape of the dual.
-        --> riaggiusta
+        r"""The value of this tensor.
+
+        Args:
+            shape: the shape of the dual tensor.
+
+        Returns:
+            ComplexTensor: the unitary matrix in Fock representation.
         """
-        return math.conj(self._original.value(shape))
+        # converting the given shape into a shape for the original tensor
+        shape_in_ket, shape_out_ket, shape_in_bra, shape_out_bra = self.unpack_shape(shape)
+        shape_ret = shape_out_ket + shape_in_ket + shape_out_bra, shape_in_bra
 
-
-class AdjointView(Tensor):
-    r"""
-    Adjoint view of a tensor. It swaps the ket and bra wires of a Tensor.
-    """
-
-    def __init__(self, tensor):
-        self._original = tensor
-        super().__init__(
-            self._original.name,
-            self._original.input.bra.keys(),
-            self._original.output.bra.keys(),
-            self._original.input.ket.keys(),
-            self._original.output.ket.keys(),
-        )
-
-    def value(self, shape: Tuple[int]):
-        r"""
-        shape: The shape of the adjoint.
-        --> riaggiusta
-        """
-        return math.conj(self._original.value(shape))
+        return math.conj(self._original.value(shape_ret))

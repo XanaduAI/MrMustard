@@ -24,6 +24,13 @@ import pytest
 # ~~~~~~~
 
 
+def random(shape):
+    r"""
+    Returns a complex matrix of given shape.
+    """
+    return np.random.rand(*shape) + 1j * np.random.rand(*shape)
+
+
 class TBad(Tensor):
     r"""
     A tensor without value.
@@ -31,22 +38,17 @@ class TBad(Tensor):
     pass
 
 
-class TId(Tensor):
-    r"""
-    A tensor whose value is the identity matrix of size ``cutoff``.
-    """
-
-    def value(self, cutoff):
-        return np.eye(cutoff)
-
-
 class TComplex(Tensor):
     r"""
-    A tensor whose value is a complex matrix of size ``[1, cutoff]``.
+    A tensor whose value is a complex matrix of given shape.
     """
 
-    def value(self, cutoff):
-        return np.arange(cutoff) + 1j * np.arange(2, cutoff + 2)
+    _value = None
+
+    def value(cls, shape):
+        if cls._value is None:
+            cls._value = random(shape)
+        return cls._value
 
 
 # ~~~~~~~
@@ -102,7 +104,7 @@ class TestTensor:
         Tests the init of tensors.
         """
         name = "t"
-        t = TId(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        t = TComplex(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
         assert t.name == name
 
@@ -119,7 +121,7 @@ class TestTensor:
         r"""
         Tests that tensors generate wires with different ``id``s.
         """
-        t = TId("t", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        t = TComplex("t", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
         all_ids = [w.id for w in t.input.ket.values()]
         all_ids += [w.id for w in t.output.ket.values()]
@@ -136,8 +138,8 @@ class TestTensor:
         r"""
         Tests that different tensors generate wires with different ``id``s.
         """
-        t1 = TId("t1", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
-        t2 = TId("t2", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        t1 = TComplex("t1", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        t2 = TComplex("t2", modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
         all_ids1 = [w.id for w in t1.input.ket.values()]
         all_ids1 += [w.id for w in t1.output.ket.values()]
@@ -152,22 +154,24 @@ class TestTensor:
         assert len(all_ids1 + all_ids2) == len(set(all_ids1 + all_ids2))
 
     def test_adjoint(self):
-        t = TComplex("t", [1], [2], [1])
+        t = TComplex("t", [1, 2], [2, 3], [1, 2])
         t_adj = t.adjoint
 
-        cutoff = 12
-        assert np.allclose(np.conj(t.value(cutoff)).T, t_adj.value(cutoff))
+        shape = (3, 4, 8, 1, 4, 8)
+
+        assert np.allclose(np.conj(t.value(shape)), t_adj.value(shape))
+        assert t_adj.value(shape).shape == shape
         assert t.input.ket.keys() == t_adj.input.bra.keys()
         assert t.input.bra.keys() == t_adj.input.ket.keys()
         assert t.output.ket.keys() == t_adj.output.bra.keys()
         assert t.output.bra.keys() == t_adj.output.ket.keys()
 
     def test_modes_in_out(self):
-        t1 = TId("t", [1], [2])
+        t1 = TComplex("t", [1], [2])
         assert t1.modes_in == [1]
         assert t1.modes_out == [2]
 
-        t1 = TId("t", [1], [2], [1], [2])
+        t1 = TComplex("t", [1], [2], [1], [2])
         assert t1.modes_in == [1]
         assert t1.modes_out == [2]
 
@@ -180,7 +184,7 @@ class TestTensor:
         Tests the init of tensors.
         """
         name = "t"
-        t = TId(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        t = TComplex(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
         wires = np.array(t.wires)
 
         list_modes = [] if modes_in_ket is None else modes_in_ket
@@ -199,13 +203,10 @@ class TestTensor:
         mask = [w.mode in list_modes for w in wires]
         assert len(wires[mask]) == 0 or len(modes_out_bra)
 
-    @pytest.mark.parametrize("cutoff", [1, 2, 10])
-    def test_value(self, cutoff):
+    def test_value_error(self):
         r"""
-        Tests the value property.
+        Tests the error for the value property.
         """
-        assert np.allclose(TId("t").value(cutoff), np.eye(cutoff))
-
         with pytest.raises(TypeError, match="abstract method value"):
             TBad("t_bad")
 
@@ -213,7 +214,7 @@ class TestTensor:
         r"""
         Tests the function to change modes.
         """
-        t = TId("t")
+        t = TComplex("t")
 
         modes_in_ket = [1]
         modes_out_ket = [2, 3]
@@ -228,8 +229,8 @@ class TestTensor:
         r"""
         Tests the errors of the function to change modes.
         """
-        t1 = TId("t1", [1])
-        t2 = TId("t2", None, [1])
+        t1 = TComplex("t1", [1])
+        t2 = TComplex("t2", None, [1])
 
         with pytest.raises(ValueError, match="Input modes"):
             t1.change_modes([2], None, [3])
