@@ -202,7 +202,7 @@ class Tensor(ABC):
 
     @property
     def adjoint(self) -> AdjointView:
-        r"" r" The adjoint view of this Tensor (with new ``id``s). That is, ket <-> bra." ""
+        r"""The adjoint view of this Tensor (with new ``id``s). That is, ket <-> bra."""
         return AdjointView(self)
 
     @property
@@ -375,6 +375,29 @@ class TensorView(Tensor):
         return self._original.value(shape)
 
 
+class DualView(Tensor):
+    r"""
+    Dual view of a tensor. It swaps the input and output wires of a Tensor.
+    """
+
+    def __init__(self, tensor):
+        self._original = tensor
+        super().__init__(
+            self._original.name,
+            modes_in_ket=self._original.output.ket.keys(),
+            modes_out_ket=self._original.input.ket.keys(),
+            modes_in_bra=self._original.output.bra.keys(),
+            modes_out_bra=self._original.input.bra.keys(),
+        )
+
+    def value(self, shape: Tuple[int]):
+        r"""
+        shape: The shape of the dual.
+        --> riaggiusta
+        """
+        return math.conj(self._original.value(shape))
+
+
 class AdjointView(Tensor):
     r"""
     Adjoint view of a tensor. It swaps the ket and bra wires of a Tensor.
@@ -391,4 +414,8 @@ class AdjointView(Tensor):
         )
 
     def value(self, shape: Tuple[int]):
+        r"""
+        shape: The shape of the adjoint.
+        --> riaggiusta
+        """
         return math.conj(self._original.value(shape))
