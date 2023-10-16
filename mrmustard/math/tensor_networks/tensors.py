@@ -385,7 +385,9 @@ class Tensor(ABC):
             ret = _sort_shapes(shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra)
         ret = _sort_shapes(shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra)
 
-        return [item for sublist in ret for item in sublist]
+        return tuple(
+            [item for sublist in ret for item in sublist]
+        )  # pylint: disable=consider-using-generator
 
 
 class AdjointView(Tensor):
