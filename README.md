@@ -81,7 +81,6 @@ cat >> Sgate(0.5)  # squeezed cat
 
 
 
-
 ## 2. Gates and the right shift operator `>>`
 
 Applying gates to states looks natural, thanks to python's right-shift operator `>>`:
