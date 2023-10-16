@@ -55,11 +55,11 @@ def contract(tensors: list[Tensor], default_dim: int):
     r"""Contract a list of tensors.
 
     Args:
-        tensors: the tensors to contract.
-        dim: the default dimension of the contractions.
+        tensors: The tensors to contract.
+        dim: The default dimension of the contractions.
 
     Returns:
-        (tensor) the contracted tensor
+        The contracted tensor.
     """
     opt_einsum_args = []
     for t in tensors:
@@ -80,7 +80,7 @@ def draw(
         figsize: The size of the returned figure.
 
     Returns:
-        (fig): A figure showing the tensor network.
+        A figure showing the tensor network.
     """
     try:
         fn_layout = getattr(nx.drawing.layout, layout)
