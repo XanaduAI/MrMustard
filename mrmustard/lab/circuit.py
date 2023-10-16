@@ -100,7 +100,7 @@ class Circuit(Transformation, Parametrized):
         return all(op.is_unitary for op in self._ops)
 
     def value(self, shape: Tuple[int]):
-        raise NotImplemented
+        raise NotImplementedError
 
     def __len__(self):
         return len(self._ops)

@@ -14,7 +14,7 @@
 
 """This module contains tests for the networks.py module."""
 
-from mrmustard.math.tensor_networks import *
+from mrmustard.math.tensor_networks import Tensor, connect, contract, draw
 
 from matplotlib.figure import Figure
 

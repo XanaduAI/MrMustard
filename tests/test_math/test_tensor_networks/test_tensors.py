@@ -14,7 +14,7 @@
 
 """This module contains tests for the tensors.py module."""
 
-from mrmustard.math.tensor_networks import *
+from mrmustard.math.tensor_networks import connect, Wire, Tensor
 
 import numpy as np
 import pytest
@@ -35,7 +35,6 @@ class TBad(Tensor):
     r"""
     A tensor without value.
     """
-    pass
 
 
 class TComplex(Tensor):
@@ -134,7 +133,9 @@ class TestTensor:
     @pytest.mark.parametrize("modes_out_ket", [None, [4]])
     @pytest.mark.parametrize("modes_in_bra", [None, [1, 2, 3]])
     @pytest.mark.parametrize("modes_out_bra", [None, [4]])
-    def test_ids_in_same_tensor(self, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra):
+    def test_ids_in_different_tensor(
+        self, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra
+    ):
         r"""
         Tests that different tensors generate wires with different ``id``s.
         """
@@ -154,6 +155,9 @@ class TestTensor:
         assert len(all_ids1 + all_ids2) == len(set(all_ids1 + all_ids2))
 
     def test_adjoint(self):
+        r"""
+        Tests the adjoint method.
+        """
         t = TComplex("t", [1, 2], [2, 3], [1, 2])
         t_adj = t.adjoint
 
@@ -167,6 +171,9 @@ class TestTensor:
         assert t.output.bra.keys() == t_adj.output.ket.keys()
 
     def test_modes_in_out(self):
+        r"""
+        Tests the modes_in and modes_out methods.
+        """
         t1 = TComplex("t", [1], [2])
         assert t1.modes_in == [1]
         assert t1.modes_out == [2]
@@ -221,9 +228,9 @@ class TestTensor:
         t.change_modes(modes_in_ket, modes_out_ket)
 
         assert list(t.input.ket.keys()) == modes_in_ket
-        assert t.input.bra == {}
+        assert not t.input.bra
         assert list(t.output.ket.keys()) == modes_out_ket
-        assert t.output.bra == {}
+        assert not t.output.bra
 
     def test_change_modes_errors(self):
         r"""

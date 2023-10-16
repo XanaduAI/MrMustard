@@ -70,12 +70,12 @@ def binomial_subspace_basis(cutoffs: tuple[int, ...], weight: int):
     return basis[1:]  # remove the dummy element
 
 
-# def BINOMIAL_PATHS_NUMBA_n(modes):
-#     r"Creates a numba dictionary to store the paths and effectively cache them."
-#     return typed.Dict.empty(
-#         key_type=typeof(((0,) * modes, 0)),
-#         value_type=types.ListType(typeof((0,) * modes)),
-#     )
+def BINOMIAL_PATHS_NUMBA_n(modes):
+    r"Creates a numba dictionary to store the paths and effectively cache them."
+    return typed.Dict.empty(
+        key_type=typeof(((0,) * modes, 0)),
+        value_type=types.ListType(typeof((0,) * modes)),
+    )
 
 
-# BINOMIAL_PATHS_NUMBA = {modes: BINOMIAL_PATHS_NUMBA_n(modes) for modes in range(1, 100)}
+BINOMIAL_PATHS_NUMBA = {modes: BINOMIAL_PATHS_NUMBA_n(modes) for modes in range(1, 100)}

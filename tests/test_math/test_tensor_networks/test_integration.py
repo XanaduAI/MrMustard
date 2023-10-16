@@ -14,7 +14,7 @@
 
 """This module contains tests for simulating quantum circuits with tensor networks."""
 
-from mrmustard.math.tensor_networks import *
+from mrmustard.math.tensor_networks import connect, contract
 from mrmustard.lab.gates import (
     BSgate,
     CXgate,

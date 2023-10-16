@@ -171,8 +171,8 @@ class Transformation(Tensor):
             U = self.U(shape[: self.num_modes])
             Udual = self.U(shape[self.num_modes :])
             if dual:
-                return fock.U_to_choi(Udual, U)
-            return fock.U_to_choi(U, Udual)
+                return fock.U_to_choi(U=Udual, Udual=U)
+            return fock.U_to_choi(U=U, Udual=Udual)
 
         X, Y, d = self.XYd(allow_none=False)
         choi = fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
@@ -324,6 +324,14 @@ class Transformation(Tensor):
 
 
 class Unitary(Transformation):
+    r"""
+    A unitary transformation.
+
+    Args:
+        name: The name of this unitary.
+        modes: The modes that this unitary acts on.
+    """
+
     def __init__(self, name: str, modes: list[int]):
         super().__init__(name=name, modes_in_ket=modes, modes_out_ket=modes)
         self.is_unitary = True
@@ -384,6 +392,14 @@ class Unitary(Transformation):
 
 
 class Channel(Transformation):
+    r"""
+    A quantum channel.
+
+    Args:
+        name: The name of this channel.
+        modes: The modes that this channel acts on.
+    """
+
     def __init__(self, name: str, modes: list[int]):
         super().__init__(
             name=name,

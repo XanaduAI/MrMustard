@@ -16,8 +16,8 @@
 
 from __future__ import annotations
 
-from opt_einsum import contract as opt_contract
 from typing import Optional
+from opt_einsum import contract as opt_contract
 
 from .tensors import Wire, Tensor
 

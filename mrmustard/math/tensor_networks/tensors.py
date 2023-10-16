@@ -37,6 +37,7 @@ def random_int() -> int:
     return uuid.uuid1().int
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class Wire:
     r"""Represents a wire in a tensor network.
@@ -236,7 +237,7 @@ class Tensor(ABC):
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        if self._modes_in_ket != []:
+        if self._modes_in_ket:
             return self._modes_in_ket
         return self._modes_in_bra
 
@@ -249,7 +250,7 @@ class Tensor(ABC):
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        if self._modes_out_ket != []:
+        if self._modes_out_ket:
             return self._modes_out_ket
         return self._modes_out_bra
 
@@ -372,7 +373,7 @@ class Tensor(ABC):
 
         def _sort_shapes(*args):
             for arg in args:
-                if arg != []:
+                if arg:
                     yield arg
 
         shape_in_ket = [w.dim if w.dim else default_dim for w in self.input.ket.values()]
@@ -384,7 +385,7 @@ class Tensor(ABC):
             ret = _sort_shapes(shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra)
         ret = _sort_shapes(shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra)
 
-        return tuple([item for sublist in ret for item in sublist])
+        return [item for sublist in ret for item in sublist]
 
 
 class AdjointView(Tensor):
