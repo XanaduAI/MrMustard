@@ -247,7 +247,7 @@ class Transformation(Tensor):
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from mrmustard.lab.circuit import Circuit
+        from mrmustard.lab.circuit import Circuit  # pylint: disable=import-outside-toplevel
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
@@ -358,7 +358,6 @@ class Unitary(Transformation):
         Returns:
             ComplexTensor: the unitary matrix in Fock representation
         """
-        N = self.num_modes
         if cutoffs is None:
             pass
         elif len(cutoffs) != self.num_modes:

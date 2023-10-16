@@ -18,7 +18,7 @@
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
 """
 
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 from mrmustard import settings
 from mrmustard.lab.abstract import Channel, Unitary, State
@@ -569,7 +569,6 @@ class BSgate(Parametrized, Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        N = self.num_modes
         if cutoffs is None:
             pass
         elif len(cutoffs) == 4:
