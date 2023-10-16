@@ -161,7 +161,6 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf), [Yuan YAO](https://github.com/sylviemonet)
 
-
 ---
 
 # Release 0.4.1
