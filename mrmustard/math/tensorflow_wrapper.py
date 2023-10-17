@@ -23,7 +23,7 @@ import tensorflow_probability as tfp
 from mrmustard import settings
 from mrmustard.math.autocast import Autocast
 from mrmustard.math.lattice import strategies
-from mrmustard.math.compactFock.compactFock_inputValidation import (
+from mrmustard.math.lattice.strategies.compactFock.compactFock_inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
