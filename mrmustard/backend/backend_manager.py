@@ -525,6 +525,37 @@ class BackendManager:
             ),
         )
 
+    def hermite_renormalized_binomial(
+        self,
+        A: Tensor,
+        B: Tensor,
+        C: Tensor,
+        shape: Tuple[int],
+        max_l2: Optional[float],
+        global_cutoff: Optional[int],
+    ) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
+        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
+        not provided, is set to the default value of the AUTOCUTOFF_PROBABILITY setting.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor (local cutoffs).
+            max_l2 (float): The maximum squared L2 norm of the tensor.
+            global_cutoff (optional int): The global cutoff.
+
+        Returns:
+            The renormalized Hermite polynomial of given shape.
+        """
+        return self._apply(
+            "hermite_renormalized_binomial",
+            (A, B, C, shape, max_l2, global_cutoff),
+        )
+
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
 
