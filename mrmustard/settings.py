@@ -301,13 +301,13 @@ class Settings:
             # import Julia functions
             math_directory = os.path.dirname(__file__)
             Main_julia.cd(math_directory)
-            Main_julia.include("math/lattice/strategies/julia/helperFunctions.jl")
+            Main_julia.include("math/lattice/strategies/julia/getPrecision.jl")
             Main_julia.include("math/lattice/strategies/julia/vanilla.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/compactFock_helperFunctions.jl")
+            Main_julia.include("math/lattice/strategies/julia/compactFock/helperFunctions.jl")
             Main_julia.include("math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
             Main_julia.include("math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/1leftoverMode_amps.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/1leftoverMode_grad.jl")
+            Main_julia.include("math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl")
+            Main_julia.include("math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl")
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
