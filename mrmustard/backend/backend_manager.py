@@ -231,6 +231,19 @@ class BackendManager:
         """
         return self._apply("atleast_1d", (array, dtype))
 
+    def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
+        """
+        Returns a tensor based on the truth value of the boolean mask.
+
+        Args:
+            tensor: A tensor.
+            mask: A boolean mask.
+
+        Returns:
+            A tensor based on the truth value of the boolean mask.
+        """
+        return self._apply("boolean_mask", (tensor, mask))
+
     def cast(self, array: Tensor, dtype=None) -> Tensor:
         r"""Casts ``array`` to ``dtype``.
 
@@ -1048,34 +1061,9 @@ class BackendManager:
         """
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
-    @staticmethod
-    def boolean_mask(tensor: Tensor, mask: Tensor) -> Tensor:
-        """
-        Returns a tensor based on the truth value of the boolean mask.
-
-        Args:
-            tensor: A tensor.
-            mask: A boolean mask.
-
-        Returns:
-            A tensor based on the truth value of the boolean mask.
-        """
-        if settings.BACKEND == "tensorflow":
-            from tensorflow import boolean_mask
-
-            return boolean_mask(tensor, mask)
-
-    @staticmethod
-    def custom_gradient(func, *args, **kwargs):
+    def custom_gradient(self, func, *args, **kwargs):
         """Decorator to define a function with a custom gradient."""
-        if settings.BACKEND == "tensorflow":
-            from tensorflow import custom_gradient
-
-            return custom_gradient(func, *args, **kwargs)
-
-    # def custom_gradient(self, func, *args, **kwargs):
-    #     """Decorator to define a function with a custom gradient."""
-    #     return self._apply("custom_gradient", (func, args, kwargs))
+        return self._apply("custom_gradient", (func, args, kwargs))
 
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""

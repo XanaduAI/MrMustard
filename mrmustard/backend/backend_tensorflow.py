@@ -72,13 +72,15 @@ class BackendTensorflow(BackendBase):
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
+    def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
+        return tf.boolean_mask(tensor, mask)
+
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
         return tf.cast(array, dtype)
 
     def custom_gradient(self, func, args, kwargs):
-        """Decorator to define a function with a custom gradient."""
         return tf.custom_gradient(func, *args, **kwargs)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
@@ -349,7 +351,6 @@ class BackendTensorflow(BackendBase):
     # ~~~~~~~~~~~~~~~~~
 
     def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
-        r"""Default optimizer for the Euclidean parameters."""
         return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
