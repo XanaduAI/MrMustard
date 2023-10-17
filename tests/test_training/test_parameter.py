@@ -26,9 +26,7 @@ from mrmustard.training.parameter import (
     Symplectic,
     Trainable,
 )
-from mrmustard.math import Math
-
-math = Math()
+import mrmustard.backend as math
 
 
 @pytest.mark.parametrize("from_backend", [True, False])

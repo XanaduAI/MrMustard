@@ -551,10 +551,67 @@ class BackendManager:
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        return self._apply(
-            "hermite_renormalized_binomial",
-            (A, B, C, shape, max_l2, global_cutoff),
-        )
+        return self._apply("hermite_renormalized_binomial", (A, B, C, shape, max_l2, global_cutoff))
+
+    def hermite_renormalized_diagonal(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+
+    def hermite_renormalized_diagonal_reorderedAB(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
+        by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial.
+        """
+        return self._apply("hermite_renormalized_diagonal_reorderedAB", (A, B, C, cutoffs))
+
+    def hermite_renormalized_1leftoverMode(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
+
+    def hermite_renormalized_1leftoverMode_reorderedAB(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
+        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
+
+        Calculates all possible Fock representations of mode 0,
+        where all other modes are PNR detected.
+        This is done by applying the recursion relation in a selective manner.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial.
+        """
+
+        return self._apply("hermite_renormalized_1leftoverMode_reorderedAB", (A, B, C, cutoffs))
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
@@ -1422,3 +1479,42 @@ class BackendManager:
         """
         Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
         return 0.5 * (Z - self.conj(self.transpose(Z)))
+
+    import tensorflow as tf
+
+    @tf.custom_gradient
+    def getitem(tensor, *, key):
+        """A differentiable pure equivalent of numpy's ``value = tensor[key]``."""
+        value = np.array(tensor)[key]
+
+        def grad(dy):
+            dL_dtensor = np.zeros_like(tensor)
+            dL_dtensor[key] = dy
+            return dL_dtensor
+
+        return value, grad
+
+    @tf.custom_gradient
+    def setitem(tensor, value, *, key):
+        """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
+        _tensor = np.array(tensor)
+        value = np.array(value)
+        _tensor[key] = value
+
+        def grad(dy):
+            dL_dtensor = np.array(dy)
+            dL_dtensor[key] = 0.0
+            # unbroadcasting the gradient
+            implicit_broadcast = list(range(_tensor.ndim - value.ndim))
+            explicit_broadcast = [
+                _tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
+            ]
+            dL_dvalue = np.sum(
+                np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)
+            )
+            dL_dvalue = np.expand_dims(
+                dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast]
+            )
+            return dL_dtensor, dL_dvalue
+
+        return _tensor, grad

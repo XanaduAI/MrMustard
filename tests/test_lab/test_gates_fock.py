@@ -40,7 +40,7 @@ from mrmustard.lab import (
     Thermal,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
-from mrmustard.math.lattice import strategies
+from mrmustard.backend.lattice import strategies
 from mrmustard.physics import fock
 from tests.random import (
     angle,

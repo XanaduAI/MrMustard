@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from mrmustard import settings
-from mrmustard.math import Math
+import mrmustard.backend as math
 
 try:
     import torch
@@ -32,19 +32,8 @@ except ImportError:
 
 def test_backend_redirection_tf():
     """Test Math class is redirecting calls to the backend set on MM settings"""
-    math = Math()
-
     settings.BACKEND = "tensorflow"
-    assert math._MathInterface__instance.__module__ == "mrmustard.math.tensorflow"
-
-
-@pytest.mark.skipif(not torch_available, reason="Test only works if Torch is installed")
-def test_backend_redirection_torch():
-    """Test Math class is redirecting calls to the backend set on MM settings"""
-    math = Math()
-
-    settings.BACKEND = "torch"
-    assert math._MathInterface__instance.__module__ == "mrmustard.math.torch"
+    assert math.backend.name == "tensorflow"
 
 
 def test_error_for_wrong_backend():
@@ -60,6 +49,5 @@ def test_error_for_wrong_backend():
 
 def test_hash_tensor():
     """Test hash of a tensor"""
-    math = Math()
     tensor = math.astensor([1, 2, 3])
     assert np.allclose(*[math.hash_tensor(tensor) for _ in range(3)])
