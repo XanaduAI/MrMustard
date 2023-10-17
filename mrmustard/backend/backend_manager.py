@@ -503,6 +503,9 @@ class BackendManager:
         """
         return self._apply("hash_tensor", (tensor,))
 
+    import tensorflow as tf
+
+    @tf.custom_gradient
     def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
         r"""The array of hermite renormalized polynomials of the given coefficients.
 
@@ -515,6 +518,16 @@ class BackendManager:
         Returns:
             array: renormalized hermite polynomials
         """
+        from mrmustard.backend.lattice import strategies
+
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        G = strategies.vanilla(tuple(shape), _A, _B, _C)
+
+        def grad(dLdGconj):
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
+            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+
+        return G, grad
         return self._apply(
             "hermite_renormalized",
             (
@@ -1174,7 +1187,7 @@ class BackendManager:
         if settings.BACKEND == "tensorflow":
             import tensorflow as tf
 
-            return tf.keras.optimizers.Adam(learning_rate=0.001)
+            return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
