@@ -1,9 +1,10 @@
 module DiagonalAmps
 
 import ..HelperFunctions
+import ..CompactFock_HelperFunctions
 
 function use_offDiag_pivot!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
 
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
@@ -57,7 +58,7 @@ function use_offDiag_pivot!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, ar
 end
 
 function use_diag_pivot!(A, B, M, cutoffs, params, arr0, arr1, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
     G_in = zeros(Complex{T}, 2*M)
@@ -109,7 +110,7 @@ function fock_diagonal_amps(
     arr1001 = zeros(Complex{T}, M, M - 1, cutoffs...)
 
 
-    dict_params = HelperFunctions.construct_dict_params(cutoffs)
+    dict_params = CompactFock_HelperFunctions.construct_dict_params(cutoffs)
     for sum_params in 0:sum(cutoffs)-1
         for params in dict_params[sum_params]
             # diagonal pivots: aa,bb,cc,...

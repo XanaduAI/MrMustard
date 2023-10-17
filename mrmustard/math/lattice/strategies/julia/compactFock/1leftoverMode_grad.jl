@@ -1,6 +1,7 @@
 module LeftoverModeGrad
 
 import ..HelperFunctions
+import ..CompactFock_HelperFunctions
 
 function calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, arr_read_pivot_dA, G_in_dA_adapted, arr_read_pivot_dB, G_in_dB_adapted, l_range)
     dA = arr_read_pivot_dA[m, n, read_GB...,:,:] .* B[i]
@@ -70,7 +71,7 @@ end
 
 
 function use_offDiag_pivot_grad!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1, arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
@@ -136,7 +137,7 @@ function use_offDiag_pivot_grad!(A, B, M, cutoff_leftoverMode, cutoffs_tail, par
 end
 
 function use_diag_pivot_grad!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
     G_in = zeros(Complex{T}, cutoff_leftoverMode, cutoff_leftoverMode, 2*M)
@@ -252,7 +253,7 @@ function fock_1leftoverMode_grad(
 
     fill_firstMode_PNRzero!(arr0,arr0_dA,arr0_dB,A,B,M,cutoff_leftoverMode,SQRT)
 
-    dict_params = HelperFunctions.construct_dict_params(cutoffs_tail)
+    dict_params = CompactFock_HelperFunctions.construct_dict_params(cutoffs_tail)
     for sum_params in 0:sum(cutoffs_tail)-1
         for params in dict_params[sum_params]
             # diagonal pivots: aa,bb,cc,...

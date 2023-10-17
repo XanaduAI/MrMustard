@@ -1,6 +1,7 @@
 module DiagonalGrad
 
 import ..HelperFunctions
+import ..CompactFock_HelperFunctions
 
 function calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB)
     dA = pivot_val_dA .* B[i]
@@ -17,7 +18,7 @@ end
 function use_offDiag_pivot_grad!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1,
     arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB, T, SQRT)
     
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
@@ -80,7 +81,7 @@ function use_offDiag_pivot_grad!(A, B, M, cutoffs, params, d, arr0, arr2, arr101
     end
 end
 function use_diag_pivot_grad!(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
     G_in = zeros(Complex{T}, 2*M)
@@ -145,7 +146,7 @@ function fock_diagonal_grad(
     arr1001_dB = zeros(Complex{T}, size(arr1001)..., size(B)...)
     arr1_dB = zeros(Complex{T}, size(arr1)..., size(B)...)
 
-    dict_params = HelperFunctions.construct_dict_params(cutoffs)
+    dict_params = CompactFock_HelperFunctions.construct_dict_params(cutoffs)
     for sum_params in 0:sum(cutoffs)-1
         for params in dict_params[sum_params]
             # diagonal pivots: aa,bb,cc,...

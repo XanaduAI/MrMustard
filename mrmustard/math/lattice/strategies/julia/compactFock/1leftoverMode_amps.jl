@@ -1,6 +1,7 @@
 module LeftoverModeAmps
 
 import ..HelperFunctions
+import ..CompactFock_HelperFunctions
 
 function write_block!(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode, SQRT)
     m, n = 1, 1
@@ -32,7 +33,7 @@ function write_block!(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A,
 end
 
 function use_offDiag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
@@ -97,7 +98,7 @@ function use_offDiag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, 
 end
 
 function use_diag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1, T, SQRT)
-    pivot = HelperFunctions.repeat_twice(params)
+    pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
     G_in = zeros(Complex{T}, cutoff_leftoverMode, cutoff_leftoverMode, 2*M)
@@ -187,7 +188,7 @@ function fock_1leftoverMode_amps(
     # fill first mode for all PNR detections equal to zero
     fill_firstMode_PNRzero!(arr0,A,B,M,cutoff_leftoverMode,SQRT)
 
-    dict_params = HelperFunctions.construct_dict_params(cutoffs_tail)
+    dict_params = CompactFock_HelperFunctions.construct_dict_params(cutoffs_tail)
     for sum_params in 0:sum(cutoffs_tail)-1
         for params in dict_params[sum_params]
             # diagonal pivots: aa,bb,cc,...
