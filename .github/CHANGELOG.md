@@ -13,6 +13,8 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 * Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
 
+* Moved files around to break circular dependencies.
+
 ### Breaking changes
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
