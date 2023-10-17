@@ -28,7 +28,7 @@ from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.lattice import strategies
 from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.lattice.strategies.compactFock.compactFock_diagonal_amps import (
+from mrmustard.math.lattice.strategies.compactFock.python.compactFock_diagonal_amps import (
     fock_representation_diagonal_amps,
 )
 from mrmustard.physics.bargmann import (
