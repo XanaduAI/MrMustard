@@ -253,14 +253,14 @@ def test_fock_representation_beamsplitter(theta, phi):
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
     expected = two_mode_squeezing(r=r, theta=phi, cutoff=10)
-    assert np.allclose(expected, S2.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
+    assert np.allclose(expected, S2.U(cutoffs=[10, 10]), atol=1e-5)
 
 
 @given(phi_a=angle, phi_b=angle)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=10)
-    assert np.allclose(expected, MZ.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
+    assert np.allclose(expected, MZ.U(cutoffs=[10, 10]), atol=1e-5)
 
 
 @pytest.mark.parametrize(

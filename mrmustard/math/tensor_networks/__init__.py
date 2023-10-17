@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" This package contains the modules implementing base classes for states, measurements and tranformations.
+r"""
+This package contains the modules implementing base classes for tensors and tensor networks.
 """
 
-from .state import State
-from .measurement import FockMeasurement, Measurement
-from .transformation import Transformation, Unitary, Channel
+from .tensors import *
+from .networks import *
