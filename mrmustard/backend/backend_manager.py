@@ -1172,9 +1172,9 @@ class BackendManager:
     def DefaultEuclideanOptimizer():
         r"""Default optimizer for the Euclidean parameters."""
         if settings.BACKEND == "tensorflow":
-            from tensorflow.keras.optimizers import Adam
+            import tensorflow as tf
 
-            return Adam(learning_rate=0.001)
+            return tf.keras.optimizers.Adam(learning_rate=0.001)
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
