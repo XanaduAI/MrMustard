@@ -348,11 +348,9 @@ class BackendTensorflow(BackendBase):
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    # TODO: is a wrapper class better?
-    @staticmethod
-    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.legacy.Optimizer:
+    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
         r"""Default optimizer for the Euclidean parameters."""
-        return tf.keras.optimizers.Adam(learning_rate=0.001)
+        return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
         self, cost_fn: Callable, parameters: List[Trainable]
@@ -374,7 +372,7 @@ class BackendTensorflow(BackendBase):
     @tf.custom_gradient
     def hermite_renormalized(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
-    ) -> tf.Tensor:
+    ) -> Tuple[tf.Tensor, Callable]:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the

@@ -106,6 +106,18 @@ class BackendManager:
         cls.complex64 = ret.complex64
         cls.complex128 = ret.complex128
 
+        # decorators
+        cls.hermite_renormalized = getattr(ret, "hermite_renormalized")
+        cls.hermite_renormalized_binomial = getattr(ret, "hermite_renormalized_binomial")
+        cls.hermite_renormalized_diagonal_reorderedAB = getattr(
+            ret, "hermite_renormalized_diagonal_reorderedAB"
+        )
+        cls.hermite_renormalized_1leftoverMode_reorderedAB = getattr(
+            ret, "hermite_renormalized_1leftoverMode_reorderedAB"
+        )
+        cls.getitem = getattr(ret, "getitem")
+        cls.getitem = getattr(ret, "getitem")
+
         return ret
 
     def __new__(cls):
@@ -504,129 +516,6 @@ class BackendManager:
             int: hash of the given tensor
         """
         return self._apply("hash_tensor", (tensor,))
-
-    import tensorflow as tf
-
-    @tf.custom_gradient
-    def hermite_renormalized(self, A: Matrix, B: Vector, C: Scalar, shape: Sequence[int]) -> Tensor:
-        r"""The array of hermite renormalized polynomials of the given coefficients.
-
-        Args:
-            A: The Matrix coefficient of the hermite polynomial
-            B: The Vector coefficient of the hermite polynomial
-            C: The Scalar coefficient of the hermite polynomial
-            shape (tuple): shape of the hermite polynomial
-
-        Returns:
-            array: renormalized hermite polynomials
-        """
-        from mrmustard.backend.lattice import strategies
-
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        G = strategies.vanilla(tuple(shape), _A, _B, _C)
-
-        def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
-            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
-
-        return G, grad
-        return self._apply(
-            "hermite_renormalized",
-            (
-                A,
-                B,
-                C,
-                shape,
-            ),
-        )
-
-    def hermite_renormalized_binomial(
-        self,
-        A: Tensor,
-        B: Tensor,
-        C: Tensor,
-        shape: Tuple[int],
-        max_l2: Optional[float],
-        global_cutoff: Optional[int],
-    ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. The computation fills a tensor of given shape
-        up to a given L2 norm or global cutoff, whichever applies first. The max_l2 value, if
-        not provided, is set to the default value of the AUTOCUTOFF_PROBABILITY setting.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            shape: The shape of the final tensor (local cutoffs).
-            max_l2 (float): The maximum squared L2 norm of the tensor.
-            global_cutoff (optional int): The global cutoff.
-
-        Returns:
-            The renormalized Hermite polynomial of given shape.
-        """
-        return self._apply("hermite_renormalized_binomial", (A, B, C, shape, max_l2, global_cutoff))
-
-    def hermite_renormalized_diagonal(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
-    ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
-
-    def hermite_renormalized_diagonal_reorderedAB(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
-    ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates the diagonal of the Fock representation (i.e. the PNR detection probabilities of all modes)
-        by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-        return self._apply("hermite_renormalized_diagonal_reorderedAB", (A, B, C, cutoffs))
-
-    def hermite_renormalized_1leftoverMode(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
-    ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
-        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
-
-    def hermite_renormalized_1leftoverMode_reorderedAB(
-        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
-    ) -> Tensor:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx - Ax^2)` at zero, where the series has :math:`sqrt(n!)` at the
-        denominator rather than :math:`n!`. Note the minus sign in front of ``A``.
-
-        Calculates all possible Fock representations of mode 0,
-        where all other modes are PNR detected.
-        This is done by applying the recursion relation in a selective manner.
-
-        Args:
-            A: The A matrix.
-            B: The B vector.
-            C: The C scalar.
-            cutoffs: upper boundary of photon numbers in each mode
-
-        Returns:
-            The renormalized Hermite polynomial.
-        """
-
-        return self._apply("hermite_renormalized_1leftoverMode_reorderedAB", (A, B, C, cutoffs))
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.
@@ -1064,7 +953,9 @@ class BackendManager:
         return self._apply("value_and_gradients", (cost_fn, parameters))
 
     def xlogy(self, x: Tensor, y: Tensor) -> Tensor:
-        """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
+        """
+        Returns ``0`` if ``x == 0`` elementwise and ``x * log(y)`` otherwise.
+        """
         return self._apply("xlogy", (x, y))
 
     def zeros(self, shape: Sequence[int], dtype=None) -> Tensor:
@@ -1186,14 +1077,9 @@ class BackendManager:
     #     """Decorator to define a function with a custom gradient."""
     #     return self._apply("custom_gradient", (func, args, kwargs))
 
-    # TODO: is a wrapper class better?
-    @staticmethod
-    def DefaultEuclideanOptimizer():
+    def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""
-        if settings.BACKEND == "tensorflow":
-            import tensorflow as tf
-
-            return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
+        return self._apply("DefaultEuclideanOptimizer")
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
@@ -1498,42 +1384,3 @@ class BackendManager:
         """
         Z = self.matmul(self.conj(self.transpose(U)), dU_euclidean)
         return 0.5 * (Z - self.conj(self.transpose(Z)))
-
-    import tensorflow as tf
-
-    @tf.custom_gradient
-    def getitem(tensor, *, key):
-        """A differentiable pure equivalent of numpy's ``value = tensor[key]``."""
-        value = np.array(tensor)[key]
-
-        def grad(dy):
-            dL_dtensor = np.zeros_like(tensor)
-            dL_dtensor[key] = dy
-            return dL_dtensor
-
-        return value, grad
-
-    @tf.custom_gradient
-    def setitem(tensor, value, *, key):
-        """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
-        _tensor = np.array(tensor)
-        value = np.array(value)
-        _tensor[key] = value
-
-        def grad(dy):
-            dL_dtensor = np.array(dy)
-            dL_dtensor[key] = 0.0
-            # unbroadcasting the gradient
-            implicit_broadcast = list(range(_tensor.ndim - value.ndim))
-            explicit_broadcast = [
-                _tensor.ndim - value.ndim + j for j in range(value.ndim) if value.shape[j] == 1
-            ]
-            dL_dvalue = np.sum(
-                np.array(dy)[key], axis=tuple(implicit_broadcast + explicit_broadcast)
-            )
-            dL_dvalue = np.expand_dims(
-                dL_dvalue, [i - len(implicit_broadcast) for i in explicit_broadcast]
-            )
-            return dL_dtensor, dL_dvalue
-
-        return _tensor, grad
