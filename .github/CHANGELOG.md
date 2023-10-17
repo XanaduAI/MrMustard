@@ -108,7 +108,7 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 ### Improvements
 
 * The math module now has a submodule `lattice` for constructing recurrence relation strategies in the Fock lattice.
-  There are a few predefined strategies in `mrmustard.math.lattice.strategies`.
+  There are a few predefined strategies in `mrmustard.backend.lattice.strategies`.
   [(#235)](https://github.com/XanaduAI/MrMustard/pull/235)
 
 * Gradients in the Fock lattice are now computed using the vector-jacobian product.
@@ -265,7 +265,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
   [(#195)](https://github.com/XanaduAI/MrMustard/pull/195)
 
   ```python
-  from mrmustard.math.mmtensor import MMTensor
+  from mrmustard.backend.mmtensor import MMTensor
 
   # define two tensors
   A = MMTensor(np.random.rand(2, 3, 4), axis_labels=["foo", "bar", "contract"])
