@@ -132,7 +132,7 @@ def test_learning_two_mode_squeezing():
         ),
     ]
     circ = Circuit(ops)
-    state_in = Vacuum(num_modes=3)
+    state_in = Vacuum(num_modes=2)
 
     def cost_fn():
         amps = (state_in >> circ).ket(cutoffs=[2, 2])
