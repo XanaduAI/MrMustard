@@ -74,17 +74,9 @@ class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
-    int32 = None
-    float32 = None
-    float64 = None
-    complex64 = None
-    complex128 = None
-
-    # decorators
-    hermite_renormalized = None
-    hermite_renormalized_binomial = None
-    hermite_renormalized_diagonal_reorderedAB = None
-    hermite_renormalized_1leftoverMode_reorderedAB = None
+    # the backend in use
+    # TODO: This is not robust. Initialize NumpyBackend instead, when available
+    _backend: Optional[str] = None
 
     # the configured Euclidean optimizer.
     _euclidean_opt: type = None
@@ -94,32 +86,27 @@ class BackendManager:
         r"""
         The backend that is being used.
         """
+        name = settings.BACKEND
+        if self._backend and self._backend.name == name:
+            # same backend as in the last call
+            return self._backend
+
         backend = settings.BACKEND
         module = all_modules[backend]["module"]
         object = all_modules[backend]["object"]
         try:
             ret = getattr(module, object)()
         except:
+            # lazy import
             loader = all_modules[backend]["loader"]
             loader.exec_module(module)
             ret = getattr(module, object)()
 
-        self.int32 = ret.int32
-        self.float32 = ret.float32
-        self.float64 = ret.float64
-        self.complex64 = ret.complex64
-        self.complex128 = ret.complex128
+        # switch backend
+        self._backend = ret
 
-        # decorators
-        e = NotImplementedError(f"Decorator not implemented by backend ``{backend}``.")
-        self.hermite_renormalized = getattr(ret, "hermite_renormalized", e)
-        self.hermite_renormalized_binomial = getattr(ret, "hermite_renormalized_binomial", e)
-        self.hermite_renormalized_diagonal_reorderedAB = getattr(
-            ret, "hermite_renormalized_diagonal_reorderedAB", e
-        )
-        self.hermite_renormalized_1leftoverMode_reorderedAB = getattr(
-            ret, "hermite_renormalized_1leftoverMode_reorderedAB", e
-        )
+        # bind
+        self._bind(ret)
 
         return ret
 
@@ -132,6 +119,42 @@ class BackendManager:
         except AttributeError:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.backend.name}``."
             raise NotImplementedError(msg)
+
+    def _bind(self, backend):
+        r"""
+        Binds the types and decorators of this backend manager to those of the given ``backend``.
+        """
+
+        def _getattr_err(name):
+            r"""
+            Implements ``getattr`` with custom error.
+            """
+            msg = f"Backend ``{backend.name}`` does not support ``{name}``"
+            e = NotImplementedError(msg)
+            return getattr(backend, name, e)
+
+        # types
+        setattr(self, "int32", _getattr_err("int32"))
+        setattr(self, "float32", _getattr_err("float32"))
+        setattr(self, "float64", _getattr_err("float64"))
+        setattr(self, "complex64", _getattr_err("complex64"))
+        setattr(self, "complex128", _getattr_err("complex128"))
+
+        # decorators
+        setattr(self, "hermite_renormalized", _getattr_err("hermite_renormalized"))
+        setattr(
+            self, "hermite_renormalized_binomial", _getattr_err("hermite_renormalized_binomial")
+        )
+        setattr(
+            self,
+            "hermite_renormalized_diagonal_reorderedAB",
+            _getattr_err("hermite_renormalized_diagonal_reorderedAB"),
+        )
+        setattr(
+            self,
+            "hermite_renormalized_1leftoverMode_reorderedAB",
+            _getattr_err("hermite_renormalized_1leftoverMode_reorderedAB"),
+        )
 
     def __new__(cls):
         # singleton
@@ -532,6 +555,22 @@ class BackendManager:
             int: hash of the given tensor
         """
         return self._apply("hash_tensor", (tensor,))
+
+    def hermite_renormalized_diagonal(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
+        Then, calculates the required renormalized multidimensional Hermite polynomial.
+        """
+        return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+
+    def hermite_renormalized_1leftoverMode(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        Then, calculate the required renormalized multidimensional Hermite polynomial.
+        """
+        return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
 
     def imag(self, array: Tensor) -> Tensor:
         r"""The imaginary part of array.

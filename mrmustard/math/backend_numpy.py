@@ -22,6 +22,8 @@ class BackendNumpy(BackendBase):
     A numpy backend.
     """
 
+    int32 = np.int
+
     def __init__(self):
         super().__init__(name="numpy")
 
