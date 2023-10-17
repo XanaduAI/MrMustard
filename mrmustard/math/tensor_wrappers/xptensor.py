@@ -27,8 +27,9 @@ from typing import (
 )
 
 from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
+from mrmustard.math.backend_manager import BackendManager
 
-import mrmustard.math as math
+math = BackendManager()
 
 
 class XPTensor(ABC):

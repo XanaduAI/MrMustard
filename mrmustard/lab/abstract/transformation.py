@@ -19,11 +19,12 @@
 
 from __future__ import annotations
 
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from mrmustard import settings
+from mrmustard.math.tensor_networks import Tensor
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
 from mrmustard.utils.typing import RealMatrix, RealVector
@@ -33,29 +34,13 @@ from .state import State
 import mrmustard.math as math
 
 
-class Transformation:
-    r"""Base class for all Transformations."""
-    is_unitary = True  # whether the transformation is unitary (True by default)
-
-    def bargmann(self, numpy=False):
-        X, Y, d = self.XYd(allow_none=False)
-        if self.is_unitary:
-            A, B, C = bargmann.wigner_to_bargmann_U(
-                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
-                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
-            )
-        else:
-            A, B, C = bargmann.wigner_to_bargmann_Choi(
-                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
-                Y if Y is not None else math.zeros((d.shape[-1], d.shape[-1]), dtype=d.dtype),
-                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
-            )
-        if numpy:
-            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
-        return A, B, C
+class Transformation(Tensor):
+    r"""
+    Base class for all Transformations.
+    """
 
     def primal(self, state: State) -> State:
-        r"""Applies ``self`` (a ``Transformation``) to other (a ``State``) and returns the transformed state.
+        r"""Applies this transformation to the given ``state`` and returns the transformed state.
 
         Args:
             state (State): the state to transform
@@ -64,13 +49,13 @@ class Transformation:
             State: the transformed state
         """
         if state.is_gaussian:
-            new_state = self.transform_gaussian(state, dual=False)
+            new_state = self._transform_gaussian(state, dual=False)
         else:
-            new_state = self.transform_fock(state, dual=False)
+            new_state = self._transform_fock(state, dual=False)
         return new_state
 
     def dual(self, state: State) -> State:
-        r"""Applies the dual of self (dual of a ``Transformation``) to other (a ``State``) and returns the transformed state.
+        r"""Applies the dual of this transformation to the given ``state`` and returns the transformed state.
 
         Args:
             state (State): the state to transform
@@ -79,12 +64,12 @@ class Transformation:
             State: the transformed state
         """
         if state.is_gaussian:
-            new_state = self.transform_gaussian(state, dual=True)
+            new_state = self._transform_gaussian(state, dual=True)
         else:
-            new_state = self.transform_fock(state, dual=True)
+            new_state = self._transform_fock(state, dual=True)
         return new_state
 
-    def transform_gaussian(self, state: State, dual: bool) -> State:
+    def _transform_gaussian(self, state: State, dual: bool) -> State:
         r"""Transforms a Gaussian state into a Gaussian state.
 
         Args:
@@ -101,56 +86,8 @@ class Transformation:
         )  # NOTE: assumes modes don't change
         return new_state
 
-    def transform_fock(self, state: State, dual: bool) -> State:
-        r"""Transforms a state in Fock representation.
-
-        Args:
-            state (State): the state to transform
-            dual (bool): whether to apply the dual channel
-
-        Returns:
-            State: the transformed state
-        """
-        op_idx = [state.modes.index(m) for m in self.modes]
-        if self.is_unitary:
-            # until we have output autocutoff we use the same input cutoff list
-            U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx] * 2)
-            U = math.dagger(U) if dual else U
-            if state.is_pure:
-                return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
-            return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
-        else:
-            # until we have output autocutoff we use the same input cutoff list
-            choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx] * 4)
-            n = state.num_modes
-            N0 = list(range(0, n))
-            N1 = list(range(n, 2 * n))
-            N2 = list(range(2 * n, 3 * n))
-            N3 = list(range(3 * n, 4 * n))
-            if dual:
-                choi = math.transpose(choi, N1 + N0 + N3 + N2)  # we flip out-in
-
-            if state.is_pure:
-                return State(
-                    dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes
-                )
-            return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
-
-    @property
-    def modes(self) -> Sequence[int]:
-        """Returns the list of modes on which the transformation acts on."""
-        if self._modes in (None, []):
-            for elem in self.XYd(allow_none=True):
-                if elem is not None:
-                    self._modes = list(range(elem.shape[-1] // 2))
-                    break
-        return self._modes
-
-    @modes.setter
-    def modes(self, modes: List[int]):
-        r"""Sets the modes on which the transformation acts."""
-        self._validate_modes(modes)
-        self._modes = modes
+    def _transform_fock(self, state: State, dual: bool) -> State:
+        raise NotImplementedError
 
     @property
     def num_modes(self) -> int:
@@ -194,6 +131,59 @@ class Transformation:
             return -d
         return -math.matmul(Xdual, d)
 
+    def bargmann(self, numpy=False):
+        X, Y, d = self.XYd(allow_none=False)
+        if self.is_unitary:
+            A, B, C = bargmann.wigner_to_bargmann_U(X, d)
+        else:
+            A, B, C = bargmann.wigner_to_bargmann_Choi(X, Y, d)
+        if numpy:
+            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
+        return A, B, C
+
+    def choi(
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+        dual: bool = False,
+    ):
+        r"""Returns the Choi representation of the transformation.
+
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        The ``shape`` is in the order ``(out_L, in_L, out_R, in_R)``.
+
+        Args:
+            cutoffs: the cutoffs of the input and output modes
+            shape: the shape of the Choi matrix
+            dual: whether to return the dual Choi
+        """
+        N = self.num_modes
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) != N:
+            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+
+        shape = shape or tuple(cutoffs) * 4
+
+        if self.is_unitary:
+            shape = shape[: 2 * self.num_modes]
+            U = self.U(shape[: self.num_modes])
+            Udual = self.U(shape[self.num_modes :])
+            if dual:
+                return fock.U_to_choi(U=Udual, Udual=U)
+            return fock.U_to_choi(U=U, Udual=Udual)
+
+        X, Y, d = self.XYd(allow_none=False)
+        choi = fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
+        if dual:
+            n = len(shape) // 4
+            N0 = list(range(0, n))
+            N1 = list(range(n, 2 * n))
+            N2 = list(range(2 * n, 3 * n))
+            N3 = list(range(3 * n, 4 * n))
+            choi = math.conj(math.transpose(choi, N1 + N0 + N3 + N2))  # if dual we flip out-in
+        return choi
+
     def XYd(
         self, allow_none: bool = True
     ) -> Tuple[Optional[RealMatrix], Optional[RealMatrix], Optional[RealVector]]:
@@ -222,41 +212,6 @@ class Transformation:
         ddual = math.zeros_like(Xdual[:, 0]) if self.d_vector_dual is None else self.d_vector_dual
         return Xdual, Ydual, ddual
 
-    def U(self, cutoffs: Sequence[int]):
-        r"""Returns the unitary representation of the transformation."""
-        if not self.is_unitary:
-            return None
-        X, _, d = self.XYd(allow_none=False)
-        if len(cutoffs) == self.num_modes:
-            shape = tuple(cutoffs) * 2
-        elif len(cutoffs) == 2 * self.num_modes:
-            shape = tuple(cutoffs)
-
-        else:
-            raise ValueError(
-                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {2*self.num_modes})"
-            )
-        return fock.wigner_to_fock_U(X, d, shape=shape)
-
-    def choi(self, cutoffs: Sequence[int]):
-        r"""Returns the Choi representation of the transformation."""
-        if len(cutoffs) == self.num_modes:
-            shape = tuple(cutoffs) * 4
-        elif len(cutoffs) == 4 * self.num_modes:
-            shape = tuple(cutoffs)
-        else:
-            raise ValueError(
-                f"Invalid number of cutoffs: {len(cutoffs)} (expected {self.num_modes} or {4*self.num_modes})"
-            )
-        if self.is_unitary:
-            shape = shape[: 2 * self.num_modes]
-            U = self.U(shape[: self.num_modes])
-            Udual = self.U(shape[self.num_modes :])
-            return fock.U_to_choi(U, Udual)
-        X, Y, d = self.XYd(allow_none=False)
-
-        return fock.wigner_to_fock_Choi(X, Y, d, shape=shape)
-
     def __getitem__(self, items) -> Callable:
         r"""Sets the modes on which the transformation acts.
 
@@ -273,12 +228,12 @@ class Transformation:
             modes = list(items)
         else:
             raise ValueError(f"{items} is not a valid slice or list of modes.")
-        self.modes = modes
+        if self.is_unitary:
+            self.change_modes(modes, modes)
+        else:
+            self.change_modes(modes, modes, modes, modes)
         return self
 
-    # TODO: use __class_getitem__ for compiler stuff
-
-    # pylint: disable=import-outside-toplevel,cyclic-import
     def __rshift__(self, other: Transformation):
         r"""Concatenates self with other (other after self).
 
@@ -291,9 +246,7 @@ class Transformation:
         Returns:
             Circuit: A circuit that concatenates self with other
         """
-        from ..circuit import (
-            Circuit,
-        )
+        from mrmustard.lab.circuit import Circuit  # pylint: disable=import-outside-toplevel
 
         ops1 = self._ops if isinstance(self, Circuit) else [self]
         ops2 = other._ops if isinstance(other, Circuit) else [other]
@@ -325,22 +278,6 @@ class Transformation:
         raise ValueError(
             f"{other} of type {other.__class__} is not a valid state or transformation."
         )
-
-    # pylint: disable=too-many-branches,too-many-return-statements
-    def __eq__(self, other):
-        r"""Returns ``True`` if the two transformations are equal."""
-        if not isinstance(other, Transformation):
-            return False
-        if not (self.is_gaussian and other.is_gaussian):
-            return np.allclose(
-                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
-                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
-                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
-            )
-
-        sX, sY, sd = self.XYd(allow_none=False)
-        oX, oY, od = other.XYd(allow_none=False)
-        return np.allclose(sX, oX) and np.allclose(sY, oY) and np.allclose(sd, od)
 
     def __repr__(self):
         class_name = self.__class__.__name__
@@ -383,3 +320,115 @@ class Transformation:
                 )
 
         return header + body
+
+
+class Unitary(Transformation):
+    r"""
+    A unitary transformation.
+
+    Args:
+        name: The name of this unitary.
+        modes: The modes that this unitary acts on.
+    """
+
+    def __init__(self, name: str, modes: list[int]):
+        super().__init__(name=name, modes_in_ket=modes, modes_out_ket=modes)
+        self.is_unitary = True
+
+    def value(self, shape: Tuple[int]):
+        return self.U(shape=shape)
+
+    def _transform_fock(self, state: State, dual=False) -> State:
+        op_idx = [state.modes.index(m) for m in self.modes]
+        U = self.U(cutoffs=[state.cutoffs[i] for i in op_idx])
+        if state.is_hilbert_vector:
+            return State(ket=fock.apply_kraus_to_ket(U, state.ket(), op_idx), modes=state.modes)
+        return State(dm=fock.apply_kraus_to_dm(U, state.dm(), op_idx), modes=state.modes)
+
+    def U(
+        self,
+        cutoffs: Optional[Sequence[int]] = None,
+        shape: Optional[Sequence[int]] = None,
+    ):
+        r"""Returns the unitary representation of the transformation.
+
+        If specified, ``shape`` takes precedence over ``cutoffs``.
+        ``shape`` is in the order ``(out, in)``.
+
+        Note that for a unitary transformation on N modes, ``len(cutoffs)`` is ``N``
+        and ``len(shape)`` is ``2N``.
+
+        Args:
+            cutoffs: the cutoffs of the input and output modes
+            shape: the shape of the unitary matrix
+
+        Returns:
+            ComplexTensor: the unitary matrix in Fock representation
+        """
+        if cutoffs is None:
+            pass
+        elif len(cutoffs) != self.num_modes:
+            raise ValueError(f"len(cutoffs) must be {self.num_modes} (got {len(cutoffs)})")
+        shape = shape or tuple(cutoffs) * 2
+        X, _, d = self.XYd(allow_none=False)
+        return fock.wigner_to_fock_U(X, d, shape=shape)
+
+    def __eq__(self, other):
+        r"""Returns ``True`` if the two transformations are equal."""
+        if not isinstance(other, Unitary):
+            return False
+        if not (self.is_gaussian and other.is_gaussian):
+            return np.allclose(
+                self.U(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes),
+                other.U(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 2 * self.num_modes),
+                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
+            )
+        sX, sY, sd = self.XYd(allow_none=False)
+        oX, oY, od = other.XYd(allow_none=False)
+        assert np.isclose(np.linalg.norm(sY), 0)
+        assert np.isclose(np.linalg.norm(oY), 0)
+        return np.allclose(sX, oX) and np.allclose(sd, od)
+
+
+class Channel(Transformation):
+    r"""
+    A quantum channel.
+
+    Args:
+        name: The name of this channel.
+        modes: The modes that this channel acts on.
+    """
+
+    def __init__(self, name: str, modes: list[int]):
+        super().__init__(
+            name=name,
+            modes_in_ket=modes,
+            modes_out_ket=modes,
+            modes_in_bra=modes,
+            modes_out_bra=modes,
+        )
+        self.is_unitary = False
+
+    def _transform_fock(self, state: State, dual: bool = False) -> State:
+        op_idx = [state.modes.index(m) for m in self.modes]
+        choi = self.choi(cutoffs=[state.cutoffs[i] for i in op_idx], dual=dual)
+        if state.is_hilbert_vector:
+            return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
+        return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+
+    def value(self, shape: Tuple[int]):
+        return self.choi(shape=shape)
+
+    def __eq__(self, other):
+        r"""Returns ``True`` if the two transformations are equal."""
+        if not isinstance(other, Channel):
+            return False
+        if not (self.is_gaussian and other.is_gaussian):
+            return np.allclose(
+                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
+            )
+        sX, sY, sd = self.XYd(allow_none=False)
+        oX, oY, od = other.XYd(allow_none=False)
+        return np.allclose(sX, oX) and np.allclose(sY, oY) and np.allclose(sd, od)

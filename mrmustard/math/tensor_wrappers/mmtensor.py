@@ -21,8 +21,9 @@ import string
 from numbers import Number
 from typing import List, Optional, Union
 
+from mrmustard.math.backend_manager import BackendManager
 
-import mrmustard.math as math
+math = BackendManager()
 
 
 class MMTensor:
