@@ -76,6 +76,7 @@ class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
+    int32 = None
     float32 = None
     float64 = None
     complex64 = None
@@ -99,6 +100,7 @@ class BackendManager:
             loader.exec_module(module)
             ret = getattr(module, object)()
 
+        cls.int32 = ret.int32
         cls.float32 = ret.float32
         cls.float64 = ret.float64
         cls.complex64 = ret.complex64
@@ -1060,6 +1062,10 @@ class BackendManager:
             tuple: loss and gradients (dict) of the given cost function
         """
         return self._apply("value_and_gradients", (cost_fn, parameters))
+
+    def xlogy(self, x: Tensor, y: Tensor) -> Tensor:
+        """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
+        return self._apply("xlogy", (x, y))
 
     def zeros(self, shape: Sequence[int], dtype=None) -> Tensor:
         r"""Returns an array of zeros with the given shape and ``dtype``.

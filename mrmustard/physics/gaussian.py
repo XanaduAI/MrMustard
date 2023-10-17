@@ -660,7 +660,8 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     """
     N = len(cov) // 2
     Aindices = math.astensor(
-        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes],
+        dtype=math.int32,
     )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)

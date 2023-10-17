@@ -36,6 +36,7 @@ class BackendTensorflow(BackendBase):
     A base class for backends.
     """
 
+    int32 = tf.int32
     float64 = tf.float64
     float32 = tf.float32
     complex64 = tf.complex64
@@ -71,7 +72,7 @@ class BackendTensorflow(BackendBase):
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
-    def cast(self, array: tf.Tensor, dtype) -> tf.Tensor:
+    def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
         return tf.cast(array, dtype)
@@ -163,7 +164,7 @@ class BackendTensorflow(BackendBase):
     def from_backend(self, value) -> bool:
         return isinstance(value, (tf.Tensor, tf.Variable))
 
-    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
+    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
     def hash_tensor(self, tensor: tf.Tensor) -> int:
