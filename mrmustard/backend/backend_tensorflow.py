@@ -349,7 +349,7 @@ class BackendTensorflow(BackendBase):
 
     # TODO: is a wrapper class better?
     @staticmethod
-    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.Optimizer:
+    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.legacy.Optimizer:
         r"""Default optimizer for the Euclidean parameters."""
         return tf.keras.optimizers.Adam(learning_rate=0.001)
 
