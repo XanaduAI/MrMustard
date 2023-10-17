@@ -8,7 +8,7 @@ from mrmustard.lab import Coherent, Fock, State
 from mrmustard.physics import fock as fp
 from mrmustard.physics import gaussian as gp
 from tests.random import force_settings
-import mrmustard.backend as math
+import mrmustard.math as math
 
 hbar0 = settings.HBAR
 

@@ -7,7 +7,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.backend.numba.compactFock_helperFunctions import (
+from mrmustard.math.numba.compactFock_helperFunctions import (
     SQRT,
     repeat_twice,
     construct_dict_params,

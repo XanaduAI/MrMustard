@@ -27,7 +27,7 @@ from mrmustard.training.parameter import (
     Symplectic,
     Trainable,
 )
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 @pytest.mark.parametrize("kwargs", [{"a": 5}, {"b": 4.5}])

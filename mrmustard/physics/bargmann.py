@@ -21,7 +21,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 def cayley(X, c):

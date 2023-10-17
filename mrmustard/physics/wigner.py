@@ -18,7 +18,7 @@ import numpy as np
 from numba import njit
 
 from mrmustard import settings
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 __all__ = ["wigner_discretized"]

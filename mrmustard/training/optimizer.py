@@ -25,7 +25,7 @@ from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 __all__ = ["Optimizer"]
 

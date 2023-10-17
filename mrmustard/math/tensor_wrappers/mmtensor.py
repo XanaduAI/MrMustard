@@ -22,7 +22,7 @@ from numbers import Number
 from typing import List, Optional, Union
 
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 class MMTensor:

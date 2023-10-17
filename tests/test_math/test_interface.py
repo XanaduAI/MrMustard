@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from mrmustard import settings
-import mrmustard.backend as math
+import mrmustard.math as math
 
 try:
     import torch

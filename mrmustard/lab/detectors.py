@@ -27,7 +27,7 @@ from .abstract import FockMeasurement, Measurement, State
 from .gates import Rgate
 from .states import Coherent, DisplacedSqueezed
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heterodyne"]
 

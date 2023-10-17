@@ -25,7 +25,7 @@ from mrmustard.lab.gates import (
 )
 from mrmustard.lab.states import Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 def test_tensorboard_callback(tmp_path):

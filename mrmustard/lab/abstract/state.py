@@ -42,7 +42,7 @@ from mrmustard.utils.typing import (
     RealVector,
 )
 from mrmustard.physics.wigner import wigner_discretized
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 if TYPE_CHECKING:

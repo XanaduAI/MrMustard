@@ -42,7 +42,7 @@ from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer, Parametrized
 from mrmustard.training.callbacks import Callback
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 @given(n=st.integers(0, 3))

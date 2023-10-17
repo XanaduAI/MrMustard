@@ -28,7 +28,7 @@ from typing import (
 
 from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 class XPTensor(ABC):

@@ -1,5 +1,5 @@
 # """
-# Unit tests for mrmustard.backend.numba.compactFock~
+# Unit tests for mrmustard.math.numba.compactFock~
 # """
 # import numpy as np
 # from hypothesis import given
@@ -11,7 +11,7 @@
 # from mrmustard.training import Optimizer
 # from tests.random import n_mode_mixed_state
 
-# import mrmustard.backend as math  # use methods in math if you want them to be differentiable
+# import mrmustard.math as math  # use methods in math if you want them to be differentiable
 
 
 # def allowed_cutoffs(max_cutoffs):

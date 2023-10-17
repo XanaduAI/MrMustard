@@ -24,10 +24,10 @@ from typing import List, Optional, Sequence, Tuple
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.backend.caching import tensor_int_cache
-from mrmustard.backend.lattice import strategies
-from mrmustard.backend.tensor_wrappers.mmtensor import MMTensor
-from mrmustard.backend.numba.compactFock_diagonal_amps import (
+from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.lattice import strategies
+from mrmustard.math.tensor_wrappers.mmtensor import MMTensor
+from mrmustard.math.numba.compactFock_diagonal_amps import (
     fock_representation_diagonal_amps,
 )
 from mrmustard.physics.bargmann import (
@@ -37,7 +37,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
 )
 from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
-import mrmustard.backend as math
+import mrmustard.math as math
 
 SQRT = np.sqrt(np.arange(1e6))
 

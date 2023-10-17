@@ -25,7 +25,7 @@ from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
 from .abstract import State
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 __all__ = [

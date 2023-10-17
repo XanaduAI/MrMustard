@@ -17,7 +17,7 @@
 import numpy as np
 from scipy.special import eval_hermite, factorial
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 def test_reduction_to_renorm_physicists_polys():

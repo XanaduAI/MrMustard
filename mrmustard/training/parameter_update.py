@@ -20,7 +20,7 @@ from mrmustard.utils.typing import Tensor
 
 from .parameter import Trainable
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):

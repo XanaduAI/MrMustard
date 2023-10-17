@@ -34,7 +34,7 @@ from mrmustard.lab import (
     State,
     Vacuum,
 )
-from mrmustard.backend.lattice.strategies import displacement, grad_displacement
+from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock
 
 # helper strategies

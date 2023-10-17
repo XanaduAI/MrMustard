@@ -19,7 +19,7 @@ from typing import Optional
 import numpy as np
 from numba import njit, typed, types
 
-from mrmustard.backend.lattice import paths, steps
+from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))

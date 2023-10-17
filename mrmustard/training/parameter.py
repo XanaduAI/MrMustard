@@ -90,7 +90,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Sequence, Any
 from mrmustard.utils.typing import Tensor
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 __all__ = [
     "Parameter",

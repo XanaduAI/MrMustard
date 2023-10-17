@@ -40,7 +40,7 @@ from mrmustard.lab import (
 from tests.random import none_or_
 
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 hbar = settings.HBAR
 

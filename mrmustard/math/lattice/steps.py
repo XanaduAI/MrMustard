@@ -26,8 +26,8 @@ import numpy as np
 from numba import njit, prange, types
 from numba.cpython.unsafe.tuple import tuple_setitem
 
-from mrmustard.backend.lattice.neighbors import lower_neighbors
-from mrmustard.backend.lattice.pivots import first_available_pivot
+from mrmustard.math.lattice.neighbors import lower_neighbors
+from mrmustard.math.lattice.pivots import first_available_pivot
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))

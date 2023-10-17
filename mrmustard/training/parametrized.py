@@ -30,7 +30,7 @@ from mrmustard.training.parameter import (
 )
 from mrmustard.utils.typing import Tensor
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 __all__ = ["Parametrized"]
 

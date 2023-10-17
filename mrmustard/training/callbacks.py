@@ -74,7 +74,7 @@ from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 import numpy as np
 import tensorflow as tf
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 @dataclass

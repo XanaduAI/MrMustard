@@ -40,7 +40,7 @@ from mrmustard.lab import (
     Thermal,
 )
 from mrmustard.lab.states import TMSV, Fock, SqueezedVacuum, State
-from mrmustard.backend.lattice import strategies
+from mrmustard.math.lattice import strategies
 from mrmustard.physics import fock
 from tests.random import (
     angle,
@@ -53,7 +53,7 @@ from tests.random import (
     two_mode_unitary_gate,
 )
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)

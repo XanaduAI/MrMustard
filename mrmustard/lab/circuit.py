@@ -27,7 +27,7 @@ from mrmustard.lab.abstract import State, Transformation
 from mrmustard.training import Parametrized
 from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard.lab.circuit_drawer import circuit_text
-from mrmustard.backend.tensor_wrappers.xptensor import XPMatrix, XPVector
+from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
 
 
 class Circuit(Transformation, Parametrized):

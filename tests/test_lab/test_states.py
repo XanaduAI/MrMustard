@@ -33,7 +33,7 @@ from mrmustard.lab.states import (
 from mrmustard.physics import gaussian as gp
 from tests.random import angle, force_settings, medium_float, n_mode_pure_state, nmodes, r
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 hbar0 = settings.HBAR
 

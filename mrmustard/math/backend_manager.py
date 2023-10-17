@@ -21,11 +21,9 @@ from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
-from .backend_numpy import BackendNumpy
 from ..utils.settings import settings
 from ..utils.typing import (
     Matrix,
-    Scalar,
     Tensor,
     Trainable,
     Vector,
@@ -55,11 +53,11 @@ def lazy_import(module_name: str):
 
 
 # lazy import for numpy
-module_name_np = "mrmustard.backend.backend_numpy"
+module_name_np = "mrmustard.math.backend_numpy"
 module_np, loader_np = lazy_import(module_name_np)
 
 # lazy import for tensorflow
-module_name_tf = "mrmustard.backend.backend_tensorflow"
+module_name_tf = "mrmustard.math.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
 
 all_modules = {
@@ -82,11 +80,17 @@ class BackendManager:
     complex64 = None
     complex128 = None
 
-    r"""The interface that all backends must implement."""
-    _euclidean_opt: type = None  # NOTE this is an object that
+    # decorators
+    hermite_renormalized = None
+    hermite_renormalized_binomial = None
+    hermite_renormalized_diagonal_reorderedAB = None
+    hermite_renormalized_1leftoverMode_reorderedAB = None
+
+    # the configured Euclidean optimizer.
+    _euclidean_opt: type = None
 
     @property
-    def backend(cls):
+    def backend(self):
         r"""
         The backend that is being used.
         """
@@ -100,31 +104,24 @@ class BackendManager:
             loader.exec_module(module)
             ret = getattr(module, object)()
 
-        cls.int32 = ret.int32
-        cls.float32 = ret.float32
-        cls.float64 = ret.float64
-        cls.complex64 = ret.complex64
-        cls.complex128 = ret.complex128
+        self.int32 = ret.int32
+        self.float32 = ret.float32
+        self.float64 = ret.float64
+        self.complex64 = ret.complex64
+        self.complex128 = ret.complex128
 
         # decorators
-        cls.hermite_renormalized = getattr(ret, "hermite_renormalized")
-        cls.hermite_renormalized_binomial = getattr(ret, "hermite_renormalized_binomial")
-        cls.hermite_renormalized_diagonal_reorderedAB = getattr(
-            ret, "hermite_renormalized_diagonal_reorderedAB"
+        e = NotImplementedError(f"Decorator not implemented by backend ``{backend}``.")
+        self.hermite_renormalized = getattr(ret, "hermite_renormalized", e)
+        self.hermite_renormalized_binomial = getattr(ret, "hermite_renormalized_binomial", e)
+        self.hermite_renormalized_diagonal_reorderedAB = getattr(
+            ret, "hermite_renormalized_diagonal_reorderedAB", e
         )
-        cls.hermite_renormalized_1leftoverMode_reorderedAB = getattr(
-            ret, "hermite_renormalized_1leftoverMode_reorderedAB"
+        self.hermite_renormalized_1leftoverMode_reorderedAB = getattr(
+            ret, "hermite_renormalized_1leftoverMode_reorderedAB", e
         )
-        cls.getitem = getattr(ret, "getitem")
-        cls.getitem = getattr(ret, "getitem")
 
         return ret
-
-    def __new__(cls):
-        # singleton
-        if not hasattr(cls, "instance"):
-            cls.instance = super(BackendManager, cls).__new__(cls)
-        return cls.instance
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
         r"""
@@ -135,6 +132,12 @@ class BackendManager:
         except AttributeError:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.backend.name}``."
             raise NotImplementedError(msg)
+
+    def __new__(cls):
+        # singleton
+        if not hasattr(cls, "instance"):
+            cls.instance = super(BackendManager, cls).__new__(cls)
+        return cls.instance
 
     # ~~~~~~~
     # Methods

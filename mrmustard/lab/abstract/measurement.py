@@ -24,7 +24,7 @@ from mrmustard.utils.typing import Tensor
 
 from .state import State
 
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 class Measurement(ABC):

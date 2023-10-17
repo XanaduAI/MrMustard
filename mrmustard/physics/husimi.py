@@ -18,7 +18,7 @@
 This module contains functions for transforming to the Husimi representation.
 """
 from mrmustard import settings
-import mrmustard.backend as math
+import mrmustard.math as math
 
 
 def pq_to_aadag(X):

@@ -22,8 +22,8 @@ from thewalrus.quantum import is_pure_cov
 
 from mrmustard import settings
 from mrmustard.utils.typing import Matrix, Scalar, Vector
-from mrmustard.backend.tensor_wrappers.xptensor import XPMatrix, XPVector
-import mrmustard.backend as math
+from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
+import mrmustard.math as math
 
 
 #  ~~~~~~

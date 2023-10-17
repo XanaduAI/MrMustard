@@ -25,7 +25,7 @@ from mrmustard.lab.abstract import State, Transformation
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
-import mrmustard.backend as math
+import mrmustard.math as math
 
 __all__ = [
     "Dgate",

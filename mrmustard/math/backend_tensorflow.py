@@ -18,7 +18,7 @@ import tensorflow_probability as tfp
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-from mrmustard.backend.backend_base import BackendBase
+from mrmustard.math.backend_base import BackendBase
 from ..utils.settings import settings
 from ..utils.typing import Tensor, Trainable
 from .autocast import Autocast
@@ -441,7 +441,7 @@ class BackendTensorflow(BackendBase):
         return G, grad
 
     def reorder_AB_bargmann(self, A: tf.Tensor, B: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
-        r"""In mrmustard.backend.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
+        r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
         ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
@@ -453,7 +453,7 @@ class BackendTensorflow(BackendBase):
     def hermite_renormalized_diagonal(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
@@ -500,7 +500,7 @@ class BackendTensorflow(BackendBase):
     def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
