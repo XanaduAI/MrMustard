@@ -63,7 +63,7 @@ def contract(tensors: list[Tensor], default_dim: int):
     """
     opt_einsum_args = []
     for t in tensors:
-        shape = t.shape(default_dim=default_dim, swap=True)
+        shape = t.shape(default_dim=default_dim, out_in=True)
         opt_einsum_args.append(t.value(shape=shape))
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)

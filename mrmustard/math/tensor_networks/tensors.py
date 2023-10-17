@@ -350,17 +350,17 @@ class Tensor(ABC):
                 raise ValueError(msg)
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
-    def shape(self, default_dim: Optional[int] = None, swap=False):
+    def shape(self, default_dim: Optional[int] = None, out_in=False):
         r"""
         Returns the shape of the underlying tensor, as inferred from the dimensions of the individual
         wires.
 
-        If ``swap`` is ``False``, the shape returned is in the order ``(in_ket, in_bra, out_ket, out_bra)``.
+        If ``out_in`` is ``False``, the shape returned is in the order ``(in_ket, in_bra, out_ket, out_bra)``.
         Otherwise, it is in the order ``(out_ket, out_bra, in_ket, in_bra)``.
 
         Args:
             default_dim: The default dimension of wires with unspecified dimension.
-            swap: Whether to swap input and output shapes.
+            out_in: Whether to return output shapes followed by input shapes or viceversa.
         """
 
         def _sort_shapes(*args):
@@ -373,7 +373,7 @@ class Tensor(ABC):
         shape_in_bra = [w.dim if w.dim else default_dim for w in self.input.bra.values()]
         shape_out_bra = [w.dim if w.dim else default_dim for w in self.output.bra.values()]
 
-        if swap:
+        if out_in:
             ret = _sort_shapes(shape_out_ket, shape_out_bra, shape_in_ket, shape_in_bra)
         ret = _sort_shapes(shape_in_ket, shape_in_bra, shape_out_ket, shape_out_bra)
 
