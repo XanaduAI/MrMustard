@@ -103,9 +103,7 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
-        self._allowed_precision_bits_hermite_poly = ImmutableSetting(
-            [128, 256, 384, 512], "ALLOWED_PRECISION_BITS_HERMITE_POLY"
-        )
+        self._allowed_precision_bits_hermite_poly = [128, 256, 384, 512]
         self._julia_already_initialized = False
 
     @property
@@ -276,34 +274,15 @@ class Settings:
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
 
-    # @property
-    # def JULIA_ALREADY_INITIALIZED(self):
-    #     r"""True if julia was previously initialized. Default is ``False``.
-    #
-    #     Cannot be changed after its value is queried for the first time.
-    #     """
-    #     return self._julia_already_initialized.value
-    #
-    # @JULIA_ALREADY_INITIALIZED.setter
-    # def JULIA_ALREADY_INITIALIZED(self, value: str):
-    #     self._hbar._julia_already_initialized = value
-
-    # @property
-    # def ALLOWED_PRECISION_BITS_HERMITE_POLY(self):  # without setter
-    #     r"""List of possible values for settings.PRECISION_BITS_HERMITE_POLY."""
-    #     return self._allowed_precision_bits_hermite_poly
+    @property
+    def JULIA_ALREADY_INITIALIZED(self):
+        r"""True if Julia was previously initialized, False otherwise"""
+        return self._julia_already_initialized
 
     @property
     def ALLOWED_PRECISION_BITS_HERMITE_POLY(self):
-        r"""List of possible values for settings.PRECISION_BITS_HERMITE_POLY.
-
-        Cannot be changed after its value is queried for the first time.
-        """
-        return self._allowed_precision_bits_hermite_poly.value
-
-    @ALLOWED_PRECISION_BITS_HERMITE_POLY.setter
-    def ALLOWED_PRECISION_BITS_HERMITE_POLY(self, value: str):
-        self._allowed_precision_bits_hermite_poly.value = value
+        r"""List of possible values for settings.PRECISION_BITS_HERMITE_POLY."""
+        return self._allowed_precision_bits_hermite_poly
 
     @property
     def PRECISION_BITS_HERMITE_POLY(self):
@@ -315,7 +294,7 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = self._allowed_precision_bits_hermite_poly.value
+        allowed_values = self._allowed_precision_bits_hermite_poly
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
@@ -346,7 +325,7 @@ class Settings:
                 "math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
             )
 
-            self._julia_already_initialized = ImmutableSetting(True, "JULIA_ALREADY_INITIALIZED")
+            self._julia_already_initialized = True
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
