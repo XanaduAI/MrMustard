@@ -287,7 +287,7 @@ class Settings:
         self._hbar._julia_already_initialized = value
 
     @property
-    def ALLOWED_PRECISION_BITS_HERMITE_POLY(self): # without setter
+    def ALLOWED_PRECISION_BITS_HERMITE_POLY(self):  # without setter
         r"""List of possible values for settings.PRECISION_BITS_HERMITE_POLY."""
         return self._allowed_precision_bits_hermite_poly
 
@@ -309,7 +309,9 @@ class Settings:
         old_value = self._precision_bits_hermite_poly
         self._precision_bits_hermite_poly = value
 
-        if value != 128 and not self._julia_already_initialized: # initialize Julia when precision > complex128 and if it wasn't initialized before
+        if (
+            value != 128 and not self._julia_already_initialized
+        ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
             # the next line must be run before "from julia import Main as Main_julia"
             _ = Julia(compiled_modules=False)
             # julia must be imported after running "_ = Julia(compiled_modules=False)"
@@ -329,7 +331,9 @@ class Settings:
             Main_julia.include(
                 "math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
             )
-            self._julia_already_initialized.value = ImmutableSetting(True, "JULIA_ALREADY_INITIALIZED")
+            self._julia_already_initialized.value = ImmutableSetting(
+                True, "JULIA_ALREADY_INITIALIZED"
+            )
 
     # use rich.table to print the settings
     def __repr__(self) -> str:

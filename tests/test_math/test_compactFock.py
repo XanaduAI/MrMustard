@@ -67,6 +67,7 @@ def test_compactFock_diagonal(A_B_G0):
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
+
 @given(random_ABC(M=3))
 def test_compactFock_1leftover(A_B_G0):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
