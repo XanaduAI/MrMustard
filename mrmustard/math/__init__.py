@@ -34,15 +34,13 @@ greater degree of flexibility and code reuse.
 
     math.cos(x)  # torch backend
 """
-
-
 import importlib
 from mrmustard import settings
 
 if importlib.util.find_spec("tensorflow"):
-    from mrmustard.math.tensorflow import TFMath
+    from mrmustard.math.tensorflow_wrapper import TFMath
 if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch import TorchMath
+    from mrmustard.math.torch_wrapper import TorchMath
 
 
 class Math:
