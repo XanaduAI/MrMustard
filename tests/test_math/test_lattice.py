@@ -20,7 +20,7 @@ import numpy as np
 from mrmustard.lab import Gaussian
 from mrmustard import settings
 
-p0 = settings.PRECISION_BITS_HERMITE_POLY
+original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 
 @pytest.mark.parametrize("precision", ([128, 512]))
@@ -35,4 +35,4 @@ def test_vanillaNumba_vs_binomial(precision):
 
     assert np.allclose(ket_vanilla, ket_binomial)
 
-    settings.PRECISION_BITS_HERMITE_POLY = p0  # put original value back
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision

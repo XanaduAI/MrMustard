@@ -382,14 +382,12 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        precision_bits = (
-            settings.PRECISION_BITS_HERMITE_POLY
-        )  # number of bits used to represent a single Fock amplitude (default: complex128)
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        else:  # julia (with precision_bits = 512)
+        else:  # julia
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
@@ -488,23 +486,37 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
-        )
+
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        if precision_bits == 128: # numba
+            poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+                hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+            )
+        else:  # julia
+            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+            poly0, poly2, poly1010, poly1001, poly1 = Main_julia.DiagonalAmps.fock_diagonal_amps(A,B,C,cutoffs,precision_bits)
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_diagonal,
-                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
-                [poly0.dtype] * 3,
-            )
+            if precision_bits == 128:  # numba
+                dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                    grad_hermite_multidimensional_diagonal,
+                    [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                    [poly0.dtype] * 3,
+                )
+            else:
+                dpoly_dC, dpoly_dA, dpoly_dB = Main_julia.DiagonalGrad.fock_diagonal_grad(A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits)
+
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
             return dLdA, dLdB, dLdC
 
-        return poly0, grad
+            return poly0, grad
+
+
 
     def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]

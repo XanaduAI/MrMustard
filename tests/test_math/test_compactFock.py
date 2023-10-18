@@ -1,6 +1,7 @@
 """
 Unit tests for mrmustard.math.numba.compactFock~
 """
+import pytest
 import numpy as np
 from hypothesis import given
 from hypothesis import strategies as st
@@ -14,6 +15,7 @@ from tests.random import n_mode_mixed_state
 
 math = Math()  # use methods in math if you want them to be differentiable
 
+original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 def allowed_cutoffs(max_cutoffs):
     r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
@@ -34,10 +36,12 @@ def random_ABC(draw, M):
     A, B, G0 = wigner_to_bargmann_rho(state.cov, state.means)
     return A, B, G0
 
-
+@pytest.mark.parametrize("precision", ([128, 512]))
 @given(random_ABC(M=3))
 def test_compactFock_diagonal(A_B_G0):
     """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
+    settings.PRECISION_BITS_HERMITE_POLY = precision
+
     for cutoffs in allowed_cutoffs((7, 7, 7)):
         A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
@@ -57,6 +61,8 @@ def test_compactFock_diagonal(A_B_G0):
             math.conj(-A), math.conj(B), math.conj(G0), cutoffs
         )
         assert np.allclose(ref_diag, G_diag)
+
+        settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
 @given(random_ABC(M=3))
