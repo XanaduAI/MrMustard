@@ -40,16 +40,13 @@ def random_ABC(draw, M):
     return A, B, G0
 
 
-# @pytest.mark.parametrize("precision", allowed_values_precision)
 @given(random_ABC(M=3))
-# def test_compactFock_diagonal(precision):
 def test_compactFock_diagonal(A_B_G0):
     """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
     for precision in allowed_values_precision:
         settings.PRECISION_BITS_HERMITE_POLY = precision
         for cutoffs in allowed_cutoffs((7, 7, 7)):
             A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
-            # A, B, G0 = random_ABC(M=3)  # Create random state (M mode Gaussian state with displacement)
 
             # Vanilla MM
             G_ref = math.hermite_renormalized(
@@ -70,17 +67,13 @@ def test_compactFock_diagonal(A_B_G0):
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
-
-# @pytest.mark.parametrize("precision", allowed_values_precision)
 @given(random_ABC(M=3))
 def test_compactFock_1leftover(A_B_G0):
-    # def test_compactFock_1leftover(precision):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
     for precision in allowed_values_precision:
         settings.PRECISION_BITS_HERMITE_POLY = precision
         for cutoffs in allowed_cutoffs((7, 7, 7)):
             A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
-            # A, B, G0 = random_ABC(M=3)  # Create random state (M mode Gaussian state with displacement)
 
             # New algorithm
             G_leftover = math.hermite_renormalized_1leftoverMode(
