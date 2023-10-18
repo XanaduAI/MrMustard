@@ -43,7 +43,7 @@ function vanilla(
 end
 
 function update_Fock_array!(
-    G::AbstractArray{Complex{T}},
+    G::AbstractArray,
     A::AbstractMatrix{Complex{Float64}},
     b::AbstractVector{Complex{Float64}},
     idx::CartesianIndex,

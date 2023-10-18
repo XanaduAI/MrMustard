@@ -396,7 +396,7 @@ class TFMath(MathInterface):
                 _B.astype(np.complex128),
                 _C.astype(np.complex128),
             )
-            G = Main_julia.Vanilla.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
+            G = Main_julia.Vanilla.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits)
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))

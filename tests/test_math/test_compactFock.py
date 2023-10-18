@@ -6,6 +6,7 @@ import numpy as np
 from hypothesis import given
 from hypothesis import strategies as st
 
+from mrmustard import settings
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity, normalize
@@ -16,6 +17,7 @@ from tests.random import n_mode_mixed_state
 math = Math()  # use methods in math if you want them to be differentiable
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
+allowed_values_precision = [128, 256, 384, 512]
 
 def allowed_cutoffs(max_cutoffs):
     r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
@@ -36,14 +38,13 @@ def random_ABC(draw, M):
     A, B, G0 = wigner_to_bargmann_rho(state.cov, state.means)
     return A, B, G0
 
-@pytest.mark.parametrize("precision", ([128, 512]))
-@given(random_ABC(M=3))
-def test_compactFock_diagonal(A_B_G0):
+@pytest.mark.parametrize("precision", allowed_values_precision)
+def test_compactFock_diagonal(precision):
     """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
     settings.PRECISION_BITS_HERMITE_POLY = precision
 
     for cutoffs in allowed_cutoffs((7, 7, 7)):
-        A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
+        A, B, G0 = random_ABC(M=3)  # Create random state (M mode Gaussian state with displacement)
 
         # Vanilla MM
         G_ref = math.hermite_renormalized(
@@ -65,11 +66,12 @@ def test_compactFock_diagonal(A_B_G0):
         settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
-@given(random_ABC(M=3))
-def test_compactFock_1leftover(A_B_G0):
+@pytest.mark.parametrize("precision", allowed_values_precision)
+def test_compactFock_1leftover(precision):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     for cutoffs in allowed_cutoffs((7, 7, 7)):
-        A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
+        A, B, G0 = random_ABC(M=3)  # Create random state (M mode Gaussian state with displacement)
 
         # New algorithm
         G_leftover = math.hermite_renormalized_1leftoverMode(
@@ -89,9 +91,13 @@ def test_compactFock_1leftover(A_B_G0):
             ]
         assert np.allclose(ref_leftover, G_leftover)
 
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
-def test_compactFock_diagonal_gradients():
+
+@pytest.mark.parametrize("precision", allowed_values_precision)
+def test_compactFock_diagonal_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Ggate(num_modes=3, symplectic_trainable=True)
 
     def cost_fn():
@@ -109,9 +115,12 @@ def test_compactFock_diagonal_gradients():
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
-def test_compactFock_1leftover_gradients():
+@pytest.mark.parametrize("precision", allowed_values_precision)
+def test_compactFock_1leftover_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Ggate(num_modes=3, symplectic_trainable=True)
 
     def cost_fn():
@@ -128,3 +137,5 @@ def test_compactFock_1leftover_gradients():
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
+
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision

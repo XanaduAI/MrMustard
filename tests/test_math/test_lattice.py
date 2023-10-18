@@ -21,12 +21,13 @@ from mrmustard.lab import Gaussian
 from mrmustard import settings
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
+allowed_values_precision = [128, 256, 384, 512]
 
-
-@pytest.mark.parametrize("precision", ([128, 512]))
+@pytest.mark.parametrize("precision", allowed_values_precision)
 def test_vanillaNumba_vs_binomial(precision):
     """Test that the vanilla method and the binomial method give the same result.
     Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
+    print("A",precision)
     settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Gaussian(2)
 
