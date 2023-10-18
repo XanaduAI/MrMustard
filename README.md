@@ -31,6 +31,16 @@ Mr Mustard supports:
 - Plug-and-play backends (TensorFlow as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
+# Julia
+MrMustard requires [Julia](https://julialang.org/) to be installed as well as the following Julia packages:
+* [PyCall](https://github.com/JuliaPy/PyCall.jl)
+* [MultiFloats](https://docs.juliahub.com/MultiFloats)
+
+Installing these packages can be done by running:
+
+```julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"```
+
+
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
 
