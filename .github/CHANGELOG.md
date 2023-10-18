@@ -23,6 +23,15 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
+
+* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
+that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
+This is done by representing Fock amplitudes with a higher precision than complex128 
+(which counters the accumulation of floating-point errors). 
+We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+[(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
+
+
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
 
@@ -40,7 +49,9 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), 
-[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
+[Yuan Yao](https://github.com/sylviemonet),
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin)
 
 ---
 
@@ -155,7 +166,6 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
 [Richard A. Wolf](https://github.com/ryk-wolf), [Yuan YAO](https://github.com/sylviemonet)
-
 
 ---
 
