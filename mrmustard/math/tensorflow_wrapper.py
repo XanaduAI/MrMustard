@@ -382,7 +382,9 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
+
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
@@ -396,6 +398,7 @@ class TFMath(MathInterface):
                 _B.astype(np.complex128),
                 _C.astype(np.complex128),
             )
+
             G = Main_julia.Vanilla.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits)
 
         def grad(dLdGconj):
@@ -514,9 +517,7 @@ class TFMath(MathInterface):
             dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
             return dLdA, dLdB, dLdC
 
-            return poly0, grad
-
-
+        return poly0, grad
 
     def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
