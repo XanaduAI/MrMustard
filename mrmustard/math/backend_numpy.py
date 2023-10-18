@@ -22,7 +22,11 @@ class BackendNumpy(BackendBase):
     A numpy backend.
     """
 
-    int32 = np.int
+    int32 = None
+    float64 = None
+    float32 = None
+    complex64 = None
+    complex128 = None
 
     def __init__(self):
         super().__init__(name="numpy")

@@ -158,9 +158,11 @@ class BackendManager:
 
     def __new__(cls):
         # singleton
-        if not hasattr(cls, "instance"):
+        try:
+            return cls.instance
+        except AttributeError:
             cls.instance = super(BackendManager, cls).__new__(cls)
-        return cls.instance
+            return cls.instance
 
     # ~~~~~~~
     # Methods
