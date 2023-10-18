@@ -20,8 +20,8 @@ from .autocast import *
 from .caching import *
 from .backend_base import *
 from .backend_manager import BackendManager
+from .compactFock import *
 from .lattice import *
-from .numba import *
 from .tensor_networks import *
 from .tensor_wrappers import *
 

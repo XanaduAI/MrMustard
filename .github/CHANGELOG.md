@@ -1,4 +1,43 @@
-# Release 0.6.0 (development release)
+# Release 0.7.0 (development release)
+
+### New features
+* Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
+  [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
+
+### Breaking changes
+* Removed circular dependencies by:
+  * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
+  * Moving `circuit_drawer` and `wigner` to `physics`.
+  * Moving `xptensor` to `math`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Created `settings.py` file to host `Settings`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+### Improvements
+
+* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
+that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
+This is done by representing Fock amplitudes with a higher precision than complex128 
+(which counters the accumulation of floating-point errors). We run Julia code via PyJulia (where Numba was used before)
+to keep the code fast.
+  [(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
+
+### Bug fixes
+
+* Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
+[(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
+
+### Documentation
+
+### Contributors
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin)
+
+# Release 0.6.0 (current release)
 
 ### New features
 
@@ -6,20 +45,19 @@
 reliable for systems with high number of excitations, for which the pre-existing iterative method is known to be unstable. Users
 can select their preferred methods by setting the value of `Settings.DISCRETIZATION_METHOD` to either `interactive` (default) or
 `clenshaw`.
+  [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
 
-* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
-  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation. It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
   [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
-
-* Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
 
 ### Breaking changes
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
   methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+  [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
-* Certain attributes of `Settings` can no longer be changed after their value is queried for the
-  first time.
+* Certain attributes of `Settings` can no longer be changed after their value is queried for the first time.
+  [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
 ### Improvements
 
@@ -27,20 +65,28 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
 
 * Incorporated `Tensor` into `Transformation` in order to deal with modes more robustly.
+  [(#287)](https://github.com/XanaduAI/MrMustard/pull/287)
 
 * Created the classes `Unitary` and `Channel` to simplify the logic in `Transformation`.
+  [(#287)](https://github.com/XanaduAI/MrMustard/pull/287)
 
 ### Bug fixes
 
-* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm).
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
 
 * Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
+  [(#283)](https://github.com/XanaduAI/MrMustard/pull/283)
 
 ### Documentation
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), 
-[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
+[Yuan Yao](https://github.com/sylviemonet),
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin)
+[Zeyue Niu](https://github.com/zeyueN)
+
 
 ---
 
@@ -65,7 +111,6 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
   def cost_fn():
       ...
-
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -128,10 +173,10 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * More robust implementation of cutoffs for States.
-[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * Dependencies and versioning are now managed using Poetry.
-[(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
+  [(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
 
 ### Bug fixes
 
@@ -144,8 +189,6 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 * When projecting a Gaussian state onto a Fock state, the upper limit of the autocutoff now respect the Fock projection.
   [(#246)](https://github.com/XanaduAI/MrMustard/pull/246)
 
-* Fixed the internal function to calculate ABC of Bargmann representation (now corresponds to the literature) and other fixes to get the correct Fock tensor. [(#255)](https://github.com/XanaduAI/MrMustard/pull/255)
-
 * Fixed a bug for the algorithms that allow faster PNR sampling from Gaussian circuits using density matrices. When the 
 cutoff of the first detector is equal to 1, the resulting density matrix is now correct.
 
@@ -154,8 +197,7 @@ cutoff of the first detector is equal to 1, the resulting density matrix is now 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), [Zeyue Niu](https://github.com/zeyueN), 
 [Robbe De Prins](https://github.com/rdprins), [Gabriele Gullì](https://github.com/ggulli),
-[Richard A. Wolf](https://github.com/ryk-wolf), [Yuan YAO](https://github.com/sylviemonet)
-
+[Richard A. Wolf](https://github.com/ryk-wolf)
 
 ---
 

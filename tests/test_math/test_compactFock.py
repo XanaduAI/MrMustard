@@ -1,5 +1,5 @@
 """
-Unit tests for mrmustard.math.numba.compactFock~
+Unit tests for mrmustard.math.compactFock.compactFock~
 """
 import numpy as np
 from hypothesis import given

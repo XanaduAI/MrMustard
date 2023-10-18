@@ -561,7 +561,7 @@ class BackendManager:
     def hermite_renormalized_diagonal(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
     ) -> Tensor:
-        r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.backend.numba.compactFock~
+        r"""Firsts, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculates the required renormalized multidimensional Hermite polynomial.
         """
         return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
@@ -569,7 +569,7 @@ class BackendManager:
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
     ) -> Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         return self._apply("hermite_renormalized_1leftoverMode", (A, B, C, cutoffs))
