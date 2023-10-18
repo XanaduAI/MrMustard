@@ -299,7 +299,6 @@ class Settings:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
             )
-        old_value = self._precision_bits_hermite_poly
         self._precision_bits_hermite_poly = value
 
         if (
