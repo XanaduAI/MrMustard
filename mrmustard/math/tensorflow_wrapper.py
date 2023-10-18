@@ -491,7 +491,7 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
         if precision_bits == 128:  # numba (complex128)
@@ -503,18 +503,19 @@ class TFMath(MathInterface):
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             poly0, poly2, poly1010, poly1001, poly1 = Main_julia.DiagonalAmps.fock_diagonal_amps(
-                A, B, C, cutoffs, precision_bits
+                A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
         def grad(dLdpoly):
             if precision_bits == 128:  # numba (complex128)
                 dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
                     grad_hermite_multidimensional_diagonal,
-                    [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                    [A, B, C.item(), poly0, poly2, poly1010, poly1001, poly1],
                     [poly0.dtype] * 3,
                 )
             else:  # julia (higher precision than complex128)
-                dpoly_dC, dpoly_dA, dpoly_dB = Main_julia.DiagonalGrad.fock_diagonal_grad(
+                dpoly_dC = poly0 / C.item()
+                dpoly_dA, dpoly_dB = Main_julia.DiagonalGrad.fock_diagonal_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 
@@ -556,11 +557,12 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
         if precision_bits == 128:  # numba (complex128)
             poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-                hermite_multidimensional_1leftoverMode, [A, B, C, cutoffs], [A.dtype] * 5
+                hermite_multidimensional_1leftoverMode, [A, B, C.item(), cutoffs], [A.dtype] * 5
             )
         else:  # julia (higher precision than complex128)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
@@ -573,7 +575,7 @@ class TFMath(MathInterface):
                 poly1001,
                 poly1,
             ) = Main_julia.LeftoverModeAmps.fock_1leftoverMode_amps(
-                A, B, C, cutoffs, precision_bits
+                A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
         def grad(dLdpoly):
@@ -584,7 +586,8 @@ class TFMath(MathInterface):
                     [poly0.dtype] * 3,
                 )
             else:  # julia (higher precision than complex128)
-                dpoly_dC, dpoly_dA, dpoly_dB = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                dpoly_dC = poly0 / C.item()
+                dpoly_dA, dpoly_dB = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 

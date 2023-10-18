@@ -28,7 +28,7 @@ allowed_values_precision = [128, 256, 384, 512]
 def test_vanillaNumba_vs_binomial(precision):
     """Test that the vanilla method and the binomial method give the same result.
     Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
-    print("A", precision)
+
     settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Gaussian(2)
 
