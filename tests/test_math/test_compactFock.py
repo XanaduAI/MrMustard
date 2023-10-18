@@ -19,6 +19,7 @@ math = Math()  # use methods in math if you want them to be differentiable
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 allowed_values_precision = [128, 256, 384, 512]
 
+
 def allowed_cutoffs(max_cutoffs):
     r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
     res = []
@@ -37,6 +38,7 @@ def random_ABC(draw, M):
     state = draw(n_mode_mixed_state(M))
     A, B, G0 = wigner_to_bargmann_rho(state.cov, state.means)
     return A, B, G0
+
 
 @pytest.mark.parametrize("precision", allowed_values_precision)
 def test_compactFock_diagonal(precision):
@@ -116,6 +118,7 @@ def test_compactFock_diagonal_gradients(precision):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
+
 
 @pytest.mark.parametrize("precision", allowed_values_precision)
 def test_compactFock_1leftover_gradients(precision):

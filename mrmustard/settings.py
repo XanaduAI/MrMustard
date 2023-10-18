@@ -304,8 +304,12 @@ class Settings:
             Main_julia.include("math/lattice/strategies/julia/compactFock/helperFunctions.jl")
             Main_julia.include("math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
             Main_julia.include("math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl")
+            Main_julia.include(
+                "math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
+            )
+            Main_julia.include(
+                "math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
+            )
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
