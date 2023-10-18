@@ -103,7 +103,8 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
-        self._julia_already_initialized = ImmutableSetting(False, "julia_already_initialized")
+        self._allowed_precision_bits_hermite_poly = ImmutableSetting([128, 256, 384, 512], "ALLOWED_PRECISION_BITS_HERMITE_POLY")
+        self._julia_already_initialized = ImmutableSetting(False, "JULIA_ALREADY_INITIALIZED")
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -283,7 +284,7 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = [128, 256, 384, 512]
+        allowed_values = self._allowed_precision_bits_hermite_poly
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
@@ -311,7 +312,7 @@ class Settings:
             Main_julia.include(
                 "math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
             )
-            self._julia_already_initialized = True
+            self._julia_already_initialized = ImmutableSetting(True, "JULIA_ALREADY_INITIALIZED")
 
     # use rich.table to print the settings
     def __repr__(self) -> str:

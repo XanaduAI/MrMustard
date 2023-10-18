@@ -17,7 +17,7 @@ from tests.random import n_mode_mixed_state
 math = Math()  # use methods in math if you want them to be differentiable
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
-allowed_values_precision = [128, 256, 384, 512]
+allowed_values_precision = settings.ALLOWED_PRECISION_BITS_HERMITE_POLY
 
 
 def allowed_cutoffs(max_cutoffs):

@@ -21,7 +21,7 @@ from mrmustard.lab import Gaussian
 from mrmustard import settings
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
-allowed_values_precision = [128, 256, 384, 512]
+allowed_values_precision = settings.ALLOWED_PRECISION_BITS_HERMITE_POLY
 
 
 @pytest.mark.parametrize("precision", allowed_values_precision)
