@@ -259,6 +259,43 @@ class Sgate(Parametrized, Unitary):
         else:
             return fock.squeezer(r[0], phi[0], shape=shape)
 
+    def U(self, cutoffs: Sequence[int]):
+        r"""Returns the unitary representation of the Squeezing gate.
+        Args:
+            cutoffs (Sequence[int]): the Hilbert space dimension cutoff for each mode
+
+        Returns:
+            array[complex]: the unitary matrix
+        """
+        N = self.num_modes
+        if len(cutoffs) == N:
+            shape = tuple(cutoffs) * 2
+        elif len(cutoffs) == 2 * N:
+            shape = tuple(cutoffs)
+        else:
+            raise ValueError(
+                "len(cutoffs) should be either equal to the number of modes or twice the number of modes (for output-input)."
+            )
+        # this works both or scalar r/phi and vector r/phi:
+        r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
+        phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
+
+        if N > 1:
+            # calculate squeezing unitary for each mode and concatenate with outer product
+            Us = None
+            for idx, single_shape in enumerate(zip(shape[:N], shape[N:])):
+                if Us is None:
+                    Us = fock.squeezer(r[idx], phi[idx], shape=single_shape)
+                else:
+                    U_next = fock.squeezer(r[idx], phi[idx], shape=single_shape)
+                    Us = math.outer(Us, U_next)
+            return math.transpose(
+                Us,
+                list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
+            )
+        else:
+            return fock.squeezer(r[0], phi[0], shape=shape)
+
     @property
     def X_matrix(self):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
@@ -580,6 +617,33 @@ class BSgate(Parametrized, Unitary):
 
         shape = shape or cutoffs
 
+        return fock.beamsplitter(
+            self.theta.value,
+            self.phi.value,
+            shape=shape,
+            method=method or settings.DEFAULT_BS_METHOD,
+        )
+
+    def U(self, cutoffs: Optional[List[int]], method=None):
+        r"""Returns the symplectic transformation matrix for the beam splitter.
+
+        Args:
+            cutoffs (List[int]): the list of cutoff dimensions for each mode
+                in the order (out_0, out_1, in_0, in_1).
+            method (str): the method used to compute the unitary matrix. Options are:
+                * 'vanilla': uses the standard method
+                * 'schwinger': slower, but numerically stable
+            default is set in settings.DEFAULT_BS_METHOD (with 'vanilla' by default)
+
+        Returns:
+            array[complex]: the unitary tensor of the beamsplitter
+        """
+        if len(cutoffs) == 4:
+            shape = tuple(cutoffs)
+        elif len(cutoffs) == 2:
+            shape = tuple(cutoffs) + tuple(cutoffs)
+        else:
+            raise ValueError(f"Invalid len(cutoffs): {len(cutoffs)} (should be 2 or 4).")
         return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
