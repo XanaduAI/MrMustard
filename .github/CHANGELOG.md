@@ -23,7 +23,6 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
-
 * Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
 that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
 This is done by representing Fock amplitudes with a higher precision than complex128 
