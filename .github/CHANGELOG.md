@@ -11,6 +11,8 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
   [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
 
+* Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
+
 ### Breaking changes
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
@@ -32,6 +34,10 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
+
+* Incorporated `Tensor` into `Transformation` in order to deal with modes more robustly.
+
+* Created the classes `Unitary` and `Channel` to simplify the logic in `Transformation`.
 
 ### Bug fixes
 

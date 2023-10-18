@@ -29,6 +29,8 @@ from mrmustard.typing import RealMatrix, RealVector
 from mrmustard.utils.circdrawer import circuit_text
 from mrmustard.utils.xptensor import XPMatrix, XPVector
 
+import numpy as np
+
 
 class Circuit(Transformation, Parametrized):
     """Represents a quantum circuit: a set of operations to be applied on quantum states.
@@ -39,7 +41,7 @@ class Circuit(Transformation, Parametrized):
 
     def __init__(self, ops: Optional[List] = None):
         self._ops = list(ops) if ops is not None else []
-        super().__init__()
+        super().__init__(name="Circuit")
         self.reset()
 
     def reset(self):
@@ -97,6 +99,9 @@ class Circuit(Transformation, Parametrized):
         """Returns `true` if all operations in the circuit are unitary."""
         return all(op.is_unitary for op in self._ops)
 
+    def value(self, shape: Tuple[int]):
+        raise NotImplementedError
+
     def __len__(self):
         return len(self._ops)
 
@@ -112,3 +117,19 @@ class Circuit(Transformation, Parametrized):
         """String representation of the circuit."""
         ops_repr = [repr(op) for op in self._ops]
         return " >> ".join(ops_repr)
+
+    # pylint: disable=too-many-branches,too-many-return-statements
+    def __eq__(self, other):
+        r"""Returns ``True`` if the two transformations are equal."""
+        if not isinstance(other, Circuit):
+            return False
+        if not (self.is_gaussian and other.is_gaussian):
+            return np.allclose(
+                self.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                other.choi(cutoffs=[settings.EQ_TRANSFORMATION_CUTOFF] * 4 * self.num_modes),
+                rtol=settings.EQ_TRANSFORMATION_RTOL_FOCK,
+            )
+
+        sX, sY, sd = self.XYd(allow_none=False)
+        oX, oY, od = other.XYd(allow_none=False)
+        return np.allclose(sX, oX) and np.allclose(sY, oY) and np.allclose(sd, od)
