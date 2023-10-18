@@ -15,8 +15,10 @@
 """A module containing the settings.
 """
 
+import os
 from rich import print
 import rich.table
+from julia.api import Julia
 import numpy as np
 
 __all__ = ["Settings", "settings"]
@@ -100,6 +102,7 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
+        self._precision_bits_hermite_poly = 128
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -268,6 +271,35 @@ class Settings:
     def SEED(self, value):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
+
+    @property
+    def PRECISION_BITS_HERMITE_POLY(self):
+        r"""
+        The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
+        Default is 128 (i.e. the Fock representation has dtype complex128).
+        """
+        return self._precision_bits_hermite_poly
+
+    @PRECISION_BITS_HERMITE_POLY.setter
+    def PRECISION_BITS_HERMITE_POLY(self, value: int):
+        allowed_values = [128, 512]
+        if value not in allowed_values:
+            raise ValueError(
+                f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
+            )
+        self._precision_bits_hermite_poly = value
+
+        if value != 128:
+            # initialize Julia
+            # the next line must be run before "from julia import Main as Main_julia"
+            _ = Julia(compiled_modules=False)
+            # julia must be imported after running "_ = Julia(compiled_modules=False)"
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+
+            # import Julia functions
+            math_directory = os.path.dirname(__file__)
+            Main_julia.cd(math_directory)
+            Main_julia.include("math/lattice/strategies/vanilla.jl")
 
     # use rich.table to print the settings
     def __repr__(self) -> str:

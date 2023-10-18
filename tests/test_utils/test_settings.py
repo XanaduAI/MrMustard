@@ -60,11 +60,15 @@ class TestSettings:
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
         assert settings.PNR_INTERNAL_CUTOFF == 50
         assert settings.HOMODYNE_SQUEEZING == 10.0
+        assert settings.PRECISION_BITS_HERMITE_POLY == 128
         assert settings.PROGRESSBAR is True
         assert settings.DEFAULT_BS_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
 
         with pytest.raises(ValueError, match="Cannot change"):
             settings.HBAR = 3
+
+        with pytest.raises(ValueError, match="precision_bits_hermite_poly"):
+            settings.PRECISION_BITS_HERMITE_POLY = 9
 
     def test_settings_seed_randomness_at_init(self):
         """Test that the random seed is set randomly as MM is initialized."""
