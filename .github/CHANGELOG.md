@@ -17,6 +17,8 @@ to keep the code fast.
 
 ### Bug fixes
 
+* Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
+
 ### Documentation
 
 ### Contributors

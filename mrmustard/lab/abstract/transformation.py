@@ -40,23 +40,6 @@ class Transformation(Tensor):
     Base class for all Transformations.
     """
 
-    def bargmann(self, numpy=False):
-        X, Y, d = self.XYd(allow_none=False)
-        if self.is_unitary:
-            A, B, C = bargmann.wigner_to_bargmann_U(
-                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
-                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
-            )
-        else:
-            A, B, C = bargmann.wigner_to_bargmann_Choi(
-                X if X is not None else math.identity(d.shape[-1], dtype=d.dtype),
-                Y if Y is not None else math.zeros((d.shape[-1], d.shape[-1]), dtype=d.dtype),
-                d if d is not None else math.zeros(X.shape[-1], dtype=X.dtype),
-            )
-        if numpy:
-            return math.asnumpy(A), math.asnumpy(B), math.asnumpy(C)
-        return A, B, C
-
     def primal(self, state: State) -> State:
         r"""Applies this transformation to the given ``state`` and returns the transformed state.
 
