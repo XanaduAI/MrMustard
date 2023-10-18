@@ -30,7 +30,7 @@ from mrmustard.math.compactFock.compactFock_inputValidation import (
     hermite_multidimensional_diagonal,
 )
 from mrmustard.utils.typing import Tensor, Trainable
-from mrmustard.math.math_interface import MathInterface
+from .math_interface import MathInterface
 
 
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
