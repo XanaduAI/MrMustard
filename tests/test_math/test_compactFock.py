@@ -74,7 +74,7 @@ def test_compactFock_diagonal(A_B_G0):
 # @pytest.mark.parametrize("precision", allowed_values_precision)
 @given(random_ABC(M=3))
 def test_compactFock_1leftover(A_B_G0):
-# def test_compactFock_1leftover(precision):
+    # def test_compactFock_1leftover(precision):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
     for precision in allowed_values_precision:
         settings.PRECISION_BITS_HERMITE_POLY = precision

@@ -24,13 +24,14 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 ### Improvements
 
 
-* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
-that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
-This is done by representing Fock amplitudes with a higher precision than complex128 
-(which counters the accumulation of floating-point errors). 
+* Calculating Fock representations and their gradients is now more numerically stable (i.e. numerical blowups that 
+result from repeatedly applying the recurrence relation are postponed to higher cutoff values).
+This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/MrMustard/pull/274) and for the 
+"diagonal strategy" and "single leftover mode strategy" [(#288)](https://github.com/XanaduAI/MrMustard/pull/288/).
+This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors). 
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
-[(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
-
+The precision is controlled by setting settings.PRECISION_BITS_HERMITE_POLY. The default value is 128, 
+which uses the old Numba code. When setting to a higher value, the new Julia code is run.
 
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
