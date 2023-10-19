@@ -24,7 +24,7 @@ from typing import List, Optional, Tuple
 
 from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
-from mrmustard.training import Parametrized
+from mrmustard.training.parametrized import Parametrized
 from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard.lab.circuit_drawer import circuit_text
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector

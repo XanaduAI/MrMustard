@@ -23,7 +23,7 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.lab.abstract import Channel, Unitary, State
 from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
+from mrmustard.training.parametrized import Parametrized
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 import mrmustard.math as math
 

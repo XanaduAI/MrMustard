@@ -1,4 +1,4 @@
-# Copyright 2023 Xanadu Quantum Technologies Inc.
+# Copyright 2021 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,43 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+"""This module contains the numpy implementation of the :class:`Math` interface."""
 
 from math import lgamma as mlgamma
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 from scipy.linalg import expm as scipy_expm
 from scipy.special import xlogy as scipy_xlogy
 
-from .autocast import Autocast
-from .backend_base import BackendBase
-from ..utils.settings import settings
-from ..utils.typing import Trainable
-from .autocast import Autocast
+import numpy as np
 
-# from .compactFock.compactFock_inputValidation import (
-#     grad_hermite_multidimensional_1leftoverMode,
-#     grad_hermite_multidimensional_diagonal,
-#     hermite_multidimensional_1leftoverMode,
-#     hermite_multidimensional_diagonal,
-# )
+from mrmustard import settings
+from mrmustard.math.autocast import Autocast
+from mrmustard.math.lattice import strategies
+from mrmustard.typing import Tensor, Trainable
+
+from .math_interface import MathInterface
 
 
-class BackendNumpy(BackendBase):
-    r"""
-    A numpy backend.
-    """
+# pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
+class NPMath(MathInterface):
+    r"""Numpy implementation of the :class:`Math` interface."""
 
-    int32 = np.int32
     float64 = np.float64
     float32 = np.float32
     complex64 = np.complex64
     complex128 = np.complex128
 
-    def __init__(self):
-        super().__init__(name="numpy")
+    def __getattr__(self, name):
+        return getattr(np, name)
 
-    def hello(self):
-        print(f"Hello from {self._name} backend.")
+    # ~~~~~~~~~
+    # Basic ops
+    # ~~~~~~~~~
 
     def abs(self, array: np.array) -> np.array:
         return np.abs(array)
@@ -84,9 +79,6 @@ class BackendNumpy(BackendBase):
         if not isinstance(array, np.ndarray):
             return array
         return array.astype(dtype)  # gotta fix the warning
-
-    def custom_gradient(self, func, args, kwargs):
-        return np.gradient(func, *args, **kwargs)
 
     def clip(self, array, a_min, a_max) -> np.array:
         return np.clip(array, a_min, a_max)
@@ -183,7 +175,7 @@ class BackendNumpy(BackendBase):
     def eye(self, size: int, dtype=np.float64) -> np.array:
         return np.eye(size, dtype=dtype)
 
-    def eye_like(self, array: np.array) -> np.ndarray:
+    def eye_like(self, array: np.array) -> Tensor:
         return np.eye(array.shape[-1], dtype=array.dtype)
 
     def from_backend(self, value) -> bool:
@@ -336,7 +328,7 @@ class BackendNumpy(BackendBase):
         np.add.at(tensor, indices, values)
         return tensor
 
-    def unique_tensors(self, lst: List[np.ndarray]) -> List[np.ndarray]:
+    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
         hash_dict = {}
         for tensor in lst:
             try:
@@ -350,7 +342,7 @@ class BackendNumpy(BackendBase):
         return np.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: np.array) -> np.array:
-        return np.zeros(np.array(array).shape)
+        return np.zeros(array.shape)
 
     def map_fn(self, func, elements):
         # ??
@@ -360,15 +352,15 @@ class BackendNumpy(BackendBase):
     def squeeze(self, tensor, axis=None):
         return np.squeeze(tensor, axis=axis)
 
-    def cholesky(self, input: np.ndarray):
+    def cholesky(self, input: Tensor):
         return np.linalg.cholesky(input)
 
-    def Categorical(self, probs: np.ndarray, name: str):
+    def Categorical(self, probs: Tensor, name: str):
         # return tfp.distributions.Categorical(probs=probs, name=name)
         # ??
         pass
 
-    def MultivariateNormalTriL(self, loc: np.ndarray, scale_tril: np.ndarray):
+    def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
         # return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
         # ??
         pass
@@ -393,7 +385,7 @@ class BackendNumpy(BackendBase):
             parameters (List[Trainable]): The parameters to optimize.
 
         Returns:
-            tuple(np.ndarray, List[np.ndarray]): the loss and the gradients
+            tuple(Tensor, List[Tensor]): the loss and the gradients
         """
         # ??
         pass
@@ -415,13 +407,11 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        from .lattice.strategies import vanilla
-
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        G = vanilla(tuple(shape), _A, _B, _C)
+        G = strategies.vanilla(tuple(shape), _A, _B, _C)
 
         # def grad(dLdGconj):
-        #     dLdA, dLdB, dLdC = vanilla_vjp(G, _C, np.conj(dLdGconj))
+        #     dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
         #     return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         # return G, grad
@@ -453,9 +443,7 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        from .lattice.strategies import binomial
-
-        G, _ = binomial(
+        G, _ = strategies.binomial(
             tuple(shape),
             A,
             B,
@@ -465,9 +453,7 @@ class BackendNumpy(BackendBase):
         )
 
         def grad(dLdGconj):
-            from .lattice.strategies import vanilla_vjp
-
-            dLdA, dLdB, dLdC = vanilla_vjp(G, C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
@@ -548,31 +534,31 @@ class BackendNumpy(BackendBase):
         pass
 
     @staticmethod
-    def eigvals(tensor: np.array) -> np.ndarray:
+    def eigvals(tensor: np.array) -> Tensor:
         """Returns the eigenvalues of a matrix."""
         return np.linalg.eigvals(tensor)
 
     @staticmethod
-    def eigvalsh(tensor: np.array) -> np.ndarray:
+    def eigvalsh(tensor: np.array) -> Tensor:
         """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
         return np.linalg.eigvalsh(tensor)
 
     @staticmethod
-    def svd(tensor: np.array) -> np.ndarray:
+    def svd(tensor: np.array) -> Tensor:
         """Returns the Singular Value Decomposition of a matrix."""
         return np.linalg.svd(tensor)
 
     @staticmethod
-    def xlogy(x: np.array, y: np.array) -> np.ndarray:
+    def xlogy(x: np.array, y: np.array) -> Tensor:
         """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
         return scipy_xlogy(x, y)
 
     @staticmethod
-    def eigh(tensor: np.array) -> np.ndarray:
+    def eigh(tensor: np.array) -> Tensor:
         """Returns the eigenvalues and eigenvectors of a matrix."""
         return np.linalg.eigh(tensor)
 
-    def sqrtm(self, tensor: np.array, rtol=1e-05, atol=1e-08) -> np.ndarray:
+    def sqrtm(self, tensor: np.array, rtol=1e-05, atol=1e-08) -> Tensor:
         """Returns the matrix square root of a square matrix, such that ``sqrt(A) @ sqrt(A) = A``."""
 
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
@@ -581,7 +567,13 @@ class BackendNumpy(BackendBase):
         return np.linalg.sqrtm(tensor)
 
     @staticmethod
-    def boolean_mask(tensor: np.array, mask: np.array) -> np.ndarray:
+    def boolean_mask(tensor: np.array, mask: np.array) -> Tensor:
         """Returns a tensor based on the truth value of the boolean mask."""
+        # ??
+        pass
+
+    @staticmethod
+    def custom_gradient(func, *args, **kwargs):
+        """Decorator to define a function with a custom gradient."""
         # ??
         pass

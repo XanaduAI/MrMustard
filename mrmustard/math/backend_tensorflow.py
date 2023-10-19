@@ -18,7 +18,7 @@ import tensorflow_probability as tfp
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
-from mrmustard.math.backend_base import BackendBase
+from .backend_base import BackendBase
 from ..utils.settings import settings
 from ..utils.typing import Tensor, Trainable
 from .autocast import Autocast
@@ -46,7 +46,7 @@ class BackendTensorflow(BackendBase):
         super().__init__(name="tensorflow")
 
     def hello(self):
-        print(f"Hello from {self._name}")
+        print(f"Hello from {self._name} backend.")
 
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)

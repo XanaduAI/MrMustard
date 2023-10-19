@@ -73,7 +73,8 @@ import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 import numpy as np
-import tensorflow as tf
+
+# import tensorflow as tf
 import mrmustard.math as math
 
 
@@ -214,6 +215,8 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
 
     def init_writer(self, trainables):
         """Initializes tb logdir folders and writer."""
+        import tensorflow as tf
+
         if (self.writter_logdir is None) or (self.optimizer_step <= self.steps_per_call):
             trainable_key_hash = hashlib.sha256(
                 ",".join(trainables.keys()).encode("utf-8")
@@ -238,6 +241,7 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         **kwargs,
     ):  # pylint: disable=unused-argument,arguments-differ
         """Logs costs and parameters to Tensorboard."""
+        import tensorflow as tf
 
         self.init_writer(trainables=trainables)
         obj_tag = "objectives"

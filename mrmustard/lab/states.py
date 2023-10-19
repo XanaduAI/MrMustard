@@ -20,7 +20,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 from mrmustard import settings
 from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
+from mrmustard.training.parametrized import Parametrized
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
 from .abstract import State
