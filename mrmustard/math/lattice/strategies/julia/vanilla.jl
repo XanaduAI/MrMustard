@@ -12,7 +12,7 @@ function vanilla(
     """Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
     in ndindex (i.e. CartesianIndices) order.
     Both the input and output of this function have dtype Complex{Float64},
-    but Complex{Float64x4} is used intermediately to postpone the nummerical blowup
+    but a higher precision (i.e. ``precision_bits``) is used intermediately to postpone the nummerical blowup
     that results from the instable recurrence relation.
 
     Args:
@@ -20,6 +20,7 @@ function vanilla(
         b: B vector of the Fock-Bargmann representation
         c: vacuum amplitude
         shape: shape of the output tensor
+        precision_bits: the number of bits used to represent a single Fock amplitude
 
     Returns:
         Array{Complex{Float64}}: Fock representation of the Gaussian tensor with shape ``shape``
@@ -49,6 +50,7 @@ function update_Fock_array!(
     idx::CartesianIndex,
     SQRT::AbstractVector
     )
+    """Apply the recurrence relation once and update G at a certain index"""
 
     i, pivot = get_pivot(idx)
 

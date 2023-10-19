@@ -4,6 +4,10 @@ import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function write_block!(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode, SQRT)
+    """
+    Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    (cfr. algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097)
+    """
     m, n = 1, 1
     A_adapted = A[i, 3:end]
     G_in_adapted = G_in[1, 1, :]
@@ -33,6 +37,8 @@ function write_block!(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A,
 end
 
 function use_offDiag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1, T, SQRT)
+    """Given params=(a,b,c,...), apply the recurrence relation for the pivots
+    [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...] / ..."""
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
@@ -98,6 +104,7 @@ function use_offDiag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, 
 end
 
 function use_diag_pivot!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1, T, SQRT)
+    """Given params=(a,b,c,...), apply the recurrence relation for the pivot [a,a,b,b,c,c...]"""
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
@@ -169,6 +176,20 @@ function fock_1leftoverMode_amps(
     cutoffs::Tuple,
     precision_bits::Int64
     )
+    """Returns the density matrices in the upper, undetected mode of a circuit when all other modes are PNR detected
+    according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097
+    Args:
+        A, B, G0: required input for recurrence relation
+        cutoffs: upper bounds for the number of photons in each mode
+        precision_bits: number of bits used to represent a single Fock amplitude
+    Returns:
+        Submatrices of the Fock representation. Each submatrix contains Fock indices of a certain type.
+        arr0 --> type: [a,a,b,b,c,c...]
+        arr2 --> type: [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
+        arr1010 --> type: [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
+        arr1001 --> type: [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
+        arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
+    """
     
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]

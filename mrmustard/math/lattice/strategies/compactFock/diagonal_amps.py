@@ -122,8 +122,8 @@ def fock_representation_diagonal_amps_NUMBA(
     A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
 ):
     """
-    Returns the PNR probabilities of a state or Choi state
-    (by using the recurrence relation to calculate a limited number of Fock amplitudes)
+    Returns the PNR probabilities of a mixed state according to algorithm 1 of:
+    https://doi.org/10.22331/q-2023-08-29-1097
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
         M (int): number of modes

@@ -591,7 +591,8 @@ def fock_representation_1leftoverMode_grad_NUMBA(
     zero_tuple,
 ):
     """
-    Returns the PNR probabilities of a state or Choi state (by using the recurrence relation to calculate a limited number of Fock amplitudes)
+    Returns the gradients of the density matrices in the upper, undetected mode of a circuit when all other modes
+    are PNR detected (according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097)
     Args:
         A, B (array, Vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
         M (int): number of modes

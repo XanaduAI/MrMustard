@@ -4,6 +4,8 @@ import ..HelperFunctions
 import ..CompactFock_HelperFunctions
 
 function use_offDiag_pivot!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1, T, SQRT)
+    """Given params=(a,b,c,...), apply the recurrence relation for the pivots
+    [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...] / ..."""
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
 
@@ -58,6 +60,7 @@ function use_offDiag_pivot!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, ar
 end
 
 function use_diag_pivot!(A, B, M, cutoffs, params, arr0, arr1, T, SQRT)
+    """Given params=(a,b,c,...), apply the recurrence relation for the pivot [a,a,b,b,c,c...]"""
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
@@ -96,7 +99,7 @@ function fock_diagonal_amps(
     cutoffs::Tuple,
     precision_bits::Int64
     )
-    """Returns the PNR probabilities of a mixed state according to the following algorithm:
+    """Returns the PNR probabilities of a mixed state according to algorithm 1 of
     https://doi.org/10.22331/q-2023-08-29-1097
     Args:
         A, B, G0: required input for recurrence relation

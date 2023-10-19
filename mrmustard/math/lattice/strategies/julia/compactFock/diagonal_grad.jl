@@ -4,6 +4,15 @@ import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB)
+    """Calculate the derivatives of a single Fock amplitude w.r.t A and B.
+    Args:
+        i (int): the element of the multidim index that is increased
+        G_in, G_in_dA, G_in_dB (array, array, array): all Fock amplitudes from the 'read' group in the recurrence relation and their derivatives w.r.t. A and B
+        A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
+        K_l, K_i (vector, vector): SQRT[pivot], SQRT[pivot + 1]
+        M (int): number of modes
+        pivot_val, pivot_val_dA, pivot_val_dB (array, array, array): Fock amplitude at the position of the pivot and its derivatives w.r.t. A and B
+    """
     dA = pivot_val_dA .* B[i]
     dB = pivot_val_dB .* B[i]
     dB[i] += pivot_val
@@ -17,6 +26,8 @@ end
                                 
 function use_offDiag_pivot_grad!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1,
     arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB, T, SQRT)
+    """Given params=(a,b,c,...), apply the eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097)
+    for the pivots [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...] / ..."""
     
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
@@ -81,6 +92,8 @@ function use_offDiag_pivot_grad!(A, B, M, cutoffs, params, d, arr0, arr2, arr101
     end
 end
 function use_diag_pivot_grad!(A, B, M, cutoffs, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB, T, SQRT)
+    """Given params=(a,b,c,...), apply the eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097)
+     for the pivot [a,a,b,b,c,c...]"""
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
@@ -128,6 +141,20 @@ function fock_diagonal_grad(
     arr1::AbstractArray{Complex{Float64}},
     precision_bits::Int64
     )
+    """Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
+    https://doi.org/10.22331/q-2023-08-29-1097
+    Args:
+        A, B: required input for recurrence relation
+        Submatrices of the Fock representation. Each submatrix contains Fock indices of a certain type.
+            arr0 --> type: [a,a,b,b,c,c...]
+            arr2 --> type: [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
+            arr1010 --> type: [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
+            arr1001 --> type: [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
+            arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
+        precision_bits: number of bits used to represent a single Fock amplitude
+    Returns:
+        arr0_dA, arr0_dB: derivatives of arr0 w.r.t A and B
+    """
     
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]

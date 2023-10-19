@@ -1,6 +1,12 @@
 module CompactFock_HelperFunctions
 
 function repeat_twice(params)
+    """
+    Args:
+        params: [a,b,c,...]
+    Returns:
+        [a,a,b,b,c,c,...]
+    """
     pivot = Vector{Int64}(undef, 2 * length(params))
     for (i, val) in enumerate(params)
         pivot[2 * i - 1] = val
@@ -10,6 +16,12 @@ function repeat_twice(params)
 end
 
 function construct_dict_params(cutoffs)
+    """
+    Args:
+        cutoffs (tuple): upper bounds for the number of photons in each mode
+    Returns:
+        Dict: all possible values for (a,b,c,...), grouped in lists according to their sum a+b+c+...
+    """
     M = length(cutoffs)
     indices = Dict{Int64, Vector{Tuple}}()
     for sum_params in 0:sum(cutoffs)-1

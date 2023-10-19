@@ -4,6 +4,7 @@ import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, arr_read_pivot_dA, G_in_dA_adapted, arr_read_pivot_dB, G_in_dB_adapted, l_range)
+    """Apply eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097) for a single Fock amplitude"""
     dA = arr_read_pivot_dA[m, n, read_GB...,:,:] .* B[i]
     dB = arr_read_pivot_dB[m, n, read_GB...,:] .* B[i]
     dB[i] += arr_read_pivot[m, n, read_GB...]
@@ -16,6 +17,10 @@ function calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B
 end
 
 function write_block_grad(i, write, arr_read_pivot, read_GB, G_in, A, B, K_i, K_l, cutoff_leftoverMode, arr_write_dA, arr_read_pivot_dA, G_in_dA, arr_write_dB, arr_read_pivot_dB, G_in_dB, SQRT)
+    """
+    Apply eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097)
+    to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    """
     m, n = 1, 1
     l_range = 3:size(A)[2]
     A_adapted = A[i, 3:end]
@@ -63,6 +68,10 @@ function write_block_grad(i, write, arr_read_pivot, read_GB, G_in, A, B, K_i, K_
 end
 
 function read_block(arr_write, arr_write_dA, arr_write_dB, idx_write, arr_read, arr_read_dA, arr_read_dB, idx_read_tail)
+    """
+    Read the blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
+    and their derivatives w.r.t A and B and write them to G_in, G_in_dA, G_in_dB
+    """
     arr_write[:, :, idx_write] .= arr_read[:, :, idx_read_tail...]
     arr_write_dA[:, :, idx_write, :, :] .= arr_read_dA[:, :, idx_read_tail...,:, :]
     arr_write_dB[:, :, idx_write, :] .= arr_read_dB[:, :, idx_read_tail...,:]
@@ -71,6 +80,8 @@ end
 
 
 function use_offDiag_pivot_grad!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, d, arr0, arr2, arr1010, arr1001, arr1, arr0_dA, arr2_dA, arr1010_dA, arr1001_dA, arr1_dA, arr0_dB, arr2_dB, arr1010_dB, arr1001_dB, arr1_dB, T, SQRT)
+    """Given params=(a,b,c,...), apply the eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097)
+    for the pivots [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...] / ..."""
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
     pivot[2 * d - 1] += 1
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
@@ -138,6 +149,8 @@ end
 
 function use_diag_pivot_grad!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr1, arr0_dA, arr1_dA, arr0_dB, arr1_dB, T, SQRT)
     pivot = CompactFock_HelperFunctions.repeat_twice(params)
+    """Given params=(a,b,c,...), apply the eqs. 16 & 17 (of https://doi.org/10.22331/q-2023-08-29-1097)
+     for the pivot [a,a,b,b,c,c...]"""
     K_l = SQRT[pivot] # julia indexing counters extra zero in SQRT
     K_i = SQRT[pivot .+ 1] # julia indexing counters extra zero in SQRT
     G_in = zeros(Complex{T}, cutoff_leftoverMode, cutoff_leftoverMode, 2*M)
@@ -183,7 +196,7 @@ function use_diag_pivot_grad!(A, B, M, cutoff_leftoverMode, cutoffs_tail, params
 end
 
 function fill_firstMode_PNRzero!(arr0,arr0_dA,arr0_dB,A,B,M,cutoff_leftoverMode,SQRT)
-    # fill first mode for all PNR detections equal to zero
+    """fill first mode when all PNR detection values are equal to zero"""
     one_tuple = tuple(fill(1,M-1)...)
 
     for m in 1:cutoff_leftoverMode - 1
@@ -231,6 +244,20 @@ function fock_1leftoverMode_grad(
     arr1::AbstractArray{Complex{Float64}},
     precision_bits::Int64
     )
+    """Returns the gradients of the density matrices in the upper, undetected mode of a circuit when all other modes
+    are PNR detected (according to algorithm 2 of https://doi.org/10.22331/q-2023-08-29-1097)
+    Args:
+        A, B: required input for recurrence relation
+        Submatrices of the Fock representation. Each submatrix contains Fock indices of a certain type.
+            arr0 --> type: [a,a,b,b,c,c...]
+            arr2 --> type: [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
+            arr1010 --> type: [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
+            arr1001 --> type: [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
+            arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
+        precision_bits: number of bits used to represent a single Fock amplitude
+    Returns:
+        arr0_dA, arr0_dB: derivatives of arr0 w.r.t A and B
+    """
     
     T = GetPrecision.get_dtype(precision_bits)
     SQRT = GetPrecision.SQRT_dict[precision_bits]
