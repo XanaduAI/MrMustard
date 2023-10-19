@@ -67,15 +67,35 @@ class TestSettings:
     def test_setters(self):
         settings = Settings()
 
+        ap0 = settings.AUTOCUTOFF_PROBABILITY
+        settings.AUTOCUTOFF_PROBABILITY = 0.1
+        assert settings.AUTOCUTOFF_PROBABILITY == 0.1
+        settings.AUTOCUTOFF_PROBABILITY = ap0
+
         db0 = settings.DEBUG
         settings.DEBUG = True
         assert settings.DEBUG is True
         settings.DEBUG = db0
 
-        ap0 = settings.AUTOCUTOFF_PROBABILITY
-        settings.AUTOCUTOFF_PROBABILITY = 0.1
-        assert settings.AUTOCUTOFF_PROBABILITY == 0.1
-        settings.AUTOCUTOFF_PROBABILITY = ap0
+        dbsm0 = settings.DEFAULT_BS_METHOD
+        settings.DEFAULT_BS_METHOD = "schwinger"
+        assert settings.DEFAULT_BS_METHOD == "schwinger"
+        settings.DEFAULT_BS_METHOD = dbsm0
+
+        eqtc0 = settings.EQ_TRANSFORMATION_CUTOFF
+        settings.EQ_TRANSFORMATION_CUTOFF = 2
+        assert settings.EQ_TRANSFORMATION_CUTOFF == 2
+        settings.EQ_TRANSFORMATION_CUTOFF = eqtc0
+
+        pnr0 = settings.PNR_INTERNAL_CUTOFF
+        settings.PNR_INTERNAL_CUTOFF = False
+        assert settings.PNR_INTERNAL_CUTOFF is False
+        settings.PNR_INTERNAL_CUTOFF = pnr0
+
+        pb0 = settings.PROGRESSBAR
+        settings.PROGRESSBAR = False
+        assert settings.PROGRESSBAR is False
+        settings.PROGRESSBAR = pb0
 
         s0 = settings.SEED
         settings.SEED = None
