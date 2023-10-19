@@ -96,6 +96,20 @@ function fock_diagonal_amps(
     cutoffs::Tuple,
     precision_bits::Int64
     )
+    """Returns the PNR probabilities of a mixed state according to the following algorithm:
+    https://doi.org/10.22331/q-2023-08-29-1097
+    Args:
+        A, B, G0: required input for recurrence relation
+        cutoffs: upper bounds for the number of photons in each mode
+        precision_bits: number of bits used to represent a single Fock amplitude
+    Returns:
+        Submatrices of the Fock representation. Each submatrix contains Fock indices of a certain type.
+        arr0 --> type: [a,a,b,b,c,c...]
+        arr2 --> type: [a+2,a,b,b,c,c...] / [a,a,b+2,b,c,c...] / ...
+        arr1010 --> type: [a+1,a,b+1,b,c,c,...] / [a+1,a,b,b,c+1,c,...] / [a,a,b+1,b,c+1,c,...] / ...
+        arr1001 --> type: [a+1,a,b,b+1,c,c,...] / [a+1,a,b,b,c,c+1,...] / [a,a,b+1,b,c,c+1,...] / ...
+        arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
+    """
     
     T = HelperFunctions.get_dtype(precision_bits)
     SQRT = HelperFunctions.SQRT_dict[precision_bits]

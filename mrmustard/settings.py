@@ -104,7 +104,7 @@ class Settings:
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
         self._allowed_precision_bits_hermite_poly = [128, 256, 384, 512]
-        self._julia_already_initialized = False
+        self._julia_initialized = False
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -275,9 +275,9 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
 
     @property
-    def JULIA_ALREADY_INITIALIZED(self):
+    def JULIA_INITIALIZED(self):
         r"""True if Julia was previously initialized, False otherwise"""
-        return self._julia_already_initialized
+        return self._julia_initialized
 
     @property
     def ALLOWED_PRECISION_BITS_HERMITE_POLY(self):
@@ -302,7 +302,7 @@ class Settings:
         self._precision_bits_hermite_poly = value
 
         if (
-            value != 128 and not self._julia_already_initialized
+            value != 128 and not self._julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
             # the next line must be run before "from julia import Main as Main_julia"
             _ = Julia(compiled_modules=False)
@@ -324,7 +324,7 @@ class Settings:
                 "math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
             )
 
-            self._julia_already_initialized = True
+            self._julia_initialized = True
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
