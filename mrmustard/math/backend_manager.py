@@ -74,41 +74,50 @@ class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
-    # the backend in use
-    # TODO: This is not robust. Initialize NumpyBackend instead, when available
-    _backend: Optional[str] = None
 
-    # the configured Euclidean optimizer.
-    _euclidean_opt: type = None
+    def __init__(self):
+        # the backend in use
+        self._backend: Optional[str] = None
+
+        # the configured Euclidean optimizer.
+        self._euclidean_opt: type = None
+
+        # start in numpy backend
+        self.change_backend("numpy")
 
     @property
     def backend(self):
         r"""
         The backend that is being used.
         """
-        name = settings.BACKEND
+        return self._backend
+
+    def change_backend(self, name: str):
+        r"""
+        Changes the backend to a different one.
+
+        Args:
+            name: The name of the new backend.
+        """
         if self._backend and self._backend.name == name:
             # same backend as in the last call
             return self._backend
 
-        backend = settings.BACKEND
-        module = all_modules[backend]["module"]
-        object = all_modules[backend]["object"]
+        module = all_modules[name]["module"]
+        object = all_modules[name]["object"]
         try:
-            ret = getattr(module, object)()
+            backend = getattr(module, object)()
         except:
             # lazy import
-            loader = all_modules[backend]["loader"]
+            loader = all_modules[name]["loader"]
             loader.exec_module(module)
-            ret = getattr(module, object)()
+            backend = getattr(module, object)()
 
         # switch backend
-        self._backend = ret
+        self._backend = backend
 
         # bind
-        self._bind(ret)
-
-        return ret
+        self._bind(backend)
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
         r"""
