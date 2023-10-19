@@ -50,7 +50,7 @@ class TestTransformations:
         contraction = contract([s_tens, r_tens, d_tens], default_dim)
 
         s_mat = Sgate(0.1).U(shape=(default_dim, dim))
-        r_mat = Rgate(0.2).U(shape=(dim, dim))
+        r_mat = Rgate(0.2).U(shape=(dim, dim, dim, dim))
         d_mat = Dgate(0.3).U(shape=(dim, default_dim))
         expected = np.dot(s_mat, r_mat)
         expected = np.dot(expected, d_mat)

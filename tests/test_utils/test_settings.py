@@ -64,6 +64,25 @@ class TestSettings:
         assert settings.PROGRESSBAR is True
         assert settings.DEFAULT_BS_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
 
+    def test_setters(self):
+        settings = Settings()
+
+        db0 = settings.DEBUG
+        settings.DEBUG = True
+        assert settings.DEBUG is True
+        settings.DEBUG = db0
+
+        ap0 = settings.AUTOCUTOFF_PROBABILITY
+        settings.AUTOCUTOFF_PROBABILITY = 0.1
+        assert settings.AUTOCUTOFF_PROBABILITY == 0.1
+        settings.AUTOCUTOFF_PROBABILITY = ap0
+
+        s0 = settings.SEED
+        settings.SEED = None
+        assert settings.SEED is not None
+        settings.SEED = s0
+
+        assert settings.HBAR == 2.0
         with pytest.raises(ValueError, match="Cannot change"):
             settings.HBAR = 3
 
