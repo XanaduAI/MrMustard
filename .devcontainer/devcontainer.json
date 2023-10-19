@@ -15,6 +15,7 @@
 			"extensions": [
 				"ms-python.python",
 				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter",
 				"eamodio.gitlens",
 				"dbaeumer.vscode-eslint",
 				"GitHub.vscode-pull-request-github",
