@@ -284,3 +284,26 @@ class Optimizer:
 
         def _render_traceback_(self):
             pass
+
+
+class Constant:
+    r"""
+    A constant parameter in Mr Mustard.
+
+    Args:
+        value: The value of this constant.
+        name: The name of this constant.
+    """
+
+
+class Variable:
+    r"""
+    A variable parameter in Mr Mustard.
+
+    Args:
+        value: The value of this variable.
+        name: The name of this variable.
+        bounds: The numerical bounds of this variable.
+        update_fn (optional): The function used to update this variable
+            during training. Defaults to ``update_euclidean``.
+    """
