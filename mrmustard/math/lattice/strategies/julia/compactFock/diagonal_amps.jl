@@ -1,6 +1,6 @@
 module DiagonalAmps
 
-import ..HelperFunctions
+import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function use_offDiag_pivot!(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1, T, SQRT)
@@ -114,8 +114,8 @@ function fock_diagonal_amps(
         arr1 --> type: [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
     """
     
-    T = HelperFunctions.get_dtype(precision_bits)
-    SQRT = HelperFunctions.SQRT_dict[precision_bits]
+    T = GetPrecision.get_dtype(precision_bits)
+    SQRT = GetPrecision.SQRT_dict[precision_bits]
 
     M = length(cutoffs)
 
