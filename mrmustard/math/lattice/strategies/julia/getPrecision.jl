@@ -1,4 +1,4 @@
-module HelperFunctions
+module GetPrecision
 
 using MultiFloats
 

@@ -1,6 +1,6 @@
 module DiagonalGrad
 
-import ..HelperFunctions
+import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function calc_dA_dB(i, G_in_dA, G_in_dB, G_in, A, B, K_l, K_i, M, pivot_val, pivot_val_dA, pivot_val_dB)
@@ -129,8 +129,8 @@ function fock_diagonal_grad(
     precision_bits::Int64
     )
     
-    T = HelperFunctions.get_dtype(precision_bits)
-    SQRT = HelperFunctions.SQRT_dict[precision_bits]
+    T = GetPrecision.get_dtype(precision_bits)
+    SQRT = GetPrecision.SQRT_dict[precision_bits]
 
     cutoffs = size(arr0)
     M = length(cutoffs)

@@ -1,6 +1,6 @@
 module LeftoverModeGrad
 
-import ..HelperFunctions
+import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function calc_dA_dB(m, n, i, arr_read_pivot, read_GB, G_in_adapted, A_adapted, B, K_i, K_l_adapted, arr_read_pivot_dA, G_in_dA_adapted, arr_read_pivot_dB, G_in_dB_adapted, l_range)
@@ -232,8 +232,8 @@ function fock_1leftoverMode_grad(
     precision_bits::Int64
     )
     
-    T = HelperFunctions.get_dtype(precision_bits)
-    SQRT = HelperFunctions.SQRT_dict[precision_bits]
+    T = GetPrecision.get_dtype(precision_bits)
+    SQRT = GetPrecision.SQRT_dict[precision_bits]
     
     cutoffs = size(arr0)[2:end]
     M = length(cutoffs)

@@ -1,6 +1,6 @@
 module Vanilla
 
-import ..HelperFunctions
+import ..GetPrecision
 
 function vanilla(
     A::AbstractMatrix{Complex{Float64}},
@@ -25,8 +25,8 @@ function vanilla(
         Array{Complex{Float64}}: Fock representation of the Gaussian tensor with shape ``shape``
     """
 
-    T = HelperFunctions.get_dtype(precision_bits)
-    SQRT = HelperFunctions.SQRT_dict[precision_bits]
+    T = GetPrecision.get_dtype(precision_bits)
+    SQRT = GetPrecision.SQRT_dict[precision_bits]
 
     shape = Tuple(shape)
 

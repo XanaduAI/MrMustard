@@ -1,6 +1,6 @@
 module LeftoverModeAmps
 
-import ..HelperFunctions
+import ..GetPrecision
 import ..CompactFock_HelperFunctions
 
 function write_block!(i, arr_write, write, arr_read_pivot, read_GB, G_in, GB, A, K_i, cutoff_leftoverMode, SQRT)
@@ -170,8 +170,8 @@ function fock_1leftoverMode_amps(
     precision_bits::Int64
     )
     
-    T = HelperFunctions.get_dtype(precision_bits)
-    SQRT = HelperFunctions.SQRT_dict[precision_bits]
+    T = GetPrecision.get_dtype(precision_bits)
+    SQRT = GetPrecision.SQRT_dict[precision_bits]
 
     M = length(cutoffs)
     cutoff_leftoverMode = cutoffs[1]
