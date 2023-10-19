@@ -32,6 +32,7 @@ from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
 from mrmustard.typing import Tensor, Trainable
 from mrmustard.math.math_interface import MathInterface
 
+
 # pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
 class TFMath(MathInterface):
     r"""Tensorflow implemantion of the :class:`Math` interface."""
