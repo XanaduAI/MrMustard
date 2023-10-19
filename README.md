@@ -32,7 +32,7 @@ Mr Mustard supports:
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 # Julia
-MrMustard requires [Julia](https://julialang.org/) to be installed as well as the following Julia packages:
+MrMustard requires [Julia](https://github.com/JuliaLang/juliaup#installation) to be installed as well as the following Julia packages:
 * [PyCall](https://github.com/JuliaPy/PyCall.jl)
 * [MultiFloats](https://docs.juliahub.com/MultiFloats)
 

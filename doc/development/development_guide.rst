@@ -7,7 +7,7 @@ Dependencies
 Mr Mustard requires the following libraries be installed:
 
 * `Python <http://python.org/>`_ >= 3.9
-* `Julia <https://julialang.org/>`_ = 1.9.3
+* `Julia <https://github.com/JuliaLang/juliaup#installation>`_ = 1.9.3
 
 as well as the following Python packages:
 
