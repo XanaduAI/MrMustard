@@ -112,7 +112,15 @@ def wigner_to_bargmann_U(X, d):
 
 
 def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Sequence[int]):
-    r"""Returns the contraction of two A matrices."""
+    r"""Returns the contraction of an A matrix over a subset of indices.
+
+    Arguments:
+        Abc (tuple): the (A,b,c) triple
+        idx (tuple): the indices to contract over
+
+    Returns:
+        tuple: the contracted (A,b,c) triple
+    """
     n = len(idx) // 2
     A, b, c = Abc
     not_idx = [i for i in range(A.shape[-1]) if i not in idx]
@@ -140,6 +148,16 @@ def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Se
 
 
 def join_Abc(Abc1, Abc2):
+    r"""Joins two (A,b,c) triples into a single (A,b,c) triple by block addition of the A matrices and
+    concatenating the b vectors.
+
+    Arguments:
+        Abc1 (tuple): the first (A,b,c) triple
+        Abc2 (tuple): the second (A,b,c) triple
+
+    Returns:
+        tuple: the joined (A,b,c) triple
+    """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
 
@@ -155,8 +173,16 @@ def join_Abc(Abc1, Abc2):
     return A12, b12, c1 * c2
 
 
-def reorder_abc(Abc, order):
-    r"""Reorders the indices of the A matrix and b vector of a (A,b,c) triple."""
+def reorder_abc(Abc, order: Sequence[int]):
+    r"""Reorders the indices of the A matrix and b vector of a (A,b,c) triple.
+
+    Arguments:
+        Abc (tuple): the (A,b,c) triple
+        order (tuple): the new order of the indices
+
+    Returns:
+        tuple: the reordered (A,b,c) triple
+    """
     A, b, c = Abc
     A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
     b = math.gather(b, order, axis=-1)
@@ -164,7 +190,17 @@ def reorder_abc(Abc, order):
 
 
 def contract_two_Abc(Abc1, Abc2, idx1, idx2):
-    r"""Returns the contraction of two A matrices."""
+    r"""Returns the contraction of two A matrices over the given index pairs.
+
+    Arguments:
+        Abc1 (tuple): the first (A,b,c) triple
+        Abc2 (tuple): the second (A,b,c) triple
+        idx1 (tuple): the first indices to contract over
+        idx2 (tuple): the second indices to contract over (must have same length as idx1)
+
+    Returns:
+        tuple: the contracted (A,b,c) triple
+    """
     return contract_Abc_base(
         join_Abc(Abc1, Abc2), tuple(idx1) + tuple(i + Abc1[0].shape[-1] for i in idx2)
     )
