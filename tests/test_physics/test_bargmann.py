@@ -58,6 +58,7 @@ def test_bargmann_numpy_transformation():
 
 
 def test_abc_contraction_2mode_psi_U():
+    "tests that the abc contraction works for U|psi>"
     psi = Gaussian(2)
     U = Ggate(2)
 
@@ -73,6 +74,7 @@ def test_abc_contraction_2mode_psi_U():
 
 
 def test_abc_contraction_2mode_rho_phi():
+    "tests that the abc contraction works for rho >> phi"
     rho = Gaussian(2) >> Attenuator([0.1, 0.2]) >> Ggate(2) >> Attenuator([0.4, 0.9])
     phi = Ggate(2) >> Attenuator([0.3, 0.4]) >> Ggate(2)
     # out1bra, out2bra, out1ket, out2ket
@@ -90,6 +92,7 @@ def test_abc_contraction_2mode_rho_phi():
 
 
 def test_abc_contraction_3mode_rho_2mode_U():
+    "tests that the abc contraction works for U rho U_dagger"
     rho = Gaussian(3) >> Attenuator([0.1, 0.2, 0.4]) >> Ggate(3) >> Attenuator([0.4, 0.5, 0.9])
     U = Ggate(2)
 

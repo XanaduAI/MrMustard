@@ -17,8 +17,8 @@
 """
 This module contains functions for transforming to the Bargmann representation.
 """
-import numpy as np
 from typing import Tuple, Sequence
+import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
