@@ -189,14 +189,15 @@ class TFMath(MathInterface):
     @Autocast()
     def matmul(
         self,
-        a: tf.Tensor,
-        b: tf.Tensor,
+        *ab: tf.Tensor,  # pylint: disable=arguments-differ
         transpose_a=False,
         transpose_b=False,
         adjoint_a=False,
         adjoint_b=False,
     ) -> tf.Tensor:
-        return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
+        if len(ab) > 2:
+            return self.matmul(ab[0], self.matmul(*ab[1:]))
+        return tf.linalg.matmul(ab[0], ab[1], transpose_a, transpose_b, adjoint_a, adjoint_b)
 
     @Autocast()
     def matvec(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, adjoint_a=False) -> tf.Tensor:
