@@ -16,6 +16,10 @@ This module contains logic for the text-based circuit drawer for MrMustard
 """
 from collections import defaultdict
 
+__all__ = [
+    "circuit_text",
+]
+
 
 def mode_set(op):
     "includes modes in between min and max of op.modes"
@@ -24,7 +28,7 @@ def mode_set(op):
 
 def drawable_layers(ops):
     r"""Determine non-overlapping yet dense placement of ops into layers for drawing.
-    Arguments:
+    Args:
         ops Iterable[op]: a list of operations
 
     Returns:
@@ -74,8 +78,8 @@ def circuit_text(
     ops,
     decimals=None,
 ):
-    r"""Text based diagram for a Quantum circuit.
-    Arguments:
+    r"""Text based diagram for a quantum circuit.
+    Args:
         ops (List[Transformation]): the operations and measurements to draw as a list of MrMustard operations
         decimals (optional(int)): How many decimal points to include when formatting operation parameters.
             Default ``None`` will omit parameters from operation labels.

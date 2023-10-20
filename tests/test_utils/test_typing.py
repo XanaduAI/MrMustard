@@ -17,7 +17,7 @@
 from typing import get_origin, get_args
 import numpy as np
 
-from mrmustard.typing import (
+from mrmustard.utils.typing import (
     Batch,
     ComplexMatrix,
     ComplexTensor,

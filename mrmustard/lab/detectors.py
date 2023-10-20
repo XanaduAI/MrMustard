@@ -22,7 +22,7 @@ from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
-from mrmustard.typing import RealMatrix, RealVector
+from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .abstract import FockMeasurement, Measurement, State
 from .gates import Rgate

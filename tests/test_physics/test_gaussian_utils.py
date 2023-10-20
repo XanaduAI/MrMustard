@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import numpy as np
-from hypothesis import given, strategies as st
 from mrmustard import *
 from mrmustard.physics import gaussian as gp
 
