@@ -20,8 +20,8 @@ import numpy as np
 import torch
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.typing import Tensor, Trainable
-from mrmustard.math.math_interface import MathInterface
+from mrmustard.utils.typing import Tensor, Trainable
+from .math_interface import MathInterface
 
 
 # pylint: disable=too-many-public-methods,no-self-use
