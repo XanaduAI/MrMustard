@@ -4,6 +4,9 @@
 * Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
+* Added functions in physics.bargmann to join and contract (A,b,c) triples.
+  [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
+
 ### Breaking changes
 * Removed circular dependencies by:
   * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
@@ -35,7 +38,8 @@ to keep the code fast.
 
 ### Contributors
 [Robbe De Prins](https://github.com/rdprins),
-[Samuele Ferracin](https://github.com/SamFerracin)
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Filippo Miatto](https://github.com/ziofil)
 
 # Release 0.6.0 (current release)
 
