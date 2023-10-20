@@ -123,7 +123,7 @@ def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Se
     """
     n = len(idx) // 2
     A, b, c = Abc
-    not_idx = [i for i in range(A.shape[-1]) if i not in idx]
+    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
     I = math.eye(n, dtype=A.dtype)
     Z = math.zeros((n, n), dtype=A.dtype)
