@@ -107,3 +107,89 @@ def wigner_to_bargmann_U(X, d):
     N = X.shape[-1] // 2
     A, B, C = wigner_to_bargmann_Choi(X, math.zeros_like(X), d)
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
+
+
+## Methods for manipulating (A,b,c) triples
+
+from typing import Tuple, Sequence
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
+
+
+def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Sequence[int]):
+    r"""Returns the contraction of two A matrices."""
+    n = len(idx) // 2
+    A, b, c = Abc
+    not_idx = [i for i in range(A.shape[-1]) if i not in idx]
+
+    I = math.eye(n, dtype=A.dtype)
+    Z = math.zeros((n, n), dtype=A.dtype)
+    X = math.block([[Z, I], [I, Z]])
+
+    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) - X
+    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
+    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
+
+    bM = math.gather(b, idx, axis=-1)
+    bR = math.gather(b, not_idx, axis=-1)
+
+    A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
+    b_post = bR - math.sum(bM * math.solve(M, bM))
+    c_post = (
+        c
+        * math.sqrt((-1) ** n / math.det(M))
+        * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))  # this is exp(-0.5 * bM.T @ M^-1 @ bM)
+    )
+
+    return A_post, b_post, c_post
+
+
+def join_Abc(Abc1, Abc2):
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+
+    A12 = math.block(
+        [
+            [A1, math.zeros((A1.shape[-2], A2.shape[-1]), dtype=A1.dtype)],
+            [math.zeros((A2.shape[-2], A1.shape[-1]), dtype=A1.dtype), A2],
+        ]
+    )
+
+    b12 = math.concat([b1, b2], axis=-1)
+
+    return A12, b12, c1 * c2
+
+
+def reorder_abc(Abc, order):
+    r"""Reorders the indices of the A matrix and b vector of a (A,b,c) triple."""
+    A, b, c = Abc
+    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
+    b = math.gather(b, order, axis=-1)
+    return A, b, c
+
+
+def contract_two_Abc(Abc1, Abc2, idx1, idx2):
+    r"""Returns the contraction of two A matrices."""
+    return contract_Abc_base(
+        join_Abc(Abc1, Abc2), tuple(idx1) + tuple(i + Abc1[0].shape[-1] for i in idx2)
+    )
+
+
+##########################################
+###   Representation transformations   ###
+##########################################
+
+
+def bargmann_to_wavefunction(Abc, quadrature_angles):
+    pass
+
+
+def bargmann_to_characteristic(Abc, s):
+    pass
+
+
+def bargmann_FT(Abc):
+    pass
+
+
+def bargmann_to_phase_space(Abc, s):
+    return bargmann_FT(bargmann_to_characteristic(Abc, s))
