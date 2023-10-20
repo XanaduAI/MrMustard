@@ -18,10 +18,12 @@
 This module contains functions for transforming to the Bargmann representation.
 """
 import numpy as np
+from typing import Tuple, Sequence
 
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
+from mrmustard.utils.typing import ComplexMatrix, ComplexVector
 
 math = Math()
 
@@ -109,12 +111,6 @@ def wigner_to_bargmann_U(X, d):
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
 
 
-## Methods for manipulating (A,b,c) triples
-
-from typing import Tuple, Sequence
-from mrmustard.utils.typing import ComplexMatrix, ComplexVector
-
-
 def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Sequence[int]):
     r"""Returns the contraction of two A matrices."""
     n = len(idx) // 2
@@ -179,17 +175,17 @@ def contract_two_Abc(Abc1, Abc2, idx1, idx2):
 ##########################################
 
 
-def bargmann_to_wavefunction(Abc, quadrature_angles):
-    pass
+# def bargmann_to_wavefunction(Abc, quadrature_angles):
+#     pass
 
 
-def bargmann_to_characteristic(Abc, s):
-    pass
+# def bargmann_to_characteristic(Abc, s):
+#     pass
 
 
-def bargmann_FT(Abc):
-    pass
+# def bargmann_FT(Abc):
+#     pass
 
 
-def bargmann_to_phase_space(Abc, s):
-    return bargmann_FT(bargmann_to_characteristic(Abc, s))
+# def bargmann_to_phase_space(Abc, s):
+#     return bargmann_FT(bargmann_to_characteristic(Abc, s))
