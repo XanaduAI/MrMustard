@@ -16,7 +16,7 @@
 
 from mrmustard import settings
 from mrmustard.lab import BSgate, Ggate
-from mrmustard.utils.circdrawer import (
+from mrmustard.lab.circuit_drawer import (
     _add_grouping_symbols,
     _add_op,
     circuit_text,
