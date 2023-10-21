@@ -7,8 +7,8 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
     contract_two_Abc,
     reorder_abc,
-    Bargmann,
 )
+from mrmustard.physics.bargmann_repr import Bargmann
 from mrmustard.math import Math
 
 math = Math()
