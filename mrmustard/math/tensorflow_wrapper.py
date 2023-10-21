@@ -71,6 +71,13 @@ class TFMath(MathInterface):
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
+    def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
+        Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
+        Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
+        return self.concat(
+            [self.concat([mat1, Za], axis=-1), self.concat([Zb, mat2], axis=-1)], axis=-2
+        )
+
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
