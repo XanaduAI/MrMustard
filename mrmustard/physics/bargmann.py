@@ -158,7 +158,7 @@ def join_Abc(Abc1, Abc2):
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-    A12 = math.block_diag([A1, A2])
+    A12 = math.block_diag(A1, A2)
     b12 = math.concat([b1, b2], axis=-1)
     c12 = c1 * c2
     return A12, b12, c12
