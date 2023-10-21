@@ -69,7 +69,25 @@ class TFMath(MathInterface):
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return self.cast(tf.reshape(array, [-1]), dtype)
+        if len(array.shape) == 0:
+            array = self.expand_dims(array, 0)
+        return self.cast(array, dtype)
+
+    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        if len(array.shape) == 0:
+            array = self.expand_dims(array, 0)
+        if len(array.shape) == 1:
+            array = self.expand_dims(array, 0)
+        return self.cast(array, dtype)
+
+    def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        if len(array.shape) == 0:
+            array = self.expand_dims(array, 0)
+        if len(array.shape) == 1:
+            array = self.expand_dims(array, 0)
+        if len(array.shape) == 2:
+            array = self.expand_dims(array, 0)
+        return self.cast(array, dtype)
 
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
