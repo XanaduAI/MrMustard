@@ -99,14 +99,19 @@ class Bargmann(MatVecData):
 
     def __matmul__(self, other: Bargmann) -> Bargmann:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
-        A, b, c = contract_two_Abc(
-            (self.A, self.b, self.c),
-            (other.A, other.b, other.c),
-            self._contract_idxs,
-            other._contract_idxs,
-        )
-
-        return self.__class__(A, b, c)
+        Abc = []
+        for A1, b1, c1 in zip(self.A, self.b, self.c):
+            for A2, b2, c2 in zip(other.A, other.b, other.c):
+                Abc.append(
+                    contract_two_Abc(
+                        (A1, b1, c1),
+                        (A2, b2, c2),
+                        self._contract_idxs,
+                        other._contract_idxs,
+                    )
+                )
+        A, b, c = zip(*Abc)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
         idx = (idx,) if isinstance(idx, int) else idx
