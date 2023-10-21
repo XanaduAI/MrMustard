@@ -75,7 +75,11 @@ class TFMath(MathInterface):
         return self.cast(tf.experimental.numpy.atleast_2d(array), dtype)
 
     def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return self.cast(tf.experimental.numpy.atleast_3d(array), dtype)
+        # NOTE in TF 2.14, this function adds an axis AT THE END (!)
+        array = self.atleast_2d(self.atleast_1d(array, dtype))
+        if len(array.shape) == 2:
+            array = self.expand_dims(array, 0)
+        return array
 
     def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
         Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
