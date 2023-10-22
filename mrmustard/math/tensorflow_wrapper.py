@@ -19,6 +19,7 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+import hashlib
 
 from mrmustard import settings
 from mrmustard.math.autocast import Autocast
@@ -182,11 +183,13 @@ class TFMath(MathInterface):
         return tf.gather(array, indices, axis=axis)
 
     def hash_tensor(self, tensor: tf.Tensor) -> int:
-        try:
-            REF = tensor.ref()
-        except AttributeError as e:
-            raise TypeError("Cannot hash tensor") from e
-        return hash(REF)
+        # try:
+        # REF = tensor.ref()
+        # except AttributeError as e:
+        #     raise TypeError("Cannot hash tensor") from e
+        # return hash(REF)
+        REF = tensor.numpy().tobytes()
+        return hashlib.sha256(REF).hexdigest()
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
@@ -326,13 +329,13 @@ class TFMath(MathInterface):
 
     def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
         hash_dict = {}
-        for tensor in lst:
+        for i, tensor in enumerate(lst):
             try:
                 if (hash := self.hash_tensor(tensor)) not in hash_dict:
-                    hash_dict[hash] = tensor
+                    hash_dict[hash] = (i, tensor)
             except TypeError:
                 continue
-        return list(hash_dict.values())
+        yield from hash_dict.values()
 
     def zeros(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
         return tf.zeros(shape, dtype=dtype)
