@@ -129,3 +129,16 @@ class Bargmann(MatVecData):
         new = self.__class__(A, b, c)
         new._contract_idxs = self._contract_idxs
         return new
+
+    def simplify(self) -> None:
+        r"""use math.unique_tensors to remove duplicates of a tensor in the A stack, b stack, and c stack"""
+        # indices unique tensors of A,b,c stacks
+        unique_A = (i for i, _ in math.unique_tensors(self.A))
+        unique_b = (i for i, _ in math.unique_tensors(self.b))
+        unique_c = (i for i, _ in math.unique_tensors(self.c))
+        # unique triples of A,b,c
+        uniques = [i for i in unique_A if i in unique_b and i in unique_c]
+        # gather unique triples
+        self.mat = math.gather(self.A, uniques, axis=0)
+        self.vec = math.gather(self.b, uniques, axis=0)
+        self.coeff = math.gather(self.c, uniques, axis=0)
