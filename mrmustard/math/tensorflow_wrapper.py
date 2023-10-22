@@ -183,11 +183,6 @@ class TFMath(MathInterface):
         return tf.gather(array, indices, axis=axis)
 
     def hash_tensor(self, tensor: tf.Tensor) -> int:
-        # try:
-        # REF = tensor.ref()
-        # except AttributeError as e:
-        #     raise TypeError("Cannot hash tensor") from e
-        # return hash(REF)
         REF = tensor.numpy().tobytes()
         return hashlib.sha256(REF).hexdigest()
 
