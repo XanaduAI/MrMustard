@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from mrmustard import settings
+from mrmustard.utils.settings import _allowed_precision_bits_hermite_poly
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
 from mrmustard.math import Math
 from mrmustard.physics import fidelity, normalize
@@ -17,8 +18,6 @@ from tests.random import n_mode_mixed_state
 math = Math()  # use methods in math if you want them to be differentiable
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
-allowed_values_precision = settings.ALLOWED_PRECISION_BITS_HERMITE_POLY
-
 
 def allowed_cutoffs(max_cutoffs):
     r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
@@ -43,7 +42,7 @@ def random_ABC(draw, M):
 @given(random_ABC(M=3))
 def test_compactFock_diagonal(A_B_G0):
     """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
-    for precision in allowed_values_precision:
+    for precision in _allowed_precision_bits_hermite_poly:
         settings.PRECISION_BITS_HERMITE_POLY = precision
         for cutoffs in allowed_cutoffs((7, 7, 7)):
             A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
@@ -71,7 +70,7 @@ def test_compactFock_diagonal(A_B_G0):
 @given(random_ABC(M=3))
 def test_compactFock_1leftover(A_B_G0):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
-    for precision in allowed_values_precision:
+    for precision in _allowed_precision_bits_hermite_poly:
         settings.PRECISION_BITS_HERMITE_POLY = precision
         for cutoffs in allowed_cutoffs((7, 7, 7)):
             A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
@@ -97,7 +96,7 @@ def test_compactFock_1leftover(A_B_G0):
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
-@pytest.mark.parametrize("precision", allowed_values_precision)
+@pytest.mark.parametrize("precision", _allowed_precision_bits_hermite_poly)
 def test_compactFock_diagonal_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
     settings.PRECISION_BITS_HERMITE_POLY = precision
@@ -121,7 +120,7 @@ def test_compactFock_diagonal_gradients(precision):
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
-@pytest.mark.parametrize("precision", allowed_values_precision)
+@pytest.mark.parametrize("precision", _allowed_precision_bits_hermite_poly)
 def test_compactFock_1leftover_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
     settings.PRECISION_BITS_HERMITE_POLY = precision

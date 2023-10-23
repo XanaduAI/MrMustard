@@ -23,6 +23,8 @@ import numpy as np
 
 __all__ = ["Settings", "settings"]
 
+_julia_initialized = False # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+_allowed_precision_bits_hermite_poly = [128, 256, 384, 512] # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
 class ImmutableSetting:
     r"""A setting that becomes immutable after the first time its value is queried.
@@ -103,8 +105,6 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
-        self._allowed_precision_bits_hermite_poly = [128, 256, 384, 512]
-        self._julia_initialized = False
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -275,26 +275,18 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
 
     @property
-    def JULIA_INITIALIZED(self):
-        r"""True if Julia was previously initialized, False otherwise"""
-        return self._julia_initialized
-
-    @property
-    def ALLOWED_PRECISION_BITS_HERMITE_POLY(self):
-        r"""List of possible values for settings.PRECISION_BITS_HERMITE_POLY."""
-        return self._allowed_precision_bits_hermite_poly
-
-    @property
     def PRECISION_BITS_HERMITE_POLY(self):
         r"""
         The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
         Default is 128 (i.e. the Fock representation has dtype complex128).
+        Currently allowed values: 128, 256, 384, 512
         """
         return self._precision_bits_hermite_poly
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = self._allowed_precision_bits_hermite_poly
+        global _julia_initialized
+        allowed_values = _allowed_precision_bits_hermite_poly
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
@@ -302,7 +294,7 @@ class Settings:
         self._precision_bits_hermite_poly = value
 
         if (
-            value != 128 and not self._julia_initialized
+            value != 128 and not _julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
             # the next line must be run before "from julia import Main as Main_julia"
             _ = Julia(compiled_modules=False)
@@ -312,19 +304,19 @@ class Settings:
             # import Julia functions
             utils_directory = os.path.dirname(__file__)
             Main_julia.cd(utils_directory)
-            Main_julia.include("math/lattice/strategies/julia/getPrecision.jl")
-            Main_julia.include("math/lattice/strategies/julia/vanilla.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/helperFunctions.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
-            Main_julia.include("math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
+            Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
+            Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
             Main_julia.include(
-                "math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
+                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
             )
             Main_julia.include(
-                "math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
+                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
             )
 
-            self._julia_initialized = True
+            _julia_initialized = True
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
