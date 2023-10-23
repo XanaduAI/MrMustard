@@ -90,6 +90,7 @@ version = "2022.10.11"
 [[deps.MultiFloats]]
 deps = ["LinearAlgebra", "Printf", "Random"]
 git-tree-sha1 = "4d047875ab0571dbec7e7348ff3d2b09edace3aa"
+pinned = true
 uuid = "bdf0d083-296b-4888-a5b6-7498122e68a5"
 version = "1.0.4"
 
@@ -127,6 +128,7 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 [[deps.PyCall]]
 deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
 git-tree-sha1 = "43d304ac6f0354755f1d60730ece8c499980f7ba"
+pinned = true
 uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 version = "1.96.1"
 
