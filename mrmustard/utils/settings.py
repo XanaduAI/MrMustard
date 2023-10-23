@@ -23,16 +23,6 @@ import numpy as np
 
 __all__ = ["Settings", "settings"]
 
-_julia_initialized = (
-    False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-)
-_allowed_precision_bits_hermite_poly = [
-    128,
-    256,
-    384,
-    512,
-]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
-
 
 class ImmutableSetting:
     r"""A setting that becomes immutable after the first time its value is queried.
@@ -113,6 +103,8 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
+        self._julia_initialized = False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        self._allowed_precision_bits_hermite_poly = [128,256,384,512]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -293,8 +285,7 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        global _julia_initialized
-        allowed_values = _allowed_precision_bits_hermite_poly
+        allowed_values = self._allowed_precision_bits_hermite_poly
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
@@ -302,7 +293,7 @@ class Settings:
         self._precision_bits_hermite_poly = value
 
         if (
-            value != 128 and not _julia_initialized
+            value != 128 and not self._julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
             # the next line must be run before "from julia import Main as Main_julia"
             _ = Julia(compiled_modules=False)
@@ -324,7 +315,7 @@ class Settings:
                 "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
             )
 
-            _julia_initialized = True
+            self._julia_initialized = True
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
