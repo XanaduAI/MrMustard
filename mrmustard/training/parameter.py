@@ -89,7 +89,7 @@ from abc import ABC, abstractmethod
 
 from typing import Optional, Sequence, Any
 from mrmustard.math import Math
-from mrmustard.typing import Tensor
+from mrmustard.utils.typing import Tensor
 
 math = Math()
 

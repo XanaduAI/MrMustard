@@ -303,6 +303,7 @@ class Settings:
             Pkg.activate("../../julia_pkg/")
 
             # import Julia functions
+            Main_julia.cd(utils_directory)
             Main_julia.include("math/lattice/strategies/vanilla.jl")
 
     # use rich.table to print the settings

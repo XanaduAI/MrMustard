@@ -5,6 +5,17 @@
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
 ### Breaking changes
+* Removed circular dependencies by:
+  * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
+  * Moving `circuit_drawer` and `wigner` to `physics`.
+  * Moving `xptensor` to `math`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Created `settings.py` file to host `Settings`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
 
 ### Improvements
 
@@ -16,6 +27,9 @@ to keep the code fast.
   [(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
 
 ### Bug fixes
+
+* Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
+[(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
 
 ### Documentation
 

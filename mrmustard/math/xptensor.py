@@ -27,7 +27,7 @@ from typing import (
 )
 
 from mrmustard.math import Math
-from mrmustard.typing import Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
 
 math = Math()
 
@@ -35,7 +35,7 @@ math = Math()
 class XPTensor(ABC):
     r"""A representation of Matrices and Vectors in phase space.
 
-    Tensors in phase space have a ``(2n, 2n)`` or ``(2n,)`` shape where n is the number of modes.
+    Tensors in phase space have a ``(2n, 2n)`` or ``(2n,)`` shape, where ``n`` is the number of modes.
 
     There are two main orderings:
         - xxpp: matrix is a `2\times 2` block matrix where each block is an `xx`, `xp`, `px`, `pp` block on all modes.
@@ -60,9 +60,9 @@ class XPTensor(ABC):
 
     Args:
         tensor: The tensor in (n,m,2,2) or (n,2) order.
-        modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
         like_0: Whether the null tensor behaves like 0 under addition (e.g. the noise matrix Y)
-        like_1: Whether the null tensor behaves like 1 under multiplication (e.g. a symplectic transformation matrix)
+        is_vector: Whether the tensor is a vector.
+        modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
     """
 
     @abstractmethod  # so that XPTensor can't be instantiated directly
@@ -70,7 +70,7 @@ class XPTensor(ABC):
         self,
         tensor: Optional[Tensor],
         like_0: bool,
-        isVector: bool,
+        is_vector: bool,
         modes: Union[Tuple[List[int], List[int]], None],
     ):
         self.like_0 = like_0
@@ -78,16 +78,16 @@ class XPTensor(ABC):
             None if tensor is None else tensor.shape[: len(tensor.shape) // 2]
         )  # only (N,M) or (N,)
         self.ndim = None if tensor is None else len(self.shape)
-        self.isVector = isVector
-        if self.ndim == 1 and not self.isVector:
+        self.is_vector = is_vector
+        if self.ndim == 1 and not self.is_vector:
             raise ValueError(
-                f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==4, got {len(tensor.shape)})"
+                f"tensor shape incompatible with is_vector={is_vector} (expected len(tensor.shape)==1, got {len(tensor.shape)})"
             )
-        if self.ndim == 2 and self.isVector:
+        if self.ndim == 2 and self.is_vector:
             raise ValueError(
-                f"tensor shape incompatible with isVector={isVector} (expected len(tensor.shape)==2, got {len(tensor.shape)})"
+                f"tensor shape incompatible with is_vector={is_vector} (expected len(tensor.shape)==2, got {len(tensor.shape)})"
             )
-        if self.isVector and self.like_1:
+        if self.is_vector and self.like_1:
             raise ValueError("vectors should be like_0")
         self.tensor = tensor
         if not (set(modes[0]) == set(modes[1]) or set(modes[0]).isdisjoint(modes[1])):
@@ -115,7 +115,7 @@ class XPTensor(ABC):
 
     @property
     def isMatrix(self) -> Optional[bool]:
-        return not self.isVector
+        return not self.is_vector
 
     @property
     def isCoherence(self) -> Optional[bool]:
@@ -127,7 +127,7 @@ class XPTensor(ABC):
 
     @property
     def T(self) -> XPMatrix:
-        if self.isVector:
+        if self.is_vector:
             raise ValueError("Cannot transpose a vector")
         if self.tensor is None:
             return self
@@ -165,7 +165,7 @@ class XPTensor(ABC):
             return None
         return math.transpose(self.tensor, (2, 3, 0, 1) if self.isMatrix else (0, 1))  # 22NM or 2N
 
-    def clone(self, times: int, modes=None) -> XPtensor:
+    def clone(self, times: int, modes=None) -> XPTensor:
         r"""Create a new XPTensor made by cloning the system a given number of times
         (the modes are reset by default unless specified).
         """
@@ -212,7 +212,7 @@ class XPTensor(ABC):
                 f"No integer multiple of {self.num_modes} modes fits into {other.num_modes} modes"
             )
         times = other.num_modes // self.num_modes
-        if self.isVector == other.isVector:
+        if self.is_vector == other.is_vector:
             tensor = self.clone(times, modes=other.modes).tensor
         else:
             raise ValueError("Cannot clone a vector into a matrix or viceversa")
@@ -247,7 +247,7 @@ class XPTensor(ABC):
         if self.tensor is None and other.tensor is None:
             if self.isMatrix and other.isMatrix:
                 return XPMatrix(None, like_1=self.like_1 and other.like_1)
-            if self.isVector or other.isVector:
+            if self.is_vector or other.is_vector:
                 return XPVector(None)
         # either is None
         if self.tensor is None:
@@ -258,15 +258,15 @@ class XPTensor(ABC):
         if self.isMatrix and other.isMatrix:
             tensor, modes = self._mode_aware_matmul(other)
             return XPMatrix(tensor, like_1=self.like_1 and other.like_1, modes=modes)
-        if self.isMatrix and other.isVector:
+        if self.isMatrix and other.is_vector:
             tensor, modes = self._mode_aware_matmul(other)
             return XPVector(
                 tensor, modes[0]
             )  # TODO: check if we can output modes as a list in _mode_aware_matmul
-        if self.isVector and other.isMatrix:
+        if self.is_vector and other.isMatrix:
             tensor, modes = other.T._mode_aware_matmul(self)
             return XPVector(tensor, modes[0])
-        # self.isVector and other.isVector:
+        # self.is_vector and other.is_vector:
         return self._mode_aware_vecvec(other)  # NOTE: this is a scalar, not an XPTensor
 
     # pylint: disable=too-many-statements
@@ -370,7 +370,7 @@ class XPTensor(ABC):
             raise TypeError(
                 f"unsupported operand type(s) for +: '{self.__class__.__qualname__}' and '{other.__class__.__qualname__}'"
             )
-        if self.isVector != other.isVector:
+        if self.is_vector != other.is_vector:
             raise ValueError("Cannot add a vector and a matrix")
         if self.isCoherence != other.isCoherence:
             raise ValueError("Cannot add a coherence block and a diagonal block")
@@ -471,7 +471,7 @@ class XPTensor(ABC):
             T[[1,2,3],:] ~ self.tensor[[1,2,3],:,:,:] # i.e. the block with outmodes [1,2,3] and all inmodes
             T[[1,2,3],[4,5]] ~ self.tensor[[1,2,3],[4,5],:,:]  # i.e. the block with outmodes [1,2,3] and inmodes [4,5]
         """
-        if self.isVector:
+        if self.is_vector:
             if isinstance(modes, int):
                 _modes = [modes]
             elif isinstance(modes, list) and all(isinstance(m, int) for m in modes):
@@ -518,7 +518,11 @@ class XPTensor(ABC):
 class XPMatrix(XPTensor):
     r"""A convenience class for a matrix in the XPTensor format.
 
-    # TODO: write docstring
+    Args:
+        tensor: The tensor in (n,m,2,2) or (n,2) order.
+        like_0: Whether the null tensor behaves like 0 under addition (e.g. the noise matrix Y)
+        like_1: Whether the null tensor behaves like 1 under multiplication (e.g. a symplectic transformation matrix)
+        modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
     """
 
     def __init__(
@@ -545,7 +549,7 @@ class XPMatrix(XPTensor):
                 list(range(s)) for s in tensor.shape[:2]
             )  # NOTE assuming that it isn't a coherence block
         like_0 = like_0 if like_0 is not None else not like_1
-        super().__init__(tensor, like_0, isVector=False, modes=modes)
+        super().__init__(tensor, like_0, is_vector=False, modes=modes)
 
     @classmethod
     def from_xxpp(
@@ -578,7 +582,12 @@ class XPMatrix(XPTensor):
 
 
 class XPVector(XPTensor):
-    r"""A convenience class for a vector in the XPTensor format."""
+    r"""A convenience class for a vector in the XPTensor format.
+
+    Args:
+        tensor: The tensor in (n,m,2,2) or (n,2) order.
+        modes: a list of modes for a diagonal matrix or a vector and a tuple of two lists for a coherence (not optional for a coherence)
+    """
 
     def __init__(self, tensor: Tensor = None, modes: Union[List[int], None] = None):
         if modes is None and tensor is not None:
@@ -589,7 +598,7 @@ class XPVector(XPTensor):
             isinstance(modes, list) or all(isinstance(m, int) for m in modes)
         ):
             raise ValueError("the modes of an XPVector should be a list of ints")
-        super().__init__(tensor, like_0=True, isVector=True, modes=(modes, []))
+        super().__init__(tensor, like_0=True, is_vector=True, modes=(modes, []))
 
     @classmethod
     def from_xxpp(
