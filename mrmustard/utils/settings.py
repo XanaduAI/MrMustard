@@ -23,8 +23,16 @@ import numpy as np
 
 __all__ = ["Settings", "settings"]
 
-_julia_initialized = False # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-_allowed_precision_bits_hermite_poly = [128, 256, 384, 512] # possible values for settings.PRECISION_BITS_HERMITE_POLY
+_julia_initialized = (
+    False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+)
+_allowed_precision_bits_hermite_poly = [
+    128,
+    256,
+    384,
+    512,
+]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
+
 
 class ImmutableSetting:
     r"""A setting that becomes immutable after the first time its value is queried.

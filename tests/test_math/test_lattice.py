@@ -23,6 +23,7 @@ from mrmustard.utils.settings import _allowed_precision_bits_hermite_poly
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
+
 @pytest.mark.parametrize("precision", _allowed_precision_bits_hermite_poly)
 def test_vanillaNumba_vs_binomial(precision):
     """Test that the vanilla method and the binomial method give the same result.

@@ -19,6 +19,7 @@ math = Math()  # use methods in math if you want them to be differentiable
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
+
 def allowed_cutoffs(max_cutoffs):
     r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
     res = []
