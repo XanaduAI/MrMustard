@@ -26,7 +26,6 @@ from mrmustard.lab import (
     State,
 )
 from mrmustard.physics.wigner import wigner_discretized
-from tests.random import force_settings
 
 # original settings
 autocutoff_max0 = settings.AUTOCUTOFF_MAX_CUTOFF
@@ -44,7 +43,7 @@ def reset_settings():
     settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
     settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
     settings.DISCRETIZATION_METHOD = method0
-    force_settings("_hbar", hbar0)
+    settings._force_hbar(hbar0)
 
 
 def distance(W_mm, W_th):
@@ -121,7 +120,7 @@ class TestWignerDiscretized:
     def test_cat_state(self, method, hbar):
         r"""Tests DWF for cat states"""
         settings.DISCRETIZATION_METHOD = method
-        force_settings("_hbar", hbar)
+        settings._force_hbar(hbar)
 
         q_vec = np.linspace(-4, 4, 100)
         p_vec = np.linspace(-1.5, 1.5, 100)
@@ -147,7 +146,7 @@ class TestWignerDiscretized:
         settings.AUTOCUTOFF_MIN_CUTOFF = 100
         settings.AUTOCUTOFF_MAX_CUTOFF = 150
         settings.DISCRETIZATION_METHOD = method
-        force_settings("_hbar", hbar)
+        settings._force_hbar(hbar)
 
         # centering the intervals around alpha--away from the center,
         # the values are small and unstable.
@@ -172,7 +171,7 @@ class TestWignerDiscretized:
     def test_fock_state(self, n, hbar, method):
         r"""Tests DWF for fock states"""
         settings.DISCRETIZATION_METHOD = method
-        force_settings("_hbar", hbar)
+        settings._force_hbar(hbar)
 
         q_vec = np.linspace(-1, 1, 20)
         p_vec = np.linspace(-1, 1, 20)
