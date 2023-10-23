@@ -25,7 +25,6 @@ from .abstract import Channel, Unitary, State
 from .utils import make_parameter
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
 math = Math()
@@ -187,7 +186,6 @@ class Sgate(Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -280,7 +278,6 @@ class Rgate(Unitary):
         angle_trainable: bool = False,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -376,7 +373,6 @@ class Pgate(Unitary):
         shearing_trainable: bool = False,
         shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -414,7 +410,6 @@ class CXgate(Unitary):
         s_trainable: bool = False,
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -428,7 +423,7 @@ class CXgate(Unitary):
         return gaussian.controlled_X(self.s.value)
 
 
-class CZgate(Parametrized, Unitary):
+class CZgate(Unitary):
     r"""Controlled Z gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -450,14 +445,11 @@ class CZgate(Parametrized, Unitary):
         s_trainable: bool = False,
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
+        Unitary.__init__(
             self,
-            s=s,
-            s_trainable=s_trainable,
-            s_bounds=s_bounds,
-            **kwargs,
+            modes=modes or [0, 1],
+            name="CZgate",
         )
         self._add_parameter(make_parameter(s, s_trainable, "s", s_bounds, None))
 
@@ -494,7 +486,6 @@ class BSgate(Unitary):
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -592,7 +583,6 @@ class MZgate(Unitary):
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         internal: bool = False,
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -641,7 +631,6 @@ class S2gate(Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         Unitary.__init__(
             self,
@@ -681,7 +670,6 @@ class Interferometer(Unitary):
         unitary: Optional[ComplexMatrix] = None,
         unitary_trainable: bool = False,
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         if modes is not None and num_modes != len(modes):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -736,7 +724,6 @@ class RealInterferometer(Unitary):
         orthogonal: Optional[RealMatrix] = None,
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -794,7 +781,6 @@ class Ggate(Unitary):
         symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
@@ -873,7 +859,6 @@ class Attenuator(Channel):
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         Channel.__init__(
             self,
@@ -937,7 +922,6 @@ class Amplifier(Channel):
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         Channel.__init__(
             self,
@@ -992,7 +976,6 @@ class AdditiveNoise(Channel):
         noise_trainable: bool = False,
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         Channel.__init__(
             self,
