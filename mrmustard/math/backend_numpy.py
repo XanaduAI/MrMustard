@@ -98,7 +98,7 @@ class BackendNumpy(BackendBase):
         return np.clip(array, a_min, a_max)
 
     def concat(self, values: List[np.array], axis: int) -> np.array:
-        values = np.array(values) if len(np.array(values).shape) != 1 else np.array([values])
+        # values = np.array(values) if len(np.array(values).shape) != 1 else np.array([values])
         return np.concatenate(values, axis)
 
     def conj(self, array: np.array) -> np.array:
@@ -212,7 +212,7 @@ class BackendNumpy(BackendBase):
         return True
 
     def lgamma(self, x: np.array) -> np.array:
-        return mlgamma(x)
+        return np.array([mlgamma(v) for v in x])
 
     def log(self, x: np.array) -> np.array:
         return np.log(x)
