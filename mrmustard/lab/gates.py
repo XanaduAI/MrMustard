@@ -25,6 +25,8 @@ from mrmustard.lab.abstract import Channel, Unitary, State
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
 math = Math()
@@ -49,7 +51,7 @@ __all__ = [
 ]
 
 
-class Dgate(Parametrized, Unitary):
+class Dgate(Unitary):
     r"""Displacement gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -81,24 +83,34 @@ class Dgate(Parametrized, Unitary):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        Parametrized.__init__(
-            self,
-            x=x,
-            y=y,
-            x_trainable=x_trainable,
-            y_trainable=y_trainable,
-            x_bounds=x_bounds,
-            y_bounds=y_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(m)),
             name="Dgate",
         )
+
+        self.parameter_set = ParameterSet()
+
+        # TODO: What follows can be encapsulated in convenience functions that
+        # kill the line numbers, making init's more readable and easier to debug
+
+        # adding "x"
+        if x_trainable:
+            x_parameter = Variable(value=x, name="x", bounds=x_bounds)
+        else:
+            x_parameter = Constant(value=x, name="x")
+        self.parameter_set.add_parameter(x_parameter)
+        self.__dict__["x"] = self.parameter_set.x
+
+        # adding "y"
+        if y_trainable:
+            y_parameter = Variable(value=y, name="y", bounds=y_bounds)
+        else:
+            y_parameter = Constant(value=y, name="y")
+        self.parameter_set.add_parameter(y_parameter)
+        self.__dict__["y"] = self.parameter_set.y
 
     @property
     def d_vector(self):
@@ -137,8 +149,8 @@ class Dgate(Parametrized, Unitary):
         if shape is None:
             raise ValueError
 
-        x = self.x.value * math.ones(N, dtype=self.x.value.dtype)
-        y = self.y.value * math.ones(N, dtype=self.y.value.dtype)
+        x = self.x.value * math.ones(N, dtype=self.x.dtype)
+        y = self.y.value * math.ones(N, dtype=self.y.dtype)
 
         if N > 1:
             # calculate displacement unitary for each mode and concatenate with outer product

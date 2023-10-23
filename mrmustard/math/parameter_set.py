@@ -18,7 +18,9 @@ from typing import Union
 
 from .parameters import Constant, Variable
 
-__all__ = ["ParameterSet",]
+__all__ = [
+    "ParameterSet",
+]
 
 
 class ParameterSet:

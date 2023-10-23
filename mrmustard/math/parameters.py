@@ -40,10 +40,10 @@ class Constant:
         dtype: The type of this constant.
     """
 
-    def __init__(self, value: any, name: str, dtype: any = math.float64):
+    def __init__(self, value: any, name: str, dtype: Optional[any] = None):
         self._value = value
         self._name = name
-        self._dtype = dtype
+        self._dtype = dtype if dtype else getattr(value, "dtype", math.float64)
 
     @property
     def dtype(self) -> str:
@@ -83,7 +83,7 @@ class Variable:
         self,
         value: any,
         name: str,
-        dtype: any = math.float64,
+        dtype: Optional[any] = None,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         update_fn: Optional[Callable] = None,
     ):
@@ -91,7 +91,7 @@ class Variable:
         self._name = name
         self._bounds = bounds
         self._update_fn = update_fn
-        self._dtype = dtype
+        self._dtype = dtype if dtype else getattr(value, "dtype", math.float64)
 
     @property
     def bounds(self) -> Tuple[Optional[float], Optional[float]]:
@@ -140,14 +140,16 @@ class Variable:
     def value(self, value):
         self._value = value
 
+
 # ~~~~~~~~~
 # Functions
 # ~~~~~~~~~
 
+
 def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Variable]], symplectic_lr: float):
     r"""
     Updates the symplectic parameters using the given symplectic gradients.
-    
+
     Implemented from:
         Wang J, Sun H, Fiori S. A Riemannian-steepest-descent approach
         for optimization on the real symplectic group.
@@ -160,7 +162,8 @@ def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Variable]], symplec
             S, math.expm(-symplectic_lr * YT) @ math.expm(-symplectic_lr * (Y - YT))
         )
         math.assign(S, new_value)
-        
+
+
 def update_orthogonal(grads_and_vars: Sequence[Tuple[Tensor, Variable]], orthogonal_lr: float):
     r"""Updates the orthogonal parameters using the given orthogonal gradients.
 
