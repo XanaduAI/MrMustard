@@ -295,10 +295,11 @@ class Settings:
             # the next line must be run before "from julia import Main as Main_julia"
             _ = Julia(compiled_modules=False)
             # the next line must be run after "_ = Julia(compiled_modules=False)"
-            from julia import Main as Main_julia # pylint: disable=import-outside-toplevel
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             # load julia environment
             from julia import Pkg  # pylint: disable=import-outside-toplevel
+
             utils_directory = os.path.dirname(__file__)
             Main_julia.cd(utils_directory)
             Pkg.activate("../../julia_pkg")
