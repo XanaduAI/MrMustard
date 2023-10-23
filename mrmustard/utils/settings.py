@@ -297,9 +297,7 @@ class Settings:
             # the next line must be run after "_ = Julia(compiled_modules=False)"
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            # activate julia package
-            from julia import Pkg  # pylint: disable=import-outside-toplevel
-
+            # load julia environment
             utils_directory = os.path.dirname(__file__)
             Main_julia.cd(utils_directory)
             os.environ[

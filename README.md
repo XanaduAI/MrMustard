@@ -32,14 +32,26 @@ Mr Mustard supports:
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
 # Julia
-MrMustard requires [Julia](https://github.com/JuliaLang/juliaup#installation) to be installed, as well as the following Julia packages:
-* [PyCall](https://github.com/JuliaPy/PyCall.jl)
-* [MultiFloats](https://docs.juliahub.com/MultiFloats)
 
-Installing these packages can be done by running:
+[//]: # (MrMustard requires [Julia]&#40;https://github.com/JuliaLang/juliaup#installation&#41; to be installed, as well as the following Julia packages:)
 
-```julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"```
+[//]: # (* [PyCall]&#40;https://github.com/JuliaPy/PyCall.jl&#41;)
 
+[//]: # (* [MultiFloats]&#40;https://docs.juliahub.com/MultiFloats&#41;)
+
+[//]: # ()
+[//]: # (Installing these packages can be done by running:)
+
+[//]: # (```julia -e "using Pkg; Pkg.add&#40;\"PyCall\"&#41;; Pkg.add&#40;\"MultiFloats\"&#41;"```)
+
+MrMustard requires [Julia](https://github.com/JuliaLang/juliaup#installation) to be installed. Setting up the Julia 
+dependencies can be done by running:
+```
+cd julia_pkg
+julia
+using Pkg
+Pkg.instantiate()
+```
 
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
