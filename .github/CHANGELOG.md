@@ -5,6 +5,17 @@
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
 ### Breaking changes
+* Removed circular dependencies by:
+  * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
+  * Moving `circuit_drawer` and `wigner` to `physics`.
+  * Moving `xptensor` to `math`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Created `settings.py` file to host `Settings`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
 
 ### Improvements
 

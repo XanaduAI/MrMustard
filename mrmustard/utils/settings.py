@@ -310,8 +310,8 @@ class Settings:
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             # import Julia functions
-            math_directory = os.path.dirname(__file__)
-            Main_julia.cd(math_directory)
+            utils_directory = os.path.dirname(__file__)
+            Main_julia.cd(utils_directory)
             Main_julia.include("math/lattice/strategies/julia/getPrecision.jl")
             Main_julia.include("math/lattice/strategies/julia/vanilla.jl")
             Main_julia.include("math/lattice/strategies/julia/compactFock/helperFunctions.jl")
