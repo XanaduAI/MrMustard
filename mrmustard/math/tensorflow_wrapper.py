@@ -223,7 +223,7 @@ class TFMath(MathInterface):
 
     def new_constant(self, value, name: str, dtype=tf.float64):
         value = self.convert_to_tensor(value, dtype)
-        return Constant(value=value, name=name, dtype=dtype)
+        return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
         """Note that the norm preserves the type of array."""

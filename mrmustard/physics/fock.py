@@ -31,6 +31,7 @@ from mrmustard.math.mmtensor import MMTensor
 from mrmustard.math.compactFock.compactFock_diagonal_amps import (
     fock_representation_diagonal_amps,
 )
+from mrmustard.math.parameters import Constant
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
@@ -837,7 +838,9 @@ def quadrature_distribution(
         )
 
     if x is None:
-        x = np.sqrt(settings.HBAR) * math.new_constant(estimate_quadrature_axis(cutoff), "q_tensor")
+        x = np.sqrt(settings.HBAR) * Constant(
+            value=estimate_quadrature_axis(cutoff), name="q_tensor"
+        )
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (

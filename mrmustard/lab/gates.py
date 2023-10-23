@@ -21,12 +21,11 @@ This module defines gates and operations that can be applied to quantum modes to
 from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 from mrmustard import settings
-from mrmustard.lab.abstract import Channel, Unitary, State
+from .abstract import Channel, Unitary, State
+from .utils import make_parameter, add_parameter
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.training import Parametrized
-from mrmustard.math.parameters import Constant, Variable
-from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
 math = Math()
@@ -91,26 +90,16 @@ class Dgate(Unitary):
             name="Dgate",
         )
 
-        self.parameter_set = ParameterSet()
-
         # TODO: What follows can be encapsulated in convenience functions that
         # kill the line numbers, making init's more readable and easier to debug
 
         # adding "x"
-        if x_trainable:
-            x_parameter = Variable(value=x, name="x", bounds=x_bounds)
-        else:
-            x_parameter = Constant(value=x, name="x")
-        self.parameter_set.add_parameter(x_parameter)
-        self.__dict__["x"] = self.parameter_set.x
+        x_parameter = make_parameter(x_trainable, x, "x", x_bounds, None)
+        add_parameter(self, x_parameter)
 
         # adding "y"
-        if y_trainable:
-            y_parameter = Variable(value=y, name="y", bounds=y_bounds)
-        else:
-            y_parameter = Constant(value=y, name="y")
-        self.parameter_set.add_parameter(y_parameter)
-        self.__dict__["y"] = self.parameter_set.y
+        y_parameter = make_parameter(y_trainable, y, "y", y_bounds, None)
+        add_parameter(self, y_parameter)
 
     @property
     def d_vector(self):
@@ -170,7 +159,7 @@ class Dgate(Unitary):
             return fock.displacement(x[0], y[0], shape=shape)
 
 
-class Sgate(Parametrized, Unitary):
+class Sgate(Unitary):
     r"""Squeezing gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -204,21 +193,19 @@ class Sgate(Parametrized, Unitary):
         modes: Optional[list[int]] = None,
         **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
         )
+
+        # adding "r"
+        r_parameter = make_parameter(r_trainable, r, "r", r_bounds, None)
+        add_parameter(self, r_parameter)
+
+        # adding "phi"
+        phi_parameter = make_parameter(phi_trainable, phi, "phi", phi_bounds, None)
+        add_parameter(self, phi_parameter)
 
     def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
@@ -252,8 +239,8 @@ class Sgate(Parametrized, Unitary):
             raise ValueError
 
         # this works both or scalar r/phi and vector r/phi:
-        r = self.r.value * math.ones(N, dtype=self.r.value.dtype)
-        phi = self.phi.value * math.ones(N, dtype=self.phi.value.dtype)
+        r = self.r.value * math.ones(N, dtype=self.r.dtype)
+        phi = self.phi.value * math.ones(N, dtype=self.phi.dtype)
 
         if N > 1:
             # calculate squeezing unitary for each mode and concatenate with outer product

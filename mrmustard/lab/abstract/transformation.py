@@ -25,6 +25,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.tensor_networks import Tensor
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.training.parameter import Parameter
@@ -92,7 +93,9 @@ class Transformation(Tensor):
 
     @property
     def num_modes(self) -> int:
-        r"""The number of modes on which the transformation acts."""
+        r"""
+        The number of modes on which the transformation acts.
+        """
         return len(self.modes)
 
     def _validate_modes(self, modes):
@@ -334,7 +337,15 @@ class Unitary(Transformation):
 
     def __init__(self, name: str, modes: list[int]):
         super().__init__(name=name, modes_in_ket=modes, modes_out_ket=modes)
+        self._parameter_set = ParameterSet()
         self.is_unitary = True
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this unitary.
+        """
+        return self._parameter_set
 
     def value(self, shape: Tuple[int]):
         return self.U(shape=shape)
@@ -408,6 +419,7 @@ class Channel(Transformation):
             modes_in_bra=modes,
             modes_out_bra=modes,
         )
+        self._parameter_set = ParameterSet()
         self.is_unitary = False
 
     def _transform_fock(self, state: State, dual: bool = False) -> State:
@@ -416,6 +428,13 @@ class Channel(Transformation):
         if state.is_hilbert_vector:
             return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this channel.
+        """
+        return self._parameter_set
 
     def value(self, shape: Tuple[int]):
         return self.choi(shape=shape)
