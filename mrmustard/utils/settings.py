@@ -302,11 +302,12 @@ class Settings:
 
             utils_directory = os.path.dirname(__file__)
             Main_julia.cd(utils_directory)
-            Pkg.activate("../../julia_pkg/")
+            os.environ[
+                "JULIA_PROJECT"
+            ] = "../../julia_pkg/"  # directory containing Project.toml and Manifest.toml
 
             # import Julia functions
-            Main_julia.cd(utils_directory)
-            Main_julia.include("math/lattice/strategies/vanilla.jl")
+            Main_julia.include("../math/lattice/strategies/vanilla.jl")
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
