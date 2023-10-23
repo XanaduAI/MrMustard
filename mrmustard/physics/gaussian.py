@@ -197,13 +197,13 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> Vector:
     Returns:
         Vector: displacement vector of a displacement gate
     """
-    x = math.atleast_1d(x)
-    y = math.atleast_1d(y)
+    x = math.atleast_1d(x, dtype=math.float64)
+    y = math.atleast_1d(y, dtype=math.float64)
     if x.shape[-1] == 1:
         x = math.tile(x, y.shape)
     if y.shape[-1] == 1:
         y = math.tile(y, x.shape)
-    return math.sqrt(2 * settings.HBAR, dtype=x.dtype) * math.concat([x, y], axis=0)
+    return math.sqrt(2 * settings.HBAR, dtype=math.float64) * math.concat([x, y], axis=0)
 
 
 def beam_splitter_symplectic(theta: Scalar, phi: Scalar) -> Matrix:

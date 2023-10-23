@@ -30,7 +30,44 @@ __all__ = ["Constant", "Variable"]
 # ~~~~~~~
 
 
-class Constant:
+class ParameterBase:
+    r"""
+    A base class for Mr Mustard parameters.
+
+    Args:
+        value: The value of this parameter.
+        name: The name of this parameter.
+        dtype: The type of this parameter.
+    """
+
+    def __init__(self, value: any, name: str, dtype: any):
+        self._value = value
+        self._name = name
+        self._dtype = dtype
+
+    @property
+    def dtype(self) -> str:
+        r"""
+        The type of this parameter.
+        """
+        return self._dtype
+
+    @property
+    def name(self) -> str:
+        r"""
+        The name of this parameter.
+        """
+        return self._name
+
+    @property
+    def value(self) -> any:
+        r"""
+        The value of this parameter.
+        """
+        return self._value
+
+
+class Constant(ParameterBase):
     r"""
     A parameter with a constant, immutable value.
 
@@ -40,34 +77,17 @@ class Constant:
         dtype: The type of this constant.
     """
 
-    def __init__(self, value: any, name: str, dtype: Optional[any] = None):
-        self._value = value
-        self._name = name
-        self._dtype = dtype if dtype else getattr(value, "dtype", math.float64)
+    def __init__(self, value: any, name: str, dtype: any = math.float64):
+        super().__init__(value, name, dtype)
 
-    @property
-    def dtype(self) -> str:
-        r"""
-        The type of this constant.
-        """
-        return self._dtype
+    def __mul__(self, value):
+        return type(self)(value=value * self.value, name=self.name, dtype=self.dtype)
 
-    @property
-    def name(self) -> str:
-        r"""
-        The name of this constant.
-        """
-        return self._name
-
-    @property
-    def value(self) -> any:
-        r"""
-        The value of this constant.
-        """
-        return self._value
+    def __rmul__(self, value):
+        return type(self)(value=self.value * value, name=self.name, dtype=self.dtype)
 
 
-class Variable:
+class Variable(ParameterBase):
     r"""
     A parameter whose value can change.
 
@@ -83,15 +103,13 @@ class Variable:
         self,
         value: any,
         name: str,
-        dtype: Optional[any] = None,
+        dtype: any = math.float64,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         update_fn: Optional[Callable] = None,
     ):
-        self._value = value
-        self._name = name
+        super().__init__(value, name, dtype)
         self._bounds = bounds
         self._update_fn = update_fn
-        self._dtype = dtype if dtype else getattr(value, "dtype", math.float64)
 
     @property
     def bounds(self) -> Tuple[Optional[float], Optional[float]]:
@@ -99,20 +117,6 @@ class Variable:
         The numerical bounds of this variable.
         """
         return self._bounds
-
-    @property
-    def dtype(self) -> str:
-        r"""
-        The type of this variable.
-        """
-        return self._dtype
-
-    @property
-    def name(self) -> str:
-        r"""
-        The name of this variable.
-        """
-        return self._name
 
     @property
     def update_fn(self) -> Optional[Callable]:
@@ -139,6 +143,24 @@ class Variable:
     @value.setter
     def value(self, value):
         self._value = value
+
+    def __mul__(self, value):
+        return type(self)(
+            value=value * self.value,
+            name=self.name,
+            dtype=self.dtype,
+            bounds=self.bounds,
+            update_fn=self.update_fn,
+        )
+
+    def __rmul__(self, value):
+        return type(self)(
+            value=self.value * value,
+            name=self.name,
+            dtype=self.dtype,
+            bounds=self.bounds,
+            update_fn=self.update_fn,
+        )
 
 
 # ~~~~~~~~~
