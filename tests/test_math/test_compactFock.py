@@ -2,6 +2,7 @@
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -43,7 +44,8 @@ def test_compactFock_diagonal(A_B_G0):
         # Vanilla MM
         G_ref = math.hermite_renormalized(
             math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-        ).numpy()  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        G_ref = math.asnumpy(G_ref)
 
         # Extract diagonal amplitudes from vanilla MM
         ref_diag = np.zeros(cutoffs, dtype=np.complex128)
@@ -72,7 +74,8 @@ def test_compactFock_1leftover(A_B_G0):
         # Vanilla MM
         G_ref = math.hermite_renormalized(
             math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-        ).numpy()  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        G_ref = math.asnumpy(G_ref)
 
         # Extract amplitudes of leftover mode from vanilla MM
         ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
@@ -83,6 +86,7 @@ def test_compactFock_1leftover(A_B_G0):
         assert np.allclose(ref_leftover, G_leftover)
 
 
+@pytest.mark.skipif(math.backend.name == "numpy", reason="training tests skipped by numpy backend")
 def test_compactFock_diagonal_gradients():
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
     G = Ggate(num_modes=3, symplectic_trainable=True)
@@ -103,6 +107,7 @@ def test_compactFock_diagonal_gradients():
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
 
+@pytest.mark.skipif(math.backend.name == "numpy", reason="training tests skipped by numpy backend")
 def test_compactFock_1leftover_gradients():
     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
     G = Ggate(num_modes=3, symplectic_trainable=True)

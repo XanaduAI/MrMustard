@@ -83,16 +83,10 @@ class BackendManager:
         self._euclidean_opt: type = None
 
         # start in numpy backend
-        self.change_backend("numpy")
+        # self._change_backend("numpy")
+        # self._change_backend("tensorflow")
 
-    @property
-    def backend(self):
-        r"""
-        The backend that is being used.
-        """
-        return self._backend
-
-    def change_backend(self, name: str):
+    def _change_backend(self, name: str):
         r"""
         Changes the backend to a different one.
 
@@ -101,7 +95,7 @@ class BackendManager:
         """
         if self._backend and self._backend.name == name:
             # same backend as in the last call
-            return self._backend
+            return None
 
         module = all_modules[name]["module"]
         object = all_modules[name]["object"]
@@ -118,6 +112,14 @@ class BackendManager:
 
         # bind
         self._bind(backend)
+
+    @property
+    def backend(self):
+        r"""
+        The backend that is being used.
+        """
+        self._change_backend(settings.BACKEND)
+        return self._backend
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
         r"""
@@ -1261,7 +1263,8 @@ class BackendManager:
         """Adds two phase-space tensors (cov matrices, displacement vectors, etc..) on the specified modes."""
         if new is None:
             return old
-        N = old.shape[-1] // 2
+        shape = getattr(old, "shape", ())
+        N = (shape[-1] if shape != () else 0) // 2
         indices = modes + [m + N for m in modes]
         return self.update_add_tensor(
             old, list(product(*[indices] * len(new.shape))), self.reshape(new, -1)
@@ -1286,11 +1289,13 @@ class BackendManager:
         """
         if a_partial is None:
             return b_full
-        N = b_full.shape[-1] // 2
+        shape = getattr(b_full, "shape", ())
+        N = (shape[-1] if shape != () else 0) // 2
         indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
-        return self.update_tensor(b_full, indices[:, None], b_rows)
+        self.update_tensor(b_full, indices[:, None], b_rows)
+        return b_full  # ??
 
     def right_matmul_at_modes(
         self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]

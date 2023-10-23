@@ -59,7 +59,7 @@ class BackendTensorflow(BackendBase):
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
-        return np.array(tensor)
+        return tensor.numpy()
 
     def assign(self, tensor: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
         tensor.assign(value)

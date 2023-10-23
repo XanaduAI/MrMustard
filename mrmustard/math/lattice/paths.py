@@ -68,3 +68,11 @@ def binomial_subspace_basis(cutoffs: tuple[int, ...], weight: int):
     )  # this is just so that numba can infer the type, then we remove it
     _binomial_subspace_basis(cutoffs, weight, 0, cutoffs, basis)
     return basis[1:]  # remove the dummy element
+
+
+def BINOMIAL_PATHS_NUMBA_n(modes):
+    r"Creates a numba dictionary to store the paths and effectively cache them."
+    return typed.Dict.empty(
+        key_type=typeof(((0,) * modes, 0)),
+        value_type=types.ListType(typeof((0,) * modes)),
+    )

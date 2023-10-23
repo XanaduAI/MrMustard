@@ -23,14 +23,14 @@ from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
 from ..utils.typing import Trainable
-from .autocast import Autocast
+from .lattice.strategies import binomial, vanilla, vanilla_vjp
 
-# from .compactFock.compactFock_inputValidation import (
-#     grad_hermite_multidimensional_1leftoverMode,
-#     grad_hermite_multidimensional_diagonal,
-#     hermite_multidimensional_1leftoverMode,
-#     hermite_multidimensional_diagonal,
-# )
+from .compactFock.compactFock_inputValidation import (
+    grad_hermite_multidimensional_1leftoverMode,
+    grad_hermite_multidimensional_diagonal,
+    hermite_multidimensional_1leftoverMode,
+    hermite_multidimensional_diagonal,
+)
 
 
 class BackendNumpy(BackendBase):
@@ -86,12 +86,19 @@ class BackendNumpy(BackendBase):
         return array.astype(dtype)  # gotta fix the warning
 
     def custom_gradient(self, func, args, kwargs):
-        return np.gradient(func, *args, **kwargs)
+        def trivial_decorator(*args, **kwargs):
+            r"""
+            Returns a trivial decorator that does nothing.
+            """
+            return func(*args, **kwargs)
+
+        return trivial_decorator
 
     def clip(self, array, a_min, a_max) -> np.array:
         return np.clip(array, a_min, a_max)
 
     def concat(self, values: List[np.array], axis: int) -> np.array:
+        values = np.array(values) if len(np.array(values).shape) != 1 else np.array([values])
         return np.concatenate(values, axis)
 
     def conj(self, array: np.array) -> np.array:
@@ -189,7 +196,7 @@ class BackendNumpy(BackendBase):
     def from_backend(self, value) -> bool:
         return isinstance(value, np.ndarray)
 
-    def gather(self, array: np.array, indices: np.array, axis: int = None) -> np.array:
+    def gather(self, array: np.array, indices: np.array, axis: int = 0) -> np.array:
         return np.take(array, indices, axis=axis)
 
     def hash_tensor(self, tensor: np.array) -> int:
@@ -319,13 +326,44 @@ class BackendNumpy(BackendBase):
     def transpose(self, a: np.array, perm: Sequence[int] = None) -> np.array:
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
-        return np.transpose(a, perm)
+        import tensorflow as tf
+
+        return tf.transpose(a.astensor(), perm)
+
+        if a is None:
+            return None  # TODO: remove and address None inputs where tranpose is used
+
+        def permute_rows(a, perm):
+            ret = np.array(
+                [
+                    a[perm[0]],
+                ]
+            )
+            for p in perm[1:]:
+                ret = np.append(
+                    ret,
+                    np.array(
+                        [
+                            a[p],
+                        ]
+                    ),
+                    axis=0,
+                )
+            return ret
+
+        ret = a
+        ret = ret if not perm else permute_rows(ret, perm)
+        ret = ret.transpose()
+
+        print(a, "\n")
+        print(ret)
+
+        return ret
 
     @Autocast()
     def update_tensor(self, tensor: np.array, indices: np.array, values: np.array):
-        # return np.array_scatter_nd_update(tensor, indices, values)
-        # ??
-        pass
+        np.add.at(tensor, indices.T, values)
+        return tensor
 
     @Autocast()
     def update_add_tensor(self, tensor: np.array, indices: np.array, values: np.array):
@@ -383,21 +421,6 @@ class BackendNumpy(BackendBase):
         r"""Default optimizer for the Euclidean parameters."""
         return None
 
-    def value_and_gradients(
-        self, cost_fn: Callable, parameters: List[Trainable]
-    ) -> Tuple[np.array, List[np.array]]:
-        r"""Computes the loss and gradients of the given cost function.
-
-        Args:
-            cost_fn (Callable with no args): The cost function.
-            parameters (List[Trainable]): The parameters to optimize.
-
-        Returns:
-            tuple(np.ndarray, List[np.ndarray]): the loss and the gradients
-        """
-        # ??
-        pass
-
     def hermite_renormalized(
         self, A: np.array, B: np.array, C: np.array, shape: Tuple[int]
     ) -> np.array:
@@ -415,16 +438,24 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        from .lattice.strategies import vanilla
-
+        precision_bits = (
+            settings.PRECISION_BITS_HERMITE_POLY
+        )  # number of bits used to represent a single Fock amplitude (default: complex128)
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-        G = vanilla(tuple(shape), _A, _B, _C)
 
-        # def grad(dLdGconj):
-        #     dLdA, dLdB, dLdC = vanilla_vjp(G, _C, np.conj(dLdGconj))
-        #     return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
+        if precision_bits == 128:  # numba
+            G = vanilla(tuple(shape), _A, _B, _C)
+        else:  # julia (with precision_bits = 512)
+            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-        # return G, grad
+            _A, _B, _C = (
+                _A.astype(np.complex128),
+                _B.astype(np.complex128),
+                _C.astype(np.complex128),
+            )
+            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
+
         return G
 
     def hermite_renormalized_binomial(
@@ -453,8 +484,6 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        from .lattice.strategies import binomial
-
         G, _ = binomial(
             tuple(shape),
             A,
@@ -464,13 +493,7 @@ class BackendNumpy(BackendBase):
             global_cutoff=global_cutoff or sum(shape) - len(shape) + 1,
         )
 
-        def grad(dLdGconj):
-            from .lattice.strategies import vanilla_vjp
-
-            dLdA, dLdB, dLdC = vanilla_vjp(G, C, np.conj(dLdGconj))
-            return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
-
-        return G, grad
+        return G
 
     def reorder_AB_bargmann(self, A: np.array, B: np.array) -> Tuple[np.array, np.array]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
@@ -488,10 +511,8 @@ class BackendNumpy(BackendBase):
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
-        # A, B = self.reorder_AB_bargmann(A, B)
-        # return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
-        # ??
-        pass
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB(
         self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
@@ -512,8 +533,21 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial.
         """
-        # ??
-        pass
+        poly0, poly2, poly1010, poly1001, poly1 = hermite_multidimensional_diagonal(
+            A, B, C, cutoffs
+        )
+
+        # def grad(dLdpoly):
+        #     dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_diagonal(
+        #         A, B, C, poly0, poly2, poly1010, poly1001, poly1
+        #     )
+        #     ax = tuple(range(dLdpoly.ndim))
+        #     dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
+        #     dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
+        #     dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
+        #     return dLdA, dLdB, dLdC
+
+        return poly0  # , grad
 
     def hermite_renormalized_1leftoverMode(
         self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
@@ -521,8 +555,8 @@ class BackendNumpy(BackendBase):
         r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
-        # ??
-        pass
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_1leftoverMode_reorderedAB(
         self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
@@ -544,8 +578,8 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial.
         """
-        # ??
-        pass
+        poly0, _, _, _, _ = hermite_multidimensional_1leftoverMode(A, B, C, cutoffs)
+        return poly0
 
     @staticmethod
     def eigvals(tensor: np.array) -> np.ndarray:

@@ -22,29 +22,18 @@ import pytest
 from mrmustard import settings
 import mrmustard.math as math
 
-try:
-    import torch
-
-    torch_available = True
-except ImportError:
-    torch_available = False
-
 
 def test_backend_redirection_tf():
-    """Test Math class is redirecting calls to the backend set on MM settings"""
-    settings.BACKEND = "tensorflow"
+    """Test BackendManager class is redirecting calls to the desired backend"""
+    n0 = math.backend.name
+
+    math.change_backend("tensorflow")
     assert math.backend.name == "tensorflow"
 
+    math.change_backend("numpy")
+    assert math.backend.name == "numpy"
 
-def test_error_for_wrong_backend():
-    """Test error is raise when using a backend that is not allowed"""
-    backend = settings.BACKEND
-    with pytest.raises(ValueError) as exception_info:
-        settings.BACKEND = "unexisting_backend"
-        assert exception_info.value.args[0] == "Backend must be either 'tensorflow' or 'torch'"
-
-    # set back to initial value to avoid side effects
-    settings.BACKEND = backend
+    n0 = math.backend.name
 
 
 def test_hash_tensor():

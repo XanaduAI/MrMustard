@@ -887,6 +887,10 @@ def displacement(x, y, shape, tol=1e-15):
     else:
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
+    ret = math.astensor(gate, dtype=gate.dtype.name)
+    if settings.BACKEND == "numpy":
+        return ret
+
     def grad(dL_dDc):
         dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
         dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
@@ -894,7 +898,7 @@ def displacement(x, y, shape, tol=1e-15):
         dLdy = 2 * np.imag(dL_dac)
         return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-    return math.astensor(gate, dtype=gate.dtype.name), grad
+    return ret, grad
 
 
 @math.custom_gradient
@@ -917,6 +921,10 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
             f"Unknown beamsplitter method {method}. Options are 'vanilla' and 'schwinger'."
         )
 
+    ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
+    if settings.BACKEND == "numpy":
+        return ret
+
     def vjp(dLdGc):
         dtheta, dphi = strategies.beamsplitter_vjp(
             math.asnumpy(bs_unitary),
@@ -926,13 +934,17 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         )
         return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
 
-    return math.astensor(bs_unitary, dtype=bs_unitary.dtype.name), vjp
+    return ret, vjp
 
 
 @math.custom_gradient
 def squeezer(r, phi, shape):
     r"""creates a single mode squeezer matrix using a numba-based fock lattice strategy"""
     sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
+
+    ret = math.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
+    if settings.BACKEND == "numpy":
+        return ret
 
     def vjp(dLdGc):
         dr, dphi = strategies.squeezer_vjp(
@@ -950,6 +962,10 @@ def squeezer(r, phi, shape):
 def squeezed(r, phi, shape):
     r"""creates a single mode squeezed state using a numba-based fock lattice strategy"""
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
+
+    ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
+    if settings.BACKEND == "numpy":
+        return ret
 
     def vjp(dLdGc):
         dr, dphi = strategies.squeezed_vjp(

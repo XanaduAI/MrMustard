@@ -26,6 +26,7 @@ from mrmustard.physics import fock, gaussian
 from mrmustard.training.parametrized import Parametrized
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 import mrmustard.math as math
+from mrmustard.math.lattice import strategies
 
 __all__ = [
     "Dgate",
