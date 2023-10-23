@@ -24,7 +24,7 @@ ifndef JULIA
 	@echo "To use Mr Mustard it is recommended to have Julia installed"
 endif
 	poetry install
-	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
+	julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()
 
 .PHONY: install-all
 install-all:
@@ -35,7 +35,7 @@ ifndef JULIA
 	@echo "To use Mr Mustard it is recommended to have Julia installed"
 endif
 	poetry install --all-extras --with dev,doc
-	julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
+	julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()
 
 .PHONY: dist
 dist:
