@@ -1,0 +1,8 @@
+name = "MrMustard"
+uuid = "b8a088bd-1689-4a49-a8b0-b144d6e589e9"
+authors = ["Xanadu <filippo@xanadu.ai>"]
+version = "0.1.0"
+
+[deps]
+MultiFloats = "bdf0d083-296b-4888-a5b6-7498122e68a5"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
