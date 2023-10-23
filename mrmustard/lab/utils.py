@@ -43,15 +43,3 @@ def make_parameter(
     if is_trainable:
         return Constant(value=value, name=name)
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)
-
-
-def add_parameter(transformation: Transformation, parameter: Union[Constant, Variable]):
-    r"""
-    Adds a parameter to a transformation.
-
-    Args:
-        transformation: The given transformation.
-        parameter: The parameter to add.
-    """
-    transformation.parameter_set.add_parameter(parameter)
-    transformation.__dict__[parameter.name] = parameter

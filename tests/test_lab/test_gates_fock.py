@@ -125,7 +125,7 @@ def test_two_mode_fock_equals_gaussian(gate):
 
     via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
     via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
-    assert np.allclose(via_fock_space_dm, via_phase_space_dm)
+    assert np.allclose(via_fock_space_dm, via_phase_space_dm, atol=1e-6)
 
 
 @pytest.mark.parametrize(

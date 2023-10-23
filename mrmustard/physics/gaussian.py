@@ -379,7 +379,8 @@ def controlled_X(g: Scalar):
             [g, 1, 0, 0],
             [0, 0, 1, -g],
             [0, 0, 0, 1],
-        ]
+        ],
+        dtype=math.float64,
     )
 
 
@@ -499,7 +500,9 @@ def noise_Y(noise: Union[Scalar, Vector]) -> Matrix:
     Returns:
         Tuple[None, Matrix, None]: the ``X``, ``Y`` matrices and the ``d`` vector of the noise channel.
     """
-    return math.diag(math.concat([noise, noise], axis=0)) * settings.HBAR / 2
+    return math.cast(
+        math.diag(math.concat([noise, noise], axis=0)) * settings.HBAR / 2, dtype=math.float64
+    )
 
 
 def compose_channels_XYd(

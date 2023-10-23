@@ -25,6 +25,7 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.tensor_networks import Tensor
 from mrmustard.physics import bargmann, fock, gaussian
@@ -39,7 +40,48 @@ math = Math()
 class Transformation(Tensor):
     r"""
     Base class for all Transformations.
+
+    Args:
+        name: The name of the underlieing tensor.
+        modes_in_ket: The input modes on the ket side.
+        modes_out_ket: The output modes on the ket side.
+        modes_in_bra: The input modes on the bra side.
+        modes_out_bra: The output modes on the bra side.
     """
+
+    def __init__(
+        self,
+        name: str,
+        modes_in_ket: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_bra: Optional[list[int]] = None,
+    ):
+        super().__init__(
+            name=name,
+            modes_in_ket=modes_in_ket,
+            modes_out_ket=modes_out_ket,
+            modes_in_bra=modes_in_bra,
+            modes_out_bra=modes_out_bra,
+        )
+        self._parameter_set = ParameterSet()
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a transformation.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this unitary.
+        """
+        return self._parameter_set
 
     def primal(self, state: State) -> State:
         r"""Applies this transformation to the given ``state`` and returns the transformed state.
@@ -340,13 +382,6 @@ class Unitary(Transformation):
         self._parameter_set = ParameterSet()
         self.is_unitary = True
 
-    @property
-    def parameter_set(self):
-        r"""
-        The set of parameters for this unitary.
-        """
-        return self._parameter_set
-
     def value(self, shape: Tuple[int]):
         return self.U(shape=shape)
 
@@ -428,13 +463,6 @@ class Channel(Transformation):
         if state.is_hilbert_vector:
             return State(dm=fock.apply_choi_to_ket(choi, state.ket(), op_idx), modes=state.modes)
         return State(dm=fock.apply_choi_to_dm(choi, state.dm(), op_idx), modes=state.modes)
-
-    @property
-    def parameter_set(self):
-        r"""
-        The set of parameters for this channel.
-        """
-        return self._parameter_set
 
     def value(self, shape: Tuple[int]):
         return self.choi(shape=shape)
