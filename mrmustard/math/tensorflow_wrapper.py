@@ -183,7 +183,7 @@ class TFMath(MathInterface):
         return tf.gather(array, indices, axis=axis)
 
     def hash_tensor(self, tensor: tf.Tensor) -> int:
-        REF = tensor.numpy().tobytes()
+        REF = self.asnumpy(tensor).tobytes()
         return hashlib.sha256(REF).hexdigest()
 
     def imag(self, array: tf.Tensor) -> tf.Tensor:
