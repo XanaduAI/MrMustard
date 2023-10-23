@@ -103,8 +103,15 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
-        self._julia_initialized = False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-        self._allowed_precision_bits_hermite_poly = [128,256,384,512]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
+        self._julia_initialized = (
+            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        )
+        self._allowed_precision_bits_hermite_poly = [
+            128,
+            256,
+            384,
+            512,
+        ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
