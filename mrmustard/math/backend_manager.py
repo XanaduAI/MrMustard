@@ -65,10 +65,6 @@ all_modules = {
     "tensorflow": {"module": module_tf, "loader": loader_tf, "object": "BackendTensorflow"},
 }
 
-# ~~~~~~~
-# Classes
-# ~~~~~~~
-
 
 class BackendManager:
     r"""

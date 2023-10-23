@@ -64,9 +64,10 @@ class NPMath(MathInterface):
         return tensor
 
     def astensor(self, array: Union[np.ndarray, np.array], dtype=None) -> np.array:
-        # ??
-        # Should I return a tf.Tensor?
-        return np.array(array)
+        from tensorflow import convert_to_tensor, float64
+
+        dtype = dtype or float64
+        return convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: np.array, dtype=None) -> np.array:
         return self.cast(np.atleast_1d(array), dtype=dtype)

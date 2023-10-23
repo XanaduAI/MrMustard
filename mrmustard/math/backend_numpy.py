@@ -270,7 +270,7 @@ class BackendNumpy(BackendBase):
 
     @Autocast()
     def outer(self, array1: np.array, array2: np.array) -> np.array:
-        return np.outer(array1, array2)
+        return np.tensordot(array1, array2, [[], []])
 
     def pad(
         self,
@@ -326,9 +326,7 @@ class BackendNumpy(BackendBase):
     def transpose(self, a: np.array, perm: Sequence[int] = None) -> np.array:
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
-        import tensorflow as tf
-
-        return tf.transpose(a.astensor(), perm)
+        return np.transpose(a, axes=perm)
 
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
