@@ -14,9 +14,13 @@
 
 """This module contains the classes to describe sets of parameters."""
 
-from typing import Union
+from typing import Sequence, Union
+import numpy as np
 
 from .parameters import Constant, Variable
+from mrmustard.math import Math
+
+math = Math()
 
 __all__ = [
     "ParameterSet",
@@ -29,6 +33,7 @@ class ParameterSet:
     """
 
     def __init__(self):
+        self._names: list[str] = []
         self._constants: dict[str, Constant] = {}
         self._variables: dict[str, Variable] = {}
 
@@ -46,6 +51,14 @@ class ParameterSet:
         """
         return self._variables
 
+    @property
+    def names(self) -> Sequence[str]:
+        r"""
+        The names of all the parameters in this parameter set, in the order in which they
+        were added.
+        """
+        return self._names
+
     def add_parameter(self, parameter: Union[Constant, Variable]) -> None:
         r"""
         Adds a parameter to this parameter set.
@@ -59,9 +72,10 @@ class ParameterSet:
         """
         name = parameter.name
 
-        if name in self.constants or name in self.variables:
+        if name in self.names:
             msg = f"A parameter with name ``{name}`` is already part of this parameter set."
             raise ValueError(msg)
+        self._names.append(name)
 
         # updates dictionary and dynamically creates an attribute
         if isinstance(parameter, Constant):
@@ -70,3 +84,29 @@ class ParameterSet:
         elif isinstance(parameter, Variable):
             self.variables[parameter.name] = parameter
             self.__dict__[name] = self.variables[name]
+
+    def to_string(self, decimals: int) -> str:
+        r"""
+        Returns a string representation of the parameter values, separated by commas and rounded
+        to the specified number of decimals.
+
+        Args:
+            decimals (int): number of decimals to round to
+
+        Returns:
+            str: string representation of the parameter values
+        """
+        strings = []
+        for name in self.names:
+            param = self.constants.get(name) or self.variables.get(name)
+            value = math.asnumpy(param.value)
+            if value.ndim == 0:  # don't show arrays
+                sign = "-" if value < 0 else ""
+                value = np.abs(np.round(value, decimals))
+                int_part = int(value)
+                decimal_part = np.round(value - int_part, decimals)
+                string = sign + str(int_part) + f"{decimal_part:.{decimals}g}".lstrip("0")
+            else:
+                string = f"{name}"
+            strings.append(string)
+        return ", ".join(strings)

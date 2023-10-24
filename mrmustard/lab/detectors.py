@@ -18,10 +18,10 @@ This module implements the set of detector classes that perform measurements on 
 
 from typing import Iterable, List, Optional, Tuple, Union
 
+from .utils import make_parameter
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .abstract import FockMeasurement, Measurement, State
@@ -34,7 +34,7 @@ __all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heter
 
 
 # pylint: disable=no-member
-class PNRDetector(Parametrized, FockMeasurement):
+class PNRDetector(FockMeasurement):
     r"""Photon Number Resolving detector.
 
     If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
@@ -72,29 +72,29 @@ class PNRDetector(Parametrized, FockMeasurement):
         modes: List[int] = None,
         cutoffs: Union[int, List[int]] = None,
     ):
-        Parametrized.__init__(
-            self,
-            efficiency=math.atleast_1d(efficiency),
-            dark_counts=math.atleast_1d(dark_counts),
-            efficiency_trainable=efficiency_trainable,
-            dark_counts_trainable=dark_counts_trainable,
-            efficiency_bounds=efficiency_bounds,
-            dark_counts_bounds=dark_counts_bounds,
-        )
-
         self._stochastic_channel = stochastic_channel
         self._should_recompute_stochastic_channel = efficiency_trainable or dark_counts_trainable
+
+        eff = math.atleast_1d(efficiency)
+        dk = math.atleast_1d(dark_counts)
 
         if modes is not None:
             num_modes = len(modes)
         elif cutoffs is not None:
             num_modes = len(cutoffs)
         else:
-            num_modes = max(len(math.atleast_1d(efficiency)), len(math.atleast_1d(dark_counts)))
+            num_modes = max(len(eff), len(dk))
 
         modes = modes or list(range(num_modes))
         outcome = None
         FockMeasurement.__init__(self, outcome, modes, cutoffs)
+
+        self._add_parameter(
+            make_parameter(efficiency_trainable, eff, "efficiency", efficiency_bounds, None)
+        )
+        self._add_parameter(
+            make_parameter(dark_counts_trainable, dk, "dark_counts", dark_counts_bounds, None)
+        )
 
         self.recompute_stochastic_channel()
 
@@ -132,7 +132,7 @@ class PNRDetector(Parametrized, FockMeasurement):
 
 
 # pylint: disable: no-member
-class ThresholdDetector(Parametrized, FockMeasurement):
+class ThresholdDetector(FockMeasurement):
     r"""Threshold detector: any Fock component other than vacuum counts toward a click in the detector.
 
     If ``len(modes) > 1`` the detector is applied in parallel to all of the modes provided.
@@ -178,16 +178,6 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
         modes = modes or list(range(num_modes))
 
-        Parametrized.__init__(
-            self,
-            efficiency=efficiency,
-            dark_count_prob=dark_count_prob,
-            efficiency_trainable=efficiency_trainable,
-            dark_count_prob_trainable=dark_count_prob_trainable,
-            efficiency_bounds=efficiency_bounds,
-            dark_count_prob_bounds=dark_count_prob_bounds,
-        )
-
         self._stochastic_channel = stochastic_channel
 
         cutoffs = [2] * num_modes
@@ -197,6 +187,19 @@ class ThresholdDetector(Parametrized, FockMeasurement):
 
         outcome = None
         FockMeasurement.__init__(self, outcome, modes, cutoffs)
+
+        self._add_parameter(
+            make_parameter(efficiency_trainable, efficiency, "efficiency", efficiency_bounds, None)
+        )
+        self._add_parameter(
+            make_parameter(
+                dark_count_prob_trainable,
+                dark_count_prob,
+                "dark_count_prob",
+                dark_count_prob_bounds,
+                None,
+            )
+        )
 
         self.recompute_stochastic_channel()
 

@@ -39,6 +39,6 @@ def make_parameter(
         bounds: The bounds of the returned parameter (ignored if ``is_trainable`` is ``False``).
         update_fn: The update_fn of the returned parameter (ignored if ``is_trainable`` is ``False``).
     """
-    if is_trainable:
+    if not is_trainable:
         return Constant(value=value, name=name)
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)

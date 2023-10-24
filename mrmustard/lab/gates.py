@@ -412,7 +412,7 @@ class CXgate(Unitary):
             modes=modes or [0, 1],
             name="CXgate",
         )
-        self._add_parameter(make_parameter(s, s_trainable, "s", s_bounds, None))
+        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds, None))
 
     @property
     def X_matrix(self):
@@ -447,7 +447,7 @@ class CZgate(Unitary):
             modes=modes or [0, 1],
             name="CZgate",
         )
-        self._add_parameter(make_parameter(s, s_trainable, "s", s_bounds, None))
+        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds, None))
 
     @property
     def X_matrix(self):
@@ -488,8 +488,8 @@ class BSgate(Unitary):
             modes=modes or [0, 1],  # type: ignore
             name="BSgate",
         )
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
         self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds, None))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
 
     def U(
         self,
