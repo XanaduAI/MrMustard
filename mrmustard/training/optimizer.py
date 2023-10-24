@@ -161,11 +161,11 @@ class Optimizer:
             owner_tag = f"{root_tag}[{i}]"
             if isinstance(item, Circuit):
                 for j, op in enumerate(item._ops):
-                    tag = f"{owner_tag}:{item.name}/_ops[{j}]"
+                    tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
                     tagged_vars = op.parameter_set.tagged_variables(tag)
                     trainables.append(tagged_vars.items())
             elif hasattr(item, "parameter_set"):
-                tag = f"{owner_tag}:{item.name}"
+                tag = f"{owner_tag}:{item.__class__.__qualname__}"
                 tagged_vars = item.parameter_set.tagged_variables(tag)
                 trainables.append(tagged_vars.items())
             elif math.from_backend(item) and math.is_trainable(item):
