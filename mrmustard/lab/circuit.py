@@ -40,7 +40,7 @@ class Circuit(Transformation):
 
     def __init__(self, ops: Optional[List] = None):
         self._ops = list(ops) if ops is not None else []
-        Transformation.__init__(name="Circuit")
+        super().__init__(name="Circuit")
         self.reset()
 
     def reset(self):

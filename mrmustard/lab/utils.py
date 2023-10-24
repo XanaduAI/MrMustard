@@ -20,7 +20,10 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 from typing import Callable, Optional, Tuple
 from mrmustard.math.parameters import update_euclidean
 
+from mrmustard.math import Math
 from mrmustard.math.parameters import Constant, Variable
+
+math = Math()
 
 
 def make_parameter(

@@ -28,6 +28,7 @@ from mrmustard.math.parameters import (
     update_symplectic,
     update_unitary,
 )
+from mrmustard.lab import Circuit
 from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
@@ -138,13 +139,12 @@ class Optimizer:
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
-        grouped_items = sorted(zip(grads, trainable_params), key=lambda x: x[1].update_fn)
-        grouped_items = {
-            key: list(result)
-            for key, result in groupby(grouped_items, key=lambda x: x[1].update_fn)
-        }
+        key = lambda x: getattr(x[1], "update_fn", update_euclidean).__hash__()
+        grouped_items = sorted(zip(grads, trainable_params), key=key)
+        grouped_items = {key: list(result) for key, result in groupby(grouped_items, key=key)}
 
-        for update_fn, grads_vars in grouped_items.items():
+        for grads_vars in grouped_items.values():
+            update_fn = getattr(grads_vars[0][1], "update_fn", update_euclidean)
             params_lr = self.learning_rate[update_fn]
             # extract value (tensor) from the parameter object and group with grad
             grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
@@ -159,7 +159,12 @@ class Optimizer:
         trainables = []
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
-            if hasattr(item, "parameter_set"):
+            if isinstance(item, Circuit):
+                for j, op in enumerate(item._ops):
+                    tag = f"{owner_tag}:{item.name}/_ops[{j}]"
+                    tagged_vars = op.parameter_set.tagged_variables(tag)
+                    trainables.append(tagged_vars.items())
+            elif hasattr(item, "parameter_set"):
                 tag = f"{owner_tag}:{item.name}"
                 tagged_vars = item.parameter_set.tagged_variables(tag)
                 trainables.append(tagged_vars.items())
