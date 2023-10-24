@@ -36,11 +36,16 @@ Mr Mustard supports:
 Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
 To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
 an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3).
-The required Julia packages can be installed as follows:
+
+* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
+
+* When installing MrMustard via `poetry install`, the required Julia packages have to be installed manually as follows:
 
 ```
 julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 ```
+
+* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed _only_ if Julia was previously installed by the user.
 
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.

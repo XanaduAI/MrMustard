@@ -42,11 +42,16 @@ Increased numerical stability using Julia [optional]
 Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
 To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
 an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3).
-The required Julia packages (i.e. `PyCall <https://github.com/JuliaPy/PyCall.jl>`_ and `MultiFloats <https://docs.juliahub.com/MultiFloats>`_) can be installed as follows:
+
+* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
+
+* When installing MrMustard via ``poetry install``, the required Julia packages have to be installed manually as follows:
 
 .. code-block:: console
 
     julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
+
+* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed only if Julia was previously installed by the user.
 
 PyTorch support
 ------------------
