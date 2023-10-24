@@ -7,7 +7,9 @@
 		"dockerfile": "Dockerfile"
 	},
 	"features": {
-		"ghcr.io/julialang/devcontainer-features/julia:1": {}
+    "ghcr.io/julialang/devcontainer-features/julia:1": {
+        "channel": "lts"
+    }
 	},
 	"postCreateCommand": "/bin/zsh ./.devcontainer/post-install.sh",
 	"customizations": {
