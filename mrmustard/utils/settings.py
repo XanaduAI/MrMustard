@@ -296,18 +296,13 @@ class Settings:
             from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
 
             # the next line must be run before "from julia import Main as Main_julia"
-            LibJulia.load().init_julia(["--compiled-modules=no", "--project=julia_pkg"])
+            LibJulia.load().init_julia(["--compiled-modules=no", "--project=julia_pkg"]) # also loads julia environment
             # the next line must be run after "_ = Julia(compiled_modules=False)"
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            # load julia environment
-            from julia import Pkg  # pylint: disable=import-outside-toplevel
-
+            # import Julia functions
             utils_directory = os.path.dirname(__file__)
             Main_julia.cd(utils_directory)
-            Pkg.activate("../../julia_pkg")
-
-            # import Julia functions
             Main_julia.include("../math/lattice/strategies/vanilla.jl")
 
     # use rich.table to print the settings
