@@ -346,8 +346,6 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
     if not ray.is_initialized():  # pragma: no cover
         ray.init(num_cpus=num_cpus)
 
-    assert False
-
     return_dict = False
     if isinstance(tasks, int):
         tasks = [{} for _ in range(tasks)]
@@ -376,7 +374,6 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
 
     if not unblock:
         # blocks and wait till all tasks complete to return the end results.
-        assert False
         if pbar:
             results = list(
                 track(
