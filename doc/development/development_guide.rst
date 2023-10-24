@@ -7,7 +7,6 @@ Dependencies
 Mr Mustard requires the following libraries be installed:
 
 * `Python <http://python.org/>`_ >= 3.9
-* `Julia <https://github.com/JuliaLang/juliaup#installation>`_ = 1.9.3
 
 as well as the following Python packages:
 
@@ -18,11 +17,6 @@ as well as the following Python packages:
 * `Matplotlib <https://matplotlib.org/>`_
 * `Rich <https://pypi.org/project/rich/>`_
 * `tqdm <https://tqdm.github.io/>`_
-
-and the following Julia packages:
-
-* `PyCall <https://github.com/JuliaPy/PyCall.jl>`_
-* `MultiFloats <https://docs.juliahub.com/MultiFloats>`_
 
 If you currently do not have Python 3 installed, we recommend
 `Anaconda for Python 3 <https://www.anaconda.com/download/>`_, a distributed version
@@ -43,9 +37,12 @@ using development mode:
 The ``-e`` flag ensures that edits to the source code will be reflected when
 importing Mr Mustard in Python.
 
-Julia packages
+Increased numerical stability using Julia [optional]
 ------------------
-The required Julia packages can be installed as follows:
+Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
+To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
+an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3).
+The required Julia packages (i.e. `PyCall <https://github.com/JuliaPy/PyCall.jl>`_ and `MultiFloats <https://docs.juliahub.com/MultiFloats>`_) can be installed as follows:
 
 .. code-block:: console
 

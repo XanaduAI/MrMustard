@@ -31,24 +31,12 @@ Mr Mustard supports:
 - Plug-and-play backends (TensorFlow as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
-# Julia
+# Increased numerical stability using Julia [optional]
 
-[//]: # (MrMustard requires [Julia]&#40;https://github.com/JuliaLang/juliaup#installation&#41; to be installed, as well as the following Julia packages:)
-[//]: # (* [PyCall]&#40;https://github.com/JuliaPy/PyCall.jl&#41;)
-[//]: # (* [MultiFloats]&#40;https://docs.juliahub.com/MultiFloats&#41;)
-[//]: # ()
-[//]: # (Installing these packages can be done by running:)
-[//]: # (```julia -e "using Pkg; Pkg.add&#40;\"PyCall\"&#41;; Pkg.add&#40;\"MultiFloats\"&#41;"```)
-
-MrMustard requires [Julia](https://github.com/JuliaLang/juliaup#installation) to be installed. Setting up the Julia 
-dependencies can be done by running:
-
-[//]: # (```)
-[//]: # (cd julia_pkg)
-[//]: # (julia)
-[//]: # (using Pkg)
-[//]: # (Pkg.instantiate&#40;&#41;)
-[//]: # (```)
+Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
+To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
+an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3).
+The required Julia packages can be installed as follows:
 
 ````julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"````
 
