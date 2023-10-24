@@ -26,7 +26,6 @@ from mrmustard import settings
 from mrmustard.lab.abstract import Channel, Unitary, State
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
 math = Math()
@@ -51,7 +50,7 @@ __all__ = [
 ]
 
 
-class Dgate(Parametrized, Unitary):
+class Dgate(Unitary):
     r"""Displacement gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -83,7 +82,6 @@ class Dgate(Parametrized, Unitary):
         x_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         y_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
         Unitary.__init__(
@@ -152,7 +150,7 @@ class Dgate(Parametrized, Unitary):
             return fock.displacement(x[0], y[0], shape=shape)
 
 
-class Sgate(Parametrized, Unitary):
+class Sgate(Unitary):
     r"""Squeezing gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -184,23 +182,14 @@ class Sgate(Parametrized, Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
         )
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
 
     def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
@@ -258,7 +247,7 @@ class Sgate(Parametrized, Unitary):
         return gaussian.squeezing_symplectic(self.r.value, self.phi.value)
 
 
-class Rgate(Parametrized, Unitary):
+class Rgate(Unitary):
     r"""Rotation gate.
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -285,20 +274,13 @@ class Rgate(Parametrized, Unitary):
         angle_trainable: bool = False,
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            angle=angle,
-            angle_trainable=angle_trainable,
-            angle_bounds=angle_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
             name="Rgate",
         )
+        self._add_parameter(make_parameter(angle_trainable, angle, "angle", angle_bounds, None))
 
     @property
     def X_matrix(self):
@@ -362,7 +344,7 @@ class Rgate(Parametrized, Unitary):
         )
 
 
-class Pgate(Parametrized, Unitary):
+class Pgate(Unitary):
     r"""Quadratic phase gate.
 
     If len(modes) > 1 the gate is applied in parallel to all of the modes provided. If a parameter
@@ -387,19 +369,14 @@ class Pgate(Parametrized, Unitary):
         shearing_trainable: bool = False,
         shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            shearing=shearing,
-            shearing_trainable=shearing_trainable,
-            shearing_bounds=shearing_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(shearing)))),
             name="Pgate",
+        )
+        self._add_parameter(
+            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds, None)
         )
 
     @property
@@ -407,7 +384,7 @@ class Pgate(Parametrized, Unitary):
         return gaussian.quadratic_phase(self.shearing.value)
 
 
-class CXgate(Parametrized, Unitary):
+class CXgate(Unitary):
     r"""Controlled X gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -429,27 +406,20 @@ class CXgate(Parametrized, Unitary):
         s_trainable: bool = False,
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            s=s,
-            s_trainable=s_trainable,
-            s_bounds=s_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or [0, 1],
             name="CXgate",
         )
+        self._add_parameter(make_parameter(s, s_trainable, "s", s_bounds, None))
 
     @property
     def X_matrix(self):
         return gaussian.controlled_X(self.s.value)
 
 
-class CZgate(Parametrized, Unitary):
+class CZgate(Unitary):
     r"""Controlled Z gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which
@@ -471,27 +441,20 @@ class CZgate(Parametrized, Unitary):
         s_trainable: bool = False,
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            s=s,
-            s_trainable=s_trainable,
-            s_bounds=s_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or [0, 1],
             name="CZgate",
         )
+        self._add_parameter(make_parameter(s, s_trainable, "s", s_bounds, None))
 
     @property
     def X_matrix(self):
         return gaussian.controlled_Z(self.s.value)
 
 
-class BSgate(Parametrized, Unitary):
+class BSgate(Unitary):
     r"""Beam splitter gate.
 
     It applies to a single pair of modes.
@@ -519,23 +482,14 @@ class BSgate(Parametrized, Unitary):
         theta_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            theta=theta,
-            phi=phi,
-            theta_trainable=theta_trainable,
-            phi_trainable=phi_trainable,
-            theta_bounds=theta_bounds,
-            phi_bounds=phi_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or [0, 1],  # type: ignore
             name="BSgate",
         )
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds, None))
 
     def U(
         self,
@@ -592,7 +546,7 @@ class BSgate(Parametrized, Unitary):
             )
 
 
-class MZgate(Parametrized, Unitary):
+class MZgate(Unitary):
     r"""Mach-Zehnder gate.
 
     It supports two conventions:
@@ -625,23 +579,14 @@ class MZgate(Parametrized, Unitary):
         phi_b_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         internal: bool = False,
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            phi_a=phi_a,
-            phi_b=phi_b,
-            phi_a_trainable=phi_a_trainable,
-            phi_b_trainable=phi_b_trainable,
-            phi_a_bounds=phi_a_bounds,
-            phi_b_bounds=phi_b_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or [0, 1],
             name="MZgate",
         )
+        self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds, None))
+        self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds, None))
         self._internal = internal
 
     @property
@@ -655,7 +600,7 @@ class MZgate(Parametrized, Unitary):
             )
 
 
-class S2gate(Parametrized, Unitary):
+class S2gate(Unitary):
     r"""Two-mode squeezing gate.
 
     It applies to a single pair of modes. One can optionally set bounds for each parameter, which the optimizer will respect.
@@ -682,23 +627,14 @@ class S2gate(Parametrized, Unitary):
         r_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or [0, 1],
             name="S2gate",
         )
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
 
     @property
     def X_matrix(self):
@@ -709,7 +645,7 @@ class S2gate(Parametrized, Unitary):
             raise ValueError(f"Invalid number of modes: {len(modes)} (should be 2")
 
 
-class Interferometer(Parametrized, Unitary):
+class Interferometer(Unitary):
     r"""N-mode interferometer.
 
     It corresponds to a Ggate with zero mean and a ``2N x 2N`` unitary symplectic matrix.
@@ -730,22 +666,18 @@ class Interferometer(Parametrized, Unitary):
         unitary: Optional[ComplexMatrix] = None,
         unitary_trainable: bool = False,
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         if modes is not None and num_modes != len(modes):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
-        Parametrized.__init__(
-            self,
-            unitary=unitary,
-            unitary_trainable=unitary_trainable,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(num_modes)),
             name="Interferometer",
+        )
+        self._add_parameter(
+            make_parameter(unitary_trainable, unitary, "unitary", (None, None), None)
         )
 
     @property
@@ -769,7 +701,7 @@ class Interferometer(Parametrized, Unitary):
         return f"Interferometer(num_modes = {len(modes)}, unitary = {unitary}){modes}"
 
 
-class RealInterferometer(Parametrized, Unitary):
+class RealInterferometer(Unitary):
     r"""N-mode interferometer parametrized by an NxN orthogonal matrix (or 2N x 2N block-diagonal orthogonal matrix). This interferometer does not mix q and p.
     Does not mix q's and p's.
 
@@ -788,23 +720,19 @@ class RealInterferometer(Parametrized, Unitary):
         orthogonal: Optional[RealMatrix] = None,
         orthogonal_trainable: bool = False,
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
 
-        Parametrized.__init__(
-            self,
-            orthogonal=orthogonal,
-            orthogonal_trainable=orthogonal_trainable,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(num_modes)),
             name="RealInterferometer",
+        )
+        self._add_parameter(
+            make_parameter(orthogonal_trainable, orthogonal, "orthogonal", (None, None), None)
         )
 
     @property
@@ -828,7 +756,7 @@ class RealInterferometer(Parametrized, Unitary):
         return f"RealInterferometer(num_modes = {len(modes)}, orthogonal = {orthogonal}){modes}"
 
 
-class Ggate(Parametrized, Unitary):
+class Ggate(Unitary):
     r"""A generic N-mode Gaussian unitary transformation with zero displacement.
 
     If a symplectic matrix is not provided, one will be picked at random with effective squeezing
@@ -849,22 +777,19 @@ class Ggate(Parametrized, Unitary):
         symplectic: Optional[RealMatrix] = None,
         symplectic_trainable: bool = False,
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
         if modes is not None and (num_modes != len(modes)):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if symplectic is None:
             symplectic = math.random_symplectic(num_modes)
-        Parametrized.__init__(
-            self,
-            symplectic=symplectic,
-            symplectic_trainable=symplectic_trainable,
-            **kwargs,
-        )
+
         Unitary.__init__(
             self,
             modes=modes or list(range(num_modes)),
             name="Ggate",
+        )
+        self._add_parameter(
+            make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None), None)
         )
 
     @property
@@ -889,7 +814,7 @@ class Ggate(Parametrized, Unitary):
 
 
 # pylint: disable=no-member
-class Attenuator(Parametrized, Channel):
+class Attenuator(Channel):
     r"""The noisy attenuator channel.
 
     It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
@@ -931,23 +856,22 @@ class Attenuator(Parametrized, Channel):
         transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            transmissivity=transmissivity,
-            nbar=nbar,
-            transmissivity_trainable=transmissivity_trainable,
-            nbar_trainable=nbar_trainable,
-            transmissivity_bounds=transmissivity_bounds,
-            nbar_bounds=nbar_bounds,
-            **kwargs,
-        )
         Channel.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
             name="Attenuator",
         )
+        self._add_parameter(
+            make_parameter(
+                transmissivity_trainable,
+                transmissivity,
+                "transmissivity",
+                transmissivity_bounds,
+                None,
+            )
+        )
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds, None))
 
     @property
     def X_matrix(self):
@@ -958,7 +882,7 @@ class Attenuator(Parametrized, Channel):
         return gaussian.loss_XYd(self.transmissivity.value, self.nbar.value)[1]
 
 
-class Amplifier(Parametrized, Channel):
+class Amplifier(Channel):
     r"""The noisy amplifier channel.
 
     It corresponds to mixing with a thermal environment and applying a two-mode squeezing gate.
@@ -995,23 +919,14 @@ class Amplifier(Parametrized, Channel):
         gain_bounds: Tuple[Optional[float], Optional[float]] = (1.0, None),
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            gain=gain,
-            gain_trainable=gain_trainable,
-            gain_bounds=gain_bounds,
-            nbar=nbar,
-            nbar_trainable=nbar_trainable,
-            nbar_bounds=nbar_bounds,
-            **kwargs,
-        )
         Channel.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(gain)))),
             name="Amplifier",
         )
+        self._add_parameter(make_parameter(gain_trainable, gain, "gain", gain_bounds, None))
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds, None))
 
     @property
     def X_matrix(self):
@@ -1023,7 +938,7 @@ class Amplifier(Parametrized, Channel):
 
 
 # pylint: disable=no-member
-class AdditiveNoise(Parametrized, Channel):
+class AdditiveNoise(Channel):
     r"""The additive noise channel.
 
     Equivalent to an amplifier followed by an attenuator. E.g.,
@@ -1058,27 +973,20 @@ class AdditiveNoise(Parametrized, Channel):
         noise_trainable: bool = False,
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
-        **kwargs,
     ):
-        Parametrized.__init__(
-            self,
-            noise=noise,
-            noise_trainable=noise_trainable,
-            noise_bounds=noise_bounds,
-            **kwargs,
-        )
         Channel.__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
         )
+        self._add_parameter(make_parameter(noise_trainable, noise, "noise", noise_bounds, None))
 
     @property
     def Y_matrix(self):
         return gaussian.noise_Y(self.noise.value)
 
 
-class PhaseNoise(Parametrized, Channel):
+class PhaseNoise(Channel):
     r"""The phase noise channel.
 
     The phase noise channel is a non-Gaussian transformation that is equivalent to
@@ -1097,17 +1005,17 @@ class PhaseNoise(Parametrized, Channel):
         phase_stdev_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        Parametrized.__init__(
-            self,
-            phase_stdev=phase_stdev,
-            phase_stdev_trainable=phase_stdev_trainable,
-            phase_stdev_bounds=phase_stdev_bounds,
-        )
         Channel.__init__(
             self,
             modes=modes or [0],
             name="AddNoise",
         )
+        self._add_parameter(
+            make_parameter(
+                phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds, None
+            )
+        )
+
         self._modes = modes or [0]
         self.is_unitary = False
         self.is_gaussian = False
