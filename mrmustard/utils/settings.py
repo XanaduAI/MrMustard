@@ -103,13 +103,16 @@ class Settings:
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
 
+    def _force_hbar(self, value):
+        self._hbar._value = value
+
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
         r"""The maximum value for autocutoff. Default is ``100``."""
         return self._autocutoff_max_cutoff
 
     @AUTOCUTOFF_MAX_CUTOFF.setter
-    def AUTOCUTOFF_MAX_CUTOFF(self, value: str):
+    def AUTOCUTOFF_MAX_CUTOFF(self, value: int):
         self._autocutoff_max_cutoff = value
 
     @property
@@ -118,7 +121,7 @@ class Settings:
         return self._autocutoff_min_cutoff
 
     @AUTOCUTOFF_MIN_CUTOFF.setter
-    def AUTOCUTOFF_MIN_CUTOFF(self, value: str):
+    def AUTOCUTOFF_MIN_CUTOFF(self, value: int):
         self._autocutoff_min_cutoff = value
 
     @property
@@ -127,7 +130,7 @@ class Settings:
         return self._autocutoff_probability
 
     @AUTOCUTOFF_PROBABILITY.setter
-    def AUTOCUTOFF_PROBABILITY(self, value: str):
+    def AUTOCUTOFF_PROBABILITY(self, value: float):
         self._autocutoff_probability = value
 
     @property
@@ -150,7 +153,7 @@ class Settings:
         return self._circuit_decimals
 
     @CIRCUIT_DECIMALS.setter
-    def CIRCUIT_DECIMALS(self, value: str):
+    def CIRCUIT_DECIMALS(self, value: int):
         self._circuit_decimals = value
 
     @property
@@ -161,7 +164,7 @@ class Settings:
         return self._debug
 
     @DEBUG.setter
-    def DEBUG(self, value: str):
+    def DEBUG(self, value: bool):
         self._debug = value
 
     @property
@@ -196,7 +199,7 @@ class Settings:
         return self._eq_transformation_cutoff
 
     @EQ_TRANSFORMATION_CUTOFF.setter
-    def EQ_TRANSFORMATION_CUTOFF(self, value: str):
+    def EQ_TRANSFORMATION_CUTOFF(self, value: int):
         self._eq_transformation_cutoff = value
 
     @property
@@ -206,7 +209,7 @@ class Settings:
         return self._eq_transformation_rtol_fock
 
     @EQ_TRANSFORMATION_RTOL_FOCK.setter
-    def EQ_TRANSFORMATION_RTOL_FOCK(self, value: str):
+    def EQ_TRANSFORMATION_RTOL_FOCK(self, value: float):
         self._eq_transformation_rtol_fock = value
 
     @property
@@ -216,7 +219,7 @@ class Settings:
         return self._eq_transformation_rtol_gauss
 
     @EQ_TRANSFORMATION_RTOL_GAUSS.setter
-    def EQ_TRANSFORMATION_RTOL_GAUSS(self, value: str):
+    def EQ_TRANSFORMATION_RTOL_GAUSS(self, value: float):
         self._eq_transformation_rtol_gauss = value
 
     @property
@@ -228,7 +231,7 @@ class Settings:
         return self._hbar.value
 
     @HBAR.setter
-    def HBAR(self, value: str):
+    def HBAR(self, value: float):
         self._hbar.value = value
 
     @property
@@ -237,7 +240,7 @@ class Settings:
         return self._homodyne_squeezing
 
     @HOMODYNE_SQUEEZING.setter
-    def HOMODYNE_SQUEEZING(self, value: str):
+    def HOMODYNE_SQUEEZING(self, value: float):
         self._homodyne_squeezing = value
 
     @property
@@ -246,7 +249,7 @@ class Settings:
         return self._pnr_internal_cutoff
 
     @PNR_INTERNAL_CUTOFF.setter
-    def PNR_INTERNAL_CUTOFF(self, value: str):
+    def PNR_INTERNAL_CUTOFF(self, value: int):
         self._pnr_internal_cutoff = value
 
     @property
@@ -255,7 +258,7 @@ class Settings:
         return self._progressbar
 
     @PROGRESSBAR.setter
-    def PROGRESSBAR(self, value: str):
+    def PROGRESSBAR(self, value: bool):
         self._progressbar = value
 
     @property
@@ -267,7 +270,7 @@ class Settings:
         return self._seed
 
     @SEED.setter
-    def SEED(self, value):
+    def SEED(self, value: int):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
 
