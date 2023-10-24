@@ -18,6 +18,7 @@ used within Mr Mustard.
 
 from itertools import chain, groupby
 from typing import List, Callable, Sequence, Union, Mapping, Dict
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.training.callbacks import Callback
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
@@ -29,9 +30,6 @@ from mrmustard.math.parameters import (
     update_unitary,
 )
 from mrmustard.lab import Circuit
-from .parameter import Parameter, Trainable, create_parameter
-from .parametrized import Parametrized
-from .parameter_update import param_update_method
 
 math = Math()
 
@@ -69,7 +67,7 @@ class Optimizer:
     def minimize(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Trainable],
+        by_optimizing: Sequence[Union[Constant, Variable, Circuit]],
         max_steps: int = 1000,
         callbacks: Union[Callable, Sequence[Callable], Mapping[str, Callable]] = None,
     ):
@@ -171,17 +169,8 @@ class Optimizer:
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above
                 # returns a list, hence ensuring we have a list of lists
-                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.name)}"
-                trainables.append(
-                    [
-                        (
-                            tag,
-                            create_parameter(
-                                item, name="from_backend", is_trainable=True, owner=tag
-                            ),
-                        )
-                    ]
-                )
+                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
+                trainables.append([(tag, Variable(item, name="from _backend"))])
 
         return dict(chain(*trainables))
 
@@ -202,7 +191,7 @@ class Optimizer:
         return grouped
 
     @staticmethod
-    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
+    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Variable]):
         r"""Uses the backend to compute the loss and gradients of the parameters
         given a cost function.
 
@@ -212,7 +201,7 @@ class Optimizer:
 
         Args:
             cost_fn (Callable with no args): The cost function.
-            parameters (List[Parameter]): The parameters to optimize.
+            parameters (List[Variable]): The variables to optimize.
 
         Returns:
             tuple(Tensor, List[Tensor]): The loss and the gradients.

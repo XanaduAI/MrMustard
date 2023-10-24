@@ -9,6 +9,8 @@ Backends
 .. toctree::
     :maxdepth: 1
 
+    math/parameter_set
+    math/parameter
     math/tensorflow
 
 .. automodapi:: mrmustard.math
