@@ -21,9 +21,9 @@ This module defines gates and operations that can be applied to quantum modes to
 from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 
+from .abstract import Channel, Unitary, State
 from .utils import make_parameter
 from mrmustard import settings
-from mrmustard.lab.abstract import Channel, Unitary, State
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix

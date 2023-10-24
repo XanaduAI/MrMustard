@@ -72,7 +72,7 @@ class Transformation(Tensor):
     @property
     def parameter_set(self):
         r"""
-        The set of parameters for this unitary.
+        The set of parameters for this transformation.
         """
         return self._parameter_set
 

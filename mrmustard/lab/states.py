@@ -18,10 +18,11 @@ This module implements the quantum states upon which a quantum circuits acts on.
 
 from typing import List, Optional, Sequence, Tuple, Union
 
+from .utils import make_parameter
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics import fock, gaussian
-from mrmustard.training import Parametrized
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
 from .abstract import State
@@ -50,7 +51,7 @@ class Vacuum(State):
         State.__init__(self, cov=cov, means=means)
 
 
-class Coherent(Parametrized, State):
+class Coherent(State):
     r"""The N-mode coherent state.
 
     Equivalent to applying a displacement to the vacuum state:
@@ -97,19 +98,13 @@ class Coherent(Parametrized, State):
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
-        Parametrized.__init__(
-            self,
-            x=x,
-            y=y,
-            x_trainable=x_trainable,
-            y_trainable=y_trainable,
-            x_bounds=x_bounds,
-            y_bounds=y_bounds,
-        )
-        self._modes = modes
         self._normalize = normalize
 
-        means = gaussian.displacement(self.x.value, self.y.value)
+        self._parameter_set = ParameterSet()
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
+
+        means = gaussian.displacement(x, y)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
@@ -118,7 +113,7 @@ class Coherent(Parametrized, State):
         return gaussian.displacement(self.x.value, self.y.value)
 
 
-class SqueezedVacuum(Parametrized, State):
+class SqueezedVacuum(State):
     r"""The N-mode squeezed vacuum state.
 
     Equivalent to applying a squeezing gate to the vacuum state:
@@ -164,19 +159,14 @@ class SqueezedVacuum(Parametrized, State):
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
-        Parametrized.__init__(
-            self,
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
-        )
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
+        self._parameter_set = ParameterSet()
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+
+        cov = gaussian.squeezed_vacuum_cov(r, phi)
         means = gaussian.vacuum_means(
             cov.shape[-1] // 2,
         )
@@ -187,7 +177,7 @@ class SqueezedVacuum(Parametrized, State):
         return gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
 
 
-class TMSV(Parametrized, State):
+class TMSV(State):
     r"""The 2-mode squeezed vacuum state.
 
     Equivalent to applying a 50/50 beam splitter to a pair of squeezed vacuum states:
@@ -221,22 +211,13 @@ class TMSV(Parametrized, State):
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
-        Parametrized.__init__(
-            self,
-            r=r,
-            phi=phi,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
-        )
-        self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.two_mode_squeezed_vacuum_cov(
-            self.r.value,
-            self.phi.value,
-        )
+        self._parameter_set = ParameterSet()
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+
+        cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi)
         means = gaussian.vacuum_means(2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
@@ -245,7 +226,7 @@ class TMSV(Parametrized, State):
         return gaussian.two_mode_squeezed_vacuum_cov(self.r.value, self.phi.value)
 
 
-class Thermal(Parametrized, State):
+class Thermal(State):
     r"""The N-mode thermal state.
 
     Equivalent to applying additive noise to the vacuum:
@@ -280,14 +261,11 @@ class Thermal(Parametrized, State):
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
-        Parametrized.__init__(
-            self,
-            nbar=nbar,
-            nbar_trainable=nbar_trainable,
-            nbar_bounds=nbar_bounds,
-        )
         self._modes = modes
         self._normalize = normalize
+
+        self._parameter_set = ParameterSet()
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds, None))
 
         cov = gaussian.thermal_cov(self.nbar.value)
         means = gaussian.vacuum_means(cov.shape[-1] // 2)
@@ -298,7 +276,7 @@ class Thermal(Parametrized, State):
         return gaussian.thermal_cov(self.nbar.value)
 
 
-class DisplacedSqueezed(Parametrized, State):
+class DisplacedSqueezed(State):
     r"""The N-mode displaced squeezed state.
 
     Equivalent to applying a displacement to the squeezed vacuum state:
@@ -358,26 +336,17 @@ class DisplacedSqueezed(Parametrized, State):
         cutoffs: Optional[Sequence[int]] = None,
         normalize: bool = False,
     ):
-        Parametrized.__init__(
-            self,
-            r=r,
-            phi=phi,
-            x=x,
-            y=y,
-            r_trainable=r_trainable,
-            phi_trainable=phi_trainable,
-            x_trainable=x_trainable,
-            y_trainable=y_trainable,
-            r_bounds=r_bounds,
-            phi_bounds=phi_bounds,
-            x_bounds=x_bounds,
-            y_bounds=y_bounds,
-        )
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.squeezed_vacuum_cov(self.r.value, self.phi.value)
-        means = gaussian.displacement(self.x.value, self.y.value)
+        self._parameter_set = ParameterSet()
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+
+        cov = gaussian.squeezed_vacuum_cov(r, phi)
+        means = gaussian.displacement(x, y)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
@@ -389,7 +358,7 @@ class DisplacedSqueezed(Parametrized, State):
         return gaussian.displacement(self.x.value, self.y.value)
 
 
-class Gaussian(Parametrized, State):
+class Gaussian(State):
     r"""The N-mode Gaussian state parametrized by a symplectic matrix and N symplectic eigenvalues.
 
     The (mixed) Gaussian state is equivalent to applying a Gaussian symplectic transformation to a Thermal state:
@@ -439,21 +408,19 @@ class Gaussian(Parametrized, State):
             raise ValueError(
                 f"Eigenvalues cannot be smaller than hbar/2 = {settings.HBAR}/2 = {settings.HBAR/2}"
             )
-        Parametrized.__init__(
-            self,
-            symplectic=symplectic,
-            eigenvalues=eigenvalues,
-            eigenvalues_trainable=eigenvalues_trainable,
-            symplectic_trainable=symplectic_trainable,
-            eigenvalues_bounds=(settings.HBAR / 2, None)
-            if eigenvalues_bounds == (None, None)
-            else eigenvalues_bounds,
-            symplectic_bounds=(None, None),
-        )
         self._modes = modes
         self._normalize = normalize
 
-        cov = gaussian.gaussian_cov(self.symplectic.value, self.eigenvalues.value)
+        self._parameter_set = ParameterSet()
+        eb = (settings.HBAR / 2, None) if eigenvalues_bounds == (None, None) else eigenvalues_bounds
+        self._add_parameter(
+            make_parameter(eigenvalues_trainable, eigenvalues, "eigenvalues", eb, None)
+        )
+        self._add_parameter(
+            make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None), None)
+        )
+
+        cov = gaussian.gaussian_cov(symplectic, eigenvalues)
         means = gaussian.vacuum_means(cov.shape[-1] // 2)
         State.__init__(self, cov=cov, means=means, cutoffs=cutoffs)
 
@@ -466,7 +433,7 @@ class Gaussian(Parametrized, State):
         return any(self.eigenvalues.value > settings.HBAR / 2)
 
 
-class Fock(Parametrized, State):
+class Fock(State):
     r"""The N-mode Fock state.
 
     Args:
@@ -484,7 +451,6 @@ class Fock(Parametrized, State):
         normalize: bool = False,
     ):
         State.__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
-        Parametrized.__init__(self)
 
         self._n = [n] if isinstance(n, int) else n
         self._modes = modes
