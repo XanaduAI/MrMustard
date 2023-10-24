@@ -30,6 +30,11 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: 1.9.3
+
       - name: Install dependencies
         run: |
           python -m pip install --no-cache-dir --upgrade pip
