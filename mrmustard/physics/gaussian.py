@@ -301,7 +301,8 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
             [cp * sh, ch, sp * sh, zero],
             [zero, sp * sh, ch, -cp * sh],
             [sp * sh, zero, -cp * sh, ch],
-        ]
+        ],
+        dtype=math.float64,
     )
 
 
@@ -353,7 +354,8 @@ def controlled_Z(g: Scalar):
             [0, 1, 0, 0],
             [0, g, 1, 0],
             [g, 0, 0, 1],
-        ]
+        ],
+        dtype=math.float64,
     )
 
 

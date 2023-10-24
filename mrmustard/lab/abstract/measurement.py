@@ -21,6 +21,8 @@ from typing import Iterable, Sequence, Union
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.utils.typing import Tensor
 
 from .state import State
@@ -47,6 +49,25 @@ class Measurement(ABC):
         self._is_postselected = False if outcome is None else True
         """used to evaluate if the measurement outcome should be
         sampled or is already defined by the user (postselection)"""
+
+        self._parameter_set = ParameterSet()
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a measurement.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this measurement.
+        """
+        return self._parameter_set
 
     @property
     def modes(self):
