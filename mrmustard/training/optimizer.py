@@ -144,29 +144,11 @@ class Optimizer:
             for key, result in groupby(grouped_items, key=lambda x: x[1].update_fn)
         }
 
-        # # group grads and vars by type
-        # grouped_items = {}
-        # for param in trainable_params:
-        #     try:
-        #         grouped_items[param.update_fn] += param
-        #     except KeyError:
-        #         grouped_items[param.update_fn] = [param]
-
         for update_fn, grads_vars in grouped_items.items():
             params_lr = self.learning_rate[update_fn]
             # extract value (tensor) from the parameter object and group with grad
             grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
             update_fn(grads_and_vars, params_lr)
-
-        # # group grads and vars by type (i.e. euclidean, symplectic, orthogonal, unitary)
-        # grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
-
-        # for param_type, grads_vars in grouped_vars_and_grads.items():
-        #     param_lr = self.learning_rate[param_type]
-        #     # extract value (tensor) from the parameter object and group with grad
-        #     grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
-        #     update_method = param_update_method.get(param_type)
-        #     update_method(grads_and_vars, param_lr)
 
     @staticmethod
     def _get_trainable_params(trainable_items, root_tag: str = "optimized"):
