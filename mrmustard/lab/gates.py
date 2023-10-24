@@ -20,6 +20,8 @@ This module defines gates and operations that can be applied to quantum modes to
 
 from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
+
+from .utils import make_parameter
 from mrmustard import settings
 from mrmustard.lab.abstract import Channel, Unitary, State
 from mrmustard.math import Math
@@ -84,21 +86,13 @@ class Dgate(Parametrized, Unitary):
         **kwargs,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        Parametrized.__init__(
-            self,
-            x=x,
-            y=y,
-            x_trainable=x_trainable,
-            y_trainable=y_trainable,
-            x_bounds=x_bounds,
-            y_bounds=y_bounds,
-            **kwargs,
-        )
         Unitary.__init__(
             self,
             modes=modes or list(range(m)),
             name="Dgate",
         )
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
 
     @property
     def d_vector(self):

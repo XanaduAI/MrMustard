@@ -42,6 +42,40 @@ class Transformation(Tensor):
     Base class for all Transformations.
     """
 
+    def __init__(
+        self,
+        name: str,
+        modes_in_ket: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_bra: Optional[list[int]] = None,
+    ):
+        super().__init__(
+            name=name,
+            modes_in_ket=modes_in_ket,
+            modes_out_ket=modes_out_ket,
+            modes_in_bra=modes_in_bra,
+            modes_out_bra=modes_out_bra,
+        )
+        self._parameter_set = ParameterSet()
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a transformation.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this unitary.
+        """
+        return self._parameter_set
+
     def primal(self, state: State) -> State:
         r"""Applies this transformation to the given ``state`` and returns the transformed state.
 

@@ -146,7 +146,7 @@ class Variable:
         self._bounds = bounds
         self._update_fn = update_fn
 
-    def _get_value(value, bounds, name):
+    def _get_value(self, value, bounds, name):
         r"""
         Returns a variable from given ``value``, ``bounds``, and ``name``.
         """
