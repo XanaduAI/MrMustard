@@ -38,7 +38,9 @@ To resolve this, the conversion can be performed with extended-precision arithme
 an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3).
 The required Julia packages can be installed as follows:
 
-````julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"````
+```
+julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
+```
 
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
