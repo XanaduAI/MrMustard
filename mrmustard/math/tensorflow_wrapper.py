@@ -222,8 +222,10 @@ class TFMath(MathInterface):
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=tf.float64):
+        from mrmustard.math.parameters import Constant
+
         value = self.convert_to_tensor(value, dtype)
-        return tf.constant(value, dtype=dtype, name=name)
+        return Constant(value=tf.constant(value, dtype=dtype), dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
         """Note that the norm preserves the type of array."""

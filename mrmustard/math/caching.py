@@ -33,7 +33,8 @@ def tensor_int_cache(fn):
 
     @wraps(fn)
     def wrapper(tensor, cutoff):
-        return cached_wrapper(tuple(tensor.numpy()), cutoff)
+        t = tuple(tensor) if isinstance(tensor, np.ndarray) else tuple(tensor.numpy())
+        return cached_wrapper(t, cutoff)
 
     # copy lru_cache attributes over too
     wrapper.cache_info = cached_wrapper.cache_info

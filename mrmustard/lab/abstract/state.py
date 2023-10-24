@@ -33,6 +33,8 @@ from matplotlib import cm
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameters import Constant, Variable
+from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -95,9 +97,10 @@ class State:  # pylint: disable=too-many-public-methods
         self._ket = ket
         self._dm = dm
         self._norm = _norm
+        self._parameter_set = ParameterSet()
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0)
+            self.is_hilbert_vector = np.allclose(gaussian.purity(cov), 1.0)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -117,6 +120,23 @@ class State:  # pylint: disable=too-many-public-methods
             assert (
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a transformation.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this state.
+        """
+        return self._parameter_set
 
     @property
     def modes(self):

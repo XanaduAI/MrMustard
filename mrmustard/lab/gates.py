@@ -20,9 +20,10 @@ This module defines gates and operations that can be applied to quantum modes to
 
 from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
+
+from .utils import make_parameter
 from mrmustard import settings
 from .abstract import Channel, Unitary, State
-from .utils import make_parameter
 from mrmustard.math import Math
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
@@ -88,11 +89,6 @@ class Dgate(Unitary):
             modes=modes or list(range(m)),
             name="Dgate",
         )
-
-        # TODO: What follows can be encapsulated in convenience functions that
-        # kill the line numbers, making init's more readable and easier to debug
-
-        # adding "x" and "y"
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
 

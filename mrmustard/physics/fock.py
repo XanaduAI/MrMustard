@@ -838,9 +838,7 @@ def quadrature_distribution(
         )
 
     if x is None:
-        x = np.sqrt(settings.HBAR) * Constant(
-            value=estimate_quadrature_axis(cutoff), name="q_tensor"
-        )
+        x = np.sqrt(settings.HBAR) * estimate_quadrature_axis(cutoff)
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (
