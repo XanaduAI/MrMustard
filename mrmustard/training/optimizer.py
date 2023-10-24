@@ -153,12 +153,12 @@ class Optimizer:
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
             if isinstance(item, Parametrized):
-                tag = f"{owner_tag}:{item.__class__.__qualname__}"
+                tag = f"{owner_tag}:{item.name}"
                 trainables.append(item.traverse_trainables(owner_tag=tag).items())
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above
                 # returns a list, hence ensuring we have a list of lists
-                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
+                tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.name)}"
                 trainables.append(
                     [
                         (

@@ -91,12 +91,12 @@ class Parametrized:
             strings.append(string)
         return ", ".join(strings)
 
-    @property
-    def kw_parameters(self) -> Tuple[Tuple[str, Tensor]]:
-        r"""Return a list of parameters within the Parametrized object
-        if they have been passed as keyword arguments to the class constructor.
-        """
-        return tuple((name, getattr(self, name).value) for name in self.param_names)
+    # @property
+    # def kw_parameters(self) -> Tuple[Tuple[str, Tensor]]:
+    #     r"""Return a list of parameters within the Parametrized object
+    #     if they have been passed as keyword arguments to the class constructor.
+    #     """
+    #     return tuple((name, getattr(self, name).value) for name in self.param_names)
 
     @property
     def trainable_parameters(self) -> Sequence[Trainable]:
