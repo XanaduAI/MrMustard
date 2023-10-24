@@ -49,7 +49,7 @@ The required Julia packages can be installed as follows:
 
 .. code-block:: console
 
-    julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()
+    julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
 PyTorch support
 ------------------
