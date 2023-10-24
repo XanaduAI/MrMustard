@@ -293,10 +293,10 @@ class Settings:
 
         if value != 128:
             # initialize Julia
-            from julia.api import Julia  # pylint: disable=import-outside-toplevel
+            from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
 
             # the next line must be run before "from julia import Main as Main_julia"
-            _ = Julia(compiled_modules=False)
+            LibJulia.load().init_julia(["--compiled-modules=no", "--project=julia_pkg"])
             # the next line must be run after "_ = Julia(compiled_modules=False)"
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
