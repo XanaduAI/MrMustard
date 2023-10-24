@@ -17,7 +17,8 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple
+from mrmustard.math.parameters import update_euclidean
 
 from mrmustard.math.parameters import Constant, Variable
 
@@ -27,7 +28,7 @@ def make_parameter(
     value: any,
     name: str,
     bounds: Tuple[Optional[float], Optional[float]],
-    update_fn: Optional[Callable] = None,
+    update_fn: Callable = update_euclidean,
 ):
     r"""
     Returns a constant or variable parameter with given name, value, bounds, and update function.

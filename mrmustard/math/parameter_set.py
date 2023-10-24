@@ -85,6 +85,15 @@ class ParameterSet:
             self.variables[parameter.name] = parameter
             self.__dict__[name] = self.variables[name]
 
+    def tagged_variables(self, tag: str) -> dict[str, Variable]:
+        r"""
+        Tags the variables in this parameter set by prepending the given  ``tag`` to their names.
+        """
+        ret = {}
+        for k, v in self.variables.items():
+            ret[f"{tag}/{k}"] = v
+        return ret
+
     def to_string(self, decimals: int) -> str:
         r"""
         Returns a string representation of the parameter values, separated by commas and rounded

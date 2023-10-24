@@ -25,6 +25,7 @@ from .abstract import Channel, Unitary, State
 from .utils import make_parameter
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
 
@@ -89,8 +90,8 @@ class Dgate(Unitary):
             modes=modes or list(range(m)),
             name="Dgate",
         )
-        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
-        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
     @property
     def d_vector(self):
@@ -188,8 +189,8 @@ class Sgate(Unitary):
             modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
         )
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     def U(self, cutoffs: Optional[Sequence[int]] = None, shape: Optional[Sequence[int]] = None):
         r"""Returns the unitary representation of the Squeezing gate.
@@ -280,7 +281,7 @@ class Rgate(Unitary):
             modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
             name="Rgate",
         )
-        self._add_parameter(make_parameter(angle_trainable, angle, "angle", angle_bounds, None))
+        self._add_parameter(make_parameter(angle_trainable, angle, "angle", angle_bounds))
 
     @property
     def X_matrix(self):
@@ -376,7 +377,7 @@ class Pgate(Unitary):
             name="Pgate",
         )
         self._add_parameter(
-            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds, None)
+            make_parameter(shearing_trainable, shearing, "shearing", shearing_bounds)
         )
 
     @property
@@ -412,7 +413,7 @@ class CXgate(Unitary):
             modes=modes or [0, 1],
             name="CXgate",
         )
-        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds, None))
+        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
 
     @property
     def X_matrix(self):
@@ -447,7 +448,7 @@ class CZgate(Unitary):
             modes=modes or [0, 1],
             name="CZgate",
         )
-        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds, None))
+        self._add_parameter(make_parameter(s_trainable, s, "s", s_bounds))
 
     @property
     def X_matrix(self):
@@ -488,8 +489,8 @@ class BSgate(Unitary):
             modes=modes or [0, 1],  # type: ignore
             name="BSgate",
         )
-        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds, None))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(theta_trainable, theta, "theta", theta_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     def U(
         self,
@@ -585,8 +586,8 @@ class MZgate(Unitary):
             modes=modes or [0, 1],
             name="MZgate",
         )
-        self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds, None))
-        self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds, None))
+        self._add_parameter(make_parameter(phi_a_trainable, phi_a, "phi_a", phi_a_bounds))
+        self._add_parameter(make_parameter(phi_b_trainable, phi_b, "phi_b", phi_b_bounds))
         self._internal = internal
 
     @property
@@ -633,8 +634,8 @@ class S2gate(Unitary):
             modes=modes or [0, 1],
             name="S2gate",
         )
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
     @property
     def X_matrix(self):
@@ -677,7 +678,7 @@ class Interferometer(Unitary):
             name="Interferometer",
         )
         self._add_parameter(
-            make_parameter(unitary_trainable, unitary, "unitary", (None, None), None)
+            make_parameter(unitary_trainable, unitary, "unitary", (None, None), update_unitary)
         )
 
     @property
@@ -732,7 +733,9 @@ class RealInterferometer(Unitary):
             name="RealInterferometer",
         )
         self._add_parameter(
-            make_parameter(orthogonal_trainable, orthogonal, "orthogonal", (None, None), None)
+            make_parameter(
+                orthogonal_trainable, orthogonal, "orthogonal", (None, None), update_orthogonal
+            )
         )
 
     @property
@@ -789,7 +792,9 @@ class Ggate(Unitary):
             name="Ggate",
         )
         self._add_parameter(
-            make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None), None)
+            make_parameter(
+                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+            )
         )
 
     @property
@@ -871,7 +876,7 @@ class Attenuator(Channel):
                 None,
             )
         )
-        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds, None))
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property
     def X_matrix(self):
@@ -925,8 +930,8 @@ class Amplifier(Channel):
             modes=modes or list(range(len(math.atleast_1d(gain)))),
             name="Amplifier",
         )
-        self._add_parameter(make_parameter(gain_trainable, gain, "gain", gain_bounds, None))
-        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds, None))
+        self._add_parameter(make_parameter(gain_trainable, gain, "gain", gain_bounds))
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
     @property
     def X_matrix(self):
@@ -979,7 +984,7 @@ class AdditiveNoise(Channel):
             modes=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
         )
-        self._add_parameter(make_parameter(noise_trainable, noise, "noise", noise_bounds, None))
+        self._add_parameter(make_parameter(noise_trainable, noise, "noise", noise_bounds))
 
     @property
     def Y_matrix(self):
@@ -1011,9 +1016,7 @@ class PhaseNoise(Channel):
             name="AddNoise",
         )
         self._add_parameter(
-            make_parameter(
-                phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds, None
-            )
+            make_parameter(phase_stdev_trainable, phase_stdev, "phase_stdev", phase_stdev_bounds)
         )
 
         self._modes = modes or [0]

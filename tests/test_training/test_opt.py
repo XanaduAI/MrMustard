@@ -39,6 +39,12 @@ from mrmustard.lab.states import (
     Vacuum,
 )
 from mrmustard.math import Math
+from mrmustard.math.parameters import (
+    update_euclidean,
+    update_orthogonal,
+    update_symplectic,
+    update_unitary,
+)
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer, Parametrized
@@ -62,7 +68,7 @@ def test_S2gate_coincidence_prob(n):
     def cb(optimizer, cost, trainables, **kwargs):  # pylint: disable=unused-argument
         return {
             "cost": cost,
-            "lr": optimizer.learning_rate["euclidean"],
+            "lr": optimizer.learning_rate[update_euclidean],
             "num_trainables": len(trainables),
         }
 

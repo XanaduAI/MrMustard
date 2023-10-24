@@ -21,6 +21,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 from .utils import make_parameter
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameters import update_symplectic
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
@@ -101,8 +102,8 @@ class Coherent(State):
         self._normalize = normalize
 
         self._parameter_set = ParameterSet()
-        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
-        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
 
         means = gaussian.displacement(x, y)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2)
@@ -163,8 +164,8 @@ class SqueezedVacuum(State):
         self._normalize = normalize
 
         self._parameter_set = ParameterSet()
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         cov = gaussian.squeezed_vacuum_cov(r, phi)
         means = gaussian.vacuum_means(
@@ -214,8 +215,8 @@ class TMSV(State):
         self._normalize = normalize
 
         self._parameter_set = ParameterSet()
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi)
         means = gaussian.vacuum_means(2)
@@ -265,7 +266,7 @@ class Thermal(State):
         self._normalize = normalize
 
         self._parameter_set = ParameterSet()
-        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds, None))
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
 
         cov = gaussian.thermal_cov(self.nbar.value)
         means = gaussian.vacuum_means(cov.shape[-1] // 2)
@@ -340,10 +341,10 @@ class DisplacedSqueezed(State):
         self._normalize = normalize
 
         self._parameter_set = ParameterSet()
-        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds, None))
-        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds, None))
-        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds, None))
-        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds, None))
+        self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
+        self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+        self._add_parameter(make_parameter(r_trainable, r, "r", r_bounds))
+        self._add_parameter(make_parameter(phi_trainable, phi, "phi", phi_bounds))
 
         cov = gaussian.squeezed_vacuum_cov(r, phi)
         means = gaussian.displacement(x, y)
@@ -413,11 +414,11 @@ class Gaussian(State):
 
         self._parameter_set = ParameterSet()
         eb = (settings.HBAR / 2, None) if eigenvalues_bounds == (None, None) else eigenvalues_bounds
+        self._add_parameter(make_parameter(eigenvalues_trainable, eigenvalues, "eigenvalues", eb))
         self._add_parameter(
-            make_parameter(eigenvalues_trainable, eigenvalues, "eigenvalues", eb, None)
-        )
-        self._add_parameter(
-            make_parameter(symplectic_trainable, symplectic, "symplectic", (None, None), None)
+            make_parameter(
+                symplectic_trainable, symplectic, "symplectic", (None, None), update_symplectic
+            )
         )
 
         cov = gaussian.gaussian_cov(symplectic, eigenvalues)

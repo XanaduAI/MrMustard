@@ -90,10 +90,10 @@ class PNRDetector(FockMeasurement):
         FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self._add_parameter(
-            make_parameter(efficiency_trainable, eff, "efficiency", efficiency_bounds, None)
+            make_parameter(efficiency_trainable, eff, "efficiency", efficiency_bounds)
         )
         self._add_parameter(
-            make_parameter(dark_counts_trainable, dk, "dark_counts", dark_counts_bounds, None)
+            make_parameter(dark_counts_trainable, dk, "dark_counts", dark_counts_bounds)
         )
 
         self.recompute_stochastic_channel()
@@ -189,7 +189,7 @@ class ThresholdDetector(FockMeasurement):
         FockMeasurement.__init__(self, outcome, modes, cutoffs)
 
         self._add_parameter(
-            make_parameter(efficiency_trainable, efficiency, "efficiency", efficiency_bounds, None)
+            make_parameter(efficiency_trainable, efficiency, "efficiency", efficiency_bounds)
         )
         self._add_parameter(
             make_parameter(
@@ -197,7 +197,6 @@ class ThresholdDetector(FockMeasurement):
                 dark_count_prob,
                 "dark_count_prob",
                 dark_count_prob_bounds,
-                None,
             )
         )
 

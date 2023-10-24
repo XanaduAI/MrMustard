@@ -22,6 +22,12 @@ from mrmustard.training.callbacks import Callback
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
 from mrmustard.math import Math
+from mrmustard.math.parameters import (
+    update_euclidean,
+    update_orthogonal,
+    update_symplectic,
+    update_unitary,
+)
 from .parameter import Parameter, Trainable, create_parameter
 from .parametrized import Parametrized
 from .parameter_update import param_update_method
@@ -50,10 +56,10 @@ class Optimizer:
         euclidean_lr: float = 0.001,
     ):
         self.learning_rate = {
-            "euclidean": euclidean_lr,
-            "symplectic": symplectic_lr,
-            "unitary": unitary_lr,
-            "orthogonal": orthogonal_lr,
+            update_euclidean: euclidean_lr,
+            update_symplectic: symplectic_lr,
+            update_unitary: unitary_lr,
+            update_orthogonal: orthogonal_lr,
         }
         self.opt_history: List[float] = [0]
         self.callback_history: Dict[str, List] = {}
@@ -132,29 +138,49 @@ class Optimizer:
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
+        grouped_items = sorted(zip(grads, trainable_params), key=lambda x: x[1].update_fn)
+        grouped_items = {
+            key: list(result)
+            for key, result in groupby(grouped_items, key=lambda x: x[1].update_fn)
+        }
 
-        # group grads and vars by type (i.e. euclidean, symplectic, orthogonal, unitary)
-        grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
+        # # group grads and vars by type
+        # grouped_items = {}
+        # for param in trainable_params:
+        #     try:
+        #         grouped_items[param.update_fn] += param
+        #     except KeyError:
+        #         grouped_items[param.update_fn] = [param]
 
-        for param_type, grads_vars in grouped_vars_and_grads.items():
-            param_lr = self.learning_rate[param_type]
+        for update_fn, grads_vars in grouped_items.items():
+            params_lr = self.learning_rate[update_fn]
             # extract value (tensor) from the parameter object and group with grad
             grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
-            update_method = param_update_method.get(param_type)
-            update_method(grads_and_vars, param_lr)
+            update_fn(grads_and_vars, params_lr)
+
+        # # group grads and vars by type (i.e. euclidean, symplectic, orthogonal, unitary)
+        # grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
+
+        # for param_type, grads_vars in grouped_vars_and_grads.items():
+        #     param_lr = self.learning_rate[param_type]
+        #     # extract value (tensor) from the parameter object and group with grad
+        #     grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
+        #     update_method = param_update_method.get(param_type)
+        #     update_method(grads_and_vars, param_lr)
 
     @staticmethod
     def _get_trainable_params(trainable_items, root_tag: str = "optimized"):
-        """Traverses all instances of Parametrized or trainable items that belong to the backend
+        """Traverses all instances of gates, states, detectors, or trainable items that belong to the backend
         and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
         are traversal paths of collecting all parent tags for reaching each parameter.
         """
         trainables = []
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
-            if isinstance(item, Parametrized):
+            if hasattr(item, "parameter_set"):
                 tag = f"{owner_tag}:{item.name}"
-                trainables.append(item.traverse_trainables(owner_tag=tag).items())
+                tagged_vars = item.parameter_set.tagged_variables(tag)
+                trainables.append(tagged_vars.items())
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above
                 # returns a list, hence ensuring we have a list of lists
