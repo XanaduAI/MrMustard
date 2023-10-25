@@ -39,12 +39,7 @@ from mrmustard.lab.states import (
     Vacuum,
 )
 from mrmustard.math import Math
-from mrmustard.math.parameters import (
-    update_euclidean,
-    update_orthogonal,
-    update_symplectic,
-    update_unitary,
-)
+from mrmustard.math.parameters import Variable, update_euclidean
 from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer
@@ -337,9 +332,6 @@ def test_squeezing_hong_ou_mandel_optimizer():
     opt = Optimizer(euclidean_lr=0.001)
     opt.minimize(cost_fn, by_optimizing=[circ], max_steps=300)
     assert np.allclose(np.sinh(S_12.r.value) ** 2, 1, atol=1e-2)
-
-
-from mrmustard.math.parameters import Variable
 
 
 def test_parameter_passthrough():

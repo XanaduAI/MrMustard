@@ -14,10 +14,9 @@
 
 """This module contains the classes to describe constant and variable parameters used in Mr Mustard."""
 
-from typing import Callable, Optional, Tuple, Sequence
+from typing import Callable, Optional, Tuple
 
 from mrmustard.math import Math
-from mrmustard.utils.typing import Tensor
 
 math = Math()
 
@@ -127,6 +126,7 @@ class Constant:
         return type(self)(value=self.value * value, name=self.name)
 
 
+# pylint: disable=too-many-instance-attributes
 class Variable:
     r"""
     A parameter whose value can change.

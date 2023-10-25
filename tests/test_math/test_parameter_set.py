@@ -12,20 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
+"""
+Unit tests for the :class:`ParameterSet`.
+"""
 
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 
 
 class TestParameterSet:
+    r"""
+    Tests for ParameterSet.
+    """
+
     def test_init(self):
+        r"""
+        Tests the init.
+        """
         ps = ParameterSet()
         assert ps.names == []
         assert ps.constants == {}
         assert ps.variables == {}
 
     def test_add_parameters(self):
+        r"""
+        Tests the ``add_parameter`` method.
+        """
         const1 = Constant(1, "const1")
         const2 = Constant(2, "const2")
         var1 = Variable(1, "var1")
@@ -40,6 +52,9 @@ class TestParameterSet:
         assert ps.variables == {"var1": var1}
 
     def test_tagged_variables(self):
+        r"""
+        Tests the ``tagged_variables`` method.
+        """
         const1 = Constant(1, "const1")
         const2 = Constant(2, "const2")
         var1 = Variable(1, "var1")
@@ -53,6 +68,9 @@ class TestParameterSet:
         assert variables == {"ciao/var1": var1}
 
     def test_to_string(self):
+        r"""
+        Tests the ``to_string`` method.
+        """
         const1 = Constant(1.2345, "const1")
         const2 = Constant(2.3456, "const2")
         var1 = Variable(3.4567, "var1")

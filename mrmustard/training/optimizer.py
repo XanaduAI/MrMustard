@@ -137,7 +137,8 @@ class Optimizer:
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
-        key = lambda x: getattr(x[1], "update_fn", update_euclidean).__hash__()
+        # pylint: disable=unnecessary-lambda
+        key = lambda x: hash(getattr(x[1], "update_fn", update_euclidean))
         grouped_items = sorted(zip(grads, trainable_params), key=key)
         grouped_items = {key: list(result) for key, result in groupby(grouped_items, key=key)}
 
@@ -158,7 +159,7 @@ class Optimizer:
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
             if isinstance(item, Circuit):
-                for j, op in enumerate(item._ops):
+                for j, op in enumerate(item.ops):
                     tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
                     tagged_vars = op.parameter_set.tagged_variables(tag)
                     trainables.append(tagged_vars.items())

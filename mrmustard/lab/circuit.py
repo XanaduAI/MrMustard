@@ -43,6 +43,13 @@ class Circuit(Transformation):
         super().__init__(name="Circuit")
         self.reset()
 
+    @property
+    def ops(self) -> Optional[List]:
+        r"""
+        The list of operations comprising the circuit.
+        """
+        return self._ops
+
     def reset(self):
         """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""
         self._compiled: bool = False

@@ -18,7 +18,6 @@ This module implements the quantum states upon which a quantum circuits acts on.
 
 from typing import List, Optional, Sequence, Tuple, Union
 
-from .utils import make_parameter
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.parameters import update_symplectic
@@ -27,6 +26,7 @@ from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import RealMatrix, Scalar, Vector
 
 from .abstract import State
+from .utils import make_parameter
 
 math = Math()
 

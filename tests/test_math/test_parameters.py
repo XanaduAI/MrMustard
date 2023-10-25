@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Unit tests for :class:`Constant` and :class:`Variable`.
+"""
+
 import pytest
 
 from mrmustard.math import Math
@@ -29,7 +33,14 @@ math = Math()
 
 
 class TestConstant:
+    r"""
+    Tests for Constant.
+    """
+
     def test_init(self):
+        r"""
+        Tests the init.
+        """
         const1 = Constant(1, "const1")
         assert const1.value == 1
         assert const1.name == "const1"
@@ -43,6 +54,9 @@ class TestConstant:
         assert np.allclose(const3.value, np.array([1, 2, 3]))
 
     def test_is_const(self):
+        r"""
+        Tests that constants are immutable.
+        """
         const = Constant(1, "const")
 
         with pytest.raises(AttributeError, match="can't set attribute"):
@@ -53,7 +67,14 @@ class TestConstant:
 
 
 class TestVariable:
+    r"""
+    Tests for Variable.
+    """
+
     def test_init(self):
+        r"""
+        Tests the init.
+        """
         var1 = Variable(1, "var1")
         assert var1.value == 1
         assert var1.name == "var1"
@@ -72,6 +93,9 @@ class TestVariable:
         assert var3.update_fn == update_orthogonal
 
     def test_is_variable(self):
+        r"""
+        Tests that variables are mutable.
+        """
         var = Variable(1, "var")
 
         var.value = 2
@@ -87,6 +111,9 @@ class TestVariable:
             var.bounds = (0, 1)
 
     def test_static_methods(self):
+        r"""
+        Tests the static methods.
+        """
         va1 = Variable.symplectic(1, "var1")
         assert va1.update_fn == update_symplectic
 

@@ -17,8 +17,8 @@
 from typing import Sequence, Union
 import numpy as np
 
-from .parameters import Constant, Variable
 from mrmustard.math import Math
+from .parameters import Constant, Variable
 
 math = Math()
 
