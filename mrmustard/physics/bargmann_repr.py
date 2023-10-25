@@ -27,19 +27,22 @@ from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Matrix, 
 math = Math()
 
 
-class Bargmann(MatVecData):
-    r"""Exponential of quadratic polynomial for the Fock-Bargmann function.
+class BargmannExp(MatVecData):
+    r"""Sum of Exponentials of a quadratic polynomial for the Fock-Bargmann function.
 
     Quadratic polynomial is made of: quadratic coefficients, linear coefficients, constant.
     Each of these has a batch dimension, and the batch dimension is the same for all of them.
-    They are the parameters of the function `c * exp(x^T A x / 2 + x^T b)`.
+    They are the parameters of the function `sum_i c_i * exp(x^T A_i x / 2 + x^T b_i)`.
 
-    Note that if constants are not provided, they will all be initialized at 1.
+    This function allows for vector space operations on BargmannExp objects including linear combinations,
+    outer product, and inner product. The inner product is defined as the contraction of two
+    BargmannExp objects across marked indices. This can also be used to contract existing indices
+    in one BargmannExp object, e.g. to implement the partial trace.
 
     Args:
-        A (Batch[ComplexMatrix]):          series of quadratic coefficient
-        b (Batch[ComplexVector]):          series of linear coefficients
-        c (Optional[Batch[complex]]):series of constants
+        A (Batch[ComplexMatrix]):          batch of quadratic coefficient A_i
+        b (Batch[ComplexVector]):          batch of linear coefficients b_i
+        c (Optional[Batch[complex]]):      batch of coefficients c_i (default: [1.0])
     """
 
     def __init__(
@@ -74,8 +77,8 @@ class Bargmann(MatVecData):
     def c(self) -> Batch[Scalar]:
         return self.coeffs
 
-    def __mul__(self, other: Union[Scalar, Bargmann]) -> Bargmann:
-        if isinstance(other, Bargmann):
+    def __mul__(self, other: Union[Scalar, BargmannExp]) -> BargmannExp:
+        if isinstance(other, BargmannExp):
             new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
             new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
             new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
@@ -86,7 +89,7 @@ class Bargmann(MatVecData):
             except Exception as e:  # Neither same object type nor a scalar case
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
-    def __and__(self, other: Bargmann) -> Bargmann:
+    def __and__(self, other: BargmannExp) -> BargmannExp:
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
         cs = [c1 * c2 for c1 in self.c for c2 in other.c]
@@ -97,7 +100,7 @@ class Bargmann(MatVecData):
         new._contract_idxs = self._contract_idxs
         return new
 
-    def __matmul__(self, other: Bargmann) -> Bargmann:
+    def __matmul__(self, other: BargmannExp) -> BargmannExp:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
@@ -113,7 +116,7 @@ class Bargmann(MatVecData):
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+    def __getitem__(self, idx: int | tuple[int, ...]) -> BargmannExp:
         idx = (idx,) if isinstance(idx, int) else idx
         for i in idx:
             if i > self.dim:
@@ -124,7 +127,7 @@ class Bargmann(MatVecData):
         new._contract_idxs = idx
         return new
 
-    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
+    def reorder(self, order: tuple[int, ...] | list[int]) -> BargmannExp:
         A, b, c = reorder_abc((self.A, self.b, self.c), order)
         new = self.__class__(A, b, c)
         new._contract_idxs = self._contract_idxs
