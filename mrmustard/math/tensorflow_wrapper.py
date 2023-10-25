@@ -390,7 +390,7 @@ class TFMath(MathInterface):
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
         else:  # julia (with precision_bits = 512)
-            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            # The following import must performed after initializing julia in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             _A, _B, _C = (

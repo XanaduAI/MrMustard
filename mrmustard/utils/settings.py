@@ -299,7 +299,7 @@ class Settings:
             LibJulia.load().init_julia(
                 ["--compiled-modules=no", "--project=julia_pkg"]
             )  # also loads julia environment
-            # the next line must be run after "_ = Julia(compiled_modules=False)"
+            # the next line must be run after "LibJulia.load().init_julia()"
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             # import Julia functions
