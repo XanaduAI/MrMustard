@@ -137,9 +137,8 @@ class Optimizer:
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
-        key = lambda x: hash(
-            getattr(x[1], "update_fn", update_euclidean)
-        )  # pylint: disable=unnecessary-lambda
+        # pylint: disable=unnecessary-lambda
+        key = lambda x: hash(getattr(x[1], "update_fn", update_euclidean))
         grouped_items = sorted(zip(grads, trainable_params), key=key)
         grouped_items = {key: list(result) for key, result in groupby(grouped_items, key=key)}
 
