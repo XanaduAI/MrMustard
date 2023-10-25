@@ -30,9 +30,9 @@ class TestParameterSet:
         Tests the init.
         """
         ps = ParameterSet()
-        assert ps.names == []
-        assert ps.constants == {}
-        assert ps.variables == {}
+        assert not ps.names
+        assert not ps.constants
+        assert not ps.variables
 
     def test_add_parameters(self):
         r"""

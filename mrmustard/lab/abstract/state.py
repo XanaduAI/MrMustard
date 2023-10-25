@@ -33,7 +33,6 @@ from matplotlib import cm
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
