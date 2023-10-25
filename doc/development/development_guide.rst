@@ -45,7 +45,7 @@ an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ 
 
 * When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
 
-* When installing MrMustard via ``poetry install``, the required Julia packages have to be installed manually as follows:
+* When installing MrMustard via ``poetry install`` or ``pip install``, the required Julia packages have to be installed manually as follows:
 
 .. code-block:: console
 
