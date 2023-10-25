@@ -130,7 +130,6 @@ class Optimizer:
                         cost_fn_modified = True
                         self.callback_history["orig_cost"] = self.opt_history.copy()
 
-    # pylint: disable=unnecessary-lambda
     def apply_gradients(self, trainable_params, grads):
         """Apply gradients to variables.
 
@@ -138,7 +137,9 @@ class Optimizer:
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
-        key = lambda x: hash(getattr(x[1], "update_fn", update_euclidean))
+        key = lambda x: hash(
+            getattr(x[1], "update_fn", update_euclidean)
+        )  # pylint: disable=unnecessary-lambda
         grouped_items = sorted(zip(grads, trainable_params), key=key)
         grouped_items = {key: list(result) for key, result in groupby(grouped_items, key=key)}
 
