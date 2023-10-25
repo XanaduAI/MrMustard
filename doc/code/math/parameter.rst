@@ -1,7 +1,7 @@
-Parameter
-=========
+Parameters
+==========
 
-.. currentmodule:: mrmustard.math.parameter
+.. currentmodule:: mrmustard.math.parameters
 
-.. automodapi:: mrmustard.math.parameter
+.. automodapi:: mrmustard.math.parameters
     :no-heading:

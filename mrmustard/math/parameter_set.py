@@ -30,6 +30,24 @@ __all__ = [
 class ParameterSet:
     r"""
     A set of parameters.
+
+    ``ParameterSet`` can store both constant and variable parameters. It provides fast access to
+    both classes of parameters, as well as to their names.
+
+    .. code::
+
+      const1 = Constant(1.2345, "const1")
+      const2 = Constant(2.3456, "const2")
+      var1 = Variable(3.4567, "var1")
+
+      ps = ParameterSet()
+      ps.add_parameter(const1)
+      ps.add_parameter(const2)
+      ps.add_parameter(var1)
+
+      ps.names  # returns `["const1", "const2", "var1"]`
+      ps.constants  # returns `{"const1": const1, "const2": const2}`
+      ps.variable  # returns `{"var1": var1}`
     """
 
     def __init__(self):
@@ -87,7 +105,9 @@ class ParameterSet:
 
     def tagged_variables(self, tag: str) -> dict[str, Variable]:
         r"""
-        Tags the variables in this parameter set by prepending the given  ``tag`` to their names.
+        Returns a dictionary whose keys are tagged names of the variables in this parameter set, and whose
+        values are the variables in this parameter set. Tagging is done by prepending the string ``f"{tag}"/``
+        to variables' original names.
         """
         ret = {}
         for k, v in self.variables.items():

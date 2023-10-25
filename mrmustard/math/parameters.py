@@ -87,6 +87,10 @@ class Constant:
     r"""
     A parameter with a constant, immutable value.
 
+    .. code::
+
+      my_const = Constant(1, "my_const")
+
     Args:
         value: The value of this constant.
         name: The name of this constant.
@@ -126,6 +130,10 @@ class Constant:
 class Variable:
     r"""
     A parameter whose value can change.
+
+    .. code::
+
+      my_var = Variable(1, "my_var")
 
     Args:
         value: The value of this variable.
@@ -192,6 +200,63 @@ class Variable:
     @value.setter
     def value(self, value):
         self._value = self._get_value(value, self.bounds, self.name)
+
+    @staticmethod
+    def orthogonal(
+        value: any,
+        name: str,
+        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        r"""
+        Initializes a variable with ``update_fn`` for orthogonal optimization.
+
+        Args:
+            value: The value of the returned variable.
+            name: The name of the returned variable.
+            bounds: The numerical bounds of the returned variable.
+
+        Returns:
+            A variable with ``update_fn`` for orthogonal optimization.
+        """
+        return Variable(value, name, bounds, update_orthogonal)
+
+    @staticmethod
+    def symplectic(
+        value: any,
+        name: str,
+        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        r"""
+        Initializes a variable with ``update_fn`` for simplectic optimization.
+
+        Args:
+            value: The value of the returned variable.
+            name: The name of the returned variable.
+            bounds: The numerical bounds of the returned variable.
+
+        Returns:
+            A variable with ``update_fn`` for simplectic optimization.
+        """
+        return Variable(value, name, bounds, update_symplectic)
+
+    @staticmethod
+    def unitary(
+        value: any,
+        name: str,
+        bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+    ):
+        r"""
+        Initializes a variable with ``update_fn`` for unitary optimization.
+
+        Args:
+            value: The value of the returned variable.
+            name: The name of the returned variable.
+            bounds: The numerical bounds of the returned variable.
+
+        Returns:
+            A variable with ``update_fn`` for unitary optimization.
+        """
+        return Variable(value, name, bounds, update_unitary)
 
     def __mul__(self, value):
         return type(self)(

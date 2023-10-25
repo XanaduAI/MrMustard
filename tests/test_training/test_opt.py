@@ -339,27 +339,29 @@ def test_squeezing_hong_ou_mandel_optimizer():
     assert np.allclose(np.sinh(S_12.r.value) ** 2, 1, atol=1e-2)
 
 
-# def test_parameter_passthrough():
-#     """Same as the test above, but with param passthrough"""
-#     settings.SEED = 42
-#     r = np.arcsinh(1.0)
-#     par = Parametrized(
-#         r=math.new_variable(r, (0.0, None), "r"),
-#         phi=math.new_variable(settings.rng.normal(), (None, None), "phi"),
-#     )
-#     ops = [
-#         S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
-#         S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
-#         S2gate(r=par.r.value, phi=par.phi.value)[1, 2],
-#     ]
-#     circ = Circuit(ops)
+from mrmustard.math.parameters import Variable
 
-#     def cost_fn():
-#         return math.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
 
-#     opt = Optimizer(euclidean_lr=0.001)
-#     opt.minimize(cost_fn, by_optimizing=[par], max_steps=300)
-#     assert np.allclose(np.sinh(par.r.value) ** 2, 1, atol=1e-2)
+def test_parameter_passthrough():
+    """Same as the test above, but with param passthrough"""
+    settings.SEED = 42
+    r = np.arcsinh(1.0)
+    r_var = Variable(r, "r", (0.0, None))
+    phi_var = Variable(settings.rng.normal(), "phi", (None, None))
+
+    ops = [
+        S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1],
+        S2gate(r=r, phi=0.0, phi_trainable=True)[2, 3],
+        S2gate(r=r_var, phi=phi_var)[1, 2],
+    ]
+    circ = Circuit(ops)
+
+    def cost_fn():
+        return math.abs((Vacuum(4) >> circ).ket(cutoffs=[2, 2, 2, 2])[1, 1, 1, 1]) ** 2
+
+    opt = Optimizer(euclidean_lr=0.001)
+    opt.minimize(cost_fn, by_optimizing=[r_var, phi_var], max_steps=300)
+    assert np.allclose(np.sinh(r_var.value) ** 2, 1, atol=1e-2)
 
 
 def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
