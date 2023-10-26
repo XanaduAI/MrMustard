@@ -22,6 +22,7 @@ from scipy.stats import ortho_group, unitary_group
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from .backend_numpy import BackendNumpy
+from .backend_tensorflow import BackendTensorflow
 from ..utils.settings import settings
 from ..utils.typing import (
     Matrix,
@@ -75,7 +76,7 @@ class BackendManager:
 
     def __init__(self):
         # the backend in use
-        backend = BackendNumpy()
+        backend = BackendTensorflow()
         self._backend = backend
         self._bind(backend)
 
@@ -1285,13 +1286,11 @@ class BackendManager:
         """
         if a_partial is None:
             return b_full
-        shape = getattr(b_full, "shape", ())
-        N = (shape[-1] if shape != () else 0) // 2
+        N = b_full.shape[-1] // 2
         indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
         b_rows = self.gather(b_full, indices, axis=0)
         b_rows = self.matmul(a_partial, b_rows)
-        self.update_tensor(b_full, indices[:, None], b_rows)
-        return b_full  # ??
+        return self.update_tensor(b_full, indices[:, None], b_rows)
 
     def right_matmul_at_modes(
         self, a_full: Tensor, b_partial: Tensor, modes: Sequence[int]

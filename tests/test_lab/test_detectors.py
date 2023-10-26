@@ -76,7 +76,6 @@ class TestPNRDetector:
         assert np.allclose(mean, expected_mean)
         variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean**2
         expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
-        assert False
         assert np.allclose(variance, expected_variance)
 
     @given(
