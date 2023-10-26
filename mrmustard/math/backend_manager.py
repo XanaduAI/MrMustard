@@ -75,14 +75,12 @@ class BackendManager:
 
     def __init__(self):
         # the backend in use
-        self._backend: Optional[str] = BackendNumpy()
+        backend = BackendNumpy()
+        self._backend = backend
+        self._bind(backend)
 
         # the configured Euclidean optimizer.
         self._euclidean_opt: type = None
-
-        # start in numpy backend
-        # self._change_backend("numpy")
-        # self._change_backend("tensorflow")
 
     def _change_backend(self, name: str):
         r"""

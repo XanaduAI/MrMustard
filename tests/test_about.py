@@ -21,6 +21,8 @@ import re
 
 import mrmustard as mm
 
+mm.settings.BACKEND = "tensorflow"
+
 
 def test_about():
     """Tests if the about string prints correctly."""
