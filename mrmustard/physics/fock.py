@@ -705,7 +705,9 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
 
     # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
+    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(
+        math.pow(1 / 2, math.arange(0, cutoff))
+    )
 
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys

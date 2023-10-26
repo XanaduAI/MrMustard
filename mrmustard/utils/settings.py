@@ -82,7 +82,7 @@ class Settings:
 
     def __init__(self):
         self._backend = "tensorflow"
-        # self._backend = "numpy"
+        self._backend = "numpy"
         self._hbar = ImmutableSetting(2.0, "HBAR")
         self._debug = False
         self._autocutoff_probability = 0.999  # capture at least 99.9% of the probability

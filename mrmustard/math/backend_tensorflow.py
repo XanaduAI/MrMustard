@@ -59,9 +59,7 @@ class BackendTensorflow(BackendBase):
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
-        if isinstance(tensor, np.ndarray):
-            return tensor
-        return tensor.numpy()
+        return np.array(tensor)
 
     def assign(self, tensor: tf.Tensor, value: tf.Tensor) -> tf.Tensor:
         tensor.assign(value)
@@ -118,9 +116,10 @@ class BackendTensorflow(BackendBase):
         self,
         array: tf.Tensor,
         filters: tf.Tensor,
-        padding="VALID",
+        padding: Optional[str] = None,
         data_format="NWC",
     ) -> tf.Tensor:
+        padding = padding or "VALID"
         return tf.nn.convolution(array, filters=filters, padding=padding, data_format=data_format)
 
     def cos(self, array: tf.Tensor) -> tf.Tensor:

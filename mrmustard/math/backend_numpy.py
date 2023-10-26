@@ -114,13 +114,13 @@ class BackendNumpy(BackendBase):
         self,
         array: np.array,
         filters: np.array,
-        strides: Optional[List[int]] = None,
-        padding="VALID",
+        padding: Optional[str] = None,
         data_format="NWC",
-        dilations: Optional[List[int]] = None,
     ) -> np.array:
-        # ?? Seem to only be able to do 2D convolutions
-        pass
+        from scipy.ndimage import convolve
+
+        padding = padding or "reflect"
+        return convolve(array, filters, mode=padding)
 
     def cos(self, array: np.array) -> np.array:
         return np.cos(array)
@@ -166,12 +166,12 @@ class BackendNumpy(BackendBase):
             )
             return ret.reshape(original_sh[:-1] + inner_shape)
 
-    def diag_part(self, array: np.array) -> np.array:
+    def diag_part(self, array: np.array, k: int) -> np.array:
         # ??
         # seems like it's always only used on 2-D matrices
-        if array.shape != 2:
+        if len(array.shape) != 2:
             raise ValueError("`diag_part` only supports 2-D arrays.")
-        return np.diag(array)
+        return np.diag(array, k=k)
 
     def einsum(self, string: str, *tensors) -> np.array:
         if type(string) is str:
@@ -276,9 +276,11 @@ class BackendNumpy(BackendBase):
         self,
         array: np.array,
         paddings: Sequence[Tuple[int, int]],
-        mode="constant",
+        mode="CONSTANT",
         constant_values=0,
     ) -> np.array:
+        if mode == "CONSTANT":
+            mode = "constant"
         return np.pad(array, paddings, mode, constant_values=constant_values)
 
     @staticmethod

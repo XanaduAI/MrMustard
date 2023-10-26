@@ -22,7 +22,6 @@ from scipy.stats import ortho_group, unitary_group
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from .backend_numpy import BackendNumpy
-from .backend_tensorflow import BackendTensorflow
 from ..utils.settings import settings
 from ..utils.typing import (
     Matrix,
@@ -76,7 +75,7 @@ class BackendManager:
 
     def __init__(self):
         # the backend in use
-        backend = BackendTensorflow()
+        backend = BackendNumpy()
         self._backend = backend
         self._bind(backend)
 
@@ -353,7 +352,7 @@ class BackendManager:
         self,
         array: Tensor,
         filters: Tensor,
-        padding="VALID",
+        padding: Optional[str] = None,
         data_format="NWC",
     ) -> Tensor:  # TODO: remove strides and data_format?
         r"""Performs a convolution on array with filters.
@@ -1372,7 +1371,6 @@ class BackendManager:
         Note that the output is not guaranteed to be a complete joint probability,
         as it's computed only up to the dimension of the base probs.
         """
-
         if prob.ndim > 3 or other.ndim > 3:
             raise ValueError("cannot convolve arrays with more than 3 axes")
         if not prob.shape == other.shape:
@@ -1383,7 +1381,6 @@ class BackendManager:
         return self.convolution(
             prob_padded[None, ..., None],
             other_reversed[..., None, None],
-            padding="VALID",  # TODO: do we need to specify this?
             data_format="N"
             + ("HD"[: other.ndim - 1])[::-1]
             + "WC",  # TODO: rewrite this to be more readable (do we need it?)

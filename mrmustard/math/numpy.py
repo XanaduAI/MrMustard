@@ -155,7 +155,7 @@ class NPMath(MathInterface):
     def diag_part(self, array: np.array) -> np.array:
         # ??
         # seems like it's always only used on 2-D matrices
-        if array.shape != 2:
+        if len(array.shape) != 2:
             raise ValueError("`diag_part` only supports 2-D arrays.")
         return np.diag(array)
 
