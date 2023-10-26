@@ -18,12 +18,17 @@ used within Mr Mustard.
 
 from itertools import chain, groupby
 from typing import List, Callable, Sequence, Union, Mapping, Dict
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.training.callbacks import Callback
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from .parameter import Parameter, Trainable, create_parameter
-from .parametrized import Parametrized
-from .parameter_update import param_update_method
+from mrmustard.math.parameters import (
+    update_euclidean,
+    update_orthogonal,
+    update_symplectic,
+    update_unitary,
+)
+from mrmustard.lab import Circuit
 
 import mrmustard.math as math
 
@@ -49,10 +54,10 @@ class Optimizer:
         euclidean_lr: float = 0.001,
     ):
         self.learning_rate = {
-            "euclidean": euclidean_lr,
-            "symplectic": symplectic_lr,
-            "unitary": unitary_lr,
-            "orthogonal": orthogonal_lr,
+            update_euclidean: euclidean_lr,
+            update_symplectic: symplectic_lr,
+            update_unitary: unitary_lr,
+            update_orthogonal: orthogonal_lr,
         }
         self.opt_history: List[float] = [0]
         self.callback_history: Dict[str, List] = {}
@@ -61,7 +66,7 @@ class Optimizer:
     def minimize(
         self,
         cost_fn: Callable,
-        by_optimizing: Sequence[Trainable],
+        by_optimizing: Sequence[Union[Constant, Variable, Circuit]],
         max_steps: int = 1000,
         callbacks: Union[Callable, Sequence[Callable], Mapping[str, Callable]] = None,
     ):
@@ -131,43 +136,47 @@ class Optimizer:
         applies the corresponding update method for each variable type. Update methods are
         registered on :mod:`parameter_update` module.
         """
+        grouped_items = sorted(
+            zip(grads, trainable_params),
+            key=lambda x: hash(getattr(x[1], "update_fn", update_euclidean)),
+        )
+        grouped_items = {
+            key: list(result)
+            for key, result in groupby(
+                grouped_items, key=lambda x: hash(getattr(x[1], "update_fn", update_euclidean))
+            )
+        }
 
-        # group grads and vars by type (i.e. euclidean, symplectic, orthogonal, unitary)
-        grouped_vars_and_grads = self._group_vars_and_grads_by_type(trainable_params, grads)
-
-        for param_type, grads_vars in grouped_vars_and_grads.items():
-            param_lr = self.learning_rate[param_type]
+        for grads_vars in grouped_items.values():
+            update_fn = getattr(grads_vars[0][1], "update_fn", update_euclidean)
+            params_lr = self.learning_rate[update_fn]
             # extract value (tensor) from the parameter object and group with grad
             grads_and_vars = [(grad, p.value) for grad, p in grads_vars]
-            update_method = param_update_method.get(param_type)
-            update_method(grads_and_vars, param_lr)
+            update_fn(grads_and_vars, params_lr)
 
     @staticmethod
     def _get_trainable_params(trainable_items, root_tag: str = "optimized"):
-        """Traverses all instances of Parametrized or trainable items that belong to the backend
+        """Traverses all instances of gates, states, detectors, or trainable items that belong to the backend
         and return a dict of trainables of the form `{tags: trainable_parameters}` where the `tags`
         are traversal paths of collecting all parent tags for reaching each parameter.
         """
         trainables = []
         for i, item in enumerate(trainable_items):
             owner_tag = f"{root_tag}[{i}]"
-            if isinstance(item, Parametrized):
+            if isinstance(item, Circuit):
+                for j, op in enumerate(item.ops):
+                    tag = f"{owner_tag}:{item.__class__.__qualname__}/_ops[{j}]"
+                    tagged_vars = op.parameter_set.tagged_variables(tag)
+                    trainables.append(tagged_vars.items())
+            elif hasattr(item, "parameter_set"):
                 tag = f"{owner_tag}:{item.__class__.__qualname__}"
-                trainables.append(item.traverse_trainables(owner_tag=tag).items())
+                tagged_vars = item.parameter_set.tagged_variables(tag)
+                trainables.append(tagged_vars.items())
             elif math.from_backend(item) and math.is_trainable(item):
                 # the created parameter is wrapped into a list because the case above
                 # returns a list, hence ensuring we have a list of lists
                 tag = f"{owner_tag}:{math.__class__.__name__}/{getattr(item, 'name', item.__class__.__name__)}"
-                trainables.append(
-                    [
-                        (
-                            tag,
-                            create_parameter(
-                                item, name="from_backend", is_trainable=True, owner=tag
-                            ),
-                        )
-                    ]
-                )
+                trainables.append([(tag, Variable(item, name="from _backend"))])
 
         return dict(chain(*trainables))
 
@@ -188,7 +197,7 @@ class Optimizer:
         return grouped
 
     @staticmethod
-    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Parameter]):
+    def compute_loss_and_gradients(cost_fn: Callable, parameters: List[Variable]):
         r"""Uses the backend to compute the loss and gradients of the parameters
         given a cost function.
 
@@ -198,7 +207,7 @@ class Optimizer:
 
         Args:
             cost_fn (Callable with no args): The cost function.
-            parameters (List[Parameter]): The parameters to optimize.
+            parameters (List[Variable]): The variables to optimize.
 
         Returns:
             tuple(Tensor, List[Tensor]): The loss and the gradients.

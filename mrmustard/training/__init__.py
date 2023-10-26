@@ -64,6 +64,5 @@ Then, we can see the optimized value of the parameters, for example
 
 """
 
-from .parametrized import Parametrized
 from .optimizer import Optimizer
 from .callbacks import TensorboardCallback

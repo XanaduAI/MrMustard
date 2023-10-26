@@ -21,7 +21,7 @@ from scipy.stats import unitary_group
 from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
-from mrmustard.training.parameter_update import update_orthogonal, update_symplectic, update_unitary
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 import mrmustard.math as math
 
 

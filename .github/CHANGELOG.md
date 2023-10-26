@@ -26,6 +26,10 @@ This is done by representing Fock amplitudes with a higher precision than comple
 to keep the code fast.
   [(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
 
+* Replaced parameters in `training` with `Constant` and `Variable` classes.
+
+* Improved how states, transformations, and detectors deal with parameters by replacing the `Parametrized` class with `ParameterSet`.
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.

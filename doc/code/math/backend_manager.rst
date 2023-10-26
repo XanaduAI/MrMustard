@@ -1,5 +1,5 @@
-The `math` module
-=================
+Backend Manager
+===============
 
 .. currentmodule:: mrmustard.math.backend_manager
 

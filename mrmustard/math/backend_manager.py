@@ -21,6 +21,7 @@ from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from .backend_numpy import BackendNumpy
 from ..utils.settings import settings
 from ..utils.typing import (
     Matrix,
@@ -29,7 +30,9 @@ from ..utils.typing import (
     Vector,
 )
 
-__all__ = ("BackendManager",)
+__all__ = [
+    "BackendManager",
+]
 
 # ~~~~~~~
 # Helpers
@@ -61,7 +64,6 @@ module_name_tf = "mrmustard.math.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
 
 all_modules = {
-    "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
     "tensorflow": {"module": module_tf, "loader": loader_tf, "object": "BackendTensorflow"},
 }
 
@@ -73,7 +75,7 @@ class BackendManager:
 
     def __init__(self):
         # the backend in use
-        self._backend: Optional[str] = None
+        self._backend: Optional[str] = BackendNumpy()
 
         # the configured Euclidean optimizer.
         self._euclidean_opt: type = None
