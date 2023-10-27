@@ -15,9 +15,11 @@
 import numpy as np
 
 from math import lgamma as mlgamma
+from numpy.random import default_rng
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 from scipy.linalg import expm as scipy_expm
 from scipy.special import xlogy as scipy_xlogy
+from scipy.stats import multivariate_normal
 
 from .autocast import Autocast
 from .backend_base import BackendBase
@@ -103,24 +105,6 @@ class BackendNumpy(BackendBase):
 
     def conj(self, array: np.array) -> np.array:
         return np.conj(array)
-
-    def constraint_func(self, bounds: Tuple[Optional[float], Optional[float]]) -> None:
-        # ??
-        pass
-
-    # pylint: disable=arguments-differ
-    @Autocast()
-    def convolution(
-        self,
-        array: np.array,
-        filters: np.array,
-        padding: Optional[str] = None,
-        data_format="NWC",
-    ) -> np.array:
-        from scipy.ndimage import convolve
-
-        padding = padding or "reflect"
-        return convolve(array, filters, mode=padding)
 
     def cos(self, array: np.array) -> np.array:
         return np.cos(array)
@@ -402,14 +386,31 @@ class BackendNumpy(BackendBase):
         return np.linalg.cholesky(input)
 
     def Categorical(self, probs: np.ndarray, name: str):
-        # return tfp.distributions.Categorical(probs=probs, name=name)
-        # ??
-        pass
+        class Generator:
+            def __init__(self, probs):
+                self._probs = probs
+
+            def sample(self):
+                array = np.random.multinomial(1, pvals=probs)
+                return np.where(array == 1)[0][0]
+
+        return Generator(probs)
 
     def MultivariateNormalTriL(self, loc: np.ndarray, scale_tril: np.ndarray):
-        # return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
-        # ??
-        pass
+        class Generator:
+            def __init__(self, mean, cov):
+                self._mean = mean
+                self._cov = cov
+
+            def sample(self, dtype=None):
+                fn = default_rng().multivariate_normal
+                ret = fn(self._mean, self._cov)
+                return ret
+
+            def prob(self, x):
+                return multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
+
+        return Generator(loc, scale_tril)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions

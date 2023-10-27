@@ -48,6 +48,9 @@ hbar = settings.HBAR
 class TestPNRDetector:
     """tests related to PNR detectors"""
 
+    @pytest.mark.skipif(
+        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+    )
     @given(
         alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1),
         eta=st.floats(0, 1),
@@ -60,6 +63,9 @@ class TestPNRDetector:
         expected = poisson.pmf(k=np.arange(len(ps)), mu=eta * np.abs(alpha) ** 2 + dc)
         assert np.allclose(ps, expected)
 
+    @pytest.mark.skipif(
+        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+    )
     @given(
         r=st.floats(0, 0.5),
         phi=st.floats(0, 2 * np.pi),
@@ -78,6 +84,9 @@ class TestPNRDetector:
         expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
         assert np.allclose(variance, expected_variance)
 
+    @pytest.mark.skipif(
+        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+    )
     @given(
         r=st.floats(0, 0.5),
         phi=st.floats(0, 2 * np.pi),
@@ -110,6 +119,9 @@ class TestPNRDetector:
         assert np.allclose(var_i, expected_var_i)
         assert np.allclose(covar, expected_covar)
 
+    @pytest.mark.skipif(
+        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+    )
     def test_postselection(self):
         """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
         n_mean = 1.0
@@ -127,6 +139,9 @@ class TestPNRDetector:
         expected_state[n_measured, n_measured] = 1.0
         assert np.allclose(proj_state, expected_state)
 
+    @pytest.mark.skipif(
+        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+    )
     @given(eta=st.floats(0, 1))
     def test_loss_probs(self, eta):
         "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"

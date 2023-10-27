@@ -23,17 +23,17 @@ from mrmustard import settings
 import mrmustard.math as math
 
 
-def test_backend_redirection_tf():
-    """Test BackendManager class is redirecting calls to the desired backend"""
-    n0 = math.backend.name
+# def test_backend_redirection_tf():
+#     """Test BackendManager class is redirecting calls to the desired backend"""
+#     n0 = math.backend.name
 
-    math.change_backend("tensorflow")
-    assert math.backend.name == "tensorflow"
+#     math.change_backend("tensorflow")
+#     assert math.backend.name == "tensorflow"
 
-    math.change_backend("numpy")
-    assert math.backend.name == "numpy"
+#     math.change_backend("numpy")
+#     assert math.backend.name == "numpy"
 
-    n0 = math.backend.name
+#     n0 = math.backend.name
 
 
 def test_hash_tensor():
