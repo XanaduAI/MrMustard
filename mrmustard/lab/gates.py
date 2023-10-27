@@ -84,7 +84,6 @@ class Dgate(Unitary):
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
         super().__init__(
-            self,
             modes=modes or list(range(m)),
             name="Dgate",
         )
@@ -183,7 +182,6 @@ class Sgate(Unitary):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
         )
@@ -275,7 +273,6 @@ class Rgate(Unitary):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
             name="Rgate",
         )
@@ -370,7 +367,6 @@ class Pgate(Unitary):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or list(range(len(math.atleast_1d(shearing)))),
             name="Pgate",
         )
@@ -407,7 +403,6 @@ class CXgate(Unitary):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or [0, 1],
             name="CXgate",
         )
@@ -442,7 +437,6 @@ class CZgate(Unitary):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or [0, 1],
             name="CZgate",
         )
@@ -483,7 +477,6 @@ class BSgate(Unitary):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or [0, 1],  # type: ignore
             name="BSgate",
         )
@@ -580,7 +573,6 @@ class MZgate(Unitary):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or [0, 1],
             name="MZgate",
         )
@@ -628,7 +620,6 @@ class S2gate(Unitary):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or [0, 1],
             name="S2gate",
         )
@@ -671,7 +662,6 @@ class Interferometer(Unitary):
         if unitary is None:
             unitary = math.random_unitary(num_modes)
         super().__init__(
-            self,
             modes=modes or list(range(num_modes)),
             name="Interferometer",
         )
@@ -726,7 +716,6 @@ class RealInterferometer(Unitary):
             orthogonal = math.random_orthogonal(num_modes)
 
         super().__init__(
-            self,
             modes=modes or list(range(num_modes)),
             name="RealInterferometer",
         )
@@ -785,7 +774,6 @@ class Ggate(Unitary):
             symplectic = math.random_symplectic(num_modes)
 
         super().__init__(
-            self,
             modes=modes or list(range(num_modes)),
             name="Ggate",
         )
@@ -861,7 +849,6 @@ class Attenuator(Channel):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
             name="Attenuator",
         )
@@ -924,7 +911,6 @@ class Amplifier(Channel):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or list(range(len(math.atleast_1d(gain)))),
             name="Amplifier",
         )
@@ -978,7 +964,6 @@ class AdditiveNoise(Channel):
         modes: Optional[list[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
         )
@@ -1009,7 +994,6 @@ class PhaseNoise(Channel):
         modes: Optional[List[int]] = None,
     ):
         super().__init__(
-            self,
             modes=modes or [0],
             name="AddNoise",
         )
