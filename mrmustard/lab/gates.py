@@ -85,7 +85,7 @@ class Dgate(Unitary):
         modes: Optional[List[int]] = None,
     ):
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(m)),
             name="Dgate",
@@ -184,7 +184,7 @@ class Sgate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(r)))),  # type: ignore
             name="Sgate",
@@ -276,7 +276,7 @@ class Rgate(Unitary):
         angle_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(angle)))),  # type: ignore
             name="Rgate",
@@ -371,7 +371,7 @@ class Pgate(Unitary):
         shearing_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(shearing)))),
             name="Pgate",
@@ -408,7 +408,7 @@ class CXgate(Unitary):
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or [0, 1],
             name="CXgate",
@@ -443,7 +443,7 @@ class CZgate(Unitary):
         s_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or [0, 1],
             name="CZgate",
@@ -484,7 +484,7 @@ class BSgate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[list[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or [0, 1],  # type: ignore
             name="BSgate",
@@ -581,7 +581,7 @@ class MZgate(Unitary):
         internal: bool = False,
         modes: Optional[List[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or [0, 1],
             name="MZgate",
@@ -629,7 +629,7 @@ class S2gate(Unitary):
         phi_bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         modes: Optional[List[int]] = None,
     ):
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or [0, 1],
             name="S2gate",
@@ -672,7 +672,7 @@ class Interferometer(Unitary):
             raise ValueError(f"Invalid number of modes: got {len(modes)}, should be {num_modes}")
         if unitary is None:
             unitary = math.random_unitary(num_modes)
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(num_modes)),
             name="Interferometer",
@@ -727,7 +727,7 @@ class RealInterferometer(Unitary):
         if orthogonal is None:
             orthogonal = math.random_orthogonal(num_modes)
 
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(num_modes)),
             name="RealInterferometer",
@@ -786,7 +786,7 @@ class Ggate(Unitary):
         if symplectic is None:
             symplectic = math.random_symplectic(num_modes)
 
-        Unitary.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(num_modes)),
             name="Ggate",
@@ -862,7 +862,7 @@ class Attenuator(Channel):
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        Channel.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
             name="Attenuator",
@@ -925,7 +925,7 @@ class Amplifier(Channel):
         nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
     ):
-        Channel.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(gain)))),
             name="Amplifier",
@@ -979,7 +979,7 @@ class AdditiveNoise(Channel):
         noise_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[list[int]] = None,
     ):
-        Channel.__init__(
+        super().__init__(
             self,
             modes=modes or list(range(len(math.atleast_1d(noise)))),
             name="AddNoise",
@@ -1010,7 +1010,7 @@ class PhaseNoise(Channel):
         phase_stdev_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
         modes: Optional[List[int]] = None,
     ):
-        Channel.__init__(
+        super().__init__(
             self,
             modes=modes or [0],
             name="AddNoise",
