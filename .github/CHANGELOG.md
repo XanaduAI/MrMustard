@@ -29,8 +29,10 @@ The precision is controlled by setting settings.PRECISION_BITS_HERMITE_POLY. The
 which uses the old Numba code. When setting to a higher value, the new Julia code is run.
 
 * Replaced parameters in `training` with `Constant` and `Variable` classes.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
 
 * Improved how states, transformations, and detectors deal with parameters by replacing the `Parametrized` class with `ParameterSet`.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
 
 ### Bug fixes
 
