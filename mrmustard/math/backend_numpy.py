@@ -25,11 +25,8 @@ from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
 from ..utils.typing import Trainable
-from .lattice.strategies import binomial, vanilla, vanilla_vjp
-
-from .compactFock.compactFock_inputValidation import (
-    grad_hermite_multidimensional_1leftoverMode,
-    grad_hermite_multidimensional_diagonal,
+from .lattice.strategies import binomial, vanilla
+from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
 )
