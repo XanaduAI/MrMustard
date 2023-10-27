@@ -49,7 +49,7 @@ class Vacuum(State):
     def __init__(self, num_modes: int):
         cov = gaussian.vacuum_cov(num_modes)
         means = gaussian.vacuum_means(num_modes)
-        super().__init__(self, cov=cov, means=means)
+        super().__init__(cov=cov, means=means)
 
 
 class Coherent(State):
@@ -107,7 +107,7 @@ class Coherent(State):
 
         means = gaussian.displacement(x, y)
         cov = gaussian.vacuum_cov(means.shape[-1] // 2)
-        super().__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
+        super().__init__(cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def means(self):
@@ -171,7 +171,7 @@ class SqueezedVacuum(State):
         means = gaussian.vacuum_means(
             cov.shape[-1] // 2,
         )
-        super().__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        super().__init__(cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -220,7 +220,7 @@ class TMSV(State):
 
         cov = gaussian.two_mode_squeezed_vacuum_cov(r, phi)
         means = gaussian.vacuum_means(2)
-        super().__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        super().__init__(cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -270,7 +270,7 @@ class Thermal(State):
 
         cov = gaussian.thermal_cov(self.nbar.value)
         means = gaussian.vacuum_means(cov.shape[-1] // 2)
-        super().__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        super().__init__(cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -348,7 +348,7 @@ class DisplacedSqueezed(State):
 
         cov = gaussian.squeezed_vacuum_cov(r, phi)
         means = gaussian.displacement(x, y)
-        super().__init__(self, cov=cov, means=means, cutoffs=cutoffs, modes=modes)
+        super().__init__(cov=cov, means=means, cutoffs=cutoffs, modes=modes)
 
     @property
     def cov(self):
@@ -423,7 +423,7 @@ class Gaussian(State):
 
         cov = gaussian.gaussian_cov(symplectic, eigenvalues)
         means = gaussian.vacuum_means(cov.shape[-1] // 2)
-        super().__init__(self, cov=cov, means=means, cutoffs=cutoffs)
+        super().__init__(cov=cov, means=means, cutoffs=cutoffs)
 
     @property
     def cov(self):
@@ -451,7 +451,7 @@ class Fock(State):
         cutoffs: Sequence[int] = None,
         normalize: bool = False,
     ):
-        super().__init__(self, ket=fock.fock_state(n), cutoffs=cutoffs)
+        super().__init__(ket=fock.fock_state(n), cutoffs=cutoffs)
 
         self._n = [n] if isinstance(n, int) else n
         self._modes = modes
