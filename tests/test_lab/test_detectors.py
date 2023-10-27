@@ -77,10 +77,10 @@ class TestPNRDetector:
         S = Sgate(r=r, phi=phi)
         ps = Vacuum(1) >> S >> PNRDetector(efficiency=eta, dark_counts=dc)
         assert np.allclose(np.sum(ps), 1.0)
-        mean = np.arange(len(ps)) @ ps.numpy()
+        mean = np.arange(len(ps)) @ math.asnumpy(ps)
         expected_mean = eta * np.sinh(r) ** 2 + dc
         assert np.allclose(mean, expected_mean)
-        variance = np.arange(len(ps)) ** 2 @ ps.numpy() - mean**2
+        variance = np.arange(len(ps)) ** 2 @ math.asnumpy(ps) - mean**2
         expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
         assert np.allclose(variance, expected_variance)
 
@@ -111,7 +111,7 @@ class TestPNRDetector:
         var_i = np.sum(ps, axis=0) @ n**2 - mean_i**2
         expected_var_s = n_s * (n_s + 1) + dc_s
         expected_var_i = n_i * (n_i + 1) + dc_i
-        covar = n @ ps.numpy() @ n - mean_s * mean_i
+        covar = n @ math.asnumpy(ps) @ n - mean_s * mean_i
         expected_covar = eta_s * eta_i * (np.sinh(r) * np.cosh(r)) ** 2
         assert np.allclose(mean_s, expected_mean_s)
         assert np.allclose(mean_i, expected_mean_i)
@@ -184,7 +184,7 @@ class TestHomodyneDetector:
         if outcome is not None:
             # checks postselection ensuring the x-quadrature
             # value is consistent with the postselected value
-            x_outcome = detector.outcome.numpy()[:2]
+            x_outcome = math.asnumpy(detector.outcome)[:2]
             assert np.allclose(x_outcome, outcome)
 
     @given(
@@ -212,7 +212,7 @@ class TestHomodyneDetector:
             means = np.array(
                 [2 * np.sqrt(s * (1 + s)) * outcome / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
             )
-            assert np.allclose(remaining_state.means.numpy(), means)
+            assert np.allclose(math.asnumpy(remaining_state.means), means)
 
     @given(
         s=st.floats(1.0, 10.0),
@@ -249,7 +249,7 @@ class TestHomodyneDetector:
                 ],
             ]
         )
-        assert np.allclose(remaining_state.cov.numpy(), cov, atol=1e-5)
+        assert np.allclose(math.asnumpy(remaining_state.cov), cov, atol=1e-5)
         # TODO: figure out why this is not working
         # if outcome is not None:
         #     outcome = outcome * np.sqrt(hbar)
@@ -287,7 +287,7 @@ class TestHomodyneDetector:
             ]
         )
 
-        means = remaining_state.means.numpy()
+        means = math.asnumpy(remaining_state.means)
         assert np.allclose(means, expected_means)
 
     N_MEAS = 150  # number of homodyne measurements to perform
@@ -315,7 +315,7 @@ class TestHomodyneDetector:
         results = np.empty((self.N_MEAS, 2))
         for i in range(self.N_MEAS):
             _ = state << detector
-            results[i] = detector.outcome.numpy()
+            results[i] = math.asnumpy(detector.outcome)
 
         mean = results.mean(axis=0)
         assert np.allclose(mean[0], mean_expected, atol=self.std_10, rtol=0)
@@ -327,7 +327,7 @@ class TestHomodyneDetector:
         covarince matrix: one that has tends to :math:`diag(1/\sigma[1,1],0)`."""
 
         sigma = np.identity(2)
-        sigma_m = SqueezedVacuum(r=settings.HOMODYNE_SQUEEZING, phi=0).cov.numpy()
+        sigma_m = math.asnumpy(SqueezedVacuum(r=settings.HOMODYNE_SQUEEZING, phi=0).cov)
 
         inverse_covariance = np.linalg.inv(sigma + sigma_m)
         assert np.allclose(inverse_covariance, np.diag([1 / sigma[1, 1], 0]))
@@ -378,7 +378,7 @@ class TestHeterodyneDetector:
 
         # assert expected covariance
         cov = hbar / 2 * np.array([[1, 0], [0, 1]])
-        assert np.allclose(remaining_state.cov.numpy(), cov)
+        assert np.allclose(math.asnumpy(remaining_state.cov), cov)
 
         # assert expected means vector, not tested when x or y is None
         # because we cannot access the sampled outcome value

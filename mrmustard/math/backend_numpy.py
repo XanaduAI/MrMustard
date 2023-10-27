@@ -97,7 +97,7 @@ class BackendNumpy(BackendBase):
         return np.clip(array, a_min, a_max)
 
     def concat(self, values: List[np.array], axis: int) -> np.array:
-        # values = np.array(values) if len(np.array(values).shape) != 1 else np.array([values])
+        values = np.array(values) if len(np.array(values).shape) != 1 else np.array([values])
         return np.concatenate(values, axis)
 
     def conj(self, array: np.array) -> np.array:
@@ -407,6 +407,7 @@ class BackendNumpy(BackendBase):
             def prob(self, x):
                 return multivariate_normal.pdf(x, mean=self._mean, cov=self._cov)
 
+        scale_tril = scale_tril @ np.transpose(scale_tril)
         return Generator(loc, scale_tril)
 
     # ~~~~~~~~~~~~~~~~~
