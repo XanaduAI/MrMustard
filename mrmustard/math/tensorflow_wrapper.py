@@ -23,7 +23,7 @@ import tensorflow_probability as tfp
 from mrmustard import settings
 from mrmustard.math.autocast import Autocast
 from mrmustard.math.lattice import strategies
-from mrmustard.math.compactFock.compactFock_inputValidation import (
+from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
@@ -382,14 +382,14 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        precision_bits = (
-            settings.PRECISION_BITS_HERMITE_POLY
-        )  # number of bits used to represent a single Fock amplitude (default: complex128)
+
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        else:  # julia (with precision_bits = 512)
+        else:  # julia
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
@@ -398,7 +398,10 @@ class TFMath(MathInterface):
                 _B.astype(np.complex128),
                 _C.astype(np.complex128),
             )
-            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
+
+            G = Main_julia.Vanilla.vanilla(
+                _A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits
+            )
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
@@ -488,16 +491,34 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
-        )
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        if precision_bits == 128:  # numba (complex128)
+            poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+                hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+            )
+        else:  # julia (higher precision than complex128)
+            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+
+            poly0, poly2, poly1010, poly1001, poly1 = Main_julia.DiagonalAmps.fock_diagonal_amps(
+                A, B, C.item(), tuple(cutoffs), precision_bits
+            )
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_diagonal,
-                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
-                [poly0.dtype] * 3,
-            )
+            if precision_bits == 128:  # numba (complex128)
+                dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                    grad_hermite_multidimensional_diagonal,
+                    [A, B, C.item(), poly0, poly2, poly1010, poly1001, poly1],
+                    [poly0.dtype] * 3,
+                )
+            else:  # julia (higher precision than complex128)
+                dpoly_dC = poly0 / C.item()
+                dpoly_dA, dpoly_dB = Main_julia.DiagonalGrad.fock_diagonal_grad(
+                    A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
+                )
+
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
@@ -536,16 +557,40 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_1leftoverMode, [A, B, C, cutoffs], [A.dtype] * 5
-        )
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        if precision_bits == 128:  # numba (complex128)
+            poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+                hermite_multidimensional_1leftoverMode, [A, B, C.item(), cutoffs], [A.dtype] * 5
+            )
+        else:  # julia (higher precision than complex128)
+            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+
+            (
+                poly0,
+                poly2,
+                poly1010,
+                poly1001,
+                poly1,
+            ) = Main_julia.LeftoverModeAmps.fock_1leftoverMode_amps(
+                A, B, C.item(), tuple(cutoffs), precision_bits
+            )
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_1leftoverMode,
-                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
-                [poly0.dtype] * 3,
-            )
+            if precision_bits == 128:  # numba (complex128)
+                dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                    grad_hermite_multidimensional_1leftoverMode,
+                    [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                    [poly0.dtype] * 3,
+                )
+            else:  # julia (higher precision than complex128)
+                dpoly_dC = poly0 / C.item()
+                dpoly_dA, dpoly_dB = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                    A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
+                )
+
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
