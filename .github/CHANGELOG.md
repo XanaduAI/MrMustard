@@ -32,12 +32,15 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
 [(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
+* Fixed inconsistent use of `atol` in purity evaluation for Gaussian states.
+[(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
 
 ### Documentation
 
 ### Contributors
 [Robbe De Prins](https://github.com/rdprins),
-[Samuele Ferracin](https://github.com/SamFerracin)
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Jan Provaznik](https://github.com/jan-provaznik)
 
 # Release 0.6.0 (current release)
 
