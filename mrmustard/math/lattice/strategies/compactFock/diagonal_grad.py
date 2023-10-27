@@ -7,7 +7,7 @@ import numpy as np
 import numba
 from numba import njit, int64
 from numba.cpython.unsafe.tuple import tuple_setitem
-from mrmustard.math.compactFock.compactFock_helperFunctions import (
+from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
     SQRT,
     repeat_twice,
     construct_dict_params,
@@ -225,7 +225,8 @@ def fock_representation_diagonal_grad_NUMBA(
     A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
 ):
     """
-    Returns the PNR probabilities of a state or Choi state (by using the recurrence relation to calculate a limited number of Fock amplitudes)
+    Returns the gradients of the PNR probabilities of a mixed state according to algorithm 1 of
+    https://doi.org/10.22331/q-2023-08-29-1097
     Args:
         A, B (array, vector): required input for recurrence relation (given by mrmustard.physics.fock.ABC)
         M (int): number of modes
@@ -237,7 +238,7 @@ def fock_representation_diagonal_grad_NUMBA(
         arr1 (array): submatrix of the fock representation that contains Fock amplitudes of the types [a+1,a,b,b,c,c...] / [a,a+1,b,b,c,c...] / [a,a,b+1,b,c,c...] / ...
         tuple_type, list_type (Numba types): numba types that need to be defined outside of Numba compiled functions
     Returns:
-        array: the fock representation
+        array: the derivatives of the fock representation w.r.t. A and B
     """
     arr0_dA = np.zeros(arr0.shape + A.shape, dtype=np.complex128)
     arr2_dA = np.zeros(arr2.shape + A.shape, dtype=np.complex128)

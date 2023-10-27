@@ -98,7 +98,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0)
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0, atol=1e-6)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
