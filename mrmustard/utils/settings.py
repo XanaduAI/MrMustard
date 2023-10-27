@@ -304,6 +304,7 @@ class Settings:
             value != 128 and not self._julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
             from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
+
             # the next line must be run before "from julia import Main as Main_julia"
             LibJulia.load().init_julia(
                 ["--compiled-modules=no", "--project=julia_pkg"]
