@@ -16,7 +16,10 @@
 
 from __future__ import annotations
 
+import numpy as np
+import matplotlib.pyplot as plt
 import warnings
+
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -26,13 +29,12 @@ from typing import (
     Tuple,
     Union,
 )
-
-import numpy as np
+from matplotlib import cm
 
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.physics import bargmann, fock, gaussian
-from mrmustard.typing import (
+from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
     ComplexVector,
@@ -40,7 +42,8 @@ from mrmustard.typing import (
     RealTensor,
     RealVector,
 )
-from mrmustard.utils import graphics
+from mrmustard.physics.wigner import wigner_discretized
+
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -94,7 +97,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0)
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0, atol=1e-6)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -672,10 +675,119 @@ class State:  # pylint: disable=too-many-public-methods
         )
 
         if self.num_modes == 1:
-            graphics.mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
+            mikkel_plot(math.asnumpy(self.dm(cutoffs=self.cutoffs)))
 
         if settings.DEBUG:
             detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
             return f"{table}\n{detailed_info}"
 
         return table
+
+
+def mikkel_plot(
+    rho: np.ndarray,
+    xbounds: Tuple[int] = (-6, 6),
+    ybounds: Tuple[int] = (-6, 6),
+    **kwargs,
+):  # pylint: disable=too-many-statements
+    """Plots the Wigner function of a state given its density matrix.
+
+    Args:
+        rho (np.ndarray): density matrix of the state
+        xbounds (Tuple[int]): range of the x axis
+        ybounds (Tuple[int]): range of the y axis
+
+    Keyword args:
+        resolution (int): number of points used to calculate the wigner function
+        xticks (Tuple[int]): ticks of the x axis
+        xtick_labels (Optional[Tuple[str]]): labels of the x axis; if None uses default formatter
+        yticks (Tuple[int]): ticks of the y axis
+        ytick_labels (Optional[Tuple[str]]): labels of the y axis; if None uses default formatter
+        grid (bool): whether to display the grid
+        cmap (matplotlib.colormap): colormap of the figure
+
+    Returns:
+        tuple: figure and axes
+    """
+
+    plot_args = {
+        "resolution": 200,
+        "xticks": (-5, 0, 5),
+        "xtick_labels": None,
+        "yticks": (-5, 0, 5),
+        "ytick_labels": None,
+        "grid": False,
+        "cmap": cm.RdBu,
+    }
+    plot_args.update(kwargs)
+
+    if plot_args["xtick_labels"] is None:
+        plot_args["xtick_labels"] = plot_args["xticks"]
+    if plot_args["ytick_labels"] is None:
+        plot_args["ytick_labels"] = plot_args["yticks"]
+
+    q, ProbX = fock.quadrature_distribution(rho)
+    p, ProbP = fock.quadrature_distribution(rho, np.pi / 2)
+
+    xvec = np.linspace(*xbounds, plot_args["resolution"])
+    pvec = np.linspace(*ybounds, plot_args["resolution"])
+    W, X, P = wigner_discretized(rho, xvec, pvec)
+
+    ### PLOTTING ###
+
+    fig, ax = plt.subplots(
+        2,
+        2,
+        figsize=(6, 6),
+        gridspec_kw={"width_ratios": [2, 1], "height_ratios": [1, 2]},
+    )
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
+
+    # Wigner function
+    ax[1][0].contourf(X, P, W, 120, cmap=plot_args["cmap"], vmin=-abs(W).max(), vmax=abs(W).max())
+    ax[1][0].set_xlabel("$x$", fontsize=12)
+    ax[1][0].set_ylabel("$p$", fontsize=12)
+    ax[1][0].get_xaxis().set_ticks(plot_args["xticks"])
+    ax[1][0].xaxis.set_ticklabels(plot_args["xtick_labels"])
+    ax[1][0].get_yaxis().set_ticks(plot_args["yticks"])
+    ax[1][0].yaxis.set_ticklabels(plot_args["ytick_labels"], rotation="vertical", va="center")
+    ax[1][0].tick_params(direction="in")
+    ax[1][0].set_xlim(xbounds)
+    ax[1][0].set_ylim(ybounds)
+    ax[1][0].grid(plot_args["grid"])
+
+    # X quadrature probability distribution
+    ax[0][0].fill(q, ProbX, color=plot_args["cmap"](0.5))
+    ax[0][0].plot(q, ProbX, color=plot_args["cmap"](0.8))
+    ax[0][0].get_xaxis().set_ticks(plot_args["xticks"])
+    ax[0][0].xaxis.set_ticklabels([])
+    ax[0][0].get_yaxis().set_ticks([])
+    ax[0][0].tick_params(direction="in")
+    ax[0][0].set_ylabel("Prob($x$)", fontsize=12)
+    ax[0][0].set_xlim(xbounds)
+    ax[0][0].set_ylim([0, 1.1 * max(ProbX)])
+    ax[0][0].grid(plot_args["grid"])
+
+    # P quadrature probability distribution
+    ax[1][1].fill(ProbP, p, color=plot_args["cmap"](0.5))
+    ax[1][1].plot(ProbP, p, color=plot_args["cmap"](0.8))
+    ax[1][1].get_xaxis().set_ticks([])
+    ax[1][1].get_yaxis().set_ticks(plot_args["yticks"])
+    ax[1][1].yaxis.set_ticklabels([])
+    ax[1][1].tick_params(direction="in")
+    ax[1][1].set_xlabel("Prob($p$)", fontsize=12)
+    ax[1][1].set_xlim([0, 1.1 * max(ProbP)])
+    ax[1][1].set_ylim(ybounds)
+    ax[1][1].grid(plot_args["grid"])
+
+    # Density matrix
+    ax[0][1].matshow(abs(rho), cmap=plot_args["cmap"], vmin=-abs(rho).max(), vmax=abs(rho).max())
+    ax[0][1].set_title(r"abs($\rho$)", fontsize=12)
+    ax[0][1].tick_params(direction="in")
+    ax[0][1].get_xaxis().set_ticks([])
+    ax[0][1].get_yaxis().set_ticks([])
+    ax[0][1].set_aspect("auto")
+    ax[0][1].set_ylabel(f"cutoff = {len(rho)}", fontsize=12)
+    ax[0][1].yaxis.set_label_position("right")
+
+    return fig, ax

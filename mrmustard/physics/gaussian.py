@@ -22,8 +22,8 @@ from thewalrus.quantum import is_pure_cov
 
 from mrmustard import settings
 from mrmustard.math import Math
-from mrmustard.typing import Matrix, Scalar, Vector
-from mrmustard.utils.xptensor import XPMatrix, XPVector
+from mrmustard.utils.typing import Matrix, Scalar, Vector
+from mrmustard.math.xptensor import XPMatrix, XPVector
 
 math = Math()
 
@@ -810,7 +810,7 @@ def fidelity(mu1: Vector, cov1: Matrix, mu2: Vector, cov2: Matrix) -> float:
 
     _fidelity = f0 * math.exp((-1 / 2) * dot)  # square of equation 95
 
-    return math.cast(_fidelity, "float64")
+    return math.real(_fidelity)
 
 
 def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:

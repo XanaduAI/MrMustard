@@ -28,16 +28,13 @@ from mrmustard.math import Math
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.lattice import strategies
 from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.numba.compactFock_diagonal_amps import (
-    fock_representation_diagonal_amps,
-)
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
 
 math = Math()
 SQRT = np.sqrt(np.arange(1e6))
@@ -80,7 +77,7 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
         means_i = np.array([means[i], means[i + M]])
         # apply 1-d recursion until probability is less than 0.99
         A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
-        diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
+        diag = math.hermite_renormalized_diagonal(A, B, C, cutoffs=[100])
         # find at what index in the cumsum the probability is more than 0.99
         for i, val in enumerate(np.cumsum(diag)):
             if val > probability:
@@ -123,6 +120,10 @@ def wigner_to_fock_state(
     """
     if return_dm:
         A, B, C = wigner_to_bargmann_rho(cov, means)
+        # NOTE: change the order of the index in AB
+        Xmat = math.Xmat(A.shape[-1] // 2)
+        A = math.matmul(math.matmul(Xmat, A), Xmat)
+        B = math.matvec(Xmat, B)
         return math.hermite_renormalized(A, B, C, shape=shape)
     else:  # here we can apply max prob and max photons
         A, B, C = wigner_to_bargmann_psi(cov, means)
@@ -167,6 +168,11 @@ def wigner_to_fock_Choi(X, Y, d, shape):
         Tensor: the fock representation of the Choi matrix
     """
     A, B, C = wigner_to_bargmann_Choi(X, Y, d)
+    # NOTE: change the order of the index in AB
+    Xmat = math.Xmat(A.shape[-1] // 2)
+    A = math.matmul(math.matmul(Xmat, A), Xmat)
+    N = B.shape[-1] // 2
+    B = math.concat([B[N:], B[:N]], axis=-1)
     return math.hermite_renormalized(A, B, C, shape=tuple(shape))
 
 
@@ -250,7 +256,7 @@ def U_to_choi(U: Tensor, Udual: Optional[Tensor] = None) -> Tensor:
         Tensor: the Choi tensor. The index order is going to be :math:`[\mathrm{out}_l, \mathrm{in}_l, \mathrm{out}_r, \mathrm{in}_r]`
         where :math:`\mathrm{in}_l` and :math:`\mathrm{in}_r` are to be contracted with the left and right indices of the density matrix.
     """
-    return math.outer(U, Udual or math.conj(U))
+    return math.outer(U, math.conj(U) if Udual is None else Udual)
 
 
 def fidelity(state_a, state_b, a_ket: bool, b_ket: bool) -> Scalar:

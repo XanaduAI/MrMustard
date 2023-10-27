@@ -24,7 +24,7 @@ from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from mrmustard import settings
-from mrmustard.typing import (
+from mrmustard.utils.typing import (
     Matrix,
     Scalar,
     Tensor,

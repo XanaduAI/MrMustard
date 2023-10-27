@@ -253,14 +253,14 @@ def test_fock_representation_beamsplitter(theta, phi):
 def test_fock_representation_two_mode_squeezing(r, phi):
     S2 = S2gate(r=r, phi=phi)
     expected = two_mode_squeezing(r=r, theta=phi, cutoff=10)
-    assert np.allclose(expected, S2.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
+    assert np.allclose(expected, S2.U(cutoffs=[10, 10]), atol=1e-5)
 
 
 @given(phi_a=angle, phi_b=angle)
 def test_fock_representation_mzgate(phi_a, phi_b):
     MZ = MZgate(phi_a=phi_a, phi_b=phi_b, internal=False)
     expected = mzgate(theta=phi_b, phi=phi_a, cutoff=10)
-    assert np.allclose(expected, MZ.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
+    assert np.allclose(expected, MZ.U(cutoffs=[10, 10]), atol=1e-5)
 
 
 @pytest.mark.parametrize(
@@ -303,6 +303,25 @@ def test_raise_interferometer_error():
 def test_choi_cutoffs():
     output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
+
+
+@pytest.mark.parametrize("gate", [Sgate(1), Rgate(0.1), Dgate(0.1)])
+@pytest.mark.parametrize("cutoff", [2, 5])
+@pytest.mark.parametrize("modes", [[0], [1, 2]])
+def test_choi_for_unitary(gate, cutoff, modes):
+    """tests the `choi` method for unitary transformations"""
+    gate = gate[modes]
+    N = gate.num_modes
+    cutoffs = [cutoff] * N
+
+    choi = gate.choi(cutoffs=cutoffs).numpy().reshape(cutoff ** (2 * N), cutoff ** (2 * N))
+
+    t = gate.U(cutoffs=cutoffs).numpy()
+    row = t.flatten().reshape(1, cutoff ** (2 * N))
+    col = t.flatten().reshape(cutoff ** (2 * N), 1)
+    expected = np.dot(col, row)
+
+    assert np.allclose(expected, choi)
 
 
 def test_measure_with_fock():

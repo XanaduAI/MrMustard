@@ -1,31 +1,99 @@
-# Release 0.6.0 (development release)
+# Release 0.7.0 (development release)
+
+### New features
+* Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
+  [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
+
+### Breaking changes
+* Removed circular dependencies by:
+  * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.
+  * Moving `circuit_drawer` and `wigner` to `physics`.
+  * Moving `xptensor` to `math`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Created `settings.py` file to host `Settings`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
+  [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+### Improvements
+
+* Calculating Fock representations and their gradients is now more numerically stable (i.e. numerical blowups that 
+result from repeatedly applying the recurrence relation are postponed to higher cutoff values).
+This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/MrMustard/pull/274) and for the 
+"diagonal strategy" and "single leftover mode strategy" [(#288)](https://github.com/XanaduAI/MrMustard/pull/288/).
+This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors). 
+We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+The precision is controlled by setting settings.PRECISION_BITS_HERMITE_POLY. The default value is 128, 
+which uses the old Numba code. When setting to a higher value, the new Julia code is run.
+
+### Bug fixes
+
+* Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
+[(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
+* Fixed inconsistent use of `atol` in purity evaluation for Gaussian states.
+[(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
+
+### Documentation
+
+### Contributors
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin),
+[Jan Provaznik](https://github.com/jan-provaznik)
+
+# Release 0.6.0 (current release)
 
 ### New features
 
-* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation.
-  It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
+* Added a new method to discretize Wigner functions that revolves Clenshaw summations. This method is expected to be fast and
+reliable for systems with high number of excitations, for which the pre-existing iterative method is known to be unstable. Users
+can select their preferred methods by setting the value of `Settings.DISCRETIZATION_METHOD` to either `interactive` (default) or
+`clenshaw`.
+  [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
+
+* Added the `PhaseNoise(phase_stdev)` gate (non-Gaussian). Output is a mixed state in Fock representation. It is not based on a choi operator, but on a nonlinear transformation of the density matrix.
   [(#275)](https://github.com/XanaduAI/MrMustard/pull/275)
 
 ### Breaking changes
 
 * The value of `hbar` can no longer be specified outside of `Settings`. All the classes and 
   methods that allowed specifying its value as an input now retrieve it directly from `Settings`.
+  [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
-* Certain attributes of `Settings` can no longer be changed after their value is queried for the
-  first time.
+* Certain attributes of `Settings` can no longer be changed after their value is queried for the first time.
+  [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
 ### Improvements
 
+* Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
+  [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
+
+* Incorporated `Tensor` into `Transformation` in order to deal with modes more robustly.
+  [(#287)](https://github.com/XanaduAI/MrMustard/pull/287)
+
+* Created the classes `Unitary` and `Channel` to simplify the logic in `Transformation`.
+  [(#287)](https://github.com/XanaduAI/MrMustard/pull/287)
+
 ### Bug fixes
 
-* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm). [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+* Fixed a bug about the variable names in functions (apply_kraus_to_ket, apply_kraus_to_dm, apply_choi_to_ket, apply_choi_to_dm).
+  [(#271)](https://github.com/XanaduAI/MrMustard/pull/271)
+
+* Fixed a bug that was leading to an error when computing the Choi representation of a unitary transformation.
+  [(#283)](https://github.com/XanaduAI/MrMustard/pull/283)
 
 ### Documentation
 
 ### Contributors
 [Filippo Miatto](https://github.com/ziofil), 
-[Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet)
+[Yuan Yao](https://github.com/sylviemonet),
+[Robbe De Prins](https://github.com/rdprins),
+[Samuele Ferracin](https://github.com/SamFerracin)
+[Zeyue Niu](https://github.com/zeyueN)
 
+
+---
 
 # Release 0.5.0 (current release)
 
@@ -48,7 +116,6 @@
 
   def cost_fn():
       ...
-
   def as_dB(cost):
       delta = np.sqrt(np.log(1 / (abs(cost) ** 2)) / (2 * np.pi))
       cost_dB = -10 * np.log10(delta**2)
@@ -111,10 +178,10 @@
   [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * More robust implementation of cutoffs for States.
-[(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
+  [(#239)](https://github.com/XanaduAI/MrMustard/pull/239)
 
 * Dependencies and versioning are now managed using Poetry.
-[(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
+  [(#257)](https://github.com/XanaduAI/MrMustard/pull/257)
 
 ### Bug fixes
 

@@ -20,8 +20,7 @@ import numpy as np
 import torch
 
 from mrmustard.math.autocast import Autocast
-from mrmustard.typing import Tensor, Trainable
-
+from mrmustard.utils.typing import Tensor, Trainable
 from .math_interface import MathInterface
 
 
@@ -256,14 +255,22 @@ class TorchMath(MathInterface):
         return torch.cat(values, axis)
 
     def update_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+        self,
+        tensor: torch.Tensor,
+        indices: torch.Tensor,
+        values: torch.Tensor,
+        dims: int = 0,
     ):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
         return tensor.scatter_(dims, indices, values)
 
     def update_add_tensor(
-        self, tensor: torch.Tensor, indices: torch.Tensor, values: torch.Tensor, dims: int = 0
+        self,
+        tensor: torch.Tensor,
+        indices: torch.Tensor,
+        values: torch.Tensor,
+        dims: int = 0,
     ):
         # TODO: dims need to be an argument, or should be interpreted from the other data
 
@@ -286,7 +293,11 @@ class TorchMath(MathInterface):
         return constraint
 
     def new_variable(
-        self, value, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=torch.float64
+        self,
+        value,
+        bounds: Tuple[Optional[float], Optional[float]],
+        name: str,
+        dtype=torch.float64,
     ):
         return torch.tensor(value, dtype=dtype, requires_grad=True)
 

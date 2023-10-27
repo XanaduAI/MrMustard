@@ -16,7 +16,7 @@
 Tests for the Settings class.
 """
 
-from mrmustard.settings import Settings, ImmutableSetting
+from mrmustard.utils.settings import Settings, ImmutableSetting
 import pytest
 
 
@@ -54,16 +54,60 @@ class TestSettings:
         assert settings.AUTOCUTOFF_MAX_CUTOFF == 100
         assert settings.AUTOCUTOFF_MIN_CUTOFF == 1
         assert settings.CIRCUIT_DECIMALS == 3
+        assert settings.DISCRETIZATION_METHOD == "iterative"
         assert settings.EQ_TRANSFORMATION_CUTOFF == 3
         assert settings.EQ_TRANSFORMATION_RTOL_FOCK == 1e-3
         assert settings.EQ_TRANSFORMATION_RTOL_GAUSS == 1e-6
         assert settings.PNR_INTERNAL_CUTOFF == 50
         assert settings.HOMODYNE_SQUEEZING == 10.0
+        assert settings.PRECISION_BITS_HERMITE_POLY == 128
         assert settings.PROGRESSBAR is True
         assert settings.DEFAULT_BS_METHOD == "vanilla"  # can be 'vanilla' or 'schwinger'
 
+    def test_setters(self):
+        settings = Settings()
+
+        ap0 = settings.AUTOCUTOFF_PROBABILITY
+        settings.AUTOCUTOFF_PROBABILITY = 0.1
+        assert settings.AUTOCUTOFF_PROBABILITY == 0.1
+        settings.AUTOCUTOFF_PROBABILITY = ap0
+
+        db0 = settings.DEBUG
+        settings.DEBUG = True
+        assert settings.DEBUG is True
+        settings.DEBUG = db0
+
+        dbsm0 = settings.DEFAULT_BS_METHOD
+        settings.DEFAULT_BS_METHOD = "schwinger"
+        assert settings.DEFAULT_BS_METHOD == "schwinger"
+        settings.DEFAULT_BS_METHOD = dbsm0
+
+        eqtc0 = settings.EQ_TRANSFORMATION_CUTOFF
+        settings.EQ_TRANSFORMATION_CUTOFF = 2
+        assert settings.EQ_TRANSFORMATION_CUTOFF == 2
+        settings.EQ_TRANSFORMATION_CUTOFF = eqtc0
+
+        pnr0 = settings.PNR_INTERNAL_CUTOFF
+        settings.PNR_INTERNAL_CUTOFF = False
+        assert settings.PNR_INTERNAL_CUTOFF is False
+        settings.PNR_INTERNAL_CUTOFF = pnr0
+
+        pb0 = settings.PROGRESSBAR
+        settings.PROGRESSBAR = False
+        assert settings.PROGRESSBAR is False
+        settings.PROGRESSBAR = pb0
+
+        s0 = settings.SEED
+        settings.SEED = None
+        assert settings.SEED is not None
+        settings.SEED = s0
+
+        assert settings.HBAR == 2.0
         with pytest.raises(ValueError, match="Cannot change"):
             settings.HBAR = 3
+
+        with pytest.raises(ValueError, match="precision_bits_hermite_poly"):
+            settings.PRECISION_BITS_HERMITE_POLY = 9
 
     def test_settings_seed_randomness_at_init(self):
         """Test that the random seed is set randomly as MM is initialized."""

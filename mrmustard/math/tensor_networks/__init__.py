@@ -1,4 +1,4 @@
-# Copyright 2022 Xanadu Quantum Technologies Inc.
+# Copyright 2021 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test related to visualization on MrMustard."""
+r"""
+This package contains the modules implementing base classes for tensors and tensor networks.
+"""
 
-from mrmustard.lab import Coherent
-from mrmustard.utils.graphics import mikkel_plot
-
-
-def test_mikkel_plot():
-    """Tests that mikkel plot returns figure and axes."""
-    dm = Coherent().dm(cutoffs=[10])
-    fig, axs = mikkel_plot(dm.numpy())
-
-    assert fig is not None
-    assert axs is not None
+from .tensors import *
+from .networks import *

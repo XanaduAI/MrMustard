@@ -14,16 +14,26 @@
 
 """Tests for the lattice module"""
 
+import pytest
 import numpy as np
 
 from mrmustard.lab import Gaussian
+from mrmustard import settings
+
+original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 
-def test_vanilla_vs_binomial():
-    """Test that the vanilla and binomial methods give the same result"""
+@pytest.mark.parametrize("precision", settings._allowed_precision_bits_hermite_poly)
+def test_vanillaNumba_vs_binomial(precision):
+    """Test that the vanilla method and the binomial method give the same result.
+    Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
+
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Gaussian(2)
 
     ket_vanilla = G.ket(cutoffs=[10, 10])[:5, :5]
     ket_binomial = G.ket(max_photons=10)[:5, :5]
 
     assert np.allclose(ket_vanilla, ket_binomial)
+
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision

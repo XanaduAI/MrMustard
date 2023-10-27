@@ -15,8 +15,10 @@
 """A module containing the settings.
 """
 
+import os
 from rich import print
 import rich.table
+from julia.api import Julia
 import numpy as np
 
 __all__ = ["Settings", "settings"]
@@ -86,6 +88,7 @@ class Settings:
         self._autocutoff_max_cutoff = 100
         self._autocutoff_min_cutoff = 1
         self._circuit_decimals = 3
+        self._discretization_method = "iterative"
         # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
         # 3 is enough to include a full step of the rec relations
         self._eq_transformation_cutoff = 3
@@ -99,6 +102,19 @@ class Settings:
         self._seed = np.random.randint(0, 2**31 - 1)
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
+        self._precision_bits_hermite_poly = 128
+        self._julia_initialized = (
+            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        )
+        self._allowed_precision_bits_hermite_poly = [
+            128,
+            256,
+            384,
+            512,
+        ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
+
+    def _force_hbar(self, value):
+        self._hbar._value = value
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
@@ -106,7 +122,7 @@ class Settings:
         return self._autocutoff_max_cutoff
 
     @AUTOCUTOFF_MAX_CUTOFF.setter
-    def AUTOCUTOFF_MAX_CUTOFF(self, value: str):
+    def AUTOCUTOFF_MAX_CUTOFF(self, value: int):
         self._autocutoff_max_cutoff = value
 
     @property
@@ -115,7 +131,7 @@ class Settings:
         return self._autocutoff_min_cutoff
 
     @AUTOCUTOFF_MIN_CUTOFF.setter
-    def AUTOCUTOFF_MIN_CUTOFF(self, value: str):
+    def AUTOCUTOFF_MIN_CUTOFF(self, value: int):
         self._autocutoff_min_cutoff = value
 
     @property
@@ -124,7 +140,7 @@ class Settings:
         return self._autocutoff_probability
 
     @AUTOCUTOFF_PROBABILITY.setter
-    def AUTOCUTOFF_PROBABILITY(self, value: str):
+    def AUTOCUTOFF_PROBABILITY(self, value: float):
         self._autocutoff_probability = value
 
     @property
@@ -147,7 +163,7 @@ class Settings:
         return self._circuit_decimals
 
     @CIRCUIT_DECIMALS.setter
-    def CIRCUIT_DECIMALS(self, value: str):
+    def CIRCUIT_DECIMALS(self, value: int):
         self._circuit_decimals = value
 
     @property
@@ -158,8 +174,20 @@ class Settings:
         return self._debug
 
     @DEBUG.setter
-    def DEBUG(self, value: str):
+    def DEBUG(self, value: bool):
         self._debug = value
+
+    @property
+    def DISCRETIZATION_METHOD(self):
+        r"""The method used to discretize the Wigner function. Default is ``iterative``.
+
+        Can be either ``'iterative'`` or ``'clenshaw'``.
+        """
+        return self._discretization_method
+
+    @DISCRETIZATION_METHOD.setter
+    def DISCRETIZATION_METHOD(self, value: str):
+        self._discretization_method = value
 
     @property
     def DEFAULT_BS_METHOD(self):
@@ -181,7 +209,7 @@ class Settings:
         return self._eq_transformation_cutoff
 
     @EQ_TRANSFORMATION_CUTOFF.setter
-    def EQ_TRANSFORMATION_CUTOFF(self, value: str):
+    def EQ_TRANSFORMATION_CUTOFF(self, value: int):
         self._eq_transformation_cutoff = value
 
     @property
@@ -191,7 +219,7 @@ class Settings:
         return self._eq_transformation_rtol_fock
 
     @EQ_TRANSFORMATION_RTOL_FOCK.setter
-    def EQ_TRANSFORMATION_RTOL_FOCK(self, value: str):
+    def EQ_TRANSFORMATION_RTOL_FOCK(self, value: float):
         self._eq_transformation_rtol_fock = value
 
     @property
@@ -201,7 +229,7 @@ class Settings:
         return self._eq_transformation_rtol_gauss
 
     @EQ_TRANSFORMATION_RTOL_GAUSS.setter
-    def EQ_TRANSFORMATION_RTOL_GAUSS(self, value: str):
+    def EQ_TRANSFORMATION_RTOL_GAUSS(self, value: float):
         self._eq_transformation_rtol_gauss = value
 
     @property
@@ -213,7 +241,7 @@ class Settings:
         return self._hbar.value
 
     @HBAR.setter
-    def HBAR(self, value: str):
+    def HBAR(self, value: float):
         self._hbar.value = value
 
     @property
@@ -222,7 +250,7 @@ class Settings:
         return self._homodyne_squeezing
 
     @HOMODYNE_SQUEEZING.setter
-    def HOMODYNE_SQUEEZING(self, value: str):
+    def HOMODYNE_SQUEEZING(self, value: float):
         self._homodyne_squeezing = value
 
     @property
@@ -231,7 +259,7 @@ class Settings:
         return self._pnr_internal_cutoff
 
     @PNR_INTERNAL_CUTOFF.setter
-    def PNR_INTERNAL_CUTOFF(self, value: str):
+    def PNR_INTERNAL_CUTOFF(self, value: int):
         self._pnr_internal_cutoff = value
 
     @property
@@ -240,7 +268,7 @@ class Settings:
         return self._progressbar
 
     @PROGRESSBAR.setter
-    def PROGRESSBAR(self, value: str):
+    def PROGRESSBAR(self, value: bool):
         self._progressbar = value
 
     @property
@@ -252,9 +280,52 @@ class Settings:
         return self._seed
 
     @SEED.setter
-    def SEED(self, value):
+    def SEED(self, value: int):
         self._seed = value
         self.rng = np.random.default_rng(self._seed)
+
+    @property
+    def PRECISION_BITS_HERMITE_POLY(self):
+        r"""
+        The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
+        Default is 128 (i.e. the Fock representation has dtype complex128).
+        Currently allowed values: 128, 256, 384, 512
+        """
+        return self._precision_bits_hermite_poly
+
+    @PRECISION_BITS_HERMITE_POLY.setter
+    def PRECISION_BITS_HERMITE_POLY(self, value: int):
+        allowed_values = self._allowed_precision_bits_hermite_poly
+        if value not in allowed_values:
+            raise ValueError(
+                f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
+            )
+        self._precision_bits_hermite_poly = value
+
+        if (
+            value != 128 and not self._julia_initialized
+        ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
+            # the next line must be run before "from julia import Main as Main_julia"
+            _ = Julia(compiled_modules=False)
+            # julia must be imported after running "_ = Julia(compiled_modules=False)"
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+
+            # import Julia functions
+            utils_directory = os.path.dirname(__file__)
+            Main_julia.cd(utils_directory)
+            Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
+            Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
+            )
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
+            )
+
+            self._julia_initialized = True
 
     # use rich.table to print the settings
     def __repr__(self) -> str:
