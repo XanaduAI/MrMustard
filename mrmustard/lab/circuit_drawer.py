@@ -63,7 +63,7 @@ def _add_op(op, layer_str, decimals):
         control = [op.modes[0]]
     label = op.short_name
     if decimals is not None:
-        param_string = op.param_string(decimals)
+        param_string = op.parameter_set.to_string(decimals)
         if param_string == "":
             param_string = str(len(op.modes))
         label += "(" + param_string + ")"
