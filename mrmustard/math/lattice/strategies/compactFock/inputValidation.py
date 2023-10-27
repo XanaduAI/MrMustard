@@ -1,17 +1,21 @@
 """
 This module contains helper functions that are used in
-compactFock_diagonal_amps.py, compactFock_diagonal_grad.py, compactFock_1leftoverMode_amps.py and compactFock_1leftoverMode_grad.py
+diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py
 to validate the input provided by the user.
 """
 
 from typing import Iterable
 import numpy as np
-from mrmustard.math.compactFock.compactFock_diagonal_amps import fock_representation_diagonal_amps
-from mrmustard.math.compactFock.compactFock_diagonal_grad import fock_representation_diagonal_grad
-from mrmustard.math.compactFock.compactFock_1leftoverMode_amps import (
+from mrmustard.math.lattice.strategies.compactFock.diagonal_amps import (
+    fock_representation_diagonal_amps,
+)
+from mrmustard.math.lattice.strategies.compactFock.diagonal_grad import (
+    fock_representation_diagonal_grad,
+)
+from mrmustard.math.lattice.strategies.compactFock.singleLeftoverMode_amps import (
     fock_representation_1leftoverMode_amps,
 )
-from mrmustard.math.compactFock.compactFock_1leftoverMode_grad import (
+from mrmustard.math.lattice.strategies.compactFock.singleLeftoverMode_grad import (
     fock_representation_1leftoverMode_grad,
 )
 from thewalrus._hafnian import input_validation

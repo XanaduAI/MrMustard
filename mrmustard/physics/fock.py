@@ -27,9 +27,6 @@ from mrmustard import settings
 from mrmustard.math.caching import tensor_int_cache
 from mrmustard.math.lattice import strategies
 from mrmustard.math.tensor_wrappers.mmtensor import MMTensor
-from mrmustard.math.compactFock.compactFock_diagonal_amps import (
-    fock_representation_diagonal_amps,
-)
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
@@ -79,7 +76,7 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
         means_i = np.array([means[i], means[i + M]])
         # apply 1-d recursion until probability is less than 0.99
         A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
-        diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
+        diag = math.hermite_renormalized_diagonal(A, B, C, cutoffs=[100])
         # find at what index in the cumsum the probability is more than 0.99
         for i, val in enumerate(np.cumsum(diag)):
             if val > probability:

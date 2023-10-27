@@ -1,6 +1,6 @@
 """
 This module contains helper functions that are used in
-compactFock_diagonal_amps.py, compactFock_diagonal_grad.py, compactFock_1leftoverMode_amps.py and compactFock_1leftoverMode_grad.py
+diagonal_amps.py, diagonal_grad.py, singleLeftoverMode_amps.py and singleLeftoverMode_grad.py
 """
 
 import numpy as np
