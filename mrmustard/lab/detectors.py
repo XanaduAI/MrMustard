@@ -86,7 +86,7 @@ class PNRDetector(FockMeasurement):
 
         modes = modes or list(range(num_modes))
         outcome = None
-        FockMeasurement.__init__(self, outcome, modes, cutoffs)
+        super().__init__(self, outcome, modes, cutoffs)
 
         self._add_parameter(
             make_parameter(efficiency_trainable, eff, "efficiency", efficiency_bounds)
@@ -185,7 +185,7 @@ class ThresholdDetector(FockMeasurement):
         )
 
         outcome = None
-        FockMeasurement.__init__(self, outcome, modes, cutoffs)
+        super().__init__(self, outcome, modes, cutoffs)
 
         self._add_parameter(
             make_parameter(efficiency_trainable, efficiency, "efficiency", efficiency_bounds)

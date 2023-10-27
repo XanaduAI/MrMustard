@@ -203,21 +203,26 @@ class Variable:
 
     @staticmethod
     def orthogonal(
-        value: any,
+        value: Optional[any],
         name: str,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        N: int = 1,
     ):
         r"""
         Initializes a variable with ``update_fn`` for orthogonal optimization.
 
         Args:
-            value: The value of the returned variable.
+            value: The value of the returned variable. If ``None``, a random orthogonal
+                matrix of dimension ``N`` is initialized.
             name: The name of the returned variable.
             bounds: The numerical bounds of the returned variable.
+            N: The dimension of the random orthogonal matrix. This value is ignored if
+                ``value`` is not ``None``.
 
         Returns:
             A variable with ``update_fn`` for orthogonal optimization.
         """
+        value = value or math.random_orthogonal(N)
         return Variable(value, name, bounds, update_orthogonal)
 
     @staticmethod
@@ -225,18 +230,23 @@ class Variable:
         value: any,
         name: str,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        N: int = 1,
     ):
         r"""
         Initializes a variable with ``update_fn`` for simplectic optimization.
 
         Args:
-            value: The value of the returned variable.
+            value: The value of the returned variable. If ``None``, a random symplectic
+                matrix of dimension ``N`` is initialized.
             name: The name of the returned variable.
             bounds: The numerical bounds of the returned variable.
+            N: The dimension of the random symplectic matrix. This value is ignored if
+                ``value`` is not ``None``.
 
         Returns:
             A variable with ``update_fn`` for simplectic optimization.
         """
+        value = value or math.random_symplectic(N)
         return Variable(value, name, bounds, update_symplectic)
 
     @staticmethod
@@ -244,18 +254,23 @@ class Variable:
         value: any,
         name: str,
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
+        N: int = 1,
     ):
         r"""
         Initializes a variable with ``update_fn`` for unitary optimization.
 
         Args:
-            value: The value of the returned variable.
+            value: The value of the returned variable. If ``None``, a random unitary
+                matrix of dimension ``N`` is initialized.
             name: The name of the returned variable.
             bounds: The numerical bounds of the returned variable.
+            N: The dimension of the random unitary matrix. This value is ignored if
+                ``value`` is not ``None``.
 
         Returns:
             A variable with ``update_fn`` for unitary optimization.
         """
+        value = value or math.random_unitary(N)
         return Variable(value, name, bounds, update_unitary)
 
     def __mul__(self, value):
