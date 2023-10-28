@@ -554,17 +554,6 @@ class BackendManager:
             ),
         )
 
-    def hash_tensor(self, tensor: Tensor) -> int:
-        r"""The hash of the given tensor.
-
-        Args:
-            tensor: The tensor to hash
-
-        Returns:
-            int: hash of the given tensor
-        """
-        return self._apply("hash_tensor", (tensor,))
-
     def hermite_renormalized_diagonal(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
     ) -> Tensor:
@@ -970,17 +959,6 @@ class BackendManager:
             array: transposed array
         """
         return self._apply("transpose", (a, perm))
-
-    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
-        r"""The tensors in ``lst`` without duplicates and non-tensors.
-
-        Args:
-            lst (list): list of tensors to remove duplicates and non-tensors from.
-
-        Returns:
-            list: list of tensors without duplicates and non-tensors.
-        """
-        return self._apply("unique_tensors", (lst,))
 
     def update_tensor(self, tensor: Tensor, indices: Tensor, values: Tensor) -> Tensor:
         r"""Updates a tensor in place with the given values.

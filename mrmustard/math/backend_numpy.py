@@ -180,9 +180,6 @@ class BackendNumpy(BackendBase):
     def gather(self, array: np.array, indices: np.array, axis: int = 0) -> np.array:
         return np.take(array, indices, axis=axis)
 
-    def hash_tensor(self, tensor: np.array) -> int:
-        return hash(tensor.tobytes())
-
     def imag(self, array: np.array) -> np.array:
         return np.imag(array)
 
@@ -354,16 +351,6 @@ class BackendNumpy(BackendBase):
         indices = tuple(indices.reshape(-1, indices.shape[-1]).T)
         np.add.at(tensor, indices, values)
         return tensor
-
-    def unique_tensors(self, lst: List[np.ndarray]) -> List[np.ndarray]:
-        hash_dict = {}
-        for tensor in lst:
-            try:
-                if (hash := self.hash_tensor(tensor)) not in hash_dict:
-                    hash_dict[hash] = tensor
-            except TypeError:
-                continue
-        return list(hash_dict.values())
 
     def zeros(self, shape: Sequence[int], dtype=np.float64) -> np.array:
         return np.zeros(shape, dtype=dtype)
