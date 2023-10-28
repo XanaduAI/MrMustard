@@ -34,9 +34,3 @@ import mrmustard.math as math
 #     assert math.backend.name == "numpy"
 
 #     n0 = math.backend.name
-
-
-# def test_hash_tensor():
-#     """Test hash of a tensor"""
-#     tensor = math.astensor([1, 2, 3])
-#     assert np.allclose(*[math.hash_tensor(tensor) for _ in range(3)])

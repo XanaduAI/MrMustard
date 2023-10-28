@@ -170,13 +170,6 @@ class BackendTensorflow(BackendBase):
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
-    def hash_tensor(self, tensor: tf.Tensor) -> int:
-        try:
-            REF = tensor.ref()
-        except AttributeError as e:
-            raise TypeError("Cannot hash tensor") from e
-        return hash(REF)
-
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
 
@@ -314,16 +307,6 @@ class BackendTensorflow(BackendBase):
     @Autocast()
     def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
         return tf.tensor_scatter_nd_add(tensor, indices, values)
-
-    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
-        hash_dict = {}
-        for tensor in lst:
-            try:
-                if (hash := self.hash_tensor(tensor)) not in hash_dict:
-                    hash_dict[hash] = tensor
-            except TypeError:
-                continue
-        return list(hash_dict.values())
 
     def zeros(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
         dtype = dtype or tf.float64
