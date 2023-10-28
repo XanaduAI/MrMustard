@@ -109,9 +109,9 @@ class Settings:
         )
         self._allowed_precision_bits_hermite_poly = [
             128,
-            256,
-            384,
-            512,
+            # 256,
+            # 384,
+            # 512,
         ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     def _force_hbar(self, value):

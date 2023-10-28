@@ -99,6 +99,7 @@ def test_compactFock_1leftover(A_B_G0):
 
 
 @pytest.mark.parametrize("precision", settings._allowed_precision_bits_hermite_poly)
+@pytest.mark.skipif(math.backend.name == "numpy", reason="training tests skipped by numpy backend")
 def test_compactFock_diagonal_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
     settings.PRECISION_BITS_HERMITE_POLY = precision
