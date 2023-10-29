@@ -22,7 +22,7 @@ from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
 from mrmustard.math import Math
-from mrmustard.training.parameter_update import update_orthogonal, update_symplectic, update_unitary
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 
 math = Math()
 

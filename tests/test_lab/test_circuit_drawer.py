@@ -108,9 +108,11 @@ def test_circuit_text():
 
 
 def test_param_order():
-    r"""Tests that Parametrized.param_string returns the parameters in the correct order"""
+    r"""Tests that ParameterSet.to_string returns the parameters in the correct order"""
     B = BSgate(theta=0.4, phi=0.5)
-    assert B.param_string(decimals=1) == "0.4, 0.5"
+    assert B.parameter_set.to_string(decimals=1) == "0.4, 0.5"
 
     B = BSgate(phi=0.5, theta=0.4)
-    assert B.param_string(decimals=1) == "0.4, 0.5"  # same order as class constructor, not call
+    assert (
+        B.parameter_set.to_string(decimals=1) == "0.4, 0.5"
+    )  # same order as class constructor, not call
