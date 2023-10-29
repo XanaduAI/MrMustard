@@ -33,6 +33,7 @@ from matplotlib import cm
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -117,6 +118,26 @@ class State:  # pylint: disable=too-many-public-methods
             assert (
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a state.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        if not getattr(self, "_parameter_set", None):
+            msg = "Cannot add a parameter to a state with no parameter set."
+            raise ValueError(msg)
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this state.
+        """
+        return getattr(self, "_parameter_set", None)
 
     @property
     def modes(self):

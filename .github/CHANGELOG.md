@@ -31,6 +31,12 @@ We run Julia code via PyJulia (where Numba was used before) to keep the code fas
 The precision is controlled by setting settings.PRECISION_BITS_HERMITE_POLY. The default value is 128, 
 which uses the old Numba code. When setting to a higher value, the new Julia code is run.
 
+* Replaced parameters in `training` with `Constant` and `Variable` classes.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
+
+* Improved how states, transformations, and detectors deal with parameters by replacing the `Parametrized` class with `ParameterSet`.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
