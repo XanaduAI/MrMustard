@@ -113,6 +113,7 @@ class Settings:
         ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     def _force_hbar(self, value):
+        r"can set the value of HBAR at any time. use with caution."
         self._hbar._value = value
 
     @property
