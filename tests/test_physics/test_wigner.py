@@ -38,14 +38,6 @@ hbar0 = settings.HBAR
 # ~~~~~~~
 
 
-def reset_settings():
-    r"""Resets `Settings`"""
-    settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
-    settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
-    settings.DISCRETIZATION_METHOD = method0
-    settings._force_hbar(hbar0)
-
-
 def distance(W_mm, W_th):
     r"""Calculates the distance between the discretized Wigner functions W_mm (generated
     by `mrmustard`) and W_th (computed analytically) as the maximum of `|W_mm-W_th|/|W_th|`,
@@ -115,6 +107,15 @@ def W_fock(q_vec, p_vec, n):
 class TestWignerDiscretized:
     r"""Tests discretized Wigner functions (DWF) for various states"""
 
+    hbar0: float = settings.HBAR
+
+    def teardown_method(self, method):
+        r"""Resets `Settings`"""
+        settings.AUTOCUTOFF_MAX_CUTOFF = autocutoff_max0
+        settings.AUTOCUTOFF_MIN_CUTOFF = autocutoff_min0
+        settings.DISCRETIZATION_METHOD = method0
+        settings._force_hbar(self.hbar0)
+
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     @pytest.mark.parametrize("hbar", [1, 2])
     def test_cat_state(self, method, hbar):
@@ -135,8 +136,6 @@ class TestWignerDiscretized:
         assert np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
         assert np.allclose(q_mat.T, q_vec)
         assert np.allclose(p_mat, p_vec)
-
-        reset_settings()
 
     @pytest.mark.parametrize("alpha", [0 + 0j, 3 + 3j])
     @pytest.mark.parametrize("hbar", [2, 3])
@@ -163,8 +162,6 @@ class TestWignerDiscretized:
         assert np.allclose(q_mat.T, q_vec)
         assert np.allclose(p_mat, p_vec)
 
-        reset_settings()
-
     @pytest.mark.parametrize("n", [2, 6])
     @pytest.mark.parametrize("hbar", [2, 3])
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
@@ -183,8 +180,6 @@ class TestWignerDiscretized:
         assert np.allclose(distance(W_mm, W_th), 0)
         assert np.allclose(q_mat.T, q_vec)
         assert np.allclose(p_mat, p_vec)
-
-        reset_settings()
 
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_both_method_succeed(self, method):
@@ -207,8 +202,6 @@ class TestWignerDiscretized:
         assert np.allclose(q_mat.T, q_vec)
         assert np.allclose(p_mat, p_vec)
 
-        reset_settings()
-
     @pytest.mark.parametrize("method", ["iterative", "clenshaw"])
     def test_squeezed_vacuum_iterative_fails(self, method):
         r"""Tests DWF for a squeezed vacuum state with squeezing s=2.
@@ -228,5 +221,3 @@ class TestWignerDiscretized:
 
         success = np.allclose(distance(W_mm, W_th), 0, atol=10**-1)
         assert success is False if method == "iterative" else True
-
-        reset_settings()
