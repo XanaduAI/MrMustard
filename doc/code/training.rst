@@ -5,8 +5,6 @@ mrmustard.training
     :maxdepth: 1
 
     training/optimizer
-    training/parameter
-    training/parametrized
     training/trainer
     training/callbacks
 

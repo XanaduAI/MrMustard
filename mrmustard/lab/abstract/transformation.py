@@ -25,9 +25,10 @@ import numpy as np
 
 from mrmustard import settings
 from mrmustard.math import Math
+from mrmustard.math.parameter_set import ParameterSet
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.math.tensor_networks import Tensor
 from mrmustard.physics import bargmann, fock, gaussian
-from mrmustard.training.parameter import Parameter
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .state import State
@@ -39,6 +40,40 @@ class Transformation(Tensor):
     r"""
     Base class for all Transformations.
     """
+
+    def __init__(
+        self,
+        name: str,
+        modes_in_ket: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_bra: Optional[list[int]] = None,
+    ):
+        super().__init__(
+            name=name,
+            modes_in_ket=modes_in_ket,
+            modes_out_ket=modes_out_ket,
+            modes_in_bra=modes_in_bra,
+            modes_out_bra=modes_out_bra,
+        )
+        self._parameter_set = ParameterSet()
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a transformation.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this transformation.
+        """
+        return self._parameter_set
 
     def primal(self, state: State) -> State:
         r"""Applies this transformation to the given ``state`` and returns the transformed state.
@@ -281,10 +316,10 @@ class Transformation(Tensor):
         )
 
     def __repr__(self):
-        class_name = self.__class__.__name__
+        class_name = self.name
         modes = self.modes
 
-        parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
+        parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, (Constant, Variable))}
         param_str_rep = [
             f"{name}={repr(math.asnumpy(par.value))}" for name, par in parameters.items()
         ]
@@ -294,7 +329,7 @@ class Transformation(Tensor):
         return f"{class_name}({params_str}, modes = {modes})".replace("\n", "")
 
     def __str__(self):
-        class_name = self.__class__.__name__
+        class_name = self.name
         modes = self.modes
         return f"<{class_name} object at {hex(id(self))} acting on modes {modes}>"
 
@@ -307,7 +342,9 @@ class Transformation(Tensor):
 
         body = ""
         with np.printoptions(precision=6, suppress=True):
-            parameters = {k: v for k, v in self.__dict__.items() if isinstance(v, Parameter)}
+            parameters = {
+                k: v for k, v in self.__dict__.items() if isinstance(v, (Constant, Variable))
+            }
             for name, par in parameters.items():
                 par_value = repr(math.asnumpy(par.value)).replace("\n", "<br>")
                 body += (
