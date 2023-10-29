@@ -113,7 +113,7 @@ def wigner_to_bargmann_U(X, d):
 
 def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Sequence[int]):
     r"""Returns the contraction of an A matrix over a subset of indices.
-        The indices are assumed to be in the order i1,i2...j1,j2... where 
+        The indices are assumed to be in the order i1,i2...j1,j2... where
         the contraction pairs are (i1,j1), (i2,j2), etc...
     Arguments:
         Abc (tuple): the (A,b,c) triple
@@ -122,7 +122,7 @@ def contract_Abc_base(Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Se
     Returns:
         tuple: the contracted (A,b,c) triple
     """
-    assert not len(idx) % 2 "idx must have even length"
+    assert not len(idx) % 2
     n = len(idx) // 2
     A, b, c = Abc
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
