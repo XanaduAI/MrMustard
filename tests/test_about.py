@@ -18,21 +18,33 @@ Unit tests for the :mod:`thewalrus` configuration class :class:`Configuration`.
 import contextlib
 import io
 import re
+import pytest
 
-import mrmustard as mm
+from mrmustard import about, settings, version
+
+
+@pytest.mark.tf
+def test_change_backend():
+    r"""
+    Changes the backend to tensorflow.
+    This is the first test that is run, and since ``Settings`` is a singleton,
+    the backend then remains the tensorflow backend for all future tests.
+    """
+    settings.BACKEND = "tensorflow"
 
 
 def test_about():
     """Tests if the about string prints correctly."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
-        mm.about()
+        about()
     out = f.getvalue().strip()
 
     assert "Python version:" in out
     pl_version_match = re.search(r"Mr Mustard version:\s+([\S]+)\n", out).group(1)
-    assert mm.version() in pl_version_match
+    assert version() in pl_version_match
     assert "Numpy version" in out
     assert "Scipy version" in out
     assert "The Walrus version" in out
     assert "TensorFlow version" in out
+    assert settings.BACKEND == "tensorflow"

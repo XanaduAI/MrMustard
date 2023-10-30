@@ -49,7 +49,7 @@ class TestPNRDetector:
     """tests related to PNR detectors"""
 
     @pytest.mark.skipif(
-        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
     )
     @given(
         alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1),
@@ -64,7 +64,7 @@ class TestPNRDetector:
         assert np.allclose(ps, expected)
 
     @pytest.mark.skipif(
-        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
     )
     @given(
         r=st.floats(0, 0.5),
@@ -85,7 +85,7 @@ class TestPNRDetector:
         assert np.allclose(variance, expected_variance)
 
     @pytest.mark.skipif(
-        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
     )
     @given(
         r=st.floats(0, 0.5),
@@ -120,7 +120,7 @@ class TestPNRDetector:
         assert np.allclose(covar, expected_covar)
 
     @pytest.mark.skipif(
-        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
+        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
     )
     def test_postselection(self):
         """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
