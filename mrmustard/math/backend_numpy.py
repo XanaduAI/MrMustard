@@ -111,6 +111,7 @@ class BackendNumpy(BackendBase):
         if any(tf.rank(v) == 0 for v in values):
             return tf.stack(values, axis).numpy()
         return tf.concat(values, axis).numpy()
+
         if any(np.allclose(np.linalg.matrix_rank(v), 0) for v in values):
             return np.stack(values, axis)
         return np.concatenate(values, axis)
@@ -163,6 +164,7 @@ class BackendNumpy(BackendBase):
             return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.array, k: int) -> np.array:
+        # np.diagonal
         import tensorflow as tf
 
         return tf.linalg.diag_part(array, k=k).numpy()
@@ -173,6 +175,7 @@ class BackendNumpy(BackendBase):
         return np.diag(array, k=k)
 
     def set_diag(self, array: np.array, diag: np.array, k: int) -> np.array:
+        # array[..., np.arange(0, n), np.arange(k, n+k)] = value
         import tensorflow as tf
 
         return tf.linalg.set_diag(array, diag, k=k).numpy()
