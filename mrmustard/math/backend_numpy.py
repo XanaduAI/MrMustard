@@ -169,10 +169,17 @@ class BackendNumpy(BackendBase):
         return ret
 
     def set_diag(self, array: np.array, diag: np.array, k: int) -> np.array:
-        # array[..., np.arange(0, n), np.arange(k, n+k)] = value
-        import tensorflow as tf
+        i = np.arange(0, array.shape[-2] - abs(k))
+        if k < 0:
+            i -= array.shape[-2] - abs(k)
 
-        return tf.linalg.set_diag(array, diag, k=k).numpy()
+        j = np.arange(abs(k), array.shape[-1])
+        if k < 0:
+            j -= abs(k)
+
+        array[..., i, j] = diag
+
+        return array
 
     def einsum(self, string: str, *tensors) -> np.array:
         if type(string) is str:
