@@ -14,6 +14,7 @@
 
 """Tests for the lattice module"""
 
+import importlib
 import pytest
 import numpy as np
 
@@ -23,8 +24,11 @@ from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
+do_julia = True if importlib.util.find_spec("julia") else False
+precisions = [128, 256, 384, 512] if do_julia else [128,]
 
-@pytest.mark.parametrize("precision", [128, 256, 384, 512])
+
+@pytest.mark.parametrize("precision", precisions)
 def test_vanillaNumba_vs_binomial(precision):
     """Test that the vanilla method and the binomial method give the same result.
     Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
