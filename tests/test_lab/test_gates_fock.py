@@ -162,6 +162,9 @@ def test_parallel_displacement(x1, x2, y1, y2):
     assert np.allclose(U12, np.transpose(np.tensordot(U1, U2, [[], []]), [0, 2, 1, 3]))
 
 
+@pytest.mark.skipif(
+    math.backend.name == "numpy", reason="value_and_gradients not implemented in numpy"
+)
 def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
     cutoffs = (5, 5)
@@ -182,7 +185,7 @@ def test_displacement_grad():
     cutoffs = [5, 5]
     x = math.new_variable(0.1, None, "x")
     y = math.new_variable(0.1, None, "y")
-    alpha = math.make_complex(x, y).numpy()
+    alpha = math.asnumpy(math.make_complex(x, y))
     delta = 1e-6
     dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
         2 * delta
@@ -313,9 +316,9 @@ def test_choi_for_unitary(gate, cutoff, modes):
     N = gate.num_modes
     cutoffs = [cutoff] * N
 
-    choi = gate.choi(cutoffs=cutoffs).numpy().reshape(cutoff ** (2 * N), cutoff ** (2 * N))
+    choi = math.asnumpy(gate.choi(cutoffs=cutoffs)).reshape(cutoff ** (2 * N), cutoff ** (2 * N))
 
-    t = gate.U(cutoffs=cutoffs).numpy()
+    t = math.asnumpy(gate.U(cutoffs=cutoffs))
     row = t.flatten().reshape(1, cutoff ** (2 * N))
     col = t.flatten().reshape(cutoff ** (2 * N), 1)
     expected = np.dot(col, row)

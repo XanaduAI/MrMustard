@@ -15,14 +15,19 @@
 """optimization tests"""
 
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from scipy.stats import unitary_group
 from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
+from mrmustard import settings
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 import mrmustard.math as math
+
+if settings.BACKEND == "numpy":
+    pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 
 def is_unitary(M, rtol=1e-05, atol=1e-08):
@@ -49,7 +54,9 @@ def test_update_symplectic(n):
             bounds=None,
         )
         update_symplectic([[dS_euclidean, S]], 0.01)
-        assert is_symplectic(S.numpy()), "training step does not result in a symplectic matrix"
+        assert is_symplectic(
+            math.asnumpy(S)
+        ), "training step does not result in a symplectic matrix"
 
 
 @given(n=st.integers(2, 4))
@@ -59,9 +66,12 @@ def test_update_unitary(n):
     for _ in range(20):
         dU_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_unitary([[dU_euclidean, U]], 0.01)
-        assert is_unitary(U.numpy()), "training step does not result in a unitary matrix"
+        assert is_unitary(math.asnumpy(U)), "training step does not result in a unitary matrix"
         sym = np.block(
-            [[np.real(U.numpy()), -np.imag(U.numpy())], [np.imag(U.numpy()), np.real(U.numpy())]]
+            [
+                [np.real(math.asnumpy(U)), -np.imag(math.asnumpy(U))],
+                [np.imag(math.asnumpy(U)), np.real(math.asnumpy(U))],
+            ]
         )
         assert is_symplectic(sym), "training step does not result in a symplectic matrix"
         assert is_orthogonal(sym), "training step does not result in an orthogonal matrix"
@@ -74,11 +84,11 @@ def test_update_orthogonal(n):
     for _ in range(20):
         dO_euclidean = np.random.random((n, n)) + 1j * np.random.random((n, n))
         update_orthogonal([[dO_euclidean, O]], 0.01)
-        assert is_unitary(O.numpy()), "training step does not result in a unitary matrix"
+        assert is_unitary(math.asnumpy(O)), "training step does not result in a unitary matrix"
         ortho = np.block(
             [
-                [np.real(O.numpy()), -math.zeros_like(O.numpy())],
-                [math.zeros_like(O.numpy()), np.real(O.numpy())],
+                [np.real(math.asnumpy(O)), -math.zeros_like(math.asnumpy(O))],
+                [math.zeros_like(math.asnumpy(O)), np.real(math.asnumpy(O))],
             ]
         )
         assert is_symplectic(ortho), "training step does not result in a symplectic matrix"

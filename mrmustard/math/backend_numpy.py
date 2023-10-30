@@ -14,9 +14,11 @@
 
 import numpy as np
 
+from copy import deepcopy
 from math import lgamma as mlgamma
 from numpy.random import default_rng
 from typing import Callable, List, Optional, Sequence, Tuple, Union
+import scipy
 from scipy.linalg import expm as scipy_expm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
@@ -59,7 +61,9 @@ class BackendNumpy(BackendBase):
         return np.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: np.array) -> np.array:
-        return tensor
+        if isinstance(tensor, np.ndarray):
+            return tensor
+        return np.array(tensor)
 
     def assign(self, tensor: np.array, value: np.array) -> np.array:
         # ??
@@ -68,12 +72,17 @@ class BackendNumpy(BackendBase):
         return tensor
 
     def astensor(self, array: Union[np.ndarray, np.array], dtype=None) -> np.array:
-        # ??
-        # Should I return a tf.Tensor?
         return np.array(array)
 
     def atleast_1d(self, array: np.array, dtype=None) -> np.array:
         return self.cast(np.atleast_1d(array), dtype=dtype)
+
+    def block(self, blocks: List[List[np.array]], axes=(-2, -1)) -> np.array:
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
+
+    def boolean_mask(self, tensor: np.array, mask: np.array) -> np.ndarray:
+        return np.array([t for i, t in enumerate(tensor) if mask[i]])
 
     def cast(self, array: np.array, dtype=None) -> np.array:
         if dtype is None:
@@ -97,7 +106,13 @@ class BackendNumpy(BackendBase):
         return np.clip(array, a_min, a_max)
 
     def concat(self, values: List[np.array], axis: int) -> np.array:
-        values = np.array(values) if len(np.array(values).shape) != 1 else np.array([values])
+        import tensorflow as tf
+
+        if any(tf.rank(v) == 0 for v in values):
+            return tf.stack(values, axis).numpy()
+        return tf.concat(values, axis).numpy()
+        if any(np.allclose(np.linalg.matrix_rank(v), 0) for v in values):
+            return np.stack(values, axis)
         return np.concatenate(values, axis)
 
     def conj(self, array: np.array) -> np.array:
@@ -148,11 +163,19 @@ class BackendNumpy(BackendBase):
             return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.array, k: int) -> np.array:
+        import tensorflow as tf
+
+        return tf.linalg.diag_part(array, k=k).numpy()
         # ??
         # seems like it's always only used on 2-D matrices
         if len(array.shape) != 2:
             raise ValueError("`diag_part` only supports 2-D arrays.")
         return np.diag(array, k=k)
+
+    def set_diag(self, array: np.array, diag: np.array, k: int) -> np.array:
+        import tensorflow as tf
+
+        return tf.linalg.set_diag(array, diag, k=k).numpy()
 
     def einsum(self, string: str, *tensors) -> np.array:
         if type(string) is str:
@@ -244,7 +267,7 @@ class BackendNumpy(BackendBase):
         return np.ones(shape, dtype=dtype)
 
     def ones_like(self, array: np.array) -> np.array:
-        return np.ones(array.shape)
+        return np.ones(array.shape, dtype=array.dtype)
 
     @Autocast()
     def outer(self, array1: np.array, array2: np.array) -> np.array:
@@ -291,6 +314,12 @@ class BackendNumpy(BackendBase):
         return np.sqrt(self.cast(x, dtype))
 
     def sum(self, array: np.array, axes: Sequence[int] = None):
+        import tensorflow as tf
+
+        return tf.reduce_sum(array, axes).numpy()
+        return np.sum(array, axes or None)
+        if not axes:
+            return np.array(array)
         return np.sum(array, axes)
 
     @Autocast()
@@ -340,8 +369,10 @@ class BackendNumpy(BackendBase):
 
     @Autocast()
     def update_tensor(self, tensor: np.array, indices: np.array, values: np.array):
-        np.add.at(tensor, indices.T, values)
-        return tensor
+        ret = deepcopy(tensor)
+        for n_index, index in enumerate(indices):
+            ret[tuple(index)] = values[n_index]
+        return ret
 
     @Autocast()
     def update_add_tensor(self, tensor: np.array, indices: np.array, values: np.array):
@@ -349,14 +380,15 @@ class BackendNumpy(BackendBase):
         # https://stackoverflow.com/questions/65734836/numpy-equivalent-to-tf-tensor-scatter-nd-add-method
         indices = np.array(indices)  # figure out why we need this
         indices = tuple(indices.reshape(-1, indices.shape[-1]).T)
-        np.add.at(tensor, indices, values)
-        return tensor
+        ret = deepcopy(tensor)
+        np.add.at(ret, indices, values)
+        return ret
 
     def zeros(self, shape: Sequence[int], dtype=np.float64) -> np.array:
         return np.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: np.array) -> np.array:
-        return np.zeros(np.array(array).shape)
+        return np.zeros(np.array(array).shape, dtype=array.dtype)
 
     def map_fn(self, func, elements):
         # ??
@@ -424,9 +456,9 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        precision_bits = (
-            settings.PRECISION_BITS_HERMITE_POLY
-        )  # number of bits used to represent a single Fock amplitude (default: complex128)
+
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
@@ -440,7 +472,9 @@ class BackendNumpy(BackendBase):
                 _B.astype(np.complex128),
                 _C.astype(np.complex128),
             )
-            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
+            G = Main_julia.Vanilla.vanilla(
+                _A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits
+            )
 
         return G
 
@@ -519,21 +553,9 @@ class BackendNumpy(BackendBase):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, poly2, poly1010, poly1001, poly1 = hermite_multidimensional_diagonal(
-            A, B, C, cutoffs
-        )
+        poly0, _, _, _, _ = hermite_multidimensional_diagonal(A, B, C, cutoffs)
 
-        # def grad(dLdpoly):
-        #     dpoly_dC, dpoly_dA, dpoly_dB = grad_hermite_multidimensional_diagonal(
-        #         A, B, C, poly0, poly2, poly1010, poly1001, poly1
-        #     )
-        #     ax = tuple(range(dLdpoly.ndim))
-        #     dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
-        #     dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
-        #     dLdC = self.sum(dLdpoly * self.conj(dpoly_dC), axes=ax)
-        #     return dLdA, dLdB, dLdC
-
-        return poly0  # , grad
+        return poly0
 
     def hermite_renormalized_1leftoverMode(
         self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
@@ -598,10 +620,17 @@ class BackendNumpy(BackendBase):
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
             return self.zeros_like(tensor)
-        return np.linalg.sqrtm(tensor)
+        return scipy.linalg.sqrtm(tensor)
 
-    @staticmethod
-    def boolean_mask(tensor: np.array, mask: np.array) -> np.ndarray:
-        """Returns a tensor based on the truth value of the boolean mask."""
-        # ??
-        pass
+    def getitem(tensor, *, key):
+        """A differentiable pure equivalent of numpy's ``value = tensor[key]``."""
+        value = np.array(tensor)[key]
+        return value
+
+    def setitem(tensor, value, *, key):
+        """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
+        _tensor = np.array(tensor)
+        value = np.array(value)
+        _tensor[key] = value
+
+        return _tensor

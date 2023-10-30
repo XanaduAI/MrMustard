@@ -15,6 +15,7 @@
 """optimization tests"""
 
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
@@ -44,6 +45,9 @@ from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 import mrmustard.math as math
+
+if settings.BACKEND == "numpy":
+    pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 
 @given(n=st.integers(0, 3))
@@ -378,7 +382,7 @@ def test_making_thermal_state_as_one_half_two_mode_squeezed_vacuum():
 
     opt = Optimizer(symplectic_lr=0.1)
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
-    S = G.symplectic.value.numpy()
+    S = math.asnumpy(G.symplectic.value)
     cov = S @ S.T
     assert np.allclose(cov, two_mode_squeezing(2 * np.arcsinh(np.sqrt(nbar)), 0.0))
 
@@ -402,7 +406,7 @@ def test_opt_backend_param():
     opt = Optimizer(symplectic_lr=0.1, euclidean_lr=0.05)
     opt.minimize(cost_fn_sympl, by_optimizing=[S, r_angle])
 
-    assert np.allclose(r_angle.numpy(), rotation_angle / 2, atol=1e-4)
+    assert np.allclose(math.asnumpy(r_angle), rotation_angle / 2, atol=1e-4)
 
 
 def test_dgate_optimization():

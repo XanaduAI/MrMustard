@@ -121,9 +121,6 @@ class Transformation(Tensor):
         )  # NOTE: assumes modes don't change
         return new_state
 
-    def _transform_fock(self, state: State, dual: bool) -> State:
-        raise NotImplementedError
-
     @property
     def num_modes(self) -> int:
         r"""The number of modes on which the transformation acts."""

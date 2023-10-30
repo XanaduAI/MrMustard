@@ -15,6 +15,7 @@
 """callbacks tests"""
 
 import numpy as np
+import pytest
 import tensorflow as tf
 
 from mrmustard import settings
@@ -26,6 +27,9 @@ from mrmustard.lab.gates import (
 from mrmustard.lab.states import Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 import mrmustard.math as math
+
+if settings.BACKEND == "numpy":
+    pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 
 def test_tensorboard_callback(tmp_path):

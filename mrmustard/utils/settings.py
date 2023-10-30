@@ -81,7 +81,6 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._backend = "tensorflow"
         self._backend = "numpy"
         self._hbar = ImmutableSetting(2.0, "HBAR")
         self._debug = False
@@ -107,12 +106,6 @@ class Settings:
         self._julia_initialized = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
-        self._allowed_precision_bits_hermite_poly = [
-            128,
-            # 256,
-            # 384,
-            # 512,
-        ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     def _force_hbar(self, value):
         self._hbar._value = value
@@ -296,7 +289,7 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = self._allowed_precision_bits_hermite_poly
+        allowed_values = [128, 256, 384, 512]
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"

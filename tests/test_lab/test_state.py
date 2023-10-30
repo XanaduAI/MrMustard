@@ -2,6 +2,7 @@ import numpy as np
 
 from mrmustard.lab import Attenuator, Coherent, Gaussian
 from mrmustard.lab.abstract.state import mikkel_plot
+import mrmustard.math as math
 
 
 def test_addition():
@@ -53,7 +54,7 @@ def test_division_dm():
 def test_mikkel_plot():
     """Tests that mikkel plot returns figure and axes."""
     dm = Coherent().dm(cutoffs=[10])
-    fig, axs = mikkel_plot(dm.numpy())
+    fig, axs = mikkel_plot(math.asnumpy(dm))
 
     assert fig is not None
     assert axs is not None

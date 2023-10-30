@@ -64,11 +64,8 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    return (
-        A[N:, N:],
-        B[N:],
-        math.sqrt(C),
-    )  # NOTE: c for th psi is to calculated from the global phase formula.
+    return A[N:, N:], B[N:], math.sqrt(C)
+    # NOTE: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):

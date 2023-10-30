@@ -19,6 +19,7 @@ from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
+from mrmustard import settings
 from mrmustard.lab import (
     TMSV,
     Attenuator,
@@ -186,7 +187,8 @@ def test_dm_to_ket_error():
     """Test fock.dm_to_ket raises an error when state is mixed"""
     state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
 
-    with pytest.raises(ValueError):
+    e = ValueError if settings.BACKEND == "tensorflow" else TypeError
+    with pytest.raises(e):
         fock.dm_to_ket(state)
 
 

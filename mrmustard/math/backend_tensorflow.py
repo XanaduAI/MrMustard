@@ -72,6 +72,10 @@ class BackendTensorflow(BackendBase):
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return self.cast(tf.reshape(array, [-1]), dtype)
 
+    def block(self, blocks: List[List[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
+
     def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
         return tf.boolean_mask(tensor, mask)
 

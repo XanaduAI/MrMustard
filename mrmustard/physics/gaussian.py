@@ -292,7 +292,7 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     sp = math.cast(math.sin(phi), math.float64)
     ch = math.cast(math.cosh(r), math.float64)
     sh = math.cast(math.sinh(r), math.float64)
-    zero = math.cast(math.zeros_like(r), math.float64)
+    zero = math.cast(math.zeros_like(math.asnumpy(r)), math.float64)
     return math.astensor(
         [
             [ch, cp * sh, zero, sp * sh],

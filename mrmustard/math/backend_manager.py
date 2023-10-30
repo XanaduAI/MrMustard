@@ -64,6 +64,7 @@ module_name_tf = "mrmustard.math.backend_tensorflow"
 module_tf, loader_tf = lazy_import(module_name_tf)
 
 all_modules = {
+    "numpy": {"module": module_np, "loader": loader_np, "object": "BackendNumpy"},
     "tensorflow": {"module": module_tf, "loader": loader_tf, "object": "BackendTensorflow"},
 }
 
@@ -278,6 +279,18 @@ class BackendManager:
             A tensor based on the truth value of the boolean mask.
         """
         return self._apply("boolean_mask", (tensor, mask))
+
+    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
+        r"""Returns a matrix made from the given blocks.
+
+        Args:
+            blocks (list): list of lists of compatible blocks
+            axes (tuple): axes to stack the blocks along
+
+        Returns:
+            array: matrix made of blocks
+        """
+        return self._apply("block", (blocks, axes))
 
     def cast(self, array: Tensor, dtype=None) -> Tensor:
         r"""Casts ``array`` to ``dtype``.
@@ -1113,19 +1126,6 @@ class BackendManager:
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def block(self, blocks: List[List[Tensor]], axes=(-2, -1)) -> Tensor:
-        r"""Returns a matrix made from the given blocks.
-
-        Args:
-            blocks (list): list of lists of compatible blocks
-            axes (tuple): axes to stack the blocks along
-
-        Returns:
-            array: matrix made of blocks
-        """
-        rows = [self.concat(row, axis=axes[1]) for row in blocks]
-        return self.concat(rows, axis=axes[0])
-
     def dagger(self, array: Tensor) -> Tensor:
         """The adjoint of ``array``. This operation swaps the first
         and second half of the indexes and then conjugates the matrix.
@@ -1263,6 +1263,8 @@ class BackendManager:
         """
         if a_partial is None:
             return b_full
+        from copy import deepcopy
+
         N = b_full.shape[-1] // 2
         indices = self.astensor(modes + [m + N for m in modes], dtype="int32")
         b_rows = self.gather(b_full, indices, axis=0)
