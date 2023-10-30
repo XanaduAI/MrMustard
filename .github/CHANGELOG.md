@@ -72,6 +72,13 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
 
 ### Improvements
 
+* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
+that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
+This is done by representing Fock amplitudes with a higher precision than complex128 
+(which counters the accumulation of floating-point errors). 
+We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+[(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
+
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
 
@@ -749,3 +756,4 @@ This release contains contributions from (in alphabetical order):
 [Sebastián Duque](https://github.com/sduquemesa), [Zhi Han](https://github.com/hanzhihua1),
 [Theodor Isacsson](https://github.com/thisac/), [Josh Izaac](https://github.com/josh146),
 [Filippo Miatto](https://github.com/ziofil), [Nicolas Quesada](https://github.com/nquesada)
+

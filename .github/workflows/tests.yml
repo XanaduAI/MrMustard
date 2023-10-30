@@ -30,13 +30,18 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: 1.9.3
+
       - name: Install dependencies
         run: |
           python -m pip install --no-cache-dir --upgrade pip
           pip install --no-cache-dir poetry==1.4.0
           poetry config virtualenvs.create false
           poetry install --extras "ray" --with dev
-          julia -e "using Pkg; Pkg.add(\"PyCall\"); Pkg.add(\"MultiFloats\")"
+          julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
       - name: Run tests
         run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native

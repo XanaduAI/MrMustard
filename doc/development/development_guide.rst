@@ -18,7 +18,6 @@ as well as the following Python packages:
 * `Rich <https://pypi.org/project/rich/>`_
 * `tqdm <https://tqdm.github.io/>`_
 
-
 If you currently do not have Python 3 installed, we recommend
 `Anaconda for Python 3 <https://www.anaconda.com/download/>`_, a distributed version
 of Python packaged for scientific computation.
@@ -38,6 +37,21 @@ using development mode:
 The ``-e`` flag ensures that edits to the source code will be reflected when
 importing Mr Mustard in Python.
 
+Increased numerical stability using Julia [optional]
+------------------
+Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
+To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
+an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3 recommended).
+
+* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
+
+* When installing MrMustard via ``poetry install`` or ``pip install``, the required Julia packages have to be installed manually as follows:
+
+.. code-block:: console
+
+    julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
+
+* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed only if Julia was previously installed by the user.
 
 PyTorch support
 ------------------
