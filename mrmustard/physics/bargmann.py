@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=redefined-outer-name
-
 """
 This module contains functions for transforming to the Bargmann representation.
 """
@@ -162,17 +160,10 @@ def join_Abc(Abc1, Abc2):
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
-
-    A12 = math.block(
-        [
-            [A1, math.zeros((A1.shape[-2], A2.shape[-1]), dtype=A1.dtype)],
-            [math.zeros((A2.shape[-2], A1.shape[-1]), dtype=A1.dtype), A2],
-        ]
-    )
-
+    A12 = math.block_diag(A1, A2)
     b12 = math.concat([b1, b2], axis=-1)
-
-    return A12, b12, c1 * c2
+    c12 = c1 * c2
+    return A12, b12, c12
 
 
 def reorder_abc(Abc, order: Sequence[int]):

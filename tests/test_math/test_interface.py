@@ -62,4 +62,6 @@ def test_hash_tensor():
     """Test hash of a tensor"""
     math = Math()
     tensor = math.astensor([1, 2, 3])
-    assert np.allclose(*[math.hash_tensor(tensor) for _ in range(3)])
+    assert math.hash_tensor(tensor) == math.hash_tensor(tensor)
+    tensor2 = math.astensor([0.1, 0.2, 0.3])
+    assert math.hash_tensor(tensor) != math.hash_tensor(tensor2)

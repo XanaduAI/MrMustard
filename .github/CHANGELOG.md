@@ -7,6 +7,9 @@
 * Added functions in physics.bargmann to join and contract (A,b,c) triples.
   [(#295)](https://github.com/XanaduAI/MrMustard/pull/295)
 
+* Added `Bargmann` representation (parametrized by Abc). Supports all algebraic operations and CV (exact) inner product.
+  [(#296)](https://github.com/XanaduAI/MrMustard/pull/296)
+
 ### Breaking changes
 * Removed circular dependencies by:
   * Removing `graphics.py`--moved `ProgressBar` to `training` and `mikkel_plot` to `lab`.

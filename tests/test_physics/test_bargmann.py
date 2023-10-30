@@ -8,6 +8,7 @@ from mrmustard.physics.bargmann import (
     contract_two_Abc,
     reorder_abc,
 )
+from mrmustard.physics.bargmann_repr import BargmannExp
 from mrmustard.math import Math
 
 math = Math()
@@ -116,3 +117,23 @@ def test_abc_contraction_3mode_rho_2mode_U():
     assert np.allclose(A_abc, A_mm)
     assert np.allclose(b_abc, b_mm)
     assert np.allclose(c_abc, c_mm)
+
+
+def test_BargmannExp_2mode_psi_U():
+    psi = Gaussian(2)
+    U = Ggate(2)
+
+    A1, b1, c1 = psi.bargmann()  # out1ket, out2ket
+    A2, b2, c2 = U.bargmann()  # out1ket, out2ket, in1ket, in2ket
+
+    Abc1 = BargmannExp(A1, b1, c1)
+    Abc2 = BargmannExp(A2, b2, c2)
+
+    psiU = Abc1[0, 1] @ Abc2[2, 3]
+
+    A_abc, b_abc, c_abc = psiU.A[0], psiU.b[0], psiU.c[0]
+    A_mm, b_mm, c_mm = (psi >> U).bargmann()
+
+    assert np.allclose(A_abc, A_mm)
+    assert np.allclose(b_abc, b_mm)
+    assert np.allclose(abs(c_abc), abs(c_mm))
