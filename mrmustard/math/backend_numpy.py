@@ -106,15 +106,10 @@ class BackendNumpy(BackendBase):
         return np.clip(array, a_min, a_max)
 
     def concat(self, values: List[np.array], axis: int) -> np.array:
-        import tensorflow as tf
-
-        if any(tf.rank(v) == 0 for v in values):
-            return tf.stack(values, axis).numpy()
-        return tf.concat(values, axis).numpy()
-
-        if any(np.allclose(np.linalg.matrix_rank(v), 0) for v in values):
-            return np.stack(values, axis)
-        return np.concatenate(values, axis)
+        try:
+            return np.concatenate(values, axis)
+        except ValueError:
+            return np.array(values)
 
     def conj(self, array: np.array) -> np.array:
         return np.conj(array)
@@ -340,36 +335,6 @@ class BackendNumpy(BackendBase):
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
         return np.transpose(a, axes=perm)
-
-        if a is None:
-            return None  # TODO: remove and address None inputs where tranpose is used
-
-        def permute_rows(a, perm):
-            ret = np.array(
-                [
-                    a[perm[0]],
-                ]
-            )
-            for p in perm[1:]:
-                ret = np.append(
-                    ret,
-                    np.array(
-                        [
-                            a[p],
-                        ]
-                    ),
-                    axis=0,
-                )
-            return ret
-
-        ret = a
-        ret = ret if not perm else permute_rows(ret, perm)
-        ret = ret.transpose()
-
-        print(a, "\n")
-        print(ret)
-
-        return ret
 
     @Autocast()
     def update_tensor(self, tensor: np.array, indices: np.array, values: np.array):

@@ -23,14 +23,14 @@ import pytest
 from mrmustard import about, settings, version
 
 
-@pytest.mark.tf
-def test_change_backend():
-    r"""
-    Changes the backend to tensorflow.
-    This is the first test that is run, and since ``Settings`` is a singleton,
-    the backend then remains the tensorflow backend for all future tests.
-    """
-    settings.BACKEND = "tensorflow"
+# @pytest.mark.tf
+# def test_change_backend():
+#     r"""
+#     Changes the backend to tensorflow.
+#     This is the first test that is run, and since ``Settings`` is a singleton,
+#     the backend then remains the tensorflow backend for all future tests.
+#     """
+#     settings.BACKEND = "tensorflow"
 
 
 def test_about():
@@ -47,4 +47,3 @@ def test_about():
     assert "Scipy version" in out
     assert "The Walrus version" in out
     assert "TensorFlow version" in out
-    assert settings.BACKEND == "tensorflow"

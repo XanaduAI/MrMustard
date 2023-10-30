@@ -93,7 +93,6 @@ class Circuit(Transformation):
             X = opX @ X
             Y = opX @ Y @ opX.T + opY
             d = opX @ d + opd
-            print(X.tensor.shape)
         return X.to_xxpp(), Y.to_xxpp(), d.to_xxpp()
 
     @property

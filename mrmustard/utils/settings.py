@@ -80,6 +80,7 @@ class Settings:
         return cls.instance
 
     def __init__(self):
+        self._backend = "tensorflow"
         self._backend = "numpy"
         self._hbar = ImmutableSetting(2.0, "HBAR")
         self._debug = False
