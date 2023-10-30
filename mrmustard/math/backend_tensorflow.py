@@ -45,9 +45,6 @@ class BackendTensorflow(BackendBase):
     def __init__(self):
         super().__init__(name="tensorflow")
 
-    def hello(self):
-        print(f"Hello from {self._name} backend.")
-
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 
@@ -334,6 +331,27 @@ class BackendTensorflow(BackendBase):
     def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
         return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
+    @staticmethod
+    def eigvals(tensor: tf.Tensor) -> Tensor:
+        return tf.linalg.eigvals(tensor)
+
+    def eigh(tensor: tf.Tensor) -> Tensor:
+        return tf.linalg.eigh(tensor)
+
+    @staticmethod
+    def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
+        return tf.math.xlogy(x, y)
+
+    @staticmethod
+    def eigh(tensor: tf.Tensor) -> Tensor:
+        return tf.linalg.eigh(tensor)
+
+    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+        # The sqrtm function has issues with matrices that are close to zero, hence we branch
+        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
+            return self.zeros_like(tensor)
+        return tf.linalg.sqrtm(tensor)
+
     # ~~~~~~~~~~~~~~~~~
     # Special functions
     # ~~~~~~~~~~~~~~~~~
@@ -592,49 +610,6 @@ class BackendTensorflow(BackendBase):
             return dLdA, dLdB, dLdC
 
         return poly0, grad
-
-    @staticmethod
-    def eigvals(tensor: tf.Tensor) -> Tensor:
-        """Returns the eigenvalues of a matrix."""
-        return tf.linalg.eigvals(tensor)
-
-    @staticmethod
-    def eigvalsh(tensor: tf.Tensor) -> Tensor:
-        """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
-        return tf.linalg.eigvalsh(tensor)
-
-    def eigh(tensor: tf.Tensor) -> Tensor:
-        """
-        The eigenvalues and eigenvectors of a matrix.
-        """
-        return tf.linalg.eigh(tensor)
-
-    @staticmethod
-    def svd(tensor: tf.Tensor) -> Tensor:
-        """Returns the Singular Value Decomposition of a matrix."""
-        return tf.linalg.svd(tensor)
-
-    @staticmethod
-    def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
-        """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
-        return tf.math.xlogy(x, y)
-
-    @staticmethod
-    def eigh(tensor: tf.Tensor) -> Tensor:
-        """Returns the eigenvalues and eigenvectors of a matrix."""
-        return tf.linalg.eigh(tensor)
-
-    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
-        """Returns the matrix square root of a square matrix, such that ``sqrt(A) @ sqrt(A) = A``."""
-
-        # The sqrtm function has issues with matrices that are close to zero, hence we branch
-        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return tf.linalg.sqrtm(tensor)
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Extras (not in the Interface)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @tf.custom_gradient
     def getitem(tensor, *, key):

@@ -177,10 +177,6 @@ class BackendManager:
     # ~~~~~~~
     # Below are the methods supported by the various backends.
 
-    def hello(self):
-        r"""A function to say hello."""
-        self._apply("hello")
-
     def abs(self, array: Tensor) -> Tensor:
         r"""The absolute value of array.
 
@@ -188,7 +184,7 @@ class BackendManager:
             array: The array to take the absolute value of.
 
         Returns:
-           The absolute value of the given ``array``.
+            The absolute value of the given ``array``.
         """
         return self._apply("abs", (array,))
 
@@ -213,7 +209,7 @@ class BackendManager:
             dtype: The dtype of the returned array.
 
         Returns:
-           The array of evenly spaced values.
+            The array of evenly spaced values.
         """
         # NOTE: is float64 by default
         return self._apply("arange", (start, limit, delta, dtype))
@@ -225,7 +221,7 @@ class BackendManager:
             tensor: The tensor to convert.
 
         Returns:
-           The corresponidng numpy array.
+            The corresponidng numpy array.
         """
         return self._apply("asnumpy", (tensor,))
 
@@ -237,7 +233,7 @@ class BackendManager:
             value: The value to assign.
 
         Returns:
-           The tensor with value assigned
+            The tensor with value assigned
         """
         return self._apply("assign", (tensor, value))
 
@@ -250,7 +246,7 @@ class BackendManager:
                 is of type ``float``.
 
         Returns:
-           The tensor with dtype.
+            The tensor with dtype.
         """
         return self._apply("astensor", (array, dtype))
 
@@ -263,7 +259,7 @@ class BackendManager:
                 is of the same type as the given one.
 
         Returns:
-           The array with at least one dimension.
+            The array with at least one dimension.
         """
         return self._apply("atleast_1d", (array, dtype))
 
@@ -284,11 +280,11 @@ class BackendManager:
         r"""Returns a matrix made from the given blocks.
 
         Args:
-            blocks (list): list of lists of compatible blocks
-            axes (tuple): axes to stack the blocks along
+            blocks: A list of lists of compatible blocks.
+            axes: Theaxes to stack the blocks along.
 
         Returns:
-            array: matrix made of blocks
+            The matrix made of blocks.
         """
         return self._apply("block", (blocks, axes))
 
@@ -301,7 +297,7 @@ class BackendManager:
                 is the same as the given one.
 
         Returns:
-           The array cast to dtype.
+            The array cast to dtype.
         """
         return self._apply("cast", (array, dtype))
 
@@ -314,7 +310,7 @@ class BackendManager:
             a_max: The maximum value.
 
         Returns:
-           The clipped array.
+            The clipped array.
         """
         return self._apply("clip", (array, a_min, a_max))
 
@@ -326,7 +322,7 @@ class BackendManager:
             axis: The axis along which to concatenate.
 
         Returns:
-           The concatenated values.
+            The concatenated values.
         """
         return self._apply("concat", (values, axis))
 
@@ -337,7 +333,7 @@ class BackendManager:
             array: The array to take the complex conjugate of.
 
         Returns:
-           The complex conjugate of the given ``array``.
+            The complex conjugate of the given ``array``.
         """
         return self._apply("conj", (array,))
 
@@ -350,14 +346,14 @@ class BackendManager:
 
         .. note::
 
-           The upper and/or lower bounds can be ``None``, in which case the constraint
+            The upper and/or lower bounds can be ``None``, in which case the constraint
             function will not clip the value.
 
         Args:
             bounds: The bounds of the constraint.
 
         Returns:
-           The constraint function.
+            The constraint function.
         """
         return self._apply("constraint_func", (bounds))
 
@@ -377,7 +373,7 @@ class BackendManager:
             data_format: The data format of the array.
 
         Returns:
-           The convolved array.
+            The convolved array.
         """
         return self._apply("convolution", (array, filters, padding, data_format))
 
@@ -388,7 +384,7 @@ class BackendManager:
             array: The array to take the cosine of,
 
         Returns:
-           The cosine of ``array``.
+            The cosine of ``array``.
         """
         return self._apply("cos", (array,))
 
@@ -399,7 +395,7 @@ class BackendManager:
             array: The array to take the hyperbolic cosine of.
 
         Returns:
-           The hyperbolic cosine of ``array``.
+            The hyperbolic cosine of ``array``.
         """
         return self._apply("cosh", (array,))
 
@@ -432,10 +428,10 @@ class BackendManager:
         r"""The determinant of matrix.
 
         Args:
-            matrix (matrix): matrix to take the determinant of
+            matrix: The matrix to take the determinant of
 
         Returns:
-            determinant of matrix
+            The determinant of ``matrix``.
         """
         return self._apply("det", (matrix,))
 
@@ -443,11 +439,11 @@ class BackendManager:
         r"""The array made by inserting the given array along the :math:`k`-th diagonal.
 
         Args:
-            array: The array to insert
-            k (int): kth diagonal to insert array into
+            array: The array to insert.
+            k: The ``k``-th diagonal to insert array into.
 
         Returns:
-            array: array with array inserted into the kth diagonal
+            The array with ``array`` inserted into the ``k``-th diagonal.
         """
         return self._apply("diag", (array, k))
 
@@ -459,17 +455,30 @@ class BackendManager:
             k: The diagonal to extract.
 
         Returns:
-            array: array of the main diagonal of array
+            The array of the main diagonal of ``array``.
         """
         return self._apply("diag_part", (array, k))
 
     def eigvals(self, tensor: Tensor) -> Tensor:
-        r"""The eigenvalues of a matrix."""
+        r"""The eigenvalues of a tensor.
+
+        Args:
+            tensor: The tensor to calculate the eigenvalues of.
+
+        Returns:
+            The eigenvalues of ``tensor``.
+        """
         return self._apply("eigvals", (tensor,))
 
     def eigh(self, tensor: Tensor) -> Tensor:
         """
         The eigenvalues and eigenvectors of a matrix.
+
+        Args:
+            tensor: The tensor to calculate the eigenvalues and eigenvectors of.
+
+        Returns:
+            The eigenvalues and deigenvectors of ``tensor``.
         """
         return self._apply("eigh", (tensor,))
 
@@ -477,11 +486,11 @@ class BackendManager:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
-            string (str): string of the Einstein summation convention
-            tensors: The tensors to perform the Einstein summation on
+            string: The string of the Einstein summation convention.
+            tensors: The tensors to perform the Einstein summation on.
 
         Returns:
-            array: result of the Einstein summation convention
+            The result of the Einstein summation convention.
         """
         return self._apply("einsum", (string, *tensors))
 
@@ -489,10 +498,10 @@ class BackendManager:
         r"""The exponential of array element-wise.
 
         Args:
-            array: The array to take the exponential of
+            array: The array to take the exponential of.
 
         Returns:
-            array: exponential of array
+            The exponential of array.
         """
         return self._apply("exp", (array,))
 
@@ -500,11 +509,11 @@ class BackendManager:
         r"""The array with an additional dimension inserted at the given axis.
 
         Args:
-            array: The array to expand
-            axis (int): axis to insert the new dimension
+            array: The array to expand.
+            axis: The axis to insert the new dimension.
 
         Returns:
-            array: array with an additional dimension inserted at the given axis
+            The array with an additional dimension inserted at the given axis.
         """
         return self._apply("expand_dims", (array, axis))
 
@@ -512,10 +521,10 @@ class BackendManager:
         r"""The matrix exponential of matrix.
 
         Args:
-            matrix (matrix): matrix to take the exponential of
+            matrix: The matrix to take the exponential of.
 
         Returns:
-            matrix: exponential of matrix
+            The exponential of ``matrix``.
         """
         return self._apply("expm", (matrix,))
 
@@ -523,12 +532,12 @@ class BackendManager:
         r"""The identity matrix of size.
 
         Args:
-            size (int): size of the identity matrix
-            dtype (dtype): data type of the identity matrix. If ``None``,
+            size: The size of the identity matrix
+            dtype: The data type of the identity matrix. If ``None``,
                 the returned matrix is of type ``float``.
 
         Returns:
-            matrix: identity matrix
+            The identity matrix.
         """
         return self._apply("eye", (size, dtype))
 
@@ -536,27 +545,34 @@ class BackendManager:
         r"""The identity matrix of the same shape and dtype as array.
 
         Args:
-            array: The array to create the identity matrix of
+            array: The array to create the identity matrix of.
 
         Returns:
-            matrix: identity matrix
+            The identity matrix.
         """
         return self._apply("eye_like", (array,))
 
     def from_backend(self, value: Any) -> bool:
-        r"""Whether the given tensor is a tensor of the concrete backend."""
+        r"""Whether the given tensor is a tensor of the concrete backend.
+
+        Args:
+            value: A value.
+
+        Returns:
+            Whether given ``value`` is a tensor of the concrete backend.
+        """
         return self._apply("from_backend", (value,))
 
     def gather(self, array: Tensor, indices: Tensor, axis: Optional[int] = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
-            array: The array to gather values from
-            indices: The indices to gather values from
-            axis (int): axis to gather values from
+            array: The array to gather values from.
+            indices: The indices to gather values from.
+            axis: The axis to gather values from.
 
         Returns:
-            array: values of the array at the given indices
+            The values of the array at the given indices.
         """
         return self._apply(
             "gather",
@@ -590,7 +606,7 @@ class BackendManager:
             array: The array to take the imaginary part of
 
         Returns:
-            array: imaginary part of array
+            The imaginary part of array
         """
         return self._apply("imag", (array,))
 
@@ -601,7 +617,7 @@ class BackendManager:
             tensor: The tensor to take the inverse of
 
         Returns:
-            array: inverse of tensor
+            The inverse of tensor
         """
         return self._apply("inv", (tensor,))
 
@@ -623,7 +639,7 @@ class BackendManager:
             x: The array to take the natural logarithm of the gamma function of
 
         Returns:
-            array: natural logarithm of the gamma function of ``x``
+            The natural logarithm of the gamma function of ``x``
         """
         return self._apply("lgamma", (x,))
 
@@ -634,7 +650,7 @@ class BackendManager:
             x: The array to take the natural logarithm of
 
         Returns:
-            array: natural logarithm of ``x``
+            The natural logarithm of ``x``
         """
         return self._apply("log", (x,))
 
@@ -658,7 +674,7 @@ class BackendManager:
             adjoint_b (bool): whether to adjoint ``b``
 
         Returns:
-            array: matrix product of ``a`` and ``b``
+            The matrix product of ``a`` and ``b``
         """
         return self._apply("matmul", (a, b, transpose_a, transpose_b, adjoint_a, adjoint_b))
 
@@ -672,7 +688,7 @@ class BackendManager:
             adjoint_a (bool): whether to adjoint ``a``
 
         Returns:
-            array: matrix vector product of ``a`` and ``b``
+            The matrix vector product of ``a`` and ``b``
         """
         return self._apply("matvec", (a, b, transpose_a, adjoint_a))
 
@@ -684,7 +700,7 @@ class BackendManager:
             b: The second array to take the maximum of
 
         Returns:
-            array: element-wise maximum of ``a`` and ``b``
+            The element-wise maximum of ``a`` and ``b``
         """
         return self._apply(
             "maximum",
@@ -702,7 +718,7 @@ class BackendManager:
             b: The second array to take the minimum of
 
         Returns:
-            array: element-wise minimum of ``a`` and ``b``
+            The element-wise minimum of ``a`` and ``b``
         """
         return self._apply(
             "minimum",
@@ -723,7 +739,7 @@ class BackendManager:
             name: The name of the new variable.
             dtype: dtype of the new variable. If ``None``, casts it to float.
         Returns:
-           The new variable.
+            The new variable.
         """
         return self._apply("new_variable", (value, bounds, name, dtype))
 
@@ -736,7 +752,7 @@ class BackendManager:
             dtype (type): dtype of the array
 
         Returns:
-            array: new constant
+            The new constant
         """
         return self._apply("new_constant", (value, name, dtype))
 
@@ -747,7 +763,7 @@ class BackendManager:
             array: The array to take the norm of
 
         Returns:
-            array: norm of array
+            The norm of array
         """
         return self._apply("norm", (array,))
 
@@ -760,7 +776,7 @@ class BackendManager:
                 of type ``float``.
 
         Returns:
-            array: array of ones
+            The array of ones
         """
         # NOTE : should be float64 by default
         return self._apply("ones", (shape, dtype))
@@ -772,7 +788,7 @@ class BackendManager:
             array: The array to take the shape and dtype of
 
         Returns:
-            array: array of ones
+            The array of ones
         """
         return self._apply("ones_like", (array,))
 
@@ -784,7 +800,7 @@ class BackendManager:
             array2: The second array to take the outer product of
 
         Returns:
-            array: outer product of array1 and array2
+            The outer product of array1 and array2
         """
         return self._apply("outer", (array1, array2))
 
@@ -800,7 +816,7 @@ class BackendManager:
             constant_values (int): constant values to use for padding
 
         Returns:
-            array: padded array
+            The padded array
         """
         return self._apply("pad", (array, paddings, mode, constant_values))
 
@@ -811,7 +827,7 @@ class BackendManager:
             matrix: The matrix to take the pseudo-inverse of
 
         Returns:
-            array: pseudo-inverse of matrix
+            The pseudo-inverse of matrix
         """
         return self._apply("pinv", (matrix,))
 
@@ -822,7 +838,7 @@ class BackendManager:
             y: The exponent
 
         Returns:
-            array: :math:`x^y`
+            The :math:`x^y`
         """
         return self._apply("pow", (x, y))
 
@@ -833,7 +849,7 @@ class BackendManager:
             array: The array to take the real part of
 
         Returns:
-            array: real part of ``array``
+            The real part of ``array``
         """
         return self._apply("real", (array,))
 
@@ -845,7 +861,7 @@ class BackendManager:
             shape (tuple): shape to reshape the array to
 
         Returns:
-            array: reshaped array
+            The reshaped array
         """
         return self._apply("reshape", (array, shape))
 
@@ -858,7 +874,7 @@ class BackendManager:
             k (int): diagonal to set
 
         Returns:
-            array: array with the diagonal set to ``diag``
+            The array with the diagonal set to ``diag``
         """
         return self._apply("set_diag", (array, diag, k))
 
@@ -869,7 +885,7 @@ class BackendManager:
             array: The array to take the sine of
 
         Returns:
-            array: sine of ``array``
+            The sine of ``array``
         """
         return self._apply("sin", (array,))
 
@@ -880,7 +896,7 @@ class BackendManager:
             array: The array to take the hyperbolic sine of
 
         Returns:
-            array: hyperbolic sine of ``array``
+            The hyperbolic sine of ``array``
         """
         return self._apply("sinh", (array,))
 
@@ -892,7 +908,7 @@ class BackendManager:
             rhs: The vector :math:`b`
 
         Returns:
-            array: solution :math:`x`
+            The solution :math:`x`
         """
         return self._apply("solve", (matrix, rhs))
 
@@ -904,7 +920,7 @@ class BackendManager:
             dtype (type): ``dtype`` of the output array.
 
         Returns:
-            array: square root of ``x``
+            The square root of ``x``
         """
         return self._apply("sqrt", (x, dtype))
 
@@ -920,7 +936,7 @@ class BackendManager:
             axes (tuple): axes to sum over
 
         Returns:
-            array: sum of array
+            The sum of array
         """
         return self._apply("sum", (array, axes))
 
@@ -930,10 +946,10 @@ class BackendManager:
         Args:
             a: The first array to take the tensordot product of
             b: The second array to take the tensordot product of
-            axes (tuple): axes to take the tensordot product over
+            axes: The axes to take the tensordot product over
 
         Returns:
-            array: tensordot product of ``a`` and ``b``
+            The tensordot product of ``a`` and ``b``
         """
         return self._apply("tensordot", (a, b, axes))
 
@@ -945,7 +961,7 @@ class BackendManager:
             repeats (tuple): number of times to tile the array along each axis
 
         Returns:
-            array: tiled array
+            The tiled array
         """
         return self._apply("tile", (array, repeats))
 
@@ -957,7 +973,7 @@ class BackendManager:
             dtype (type): ``dtype`` of the output array
 
         Returns:
-            array: trace of array
+            The trace of array
         """
         return self._apply("trace", (array, dtype))
 
@@ -969,7 +985,7 @@ class BackendManager:
             perm (tuple): permutation to apply to the array
 
         Returns:
-            array: transposed array
+            The transposed array
         """
         return self._apply("transpose", (a, perm))
 
@@ -1022,7 +1038,7 @@ class BackendManager:
                 of type ``float``.
 
         Returns:
-           The array of zeros.
+            The array of zeros.
         """
         return self._apply("zeros", (shape, dtype))
 
@@ -1033,7 +1049,7 @@ class BackendManager:
             array: The array to take the shape and ``dtype`` of.
 
         Returns:
-           The array of zeros.
+            The array of zeros.
         """
         return self._apply("zeros_like", (array,))
 
@@ -1134,7 +1150,7 @@ class BackendManager:
             array: The array to take the adjoint of
 
         Returns:
-            array: adjoint of ``array``
+            The adjoint of ``array``
         """
         N = len(array.shape) // 2
         perm = list(range(N, 2 * N)) + list(range(0, N))
@@ -1147,7 +1163,7 @@ class BackendManager:
             U: The unitary matrix in ``U(n)``
 
         Returns:
-            array: orthogonal matrix in :math:`O(2n)`
+            The orthogonal matrix in :math:`O(2n)`
         """
         X = self.real(U)
         Y = self.imag(U)
@@ -1210,7 +1226,7 @@ class BackendManager:
             num_modes (int): positive integer
 
         Returns:
-            array: :math:`2N\times 2N` array
+            The :math:`2N\times 2N` array
         """
         I = np.identity(num_modes)
         O = np.zeros((num_modes, num_modes))
@@ -1256,10 +1272,10 @@ class BackendManager:
         Args:
             a_partial: The :math:`2M\times 2M` array
             b_full: The :math:`2N\times 2N` array
-            modes (list): list of ``M`` modes to perform the multiplication on
+            modes: A list of ``M`` modes to perform the multiplication on
 
         Returns:
-            array: :math:`2N\times 2N` array
+            The :math:`2N\times 2N` array
         """
         if a_partial is None:
             return b_full
@@ -1283,10 +1299,10 @@ class BackendManager:
         Args:
             a_full: The :math:`2N\times 2N` array
             b_partial: The :math:`2M\times 2M` array
-            modes (list): list of `M` modes to perform the multiplication on
+            modes: A list of `M` modes to perform the multiplication on
 
         Returns:
-            array: :math:`2N\times 2N` array
+            The :math:`2N\times 2N` array
         """
         return self.transpose(
             self.left_matmul_at_modes(self.transpose(b_partial), self.transpose(a_full), modes)

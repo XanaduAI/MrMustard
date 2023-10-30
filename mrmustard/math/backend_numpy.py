@@ -48,9 +48,6 @@ class BackendNumpy(BackendBase):
     def __init__(self):
         super().__init__(name="numpy")
 
-    def hello(self):
-        print(f"Hello from {self._name} backend.")
-
     def abs(self, array: np.array) -> np.array:
         return np.abs(array)
 
@@ -66,8 +63,6 @@ class BackendNumpy(BackendBase):
         return np.array(tensor)
 
     def assign(self, tensor: np.array, value: np.array) -> np.array:
-        # ??
-        # How do we handle this?
         tensor = value
         return tensor
 
@@ -87,11 +82,8 @@ class BackendNumpy(BackendBase):
     def cast(self, array: np.array, dtype=None) -> np.array:
         if dtype is None:
             return array
-        # ??
-        # arrays can sometimes be float?
-        if not isinstance(array, np.ndarray):
-            return array
-        return array.astype(dtype)  # gotta fix the warning
+
+        return np.array(array, dtype=dtype)  # gotta fix the warning
 
     def custom_gradient(self, func, args, kwargs):
         def trivial_decorator(*args, **kwargs):
@@ -106,6 +98,7 @@ class BackendNumpy(BackendBase):
         return np.clip(array, a_min, a_max)
 
     def concat(self, values: List[np.array], axis: int) -> np.array:
+        # tf.concat can concatenate lists of scalars, while np.concatenate errors
         try:
             return np.concatenate(values, axis)
         except ValueError:
@@ -121,8 +114,6 @@ class BackendNumpy(BackendBase):
         return np.cosh(array)
 
     def atan2(self, y: np.array, x: np.array) -> np.array:
-        # ??
-        # add test
         return np.arctan(y, x)
 
     def make_complex(self, real: np.array, imag: np.array) -> np.array:
@@ -132,10 +123,6 @@ class BackendNumpy(BackendBase):
         return np.linalg.det(matrix)
 
     def diag(self, array: np.array, k: int = 0) -> np.array:
-        # ??
-        # this is hard. is it correct?
-        # thi difficulty is due to the fact that np.diag does a
-        # different thing for shapes > 2 (it just gets the diagonal)
         if len(array.shape) == 1:
             return np.diag(array, k=k)
         elif len(array.shape) == 2:
@@ -209,7 +196,7 @@ class BackendNumpy(BackendBase):
         return np.linalg.inv(tensor)
 
     def is_trainable(self, tensor: np.array) -> bool:
-        return True
+        return False
 
     def lgamma(self, x: np.array) -> np.array:
         return np.array([mlgamma(v) for v in x])
@@ -235,8 +222,6 @@ class BackendNumpy(BackendBase):
 
     @Autocast()
     def matvec(self, a: np.array, b: np.array, transpose_a=False, adjoint_a=False) -> np.array:
-        # ??
-        # difference between matvec and matmul?
         return self.matmul(a, b, transpose_a, adjoint_a)
 
     @Autocast()
@@ -313,13 +298,13 @@ class BackendNumpy(BackendBase):
         return np.sqrt(self.cast(x, dtype))
 
     def sum(self, array: np.array, axes: Sequence[int] = None):
-        import tensorflow as tf
+        if axes is None:
+            return np.sum(array)
 
-        return tf.reduce_sum(array, axes).numpy()
-        return np.sum(array, axes or None)
-        if not axes:
-            return np.array(array)
-        return np.sum(array, axes)
+        ret = array
+        for axis in axes:
+            ret = np.sum(ret, axis=axis)
+        return ret
 
     @Autocast()
     def tensordot(self, a: np.array, b: np.array, axes: List[int]) -> np.array:
@@ -345,7 +330,6 @@ class BackendNumpy(BackendBase):
 
     @Autocast()
     def update_add_tensor(self, tensor: np.array, indices: np.array, values: np.array):
-        # ??
         # https://stackoverflow.com/questions/65734836/numpy-equivalent-to-tf-tensor-scatter-nd-add-method
         indices = np.array(indices)  # figure out why we need this
         indices = tuple(indices.reshape(-1, indices.shape[-1]).T)
@@ -360,7 +344,6 @@ class BackendNumpy(BackendBase):
         return np.zeros(np.array(array).shape, dtype=array.dtype)
 
     def map_fn(self, func, elements):
-        # ??
         # Is this done like this?
         return np.array([func(e) for e in elements])
 
@@ -398,14 +381,29 @@ class BackendNumpy(BackendBase):
         scale_tril = scale_tril @ np.transpose(scale_tril)
         return Generator(loc, scale_tril)
 
+    @staticmethod
+    def eigvals(tensor: np.array) -> np.ndarray:
+        return np.linalg.eigvals(tensor)
+
+    @staticmethod
+    def xlogy(x: np.array, y: np.array) -> np.ndarray:
+        return scipy_xlogy(x, y)
+
+    @staticmethod
+    def eigh(tensor: np.array) -> np.ndarray:
+        return np.linalg.eigh(tensor)
+
+    def sqrtm(self, tensor: np.array, rtol=1e-05, atol=1e-08) -> np.ndarray:
+        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
+            return self.zeros_like(tensor)
+        return scipy.linalg.sqrtm(tensor)
+
     # ~~~~~~~~~~~~~~~~~
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    # TODO: is a wrapper class better?
     @staticmethod
     def DefaultEuclideanOptimizer() -> None:
-        r"""Default optimizer for the Euclidean parameters."""
         return None
 
     def hermite_renormalized(
@@ -558,46 +556,11 @@ class BackendNumpy(BackendBase):
         poly0, _, _, _, _ = hermite_multidimensional_1leftoverMode(A, B, C, cutoffs)
         return poly0
 
-    @staticmethod
-    def eigvals(tensor: np.array) -> np.ndarray:
-        """Returns the eigenvalues of a matrix."""
-        return np.linalg.eigvals(tensor)
-
-    @staticmethod
-    def eigvalsh(tensor: np.array) -> np.ndarray:
-        """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
-        return np.linalg.eigvalsh(tensor)
-
-    @staticmethod
-    def svd(tensor: np.array) -> np.ndarray:
-        """Returns the Singular Value Decomposition of a matrix."""
-        return np.linalg.svd(tensor)
-
-    @staticmethod
-    def xlogy(x: np.array, y: np.array) -> np.ndarray:
-        """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
-        return scipy_xlogy(x, y)
-
-    @staticmethod
-    def eigh(tensor: np.array) -> np.ndarray:
-        """Returns the eigenvalues and eigenvectors of a matrix."""
-        return np.linalg.eigh(tensor)
-
-    def sqrtm(self, tensor: np.array, rtol=1e-05, atol=1e-08) -> np.ndarray:
-        """Returns the matrix square root of a square matrix, such that ``sqrt(A) @ sqrt(A) = A``."""
-
-        # The sqrtm function has issues with matrices that are close to zero, hence we branch
-        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return scipy.linalg.sqrtm(tensor)
-
     def getitem(tensor, *, key):
-        """A differentiable pure equivalent of numpy's ``value = tensor[key]``."""
         value = np.array(tensor)[key]
         return value
 
     def setitem(tensor, value, *, key):
-        """A differentiable pure equivalent of numpy's ``tensor[key] = value``."""
         _tensor = np.array(tensor)
         value = np.array(value)
         _tensor[key] = value
