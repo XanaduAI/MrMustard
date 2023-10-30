@@ -164,15 +164,9 @@ class BackendNumpy(BackendBase):
             return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.array, k: int) -> np.array:
-        # np.diagonal
-        import tensorflow as tf
-
-        return tf.linalg.diag_part(array, k=k).numpy()
-        # ??
-        # seems like it's always only used on 2-D matrices
-        if len(array.shape) != 2:
-            raise ValueError("`diag_part` only supports 2-D arrays.")
-        return np.diag(array, k=k)
+        ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
+        ret.flags.writeable = True
+        return ret
 
     def set_diag(self, array: np.array, diag: np.array, k: int) -> np.array:
         # array[..., np.arange(0, n), np.arange(k, n+k)] = value
