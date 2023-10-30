@@ -198,23 +198,3 @@ def contract_two_Abc(Abc1, Abc2, idx1, idx2):
         join_Abc(Abc1, Abc2), tuple(idx1) + tuple(i + Abc1[0].shape[-1] for i in idx2)
     )
 
-
-##########################################
-###   Representation transformations   ###
-##########################################
-
-
-# def bargmann_to_wavefunction(Abc, quadrature_angles):
-#     pass
-
-
-# def bargmann_to_characteristic(Abc, s):
-#     pass
-
-
-# def bargmann_FT(Abc):
-#     pass
-
-
-# def bargmann_to_phase_space(Abc, s):
-#     return bargmann_FT(bargmann_to_characteristic(Abc, s))
