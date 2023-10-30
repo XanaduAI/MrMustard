@@ -7,9 +7,6 @@ from mrmustard import physics, settings
 from mrmustard.lab import Coherent, Fock, State
 from mrmustard.physics import fock as fp
 from mrmustard.physics import gaussian as gp
-import mrmustard.math as math
-
-hbar0 = settings.HBAR
 
 
 class TestGaussianStates:
@@ -78,7 +75,6 @@ class TestGaussianStates:
     @pytest.mark.parametrize("r2", np.random.rand(3))
     def test_fidelity_squeezed_vacuum(self, r1, r2, hbar):
         """Tests fidelity between two squeezed states"""
-        hbar0 = settings.HBAR
         settings._force_hbar(hbar)
         cov1 = np.diag([np.exp(2 * r1), np.exp(-2 * r1)]) * hbar / 2
         cov2 = np.diag([np.exp(2 * r2), np.exp(-2 * r2)]) * hbar / 2

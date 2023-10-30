@@ -108,6 +108,7 @@ class Settings:
         )
 
     def _force_hbar(self, value):
+        r"can set the value of HBAR at any time. use with caution."
         self._hbar._value = value
 
     @property
