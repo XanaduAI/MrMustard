@@ -39,17 +39,17 @@ def test_vanillaNumba_vs_binomial(precision):
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
+
 def test_binomial_vs_binomialDict():
     """Test that binomial and binomial_dict give the same result."""
 
     A, b, c = Gaussian(2).bargmann(numpy=True)
     max_prob = 0.9
-    local_cutoffs = (10,10)
+    local_cutoffs = (10, 10)
     global_cutoff = 15
 
     G, norm = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
     D = binomial_dict(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
 
     for idx in D.keys():
-        assert np.isclose(D[idx],G[idx])
-
+        assert np.isclose(D[idx], G[idx])
