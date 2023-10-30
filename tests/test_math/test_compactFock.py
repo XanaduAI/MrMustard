@@ -20,7 +20,13 @@ math = Math()  # use methods in math if you want them to be differentiable
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 do_julia = True if importlib.util.find_spec("julia") else False
-precisions = [128, 256, 384, 512] if do_julia else [128,]
+precisions = (
+    [128, 256, 384, 512]
+    if do_julia
+    else [
+        128,
+    ]
+)
 
 
 def allowed_cutoffs(max_cutoffs):

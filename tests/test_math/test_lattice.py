@@ -25,7 +25,13 @@ from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 do_julia = True if importlib.util.find_spec("julia") else False
-precisions = [128, 256, 384, 512] if do_julia else [128,]
+precisions = (
+    [128, 256, 384, 512]
+    if do_julia
+    else [
+        128,
+    ]
+)
 
 
 @pytest.mark.parametrize("precision", precisions)
