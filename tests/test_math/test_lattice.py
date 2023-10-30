@@ -24,7 +24,7 @@ from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 
 
-@pytest.mark.parametrize("precision", settings._allowed_precision_bits_hermite_poly)
+@pytest.mark.parametrize("precision", [128, 256, 384, 512])
 def test_vanillaNumba_vs_binomial(precision):
     """Test that the vanilla method and the binomial method give the same result.
     Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
