@@ -20,6 +20,8 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 from scipy.stats import poisson
 
+from ..conftest import skip_np
+
 from mrmustard import physics, settings
 from mrmustard.lab import (
     TMSV,
@@ -48,24 +50,20 @@ hbar = settings.HBAR
 class TestPNRDetector:
     """tests related to PNR detectors"""
 
-    @pytest.mark.skipif(
-        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
-    )
     @given(
         alpha=st.complex_numbers(min_magnitude=0, max_magnitude=1),
         eta=st.floats(0, 1),
         dc=st.floats(0, 0.2),
     )
-    def test_detector_coherent_state(self, alpha, eta, dc):
+    def test_detector_coherent_state(self, alpha, eta, dc, request):
         """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
+        skip_np()
+
         detector = PNRDetector(efficiency=eta, dark_counts=dc, modes=[0])
         ps = Coherent(x=alpha.real, y=alpha.imag) << detector
         expected = poisson.pmf(k=np.arange(len(ps)), mu=eta * np.abs(alpha) ** 2 + dc)
         assert np.allclose(ps, expected)
 
-    @pytest.mark.skipif(
-        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
-    )
     @given(
         r=st.floats(0, 0.5),
         phi=st.floats(0, 2 * np.pi),
@@ -74,6 +72,8 @@ class TestPNRDetector:
     )
     def test_detector_squeezed_state(self, r, phi, eta, dc):
         """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
+        skip_np()
+
         S = Sgate(r=r, phi=phi)
         ps = Vacuum(1) >> S >> PNRDetector(efficiency=eta, dark_counts=dc)
         assert np.allclose(np.sum(ps), 1.0)
@@ -84,9 +84,6 @@ class TestPNRDetector:
         expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
         assert np.allclose(variance, expected_variance)
 
-    @pytest.mark.skipif(
-        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
-    )
     @given(
         r=st.floats(0, 0.5),
         phi=st.floats(0, 2 * np.pi),
@@ -97,6 +94,8 @@ class TestPNRDetector:
     )
     def test_detector_two_mode_squeezed_state(self, r, phi, eta_s, eta_i, dc_s, dc_i):
         """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
+        skip_np()
+        
         pnr = PNRDetector(efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
         ps = Vacuum(2) >> S2gate(r=r, phi=phi) >> pnr
         n = np.arange(len(ps))
@@ -119,11 +118,10 @@ class TestPNRDetector:
         assert np.allclose(var_i, expected_var_i)
         assert np.allclose(covar, expected_covar)
 
-    @pytest.mark.skipif(
-        settings.BACKEND == "numpy", reason="PNRDetector tests skipped by numpy backend"
-    )
     def test_postselection(self):
         """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
+        skip_np()
+
         n_mean = 1.0
         n_measured = 1
         cutoff = 3
@@ -139,12 +137,11 @@ class TestPNRDetector:
         expected_state[n_measured, n_measured] = 1.0
         assert np.allclose(proj_state, expected_state)
 
-    @pytest.mark.skipif(
-        math.backend.name == "numpy", reason="PNRDetector tests skipped by numpy backend"
-    )
     @given(eta=st.floats(0, 1))
     def test_loss_probs(self, eta):
         "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
+        skip_np()
+
         ideal_detector = PNRDetector(efficiency=1.0, dark_counts=0.0)
         lossy_detector = PNRDetector(efficiency=eta, dark_counts=0.0)
         S = Sgate(r=0.2, phi=[0.0, 0.7])
@@ -170,7 +167,6 @@ class TestHomodyneDetector:
         Also checks postselection ensuring the x-quadrature value is consistent with the
         postselected value.
         """
-
         S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
         S2 = Sgate(modes=[1], r=1, phi=0)
         initial_state = Vacuum(3) >> S1 >> S2

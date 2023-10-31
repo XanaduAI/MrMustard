@@ -13,6 +13,7 @@
 # from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 # from mrmustard.training import Optimizer
 # from tests.random import n_mode_mixed_state
+# from ..conftest import skip_np
 
 # import mrmustard.math as math  # use methods in math if you want them to be differentiable
 
@@ -69,11 +70,12 @@
 #     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
-# @pytest.mark.skipif(math.backend.name == "numpy", reason="training tests skipped by numpy backend")
 # @given(random_ABC(M=3))
 # @pytest.mark.parametrize("precision", precisions)
 # def test_compactFock_1leftover(precision, A_B_G0):
 #     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+#     skip_np()
+
 #     settings.PRECISION_BITS_HERMITE_POLY = precision
 #     for cutoffs in allowed_cutoffs((7, 7, 7)):
 #         A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
@@ -100,10 +102,11 @@
 #     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
-# @pytest.mark.skipif(math.backend.name == "numpy", reason="training tests skipped by numpy backend")
 # @pytest.mark.parametrize("precision", precisions)
 # def test_compactFock_diagonal_gradients(precision):
 #     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
+#     skip_np()
+
 #     settings.PRECISION_BITS_HERMITE_POLY = precision
 #     G = Ggate(num_modes=3, symplectic_trainable=True)
 
@@ -125,10 +128,11 @@
 #     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
 
-# @pytest.mark.skipif(math.backend.name == "numpy", reason="training tests skipped by numpy backend")
 # @pytest.mark.parametrize("precision", precisions)
 # def test_compactFock_1leftover_gradients(precision):
 #     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+#     skip_np()
+
 #     settings.PRECISION_BITS_HERMITE_POLY = precision
 #     G = Ggate(num_modes=3, symplectic_trainable=True)
 

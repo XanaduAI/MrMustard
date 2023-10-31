@@ -13,13 +13,52 @@
 # limitations under the License.
 
 import os
+import pytest
 
-from hypothesis import Verbosity, settings
+from hypothesis import Verbosity, settings as hyp_settings
+from mrmustard import settings
 
 print("pytest.conf -----------------------")
 
-settings.register_profile("ci", max_examples=10, deadline=None)
-settings.register_profile("dev", max_examples=10, deadline=None)
-settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose, deadline=None)
+# ~~~~~~~~~~
+# Hypothesis
+# ~~~~~~~~~~
 
-settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
+hyp_settings.register_profile("ci", max_examples=10, deadline=None)
+hyp_settings.register_profile("dev", max_examples=10, deadline=None)
+hyp_settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose, deadline=None)
+
+hyp_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
+
+# ~~~~~~
+# Pytest
+# ~~~~~~
+
+def pytest_addoption(parser):
+    r"""
+    Adds the option to select the backend using the ``--backend`` flag. For example,
+    ``pytest --backend=tensorflow`` runs all the tests with tensorflow backend. The command
+    ``pytest`` defaults to ``pytest --backend=numpy``.
+    """
+    parser.addoption(
+        '--backend', default='numpy', help='``numpy`` or ``tensorflow``.'
+    )
+
+@pytest.fixture
+def backend(request):
+    r"""
+    Extracts ``backend`` from request.
+    """
+    return request.config.getoption('--backend')
+
+@pytest.fixture(autouse=True)
+def set_backend(backend):
+    r"""
+    Sets ``settings.BACKEND`` for all the tests.
+    """
+    settings.BACKEND = f"{backend}"
+
+def skip_np():
+    if settings.BACKEND == "numpy":
+        pytest.skip("numpy")
+

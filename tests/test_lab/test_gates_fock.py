@@ -52,6 +52,7 @@ from tests.random import (
     single_mode_unitary_gate,
     two_mode_unitary_gate,
 )
+from ..conftest import skip_np
 
 import mrmustard.math as math
 
@@ -162,11 +163,10 @@ def test_parallel_displacement(x1, x2, y1, y2):
     assert np.allclose(U12, np.transpose(np.tensordot(U1, U2, [[], []]), [0, 2, 1, 3]))
 
 
-@pytest.mark.skipif(
-    math.backend.name == "numpy", reason="value_and_gradients not implemented in numpy"
-)
 def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
+    skip_np()
+
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
     phi = math.new_variable(0.1, None, "phi")
