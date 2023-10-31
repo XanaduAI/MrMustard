@@ -111,6 +111,7 @@ class BackendManager:
         self._backend = backend
 
         # bind
+        print("binding")
         self._bind(backend)
 
     @property
@@ -135,8 +136,9 @@ class BackendManager:
         r"""
         Binds the types and decorators of this backend manager to those of the given ``backend``.
         """
+        print(backend)
 
-        def _getattr_err(name):
+        def _getattr_err(backend, name):
             r"""
             Implements ``getattr`` with custom error.
             """
@@ -144,28 +146,18 @@ class BackendManager:
             e = NotImplementedError(msg)
             return getattr(backend, name, e)
 
-        # types
-        setattr(self, "int32", _getattr_err("int32"))
-        setattr(self, "float32", _getattr_err("float32"))
-        setattr(self, "float64", _getattr_err("float64"))
-        setattr(self, "complex64", _getattr_err("complex64"))
-        setattr(self, "complex128", _getattr_err("complex128"))
-
-        # decorators
-        setattr(self, "hermite_renormalized", _getattr_err("hermite_renormalized"))
-        setattr(
-            self, "hermite_renormalized_binomial", _getattr_err("hermite_renormalized_binomial")
-        )
-        setattr(
-            self,
+        for name in [
+            "int32",
+            "float32",
+            "float64",
+            "complex64",
+            "complex128",
+            "hermite_renormalized",
+            "hermite_renormalized_binomial",
             "hermite_renormalized_diagonal_reorderedAB",
-            _getattr_err("hermite_renormalized_diagonal_reorderedAB"),
-        )
-        setattr(
-            self,
             "hermite_renormalized_1leftoverMode_reorderedAB",
-            _getattr_err("hermite_renormalized_1leftoverMode_reorderedAB"),
-        )
+        ]:
+            setattr(self, name, _getattr_err(backend, name))
 
     def __new__(cls):
         # singleton
