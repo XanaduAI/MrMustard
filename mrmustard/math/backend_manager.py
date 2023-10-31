@@ -83,6 +83,9 @@ class BackendManager:
         # the configured Euclidean optimizer.
         self._euclidean_opt: type = None
 
+    def __repr__(self) -> str:
+        return self.backend.__repr__()
+
     def _change_backend(self, name: str):
         r"""
         Changes the backend to a different one.

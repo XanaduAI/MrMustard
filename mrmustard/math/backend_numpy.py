@@ -48,6 +48,9 @@ class BackendNumpy(BackendBase):
     def __init__(self):
         super().__init__(name="numpy")
 
+    def __repr__(self) -> str:
+        return "BackendNumpy()"
+
     def abs(self, array: np.array) -> np.array:
         return np.abs(array)
 

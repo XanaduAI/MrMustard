@@ -45,6 +45,9 @@ class BackendTensorflow(BackendBase):
     def __init__(self):
         super().__init__(name="tensorflow")
 
+    def __repr__(self) -> str:
+        return "BackendTensorflow()"
+
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
 

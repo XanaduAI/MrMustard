@@ -151,16 +151,10 @@ class Variable:
         bounds: Tuple[Optional[float], Optional[float]] = (None, None),
         update_fn: Callable = update_euclidean,
     ):
-        if settings.BACKEND == "numpy":
-            msg = "Variables not supported by ``numpy`` backend, "
-            msg += "casting variable ``name`` as a constant."
-            warnings.warn(msg)
-            self = Constant(value, name)
-        else:
-            self._value = self._get_value(value, bounds, name)
-            self._name = name
-            self._bounds = bounds
-            self._update_fn = update_fn
+        self._value = self._get_value(value, bounds, name)
+        self._name = name
+        self._bounds = bounds
+        self._update_fn = update_fn
 
     def _get_value(self, value, bounds, name):
         r"""
