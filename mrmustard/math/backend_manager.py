@@ -79,6 +79,10 @@ class BackendManager:
     # the configured Euclidean optimizer.
     _euclidean_opt: type = None
 
+    # whether this class is immutable or not
+    # remain ``False`` until the ``backend`` setter is called for the first time
+    _immutable = False
+
     def __init__(cls):
         # binding types and decorators of numpy backend
         cls._bind()
@@ -95,6 +99,10 @@ class BackendManager:
         """
         if name not in ["numpy", "tensorflow"]:
             msg = "Backend must be either ``numpy`` or ``tensorflow``"
+            raise ValueError(msg)
+
+        if cls._immutable:
+            msg = "Cannot change the backend in this session."
             raise ValueError(msg)
 
         if cls._backend and cls._backend.name == name:
@@ -122,8 +130,7 @@ class BackendManager:
         r"""
         The backend that is being used.
         """
-        if cls._backend is None:
-            cls.change_backend("numpy")
+        cls._immutable = True
         return cls._backend
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
