@@ -73,18 +73,18 @@ class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
-    # the backend in use
-    _backend = None
+    # the backend in use, which is numpy by default
+    _backend = BackendNumpy()
 
     # the configured Euclidean optimizer.
     _euclidean_opt: type = None
 
-    # def __init__(cls):
-    #     # initialize in numpy backend
-    #     cls.change_backend("numpy")
+    def __init__(cls):
+        # binding types and decorators of numpy backend
+        cls._bind()
 
     def __repr__(self) -> str:
-        return self.backend.__repr__()
+        return f"Backend({self._backend.name})"
 
     def change_backend(cls, name: str):
         r"""
@@ -140,15 +140,6 @@ class BackendManager:
         r"""
         Binds the types and decorators of this backend manager to those of the given ``self._backend``.
         """
-
-        def _getattr_err(backend, name):
-            r"""
-            Implements ``getattr`` with custom error.
-            """
-            msg = f"Backend ``{backend.name}`` does not support ``{name}``"
-            e = NotImplementedError(msg)
-            return getattr(backend, name, e)
-
         for name in [
             "int32",
             "float32",
@@ -160,7 +151,7 @@ class BackendManager:
             "hermite_renormalized_diagonal_reorderedAB",
             "hermite_renormalized_1leftoverMode_reorderedAB",
         ]:
-            setattr(cls, name, _getattr_err(cls._backend, name))
+            setattr(cls, name, getattr(cls._backend, name))
 
     def __new__(cls):
         # singleton

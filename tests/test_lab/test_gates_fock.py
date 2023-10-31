@@ -16,8 +16,8 @@ import numpy as np
 import pytest
 from hypothesis import given
 from thewalrus.fock_gradients import (
-    beamsplitter,
-    displacement,
+    beamsplitter as tw_beamsplitter,
+    displacement as tw_displacement,
     mzgate,
     squeezing,
     two_mode_squeezing,
@@ -167,6 +167,8 @@ def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
     skip_np()
 
+    from mrmustard.physics.fock_custom_grads import squeezer
+
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
     phi = math.new_variable(0.1, None, "phi")
@@ -174,7 +176,7 @@ def test_squeezer_grad_against_finite_differences():
     dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (2 * delta)
     dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (2 * delta)
     _, (gradr, gradphi) = math.value_and_gradients(
-        lambda: fock.squeezer(r, phi, shape=cutoffs), [r, phi]
+        lambda: squeezer(r, phi, shape=cutoffs), [r, phi]
     )
     assert np.allclose(gradr, 2 * np.real(np.sum(dUdr)))
     assert np.allclose(gradphi, 2 * np.real(np.sum(dUdphi)))
@@ -182,19 +184,21 @@ def test_squeezer_grad_against_finite_differences():
 
 def test_displacement_grad():
     """tests fock displacement gradient against finite differences"""
+    from mrmustard.physics.fock_custom_grads import displacement as mm_displacement
+
     cutoffs = [5, 5]
     x = math.new_variable(0.1, None, "x")
     y = math.new_variable(0.1, None, "y")
     alpha = math.asnumpy(math.make_complex(x, y))
     delta = 1e-6
-    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
+    dUdx = (mm_displacement(x + delta, y, cutoffs) - mm_displacement(x - delta, y, cutoffs)) / (
         2 * delta
     )
-    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (
+    dUdy = (mm_displacement(x, y + delta, cutoffs) - mm_displacement(x, y - delta, cutoffs)) / (
         2 * delta
     )
 
-    D = fock.displacement(x, y, shape=cutoffs)
+    D = mm_displacement(x, y, shape=cutoffs)
     dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(D), alpha)
     assert np.allclose(dD_da + dD_dac, dUdx)
     assert np.allclose(1j * (dD_da - dD_dac), dUdy)
@@ -209,7 +213,7 @@ def test_fock_representation_displacement_rectangular():
     Ud = dgate.U(cutoffs)
 
     # compare with tw implementation
-    expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:5, :10]
+    expected_Ud = tw_displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:5, :10]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -223,7 +227,7 @@ def test_fock_representation_displacement_rectangular2():
     Ud = dgate.U(cutoffs)
 
     # compare with tw implementation
-    expected_Ud = displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:10, :5]
+    expected_Ud = tw_displacement(np.sqrt(x * x + y * y), np.arctan2(y, x), 10)[:10, :5]
 
     assert np.allclose(Ud, expected_Ud, atol=1e-5)
 
@@ -247,7 +251,7 @@ def test_parallel_squeezing(r1, phi1, r2, phi2):
 @given(theta=angle, phi=angle)
 def test_fock_representation_beamsplitter(theta, phi):
     BS = BSgate(theta=theta, phi=phi)
-    expected = beamsplitter(theta=theta, phi=phi, cutoff=10)
+    expected = tw_beamsplitter(theta=theta, phi=phi, cutoff=10)
     assert np.allclose(expected, BS.U(cutoffs=[10, 10, 10, 10]), atol=1e-5)
 
 

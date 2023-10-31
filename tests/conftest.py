@@ -62,3 +62,6 @@ def skip_np():
     if math.backend.name == "numpy":
         pytest.skip("numpy")
 
+def pytest_configure(config):
+    pass # your code goes here
+
