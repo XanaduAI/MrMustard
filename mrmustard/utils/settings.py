@@ -105,12 +105,6 @@ class Settings:
         self._julia_initialized = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
-        self._allowed_precision_bits_hermite_poly = [
-            128,
-            256,
-            384,
-            512,
-        ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     def _force_hbar(self, value):
         r"can set the value of HBAR at any time. use with caution."
@@ -295,7 +289,7 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = self._allowed_precision_bits_hermite_poly
+        allowed_values = [128, 256, 384, 512]
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"

@@ -25,7 +25,7 @@ This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/
 "diagonal strategy" and "single leftover mode strategy" [(#288)](https://github.com/XanaduAI/MrMustard/pull/288/).
 This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors). 
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
-The precision is controlled by setting settings.PRECISION_BITS_HERMITE_POLY. The default value is 128, 
+The precision is controlled by `setting settings.PRECISION_BITS_HERMITE_POLY`. The default value is ``128``, 
 which uses the old Numba code. When setting to a higher value, the new Julia code is run.
 
 * Replaced parameters in `training` with `Constant` and `Variable` classes.
@@ -42,6 +42,9 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
 
 ### Documentation
+
+### Tests
+* Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
 
 ### Contributors
 [Robbe De Prins](https://github.com/rdprins),
