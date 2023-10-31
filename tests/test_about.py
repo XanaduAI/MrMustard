@@ -22,15 +22,15 @@ import re
 from mrmustard import about, settings, version
 
 
-def test_change_backend():
-    r"""
-    Changes the backend to tensorflow.
-    This is the first test that is run, and since ``Settings`` is a singleton,
-    the backend then remains the tensorflow backend for all future tests.
-    """
-    print(settings.BACKEND)
-    assert settings.BACKEND in ["tensorflow", "numpy"]
-    # assert settings.BACKEND == "numpy"
+# def test_change_backend():
+#     r"""
+#     Changes the backend to tensorflow.
+#     This is the first test that is run, and since ``Settings`` is a singleton,
+#     the backend then remains the tensorflow backend for all future tests.
+#     """
+#     print(settings.BACKEND)
+#     assert settings.BACKEND in ["tensorflow", "numpy"]
+#     # assert settings.BACKEND == "numpy"
 
 
 def test_about():

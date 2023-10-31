@@ -16,7 +16,7 @@ import os
 import pytest
 
 from hypothesis import Verbosity, settings as hyp_settings
-from mrmustard import settings
+import mrmustard.math as math
 
 print("pytest.conf -----------------------")
 
@@ -54,11 +54,11 @@ def backend(request):
 @pytest.fixture(autouse=True)
 def set_backend(backend):
     r"""
-    Sets ``settings.BACKEND`` for all the tests.
+    Sets backend for all the tests.
     """
-    settings.BACKEND = f"{backend}"
+    math.change_backend(f"{backend}")
 
 def skip_np():
-    if settings.BACKEND == "numpy":
+    if math.backend.name == "numpy":
         pytest.skip("numpy")
 

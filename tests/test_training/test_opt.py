@@ -46,7 +46,7 @@ from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 import mrmustard.math as math
 
-if settings.BACKEND == "numpy":
+if math.backend.name == "numpy":
     pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 

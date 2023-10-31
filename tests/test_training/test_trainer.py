@@ -35,8 +35,9 @@ from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
+import mrmustard.math as math
 
-if settings.BACKEND == "numpy":
+if math.backend.name == "numpy":
     pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 

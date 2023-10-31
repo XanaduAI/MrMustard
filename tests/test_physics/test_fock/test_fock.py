@@ -37,6 +37,7 @@ from mrmustard.lab import (
 )
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock
+import mrmustard.math as math
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)
@@ -187,7 +188,7 @@ def test_dm_to_ket_error():
     """Test fock.dm_to_ket raises an error when state is mixed"""
     state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
 
-    e = ValueError if settings.BACKEND == "tensorflow" else TypeError
+    e = ValueError if math.backend.name == "tensorflow" else TypeError
     with pytest.raises(e):
         fock.dm_to_ket(state)
 

@@ -28,7 +28,7 @@ from mrmustard.lab.states import Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 import mrmustard.math as math
 
-if settings.BACKEND == "numpy":
+if math.backend.name == "numpy":
     pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 

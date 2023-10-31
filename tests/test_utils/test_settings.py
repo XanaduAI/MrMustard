@@ -47,7 +47,6 @@ class TestSettings:
         """Test the default values of the settings"""
         settings = Settings()
 
-        assert settings.BACKEND == "numpy"
         assert settings.HBAR == 2.0
         assert settings.DEBUG is False
         assert settings.AUTOCUTOFF_PROBABILITY == 0.999  # capture at least 99.9% of the probability

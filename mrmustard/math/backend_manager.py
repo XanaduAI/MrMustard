@@ -73,27 +73,31 @@ class BackendManager:
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
+    # the backend in use
+    _backend = None
 
-    def __init__(self):
-        # the backend in use
-        backend = BackendNumpy()
-        self._backend = backend
-        self._bind(backend)
+    # the configured Euclidean optimizer.
+    _euclidean_opt: type = None
 
-        # the configured Euclidean optimizer.
-        self._euclidean_opt: type = None
+    # def __init__(cls):
+    #     # initialize in numpy backend
+    #     cls.change_backend("numpy")
 
     def __repr__(self) -> str:
         return self.backend.__repr__()
 
-    def _change_backend(self, name: str):
+    def change_backend(cls, name: str):
         r"""
         Changes the backend to a different one.
 
         Args:
             name: The name of the new backend.
         """
-        if self._backend and self._backend.name == name:
+        if name not in ["numpy", "tensorflow"]:
+            msg = "Backend must be either ``numpy`` or ``tensorflow``"
+            raise ValueError(msg)
+
+        if cls._backend and cls._backend.name == name:
             # same backend as in the last call
             return None
 
@@ -108,19 +112,19 @@ class BackendManager:
             backend = getattr(module, object)()
 
         # switch backend
-        self._backend = backend
+        cls._backend = backend
 
         # bind
-        print("binding")
-        self._bind(backend)
+        cls._bind()
 
     @property
-    def backend(self):
+    def backend(cls):
         r"""
         The backend that is being used.
         """
-        self._change_backend(settings.BACKEND)
-        return self._backend
+        if cls._backend is None:
+            cls.change_backend("numpy")
+        return cls._backend
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
         r"""
@@ -132,11 +136,10 @@ class BackendManager:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.backend.name}``."
             raise NotImplementedError(msg)
 
-    def _bind(self, backend):
+    def _bind(cls):
         r"""
-        Binds the types and decorators of this backend manager to those of the given ``backend``.
+        Binds the types and decorators of this backend manager to those of the given ``self._backend``.
         """
-        print(backend)
 
         def _getattr_err(backend, name):
             r"""
@@ -157,7 +160,7 @@ class BackendManager:
             "hermite_renormalized_diagonal_reorderedAB",
             "hermite_renormalized_1leftoverMode_reorderedAB",
         ]:
-            setattr(self, name, _getattr_err(backend, name))
+            setattr(cls, name, _getattr_err(cls._backend, name))
 
     def __new__(cls):
         # singleton
@@ -1127,11 +1130,11 @@ class BackendManager:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @property
-    def euclidean_opt(self):
+    def euclidean_opt(cls):
         r"""The configured Euclidean optimizer."""
-        if not self._euclidean_opt:
-            self._euclidean_opt = self.DefaultEuclideanOptimizer()
-        return self._euclidean_opt
+        if not cls._euclidean_opt:
+            cls._euclidean_opt = cls.DefaultEuclideanOptimizer()
+        return cls._euclidean_opt
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
