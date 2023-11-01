@@ -1,6 +1,11 @@
 # Release 0.7.0 (development release)
 
 ### New features
+* Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
+  all the functions in the `utils`, `math`, `physics`, and `lab` with both backends, while `training`
+  requires using `tensorflow`. The `numpy` backend provides significant improvements both in import
+  time and runtime. [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
 * Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
@@ -16,6 +21,15 @@
 
 * Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
   [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
+
+* Removed the `Math` class. To use the mathematical backend, replace
+  `from mrmustard.math import Math ; math = Math()` with `import mrmustard.math as math`
+  in your scripts.
+  [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
+* The `numpy` backend is now default. To switch to the `tensorflow`
+  backend, add the line `math.change_backend("tensorflow")` to your scripts.
+  [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
 
 ### Improvements
 
