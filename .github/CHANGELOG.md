@@ -1,3 +1,25 @@
+# Release 0.6.1 (current release)
+
+### New features
+
+
+### Breaking changes
+
+
+### Improvements
+
+* relaxes versions in pyproject.toml
+  [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
+
+### Bug fixes
+
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
+---
 # Release 0.6.0 (current release)
 
 ### New features
