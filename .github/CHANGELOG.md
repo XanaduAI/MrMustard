@@ -8,8 +8,8 @@
 
 ### Improvements
 
-* relaxes versions in pyproject.toml
-  [(#280)](https://github.com/XanaduAI/MrMustard/pull/280)
+* Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
+  [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
 
 ### Bug fixes
 
