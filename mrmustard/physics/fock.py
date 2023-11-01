@@ -959,3 +959,119 @@ def squeezed(r, phi, shape):
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
     return math.astensor(sq_ket, dtype=sq_ket.dtype.name), vjp
+
+    # def primal(self, other: Union[State, Transformation]) -> State:
+    #     r"""Returns the post-measurement state after ``other`` is projected onto ``self``.
+
+    #     ``other << self`` is other projected onto ``self``.
+
+    #     If ``other`` is a ``Transformation``, it returns the dual of the transformation applied to
+    #     ``self``: ``other << self`` is like ``self >> other^dual``.
+
+    #     Note that the returned state is not normalized. To normalize a state you can use
+    #     ``mrmustard.physics.normalize``.
+    #     """
+    #     # TODO: touch this primal when refactor measurement
+
+    #     if isinstance(other, State):
+    #         return self._project_onto_state(other)
+    #     try:
+    #         return other.dual(self)
+    #     except AttributeError as e:
+    #         raise TypeError(
+    #             f"Cannot apply {other.__class__.__qualname__} to {self.__class__.__qualname__}"
+    #         ) from e
+
+    # def _project_onto_state(self, other: State) -> Union[State, float]:  # TODO: move to measurement
+    #     r"""If states are gaussian use generaldyne measurement, else use
+    #     the states' Fock representation."""
+
+    #     # if both states are gaussian
+    #     if self.is_wigner and other.is_wigner:
+    #         return self._project_onto_gaussian(other)
+
+    #     # either self or other is not gaussian
+    #     return self._project_onto_fock(other)
+
+    # def _project_onto_fock(self, other: State) -> Union[State, float]:  # TODO: move to physics
+    #     r"""Returns the post-measurement state of the projection between two non-Gaussian
+    #     states on the remaining modes or the probability of the result. When doing homodyne sampling,
+    #     returns the post-measurement state or the measument outcome if no modes remain.
+
+    #     Args:
+    #         other (State): state being projected onto self
+
+    #     Returns:
+    #         State or float: returns the conditional state on the remaining modes
+    #             or the probability.
+    #     """
+    #     remaining_modes = list(set(other.modes) - set(self.modes))
+
+    #     out_fock = self._contract_with_other(other)
+    #     if len(remaining_modes) > 0:
+    #         return (
+    #             DM(fock_array=out_fock, modes=remaining_modes)
+    #             if other.is_mixed or self.is_mixed
+    #             else Ket(fock_array=out_fock, modes=remaining_modes)
+    #         )
+
+    #     # return the probability (norm) of the state when there are no modes left
+    #     return (
+    #         fock.math.abs(out_fock) ** 2
+    #         if other.is_pure and self.is_pure
+    #         else fock.math.abs(out_fock)  # TODO check this
+    #     )
+
+    # def _contract_with_other(self, other):
+    #     other_cutoffs = [
+    #         None if m not in self.modes else other.cutoffs[other.indices(m)] for m in other.modes
+    #     ]
+    #     if hasattr(self, "_preferred_projection"):
+    #         out_fock = self._preferred_projection(other, other.indices(self.modes))
+    #     else:
+    #         # matching other's cutoffs
+    #         self_cutoffs = [other.cutoffs[other.indices(m)] for m in self.modes]
+    #         out_fock = fock.contract_states(
+    #             stateA=other.ket(other_cutoffs) if other.is_pure else other.dm(other_cutoffs),
+    #             stateB=self.ket(self_cutoffs) if self.is_pure else self.dm(self_cutoffs),
+    #             a_is_dm=other.is_mixed,
+    #             b_is_dm=self.is_mixed,
+    #             modes=other.indices(self.modes),
+    #             normalize=self._normalize if hasattr(self, "_normalize") else False,
+    #         )
+
+    #     return out_fock
+
+    # NOTE: this was just a set-up and call of general_dyne
+    # def _project_onto_gaussian(self, other: State) -> Union[State, float]:
+    #     r"""Returns the result of a generaldyne measurement given that states ``self`` and
+    #     ``other`` are gaussian.
+
+    #     Args:
+    #         other (State): gaussian state being projected onto self
+
+    #     Returns:
+    #         State or float: returns the output conditional state on the remaining modes
+    #             or the probability.
+    #     """
+    #     # here `self` is the measurement device state and `other` is the incoming state
+    #     # being projected onto the measurement state
+    #     remaining_modes = list(set(other.modes) - set(self.modes))
+
+    #     _, probability, new_cov, new_means = gaussian.general_dyne(
+    #         other.cov,
+    #         other.means,
+    #         self.cov,
+    #         self.means,
+    #         self.modes,
+    #     )
+
+    #     if len(remaining_modes) > 0:
+    #         return State(
+    #             means=new_means,
+    #             cov=new_cov,
+    #             modes=remaining_modes,
+    #             _norm=probability if not getattr(self, "_normalize", False) else 1.0,
+    #         )
+
+    #     return probability

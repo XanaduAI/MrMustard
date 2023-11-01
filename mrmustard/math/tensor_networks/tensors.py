@@ -111,6 +111,8 @@ class WireGroup:
     ket: dict = field(default_factory=dict)
     bra: dict = field(default_factory=dict)
 
+    # dunder method for the set() constructor:
+
 
 class Tensor(ABC):
     r"""An abstract class representing a tensor in a tensor network.
@@ -148,7 +150,7 @@ class Tensor(ABC):
         self._name = name
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
-    def _update_modes(
+    def _update_modes(  # TODO fshould it be called reset_wires? or reset_modes?
         self,
         modes_in_ket: Optional[list[int]] = None,
         modes_out_ket: Optional[list[int]] = None,
@@ -225,6 +227,36 @@ class Tensor(ABC):
             return list(self.modes_out)
         elif len(self.modes_out) == 0:  # measurement
             return list(self.modes_in)
+        else:
+            raise ValueError("modes are ambiguous for this Tensor.")
+
+    @modes.setter
+    def modes(self, value: list[int]):
+        r"""
+        For backward compatibility. Don't overuse.
+        It sets the modes for this Tensor, unless it's ambiguous.
+        """
+        if self.modes_in == self.modes_out:  # transformation on same modes
+            self._update_modes(
+                modes_in_ket=value,
+                modes_out_ket=value,
+                modes_in_bra=value if self._modes_in_bra == self._modes_in_ket else None,
+                modes_out_bra=value if self._modes_out_bra == self._modes_out_ket else None,
+            )
+        elif len(self.modes_in) == 0:  # state
+            self._update_modes(
+                modes_in_ket=[],
+                modes_out_ket=value,
+                modes_in_bra=[],
+                modes_out_bra=value if self._modes_in_bra == self._modes_in_ket else None,
+            )
+        elif len(self.modes_out) == 0:  # measurement
+            self._update_modes(
+                modes_in_ket=value,
+                modes_out_ket=[],
+                modes_in_bra=value if self._modes_out_bra == self._modes_out_ket else None,
+                modes_out_bra=[],
+            )
         else:
             raise ValueError("modes are ambiguous for this Tensor.")
 
