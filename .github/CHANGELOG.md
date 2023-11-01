@@ -1,4 +1,26 @@
-# Release 0.6.0 (current release)
+# Release 0.6.1-post1 (current release)
+
+### New features
+
+
+### Breaking changes
+
+
+### Improvements
+
+* Relaxes dependency versions in pyproject.toml. More specifically, this is to unpin scipy.
+  [(#300)](https://github.com/XanaduAI/MrMustard/pull/300)
+
+### Bug fixes
+
+
+### Documentation
+
+### Contributors
+[Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
+
+---
+# Release 0.6.0
 
 ### New features
 
