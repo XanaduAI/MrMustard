@@ -101,13 +101,13 @@ class BackendManager:
             msg = "Backend must be either ``numpy`` or ``tensorflow``"
             raise ValueError(msg)
 
+        if cls._backend.name == name:
+            # same backend as in the last call
+            return None
+
         if cls._immutable:
             msg = "Cannot change the backend in this session."
             raise ValueError(msg)
-
-        if cls._backend and cls._backend.name == name:
-            # same backend as in the last call
-            return None
 
         module = all_modules[name]["module"]
         object = all_modules[name]["object"]
