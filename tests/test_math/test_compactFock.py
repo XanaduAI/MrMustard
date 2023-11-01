@@ -1,6 +1,7 @@
 """
 Unit tests for mrmustard.math.compactFock.compactFock~
 """
+import importlib
 import pytest
 import numpy as np
 import pytest
@@ -19,6 +20,15 @@ import mrmustard.math as math  # use methods in math if you want them to be diff
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 precisions = [128, 256, 384, 512]
+
+do_julia = True if importlib.util.find_spec("julia") else False
+precisions = (
+    [128, 256, 384, 512]
+    if do_julia
+    else [
+        128,
+    ]
+)
 
 
 def allowed_cutoffs(max_cutoffs):
