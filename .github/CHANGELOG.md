@@ -1,4 +1,4 @@
-# Release 0.6.1 (current release)
+# Release 0.6.1-post1 (current release)
 
 ### New features
 
