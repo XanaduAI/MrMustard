@@ -70,7 +70,8 @@ class BackendNumpy(BackendBase):
         return tensor
 
     def astensor(self, array: Union[np.ndarray, np.array], dtype=None) -> np.array:
-        return np.array(array)
+        dtype = dtype or np.float64
+        return self.cast(np.array(array), dtype=dtype)
 
     def atleast_1d(self, array: np.array, dtype=None) -> np.array:
         return self.cast(np.atleast_1d(array), dtype=dtype)

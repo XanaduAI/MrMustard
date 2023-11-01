@@ -138,10 +138,11 @@ class BackendManager:
         Applies a function ``fn`` from the backend in use to the given ``args``.
         """
         try:
-            return getattr(self.backend, fn)(*args)
+            attr = getattr(self.backend, fn)
         except AttributeError:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.backend.name}``."
             raise NotImplementedError(msg)
+        return attr(*args)
 
     def _bind(cls):
         r"""
@@ -374,10 +375,10 @@ class BackendManager:
         return self._apply("convolution", (array, filters, padding, data_format))
 
     def cos(self, array: Tensor) -> Tensor:
-        r"""The cosine of array.
+        r"""The cosine of an array.
 
         Args:
-            array: The array to take the cosine of,
+            array: The array to take the cosine of.
 
         Returns:
             The cosine of ``array``.

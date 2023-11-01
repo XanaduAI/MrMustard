@@ -70,6 +70,7 @@ class BackendTensorflow(BackendBase):
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        return self.cast(tf.experimental.numpy.atleast_1d(array))
         return self.cast(tf.reshape(array, [-1]), dtype)
 
     def block(self, blocks: List[List[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
