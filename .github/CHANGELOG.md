@@ -20,7 +20,7 @@
 [Filippo Miatto](https://github.com/ziofil), [Samuele Ferracin](https://github.com/SamFerracin), [Yuan Yao](https://github.com/sylviemonet), [Zeyue Niu](https://github.com/zeyueN)
 
 ---
-# Release 0.6.0 (current release)
+# Release 0.6.0
 
 ### New features
 
