@@ -105,9 +105,9 @@ class BackendManager:
             # same backend as in the last call
             return None
 
-        if cls._immutable:
-            msg = "Cannot change the backend in this session."
-            raise ValueError(msg)
+        # if cls._immutable:
+        #     msg = "Cannot change the backend in this session."
+        #     raise ValueError(msg)
 
         module = all_modules[name]["module"]
         object = all_modules[name]["object"]
@@ -278,7 +278,7 @@ class BackendManager:
 
         Args:
             blocks: A list of lists of compatible blocks.
-            axes: Theaxes to stack the blocks along.
+            axes: The axes to stack the blocks along.
 
         Returns:
             The matrix made of blocks.
@@ -396,31 +396,6 @@ class BackendManager:
         """
         return self._apply("cosh", (array,))
 
-    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
-        """Given two real tensors representing the real and imaginary part of a complex number,
-        this operation returns a complex tensor. The input tensors must have the same shape.
-
-        Args:
-            real: The real part of the complex number.
-            imag: The imaginary part of the complex number.
-
-        Returns:
-            The complex array ``real + 1j * imag``.
-        """
-        return self._apply("make_complex", (real, imag))
-
-    def atan2(self, y: Tensor, x: Tensor) -> Tensor:
-        r"""Computes the trignometric inverse tangent of y/x element-wise.
-
-        Args:
-            y: The numerator array.
-            x: The denominator array.
-
-        Returns:
-            The arctan of y/x.
-        """
-        return self._apply("atan2", (y, x))
-
     def det(self, matrix: Tensor) -> Tensor:
         r"""The determinant of matrix.
 
@@ -475,7 +450,7 @@ class BackendManager:
             tensor: The tensor to calculate the eigenvalues and eigenvectors of.
 
         Returns:
-            The eigenvalues and deigenvectors of ``tensor``.
+            The eigenvalues and eigenvectors of ``tensor``.
         """
         return self._apply("eigh", (tensor,))
 
@@ -674,6 +649,19 @@ class BackendManager:
             The matrix product of ``a`` and ``b``
         """
         return self._apply("matmul", (a, b, transpose_a, transpose_b, adjoint_a, adjoint_b))
+
+    def make_complex(self, real: Tensor, imag: Tensor) -> Tensor:
+        """Given two real tensors representing the real and imaginary part of a complex number,
+        this operation returns a complex tensor. The input tensors must have the same shape.
+
+        Args:
+            real: The real part of the complex number.
+            imag: The imaginary part of the complex number.
+
+        Returns:
+            The complex array ``real + 1j * imag``.
+        """
+        return self._apply("make_complex", (real, imag))
 
     def matvec(self, a: Matrix, b: Vector, transpose_a=False, adjoint_a=False) -> Tensor:
         r"""The matrix vector product of ``a`` (matrix) and ``b`` (vector).

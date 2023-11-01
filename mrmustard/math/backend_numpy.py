@@ -74,7 +74,7 @@ class BackendNumpy(BackendBase):
         return self.cast(np.array(array), dtype=dtype)
 
     def atleast_1d(self, array: np.array, dtype=None) -> np.array:
-        return self.cast(np.atleast_1d(array), dtype=dtype)
+        return self.cast(np.reshape(array, [-1]), dtype)
 
     def block(self, blocks: List[List[np.array]], axes=(-2, -1)) -> np.array:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
@@ -116,12 +116,6 @@ class BackendNumpy(BackendBase):
 
     def cosh(self, array: np.array) -> np.array:
         return np.cosh(array)
-
-    def atan2(self, y: np.array, x: np.array) -> np.array:
-        return np.arctan(y, x)
-
-    def make_complex(self, real: np.array, imag: np.array) -> np.array:
-        return real + 1j * imag
 
     def det(self, matrix: np.array) -> np.array:
         return np.linalg.det(matrix)
@@ -223,6 +217,9 @@ class BackendNumpy(BackendBase):
         a = np.conj(a) if adjoint_a else a
         b = np.conj(b) if adjoint_b else b
         return np.matmul(a, b)
+
+    def make_complex(self, real: np.array, imag: np.array) -> np.array:
+        return real + 1j * imag
 
     @Autocast()
     def matvec(self, a: np.array, b: np.array, transpose_a=False, adjoint_a=False) -> np.array:

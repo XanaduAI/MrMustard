@@ -37,7 +37,7 @@ from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 import mrmustard.math as math
 
-if math.backend.name == "numpy":
+if math._backend.name == "numpy":
     pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
 
 
