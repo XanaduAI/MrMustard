@@ -79,10 +79,6 @@ class BackendManager:
     # the configured Euclidean optimizer.
     _euclidean_opt: type = None
 
-    # whether this class is immutable or not
-    # remain ``False`` until the ``backend`` setter is called for the first time
-    _immutable = False
-
     def __init__(cls):
         # binding types and decorators of numpy backend
         cls._bind()
@@ -105,10 +101,6 @@ class BackendManager:
             # same backend as in the last call
             return None
 
-        # if cls._immutable:
-        #     msg = "Cannot change the backend in this session."
-        #     raise ValueError(msg)
-
         module = all_modules[name]["module"]
         object = all_modules[name]["object"]
         try:
@@ -130,7 +122,6 @@ class BackendManager:
         r"""
         The backend that is being used.
         """
-        cls._immutable = True
         return cls._backend
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
