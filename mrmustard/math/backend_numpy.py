@@ -14,16 +14,17 @@
 
 """This module contains the numpy backend."""
 
-import numpy as np
+# pylint: disable = missing-function-docstring
+
 
 from copy import deepcopy
 from math import lgamma as mlgamma
 from typing import List, Optional, Sequence, Tuple, Union
-from numpy.random import default_rng
-import scipy
-from scipy.linalg import expm as scipy_expm
+from scipy.linalg import expm as scipy_expm, sqrtm as scipy_sqrtm
 from scipy.special import xlogy as scipy_xlogy
 from scipy.stats import multivariate_normal
+
+import numpy as np
 
 from .autocast import Autocast
 from .backend_base import BackendBase
@@ -373,7 +374,7 @@ class BackendNumpy(BackendBase):  # pylint: disable=too-many-public-methods
                 self._cov = cov
 
             def sample(self, dtype=None):  # pylint: disable=unused-argument
-                fn = default_rng().multivariate_normal
+                fn = np.random.default_rng().multivariate_normal
                 ret = fn(self._mean, self._cov)
                 return ret
 
@@ -398,7 +399,7 @@ class BackendNumpy(BackendBase):  # pylint: disable=too-many-public-methods
     def sqrtm(self, tensor: np.array, rtol=1e-05, atol=1e-08) -> np.ndarray:
         if np.allclose(tensor, 0, rtol=rtol, atol=atol):
             return self.zeros_like(tensor)
-        return scipy.linalg.sqrtm(tensor)
+        return scipy_sqrtm(tensor)
 
     # ~~~~~~~~~~~~~~~~~
     # Special functions

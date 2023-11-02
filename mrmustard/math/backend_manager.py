@@ -132,7 +132,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods
     def __repr__(self) -> str:
         return f"Backend({self.which})"
 
-    # pylint: no-self-argument
     @property
     def backend(cls) -> BackendBase:
         r"""
@@ -148,7 +147,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods
         """
         return self._backend.name
 
-    # pylint: no-self-argument
     def change_backend(cls, name: str) -> None:
         r"""
         Changes the backend to a different one.
@@ -1128,7 +1126,6 @@ class BackendManager:  # pylint: disable=too-many-public-methods
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    # pylint: no-self-argument
     @property
     def euclidean_opt(cls):
         r"""The configured Euclidean optimizer."""

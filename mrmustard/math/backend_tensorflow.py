@@ -14,6 +14,8 @@
 
 """This module contains the tensorflow backend."""
 
+# pylint: disable = missing-function-docstring
+
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
