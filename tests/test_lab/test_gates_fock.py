@@ -317,6 +317,8 @@ def test_choi_cutoffs():
         (Dgate, {"x": 0.1}),
     ],
 )
+@pytest.mark.parametrize("cutoff", [2, 5])
+@pytest.mark.parametrize("modes", [[0], [1, 2]])
 def test_choi_for_unitary(gate, kwargs, cutoff, modes):
     """tests the `choi` method for unitary transformations"""
     gate = gate(**kwargs)
