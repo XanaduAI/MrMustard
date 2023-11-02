@@ -112,8 +112,6 @@ class Dgate(Unitary):
            Raises:
                ValueError: if the length of the cutoffs array is different from N and 2N
         """
-        from mrmustard.physics.fock_custom_grads import displacement
-
         N = self.num_modes
         if cutoffs is None:
             pass
@@ -137,9 +135,9 @@ class Dgate(Unitary):
             Ud = None
             for idx, out_in in enumerate(zip(shape[:N], shape[N:])):
                 if Ud is None:
-                    Ud = displacement(x[idx], y[idx], shape=out_in)
+                    Ud = fock.displacement(x[idx], y[idx], shape=out_in)
                 else:
-                    U_next = displacement(x[idx], y[idx], shape=out_in)
+                    U_next = fock.displacement(x[idx], y[idx], shape=out_in)
                     Ud = math.outer(Ud, U_next)
 
             return math.transpose(
@@ -147,7 +145,7 @@ class Dgate(Unitary):
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return displacement(x[0], y[0], shape=shape)
+            return fock.displacement(x[0], y[0], shape=shape)
 
 
 class Sgate(Unitary):
@@ -206,8 +204,6 @@ class Sgate(Unitary):
         Returns:
             array[complex]: the unitary matrix
         """
-        from mrmustard.physics.fock_custom_grads import squeezer
-
         N = self.num_modes
         if cutoffs is None:
             pass
@@ -232,16 +228,16 @@ class Sgate(Unitary):
             Us = None
             for idx, single_shape in enumerate(zip(shape[:N], shape[N:])):
                 if Us is None:
-                    Us = squeezer(r[idx], phi[idx], shape=single_shape)
+                    Us = fock.squeezer(r[idx], phi[idx], shape=single_shape)
                 else:
-                    U_next = squeezer(r[idx], phi[idx], shape=single_shape)
+                    U_next = fock.squeezer(r[idx], phi[idx], shape=single_shape)
                     Us = math.outer(Us, U_next)
             return math.transpose(
                 Us,
                 list(range(0, 2 * N, 2)) + list(range(1, 2 * N, 2)),
             )
         else:
-            return squeezer(r[0], phi[0], shape=shape)
+            return fock.squeezer(r[0], phi[0], shape=shape)
 
     @property
     def X_matrix(self):
@@ -513,8 +509,6 @@ class BSgate(Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        from mrmustard.physics.fock_custom_grads import beamsplitter
-
         if cutoffs is None:
             pass
         elif len(cutoffs) == 4:
@@ -526,7 +520,7 @@ class BSgate(Unitary):
 
         shape = shape or cutoffs
 
-        return beamsplitter(
+        return fock.beamsplitter(
             self.theta.value,
             self.phi.value,
             shape=shape,

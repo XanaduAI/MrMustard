@@ -61,7 +61,7 @@ def set_backend(backend):
 
 
 def skip_np():
-    if math.which == "numpy":
+    if math.backend_name == "numpy":
         pytest.skip("numpy")
 
 

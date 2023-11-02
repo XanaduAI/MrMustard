@@ -89,9 +89,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return array
         return tf.cast(array, dtype)
 
-    def custom_gradient(self, func, args, kwargs):
-        return tf.custom_gradient(func, *args, **kwargs)
-
     def clip(self, array, a_min, a_max) -> tf.Tensor:
         return tf.clip_by_value(array, a_min, a_max)
 

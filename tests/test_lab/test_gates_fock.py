@@ -167,8 +167,6 @@ def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
     skip_np()
 
-    from mrmustard.physics.fock_custom_grads import squeezer
-
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
     phi = math.new_variable(0.1, None, "phi")
@@ -176,7 +174,7 @@ def test_squeezer_grad_against_finite_differences():
     dUdr = (Sgate(r + delta, phi).U(cutoffs) - Sgate(r - delta, phi).U(cutoffs)) / (2 * delta)
     dUdphi = (Sgate(r, phi + delta).U(cutoffs) - Sgate(r, phi - delta).U(cutoffs)) / (2 * delta)
     _, (gradr, gradphi) = math.value_and_gradients(
-        lambda: squeezer(r, phi, shape=cutoffs), [r, phi]
+        lambda: fock.squeezer(r, phi, shape=cutoffs), [r, phi]
     )
     assert np.allclose(gradr, 2 * np.real(np.sum(dUdr)))
     assert np.allclose(gradphi, 2 * np.real(np.sum(dUdphi)))
@@ -184,21 +182,19 @@ def test_squeezer_grad_against_finite_differences():
 
 def test_displacement_grad():
     """tests fock displacement gradient against finite differences"""
-    from mrmustard.physics.fock_custom_grads import displacement as mm_displacement
-
     cutoffs = [5, 5]
     x = math.new_variable(0.1, None, "x")
     y = math.new_variable(0.1, None, "y")
     alpha = math.asnumpy(math.make_complex(x, y))
     delta = 1e-6
-    dUdx = (mm_displacement(x + delta, y, cutoffs) - mm_displacement(x - delta, y, cutoffs)) / (
+    dUdx = (fock.displacement(x + delta, y, cutoffs) - fock.displacement(x - delta, y, cutoffs)) / (
         2 * delta
     )
-    dUdy = (mm_displacement(x, y + delta, cutoffs) - mm_displacement(x, y - delta, cutoffs)) / (
+    dUdy = (fock.displacement(x, y + delta, cutoffs) - fock.displacement(x, y - delta, cutoffs)) / (
         2 * delta
     )
 
-    D = mm_displacement(x, y, shape=cutoffs)
+    D = fock.displacement(x, y, shape=cutoffs)
     dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(D), alpha)
     assert np.allclose(dD_da + dD_dac, dUdx)
     assert np.allclose(1j * (dD_da - dD_dac), dUdy)

@@ -90,16 +90,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         if dtype is None:
             return array
 
-        return np.array(array, dtype=dtype)  # gotta fix the warning
-
-    def custom_gradient(self, func, args, kwargs):  # pylint: disable=unused-argument
-        def trivial_decorator(*args, **kwargs):
-            r"""
-            Returns a trivial decorator that does nothing.
-            """
-            return func(*args, **kwargs)
-
-        return trivial_decorator
+        return np.array(array, dtype=dtype)
 
     def clip(self, array, a_min, a_max) -> np.array:
         return np.clip(array, a_min, a_max)

@@ -99,7 +99,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         try:
             attr = getattr(self.backend, fn)
         except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.which}``."
+            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend_name}``."
             # pylint: disable=raise-missing-from
             raise NotImplementedError(msg)
         return attr(*args)
@@ -130,7 +130,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             return cls.instance
 
     def __repr__(self) -> str:
-        return f"Backend({self.which})"
+        return f"Backend({self.backend_name})"
 
     @property
     def backend(cls) -> BackendBase:
@@ -141,7 +141,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return cls._backend
 
     @property
-    def which(self) -> str:
+    def backend_name(self) -> str:
         r"""
         The name of the backend in use.
         """
@@ -158,7 +158,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             msg = "Backend must be either ``numpy`` or ``tensorflow``"
             raise ValueError(msg)
 
-        if cls.which != name:
+        if cls.backend_name != name:
             if cls._is_immutable:
                 msg = "Can no longer change the backend in this session."
                 raise ValueError(msg)
@@ -1114,9 +1114,20 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("MultivariateNormalTriL", (loc, scale_tril))
 
-    def custom_gradient(self, func, *args, **kwargs):
-        """Decorator to define a function with a custom gradient."""
-        return self._apply("custom_gradient", (func, args, kwargs))
+    def custom_gradient(self, func):
+        r"""
+        A decorator to define a function with a custom gradient.
+        """
+
+        def wrapper(*args, **kwargs):
+            if self.backend_name == "numpy":
+                return func(*args, **kwargs)
+            else:
+                from tensorflow import custom_gradient
+
+                return custom_gradient(func)(*args, **kwargs)
+
+        return wrapper
 
     def DefaultEuclideanOptimizer(self):
         r"""Default optimizer for the Euclidean parameters."""

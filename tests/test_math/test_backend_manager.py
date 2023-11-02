@@ -24,7 +24,7 @@ from mrmustard import math
 from ..conftest import skip_np
 
 
-# pylint: disable=protected-access, too-many-public-methods, unnecessary-pass
+# pylint: disable=protected-access, too-many-public-methods
 class TestBackendManager:
     r"""
     Tests the BackendManager.
@@ -42,7 +42,7 @@ class TestBackendManager:
         r"""
         Tests the error on `_apply`.
         """
-        msg = f"Function ``ciao`` not implemented for backend ``{math.which}``."
+        msg = f"Function ``ciao`` not implemented for backend ``{math.backend_name}``."
         with pytest.raises(NotImplementedError, match=msg):
             math._apply("ciao")
 
@@ -114,7 +114,7 @@ class TestBackendManager:
         dtype = getattr(math, t, None)
         res = math.astensor(arr, dtype)
 
-        if math.which == "numpy":
+        if math.backend_name == "numpy":
             assert np.allclose(res, arr.astype(dtype or np.float64))
         else:
             exp = tf.convert_to_tensor(arr, dtype=dtype or tf.float64)
@@ -203,20 +203,6 @@ class TestBackendManager:
         res = math.asnumpy(math.conj(arr))
         assert np.allclose(res, np.conj(arr))
 
-    def test_constraint_func(self):
-        r"""
-        Tests the ``constraint_func`` method.
-        """
-        skip_np()
-        pass
-
-    def test_convolution(self):
-        r"""
-        Tests the ``convolution`` method.
-        """
-        skip_np()
-        pass
-
     @pytest.mark.parametrize("l", lists)
     def test_cos(self, l):
         r"""
@@ -296,12 +282,6 @@ class TestBackendManager:
         assert np.allclose(math.asnumpy(vals), np.array([1.0, 2.0, 3.0]))
         assert np.allclose(math.asnumpy(vecs), np.eye(3))
 
-    def test_einsum(self):
-        r"""
-        Tests the ``einsum`` method.
-        """
-        pass
-
     def test_exp(self):
         r"""
         Tests the ``exp`` method.
@@ -314,18 +294,6 @@ class TestBackendManager:
             [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
         )
         assert np.allclose(res, exp)
-
-    def test_expand_dims(self):
-        r"""
-        Tests the ``expand_dims`` method.
-        """
-        pass
-
-    def test_expm(self):
-        r"""
-        Tests the ``expm`` method.
-        """
-        pass
 
     def test_eye(self):
         r"""
@@ -352,7 +320,7 @@ class TestBackendManager:
 
         v2 = np.array(v1)
         v3 = tf.constant(v1)
-        if math.which == "numpy":
+        if math.backend_name == "numpy":
             assert math.from_backend(v2) and not math.from_backend(v3)
         else:
             assert math.from_backend(v3) and not math.from_backend(v2)
@@ -370,18 +338,6 @@ class TestBackendManager:
         res2 = math.asnumpy(math.gather(arr, 2, 0))
         exp2 = np.array([6, 7, 8])
         assert np.allclose(res2, exp2)
-
-    def test_hermite_renormalized_diagonal(self):
-        r"""
-        Tests the ``hermite_renormalized_diagonal`` method.
-        """
-        pass
-
-    def test_hermite_renormalized_1leftoverMode(self):
-        r"""
-        Tests the ``hermite_renormalized_1leftoverMode`` method.
-        """
-        pass
 
     def test_imag(self):
         r"""
@@ -410,7 +366,7 @@ class TestBackendManager:
 
         assert not math.is_trainable(arr1)
         assert not math.is_trainable(arr2)
-        assert math.is_trainable(arr3) is (math.which == "tensorflow")
+        assert math.is_trainable(arr3) is (math.backend_name == "tensorflow")
 
     def test_lgamma(self):
         r"""
@@ -426,12 +382,6 @@ class TestBackendManager:
         arr = np.array([1.0, 2.0, 3.0, 4.0])
         assert np.allclose(math.asnumpy(math.log(arr)), np.log(arr))
 
-    def test_matmul(self):
-        r"""
-        Tests the ``matmul`` method.
-        """
-        pass
-
     def test_make_complex(self):
         r"""
         Tests the ``make_complex`` method.
@@ -439,12 +389,6 @@ class TestBackendManager:
         r = 1.0
         i = 2.0
         assert math.asnumpy(math.make_complex(r, i)) == r + i * 1j
-
-    def test_matvec(self):
-        r"""
-        Tests the ``matvec`` method.
-        """
-        pass
 
     def test_maximum(self):
         r"""
@@ -473,7 +417,7 @@ class TestBackendManager:
         arr = np.eye(3)
         res = math.new_variable(arr, (0, 1), "my_var", dtype)
 
-        if math.which == "numpy":
+        if math.backend_name == "numpy":
             assert np.allclose(res, arr)
             assert not hasattr(res, "name")
             assert res.dtype == dtype
@@ -491,7 +435,7 @@ class TestBackendManager:
         arr = np.eye(3)
         res = math.new_constant(arr, "my_const", dtype)
 
-        if math.which == "numpy":
+        if math.backend_name == "numpy":
             assert np.allclose(res, arr)
             assert not hasattr(res, "name")
             assert res.dtype == dtype
@@ -513,24 +457,6 @@ class TestBackendManager:
         arr = np.ones(3)
         res = math.asnumpy(math.ones_like(arr))
         assert np.allclose(res, arr)
-
-    def test_outer(self):
-        r"""
-        Tests the ``outer`` method.
-        """
-        pass
-
-    def test_pad(self):
-        r"""
-        Tests the ``new_constant`` method.
-        """
-        pass
-
-    def test_pinv(self):
-        r"""
-        Tests the ``pinv`` method.
-        """
-        pass
 
     def test_pow(self):
         r"""
@@ -613,21 +539,3 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sum(arr))
         assert np.allclose(res, 12)
-
-    def test_tensordor(self):
-        r"""
-        Tests the ``tensordor`` method.
-        """
-        pass
-
-    def test_tile(self):
-        r"""
-        Tests the ``tile`` method.
-        """
-        pass
-
-    def test_trace(self):
-        r"""
-        Tests the ``trace`` method.
-        """
-        pass

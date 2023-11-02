@@ -188,7 +188,7 @@ def test_dm_to_ket_error():
     """Test fock.dm_to_ket raises an error when state is mixed"""
     state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
 
-    e = ValueError if math.which == "tensorflow" else TypeError
+    e = ValueError if math.backend_name == "tensorflow" else TypeError
     with pytest.raises(e):
         fock.dm_to_ket(state)
 
