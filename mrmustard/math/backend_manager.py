@@ -21,6 +21,7 @@ from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 from ..utils.settings import settings
 from ..utils.typing import (
@@ -82,68 +83,22 @@ class BackendManager:
     # whether or not the backend can be changed
     _is_immutable = False
 
-    def __init__(cls):
+    def __init__(cls) -> None:
         # binding types and decorators of numpy backend
         cls._bind()
 
-    def __repr__(self) -> str:
-        return f"Backend({self._backend.name})"
-
-    def change_backend(cls, name: str):
-        r"""
-        Changes the backend to a different one.
-
-        Args:
-            name: The name of the new backend.
-        """
-        if name not in ["numpy", "tensorflow"]:
-            msg = "Backend must be either ``numpy`` or ``tensorflow``"
-            raise ValueError(msg)
-
-        if cls._backend.name == name:
-            # same backend as in the last call
-            return None
-
-        if cls._is_immutable:
-            msg = "Can no longer change the backend in this session."
-            raise ValueError(msg)
-
-        module = all_modules[name]["module"]
-        object = all_modules[name]["object"]
-        try:
-            backend = getattr(module, object)()
-        except:
-            # lazy import
-            loader = all_modules[name]["loader"]
-            loader.exec_module(module)
-            backend = getattr(module, object)()
-
-        # switch backend
-        cls._backend = backend
-
-        # bind
-        cls._bind()
-
-    @property
-    def backend(cls):
-        r"""
-        The backend that is being used.
-        """
-        cls._is_immutable = True
-        return cls._backend
-
-    def _apply(self, fn: str, args: Optional[Sequence[any]] = ()):
+    def _apply(self, fn: str, args: Optional[Sequence[any]] = ()) -> any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args``.
         """
         try:
             attr = getattr(self.backend, fn)
         except AttributeError:
-            msg = f"Function ``{fn}`` not implemented for backend ``{self.backend.name}``."
+            msg = f"Function ``{fn}`` not implemented for backend ``{self.which}``."
             raise NotImplementedError(msg)
         return attr(*args)
 
-    def _bind(cls):
+    def _bind(cls) -> None:
         r"""
         Binds the types and decorators of this backend manager to those of the given ``self._backend``.
         """
@@ -167,6 +122,56 @@ class BackendManager:
         except AttributeError:
             cls.instance = super(BackendManager, cls).__new__(cls)
             return cls.instance
+
+    def __repr__(self) -> str:
+        return f"Backend({self.which})"
+
+    @property
+    def backend(cls) -> BackendBase:
+        r"""
+        The backend that is being used.
+        """
+        cls._is_immutable = True
+        return cls._backend
+
+    @property
+    def which(cls) -> str:
+        r"""
+        The name of the backend in use.
+        """
+        return cls._backend.name
+
+    def change_backend(cls, name: str) -> None:
+        r"""
+        Changes the backend to a different one.
+
+        Args:
+            name: The name of the new backend.
+        """
+        if name not in ["numpy", "tensorflow"]:
+            msg = "Backend must be either ``numpy`` or ``tensorflow``"
+            raise ValueError(msg)
+
+        if cls.which != name:
+            if cls._is_immutable:
+                msg = "Can no longer change the backend in this session."
+                raise ValueError(msg)
+
+            module = all_modules[name]["module"]
+            object = all_modules[name]["object"]
+            try:
+                backend = getattr(module, object)()
+            except:
+                # lazy import
+                loader = all_modules[name]["loader"]
+                loader.exec_module(module)
+                backend = getattr(module, object)()
+
+            # switch backend
+            cls._backend = backend
+
+            # bind
+            cls._bind()
 
     # ~~~~~~~
     # Methods

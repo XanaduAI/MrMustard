@@ -41,7 +41,7 @@ def displacement(x, y, shape, tol=1e-15):
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
     ret = math.astensor(gate, dtype=gate.dtype.name)
-    if math.backend.name == "numpy":
+    if math.which == "numpy":
         return ret
 
     def grad(dL_dDc):
@@ -75,7 +75,7 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         )
 
     ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
-    if math.backend.name == "numpy":
+    if math.which == "numpy":
         return ret
 
     def vjp(dLdGc):
@@ -96,7 +96,7 @@ def squeezer(r, phi, shape):
     sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
-    if math.backend.name == "numpy":
+    if math.which == "numpy":
         return ret
 
     def vjp(dLdGc):
@@ -117,7 +117,7 @@ def squeezed(r, phi, shape):
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
 
     ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
-    if math.backend.name == "numpy":
+    if math.which == "numpy":
         return ret
 
     def vjp(dLdGc):

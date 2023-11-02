@@ -30,15 +30,14 @@ try:
 except ImportError:
     ray_available = False
 
-from mrmustard import settings
 from mrmustard.lab import Dgate, Gaussian, Ggate, Vacuum
 from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
-import mrmustard.math as math
 
-if math._backend.name == "numpy":
-    pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
+from ..conftest import backend
+if backend == "numpy":
+    pytest.mark.skip("Training not supported when using numpy backend.")
 
 
 @pytest.fixture(scope="function")

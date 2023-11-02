@@ -26,8 +26,9 @@ from mrmustard import settings
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 import mrmustard.math as math
 
-if math._backend.name == "numpy":
-    pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
+from ..conftest import backend
+if backend == "numpy":
+    pytest.mark.skip("Training not supported when using numpy backend.")
 
 
 def is_unitary(M, rtol=1e-05, atol=1e-08):

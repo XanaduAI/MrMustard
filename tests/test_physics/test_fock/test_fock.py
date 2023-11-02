@@ -162,7 +162,7 @@ def test_density_matrix(num_modes):
 
 
 @pytest.mark.parametrize(
-    "state,kwargs",
+    "state, kwargs",
     [(Vacuum, {"num_modes": 2}),
      (Fock, {"n": [4, 3], "modes": [0, 1]}),
      (Coherent, {"x" :[0.1, 0.2], "y": [-0.4, 0.4], "cutoffs": [10, 10]}),
@@ -188,7 +188,7 @@ def test_dm_to_ket_error():
     """Test fock.dm_to_ket raises an error when state is mixed"""
     state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
 
-    e = ValueError if math.backend.name == "tensorflow" else TypeError
+    e = ValueError if math.which == "tensorflow" else TypeError
     with pytest.raises(e):
         fock.dm_to_ket(state)
 

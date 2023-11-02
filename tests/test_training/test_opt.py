@@ -46,8 +46,9 @@ from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
 import mrmustard.math as math
 
-if math._backend.name == "numpy":
-    pytestmark = pytest.mark.skip("Training not supported when using numpy backend.")
+from ..conftest import backend
+if backend == "numpy":
+    pytest.mark.skip("Training not supported when using numpy backend.")
 
 
 @given(n=st.integers(0, 3))

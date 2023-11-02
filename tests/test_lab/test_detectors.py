@@ -291,17 +291,17 @@ class TestHomodyneDetector:
     std_10 = NUM_STDS / np.sqrt(N_MEAS)
 
     @pytest.mark.parametrize(
-        "state, mean_expected, var_expected",
-        [
-            (Vacuum(1), 0.0, settings.HBAR / 2),
-            (Coherent(2.0, 0.5), 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
-            (SqueezedVacuum(0.25, 0.0), 0.0, 0.25 * settings.HBAR / 2),
-        ],
+        "state, kwargs, mean_expected, var_expected",
+        [(Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
+        (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+        (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2)
+        ]
     )
     @pytest.mark.parametrize("gaussian_state", [True, False])
-    def test_sampling_mean_and_var(self, state, mean_expected, var_expected, gaussian_state):
+    def test_sampling_mean_and_var(self, state, kwargs, mean_expected, var_expected, gaussian_state):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
+        state = state(**kwargs)
 
         tf.random.set_seed(123)
         if not gaussian_state:

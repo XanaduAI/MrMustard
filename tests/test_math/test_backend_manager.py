@@ -41,7 +41,7 @@ class TestBackendManager:
         r"""
         Tests the error on `_apply`.
         """
-        msg = f"Function ``ciao`` not implemented for backend ``{math.backend.name}``."
+        msg = f"Function ``ciao`` not implemented for backend ``{math.which}``."
         with pytest.raises(NotImplementedError, match=msg):
             math._apply("ciao")
 
@@ -110,7 +110,7 @@ class TestBackendManager:
         dtype = getattr(math, t, None)
         res = math.astensor(arr, dtype)
 
-        if math.backend.name == "numpy":
+        if math.which == "numpy":
             assert np.allclose(res, arr.astype(dtype or np.float64))
         else:
             exp = tf.convert_to_tensor(arr, dtype=dtype or tf.float64)
@@ -346,7 +346,7 @@ class TestBackendManager:
 
         v2 = np.array(v1)
         v3 = tf.constant(v1)
-        if math.backend.name == "numpy":
+        if math.which == "numpy":
             assert math.from_backend(v2) and not math.from_backend(v3)
         else:
             assert math.from_backend(v3) and not math.from_backend(v2)
@@ -404,7 +404,7 @@ class TestBackendManager:
 
         assert not math.is_trainable(arr1)
         assert not math.is_trainable(arr2)
-        assert math.is_trainable(arr3) is (math.backend.name == "tensorflow")
+        assert math.is_trainable(arr3) is (math.which == "tensorflow")
 
     def test_lgamma(self):
         r"""
