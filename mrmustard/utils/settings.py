@@ -103,19 +103,25 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
-        self._julia_initialized = (
-            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
-        )
-        self._allowed_precision_bits_hermite_poly = [
-            128,
-            256,
-            384,
-            512,
-        ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
+        self._purity_atol = 1e-6
+        # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        self._julia_initialized = False
+
+        # possible values for settings.PRECISION_BITS_HERMITE_POLY
+        self._allowed_precision_bits_hermite_poly = [128, 256, 384, 512]
 
     def _force_hbar(self, value):
         r"can set the value of HBAR at any time. use with caution."
         self._hbar._value = value
+
+    @property
+    def PURITY_ATOL(self):
+        r"""The absolute tolerance used when computing the purity of a state. Default is ``1e-6``."""
+        return self._purity_atol
+
+    @PURITY_ATOL.setter
+    def PURITY_ATOL(self, value: float):
+        self._purity_atol = value
 
     @property
     def AUTOCUTOFF_MAX_CUTOFF(self):
