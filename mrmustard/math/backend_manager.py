@@ -12,15 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.util
-import numpy as np
-import sys
+"""This module contains the backend manager."""
+
+
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
 from functools import lru_cache
 from itertools import product
+import importlib.util
+import sys
+import numpy as np
+
 from scipy.special import binom
 from scipy.stats import ortho_group, unitary_group
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from .backend_base import BackendBase
 from .backend_numpy import BackendNumpy
 from ..utils.settings import settings
@@ -70,7 +75,7 @@ all_modules = {
 }
 
 
-class BackendManager:
+class BackendManager:  # pylint: disable=too-many-public-methods
     r"""
     A class to manage the different backends supported by Mr Mustard.
     """
@@ -83,9 +88,9 @@ class BackendManager:
     # whether or not the backend can be changed
     _is_immutable = False
 
-    def __init__(cls) -> None:
+    def __init__(self) -> None:
         # binding types and decorators of numpy backend
-        cls._bind()
+        self._bind()
 
     def _apply(self, fn: str, args: Optional[Sequence[any]] = ()) -> any:
         r"""
@@ -95,10 +100,11 @@ class BackendManager:
             attr = getattr(self.backend, fn)
         except AttributeError:
             msg = f"Function ``{fn}`` not implemented for backend ``{self.which}``."
+            # pylint: disable=raise-missing-from
             raise NotImplementedError(msg)
         return attr(*args)
 
-    def _bind(cls) -> None:
+    def _bind(self) -> None:
         r"""
         Binds the types and decorators of this backend manager to those of the given ``self._backend``.
         """
@@ -113,7 +119,7 @@ class BackendManager:
             "hermite_renormalized_diagonal_reorderedAB",
             "hermite_renormalized_1leftoverMode_reorderedAB",
         ]:
-            setattr(cls, name, getattr(cls._backend, name))
+            setattr(self, name, getattr(self._backend, name))
 
     def __new__(cls):
         # singleton
@@ -126,6 +132,7 @@ class BackendManager:
     def __repr__(self) -> str:
         return f"Backend({self.which})"
 
+    # pylint: no-self-argument
     @property
     def backend(cls) -> BackendBase:
         r"""
@@ -135,12 +142,13 @@ class BackendManager:
         return cls._backend
 
     @property
-    def which(cls) -> str:
+    def which(self) -> str:
         r"""
         The name of the backend in use.
         """
-        return cls._backend.name
+        return self._backend.name
 
+    # pylint: no-self-argument
     def change_backend(cls, name: str) -> None:
         r"""
         Changes the backend to a different one.
@@ -161,7 +169,7 @@ class BackendManager:
             object = all_modules[name]["object"]
             try:
                 backend = getattr(module, object)()
-            except:
+            except AttributeError:
                 # lazy import
                 loader = all_modules[name]["loader"]
                 loader.exec_module(module)
@@ -1120,6 +1128,7 @@ class BackendManager:
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    # pylint: no-self-argument
     @property
     def euclidean_opt(cls):
         r"""The configured Euclidean optimizer."""
@@ -1268,7 +1277,6 @@ class BackendManager:
         """
         if a_partial is None:
             return b_full
-        from copy import deepcopy
 
         N = b_full.shape[-1] // 2
         indices = self.astensor(modes + [m + N for m in modes], dtype="int32")

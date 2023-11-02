@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This module contains the tensorflow backend."""
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
