@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Iterable
 from opt_einsum import contract as opt_contract
 
 import networkx as nx
@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt
 from .tensors import Wire, Tensor
 
 
-def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
-    r"""Connects two wires in a tensor network.
+def connect(wire1: Wire | Iterable[Wire], wire2: Wire | Iterable[Wire], dim: Optional[int] = None):
+    r"""Connects two wires or iterables of wires in a tensor network.
 
     Args:
         wire1: The first wire.
@@ -37,18 +37,22 @@ def connect(wire1: Wire, wire2: Wire, dim: Optional[int] = None):
     Raises:
         ValueError: If one or both of the wires are already connected.
     """
-    if wire1.is_connected or wire2.is_connected:
-        msg = "Tried to connect wires that are already connected."
-        raise ValueError(msg)
+    if isinstance(wire1, Wire):
+        wire1 = [wire1]
+    if isinstance(wire2, Wire):
+        wire2 = [wire2]
+    for w1, w2 in zip(wire1, wire2):
+        if w1.is_connected or w2.is_connected:
+            raise ValueError("Tried to connect wires that are already connected.")
 
-    if dim:
-        wire1.dim = dim
-        wire2.dim = dim
+        if dim:
+            w1.dim = dim
+            w2.dim = dim
 
-    wire1.is_connected = True
-    wire2.is_connected = True
+        w1.is_connected = True
+        w2.is_connected = True
 
-    wire1.contraction_id = wire2.contraction_id
+        w1.contraction_id = w2.contraction_id
 
 
 def contract(tensors: list[Tensor], default_dim: int):
