@@ -36,7 +36,8 @@ from .lattice.strategies.compactFock.inputValidation import (
 )
 
 
-class BackendNumpy(BackendBase):  # pylint: disable=too-many-public-methods
+# pylint: disable=too-many-public-methods
+class BackendNumpy(BackendBase):  # pragma: no cover
     r"""
     A numpy backend.
     """

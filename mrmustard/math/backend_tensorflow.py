@@ -35,7 +35,8 @@ from .autocast import Autocast
 from .lattice import strategies
 
 
-class BackendTensorflow(BackendBase):  # pylint: disable=too-many-public-methods
+# pylint: disable=too-many-public-methods
+class BackendTensorflow(BackendBase):  # pragma: no cover
     r"""
     A base class for backends.
     """
