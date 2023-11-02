@@ -16,10 +16,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-import matplotlib.pyplot as plt
-import warnings
-
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -29,6 +25,9 @@ from typing import (
     Tuple,
     Union,
 )
+import warnings
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import cm
 
 from mrmustard import math, settings

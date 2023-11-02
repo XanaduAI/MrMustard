@@ -285,9 +285,9 @@ def test_learning_four_mode_Interferometer():
 
 
 def test_learning_four_mode_RealInterferometer():
+    """Finding the optimal Interferometer to make a NOON state with N=2"""
     skip_np()
 
-    """Finding the optimal Interferometer to make a NOON state with N=2"""
     settings.SEED = 6
     solution_O = np.array(
         [
