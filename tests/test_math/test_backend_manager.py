@@ -99,7 +99,10 @@ class TestBackendManager:
         r"""
         Tests the ``assign`` method.
         """
-        pass
+        arr = math.new_variable(np.eye(3), (None, None), "")
+        value = math.astensor(2 * np.eye(3))
+        arr = math.asnumpy(math.assign(arr, value))
+        assert np.allclose(arr, value)
 
     @pytest.mark.parametrize("t", types)
     @pytest.mark.parametrize("l", [l1, l3])
@@ -461,17 +464,39 @@ class TestBackendManager:
         res = math.asnumpy(math.minimum(arr1, arr2))
         assert np.allclose(res, arr1)
 
-    def test_new_variable(self):
+    @pytest.mark.parametrize("t", types)
+    def test_new_variable(self, t):
         r"""
         Tests the ``new_variable`` method.
         """
-        pass
+        dtype = getattr(math, t, None)
+        arr = np.eye(3)
+        res = math.new_variable(arr, (0, 1), "my_var", dtype)
 
-    def test_new_constant(self):
+        if math.which == "numpy":
+            assert np.allclose(res, arr)
+            assert not hasattr(res, "name")
+            assert res.dtype == dtype
+        else:
+            assert isinstance(res, tf.Variable)
+            assert np.allclose(math.asnumpy(res), arr)
+            assert res.dtype == dtype or math.float64
+
+    @pytest.mark.parametrize("t", types)
+    def test_new_constant(self, t):
         r"""
         Tests the ``new_constant`` method.
         """
-        pass
+        dtype = getattr(math, t, None)
+        arr = np.eye(3)
+        res = math.new_constant(arr, "my_const", dtype)
+
+        if math.which == "numpy":
+            assert np.allclose(res, arr)
+            assert not hasattr(res, "name")
+            assert res.dtype == dtype
+        else:
+            assert np.allclose(math.asnumpy(res), arr)
 
     def test_ones(self):
         r"""
