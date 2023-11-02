@@ -52,8 +52,7 @@ def wigner_to_bargmann_rho(cov, means):
     b = math.solve(Q, beta)
     B = math.conj(b)
     num_C = math.exp(-0.5 * math.sum(math.conj(beta) * b))
-    den_C = math.sqrt(math.det(Q))
-    den_C = math.cast(den_C, num_C.dtype)
+    den_C = math.sqrt(math.det(Q), dtype=num_C.dtype)
     C = num_C / den_C
     return A, B, C
 
