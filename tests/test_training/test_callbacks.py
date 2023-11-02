@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
@@ -26,7 +26,6 @@ from mrmustard.lab.gates import (
 )
 from mrmustard.lab.states import Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
-import mrmustard.math as math
 
 from ..conftest import backend
 

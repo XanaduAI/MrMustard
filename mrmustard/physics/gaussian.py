@@ -20,10 +20,9 @@ from typing import Any, Optional, Sequence, Tuple, Union
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Scalar, Vector
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
-import mrmustard.math as math
 
 
 #  ~~~~~~

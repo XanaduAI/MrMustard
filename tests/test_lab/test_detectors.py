@@ -22,7 +22,7 @@ from scipy.stats import poisson
 
 from ..conftest import skip_np
 
-from mrmustard import physics, settings
+from mrmustard import math, physics, settings
 from mrmustard.lab import (
     TMSV,
     Attenuator,
@@ -41,8 +41,6 @@ from mrmustard.lab import (
 )
 from tests.random import none_or_
 
-
-import mrmustard.math as math
 
 hbar = settings.HBAR
 

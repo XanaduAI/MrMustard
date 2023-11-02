@@ -18,7 +18,7 @@ from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.abstract import State
 from mrmustard.lab.gates import Attenuator, Dgate, Ggate, Sgate
 from mrmustard.lab.states import (
@@ -32,8 +32,6 @@ from mrmustard.lab.states import (
 )
 from mrmustard.physics import gaussian as gp
 from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
-
-import mrmustard.math as math
 
 hbar0 = settings.HBAR
 

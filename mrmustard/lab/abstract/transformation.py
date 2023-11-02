@@ -23,7 +23,7 @@ from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.math.tensor_networks import Tensor
@@ -31,8 +31,6 @@ from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .state import State
-
-import mrmustard.math as math
 
 
 class Transformation(Tensor):

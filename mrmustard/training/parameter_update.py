@@ -18,9 +18,8 @@
 from typing import Tuple, Sequence
 from mrmustard.utils.typing import Tensor
 
+from mrmustard import math
 from .parameter import Trainable
-
-import mrmustard.math as math
 
 
 def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):

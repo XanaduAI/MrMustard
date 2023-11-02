@@ -18,10 +18,8 @@
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
 from typing import Callable, Optional, Tuple
-from mrmustard.math.parameters import update_euclidean
 
-from mrmustard.math.parameters import Constant, Variable
-import mrmustard.math as math
+from mrmustard.math.parameters import update_euclidean, Constant, Variable
 
 
 def make_parameter(

@@ -22,9 +22,8 @@ from scipy.stats import unitary_group
 from thewalrus.random import random_symplectic
 from thewalrus.symplectic import is_symplectic
 
-from mrmustard import settings
+from mrmustard import math
 from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
-import mrmustard.math as math
 
 from ..conftest import backend
 

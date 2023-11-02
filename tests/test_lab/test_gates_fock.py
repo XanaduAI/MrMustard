@@ -23,7 +23,7 @@ from thewalrus.fock_gradients import (
     two_mode_squeezing,
 )
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab import (
     Attenuator,
     BSgate,
@@ -53,8 +53,6 @@ from tests.random import (
     two_mode_unitary_gate,
 )
 from ..conftest import skip_np
-
-import mrmustard.math as math
 
 
 @given(state=n_mode_pure_state(num_modes=1), x=medium_float, y=medium_float)

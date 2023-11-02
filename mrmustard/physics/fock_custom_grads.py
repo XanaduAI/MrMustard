@@ -22,8 +22,8 @@ Once this file or its methods are imported, changing the backend leads to errors
 from typing import Sequence
 import numpy as np
 
+from mrmustard import math
 from mrmustard.math.lattice import strategies
-import mrmustard.math as math
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~ static functions ~~~~~~~~~~~~~~

@@ -21,7 +21,7 @@ import pytest
 import tensorflow as tf
 
 from ..conftest import skip_np
-import mrmustard.math as math
+from mrmustard import math
 
 
 class TestBackendManager:

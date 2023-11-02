@@ -18,6 +18,7 @@ used within Mr Mustard.
 
 from itertools import chain, groupby
 from typing import List, Callable, Sequence, Union, Mapping, Dict
+from mrmustard import math
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.training.callbacks import Callback
 from mrmustard.training.progress_bar import ProgressBar
@@ -29,8 +30,6 @@ from mrmustard.math.parameters import (
     update_unitary,
 )
 from mrmustard.lab import Circuit
-
-import mrmustard.math as math
 
 __all__ = ["Optimizer"]
 

@@ -19,9 +19,8 @@ This module contains functions for transforming to the Bargmann representation.
 """
 import numpy as np
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-import mrmustard.math as math
 
 
 def cayley(X, c):

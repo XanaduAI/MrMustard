@@ -19,7 +19,7 @@ from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab import (
     TMSV,
     Attenuator,
@@ -37,7 +37,6 @@ from mrmustard.lab import (
 )
 from mrmustard.math.lattice.strategies import displacement, grad_displacement
 from mrmustard.physics import fock
-import mrmustard.math as math
 
 # helper strategies
 st_angle = st.floats(min_value=0, max_value=2 * np.pi)

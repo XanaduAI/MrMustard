@@ -31,7 +31,7 @@ from typing import (
 )
 from matplotlib import cm
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
@@ -43,7 +43,6 @@ from mrmustard.utils.typing import (
     RealVector,
 )
 from mrmustard.physics.wigner import wigner_discretized
-import mrmustard.math as math
 
 
 if TYPE_CHECKING:

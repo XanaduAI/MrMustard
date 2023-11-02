@@ -23,6 +23,7 @@ from thewalrus.symplectic import (
     two_mode_squeezing,
 )
 
+from mrmustard import math
 from mrmustard.lab import (
     Amplifier,
     Attenuator,
@@ -39,7 +40,6 @@ from mrmustard.lab import (
 )
 from mrmustard.lab.states import TMSV, Thermal, Vacuum
 from mrmustard.physics.gaussian import controlled_X, controlled_Z
-import mrmustard.math as math
 
 
 @given(r=st.floats(0, 2))

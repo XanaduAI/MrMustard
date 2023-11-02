@@ -8,15 +8,13 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
 from mrmustard.physics import fidelity, normalize
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
 from ..conftest import skip_np
-
-import mrmustard.math as math  # use methods in math if you want them to be differentiable
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
 precisions = [128, 256, 384, 512]

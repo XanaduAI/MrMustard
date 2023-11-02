@@ -1,8 +1,8 @@
 import numpy as np
 
+from mrmustard import math
 from mrmustard.lab import Attenuator, Coherent, Gaussian
 from mrmustard.lab.abstract.state import mikkel_plot
-import mrmustard.math as math
 
 
 def test_addition():

@@ -15,8 +15,8 @@
 import os
 import pytest
 
+from mrmustard import math
 from hypothesis import Verbosity, settings as hyp_settings
-import mrmustard.math as math
 
 print("pytest.conf -----------------------")
 

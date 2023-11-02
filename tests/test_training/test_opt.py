@@ -20,7 +20,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from thewalrus.symplectic import two_mode_squeezing
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
@@ -44,7 +44,6 @@ from mrmustard.physics import fidelity
 from mrmustard.physics.gaussian import trace, von_neumann_entropy
 from mrmustard.training import Optimizer
 from mrmustard.training.callbacks import Callback
-import mrmustard.math as math
 
 from ..conftest import backend
 
