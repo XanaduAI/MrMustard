@@ -1,4 +1,4 @@
-name: Tensorflow Tests
+name: Tensorflow tests
 on:
   push:
     branches:
