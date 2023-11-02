@@ -66,6 +66,11 @@ class BargmannExp(MatVecData):
         return val
 
     @property
+    def dimension(self) -> int:
+        r"""Number of variables the Fock-Bargmann function."""
+        return self.A.shape[-1]
+
+    @property
     def A(self) -> Batch[ComplexMatrix]:
         return self.mat
 
@@ -130,7 +135,8 @@ class BargmannExp(MatVecData):
     def reorder(self, order: tuple[int, ...] | list[int]) -> BargmannExp:
         A, b, c = reorder_abc((self.A, self.b, self.c), order)
         new = self.__class__(A, b, c)
-        new._contract_idxs = self._contract_idxs
+        transposed_idxs = {i: j for j, i in enumerate(order)}
+        new._contract_idxs = [transposed_idxs[i] for i in self._contract_idxs]
         return new
 
     def simplify(self) -> None:
