@@ -18,7 +18,6 @@ Unit tests for the :class:`MMTensor`.
 import numpy as np
 import pytest
 
-from mrmustard import math
 from mrmustard.math.tensor_wrappers.mmtensor import MMTensor
 
 

@@ -15,6 +15,7 @@
 r"""
 The point of entry for the backend.
 """
+import sys
 
 from .autocast import *
 from .caching import *
@@ -26,7 +27,5 @@ from .parameters import *
 from .parameter_set import *
 from .tensor_networks import *
 from .tensor_wrappers import *
-
-import sys
 
 sys.modules[__name__] = BackendManager()
