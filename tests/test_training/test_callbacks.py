@@ -27,14 +27,13 @@ from mrmustard.lab.gates import (
 from mrmustard.lab.states import Vacuum
 from mrmustard.training import Optimizer, TensorboardCallback
 
-from ..conftest import backend
-
-if backend == "numpy":
-    pytest.mark.skip("Training not supported when using numpy backend.")
+from ..conftest import skip_np
 
 
 def test_tensorboard_callback(tmp_path):
     """Tests tensorboard callbacks on hong-ou-mandel optimization."""
+    skip_np()
+
     settings.SEED = 42
     i, k = 2, 3
     r = np.arcsinh(1.0)

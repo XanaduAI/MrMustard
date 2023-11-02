@@ -14,11 +14,11 @@
 
 """This module contains the tensorflow backend."""
 
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-
-from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
@@ -33,7 +33,7 @@ from .autocast import Autocast
 from .lattice import strategies
 
 
-class BackendTensorflow(BackendBase):
+class BackendTensorflow(BackendBase):  # pylint: disable=too-many-public-methods
     r"""
     A base class for backends.
     """

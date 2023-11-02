@@ -25,7 +25,6 @@ import numpy as np
 
 from mrmustard import math, settings
 from mrmustard.math.caching import tensor_int_cache
-from mrmustard.math.lattice import strategies
 from mrmustard.math.tensor_wrappers.mmtensor import MMTensor
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,

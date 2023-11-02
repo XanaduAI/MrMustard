@@ -165,7 +165,9 @@ def test_squeezer_grad_against_finite_differences():
     """tests fock squeezer gradient against finite differences"""
     skip_np()
 
-    from mrmustard.physics.fock_custom_grads import squeezer
+    from mrmustard.physics.fock_custom_grads import (
+        squeezer,
+    )  # pylint: disable=import-outside-toplevel
 
     cutoffs = (5, 5)
     r = math.new_variable(0.5, None, "r")
@@ -182,7 +184,9 @@ def test_squeezer_grad_against_finite_differences():
 
 def test_displacement_grad():
     """tests fock displacement gradient against finite differences"""
-    from mrmustard.physics.fock_custom_grads import displacement as mm_displacement
+    from mrmustard.physics.fock_custom_grads import (
+        displacement as mm_displacement,
+    )  # pylint: disable=import-outside-toplevel
 
     cutoffs = [5, 5]
     x = math.new_variable(0.1, None, "x")

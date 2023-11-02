@@ -112,7 +112,9 @@ class Dgate(Unitary):
            Raises:
                ValueError: if the length of the cutoffs array is different from N and 2N
         """
-        from mrmustard.physics.fock_custom_grads import displacement
+        from mrmustard.physics.fock_custom_grads import (
+            displacement,
+        )  # pylint: disable=import-outside-toplevel
 
         N = self.num_modes
         if cutoffs is None:
@@ -206,7 +208,9 @@ class Sgate(Unitary):
         Returns:
             array[complex]: the unitary matrix
         """
-        from mrmustard.physics.fock_custom_grads import squeezer
+        from mrmustard.physics.fock_custom_grads import (
+            squeezer,
+        )  # pylint: disable=import-outside-toplevel
 
         N = self.num_modes
         if cutoffs is None:
@@ -513,7 +517,9 @@ class BSgate(Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        from mrmustard.physics.fock_custom_grads import beamsplitter
+        from mrmustard.physics.fock_custom_grads import (
+            beamsplitter,
+        )  # pylint: disable=import-outside-toplevel
 
         if cutoffs is None:
             pass

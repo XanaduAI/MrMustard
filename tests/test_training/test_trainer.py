@@ -35,10 +35,7 @@ from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
-from ..conftest import backend
-
-if backend == "numpy":
-    pytest.mark.skip("Training not supported when using numpy backend.")
+from ..conftest import skip_np
 
 
 @pytest.fixture(scope="function")
@@ -71,6 +68,8 @@ class TestTrainer:
     @pytest.mark.parametrize("seed", [None, 42])
     def test_circ_cost(self, wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
         """Test distributed cost calculations."""
+        skip_np()
+
         has_seed = isinstance(seed, int)
         _, cost_fn = wrappers
         results = map_trainer(
@@ -105,6 +104,8 @@ class TestTrainer:
         self, wrappers, tasks, return_type
     ):  # pylint: disable=redefined-outer-name
         """Test distributed optimizations."""
+        skip_np()
+
         max_steps = 15
         make_circ, cost_fn = wrappers
         results = map_trainer(
@@ -148,6 +149,8 @@ class TestTrainer:
         self, wrappers, metric_fns
     ):  # pylint: disable=redefined-outer-name
         """Tests custom metric functions on final circuits."""
+        skip_np()
+
         make_circ, cost_fn = wrappers
 
         tasks = {
@@ -201,6 +204,8 @@ class TestTrainer:
 
     def test_invalid_tasks(self):
         """Tests unexpected tasks arg"""
+        skip_np()
+
         with pytest.raises(
             ValueError, match="`tasks` is expected to be of type int, list, or dict."
         ):
@@ -211,6 +216,8 @@ class TestTrainer:
 
     def test_warn_unused_kwargs(self, wrappers):  # pylint: disable=redefined-outer-name
         """Test warning of unused kwargs"""
+        skip_np()
+
         _, cost_fn = wrappers
         with pytest.warns(UserWarning, match="Unused kwargs:"):
             results = train_device(
@@ -222,6 +229,8 @@ class TestTrainer:
 
     def test_no_pbar(self, wrappers):  # pylint: disable=redefined-outer-name
         """Test turning off pregress bar"""
+        skip_np()
+
         _, cost_fn = wrappers
         results = map_trainer(
             cost_fn=cost_fn,
@@ -234,6 +243,8 @@ class TestTrainer:
     @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
     def test_unblock(self, wrappers, tasks):  # pylint: disable=redefined-outer-name
         """Test unblock async mode"""
+        skip_np()
+
         _, cost_fn = wrappers
         result_getter = map_trainer(
             cost_fn=cost_fn,

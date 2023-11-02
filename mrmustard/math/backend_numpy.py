@@ -18,8 +18,8 @@ import numpy as np
 
 from copy import deepcopy
 from math import lgamma as mlgamma
+from typing import List, Optional, Sequence, Tuple, Union
 from numpy.random import default_rng
-from typing import Callable, List, Optional, Sequence, Tuple, Union
 import scipy
 from scipy.linalg import expm as scipy_expm
 from scipy.special import xlogy as scipy_xlogy
@@ -28,7 +28,6 @@ from scipy.stats import multivariate_normal
 from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
-from ..utils.typing import Trainable
 from .lattice.strategies import binomial, vanilla
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
@@ -36,7 +35,7 @@ from .lattice.strategies.compactFock.inputValidation import (
 )
 
 
-class BackendNumpy(BackendBase):
+class BackendNumpy(BackendBase):  # pylint: disable=too-many-public-methods
     r"""
     A numpy backend.
     """
@@ -91,7 +90,7 @@ class BackendNumpy(BackendBase):
 
         return np.array(array, dtype=dtype)  # gotta fix the warning
 
-    def custom_gradient(self, func, args, kwargs):
+    def custom_gradient(self, func, args, kwargs):  # pylint: disable=unused-argument
         def trivial_decorator(*args, **kwargs):
             r"""
             Returns a trivial decorator that does nothing.
@@ -195,7 +194,7 @@ class BackendNumpy(BackendBase):
     def inv(self, tensor: np.array) -> np.array:
         return np.linalg.inv(tensor)
 
-    def is_trainable(self, tensor: np.array) -> bool:
+    def is_trainable(self, tensor: np.array) -> bool:  # pylint: disable=unused-argument
         return False
 
     def lgamma(self, x: np.array) -> np.array:
@@ -241,10 +240,10 @@ class BackendNumpy(BackendBase):
         bounds: Union[Tuple[Optional[float], Optional[float]], None],
         name: str,
         dtype=np.float64,
-    ):
+    ):  # pylint: disable=unused-argument
         return np.array(value, dtype=dtype)
 
-    def new_constant(self, value, name: str, dtype=np.float64):
+    def new_constant(self, value, name: str, dtype=np.float64):  # pylint: disable=unused-argument
         return np.array(value, dtype=dtype)
 
     def norm(self, array: np.array) -> np.array:
@@ -356,7 +355,7 @@ class BackendNumpy(BackendBase):
     def cholesky(self, input: np.ndarray):
         return np.linalg.cholesky(input)
 
-    def Categorical(self, probs: np.ndarray, name: str):
+    def Categorical(self, probs: np.ndarray, name: str):  # pylint: disable=unused-argument
         class Generator:
             def __init__(self, probs):
                 self._probs = probs
@@ -373,7 +372,7 @@ class BackendNumpy(BackendBase):
                 self._mean = mean
                 self._cov = cov
 
-            def sample(self, dtype=None):
+            def sample(self, dtype=None):  # pylint: disable=unused-argument
                 fn = default_rng().multivariate_normal
                 ret = fn(self._mean, self._cov)
                 return ret
