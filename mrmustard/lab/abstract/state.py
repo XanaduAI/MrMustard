@@ -311,11 +311,11 @@ class DM(State):
         )  # TODO replace with more general Bargmann repr (e.g. poly x exp) when ready
 
     @classmethod
-    def from_fock_array(cls, fock_array, modes, name="DM"):
+    def from_fock(cls, fock_array, modes, name="DM"):
         return super().__init__(FockDM(fock_array), modes, name=name)
 
     @classmethod  # NOTE DO we really want this?
-    def from_wf_array(cls, coords, wf_array):
+    def from_wf(cls, coords, wf_array):
         return cls(WaveFunctionDM(coords, wf_array))
 
     @trainable_property
@@ -371,7 +371,7 @@ class Ket(State):
             pure_check (bool): whether to check if the state is pure (default: True)
         """
         if pure_check and physics.gaussian.purity(cov) < 1.0 - settings.PURITY_ATOL:
-            raise ValueError("Initializing a Ket using a mixed state")
+            raise ValueError("Initializing a Ket using a mixed state is not allowed")
         A, b, c = physics.bargmann.from_phase_space_ket(cov, mean, s, characteristic)
         return cls(BargmannExp(A, b, c), modes, name=name)
 
@@ -396,10 +396,10 @@ class Ket(State):
         connect(self_bra, Delta.input.bra)
         return self.__class__(contract([self, self_bra, Delta]), modes=self.modes)
 
-    def from_fock_array(self, fock_array):
+    def from_fock(self, fock_array):
         return self.__class__(FockKet(fock_array), self.modes, name=self.name)
 
-    def from_wf_q_array(self, qs, wf_q_array):
+    def from_wf(self, qs, wf_q_array):
         return self.__class__(WaveFunctionKet(qs, wf_q_array), self.modes, name=self.name)
 
     @property
