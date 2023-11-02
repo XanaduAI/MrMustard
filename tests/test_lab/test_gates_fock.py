@@ -310,12 +310,14 @@ def test_choi_cutoffs():
     output = State(dm=Coherent([1.0, 1.0]).dm([5, 8])) >> Attenuator(0.5, modes=[1])
     assert output.cutoffs == [5, 8]  # cutoffs are respected by the gate
 
+
 @pytest.mark.parametrize(
     "gate, kwargs",
-    [(Sgate, {"r": 1}),
-     (Rgate, {"angle": 0.1}),
-     (Dgate, {"x": 0.1}),
-     ]
+    [
+        (Sgate, {"r": 1}),
+        (Rgate, {"angle": 0.1}),
+        (Dgate, {"x": 0.1}),
+    ],
 )
 def test_choi_for_unitary(gate, kwargs, cutoff, modes):
     """tests the `choi` method for unitary transformations"""

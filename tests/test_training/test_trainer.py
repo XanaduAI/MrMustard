@@ -36,6 +36,7 @@ from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
 from ..conftest import backend
+
 if backend == "numpy":
     pytest.mark.skip("Training not supported when using numpy backend.")
 

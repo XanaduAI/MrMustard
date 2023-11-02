@@ -95,7 +95,7 @@ class TestPNRDetector:
     def test_detector_two_mode_squeezed_state(self, r, phi, eta_s, eta_i, dc_s, dc_i):
         """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
         skip_np()
-        
+
         pnr = PNRDetector(efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
         ps = Vacuum(2) >> S2gate(r=r, phi=phi) >> pnr
         n = np.arange(len(ps))
@@ -292,13 +292,16 @@ class TestHomodyneDetector:
 
     @pytest.mark.parametrize(
         "state, kwargs, mean_expected, var_expected",
-        [(Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
-        (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
-        (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2)
-        ]
+        [
+            (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
+            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
+            (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
+        ],
     )
     @pytest.mark.parametrize("gaussian_state", [True, False])
-    def test_sampling_mean_and_var(self, state, kwargs, mean_expected, var_expected, gaussian_state):
+    def test_sampling_mean_and_var(
+        self, state, kwargs, mean_expected, var_expected, gaussian_state
+    ):
         """Tests that the mean and variance estimates of many homodyne
         measurements are in agreement with the expected values for the states"""
         state = state(**kwargs)

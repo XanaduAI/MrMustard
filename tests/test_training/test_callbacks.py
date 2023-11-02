@@ -29,6 +29,7 @@ from mrmustard.training import Optimizer, TensorboardCallback
 import mrmustard.math as math
 
 from ..conftest import backend
+
 if backend == "numpy":
     pytest.mark.skip("Training not supported when using numpy backend.")
 

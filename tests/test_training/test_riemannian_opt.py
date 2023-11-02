@@ -27,6 +27,7 @@ from mrmustard.math.parameters import update_orthogonal, update_symplectic, upda
 import mrmustard.math as math
 
 from ..conftest import backend
+
 if backend == "numpy":
     pytest.mark.skip("Training not supported when using numpy backend.")
 

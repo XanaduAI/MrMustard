@@ -28,11 +28,11 @@ class TestBackendManager:
     r"""
     Tests the BackendManager.
     """
-    l1 = [1.]
-    l2 = [1. + 0.j, -2. + 2.j]
-    l3 = [[1., 2.], [-3., 4.]]
+    l1 = [1.0]
+    l2 = [1.0 + 0.0j, -2.0 + 2.0j]
+    l3 = [[1.0, 2.0], [-3.0, 4.0]]
     l4 = [l2, l2]
-    l5 = [[[1., 2., 3. + 6], [3., 4., 5. - 10]], [[1., 2. + 1, 3.], [3., 4., 5.]]]
+    l5 = [[[1.0, 2.0, 3.0 + 6], [3.0, 4.0, 5.0 - 10]], [[1.0, 2.0 + 1, 3.0], [3.0, 4.0, 5.0]]]
     lists = [l1, l2, l3, l4, l5]
 
     types = ["None", "int32", "float32", "float64", "complex128"]
@@ -168,7 +168,7 @@ class TestBackendManager:
         res = math.asnumpy(math.cast(arr, dtype))
         exp = arr.astype(np_dtype or np.float64)
         assert np.allclose(res, exp)
-        
+
     @pytest.mark.parametrize("l", [l1, l3])
     def test_clip(self, l):
         r"""
@@ -233,20 +233,20 @@ class TestBackendManager:
         r"""
         Tests the ``det`` method.
         """
-        arr = np.array([[1., 2.], [3., 4.]])
-        assert np.allclose(math.det(arr), -2.)
+        arr = np.array([[1.0, 2.0], [3.0, 4.0]])
+        assert np.allclose(math.det(arr), -2.0)
 
     def test_diag(self):
         r"""
         Tests the ``diag`` method.
         """
         d1 = math.ones(shape=(3,), dtype=math.float64)
-        d2 = 2*math.ones(shape=(2,), dtype=math.float64)
-        d3 = 3*math.ones(shape=(1,), dtype=math.float64)
+        d2 = 2 * math.ones(shape=(2,), dtype=math.float64)
+        d3 = 3 * math.ones(shape=(1,), dtype=math.float64)
 
         res = math.diag(d1, 0) + math.diag(d2, 1) + math.diag(d3, 2)
         res = math.asnumpy(res)
-        exp = np.array([[1., 2., 3.], [0., 1., 2.], [0., 0., 1.]])
+        exp = np.array([[1.0, 2.0, 3.0], [0.0, 1.0, 2.0], [0.0, 0.0, 1.0]])
 
         assert np.allclose(res, exp)
 
@@ -254,16 +254,16 @@ class TestBackendManager:
         r"""
         Tests the ``diag_part`` method.
         """
-        arr = np.arange(9).reshape((3,1,3))
-        
+        arr = np.arange(9).reshape((3, 1, 3))
+
         dp1 = math.asnumpy(math.diag_part(arr, 0))
         exp1 = np.array([[0], [3], [6]])
         assert np.allclose(dp1, exp1)
-        
+
         dp2 = math.asnumpy(math.diag_part(arr, 1))
         exp2 = np.array([[1], [4], [7]])
         assert np.allclose(dp2, exp2)
-        
+
         dp3 = math.asnumpy(math.diag_part(arr, 2))
         exp3 = np.array([[2], [5], [8]])
         assert np.allclose(dp3, exp3)
@@ -272,9 +272,9 @@ class TestBackendManager:
         r"""
         Tests the ``eigvals`` method.
         """
-        arr = np.arange(9, dtype=np.float64).reshape((3,3))
+        arr = np.arange(9, dtype=np.float64).reshape((3, 3))
         ev = math.asnumpy(math.eigvals(arr))
-        exp = np.array([1.33484692e+01, -1.34846923e+00, 0.])
+        exp = np.array([1.33484692e01, -1.34846923e00, 0.0])
 
         ev.sort()
         exp.sort()
@@ -289,7 +289,7 @@ class TestBackendManager:
         arr[2, 2] = 3
         vals, vecs = math.eigh(arr)
 
-        assert np.allclose(math.asnumpy(vals), np.array([1., 2., 3.]))
+        assert np.allclose(math.asnumpy(vals), np.array([1.0, 2.0, 3.0]))
         assert np.allclose(math.asnumpy(vecs), np.eye(3))
 
     def test_einsum(self):
@@ -306,7 +306,9 @@ class TestBackendManager:
         arr[1, 1] = 2
         arr[2, 2] = 3
         res = math.asnumpy(math.exp(arr))
-        exp = np.array([[np.exp(0) if i!=j else np.exp(i+1) for i in range(3)] for j in range(3)])
+        exp = np.array(
+            [[np.exp(0) if i != j else np.exp(i + 1) for i in range(3)] for j in range(3)]
+        )
         assert np.allclose(res, exp)
 
     def test_expand_dims(self):
@@ -381,16 +383,16 @@ class TestBackendManager:
         r"""
         Tests the ``imag`` method.
         """
-        arr = np.eye(3) + 2j*np.eye(3)
-        assert np.allclose(math.asnumpy(math.imag(arr)), 2*np.eye(3))
+        arr = np.eye(3) + 2j * np.eye(3)
+        assert np.allclose(math.asnumpy(math.imag(arr)), 2 * np.eye(3))
 
-        assert np.allclose(math.asnumpy(math.imag(np.eye(3))), 0*np.eye(3))
+        assert np.allclose(math.asnumpy(math.imag(np.eye(3))), 0 * np.eye(3))
 
     def test_inv(self):
         r"""
         Tests the ``inv`` method.
         """
-        arr = np.array([[1., 0], [0, 1j]])
+        arr = np.array([[1.0, 0], [0, 1j]])
         inv = math.inv(arr)
         assert np.allclose(math.asnumpy(arr @ inv), np.eye(2))
 
@@ -410,14 +412,14 @@ class TestBackendManager:
         r"""
         Tests the ``lgamma`` method.
         """
-        arr = np.array([1., 2., 3., 4.])
+        arr = np.array([1.0, 2.0, 3.0, 4.0])
         assert np.allclose(math.asnumpy(math.lgamma(arr)), math.lgamma(arr))
 
     def test_log(self):
         r"""
         Tests the ``log`` method.
         """
-        arr = np.array([1., 2., 3., 4.])
+        arr = np.array([1.0, 2.0, 3.0, 4.0])
         assert np.allclose(math.asnumpy(math.log(arr)), np.log(arr))
 
     def test_matmul(self):
@@ -430,9 +432,9 @@ class TestBackendManager:
         r"""
         Tests the ``make_complex`` method.
         """
-        r = 1.
-        i = 2.
-        math.asnumpy(math.make_complex(r, i)) == r + i*1j
+        r = 1.0
+        i = 2.0
+        math.asnumpy(math.make_complex(r, i)) == r + i * 1j
 
     def test_matvec(self):
         r"""
@@ -508,14 +510,14 @@ class TestBackendManager:
         r"""
         Tests the ``pow`` method.
         """
-        arr = np.array([1., 2., 3., 4.])
+        arr = np.array([1.0, 2.0, 3.0, 4.0])
         assert np.allclose(math.asnumpy(math.pow(arr, 2)), math.pow(arr, 2))
 
     def test_real(self):
         r"""
         Tests the ``real`` method.
         """
-        arr = np.eye(3) + 2j*np.eye(3)
+        arr = np.eye(3) + 2j * np.eye(3)
         assert np.allclose(math.asnumpy(math.real(arr)), np.eye(3))
 
         assert np.allclose(math.asnumpy(math.real(np.eye(3))), np.eye(3))
@@ -528,12 +530,12 @@ class TestBackendManager:
         shape = (1, 9)
         arr = math.reshape(arr, shape)
         assert arr.shape == shape
-        
+
     def test_set_diag(self):
         r"""
         Tests the ``set_diag`` method.
         """
-        arr = np.zeros(shape=(3,3))
+        arr = np.zeros(shape=(3, 3))
         diag = np.ones(shape=(3,))
         assert np.allclose(math.asnumpy(math.set_diag(arr, diag, 0)), np.eye(3))
 
@@ -558,7 +560,7 @@ class TestBackendManager:
         Tests the ``solve`` method.
         """
         arr = np.eye(3)
-        vec = np.array([1., 2., 3.])
+        vec = np.array([1.0, 2.0, 3.0])
         res = math.asnumpy(math.solve(arr, vec))
         assert np.allclose(arr @ res, vec)
 
@@ -577,7 +579,7 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sqrtm(arr))
         assert np.allclose(res, 2 * np.eye(3))
-        
+
     def test_sum(self):
         r"""
         Tests the ``sum`` method.
@@ -585,19 +587,19 @@ class TestBackendManager:
         arr = 4 * np.eye(3)
         res = math.asnumpy(math.sum(arr))
         assert np.allclose(res, 12)
-        
+
     def test_tensordor(self):
         r"""
         Tests the ``tensordor`` method.
         """
         pass
-        
+
     def test_tile(self):
         r"""
         Tests the ``tile`` method.
         """
         pass
-        
+
     def test_trace(self):
         r"""
         Tests the ``trace`` method.
