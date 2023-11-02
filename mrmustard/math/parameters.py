@@ -15,9 +15,7 @@
 """This module contains the classes to describe constant and variable parameters used in Mr Mustard."""
 
 from typing import Callable, Optional, Tuple
-import warnings
 
-from mrmustard import settings
 from mrmustard.math.backend_manager import BackendManager
 
 math = BackendManager()

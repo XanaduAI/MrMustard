@@ -74,8 +74,6 @@ from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 import numpy as np
 
-from mrmustard import math
-
 
 @dataclass
 class Callback:

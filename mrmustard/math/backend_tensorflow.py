@@ -335,6 +335,7 @@ class BackendTensorflow(BackendBase):  # pylint: disable=too-many-public-methods
     def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
         return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
+    @staticmethod
     def eigh(tensor: tf.Tensor) -> Tensor:
         return tf.linalg.eigh(tensor)
 

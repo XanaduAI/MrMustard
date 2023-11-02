@@ -15,16 +15,16 @@
 """
 Unit tests for the :class:`BackendManager`.
 """
-import numpy as np
 import math
+import numpy as np
 import pytest
 import tensorflow as tf
 
-from ..conftest import skip_np
 from mrmustard import math
+from ..conftest import skip_np
 
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access, too-many-public-methods, unnecessary-pass
 class TestBackendManager:
     r"""
     Tests the BackendManager.
@@ -251,7 +251,7 @@ class TestBackendManager:
 
         assert np.allclose(res, exp)
 
-    def test_diag(self):
+    def test_diag_part(self):
         r"""
         Tests the ``diag_part`` method.
         """
@@ -435,7 +435,7 @@ class TestBackendManager:
         """
         r = 1.0
         i = 2.0
-        math.asnumpy(math.make_complex(r, i)) == r + i * 1j
+        assert math.asnumpy(math.make_complex(r, i)) == r + i * 1j
 
     def test_matvec(self):
         r"""

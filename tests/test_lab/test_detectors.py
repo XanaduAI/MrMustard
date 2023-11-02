@@ -20,8 +20,6 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 from scipy.stats import poisson
 
-from ..conftest import skip_np
-
 from mrmustard import math, physics, settings
 from mrmustard.lab import (
     TMSV,
@@ -40,6 +38,8 @@ from mrmustard.lab import (
     Vacuum,
 )
 from tests.random import none_or_
+
+from ..conftest import skip_np
 
 
 hbar = settings.HBAR

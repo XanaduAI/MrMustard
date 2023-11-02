@@ -22,11 +22,11 @@ from mrmustard import settings
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import RealMatrix, RealVector
 
+from mrmustard import math
 from .abstract import FockMeasurement, Measurement, State
 from .gates import Rgate
 from .states import Coherent, DisplacedSqueezed
 from .utils import make_parameter
-from mrmustard import math
 
 __all__ = ["PNRDetector", "ThresholdDetector", "Generaldyne", "Homodyne", "Heterodyne"]
 
