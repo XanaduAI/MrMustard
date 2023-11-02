@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=no-member
+# pylint: disable=no-member, import-outside-toplevel
 
 """
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
@@ -112,9 +112,7 @@ class Dgate(Unitary):
            Raises:
                ValueError: if the length of the cutoffs array is different from N and 2N
         """
-        from mrmustard.physics.fock_custom_grads import (
-            displacement,
-        )  # pylint: disable=import-outside-toplevel
+        from mrmustard.physics.fock_custom_grads import displacement
 
         N = self.num_modes
         if cutoffs is None:
@@ -208,9 +206,7 @@ class Sgate(Unitary):
         Returns:
             array[complex]: the unitary matrix
         """
-        from mrmustard.physics.fock_custom_grads import (
-            squeezer,
-        )  # pylint: disable=import-outside-toplevel
+        from mrmustard.physics.fock_custom_grads import squeezer
 
         N = self.num_modes
         if cutoffs is None:
@@ -517,9 +513,7 @@ class BSgate(Unitary):
         Returns:
             array[complex]: the unitary tensor of the beamsplitter
         """
-        from mrmustard.physics.fock_custom_grads import (
-            beamsplitter,
-        )  # pylint: disable=import-outside-toplevel
+        from mrmustard.physics.fock_custom_grads import beamsplitter
 
         if cutoffs is None:
             pass
