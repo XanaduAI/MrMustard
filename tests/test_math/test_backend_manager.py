@@ -21,7 +21,6 @@ import pytest
 import tensorflow as tf
 
 from mrmustard import math
-from ..conftest import skip_np
 
 
 # pylint: disable=protected-access, too-many-public-methods
