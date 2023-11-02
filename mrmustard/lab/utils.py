@@ -19,7 +19,7 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 """
 from typing import Callable, Optional, Tuple
 from mrmustard.math.parameters import update_euclidean
-
+from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.parameters import Constant, Variable
 
@@ -48,3 +48,41 @@ def make_parameter(
     if not is_trainable:
         return Constant(value=value, name=name)
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)
+
+
+def trainable_property(func):
+    r"""
+    Decorator that makes a property lazily evaluated or not depending on the settings.NEED_GRADIENTS flag.
+    If settings.NEED_GRADIENTS is True, we need the property to be re-evaluated every time it is accessed
+    for the computation of the gradient. If settings.NEED_GRADIENTS is False, we want to avoid re-computing
+    the property every time it is accessed, so we make it lazy.
+
+    Arguments:
+        func (callable): The function to be made into a trainable property.
+
+    Returns:
+        callable: The decorated function.
+    """
+    attr_name = "_" + func.__name__
+
+    if settings.NEED_GRADIENTS:  # NOTE: this is only global for now (set by looking at backend)
+        import functools  # pylint: disable=import-outside-toplevel
+
+        @functools.wraps(func)
+        @property
+        def _trainable_property(self):
+            r"""
+            Property getter that lazily evaluates its value. Computes the value only on the first
+            call and caches the result in a private attribute for future access.
+
+            Returns:
+                any: The value of the lazy property.
+            """
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, func(self))
+            return getattr(self, attr_name)
+
+    else:
+        _trainable_property = property(func)
+
+    return _trainable_property
