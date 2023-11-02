@@ -28,13 +28,13 @@ from typing import (
 
 import numpy as np
 
+from mrmustard import physics
+from mrmustard import settings
+from mrmustard.lab.utils import trainable_property
 from mrmustard.math.tensor_networks.networks import connect, contract
 from mrmustard.physics.bargmann_repr import BargmannExp
-from mrmustard.physics import bargmann
-from mrmustard import settings
 from mrmustard.math.tensor_networks import Tensor
 from mrmustard.math import Math
-from mrmustard.physics import fock, gaussian
 from mrmustard.utils import graphics
 
 if TYPE_CHECKING:
@@ -43,62 +43,43 @@ if TYPE_CHECKING:
 math = Math()
 
 
-# class SafeProperty:
-#     r"""
-#     A descriptor that catches AttributeError exceptions in a getter method
-#     and raises a new AttributeError with a custom message.
+class State(Tensor):
+    r"""Mixin class for quantum states. It supplies common functionalities and properties of all states.
+    Note that Ket and DM implement their own ``from_foo`` methods.
 
-#     Usage:
+    The State class is a coordinator between the indices of the representation (in self.representation)
+    and the wires/modes, which is handled by self as well, because State inherits from Tensor.
 
-#     @SafeProperty
-#     def some_property(self):
-#         return self.some_attribute
-#     """
+    When using a State object we can think of it as the mathematical symbol, e.g. a Hilbert space vector
 
-#     def __init__(self, getter):
-#         self.getter = getter
+    .. code-block:: python
+        psi0 = Ket.from_abc(A0, b0, c0, modes=[0, 1, 2])
+        psi1 = Ket.from_abc(A1, b1, c1, modes=[0, 1, 2])
 
-#     def __get__(self, instance, owner):
-#         try:
-#             return self.getter(instance)
-#         except AttributeError:
-#             raise AttributeError("Property unavailable in the current representation.") from None
+        psi = a * psi0 + b * psi1
 
-####################################################################################################
-####################################################################################################
-# NOTE: primal is implemented via tensor contraction in the __lshift__ method. Also, all the
-# contractions are moved to physics
-####################################################################################################
-####################################################################################################
+    A State object also supports the tensor network operations, e.g. contraction, tensor product, etc.
 
-# NOTE: we don't care about implementation of the operations and the attributes of the state.
-# Those are usually in the representation, and we just delegate to it. So abstract away.
+    .. code-block:: python
+        connect(rho.output[0], channel0.input)
+        contract([rho, channel0])
 
+    A State object also supports the wire-wise matmul functionality:
 
-# pylint: disable=too-many-instance-attributes
-class State(Tensor):  # pylint: disable=too-many-public-methods
-    r"""Mixin class for quantum states. It supplies a simple initializer
-    and common functionalities and properties of all states. Note that Ket and DM
-    implement their own ``from_foo`` methods.
-
-    The State class coordinates the indices of the representation (in the attribute self.representation)
-    and the wires/modes business, which is handled by self because State is a Tensor.
+    The actual implementation of the algebraic functionality is beyond the representation interface.
+    Representation objects come in two types: there is RepresentationCV and RepresentationDV.
+    RepresentationCV is a parent of the Bargmann representation (which includes all the other continous ones that we know of)
+    and RepresentationDV is a parent of the Fock representation, but also of the discretization of the continuous representations.
     """
 
-    def __init__(self, representation, name, **modes):
-        self.representation = representation
-        super().__init__(name, **modes)
-
     def __getattr__(self, name):
+        r"""Searches for the attribute in the representation if it is not found in self (Ket or DM)."""
         try:
-            return getattr(self, name)  # try with self (Ket or DM)
-        except AttributeError:  # if not found
-            try:
-                return getattr(self.representation, name)  # try with representation
-            except AttributeError as e:
-                raise AttributeError(
-                    f"Attribute {name} not found in {self.__class__.__qualname__} or its representation"
-                ) from e
+            return getattr(self.representation, name)
+        except AttributeError as e:
+            raise AttributeError(
+                f"Attribute {name} not found in {self.__class__.__qualname__} or its representation"
+            ) from e
 
     @property
     def is_mixed(self):
@@ -108,71 +89,60 @@ class State(Tensor):  # pylint: disable=too-many-public-methods
     @property
     def is_pure(self):
         r"""Returns whether the state is pure."""
-        return np.isclose(self.purity, 1.0, atol=1e-9)
+        return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
 
-    @property
-    def norm(self) -> float:  # NOTE: risky: need to make sure user knows what kind of norm
-        r"""Returns the norm of the state."""
-        return self.representation.norm
-
-    @property
-    def probability(self) -> float:
-        r"""Returns the probability of the state."""
-        return self.representation.probability
+    @trainable_property
+    def L2_norm(self) -> float:
+        r"""Returns the L2 norm of the Hilbert space vector or Hilbert-Schmidt norm of a density matrix."""
+        return self >> self.dual
 
     def __and__(self, other: State) -> State:
         r"""Tensor product of two states."""
+        if not set(self.modes).isdisjoint(other.modes):
+            raise ValueError("Modes must be disjoint")
         return self.__class__(
             self.representation & other.representation, modes=self.modes + other.modes
         )
 
-    def __getitem__(self, item: int | Iterable) -> State:  # TODO: implement slices
-        r"""Returns the marginal state on the given modes."""
+    def __getitem__(self, item: int | Iterable) -> State:
+        r"""Returns a copy of the state on the given modes."""
         if isinstance(item, int):
             item = [item]
         elif isinstance(item, Iterable):
             item = list(item)
         else:
-            raise TypeError("item must be int or iterable or slice")
+            raise TypeError("item must be int or iterable")
+        if len(item) != self.num_modes:
+            raise ValueError(f"item must have length {self.num_modes}, got {len(item)} instead")
+        return self.__class__(self.representation, modes=item)
 
-        if not set(item).issubset(self.modes):
-            raise ValueError(
-                f"modes {item} are not a subset of the modes of the state {self.modes}"
-            )
+    def __matmul__(self, other: BargmannExp) -> BargmannExp:
+        r"""Inner product with a generic Tensor object.
+        It assumes that the _contract_idxs attribute has already been set.
+        """
+        return self.__class__(self.representation @ other, modes=self.modes)
 
+    def get_modes(self, modes: int | Iterable) -> State:
         # TODO: write partial_trace in the representation
-        self.__class__(self.representation.partial_trace(keep=item), modes=item)
+        self.__class__(self.representation.partial_trace(keep=modes), modes=modes)
 
     def __eq__(self, other) -> bool:  # pylint: disable=too-many-return-statements
-        r"""Returns whether the states are equal."""
-        return self.representation == other.representation  # do we care about modes?
+        r"""Returns whether the states are equal. Modes and all."""
+        return self.representation == other.representation and self.modes == other.modes
 
     def __rshift__(self, other: Transformation | State) -> State | complex:
         r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
         If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
         """
-        common_modes = set(self.output.ket).intersection(other.input.ket)
-        for wire1, wire2 in ((self.output.ket[m], other.input.ket[m]) for m in common_modes):
-            connect(wire1, wire2)
-        try:  # if objects have a bra side, connect it too
-            for wire1, wire2 in ((self.output.bra[m], other.input.bra[m]) for m in common_modes):
-                connect(wire1, wire2)
-        except KeyError:
-            pass
-        # TODO: contract should return a representation?
+        common_modes = set(self.modes_out).intersection(other.modes_in)
+        self_out = self.output[common_modes]
+        other_in = other.input[common_modes]
+        connect(self_out, other_in)
         return self.__class__(representation=contract([self, other]), modes=self.modes)
 
     def __lshift__(self, other: State) -> State | complex:
-        r"""Dual picture of ``__rshift__``: self << other is the same as other.dual >> self.dual."""
-        common_modes = set(self.input.ket).intersection(other.output.ket)
-        for wire1, wire2 in zip(self.input.ket[common_modes], other.output.ket[common_modes]):
-            connect(wire1, wire2)
-        try:
-            for wire1, wire2 in zip(self.input.bra[common_modes], other.output.bra[common_modes]):
-                connect(wire1, wire2)
-        except AttributeError:
-            pass
-        return self.__class__(representation=contract([self, other]), modes=self.modes)
+        r"""dual of __rshift__"""
+        return (other.dual >> self.dual).dual
 
     def __add__(self, other: State):
         r"""Implements addition of states."""
@@ -180,16 +150,20 @@ class State(Tensor):  # pylint: disable=too-many-public-methods
         return self.__class__(self.representation + other.representation, modes=self.modes)
 
     def __rmul__(self, other: Union[int, float, complex]):
-        r"""Implements multiplication by a scalar from the left.
+        r"""Implements multiplication from the left if the object on the left
+        does not implement __mul__ for the type of self.
 
         E.g., ``0.5 * psi``.
         """
         assert isinstance(other, (int, float, complex))
         return self.__class__(other * self.representation, modes=self.modes)
 
-    def __mul__(self, other: Union[int, float, complex]):
+    def __mul__(self, other):
         r"""Implements multiplication of two objects."""
-        return other * self
+        if isinstance(other, (int, float, complex)):
+            return other * self
+        modes = list(set(self.modes).union(set(other.modes)))
+        return self.__class__(self.representation * other.representation, modes=modes)
 
     def __truediv__(self, other: Union[int, float, complex]):
         r"""Implements division by a scalar.
@@ -205,7 +179,8 @@ class State(Tensor):  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target Bargmann Representation
         """
-        return self.__class__(self.representation.to_bargmann(), modes=self.modes)
+        if isinstance(self.representation, BargmannExp):
+            return self
 
     def to_fock(
         self,
@@ -242,7 +217,10 @@ class State(Tensor):  # pylint: disable=too-many-public-methods
         Returns:
             State: the converted state with the target quadrature representation
         """
-        return self.__class__(self.representation.to_quadrature(angle), modes=self.modes)
+        quadrature = physics.bargmann.quadrature_kernel(angle, dim=self.representation.dimension)
+        connect(self.output.ket, quadrature.input.ket)
+        connect(self.output.bra, quadrature.input.ket.adjoint)
+        return self.__class__(contract([self, quadrature]), modes=self.modes)
 
     def to_phase_space(self, s=1, characteristic=False):
         r"""Returns the state converted to s-parametrized phase space representation.
@@ -288,51 +266,84 @@ class State(Tensor):  # pylint: disable=too-many-public-methods
         if self.num_modes == 1:
             graphics.mikkel_plot(math.asnumpy(self.to_Fock(0.999).representation))
 
-        # TODO:
-        # if settings.DEBUG:
-        #     detailed_info = f"\ncov={repr(self.cov)}\n" + f"means={repr(self.means)}\n"
-        #     return f"{table}\n{detailed_info}"
-
         return table
+
+    @trainable_property
+    def cov(self):
+        r"""Covariance matrix of the Gaussian distribution. Available only if the representation is continuous."""
+        cov_complex = self.to_phase_space(s=1, characteristic=True).representation.A
+        R = math.Rmat(self.representation.dimension)
+        return math.matmul(math.dagger(R), cov_complex, R) * settings.HBAR
+
+    @trainable_property
+    def mean(self):  # TODO check if this is correct
+        r"""Mean of the Gaussian distribution. Available only if the representation is continuous."""
+        wigner = self.to_phase_space(s=1, characteristic=False).representation
+        mean_complex = -math.matvec(wigner.A, wigner.b)
+        R = math.Rmat(self.representation.dimension)
+        return math.matmul(math.dagger(R), mean_complex) * math.sqrt(settings.HBAR)
 
 
 class DM(State):
     def __init__(self, representation, modes, name):
-        super().__init__(
-            representation, name=name, modes_out_ket=modes, modes_out_bra=modes
-        )  # Tensor init
+        self.representation = representation
+        super().__init__(name=name, modes_out_ket=modes, modes_out_bra=modes)
 
     @classmethod
     def from_abc(cls, A, b, c, modes, name="DM"):
         return cls(BargmannExp(A, b, c), modes, name=name)
 
     @classmethod
-    def from_phase_space(cls, mat, vec, s, characteristic, modes, name="DM"):
-        r"""General constructor for density matrices in phase space representation."""
-        A, b, c = bargmann.from_phase_space_dm(mat, vec, s, characteristic)
-        return cls(BargmannExp(A, b, c), modes, name=name)
+    def from_phase_space(cls, cov, mean, modes, s=1, characteristic=False, name="DM"):
+        r"""General constructor for density matrices in phase space representation.
 
-    @classmethod
-    def from_wigner(cls, cov, means, modes, name="DM"):
-        A, b, c = bargmann.from_phase_space_dm(cov, means, s=1, characteristic=False)
-        return cls(BargmannExp(A, b, c), modes, name=name)
-
-    @classmethod
-    def from_wigner_char(cls, cov, means, modes, name="DM"):
-        A, b, c = bargmann.from_phase_space_dm(cov, means, s=1, characteristic=True)
-        return cls(BargmannExp(A, b, c), modes, name=name)
+        Args:
+            cov (Batch[ComplexMatrix]): the covariance matrix
+            mean (Batch[ComplexVector]): the vector of means
+            modes (Sequence[int]): the modes of the state
+            s (float): the parameter of the phase space representation
+            characteristic (bool): whether from the characteristic function
+            name (str): the name of the state
+        """
+        A, b, c = physics.bargmann.from_phase_space_dm(cov, mean, s, characteristic)
+        return cls(
+            BargmannExp(A, b, c), modes, name=name
+        )  # TODO replace with more general Bargmann repr (e.g. poly x exp) when ready
 
     @classmethod
     def from_fock_array(cls, fock_array, modes, name="DM"):
-        return super().__init__(FockArray(fock_array), modes, name=name)
+        return super().__init__(FockDM(fock_array), modes, name=name)
 
-    @classmethod
+    @classmethod  # NOTE DO we really want this?
     def from_wf_array(cls, coords, wf_array):
         return cls(WaveFunctionDM(coords, wf_array))
 
+    @trainable_property
+    def probability(self) -> float:  # TODO: make lazy if backend is not TF?
+        connect(self.output.ket, self.output.bra)  # TODO they remain connected though
+        return math.real(contract([self]))
+
+    @trainable_property
     def purity(self) -> float:
-        # TODO mark all indices to be contracted
-        return self.representation @ self.representation.dual
+        normalized = self / self.probability
+        return normalized.L2_norm  # NOTE: for density matrices it's the purity
+
+    def to_phase_space(self, s=1, characteristic=False):
+        r"""Returns the density matrix converted to s-parametrized phase space representation.
+
+        Args:
+            s (optional float): The parameter s of the phase space representation. Defaults to 1 (Wigner).
+                Use s=0 for the Husimi Q function and s=-1 for the Glauber-Sudarshan P function.
+            characteristic (optional bool): Whether to compute to the characteristic function. Defaults to False.
+
+        Returns:
+            DM: the converted DM in the phase space representation
+        """
+        assert s in [1, 0, -1]
+        Delta = physics.bargmann.siegel_weil_kernel(s, dim=self.representation.dimension)
+        connect(self.output.ket, Delta.input.ket)
+        connect(self.output.bra, Delta.input.bra)
+        return self.__class__(contract([self, Delta]), modes=self.modes)
 
 
 class Ket(State):
@@ -345,9 +356,45 @@ class Ket(State):
         return cls(BargmannExp(A, b, c), modes, name=name)
 
     @classmethod
-    def from_cov_means(cls, cov, means, modes, name="Ket"):  # should become from_phase_space?
-        A, b, c = bargmann.wigner_to_bargmann_psi(cov, means)
+    def from_phase_space(
+        cls, cov, mean, modes, s=1, characteristic=True, name="Ket", pure_check=True
+    ):
+        r"""General constructor for kets in phase space representation.
+
+        Args:
+            cov (Batch[ComplexMatrix]): the covariance matrix
+            mean (Batch[ComplexVector]): the vector of means
+            modes (Sequence[int]): the modes of the state
+            s (float): the parameter of the phase space representation
+            characteristic (bool): whether to compute the characteristic function
+            name (str): the name of the state
+            pure_check (bool): whether to check if the state is pure (default: True)
+        """
+        if pure_check and physics.gaussian.purity(cov) < 1.0 - settings.PURITY_ATOL:
+            raise ValueError("Initializing a Ket using a mixed state")
+        A, b, c = physics.bargmann.from_phase_space_ket(cov, mean, s, characteristic)
         return cls(BargmannExp(A, b, c), modes, name=name)
+
+    def to_phase_space(self, s=1, characteristic=False):
+        r"""Returns the density matrix converted to s-parametrized phase space representation.
+        Note that this actually is the s-parametrized phase space representation of the
+        pure density matrix |self><self|.
+
+        Args:
+            s (optional float): The parameter s of the phase space representation. Defaults to 1 (Wigner).
+                Use s=0 for the Husimi Q function and s=-1 for the Glauber-Sudarshan P function.
+            characteristic (optional bool): Whether to compute to the characteristic function. Defaults to False.
+
+        Returns:
+            DM: the converted DM in the phase space representation
+        """
+        assert s in [1, 0, -1]
+        # TODO: write SW kernel
+        Delta = physics.bargmann.siegel_weil_kernel(s, dim=self.representation.dimension)
+        self_bra = self.output.ket.adjoint
+        connect(self.output.ket, Delta.input.ket)
+        connect(self_bra, Delta.input.bra)
+        return self.__class__(contract([self, self_bra, Delta]), modes=self.modes)
 
     def from_fock_array(self, fock_array):
         return self.__class__(FockKet(fock_array), self.modes, name=self.name)
@@ -358,3 +405,7 @@ class Ket(State):
     @property
     def purity(self) -> float:
         return 1.0
+
+    @trainable_property
+    def probability(self) -> float:
+        return self.L2_norm
