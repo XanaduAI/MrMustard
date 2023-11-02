@@ -52,9 +52,9 @@ def make_parameter(
 
 def trainable_property(func):
     r"""
-    Decorator that makes a property lazily evaluated or not depending on the settings.NEED_GRADIENTS flag.
-    If settings.NEED_GRADIENTS is True, we need the property to be re-evaluated every time it is accessed
-    for the computation of the gradient. If settings.NEED_GRADIENTS is False, we want to avoid re-computing
+    Decorator that makes a property lazily evaluated or not depending on the settings.BACKEND flag.
+    If settings.BACKEND is tensorflow, we need the property to be re-evaluated every time it is accessed
+    for the computation of the gradient. If settings.BACKEND is numpy, we want to avoid re-computing
     the property every time it is accessed, so we make it lazy.
 
     Arguments:
@@ -65,7 +65,7 @@ def trainable_property(func):
     """
     attr_name = "_" + func.__name__
 
-    if settings.NEED_GRADIENTS:  # NOTE: this is only global for now (set by looking at backend)
+    if settings.BACKEND == "numpy":
         import functools  # pylint: disable=import-outside-toplevel
 
         @functools.wraps(func)
