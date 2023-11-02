@@ -24,6 +24,7 @@ from ..conftest import skip_np
 from mrmustard import math
 
 
+# pylint: disable=protected-access
 class TestBackendManager:
     r"""
     Tests the BackendManager.

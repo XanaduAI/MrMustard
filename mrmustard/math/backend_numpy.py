@@ -14,7 +14,7 @@
 
 """This module contains the numpy backend."""
 
-# pylint: disable = missing-function-docstring
+# pylint: disable = missing-function-docstring, missing-class-docstring
 
 
 from copy import deepcopy

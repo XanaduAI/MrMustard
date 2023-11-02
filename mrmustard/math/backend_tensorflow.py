@@ -14,7 +14,7 @@
 
 """This module contains the tensorflow backend."""
 
-# pylint: disable = missing-function-docstring
+# pylint: disable = missing-function-docstring, missing-class-docstring
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
@@ -335,20 +335,16 @@ class BackendTensorflow(BackendBase):  # pylint: disable=too-many-public-methods
     def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
         return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
+    def eigh(tensor: tf.Tensor) -> Tensor:
+        return tf.linalg.eigh(tensor)
+
     @staticmethod
     def eigvals(tensor: tf.Tensor) -> Tensor:
         return tf.linalg.eigvals(tensor)
 
-    def eigh(tensor: tf.Tensor) -> Tensor:
-        return tf.linalg.eigh(tensor)
-
     @staticmethod
     def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
         return tf.math.xlogy(x, y)
-
-    @staticmethod
-    def eigh(tensor: tf.Tensor) -> Tensor:
-        return tf.linalg.eigh(tensor)
 
     def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
         # The sqrtm function has issues with matrices that are close to zero, hence we branch
