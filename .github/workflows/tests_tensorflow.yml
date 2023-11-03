@@ -1,4 +1,4 @@
-name: Tests
+name: Tensorflow tests
 on:
   push:
     branches:
@@ -44,7 +44,7 @@ jobs:
           julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
       - name: Run tests
-        run: python -m pytest tests --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
+        run: python -m pytest tests --backend=tensorflow --cov=mrmustard --cov-report=term-missing --cov-report=xml -p no:warnings --tb=native
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

@@ -21,7 +21,7 @@ def write_block(
 ):  # pragma: no cover
     """
     Apply the recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
-    This is the coarse-grained version of applying the recurrence relation of mrmustard.math.numba.compactFock_diagonal_amps once.
+    This is the coarse-grained version of applying the recurrence relation of mrmustard.math.compactFock.compactFock_diagonal_amps once.
     """
     m, n = 0, 0
     A_adapted = A[i, 2:]

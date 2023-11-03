@@ -17,13 +17,11 @@
 import numpy as np
 from numba import njit
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 
 
 __all__ = ["wigner_discretized"]
 
-math = Math()
 
 # ~~~~~~~
 # Helpers

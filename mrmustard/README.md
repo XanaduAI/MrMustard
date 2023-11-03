@@ -15,4 +15,4 @@ The lab module contains states, gates and detectors. The code in these objects u
 The physics module contains the implementation of all of the functionality used in the lab module. The physics module talks to an interface for a math backend, which is defined in [`math_interface.py`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/physics/math_interface.py).
 
 ### 3. [math](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math)
-The math module contains the concrete implementations of the math interface. At the moment we have [Tensorflow](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/tensorflow.py) and [Pytorch](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/torch.py).
+The math module contains the concrete implementations of the math interface. At the moment we have [Numpy](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/backend_numpy.py) and [Tensorflow](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/backend_tensorflow.py).

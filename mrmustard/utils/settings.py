@@ -80,7 +80,6 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._backend = "tensorflow"
         self._hbar = ImmutableSetting(2.0, "HBAR")
         self._debug = False
         self._autocutoff_probability = 0.999  # capture at least 99.9% of the probability
@@ -136,20 +135,6 @@ class Settings:
     @AUTOCUTOFF_PROBABILITY.setter
     def AUTOCUTOFF_PROBABILITY(self, value: float):
         self._autocutoff_probability = value
-
-    @property
-    def BACKEND(self):
-        r"""The backend which is used. Default is ``tensorflow``.
-
-        Can be either ``'tensorflow'`` or ``'torch'``.
-        """
-        return self._backend
-
-    @BACKEND.setter
-    def BACKEND(self, value: str):
-        if value not in ["tensorflow", "torch"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
-        self._backend = value
 
     @property
     def CIRCUIT_DECIMALS(self):

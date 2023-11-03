@@ -16,10 +16,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-import matplotlib.pyplot as plt
-import warnings
-
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -29,10 +25,12 @@ from typing import (
     Tuple,
     Union,
 )
+import warnings
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import cm
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
@@ -48,8 +46,6 @@ from mrmustard.physics.wigner import wigner_discretized
 
 if TYPE_CHECKING:
     from .transformation import Transformation
-
-math = Math()
 
 
 # pylint: disable=too-many-instance-attributes

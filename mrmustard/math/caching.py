@@ -15,7 +15,10 @@
 """This module contains the logic for cachin tensor functions in Mr Mustard."""
 
 from functools import lru_cache, wraps
+from mrmustard.math.backend_manager import BackendManager
 import numpy as np
+
+math = BackendManager()
 
 
 def tensor_int_cache(fn):
@@ -33,7 +36,7 @@ def tensor_int_cache(fn):
 
     @wraps(fn)
     def wrapper(tensor, cutoff):
-        return cached_wrapper(tuple(tensor.numpy()), cutoff)
+        return cached_wrapper(tuple(math.asnumpy(tensor)), cutoff)
 
     # copy lru_cache attributes over too
     wrapper.cache_info = cached_wrapper.cache_info

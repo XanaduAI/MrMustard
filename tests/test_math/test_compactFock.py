@@ -4,20 +4,20 @@ Unit tests for mrmustard.math.compactFock.compactFock~
 import importlib
 import pytest
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
-from mrmustard.math import Math
 from mrmustard.physics import fidelity, normalize
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
-
-math = Math()  # use methods in math if you want them to be differentiable
+from ..conftest import skip_np
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
+precisions = [128, 256, 384, 512]
 
 do_julia = True if importlib.util.find_spec("julia") else False
 precisions = (
@@ -82,6 +82,8 @@ def test_compactFock_diagonal(precision, A_B_G0):
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_1leftover(precision, A_B_G0):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    skip_np()
+
     settings.PRECISION_BITS_HERMITE_POLY = precision
     for cutoffs in allowed_cutoffs((7, 7, 7)):
         A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
@@ -111,6 +113,8 @@ def test_compactFock_1leftover(precision, A_B_G0):
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_diagonal_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
+    skip_np()
+
     settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Ggate(num_modes=3, symplectic_trainable=True)
 
@@ -135,6 +139,8 @@ def test_compactFock_diagonal_gradients(precision):
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_1leftover_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    skip_np()
+
     settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Ggate(num_modes=3, symplectic_trainable=True)
 

@@ -66,7 +66,7 @@ def write_block_grad(
 ):
     """
     Apply the derivated recurrence relation to blocks of Fock amplitudes (of shape cutoff_leftoverMode x cutoff_leftoverMode)
-    This is the coarse-grained version of applying the derivated recurrence relation of mrmustard.math.numba.compactFock_diagonal_grad once.
+    This is the coarse-grained version of applying the derivated recurrence relation of mrmustard.math.compactFock.compactFock_diagonal_grad once.
     """
     # m,n = 0,0
     m, n = 0, 0

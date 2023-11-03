@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=no-member
+# pylint: disable=no-member, import-outside-toplevel
 
 """
 This module defines gates and operations that can be applied to quantum modes to construct a quantum circuit.
@@ -22,14 +22,12 @@ from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from mrmustard import settings
-from mrmustard.math import Math
-from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
-from mrmustard.physics import fock, gaussian
+from mrmustard.physics import gaussian, fock
 from mrmustard.utils.typing import ComplexMatrix, RealMatrix
+from mrmustard import math
+from mrmustard.math.parameters import update_orthogonal, update_symplectic, update_unitary
 from .abstract import Channel, Unitary, State
 from .utils import make_parameter
-
-math = Math()
 
 __all__ = [
     "Dgate",

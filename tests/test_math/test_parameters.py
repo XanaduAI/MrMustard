@@ -17,8 +17,9 @@ Unit tests for :class:`Constant` and :class:`Variable`.
 """
 
 import pytest
+import numpy as np
 
-from mrmustard.math import Math
+from mrmustard import math
 from mrmustard.math.parameters import (
     Constant,
     Variable,
@@ -27,9 +28,6 @@ from mrmustard.math.parameters import (
     update_unitary,
     update_symplectic,
 )
-import numpy as np
-
-math = Math()
 
 
 class TestConstant:

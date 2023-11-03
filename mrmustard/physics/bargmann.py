@@ -19,11 +19,8 @@ This module contains functions for transforming to the Bargmann representation.
 """
 import numpy as np
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 from mrmustard.physics.husimi import pq_to_aadag, wigner_to_husimi
-
-math = Math()
 
 
 def cayley(X, c):
@@ -53,7 +50,9 @@ def wigner_to_bargmann_rho(cov, means):
     Q, beta = wigner_to_husimi(cov, means)
     b = math.solve(Q, beta)
     B = math.conj(b)
-    C = math.exp(-0.5 * math.sum(math.conj(beta) * b)) / math.sqrt(math.det(Q))
+    num_C = math.exp(-0.5 * math.sum(math.conj(beta) * b))
+    den_C = math.sqrt(math.det(Q), dtype=num_C.dtype)
+    C = num_C / den_C
     return A, B, C
 
 
@@ -63,11 +62,8 @@ def wigner_to_bargmann_psi(cov, means):
     """
     N = cov.shape[-1] // 2
     A, B, C = wigner_to_bargmann_rho(cov, means)
-    return (
-        A[N:, N:],
-        B[N:],
-        math.sqrt(C),
-    )  # NOTE: c for th psi is to calculated from the global phase formula.
+    return A[N:, N:], B[N:], math.sqrt(C)
+    # NOTE: c for th psi is to calculated from the global phase formula.
 
 
 def wigner_to_bargmann_Choi(X, Y, d):

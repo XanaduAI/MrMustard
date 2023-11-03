@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +13,8 @@
 # limitations under the License.
 
 r"""
-The point of entry for the backend.
+The point of entry for the tensor wrappers.
 """
-import sys
 
-from .autocast import *
-from .caching import *
-from .backend_base import *
-from .backend_manager import BackendManager
-from .backend_numpy import *
-from .lattice import *
-from .parameters import *
-from .parameter_set import *
-from .tensor_networks import *
-from .tensor_wrappers import *
-
-sys.modules[__name__] = BackendManager()
+from .mmtensor import *
+from .xptensor import *

@@ -53,29 +53,6 @@ an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ 
 
 * When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed only if Julia was previously installed by the user.
 
-PyTorch support
-------------------
-
-To use Mr Mustard with PyTorch using CPU, install it as follows:
-
-.. code-block:: console
-
-    pip install torch
-
-To install PyTorch with GPU and CUDA 10.2 support:
-
-.. code-block:: console
-
-    pip install torch==1.10.0+cu102
-
-To instead use CUDA 11.3:
-
-.. code-block:: console
-
-    pip install torch==1.10.0+cu113
-
-Refer to `PyTorch <https://pytorch.org/get-started/locally/>`_ project webpage for more details.
-
 Development environment
 -----------------------
 
@@ -105,6 +82,10 @@ Individual test modules are run by invoking pytest directly from the command lin
 .. code-block:: bash
 
     pytest tests/test_fidelity.py
+
+The ``--backend`` flag allows specifying the backend used when running the tests. To
+use the numpy backend, type ``pytest tests/test_fidelity.py`` or ``pytest tests/test_fidelity.py --backend=numpy``.
+To use the tensorflow backend, run the command ``pytest tests/test_fidelity.py --backend=tensorflow``.
 
 .. note:: **Run options for Mr Mustard tests**
 

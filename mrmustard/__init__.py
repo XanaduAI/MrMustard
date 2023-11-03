@@ -79,11 +79,3 @@ def about():
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
-
-    try:  # pragma: no cover
-        import torch
-
-        torch_version = torch.__version__
-        print("Torch version:             {}".format(torch_version))
-    except ImportError:
-        torch_version = None
