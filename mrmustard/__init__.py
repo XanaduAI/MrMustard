@@ -18,7 +18,7 @@
 
 from .utils.settings import *
 
-from .math import *
+from .math import *  # this is the BackendManager
 
 from .lab.circuit import *
 from .lab.detectors import *
