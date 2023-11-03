@@ -135,10 +135,10 @@ class State:
         If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
         """
         common_modes = set(self.modes_out).intersection(other.modes_in)
-        connect(self.output[common_modes], other.input[common_modes])
-        self.representation._contract_idxs = self.connected_idxs
-        other.representation._contract_idxs = other.connected_idxs
-        return self.__class__(representation=self.representation @ other.representation, modes=self.modes)
+        self_out = self.output[common_modes]
+        other_in = other.input[common_modes]
+        connect(self_out, other_in)
+        return self.__class__(representation=contract([self, other]), modes=self.modes)
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
