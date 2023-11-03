@@ -82,7 +82,10 @@ def trainable_property(func):
                 setattr(self, attr_name, func(self))
             return getattr(self, attr_name)
 
-    else:
+    elif settings.BACKEND == "tensorflow":
         _trainable_property = property(func)
+
+    else:
+        raise ValueError(f"Unknown backend {settings.BACKEND}.")
 
     return _trainable_property
