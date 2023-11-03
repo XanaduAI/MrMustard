@@ -59,44 +59,10 @@ class Wire:
     is_ket: bool
 
     def __post_init__(self):
-        self._contraction_id: int = random_int()
-        self._dim = None
-        self._is_connected = False
+        self.contraction_id: int = random_int()
+        self.dim = None
+        self.is_connected = False
 
-    @property
-    def contraction_id(self) -> int:
-        r"""
-        A numerical identifier for the contraction involving this wire.
-        """
-        return self._contraction_id
-
-    @contraction_id.setter
-    def contraction_id(self, value: int):
-        self._contraction_id = value
-
-    @property
-    def dim(self):
-        r"""
-        The dimension of this wire.
-        """
-        return self._dim
-
-    @dim.setter
-    def dim(self, value: int):
-        if self._dim:
-            raise ValueError("Cannot change the dimension of wire with specified dimension.")
-        self._dim = value
-
-    @property
-    def is_connected(self) -> bool:
-        r"""
-        Whether or not this wire is connected with another wire.
-        """
-        return self._is_connected
-
-    @is_connected.setter
-    def is_connected(self, value: bool):
-        self._is_connected = value
 
 
 @dataclass
