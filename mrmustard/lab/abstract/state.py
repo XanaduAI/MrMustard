@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 math = Math()
 
 
-class State(Tensor):
+class State:
     r"""Mixin class for quantum states. It supplies common functionalities and properties of all states.
     Note that Ket and DM implement their own ``from_foo`` methods.
 
@@ -104,8 +104,14 @@ class State(Tensor):
             self.representation & other.representation, modes=self.modes + other.modes
         )
 
+    def __matmul__(self, other: BargmannExp) -> BargmannExp:
+        r"""Inner product with a generic Tensor object.
+        It assumes that the _contract_idxs attribute has already been set.
+        """
+        return self.__class__(self.representation @ other, modes=self.modes)
+
     def __getitem__(self, item: int | Iterable) -> State:
-        r"""Returns a copy of the state on the given modes."""
+        r"""Re-initializes the state on an alternative set of modes"""
         if isinstance(item, int):
             item = [item]
         elif isinstance(item, Iterable):
@@ -115,12 +121,6 @@ class State(Tensor):
         if len(item) != self.num_modes:
             raise ValueError(f"item must have length {self.num_modes}, got {len(item)} instead")
         return self.__class__(self.representation, modes=item)
-
-    def __matmul__(self, other: BargmannExp) -> BargmannExp:
-        r"""Inner product with a generic Tensor object.
-        It assumes that the _contract_idxs attribute has already been set.
-        """
-        return self.__class__(self.representation @ other, modes=self.modes)
 
     def get_modes(self, modes: int | Iterable) -> State:
         # TODO: write partial_trace in the representation
@@ -135,10 +135,10 @@ class State(Tensor):
         If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(2) >> Coherent(x=0.1).dual``.
         """
         common_modes = set(self.modes_out).intersection(other.modes_in)
-        self_out = self.output[common_modes]
-        other_in = other.input[common_modes]
-        connect(self_out, other_in)
-        return self.__class__(representation=contract([self, other]), modes=self.modes)
+        connect(self.output[common_modes], other.input[common_modes])
+        self.representation._contract_idxs = self.connected_idxs
+        other.representation._contract_idxs = other.connected_idxs
+        return self.__class__(representation=self.representation @ other.representation, modes=self.modes)
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
@@ -179,33 +179,7 @@ class State(Tensor):
         Returns:
             State: the converted state with the target Bargmann Representation
         """
-        if isinstance(self.representation, BargmannExp):
-            return self
-
-    def to_fock(
-        self,
-        max_prob: Optional[float] = None,
-        max_photons: Optional[int] = None,
-        shape: Optional[List[int]] = None,
-    ):
-        r"""Converts the representation of the state to Fock Representation.
-
-        Args:
-            max_prob (optional float): The maximum probability of the state. Defaults to settings.AUTOCUTOFF_PROBABILITY.
-                (used to stop the calculation of the amplitudes early)
-            max_photons (optional int): The maximum number of photons in the state, summing over all modes
-                (used to stop the calculation of the amplitudes early)
-            shape (optional List[int]): The shape of the desired Fock tensor. If None it is guessed automatically.
-
-        Returns:
-            State: the converted state with the target Fock Representation
-        """
-        fock_repr = self.representation.to_fock(
-            max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY,
-            max_photons=max_photons,
-            shape=shape,
-        )
-        return self.__class__(representation=fock_repr, modes=self.modes)
+        return self.__class__(self.representation.to_bargmann(), modes=self.modes)
 
     def to_quadrature(self, angle: float):
         r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
@@ -217,26 +191,15 @@ class State(Tensor):
         Returns:
             State: the converted state with the target quadrature representation
         """
-        quadrature = physics.bargmann.quadrature_kernel(angle, dim=self.representation.dimension)
-        connect(self.output.ket, quadrature.input.ket)
-        connect(self.output.bra, quadrature.input.ket.adjoint)
-        return self.__class__(contract([self, quadrature]), modes=self.modes)
+        kernel = physics.bargmann.quadrature_kernel(angle, dim=self.representation.dimension)
+        kernel_adj = kernel.input.ket.adjoint
+        connect(self.output.ket, kernel.input.ket)
+        connect(self.output.bra, kernel_adj)
+        self.representation._contract_idxs = self.connected_idxs
+        kernel.representation._contract_idxs = kernel.connected_idxs
+        kernel_adj.representation._contract_idxs = kernel_adj.connected_idxs
 
-    def to_phase_space(self, s=1, characteristic=False):
-        r"""Returns the state converted to s-parametrized phase space representation.
-
-        Args:
-            s (optional float): The parameter s of the phase space representation. Defaults to 1 (Wigner).
-                Use s=0 for the Husimi Q function and s=-1 for the Glauber-Sudarshan P function.
-            characteristic (optional bool): Whether to compute to the characteristic function. Defaults to False.
-
-        Returns:
-            State: the converted state with the target Wigner Representation
-        """
-        assert s in [1, 0, -1]  # for now
-        return self.__class__(
-            self.representation.to_phase_space(s, characteristic), modes=self.modes
-        )
+        return self.__class__(self.representation @ kernel @ kernel_adj, modes=self.modes)
 
     @staticmethod  # TODO: move away from here?
     def _format_probability(prob: Optional[float]) -> str:
@@ -312,7 +275,7 @@ class DM(State):
 
     @classmethod
     def from_fock(cls, fock_array, modes, name="DM"):
-        return super().__init__(FockDM(fock_array), modes, name=name)
+        return cls(FockArray(fock_array), modes, name=name)
 
     @classmethod  # NOTE DO we really want this?
     def from_wf(cls, coords, wf_array):
@@ -391,15 +354,43 @@ class Ket(State):
         assert s in [1, 0, -1]
         # TODO: write SW kernel
         Delta = physics.bargmann.siegel_weil_kernel(s, dim=self.representation.dimension)
-        self_bra = self.output.ket.adjoint
+        self_bra = self.adjoint
         connect(self.output.ket, Delta.input.ket)
-        connect(self_bra, Delta.input.bra)
+        connect(self_bra.output.bra, Delta.input.bra)
         return self.__class__(contract([self, self_bra, Delta]), modes=self.modes)
 
-    def from_fock(self, fock_array):
+    def from_fock(self, fock_array):  # TODO check if code already exists
         return self.__class__(FockKet(fock_array), self.modes, name=self.name)
+    
+    def to_fock(
+        self,
+        max_prob: Optional[float] = None,
+        max_photons: Optional[int] = None,
+        shape: Optional[List[int]] = None,
+    ):
+        r"""Converts the representation of the Ket to Fock representation.
 
-    def from_wf(self, qs, wf_q_array):
+        Args:
+            max_prob (optional float): The maximum probability of the state. Defaults to settings.AUTOCUTOFF_PROBABILITY.
+                (used to stop the calculation of the amplitudes early)
+            max_photons (optional int): The maximum number of photons in the state, summing over all modes
+                (used to stop the calculation of the amplitudes early)
+            shape (optional List[int]): The shape of the desired Fock tensor. If None it is guessed automatically.
+
+        Returns:
+            State: the converted state with the target Fock Representation
+        """
+        bargmann = self.to_bargmann().representation
+        math.hermite_renormalized(bargmann.A, bargmann.b, bargmann.c, shape)
+        fock_repr = FockKet.from_bargmann(bargmann, max_prob, max_photons, shape)
+        fock_repr = self.representation.to_fock(
+            max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY,
+            max_photons=max_photons,
+            shape=shape,
+        )
+        return self.__class__(representation=fock_repr, modes=self.modes)
+
+    def from_wf(self, qs, wf_q_array): # TODO check if code already exists
         return self.__class__(WaveFunctionKet(qs, wf_q_array), self.modes, name=self.name)
 
     @property
