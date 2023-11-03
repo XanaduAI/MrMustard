@@ -20,29 +20,15 @@ from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 from scipy.stats import poisson
 
-from mrmustard import math, physics, settings
-from mrmustard.lab import (
-    TMSV,
-    Attenuator,
-    BSgate,
-    Coherent,
-    Dgate,
-    Fock,
-    Heterodyne,
-    Homodyne,
-    PNRDetector,
-    S2gate,
-    Sgate,
-    SqueezedVacuum,
-    State,
-    Vacuum,
-)
-from tests.random import none_or_
+import mrmustard as mm
+from mrmustard import physics
+from mrmustard.lab.abstract import State
 
 from ..conftest import skip_np
+from ..random import none_or_
 
 
-hbar = settings.HBAR
+hbar = mm.settings.HBAR
 
 
 class TestPNRDetector:
@@ -57,8 +43,8 @@ class TestPNRDetector:
         """Tests the correct Poisson statistics are generated when a coherent state hits an imperfect detector"""
         skip_np()
 
-        detector = PNRDetector(efficiency=eta, dark_counts=dc, modes=[0])
-        ps = Coherent(x=alpha.real, y=alpha.imag) << detector
+        detector = mm.PNRDetector(efficiency=eta, dark_counts=dc, modes=[0])
+        ps = mm.Coherent(x=alpha.real, y=alpha.imag) << detector
         expected = poisson.pmf(k=np.arange(len(ps)), mu=eta * np.abs(alpha) ** 2 + dc)
         assert np.allclose(ps, expected)
 
@@ -72,13 +58,13 @@ class TestPNRDetector:
         """Tests the correct mean and variance are generated when a squeezed state hits an imperfect detector"""
         skip_np()
 
-        S = Sgate(r=r, phi=phi)
-        ps = Vacuum(1) >> S >> PNRDetector(efficiency=eta, dark_counts=dc)
+        S = mm.Sgate(r=r, phi=phi)
+        ps = mm.Vacuum(1) >> S >> mm.PNRDetector(efficiency=eta, dark_counts=dc)
         assert np.allclose(np.sum(ps), 1.0)
-        mean = np.arange(len(ps)) @ math.asnumpy(ps)
+        mean = np.arange(len(ps)) @ mm.math.asnumpy(ps)
         expected_mean = eta * np.sinh(r) ** 2 + dc
         assert np.allclose(mean, expected_mean)
-        variance = np.arange(len(ps)) ** 2 @ math.asnumpy(ps) - mean**2
+        variance = np.arange(len(ps)) ** 2 @ mm.math.asnumpy(ps) - mean**2
         expected_variance = eta * np.sinh(r) ** 2 * (1 + eta * (1 + 2 * np.sinh(r) ** 2)) + dc
         assert np.allclose(variance, expected_variance)
 
@@ -94,8 +80,8 @@ class TestPNRDetector:
         """Tests the correct mean and variance are generated when a two mode squeezed state hits an imperfect detector"""
         skip_np()
 
-        pnr = PNRDetector(efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
-        ps = Vacuum(2) >> S2gate(r=r, phi=phi) >> pnr
+        pnr = mm.PNRDetector(efficiency=[eta_s, eta_i], dark_counts=[dc_s, dc_i])
+        ps = mm.Vacuum(2) >> mm.S2gate(r=r, phi=phi) >> pnr
         n = np.arange(len(ps))
         mean_s = np.sum(ps, axis=1) @ n
         n_s = eta_s * np.sinh(r) ** 2
@@ -108,7 +94,7 @@ class TestPNRDetector:
         var_i = np.sum(ps, axis=0) @ n**2 - mean_i**2
         expected_var_s = n_s * (n_s + 1) + dc_s
         expected_var_i = n_i * (n_i + 1) + dc_i
-        covar = n @ math.asnumpy(ps) @ n - mean_s * mean_i
+        covar = n @ mm.math.asnumpy(ps) @ n - mean_s * mean_i
         expected_covar = eta_s * eta_i * (np.sinh(r) * np.cosh(r)) ** 2
         assert np.allclose(mean_s, expected_mean_s)
         assert np.allclose(mean_i, expected_mean_i)
@@ -117,17 +103,17 @@ class TestPNRDetector:
         assert np.allclose(covar, expected_covar)
 
     def test_postselection(self):
-        """Check the correct state is heralded for a two-mode squeezed vacuum with perfect detector"""
+        """Check the correct state is heralded for a two-mode squeezed mm.Vacuum with perfect detector"""
         skip_np()
 
         n_mean = 1.0
         n_measured = 1
         cutoff = 3
-        detector = PNRDetector(efficiency=1.0, dark_counts=0.0, cutoffs=[cutoff])
-        S2 = S2gate(r=np.arcsinh(np.sqrt(n_mean)), phi=0.0)
-        proj_state = (Vacuum(2) >> S2 >> detector)[n_measured]
-        success_prob = math.real(math.trace(proj_state))
-        proj_state = proj_state / math.trace(proj_state)
+        detector = mm.PNRDetector(efficiency=1.0, dark_counts=0.0, cutoffs=[cutoff])
+        S2 = mm.S2gate(r=np.arcsinh(np.sqrt(n_mean)), phi=0.0)
+        proj_state = (mm.Vacuum(2) >> S2 >> detector)[n_measured]
+        success_prob = mm.math.real(mm.math.trace(proj_state))
+        proj_state = proj_state / mm.math.trace(proj_state)
         # outputs the ket/dm in the third mode by projecting the first and second in 1,2 photons
         expected_prob = 1 / (1 + n_mean) * (n_mean / (1 + n_mean)) ** n_measured
         assert np.allclose(success_prob, expected_prob)
@@ -140,13 +126,13 @@ class TestPNRDetector:
         "Checks that a lossy channel is equivalent to quantum efficiency on detection probs"
         skip_np()
 
-        ideal_detector = PNRDetector(efficiency=1.0, dark_counts=0.0)
-        lossy_detector = PNRDetector(efficiency=eta, dark_counts=0.0)
-        S = Sgate(r=0.2, phi=[0.0, 0.7])
-        BS = BSgate(theta=1.4, phi=0.0)
-        L = Attenuator(transmissivity=eta)
-        dms_lossy = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> lossy_detector[0]
-        dms_ideal = Vacuum(2) >> S[0, 1] >> BS[0, 1] >> L[0] >> ideal_detector[0]
+        ideal_detector = mm.PNRDetector(efficiency=1.0, dark_counts=0.0)
+        lossy_detector = mm.PNRDetector(efficiency=eta, dark_counts=0.0)
+        S = mm.Sgate(r=0.2, phi=[0.0, 0.7])
+        BS = mm.BSgate(theta=1.4, phi=0.0)
+        L = mm.Attenuator(transmissivity=eta)
+        dms_lossy = mm.Vacuum(2) >> S[0, 1] >> BS[0, 1] >> lossy_detector[0]
+        dms_ideal = mm.Vacuum(2) >> S[0, 1] >> BS[0, 1] >> L[0] >> ideal_detector[0]
         assert np.allclose(dms_lossy, dms_ideal, atol=1e-6)
 
 
@@ -155,30 +141,30 @@ class TestHomodyneDetector:
 
     @pytest.mark.parametrize("outcome", [None] + np.random.uniform(-5, 5, size=(10, 2)).tolist())
     def test_homodyne_mode_kwargs(self, outcome):
-        """Test that S gates and Homodyne mesurements are applied to the correct modes via the
+        """Test that S gates and mm.Homodyne mesurements are applied to the correct modes via the
         `modes` kwarg.
 
         Here the initial state is a "diagonal" (angle=pi/2) squeezed state in mode 0, a "vertical"
-        (angle=0) squeezed state in mode 1 and vacuum in mode 2. Because the modes are separable,
+        (angle=0) squeezed state in mode 1 and mm.Vacuum in mode 2. Because the modes are separable,
         measuring modes 1 and 2 should leave the state in the mode 0 unchaged.
 
         Also checks postselection ensuring the x-quadrature value is consistent with the
         postselected value.
         """
-        S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
-        S2 = Sgate(modes=[1], r=1, phi=0)
-        initial_state = Vacuum(3) >> S1 >> S2
-        detector = Homodyne(result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2])
+        S1 = mm.Sgate(modes=[0], r=1, phi=np.pi / 2)
+        S2 = mm.Sgate(modes=[1], r=1, phi=0)
+        initial_state = mm.Vacuum(3) >> S1 >> S2
+        detector = mm.Homodyne(result=outcome, quadrature_angle=[0.0, 0.0], modes=[1, 2])
         final_state = initial_state << detector
 
-        expected_state = Vacuum(1) >> S1
+        expected_state = mm.Vacuum(1) >> S1
 
         assert np.allclose(final_state.dm(), expected_state.dm())
 
         if outcome is not None:
             # checks postselection ensuring the x-quadrature
             # value is consistent with the postselected value
-            x_outcome = math.asnumpy(detector.outcome)[:2]
+            x_outcome = mm.math.asnumpy(detector.outcome)[:2]
             assert np.allclose(x_outcome, outcome)
 
     @given(
@@ -186,10 +172,10 @@ class TestHomodyneDetector:
         outcome=none_or_(st.floats(-10.0, 10.0)),
     )
     def test_homodyne_on_2mode_squeezed_vacuum(self, s, outcome):
-        """Check that homodyne detection on TMSV for q-quadrature (``quadrature_angle=0.0``)"""
-        r = settings.HOMODYNE_SQUEEZING
-        detector = Homodyne(quadrature_angle=0.0, result=outcome, r=r)
-        remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << detector[0]
+        """Check that homodyne detection on mm.TMSV for q-quadrature (``quadrature_angle=0.0``)"""
+        r = mm.settings.HOMODYNE_SQUEEZING
+        detector = mm.Homodyne(quadrature_angle=0.0, result=outcome, r=r)
+        remaining_state = mm.TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << detector[0]
 
         # assert expected covariance matrix
         cov = (hbar / 2.0) * np.diag(
@@ -206,7 +192,7 @@ class TestHomodyneDetector:
             means = np.array(
                 [2 * np.sqrt(s * (1 + s)) * outcome / (np.exp(-2 * r) + 1 + 2 * s), 0.0]
             )
-            assert np.allclose(math.asnumpy(remaining_state.means), means)
+            assert np.allclose(mm.math.asnumpy(remaining_state.means), means)
 
     @given(
         s=st.floats(1.0, 10.0),
@@ -214,10 +200,10 @@ class TestHomodyneDetector:
         angle=st.floats(0, np.pi),
     )
     def test_homodyne_on_2mode_squeezed_vacuum_with_angle(self, s, outcome, angle):
-        """Check that homodyne detection on TMSV works with an arbitrary quadrature angle"""
-        r = settings.HOMODYNE_SQUEEZING
-        detector = Homodyne(quadrature_angle=angle, result=outcome, r=r)
-        remaining_state = TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << detector[0]
+        """Check that homodyne detection on mm.TMSV works with an arbitrary quadrature angle"""
+        r = mm.settings.HOMODYNE_SQUEEZING
+        detector = mm.Homodyne(quadrature_angle=angle, result=outcome, r=r)
+        remaining_state = mm.TMSV(r=np.arcsinh(np.sqrt(abs(s)))) << detector[0]
         denom = 1 + 2 * s * (s + 1) + (2 * s + 1) * np.cosh(2 * r)
         cov = (hbar / 2) * np.array(
             [
@@ -243,7 +229,7 @@ class TestHomodyneDetector:
                 ],
             ]
         )
-        assert np.allclose(math.asnumpy(remaining_state.cov), cov, atol=1e-5)
+        assert np.allclose(mm.math.asnumpy(remaining_state.cov), cov, atol=1e-5)
         # TODO: figure out why this is not working
         # if outcome is not None:
         #     outcome = outcome * np.sqrt(hbar)
@@ -265,10 +251,10 @@ class TestHomodyneDetector:
         d=arrays(np.float64, 4, elements=st.floats(-1.0, 1.0)),
     )
     def test_homodyne_on_2mode_squeezed_vacuum_with_displacement(self, s, X, d):
-        """Check that homodyne detection on displaced TMSV works"""
-        tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
-        r = settings.HOMODYNE_SQUEEZING
-        detector = Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
+        """Check that homodyne detection on displaced mm.TMSV works"""
+        tmsv = mm.TMSV(r=np.arcsinh(np.sqrt(s))) >> mm.Dgate(x=d[:2], y=d[2:])
+        r = mm.settings.HOMODYNE_SQUEEZING
+        detector = mm.Homodyne(modes=[0], quadrature_angle=0.0, result=X, r=r)
         remaining_state = tmsv << detector
         xb, xa, pb, pa = np.sqrt(2 * hbar) * d
         expected_means = np.array(
@@ -281,7 +267,7 @@ class TestHomodyneDetector:
             ]
         )
 
-        means = math.asnumpy(remaining_state.means)
+        means = mm.math.asnumpy(remaining_state.means)
         assert np.allclose(means, expected_means)
 
     N_MEAS = 150  # number of homodyne measurements to perform
@@ -291,9 +277,14 @@ class TestHomodyneDetector:
     @pytest.mark.parametrize(
         "state, kwargs, mean_expected, var_expected",
         [
-            (Vacuum, {"num_modes": 1}, 0.0, settings.HBAR / 2),
-            (Coherent, {"x": 2.0, "y": 0.5}, 2.0 * np.sqrt(2 * settings.HBAR), settings.HBAR / 2),
-            (SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * settings.HBAR / 2),
+            (mm.Vacuum, {"num_modes": 1}, 0.0, mm.settings.HBAR / 2),
+            (
+                mm.Coherent,
+                {"x": 2.0, "y": 0.5},
+                2.0 * np.sqrt(2 * mm.settings.HBAR),
+                mm.settings.HBAR / 2,
+            ),
+            (mm.SqueezedVacuum, {"r": 0.25, "phi": 0.0}, 0.0, 0.25 * mm.settings.HBAR / 2),
         ],
     )
     @pytest.mark.parametrize("gaussian_state", [True, False])
@@ -307,12 +298,12 @@ class TestHomodyneDetector:
         tf.random.set_seed(123)
         if not gaussian_state:
             state = State(dm=state.dm(cutoffs=[40]))
-        detector = Homodyne(0.0)
+        detector = mm.Homodyne(0.0)
 
         results = np.empty((self.N_MEAS, 2))
         for i in range(self.N_MEAS):
             _ = state << detector
-            results[i] = math.asnumpy(detector.outcome)
+            results[i] = mm.math.asnumpy(detector.outcome)
 
         mean = results.mean(axis=0)
         assert np.allclose(mean[0], mean_expected, atol=self.std_10, rtol=0)
@@ -320,11 +311,11 @@ class TestHomodyneDetector:
         assert np.allclose(var[0], var_expected, atol=self.std_10, rtol=0)
 
     def test_homodyne_squeezing_setting(self):
-        r"""Check default homodyne squeezing on settings leads to the correct generaldyne
-        covarince matrix: one that has tends to :math:`diag(1/\sigma[1,1],0)`."""
+        r"""Check default homodyne squeezing on mm.settings leads to the correct generaldyne
+        covarince matrix: one that has tends to :mm.math:`diag(1/\sigma[1,1],0)`."""
 
         sigma = np.identity(2)
-        sigma_m = math.asnumpy(SqueezedVacuum(r=settings.HOMODYNE_SQUEEZING, phi=0).cov)
+        sigma_m = mm.math.asnumpy(mm.SqueezedVacuum(r=mm.settings.HOMODYNE_SQUEEZING, phi=0).cov)
 
         inverse_covariance = np.linalg.inv(sigma + sigma_m)
         assert np.allclose(inverse_covariance, np.diag([1 / sigma[1, 1], 0]))
@@ -347,12 +338,12 @@ class TestHeterodyneDetector:
         """
         x, y = xy
 
-        S1 = Sgate(modes=[0], r=1, phi=np.pi / 2)
-        S2 = Sgate(modes=[1], r=1, phi=0)
-        initial_state = Vacuum(3) >> S1 >> S2
-        final_state = initial_state << Heterodyne(x, y, modes=[1, 2])
+        S1 = mm.Sgate(modes=[0], r=1, phi=np.pi / 2)
+        S2 = mm.Sgate(modes=[1], r=1, phi=0)
+        initial_state = mm.Vacuum(3) >> S1 >> S2
+        final_state = initial_state << mm.Heterodyne(x, y, modes=[1, 2])
 
-        expected_state = Vacuum(1) >> S1
+        expected_state = mm.Vacuum(1) >> S1
 
         assert np.allclose(final_state.dm(), expected_state.dm())
 
@@ -365,17 +356,17 @@ class TestHeterodyneDetector:
     def test_heterodyne_on_2mode_squeezed_vacuum_with_displacement(
         self, s, x, y, d
     ):  # TODO: check if this is correct
-        """Check that heterodyne detection on TMSV works with an arbitrary displacement"""
+        """Check that heterodyne detection on mm.TMSV works with an arbitrary displacement"""
         if x is None or y is None:
             x, y = None, None
 
-        tmsv = TMSV(r=np.arcsinh(np.sqrt(s))) >> Dgate(x=d[:2], y=d[2:])
-        heterodyne = Heterodyne(modes=[0], x=x, y=y)
+        tmsv = mm.TMSV(r=np.arcsinh(np.sqrt(s))) >> mm.Dgate(x=d[:2], y=d[2:])
+        heterodyne = mm.Heterodyne(modes=[0], x=x, y=y)
         remaining_state = tmsv << heterodyne[0]
 
         # assert expected covariance
         cov = hbar / 2 * np.array([[1, 0], [0, 1]])
-        assert np.allclose(math.asnumpy(remaining_state.cov), cov)
+        assert np.allclose(mm.math.asnumpy(remaining_state.cov), cov)
 
         # assert expected means vector, not tested when x or y is None
         # because we cannot access the sampled outcome value
@@ -397,7 +388,7 @@ class TestNormalization:
         """Checks that projecting a single mode coherent state onto a number state
         returns the expected norm."""
         assert np.allclose(
-            Coherent(2.0) << Fock(3),
+            mm.Coherent(2.0) << mm.Fock(3),
             np.abs((2.0**3) / np.sqrt(6) * np.exp(-0.5 * 4.0)) ** 2,
         )
 
@@ -408,14 +399,14 @@ class TestNormalization:
     def test_norm_2mode(self, normalize, expected_norm):
         """Checks that projecting a two-mode coherent state onto a number state
         produces a state with the expected norm."""
-        leftover = Coherent(x=[2.0, 2.0]) << Fock(3, normalize=normalize)[0]
+        leftover = mm.Coherent(x=[2.0, 2.0]) << mm.Fock(3, normalize=normalize)[0]
         assert np.isclose(
-            expected_norm * np.sqrt(settings.AUTOCUTOFF_PROBABILITY),
+            expected_norm * np.sqrt(mm.settings.AUTOCUTOFF_PROBABILITY),
             physics.norm(leftover),
-            rtol=1 - settings.AUTOCUTOFF_PROBABILITY,
+            rtol=1 - mm.settings.AUTOCUTOFF_PROBABILITY,
         )
 
     def test_norm_2mode_gaussian_normalized(self):
         """Checks that after projection the norm of the leftover state is as expected."""
-        leftover = Coherent(x=[2.0, 2.0]) << Coherent(x=1.0, normalize=True)[0]
+        leftover = mm.Coherent(x=[2.0, 2.0]) << mm.Coherent(x=1.0, normalize=True)[0]
         assert np.isclose(1.0, physics.norm(leftover), atol=1e-5)

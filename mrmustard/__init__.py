@@ -12,16 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=import-outside-toplevel
+
 """This is the top-most `__init__.py` file of MrMustard package."""
 
-
-from rich import print
-
-from ._version import __version__
 from .utils.settings import *
+
+from .math import *
+
+from .lab.circuit import *
+from .lab.detectors import *
+from .lab.gates import *
+from .lab.states import *
 
 
 def version():
+    from ._version import __version__
+
     r"""Version number of Mr Mustard.
 
     Returns:
@@ -55,7 +62,8 @@ def about():
         TensorFlow version:        2.7.0
         Torch version:             1.10.0+cu102
     """
-    # pylint: disable=import-outside-toplevel
+    from rich import print
+
     import os
     import platform
     import sys
@@ -65,6 +73,8 @@ def about():
     import scipy
     import tensorflow
     import thewalrus
+
+    from ._version import __version__
 
     # a QuTiP-style infobox
     print("\nMr Mustard: a differentiable bridge between phase space and Fock space.")
