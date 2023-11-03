@@ -83,6 +83,10 @@ Individual test modules are run by invoking pytest directly from the command lin
 
     pytest tests/test_fidelity.py
 
+The ``--backend`` flag allows specifying the backend used when running the tests. To
+use the numpy backend, type ``pytest tests/test_fidelity.py`` or ``pytest tests/test_fidelity.py --backend=numpy``.
+To use the tensorflow backend, run the command ``pytest tests/test_fidelity.py --backend=tensorflow``.
+
 .. note:: **Run options for Mr Mustard tests**
 
     When running tests, it can be useful to examine a single failing test.
