@@ -21,7 +21,6 @@ from .autocast import *
 from .caching import *
 from .backend_base import *
 from .backend_manager import BackendManager
-from .backend_numpy import *
 from .lattice import *
 from .parameters import *
 from .parameter_set import *
