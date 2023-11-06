@@ -15,8 +15,8 @@
 import numpy as np
 from numba import njit
 
-from mrmustard.math.lattice import paths, steps
-from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
+from mrmustard.math.lattice import steps
+from mrmustard.typing import ComplexMatrix, ComplexTensor, ComplexVector
 
 SQRT = np.sqrt(np.arange(100000))
 
@@ -68,7 +68,7 @@ def vanilla_jacobian(
     dGdc = G / c
 
     # initialize path iterator
-    path = paths.ndindex_path(G.shape)
+    path = np.ndindex(G.shape)
 
     # skip first index
     next(path)
