@@ -16,8 +16,9 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
+from mrmustard.math.tensor_networks import TensorAPI
 
-class Representation(ABC):
+class Representation(TensorAPI):
 
     name: str = None
 

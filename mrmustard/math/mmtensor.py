@@ -27,11 +27,12 @@ math = Math()
 
 
 class MMTensor:
-    r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API)."""
+    r"""A Mr Mustard tensor (a wrapper around an array that implements the numpy array API).
+    It provides a convenient way to keep track of the axis labels of a tensor."""
 
     def __init__(self, array, axis_labels=None):
-        # If the input array is an MMTensor,
-        # use its tensor and axis labels (or the provided ones if specified)
+        # If the input array is an MMTensor re-wrap it and replace the axis labels
+        # if they are provided.
         if isinstance(array, MMTensor):
             self.tensor = array.tensor
             self.axis_labels = axis_labels or array.axis_labels
@@ -41,7 +42,7 @@ class MMTensor:
 
         # If axis labels are not provided, generate default labels
         if self.axis_labels is None:
-            self.axis_labels = [str(n) for n in range(len(self.tensor.shape))]
+            self.axis_labels = [str(n) for n in range(len(self.tensor.shape))] # just 0123...
 
         # Validate the number of axis labels
         if len(self.axis_labels) != len(self.tensor.shape):
@@ -75,13 +76,12 @@ class MMTensor:
 
     def __truediv__(self, other):
         r"""implement the / operator"""
+        if isinstance(other, Number):
+            return MMTensor(self.tensor / other, self.axis_labels)
         if isinstance(other, MMTensor):
             self.check_axis_labels_match(other)
             return MMTensor(self.tensor / other.tensor, self.axis_labels)
-        try:
-            return MMTensor(self.tensor / other, self.axis_labels)
-        except TypeError:
-            return NotImplemented(f"Cannot divide {type(self)} by {type(other)}")
+        return NotImplemented(f"Cannot divide {type(self)} by {type(other)}")
 
     def __add__(self, other):
         r"""implement the + operator"""
@@ -109,18 +109,13 @@ class MMTensor:
             )
 
     def __radd__(self, other):
-        return self.__add__(other)
+        return self + other
 
     def __matmul__(self, other):
         r"""Overload the @ operator to perform tensor contractions."""
-        # if not isinstance(other, MMTensor):
-        #     raise TypeError(f"Cannot contract with object of type {type(other)}")
 
         # Find common axis labels
         common_labels = set(self.axis_labels) & set(other.axis_labels)
-
-        if not common_labels:
-            raise ValueError("No common axis labels found")
 
         # Determine the indices to contract along
         left_indices = [self.axis_labels.index(label) for label in common_labels]
@@ -148,7 +143,7 @@ class MMTensor:
         if relabeling is None:
             relabeling = self.axis_labels
         elif len(relabeling) != len(self.axis_labels):
-            raise ValueError("The number of labels must be equal to the number of axes.")
+            raise ValueError(f"The number of labels ({len(relabeling)}) must equal the number of axes ({len(self.axis_labels)})")
 
         self.axis_labels = relabeling
 
@@ -157,6 +152,8 @@ class MMTensor:
         for label in relabeling:
             if label not in unique_labels:
                 unique_labels.append(label)
+        
+        # get labels that are repeated (for summing over)
         repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
 
         # Turn labels into consecutive ascii lower-case letters,
@@ -174,17 +171,19 @@ class MMTensor:
         )
 
     def transpose(self, perm: Union[List[int], List[str]]):
-        """Transpose the tensor using a list of axis labels or indices."""
+        r"""Transpose the tensor using a list of axis labels or indices."""
+        assert len(perm) == len(self.axis_labels)
+        assert set(perm) == set(self.axis_labels) or set(perm) == set(range(len(self.axis_labels)))
         if set(perm) == set(self.axis_labels):
             perm = [self.axis_labels.index(label) for label in perm]
         return MMTensor(math.transpose(self.tensor, perm), [self.axis_labels[i] for i in perm])
 
     def reshape(self, shape, axis_labels=None):
-        """Reshape the tensor. Allows to change the axis labels."""
+        r"""Reshape the tensor. Allows to change the axis labels."""
         return MMTensor(math.reshape(self.tensor, shape), axis_labels or self.axis_labels)
 
     def __getitem__(self, indices):
-        """Implement indexing into the tensor."""
+        r"""Implement indexing into the tensor just like a numpy array."""
         indices = indices if isinstance(indices, tuple) else (indices,)
         axis_labels = self.axis_labels.copy()
         offset = 0

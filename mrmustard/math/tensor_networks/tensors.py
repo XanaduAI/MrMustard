@@ -19,6 +19,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Iterable
+from mrmustard.typing import ComplexVector
 
 import uuid
 
@@ -37,33 +38,96 @@ def random_int() -> int:
     return uuid.uuid1().int
 
 
-# pylint: disable=too-many-instance-attributes
+
+# class CircuitAPI:
+    # def __init__(
+    #     self,
+    #     name: str,
+    #     modes_in_ket: Optional[list[int]] = None,
+    #     modes_out_ket: Optional[list[int]] = None,
+    #     modes_in_bra: Optional[list[int]] = None,
+    #     modes_out_bra: Optional[list[int]] = None,
+    # ) -> None:
+        
+    #     msg = "modes on ket and bra sides must be equal, unless either of them is `None`."
+    #     if modes_in_ket and modes_in_bra and modes_in_ket != modes_in_bra:
+    #         raise ValueError(f"Input {msg}")
+    #     if modes_out_ket and modes_out_bra and modes_out_ket != modes_out_bra:
+    #         raise ValueError(f"Output {msg}")
+
+    #     self._name = name
+
+    #     # initialize ket and bra wire dicts
+    #     self._in_ket = {m: Wire(random_int()) for m in modes_in_ket}
+    #     self._in_bra = {m: Wire(random_int()) for m in modes_in_bra}
+    #     self._out_ket = {m: Wire(random_int()) for m in modes_out_ket}
+    #     self._out_bra = {m: Wire(random_int()) for m in modes_out_bra}
+
+    # @property
+    # def input(self):
+    #     r"""
+    #     A mapping the input modes to their respective wires.
+    #     """
+    #     return WiresKetBra(self._in_ket, self._in_bra)
+    
+    # @property
+    # def output(self):
+    #     r"""
+    #     A mapping the output modes to their respective wires.
+    #     """
+    #     return WiresKetBra(self._out_ket, self._out_bra)
+
+    # def _flag(self, modes: int | Iterable[int]):
+    #     modes = [modes] if isinstance(modes, int) else modes
+    #     new = self.__class__.__new__(self.__class__)
+    #     new.__dict__ = self.__dict__.copy()
+    #     for m in self.modes:
+    #         if m in new._in_ket:
+    #             new._in_ket[m].flagged = m in modes
+    #         if m in new._in_bra:
+    #             new._in_bra[m].flagged = m in modes
+    #         if m in new._out_ket:
+    #             new._out_ket[m].flagged = m in modes
+    #         if m in new._out_bra:
+    #             new._out_bra[m].flagged = m in modes
+    #     return new
+        
+    # @property
+    # def input(self):
+    #     return self._flag(self.modes_in)
+    
+    # @property
+    # def output(self):
+    #     return self._flag(self.modes_out)
+    
+    # def __getitem__(self, modes):
+    #     return self._flag(modes)
+
+
+
+
+
 @dataclass
 class Wire:
     r"""Represents a wire in a tensor network.
 
     Each wire is characterized by a unique identifier ``id``, which must be different from
-    the identifiers of all the other wires in the tensor network. Additionally, it owns a
-    label ``mode`` that represents the mode of light that this wire is acting on.
+    the identifiers of all the other wires in the tensor network.
 
     Args:
         id: A numerical identifier for this wire.
-        mode: The mode of light that this wire is acting on.
-        is_input: Whether this wire is an input to a tensor or an output.
-        is_ket: Whether this wire is on the ket or on the bra side.
+        flagged: Whether this wire is flagged or not.
+        index: The index of this wire in the tensor indices of the underlying tensor.
 
     """
-    id: int
-    mode: int
-    is_input: bool
-    is_ket: bool
+    # id: int
+    flagged: bool = False
+    index: int = None
 
     def __post_init__(self):
         self.contraction_id: int = random_int()
-        self.dim = None
+        self.dim = None  # CV is None, DV is an int
         self.is_connected = False
-
-
 
 @dataclass
 class WireGroup:
@@ -71,7 +135,7 @@ class WireGroup:
     It's essentially a dict that can also do
     `wg[1,2,3]` and return `{1: wg[1], 2: wg[2], 3: wg[3]}`.
 
-    Also set(self) is the set of modes (ints).
+    Also, set(wg) is the set of its modes (ints).
     This allows for easy comparison of WireGroups without having to compare the wires.
 
     Args:
@@ -79,12 +143,12 @@ class WireGroup:
     """
     wires: dict[int, Wire] = field(default_factory=dict)
 
-    def __getitem__(self, modes: int | Iterable[int]) -> WireGroup:
+    def __getitem__(self, modes: int | Iterable[int]) -> Wire | WireGroup:
         r"""If ``modes`` is an integer, it returns the wire at that mode.
         If ``modes`` is an iterable, it returns a new WireGroup containing the wires at those modes.
         """
         if isinstance(modes, int):
-            return self.wires[modes]
+            return self.wires[modes]  # TODO: fix: not a WireGroup
         return WireGroup({m: self.wires[m] for m in modes if m in self.wires})
 
     def __setitem__(self, mode: int, wire: Wire):
@@ -108,16 +172,16 @@ class WiresKetBra:
     r"""A pair of WireGroups representing ket and bra sides.
 
     Args:
-        ket: A dictionary containing the wires on the ket side.
-        bra: A dictionary containing the wires on the bra side.
+        ket (WireGroup): The ket side.
+        bra (WireGroup): The bra side.
 
     """
     ket: WireGroup = field(default_factory=WireGroup)
     bra: WireGroup = field(default_factory=WireGroup)
 
     def __getitem__(self, modes: int | Iterable[int]) -> WiresKetBra:
-        r"""Enables accessing wires with the syntax .input[4].ket and it allows creating a
-        WiresKetBra with ket and bra at a mode: e.g. .output[3,4,5] without specifying ket or bra.
+        r"""Enables accessing wires with the syntax e.g. `self.input[4].ket` and it allows creating a
+        WiresKetBra with ket and bra at a mode: e.g. `self.output[3,4,5]` without specifying ket/bra.
         """
         modes = [modes] if isinstance(modes, int) else modes
         if len(self.ket) > 0:
@@ -126,40 +190,33 @@ class WiresKetBra:
             bra = {m: self.bra[m] for m in modes}
         return WiresKetBra(ket, bra)
 
-    def __setitem__(self, mode: int, wire: Wire):
-        try:
-            if wire.is_ket:
-                side = "ket"
-                self.ket[mode] = wire
-            else:
-                side = "bra"
-                self.bra[mode] = wire
-        except KeyError:
-            raise ValueError(f"Cannot set wire at mode {mode} on {side} side")
+    # def __setitem__(self, mode: int, wire: Wire):
+    #     try:
+    #         if wire.is_ket:
+    #             side = "ket"
+    #             self.ket[mode] = wire
+    #         else:
+    #             side = "bra"
+    #             self.bra[mode] = wire
+    #     except KeyError:
+    #         raise ValueError(f"Cannot set wire at mode {mode} on {side} side")
 
 
-class Tensor(ABC):
-    r"""An abstract class representing a tensor in a tensor network.
+class TensorAPI:
+    r"""A class exposing the Tensor Network API.
+    Tensors in a tensor network should inherit from this class.
 
-    In Mr Mustard, tensors are used to represent a state or a transformation on a given set
-    of modes in the Fock representation. For example, a single-mode unitary matrix
-    :math:`U=\sum_{i,j=1}^Nu_{i,j}|i\rangle\langle{j}|` acting on mode ``3`` in an
-    N-dimensional Fock basis corresponds to the following ``Tensor`` object:
+    The TensorAPI manages the wires of a tensor while keeping track of
+    the order of the indices of the underlying tensor.
 
-    .. code-block::
-        class U(Tensor):
-            def value(self, shape):
-                # specify the value of the tensor
-                pass
-
-        U("my_unitary", [3], [3], [3], [3])
+    We distinguish between input and output wires, and between ket and bra sides.
 
     Args:
         name: The name of this tensor.
-        modes_in_ket: The input modes on the ket side.
-        modes_out_ket: The output modes on the ket side.
-        modes_in_bra: The input modes on the bra side.
         modes_out_bra: The output modes on the bra side.
+        modes_in_bra: The input modes on the bra side.
+        modes_out_ket: The output modes on the ket side.
+        modes_in_ket: The input modes on the ket side.
     """
     _repr_markdown_ = None  # otherwise it takes over the repr due to mro
 
@@ -171,27 +228,29 @@ class Tensor(ABC):
         modes_in_bra: Optional[list[int]] = None,
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
-        self._name = name
+        self.name = name
         self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
-    def _update_modes(  # TODO should it be called reset_wires? or reset_modes?
+    def _rewire(
         self,
-        modes_in_ket: Optional[list[int]] = None,
-        modes_out_ket: Optional[list[int]] = None,
-        modes_in_bra: Optional[list[int]] = None,
         modes_out_bra: Optional[list[int]] = None,
+        modes_in_bra: Optional[list[int]] = None,
+        modes_out_ket: Optional[list[int]] = None,
+        modes_in_ket: Optional[list[int]] = None,
     ) -> None:
         r"""
         Updates the modes in this tensor by setting:
 
-          * self._modes_in_ket, a list of input modes on the ket side
-          * self._modes_out_ket, a list of output modes on the ket side
-          * self._modes_in_bra, a list of input modes on the bra side
           * self._modes_out_bra, a list of output modes on the bra side
+          * self._modes_in_bra, a list of input modes on the bra side
+          * self._modes_out_ket, a list of output modes on the ket side
+          * self._modes_in_ket, a list of input modes on the ket side
           * self.self._input, a WiresKetBra containing all the input modes
           * self.self._output, a WiresKetBra containing all the output modes
 
-        It computes a new ``id`` for every wire.
+        Note that it creates brand new wires.
+        If you want to rewire a tensor without creating new wires,
+        use ``change_modes`` instead.
 
         Raises:
             ValueError: if `modes_in_ket` and `modes_in_bra` are not equal, and neither
@@ -209,26 +268,31 @@ class Tensor(ABC):
                 msg = f"Output {msg}"
                 raise ValueError(msg)
 
-        self._modes_in_ket = modes_in_ket if modes_in_ket else []
-        self._modes_out_ket = modes_out_ket if modes_out_ket else []
-        self._modes_in_bra = modes_in_bra if modes_in_bra else []
         self._modes_out_bra = modes_out_bra if modes_out_bra else []
+        self._modes_in_bra = modes_in_bra if modes_in_bra else []
+        self._modes_out_ket = modes_out_ket if modes_out_ket else []
+        self._modes_in_ket = modes_in_ket if modes_in_ket else []
 
         # initialize ket and bra wire dicts
-        ket = {m: Wire(random_int(), m, True, True) for m in self._modes_in_ket}
-        bra = {m: Wire(random_int(), m, True, False) for m in self._modes_in_bra}
+        ket = {m: Wire(False, i) for i,m in enumerate(self._modes_in_ket)}
+        IK = len(self._modes_in_ket)
+        bra = {m: Wire(False, i) for i,m in enumerate(self._modes_in_bra)+IK}
+        IB = len(self._modes_in_bra)
         self._input = WiresKetBra(ket, bra)
 
-        ket = {m: Wire(random_int(), m, False, True) for m in self._modes_out_ket}
-        bra = {m: Wire(random_int(), m, False, False) for m in self._modes_out_bra}
+        ket = {m: Wire(False, i) for i,m in enumerate(self._modes_out_ket)+IK+IB}
+        OK = len(self._modes_out_ket)
+        bra = {m: Wire(False, i) for i,m in enumerate(self._modes_out_bra)+IK+IB+OK}
         self._output = WiresKetBra(ket, bra)
 
     @property
     def input(self):
         r"""
-        A mapping the input modes to their respective wires.
+        Returns a new tensor with input wires flagged and output wires unflagged.
+        The new tensor's __dict__ is a copy of this tensor's __dict__.
         """
-        return self._input
+        # return self._input
+        
 
     @property
     def output(self):
@@ -266,24 +330,24 @@ class Tensor(ABC):
         """
         if self.modes_in == self.modes_out:  # transformation on same modes
             self._update_modes(
-                modes_in_ket=value,
-                modes_out_ket=value,
-                modes_in_bra=value if self._modes_in_bra == self._modes_in_ket else None,
                 modes_out_bra=value if self._modes_out_bra == self._modes_out_ket else None,
+                modes_in_bra=value if self._modes_in_bra == self._modes_in_ket else None,
+                modes_out_ket=value,
+                modes_in_ket=value,
             )
         elif len(self.modes_in) == 0:  # state
             self._update_modes(
-                modes_in_ket=[],
-                modes_out_ket=value,
-                modes_in_bra=[],
                 modes_out_bra=value if self._modes_in_bra == self._modes_in_ket else None,
+                modes_in_bra=[],
+                modes_out_ket=value,
+                modes_in_ket=[],
             )
         elif len(self.modes_out) == 0:  # measurement
             self._update_modes(
-                modes_in_ket=value,
-                modes_out_ket=[],
-                modes_in_bra=value if self._modes_out_bra == self._modes_out_ket else None,
                 modes_out_bra=[],
+                modes_in_bra=value if self._modes_out_bra == self._modes_out_ket else None,
+                modes_out_ket=[],
+                modes_in_ket=value,
             )
         else:
             raise ValueError("modes are ambiguous for this Tensor.")
@@ -297,9 +361,7 @@ class Tensor(ABC):
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        if self._modes_in_ket:
-            return self._modes_in_ket
-        return self._modes_in_bra
+        return self._modes_in_ket if self._modes_in_ket else self._modes_in_bra
 
     @property
     def modes_out(self) -> List[int]:
@@ -310,16 +372,7 @@ class Tensor(ABC):
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        if self._modes_out_ket:
-            return self._modes_out_ket
-        return self._modes_out_bra
-
-    @property
-    def name(self) -> int:
-        r"""
-        The name of this tensor.
-        """
-        return self._name
+        return self._modes_out_ket if self._modes_out_ket else self._modes_out_bra
 
     def unpack_shape(self, shape: Tuple[int]):
         r"""

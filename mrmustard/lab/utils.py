@@ -17,12 +17,12 @@
 """
 This module contains the utility functions used by the classes in ``mrmustard.lab``.
 """
+import functools
 from typing import Callable, Optional, Tuple
 from mrmustard.math.parameters import update_euclidean
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.parameters import Constant, Variable
-
 math = Math()
 
 
@@ -50,6 +50,7 @@ def make_parameter(
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)
 
 
+
 def trainable_property(func):
     r"""
     Decorator that makes a property lazily evaluated or not depending on the settings.BACKEND flag.
@@ -65,27 +66,15 @@ def trainable_property(func):
     """
     attr_name = "_" + func.__name__
 
-    if settings.BACKEND == "numpy":
-        import functools  # pylint: disable=import-outside-toplevel
-
-        @functools.wraps(func)
-        @property
-        def _trainable_property(self):
-            r"""
-            Property getter that lazily evaluates its value. Computes the value only on the first
-            call and caches the result in a private attribute for future access.
-
-            Returns:
-                any: The value of the lazy property.
-            """
+    
+    @functools.wraps(func)
+    def wrapper(self):
+        if settings.BACKEND == "numpy":
             if not hasattr(self, attr_name):
                 setattr(self, attr_name, func(self))
             return getattr(self, attr_name)
 
-    elif settings.BACKEND == "tensorflow":
-        _trainable_property = property(func)
+        elif settings.BACKEND == "tensorflow":
+            return func(self)
 
-    else:
-        raise ValueError(f"Unknown backend {settings.BACKEND}.")
-
-    return _trainable_property
+        return wrapper
