@@ -48,6 +48,9 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Improved how states, transformations, and detectors deal with parameters by replacing the `Parametrized` class with `ParameterSet`.
   [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
 
+* Includes julia dependencies into the python packaging for downstream installation reproducibility.
+  [(#298)](https://github.com/XanaduAI/MrMustard/pull/303)
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
