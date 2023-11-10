@@ -49,7 +49,9 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
 
 * Includes julia dependencies into the python packaging for downstream installation reproducibility.
-  [(#298)](https://github.com/XanaduAI/MrMustard/pull/303)
+  Removes dependency on tomli to load pyproject.toml for version info, uses importlib instead.
+  [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
+  [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
 
 ### Bug fixes
 
