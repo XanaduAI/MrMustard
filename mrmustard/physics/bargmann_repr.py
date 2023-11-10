@@ -22,13 +22,10 @@ from mrmustard import settings
 from mrmustard.math.tensor_networks import TensorAPI
 from mrmustard.physics.representations import Data, MatVecData
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc
-from mrmustard.math import Math
+from mrmustard import math
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Scalar, ComplexTensor
+from mrmustard.lab.abstract.representation import Representation
 
-math = Math()
-
-class Representation(TensorAPI):
-    pass
 
 
 class Bargmann(Representation):
@@ -49,9 +46,15 @@ class Bargmann(Representation):
         poly (Optional[Batch[ComplexTensor]]):    batch of fixed-degree polynomial (default: [1.0])
         modesSpec (Optional[dict]):        dictionary of modes specifications
     """
+
     def __init__(
-        self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Optional[Batch[Scalar]] = None,
-        poly: Optional[Batch[ComplexTensor]] = None, **modesSpec):
+        self,
+        A: Batch[ComplexMatrix],
+        b: Batch[ComplexVector],
+        c: Optional[Batch[Scalar]] = None,
+        poly: Optional[Batch[ComplexTensor]] = None,
+        **modesSpec,
+    ):
         self._contract_idxs = []
 
         self.A = math.atleast_3d(math.astensor(A))
@@ -65,13 +68,19 @@ class Bargmann(Representation):
         ), "A and b must have compatible dimensions"
         self.batch_dim = self.A.shape[0]
         self.dim = self.A.shape[-1]
-        self.poly = poly if len(poly.shape) == len(self.A.shape) else math.reshape(poly, (-1,)+poly.shape)
+        self.poly = (
+            poly if len(poly.shape) == len(self.A.shape) else math.reshape(poly, (-1,) + poly.shape)
+        )
         super().__init__(**modesSpec)
 
     @property
     def modesSpec(self):
-        return {"modes_out_ket": self.modes_out_ket, "modes_out_bra": self.modes_out_bra,
-                "modes_in_ket": self.modes_in_ket, "modes_in_bra": self.modes_in_bra}
+        return {
+            "modes_out_ket": self.modes_out_ket,
+            "modes_out_bra": self.modes_out_bra,
+            "modes_in_ket": self.modes_in_ket,
+            "modes_in_bra": self.modes_in_bra,
+        }
 
     def _update_Abc(self, A, b, c):
         new_ = self.__class__(A, b, c, **self.modesSpec)
@@ -84,7 +93,9 @@ class Bargmann(Representation):
         return self._update_Abc(self.A, self.b, -self.c)
 
     def __eq__(self, other: BargmannExp, exclude_scalars: bool = False) -> bool:
-        A, B = sorted([self, other], key=lambda x: x.batch_dim)  # A is a smaller or equal batch than B
+        A, B = sorted(
+            [self, other], key=lambda x: x.batch_dim
+        )  # A is a smaller or equal batch than B
         # check scalars
         Ac = np.around(A.coeffs, settings.EQUALITY_PRECISION_DECIMALS)
         Bc = memoryview(np.around(B.coeffs, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
@@ -97,7 +108,11 @@ class Bargmann(Representation):
                 Am = np.around(A.mat, settings.EQUALITY_PRECISION_DECIMALS)
                 Bm = memoryview(np.around(B.mat, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
                 if all(memoryview(m).tobytes() in Bm for m in Am):
-                    return True
+                    # check poly
+                    Ap = np.around(A.poly, settings.EQUALITY_PRECISION_DECIMALS)
+                    Bp = memoryview(np.around(B.poly, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+                    if all(memoryview(p).tobytes() in Bp for p in Ap):
+                        return True
         return False
 
     def __add__(self, other: BargmannExp) -> BargmannExp:
@@ -133,12 +148,11 @@ class Bargmann(Representation):
             new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
             new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
             new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
-            return self._update_Abc(math.astensor(new_a), math.astensor(new_b), math.astensor(new_c))
-        else:
-            try:  # scalar
-                return self._update_Abc(self.A, self.b, other * self.c)
-            except Exception as e:  # Neither same object type nor a scalar case
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+            return self._update_Abc(
+                math.astensor(new_a), math.astensor(new_b), math.astensor(new_c)
+            )
+        else:  # assume other is a scalar
+            return self._update_Abc(self.A, self.b, other * self.c)
 
     def __and__(self, other: BargmannExp) -> BargmannExp:
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
@@ -165,17 +179,14 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         # now we just make a new BargmannExp object with the contracted A,b,c
         leftover_
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c), **self.modesSpec)
+        return self.__class__(
+            math.astensor(A), math.astensor(b), math.astensor(c), **self.modesSpec
+        )
 
-    def __getitem__(self, idx: int | list[int]) -> BargmannExp:
-        idx = [idx] if isinstance(idx, int) else idx
-        for i in idx:
-            if i > self.dim:
-                raise IndexError(
-                    f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
-                )
-        new = self.__class__(self.A, self.b, self.c)
-        new._contract_idxs = idx
+    def __getitem__(self, modes: int | Iterable[int]) -> Bargmann:
+        # flags the in/out/ket/bra wires at the given modes
+        modes = [modes] if isinstance(modes, int) else modes
+        new = self.from_self(modes=self.modes).flag(modes=modes)
         return new
 
     def reorder(self, order: list[int]) -> BargmannExp:
@@ -197,4 +208,3 @@ class Bargmann(Representation):
         self.mat = math.gather(self.A, uniques, axis=0)
         self.vec = math.gather(self.b, uniques, axis=0)
         self.coeff = math.gather(self.c, uniques, axis=0)
-

@@ -1,4 +1,4 @@
-    # Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2021 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
 from mrmustard.math.tensor_networks import TensorAPI
 
-class Representation(TensorAPI):
 
+class Representation(TensorAPI):
     name: str = None
 
     @abstractproperty
@@ -34,14 +34,40 @@ class Representation(TensorAPI):
         """
         attr = getattr(self.data, name)
         if callable(attr):
+
             def wrapper(*args, **kwargs):
                 return attr(*args, **kwargs)
+
             return wrapper
         return attr
+
+    @property
+    def output(self) -> Representation:
+        # flag output wires
+        for wire in self.
+        return self
+
+    @property
+    def input(self) -> Representation:
+        # flag input wires
+        return self
+
+    @property
+    def ket(self) -> Representation:
+        # flag ket wires
+        return self
+
+    @property
+    def bra(self) -> Representation:
+        # flag bra wires
+        return self
+
+    @property
+    def __getitem__(self, item):
+        return self.data[item]
 
 
 
 class FockArray(Representation):
     def __init__(self, fock_array):
         self.data = fock_array
-

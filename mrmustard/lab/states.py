@@ -112,11 +112,11 @@ class Coherent(State):
     @property
     def means(self):
         return gaussian.displacement(self.x.value, self.y.value)
-    
+
     @property
     def representation(self):
         Abc = bargmann.displaced_abc(self.x.value, self.y.value)
-        new_repr = BargmannExp(*Abc, modes = self.modes)
+        new_repr = BargmannExp(*Abc, modes=self.modes)
         new_repr._marked_indices = self._marked_indices
         # preserve connected wires too
         return new_repr

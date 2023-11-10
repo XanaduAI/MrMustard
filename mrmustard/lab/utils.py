@@ -23,6 +23,7 @@ from mrmustard.math.parameters import update_euclidean
 from mrmustard import settings
 from mrmustard.math import Math
 from mrmustard.math.parameters import Constant, Variable
+
 math = Math()
 
 
@@ -50,7 +51,6 @@ def make_parameter(
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)
 
 
-
 def trainable_property(func):
     r"""
     Decorator that makes a property lazily evaluated or not depending on the settings.BACKEND flag.
@@ -66,7 +66,6 @@ def trainable_property(func):
     """
     attr_name = "_" + func.__name__
 
-    
     @functools.wraps(func)
     def wrapper(self):
         if settings.BACKEND == "numpy":

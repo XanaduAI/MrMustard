@@ -76,12 +76,12 @@ class State:
     def is_pure(self):
         r"""Returns whether the state is pure."""
         return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
-    
+
     @property
     def modes(self) -> List[int]:
         r"""Returns the modes of the state."""
         return self._representation.modes_out
-    
+
     @property
     def num_modes(self) -> int:
         r"""Returns the number of modes of the state."""
@@ -91,7 +91,7 @@ class State:
     def L2_norm(self) -> float:
         r"""Returns the L2 norm of the Hilbert space vector or L2 norm (Hilbert-Schmidt) of a density matrix."""
         return self >> self.dual
-    
+
     def get_modes(self, modes: int | Iterable) -> State:
         # TODO: write partial_trace in the representation
         self.__class__(self._representation.partial_trace(keep=modes), modes=modes)
@@ -120,12 +120,27 @@ class State:
         r"""Returns whether the states are equal. Modes are dealt with in the internal representation."""
         return self._representation == other._representation
 
-    def __rshift__(self, other: Transformation | State) -> State | complex:
+    def __rshift__(self, other: DualView | Transformation | Measurement) -> State | complex:
         r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
         If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(5) >> Coherent(x=0.1).dual``.
         """
         common_modes = [m for m in self.modes_out if m in other.modes_in]
-        connect(self._representation.output[common_modes], other._representation.input[common_modes])
+        try:
+            connect(
+                self._representation[common_modes].output.ket,
+                other._representation[common_modes].input.ket
+                or other._representation.adjoint[common_modes].input.ket,
+            )
+        except AttributeError:  # if self is a bra with no ket
+            pass
+        try:
+            connect(
+                self._representation[common_modes].output.bra,
+                other._representation[common_modes].input.bra
+                or other._representation.adjoint[common_modes].input.bra,
+            )
+        except AttributeError:  # if self is a ket with no bra
+            pass
         new_repr = contract(self._representation, other._representation)
         return self.__class__(representation=new_repr, modes=new_repr.modes)
 
@@ -182,7 +197,7 @@ class State:
         """
         bargmann = self._representation
         return bargmann.A, bargmann.b, bargmann.c, bargmann.poly
-    
+
     def fock(self, max_prob=None, max_photons=None, shape=None):
         r"""Converts the representation of the DM to Fock representation.
         For the final shape of the array the priority of options is shape > max_photons > max_prob.
@@ -197,14 +212,19 @@ class State:
         Returns:
             State: the converted state with the target Fock Representation
         """
-        assert max_prob or max_photons or shape, "At least one of max_prob, max_photons or shape must be specified"
-        A,b,c,poly = self.bargmann()
-        fock_array = math.hermite_renormalized(A, b, c,
+        assert (
+            max_prob or max_photons or shape
+        ), "At least one of max_prob, max_photons or shape must be specified"
+        A, b, c, poly = self.bargmann()
+        fock_array = math.hermite_renormalized(
+            A,
+            b,
+            c,
             max_prob=max_prob or settings.AUTOCUTOFF_PROBABILITY,
             max_photons=max_photons,
             shape=shape,
         )
-        return math.tensordot(poly, fock_array,[[0],[0]])
+        return math.tensordot(poly, fock_array, [[0], [0]])
 
     ##############
     # REPR STUFF #
@@ -240,9 +260,11 @@ class State:
 
         return table
 
+
 #############################
 #######  KET and DM  ########
 #############################
+
 
 class Ket(State):
     def __init__(self, representation, modes, name):
@@ -256,24 +278,37 @@ class Ket(State):
     @trainable_property
     def probability(self) -> float:
         return self.L2_norm
-    
+
     ################
     # CONSTRUCTORS #
     ################
 
     @classmethod
-    def from_bargmann(cls, A, b, c, modes, poly = None, name="Ket"):
+    def from_bargmann(cls, A, b, c, modes, poly=None, name="Ket"):
         return cls(Bargmann(A, b, c, poly), modes, name=name)
-    
+
     @classmethod
     def from_fock(cls, fock_array, modes, name="Ket"):
         return cls(Fock(fock_array), modes, name=name)
 
+    def __rshift__(self, other: DualView | Transformation | Measurement) -> State | complex:
+        r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
+        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(5) >> Coherent(x=0.1).dual``.
+        """
+        common_modes = [m for m in self.modes_out if m in other.modes_in]
+        connect(
+            self._representation[common_modes].output.ket,
+            other._representation[common_modes].input.ket
+            or other._representation.adjoint[common_modes].input.ket,
+        )
+
+
     @classmethod
     def from_phase_space(
-        cls, cov, mean, modes, s=1, characteristic=True, name="Ket", pure_check=True
+        cls, cov, mean, coeff = 1.0, s=1, characteristic=True, pure_check=True, modes=None, name="Ket"
     ):
-        r"""General constructor for kets in phase space representation.
+        r"""General constructor for kets from phase space representation.
+        Warning: kets do not really exist in phase space, but given that we use bargmann under the hood, we can do this.
 
         Args:
             cov (Batch[ComplexMatrix]): the covariance matrix
@@ -284,13 +319,13 @@ class Ket(State):
             name (str): the name of the state
             pure_check (bool): whether to check if the state is pure (default: True)
         """
-        if pure_check and physics.gaussian.purity(cov) < 1.0 - settings.PURITY_ATOL:
-            raise ValueError("Initializing a Ket using a mixed state is not allowed")
+        if pure_check and physics.phase_space.purity(cov, s, characteristic) < 1.0 - settings.PURITY_ATOL:
+            raise ValueError("Initializing a Ket using a mixed cov matrix is not allowed")
         A, b, c = physics.bargmann.from_phase_space_ket(cov, mean, s, characteristic)
-        return cls(Bargmann(A, b, c), modes, name=name)
-    
+        return cls(Bargmann(A, b, c * coeff), modes, name=name)
+
     @classmethod
-    def from_quadrature(cls, A, b, c, angle: float):
+    def from_quadrature(cls, A, b, c, angle: float, modes, name="Ket"):
         r"""Returns the state converted from quadrature (wavefunction) representation with the given quadrature angle.
         Use angle=0 for the position quadrature and angle=pi/2 for the momentum quadrature.
 
@@ -300,17 +335,23 @@ class Ket(State):
         Returns:
             State: the converted state with the target quadrature representation
         """
-        Abc = physics.bargmann.quadrature_kernel([angle]*Abc[0].shape[-1])
+        Abc = physics.bargmann.quadrature_kernel([angle] * A.shape[-1])
         kernel = Bargmann(*Abc)
-        kernel_adj = kernel.adjoint
-        # TODO
-    
+        wavefunction = Bargmann(A, b, c)  # just wavefunction! do not use inner product
+        new_repr = wavefunction.output.ket @ kernel.input.ket
+        return cls(new_repr, modes=modes, name=name)
+
     ###########################
     # PARAMETRIZATIONS OF KET #
     ###########################
 
-    def phase_space(self, s=1, characteristic=False):
+    def phase_space(self, s=0, characteristic=False):
         r"""Returns the DENSITY MATRIX (i.e. |psi><psi|) parametrization in s-parametrized phase space representation.
+
+        Since the functional form is fixed to F(z) = sum_i poly_i(z) * exp(0.5 * z^T A_i z + z^T b_i) * c_i,
+        it will still be one of these functions that parametrizes, e.g. the wigner function.
+        If s=0 (wigner) we need to compute the (Sigma,mu) pair that parametrizes the more common form
+        exp(-(x-mu)^T Sigma^-1 (x-mu)) / sqrt(det(Sigma)) (and in the p/q basis).
 
         Args:
             s (optional float): The parameter s of the phase space representation. Defaults to 1 (Wigner).
@@ -322,13 +363,15 @@ class Ket(State):
         """
         assert s in [1, 0, -1]
         if not characteristic:
-            Abc = physics.bargmann.Kernel_siegel_weil([s]*self.representation.dimension)
+            # siegel_weil is the kernel that maps Bargmann to P/Wigner/Husimi (i.e. phase space)
+            Abc = physics.bargmann.siegel_weil([s] * self.representation.dimension)
         else:
-            Abc = physics.bargmann.Kernel_s_displacement([s]*self.representation.dimension)
-        Delta = Bargmann(*Abc)
-        connect(self._representation.output.ket, Delta.input.ket)
-        connect(self._representation.output.ket.adjoint, Delta.input.bra)
-        new_repr = contract([self._representation, Delta])
+            # with the s-displacement we get the characteristic functions (Fourier Transforms) of P/Wigner/Husimi
+            Abc = physics.bargmann.s_displacement([s] * self.representation.dimension)
+        kernel = Bargmann(*Abc)
+        connect(self._representation.output.ket, kernel.input.ket)
+        connect(self._representation.output.ket.adjoint, kernel.input.bra)
+        new_repr = contract([self._representation, kernel])
         if s == 0:  # if Wigner / characteristic
             pass
             # return in p/q basis
@@ -345,7 +388,7 @@ class Ket(State):
         Returns:
             State: the converted state with the target quadrature representation
         """
-        Abc = physics.bargmann.quadrature_kernel([angle]*self.representation.dimension)
+        Abc = physics.bargmann.quadrature_kernel([angle] * self.representation.dimension)
         kernel = Bargmann(*Abc)
         kernel_adj = kernel.adjoint
         # TODO: finish
@@ -364,8 +407,8 @@ class DM(State):
     def purity(self) -> float:
         normalized = self / self.probability
         return normalized.L2_norm  # NOTE: for density matrices L2 norm is the purity
-    
-    ################ 
+
+    ################
     # CONSTRUCTORS #
     ################
 
@@ -382,7 +425,11 @@ class DM(State):
         assert s in [1, 0, -1]
         dim = cov.shape[-1] // 2
         assert len(modes) == dim
-        Abc = physics.bargmann.s_displacement([s]*dim) if characteristic else physics.bargmann.siegel_weil([s]*dim)
+        Abc = (
+            physics.bargmann.s_displacement([s] * dim)
+            if characteristic
+            else physics.bargmann.siegel_weil([s] * dim)
+        )
         Delta = Bargmann(*Abc)
         connect(self._representation.output.ket, Delta.input.ket)
         connect(Delta.output.bra, Delta.input.bra)
@@ -404,11 +451,11 @@ class DM(State):
         Returns:
             State: the converted state with the target quadrature representation
         """
-        Abc = physics.bargmann.quadrature_kernel([angle]*self.representation.dimension)
+        Abc = physics.bargmann.quadrature_kernel([angle] * self.representation.dimension)
         kernel = Bargmann(*Abc)
         kernel_adj = kernel.adjoint
         # TODO
-    
+
     ##########################
     # PARAMETRIZATIONS OF DM #
     ##########################
@@ -426,16 +473,16 @@ class DM(State):
         """
         assert s in [1, 0, -1]
         if not characteristic:
-            Abc = physics.bargmann.Kernel_siegel_weil([s]*self.representation.dimension)
+            Abc = physics.bargmann.Kernel_siegel_weil([s] * self.representation.dimension)
         else:
-            Abc = physics.bargmann.Kernel_s_displacement([s]*self.representation.dimension)
+            Abc = physics.bargmann.Kernel_s_displacement([s] * self.representation.dimension)
         Delta = Bargmann(*Abc)
         connect(self.representation.output.ket, Delta.input.ket)
         connect(self.representation.output.bra, Delta.input.bra)
         new_repr = contract([self.representation, Delta])
         if s == 0:  # if Wigner / characteristic
             R = math.Rmat(self.representation.dimension)
-    
+
     def quadrature(self, angle: float):
         r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
         Use angle=0 for the position quadrature and angle=pi/2 for the momentum quadrature.
@@ -446,7 +493,7 @@ class DM(State):
         Returns:
             State: the converted state with the target quadrature representation
         """
-        Abc = physics.bargmann.quadrature_kernel([angle]*self.representation.dimension)
+        Abc = physics.bargmann.quadrature_kernel([angle] * self.representation.dimension)
         kernel = Bargmann(*Abc)
         kernel_adj = kernel.adjoint
         connect(self.output.ket, kernel.input.ket)

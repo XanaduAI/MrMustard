@@ -197,4 +197,3 @@ def contract_two_Abc(Abc1, Abc2, idx1, idx2):
     return contract_Abc_base(
         join_Abc(Abc1, Abc2), tuple(idx1) + tuple(i + Abc1[0].shape[-1] for i in idx2)
     )
-

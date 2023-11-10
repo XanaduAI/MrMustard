@@ -39,74 +39,6 @@ def random_int() -> int:
 
 
 
-# class CircuitAPI:
-    # def __init__(
-    #     self,
-    #     name: str,
-    #     modes_in_ket: Optional[list[int]] = None,
-    #     modes_out_ket: Optional[list[int]] = None,
-    #     modes_in_bra: Optional[list[int]] = None,
-    #     modes_out_bra: Optional[list[int]] = None,
-    # ) -> None:
-        
-    #     msg = "modes on ket and bra sides must be equal, unless either of them is `None`."
-    #     if modes_in_ket and modes_in_bra and modes_in_ket != modes_in_bra:
-    #         raise ValueError(f"Input {msg}")
-    #     if modes_out_ket and modes_out_bra and modes_out_ket != modes_out_bra:
-    #         raise ValueError(f"Output {msg}")
-
-    #     self._name = name
-
-    #     # initialize ket and bra wire dicts
-    #     self._in_ket = {m: Wire(random_int()) for m in modes_in_ket}
-    #     self._in_bra = {m: Wire(random_int()) for m in modes_in_bra}
-    #     self._out_ket = {m: Wire(random_int()) for m in modes_out_ket}
-    #     self._out_bra = {m: Wire(random_int()) for m in modes_out_bra}
-
-    # @property
-    # def input(self):
-    #     r"""
-    #     A mapping the input modes to their respective wires.
-    #     """
-    #     return WiresKetBra(self._in_ket, self._in_bra)
-    
-    # @property
-    # def output(self):
-    #     r"""
-    #     A mapping the output modes to their respective wires.
-    #     """
-    #     return WiresKetBra(self._out_ket, self._out_bra)
-
-    # def _flag(self, modes: int | Iterable[int]):
-    #     modes = [modes] if isinstance(modes, int) else modes
-    #     new = self.__class__.__new__(self.__class__)
-    #     new.__dict__ = self.__dict__.copy()
-    #     for m in self.modes:
-    #         if m in new._in_ket:
-    #             new._in_ket[m].flagged = m in modes
-    #         if m in new._in_bra:
-    #             new._in_bra[m].flagged = m in modes
-    #         if m in new._out_ket:
-    #             new._out_ket[m].flagged = m in modes
-    #         if m in new._out_bra:
-    #             new._out_bra[m].flagged = m in modes
-    #     return new
-        
-    # @property
-    # def input(self):
-    #     return self._flag(self.modes_in)
-    
-    # @property
-    # def output(self):
-    #     return self._flag(self.modes_out)
-    
-    # def __getitem__(self, modes):
-    #     return self._flag(modes)
-
-
-
-
-
 @dataclass
 class Wire:
     r"""Represents a wire in a tensor network.
@@ -118,7 +50,6 @@ class Wire:
         id: A numerical identifier for this wire.
         flagged: Whether this wire is flagged or not.
         index: The index of this wire in the tensor indices of the underlying tensor.
-
     """
     # id: int
     flagged: bool = False
@@ -128,78 +59,6 @@ class Wire:
         self.contraction_id: int = random_int()
         self.dim = None  # CV is None, DV is an int
         self.is_connected = False
-
-@dataclass
-class WireGroup:
-    r"""A single group of wires.
-    It's essentially a dict that can also do
-    `wg[1,2,3]` and return `{1: wg[1], 2: wg[2], 3: wg[3]}`.
-
-    Also, set(wg) is the set of its modes (ints).
-    This allows for easy comparison of WireGroups without having to compare the wires.
-
-    Args:
-        wires: A dictionary containing the wires in this group.
-    """
-    wires: dict[int, Wire] = field(default_factory=dict)
-
-    def __getitem__(self, modes: int | Iterable[int]) -> Wire | WireGroup:
-        r"""If ``modes`` is an integer, it returns the wire at that mode.
-        If ``modes`` is an iterable, it returns a new WireGroup containing the wires at those modes.
-        """
-        if isinstance(modes, int):
-            return self.wires[modes]  # TODO: fix: not a WireGroup
-        return WireGroup({m: self.wires[m] for m in modes if m in self.wires})
-
-    def __setitem__(self, mode: int, wire: Wire):
-        self.wires[mode] = wire
-
-    def __hash__(self):
-        return hash(self.wires.keys())
-
-    def __eq__(self, other):
-        return self.wires.keys() == other.wires.keys()
-
-    def keys(self):
-        return self.wires.keys()
-
-    def values(self):
-        return self.wires.values()
-
-
-@dataclass
-class WiresKetBra:
-    r"""A pair of WireGroups representing ket and bra sides.
-
-    Args:
-        ket (WireGroup): The ket side.
-        bra (WireGroup): The bra side.
-
-    """
-    ket: WireGroup = field(default_factory=WireGroup)
-    bra: WireGroup = field(default_factory=WireGroup)
-
-    def __getitem__(self, modes: int | Iterable[int]) -> WiresKetBra:
-        r"""Enables accessing wires with the syntax e.g. `self.input[4].ket` and it allows creating a
-        WiresKetBra with ket and bra at a mode: e.g. `self.output[3,4,5]` without specifying ket/bra.
-        """
-        modes = [modes] if isinstance(modes, int) else modes
-        if len(self.ket) > 0:
-            ket = {m: self.ket[m] for m in modes}
-        if len(self.bra) > 0:
-            bra = {m: self.bra[m] for m in modes}
-        return WiresKetBra(ket, bra)
-
-    # def __setitem__(self, mode: int, wire: Wire):
-    #     try:
-    #         if wire.is_ket:
-    #             side = "ket"
-    #             self.ket[mode] = wire
-    #         else:
-    #             side = "bra"
-    #             self.bra[mode] = wire
-    #     except KeyError:
-    #         raise ValueError(f"Cannot set wire at mode {mode} on {side} side")
 
 
 class TensorAPI:
@@ -229,7 +88,7 @@ class TensorAPI:
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
         self.name = name
-        self._update_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        self._rewire(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
     def _rewire(
         self,
@@ -239,17 +98,8 @@ class TensorAPI:
         modes_in_ket: Optional[list[int]] = None,
     ) -> None:
         r"""
-        Updates the modes in this tensor by setting:
-
-          * self._modes_out_bra, a list of output modes on the bra side
-          * self._modes_in_bra, a list of input modes on the bra side
-          * self._modes_out_ket, a list of output modes on the ket side
-          * self._modes_in_ket, a list of input modes on the ket side
-          * self.self._input, a WiresKetBra containing all the input modes
-          * self.self._output, a WiresKetBra containing all the output modes
-
-        Note that it creates brand new wires.
-        If you want to rewire a tensor without creating new wires,
+        Updates the modes in this tensor by reassinging the wires.
+        If you want to change modes in a tensor without creating new wires,
         use ``change_modes`` instead.
 
         Raises:
@@ -268,38 +118,95 @@ class TensorAPI:
                 msg = f"Output {msg}"
                 raise ValueError(msg)
 
-        self._modes_out_bra = modes_out_bra if modes_out_bra else []
-        self._modes_in_bra = modes_in_bra if modes_in_bra else []
-        self._modes_out_ket = modes_out_ket if modes_out_ket else []
-        self._modes_in_ket = modes_in_ket if modes_in_ket else []
-
-        # initialize ket and bra wire dicts
-        ket = {m: Wire(False, i) for i,m in enumerate(self._modes_in_ket)}
-        IK = len(self._modes_in_ket)
-        bra = {m: Wire(False, i) for i,m in enumerate(self._modes_in_bra)+IK}
-        IB = len(self._modes_in_bra)
-        self._input = WiresKetBra(ket, bra)
-
-        ket = {m: Wire(False, i) for i,m in enumerate(self._modes_out_ket)+IK+IB}
-        OK = len(self._modes_out_ket)
-        bra = {m: Wire(False, i) for i,m in enumerate(self._modes_out_bra)+IK+IB+OK}
-        self._output = WiresKetBra(ket, bra)
+        self._in_ket = {m: Wire() for m in modes_in_ket}
+        self._in_bra = {m: Wire() for m in modes_in_bra}
+        self._out_ket = {m: Wire() for m in modes_out_ket}
+        self._out_bra = {m: Wire() for m in modes_out_bra}
 
     @property
     def input(self):
         r"""
-        Returns a new tensor with input wires flagged and output wires unflagged.
-        The new tensor's __dict__ is a copy of this tensor's __dict__.
+        Returns a new tensor with a subset of input wires flagged.
+        If no wire is flagged, it flags all the input wires.
+        If some wires are flagged, it unflags the non-input ones.
         """
-        # return self._input
-        
+        if any(wire.flagged for wire in self._in_ket.values() + self._in_bra.values()):
+            for wire in self._out_bra.values() + self._out_ket.values():
+                wire.flagged = False
+        else:
+            for wire in self._in_bra.values() + self._in_ket.values():
+                wire.flagged = True
+        return self
 
     @property
     def output(self):
         r"""
-        A mapping the output modes to their respective wires.
+        Returns a new tensor with a subset of output wires flagged.
+        If no wire is flagged, it flags all the output wires.
+        If some wires are flagged, it unflags the non-output ones.
         """
-        return self._output
+        if any(wire.flagged for wire in self._out_bra.values() + self._out_ket.values()):
+            for wire in self._in_bra.values() + self._in_ket.values():
+                wire.flagged = False
+        else:
+            for wire in self._out_bra.values() + self._out_ket.values():
+                wire.flagged = True
+        return self
+
+
+    @property
+    def ket(self):
+        r"""
+        Returns a new tensor with a subset of ket wires flagged.
+        If no wire is flagged, it flags all the ket wires.
+        If some wires are flagged, it unflags the non-ket ones.
+        """
+        if any(wire.flagged for wire in self._in_ket.values() + self._out_ket.values()):
+            for wire in self._in_bra.values() + self._out_bra.values():
+                wire.flagged = False
+        else:
+            for wire in self._in_ket.values() + self._out_ket.values():
+                wire.flagged = True
+        return self
+
+    @property
+    def bra(self):
+        r"""
+        Returns a new tensor with a subset of bra wires flagged.
+        If no wire is flagged, it flags all the bra wires.
+        If some wires are flagged, it unflags the non-bra ones.
+        """
+        if any(wire.flagged for wire in self._in_bra.values() + self._out_bra.values()):
+            for wire in self._in_ket.values() + self._out_ket.values():
+                wire.flagged = False
+        else:
+            for wire in self._in_bra.values() + self._out_bra.values():
+                wire.flagged = True
+        return self
+
+
+    def __getitem__(self, modes):
+        r"""
+        Returns a new tensor with a subset of wires flagged.
+        If no wire is flagged, it flags all the ket/bra/in/out wires at the given modes.
+        If some wires are flagged, it unflags the non-given-modes ones.
+        """
+        modes = [modes] if isinstance(modes, int) else modes
+        new = self.from_self()
+        any_flagged = any(wire.flagged for wire in self.wires):
+        if any_flagged:
+            for m in modes:
+                new._in_ket[m].flagged = True
+                new._in_bra[m].flagged = True
+                new._out_ket[m].flagged = True
+                new._out_bra[m].flagged = True
+        else:
+            for m in set(self.modes).difference(modes):
+                new._in_ket[m].flagged = False
+                new._in_bra[m].flagged = False
+                new._out_ket[m].flagged = False
+                new._out_bra[m].flagged = False
+        return new
 
     @property
     def adjoint(self) -> AdjointView:
@@ -330,14 +237,14 @@ class TensorAPI:
         """
         if self.modes_in == self.modes_out:  # transformation on same modes
             self._update_modes(
-                modes_out_bra=value if self._modes_out_bra == self._modes_out_ket else None,
-                modes_in_bra=value if self._modes_in_bra == self._modes_in_ket else None,
+                modes_out_bra=value if self._out_bra.keys() == self._out_ket.keys() else None,
+                modes_in_bra=value if self._in_bra.keys() == self._in_ket.keys() else None,
                 modes_out_ket=value,
                 modes_in_ket=value,
             )
         elif len(self.modes_in) == 0:  # state
             self._update_modes(
-                modes_out_bra=value if self._modes_in_bra == self._modes_in_ket else None,
+                modes_out_bra=value if self._in_bra.keys() == self._in_ket.keys() else None,
                 modes_in_bra=[],
                 modes_out_ket=value,
                 modes_in_ket=[],
@@ -345,7 +252,7 @@ class TensorAPI:
         elif len(self.modes_out) == 0:  # measurement
             self._update_modes(
                 modes_out_bra=[],
-                modes_in_bra=value if self._modes_out_bra == self._modes_out_ket else None,
+                modes_in_bra=value if self._out_bra.keys() == self._out_ket.keys() else None,
                 modes_out_ket=[],
                 modes_in_ket=value,
             )
@@ -361,7 +268,7 @@ class TensorAPI:
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        return self._modes_in_ket if self._modes_in_ket else self._modes_in_bra
+        return list(self._in_ket.keys()) or list(self._in_bra.keys())
 
     @property
     def modes_out(self) -> List[int]:
@@ -372,7 +279,29 @@ class TensorAPI:
         on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
         ``set()`` operation before returning the list (and hence, the order may be unexpected).
         """
-        return self._modes_out_ket if self._modes_out_ket else self._modes_out_bra
+        return list(self._out_ket.keys()) or list(self._out_bra.keys())
+
+    @property
+    def modes_ket(self) -> List[int]:
+        r"""
+        The list of ket modes that are used by this Tensor.
+
+        If this tensor has no ket modes on the bra side, or if the ket modes are equal
+        on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
+        ``set()`` operation before returning the list (and hence, the order may be unexpected).
+        """
+        return list(self._out_ket.keys()) or list(self._in_ket.keys())
+
+    @property
+    def modes_bra(self) -> List[int]:
+        r"""
+        The list of bra modes that are used by this Tensor.
+
+        If this tensor has no bra modes on the bra side, or if the bra modes are equal
+        on both ket and bra sides, it returns the list of modes. Otherwise, it performs the
+        ``set()`` operation before returning the list (and hence, the order may be unexpected).
+        """
+        return list(self._out_bra.keys()) or list(self._in_bra.keys())
 
     def unpack_shape(self, shape: Tuple[int]):
         r"""
@@ -411,10 +340,10 @@ class TensorAPI:
         The list of all wires in this tensor, sorted as ``[ket_in, ket_out, bra_in, bra_out]``.
         """
         return (
-            list(self.input.ket.values())
-            + list(self.output.ket.values())
-            + list(self.input.bra.values())
-            + list(self.output.bra.values())
+            list(self._out_bra.values())
+            + list(self._in_bra.values())
+            + list(self._out_ket.values())
+            + list(self._in_ket.values())
         )
 
     @abstractmethod

@@ -42,7 +42,7 @@ class MMTensor:
 
         # If axis labels are not provided, generate default labels
         if self.axis_labels is None:
-            self.axis_labels = [str(n) for n in range(len(self.tensor.shape))] # just 0123...
+            self.axis_labels = [str(n) for n in range(len(self.tensor.shape))]  # just 0123...
 
         # Validate the number of axis labels
         if len(self.axis_labels) != len(self.tensor.shape):
@@ -143,7 +143,9 @@ class MMTensor:
         if relabeling is None:
             relabeling = self.axis_labels
         elif len(relabeling) != len(self.axis_labels):
-            raise ValueError(f"The number of labels ({len(relabeling)}) must equal the number of axes ({len(self.axis_labels)})")
+            raise ValueError(
+                f"The number of labels ({len(relabeling)}) must equal the number of axes ({len(self.axis_labels)})"
+            )
 
         self.axis_labels = relabeling
 
@@ -152,7 +154,7 @@ class MMTensor:
         for label in relabeling:
             if label not in unique_labels:
                 unique_labels.append(label)
-        
+
         # get labels that are repeated (for summing over)
         repeated = [label for label in unique_labels if self.axis_labels.count(label) > 1]
 
