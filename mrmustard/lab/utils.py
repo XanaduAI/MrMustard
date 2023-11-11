@@ -19,12 +19,8 @@ This module contains the utility functions used by the classes in ``mrmustard.la
 """
 import functools
 from typing import Callable, Optional, Tuple
-from mrmustard.math.parameters import update_euclidean
-from mrmustard import settings
-from mrmustard.math import Math
-from mrmustard.math.parameters import Constant, Variable
 
-math = Math()
+from mrmustard.math.parameters import Constant, Variable, update_euclidean
 
 
 def make_parameter(

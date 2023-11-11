@@ -19,9 +19,9 @@ from __future__ import annotations
 import uuid
 from abc import abstractmethod
 
-from mrmustard.math import Math
+from mrmustard.math.backend_manager import BackendManager
 
-math = Math()
+math = BackendManager()
 
 
 class Wired:

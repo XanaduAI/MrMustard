@@ -18,11 +18,11 @@ used within Mr Mustard.
 
 from itertools import chain, groupby
 from typing import List, Callable, Sequence, Union, Mapping, Dict
+from mrmustard import math
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.training.callbacks import Callback
 from mrmustard.training.progress_bar import ProgressBar
 from mrmustard.utils.logger import create_logger
-from mrmustard.math import Math
 from mrmustard.math.parameters import (
     update_euclidean,
     update_orthogonal,
@@ -30,8 +30,6 @@ from mrmustard.math.parameters import (
     update_unitary,
 )
 from mrmustard.lab import Circuit
-
-math = Math()
 
 __all__ = ["Optimizer"]
 

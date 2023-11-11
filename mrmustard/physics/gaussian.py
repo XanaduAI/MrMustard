@@ -20,12 +20,9 @@ from typing import Any, Optional, Sequence, Tuple, Union
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Scalar, Vector
-from mrmustard.math.xptensor import XPMatrix, XPVector
-
-math = Math()
+from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
 
 
 #  ~~~~~~
@@ -294,7 +291,7 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     sp = math.cast(math.sin(phi), math.float64)
     ch = math.cast(math.cosh(r), math.float64)
     sh = math.cast(math.sinh(r), math.float64)
-    zero = math.cast(math.zeros_like(r), math.float64)
+    zero = math.cast(math.zeros_like(math.asnumpy(r)), math.float64)
     return math.astensor(
         [
             [ch, cp * sh, zero, sp * sh],
@@ -662,7 +659,8 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     """
     N = len(cov) // 2
     Aindices = math.astensor(
-        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes],
+        dtype=math.int32,
     )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)

@@ -16,9 +16,9 @@
 
 from typing import Callable, Optional, Tuple
 
-from mrmustard.math import Math
+from mrmustard.math.backend_manager import BackendManager
 
-math = Math()
+math = BackendManager()
 
 
 __all__ = ["Constant", "Variable"]

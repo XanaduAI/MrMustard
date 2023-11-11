@@ -26,7 +26,7 @@ from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
 from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard.lab.circuit_drawer import circuit_text
-from mrmustard.math.xptensor import XPMatrix, XPVector
+from mrmustard.math.tensor_wrappers import XPMatrix, XPVector
 
 import numpy as np
 

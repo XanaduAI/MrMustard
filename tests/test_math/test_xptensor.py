@@ -14,7 +14,7 @@
 
 from hypothesis import strategies as st, given
 from hypothesis.extra.numpy import arrays
-from mrmustard.math.xptensor import XPVector, XPMatrix
+from mrmustard.math.tensor_wrappers.xptensor import XPVector, XPMatrix
 import numpy as np
 
 even = st.integers(min_value=2, max_value=10).filter(lambda x: x % 2 == 0)

@@ -3,15 +3,15 @@ mrmustard.math
 
 .. currentmodule:: mrmustard.math
 
-Backends
----------
+The `math` module
+-----------------
 
 .. toctree::
     :maxdepth: 1
 
     math/parameter_set
     math/parameter
-    math/tensorflow
+    math/backend_manager
 
 .. automodapi:: mrmustard.math
     :no-heading:

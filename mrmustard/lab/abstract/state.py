@@ -26,17 +26,10 @@ from typing import (
 
 import numpy as np
 
-from mrmustard import physics, settings
-from mrmustard.lab.utils import trainable_property
-from mrmustard.math import Math
-from mrmustard.math.tensor_networks.networks import connect, contract
-from mrmustard.physics.bargmann_repr import Bargmann
-from mrmustard.utils import graphics
+from mrmustard import math, settings
 
 if TYPE_CHECKING:
     from .transformation import Transformation
-
-math = Math()
 
 
 class State:

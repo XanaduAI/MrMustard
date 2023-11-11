@@ -19,19 +19,19 @@ import contextlib
 import io
 import re
 
-import mrmustard as mm
+from mrmustard import about, version
 
 
 def test_about():
     """Tests if the about string prints correctly."""
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
-        mm.about()
+        about()
     out = f.getvalue().strip()
 
     assert "Python version:" in out
     pl_version_match = re.search(r"Mr Mustard version:\s+([\S]+)\n", out).group(1)
-    assert mm.version() in pl_version_match
+    assert version() in pl_version_match
     assert "Numpy version" in out
     assert "Scipy version" in out
     assert "The Walrus version" in out
