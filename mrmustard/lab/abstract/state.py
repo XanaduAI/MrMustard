@@ -26,12 +26,11 @@ from typing import (
 
 import numpy as np
 
-from mrmustard import physics
-from mrmustard import settings
+from mrmustard import physics, settings
 from mrmustard.lab.utils import trainable_property
+from mrmustard.math import Math
 from mrmustard.math.tensor_networks.networks import connect, contract
 from mrmustard.physics.bargmann_repr import Bargmann
-from mrmustard.math import Math
 from mrmustard.utils import graphics
 
 if TYPE_CHECKING:
@@ -269,7 +268,7 @@ class State:
 class Ket(State):
     def __init__(self, representation, modes, name):
         self._representation = representation
-        super().__init__(name=name, modes_out_ket=modes)
+        super().__init__(modes_out_ket=modes)
 
     @property
     def purity(self) -> float:

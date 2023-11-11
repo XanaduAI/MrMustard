@@ -26,7 +26,11 @@ import matplotlib.pyplot as plt
 from .tensors import Wire, Tensor
 
 
-def connect(wire1: Wire | Iterable[Wire], wire2: Wire | Iterable[Wire], dim: Optional[int] = None):
+def connect(
+    wire1: Wire | Iterable[Wire],
+    wire2: Wire | Iterable[Wire],
+    dim: Optional[int] = None,
+):
     r"""Connects two wires or iterables of wires in a tensor network.
 
     Args:
@@ -66,14 +70,20 @@ def contract(tensors: list[Tensor], default_dim: int):
         The contracted tensor.
     """
     opt_einsum_args = []
-    for t in tensors:  # TODO: distinguish between continuous and discrete representations
+    for (
+        t
+    ) in tensors:  # TODO: distinguish between continuous and discrete representations
         shape = t.shape(default_dim=default_dim, out_in=True)
         opt_einsum_args.append(t.value(shape=shape))
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)
 
 
-def draw(tensors: list[Tensor], layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
+def draw(
+    tensors: list[Tensor],
+    layout: str = "spring_layout",
+    figsize: tuple[int, int] = (10, 6),
+):
     r"""Draws a tensor network.
 
     Args:
@@ -130,7 +140,12 @@ def draw(tensors: list[Tensor], layout: str = "spring_layout", figsize: tuple[in
 
     fig = plt.figure(figsize=figsize)
     nx.draw_networkx_nodes(
-        graph, pos, edgecolors="gray", alpha=0.9, node_size=node_size, node_color=node_color
+        graph,
+        pos,
+        edgecolors="gray",
+        alpha=0.9,
+        node_size=node_size,
+        node_color=node_color,
     )
     nx.draw_networkx_edges(graph, pos, edge_color="lightgreen", width=4, alpha=0.6)
     nx.draw_networkx_edges(

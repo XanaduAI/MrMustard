@@ -15,7 +15,9 @@
 """This module contains the interface for Representations."""
 
 from __future__ import annotations
-from abc import ABC, abstractmethod, abstractproperty
+
+from abc import abstractproperty
+
 from mrmustard.math.tensor_networks import TensorAPI
 
 
@@ -41,30 +43,7 @@ class Representation(TensorAPI):
             return wrapper
         return attr
 
-    @property
-    def output(self) -> Representation:
-        # flag output wires
-        for wire in self.
-        return self
 
-    @property
-    def input(self) -> Representation:
-        # flag input wires
-        return self
-
-    @property
-    def ket(self) -> Representation:
-        # flag ket wires
-        return self
-
-    @property
-    def bra(self) -> Representation:
-        # flag bra wires
-        return self
-
-    @property
-    def __getitem__(self, item):
-        return self.data[item]
 
 
 
