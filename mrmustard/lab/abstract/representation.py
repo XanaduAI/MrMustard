@@ -18,11 +18,8 @@ from __future__ import annotations
 
 from abc import abstractproperty
 
-from mrmustard.math.tensor_networks import TensorAPI
 
-
-class Representation(TensorAPI):
-    name: str = None
+class Representation:
 
     @abstractproperty
     def dimension(self):
@@ -42,6 +39,14 @@ class Representation(TensorAPI):
 
             return wrapper
         return attr
+
+    def id_position(self, id):
+        r"""
+        It returns the position of the id in the list of not-None ids for this Tensor.
+        Warning: use only when len(ids) matches the number of wires of the object.
+        """
+        not_none = [i for i in self.wires.ids if i is not None]
+        return not_none.index(id)
 
 
 
