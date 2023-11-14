@@ -19,13 +19,15 @@ from typing import Iterable, Optional, Union
 
 import numpy as np
 
-from mrmustard import math, settings
-from mrmustard.math.tensor_networks import Wired
+from mrmustard.math.tensor_networks.wires import Wires
+import mrmustard.math as math
+from mrmustard import settings
+from mrmustard.lab.abstract.representation import Representation
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Scalar
 
 
-class Bargmann(Wired):
+class Bargmann(Representation):
     r"""Fock-Bargmann function constrained to the functional form of a sum of exponentials of a quadratic polynomial
     times a fixed-degree polynomial: `F(z) = sum_i poly_i(z) c_i * exp(1/2 z^T A_i z + z^T b_i)`.
 
@@ -48,14 +50,13 @@ class Bargmann(Wired):
         self,
         A: Batch[ComplexMatrix],
         b: Batch[ComplexVector],
-        c: Optional[Batch[Scalar]] = None,
+        c: Batch[Scalar],
         poly: Optional[Batch[ComplexTensor]] = None,
-        modes_in_bra=None,
-        modes_in_ket=None,
-        modes_out_bra=None,
-        modes_out_ket=None,
+        modes_in_bra=[],
+        modes_in_ket=[],
+        modes_out_bra=[],
+        modes_out_ket=[],
     ):
-        assert modes_in_bra or modes_in_ket or modes_out_bra or modes_out_ket, "No modes specified."
 
         self.A = math.atleast_3d(math.astensor(A))
         self.b = math.atleast_2d(math.astensor(b))
@@ -65,54 +66,54 @@ class Bargmann(Wired):
         assert self.A.shape[-1] == self.A.shape[-2] == self.b.shape[-1], "A and b must have compatible dimensions"
         self.batch_dim = self.A.shape[0]
         self.dim = self.A.shape[-1]
-        super().__init__(
+        self.wires = Wires(
             modes_out_bra=modes_out_bra,
             modes_in_bra=modes_in_bra,
             modes_out_ket=modes_out_ket,
             modes_in_ket=modes_in_ket,
         )
 
-    def _update_Abc(self, A, b, c):
-        new_ = self.__class__(A, b, c)
-        self._
-        return new_
+    def _from_self(self, A=None, b=None, c=None, poly=None):
+        new = self.__class__(A or self.A, b or self.b, c or self.c, poly or self.poly)
+        new.wires = self.wires
+        return new
 
     def __neg__(self) -> Bargmann:
-        return self._update_Abc(self.A, self.b, -self.c)
+        return self._from_self(self.A, self.b, -self.c)
 
     def __eq__(self, other: Bargmann, exclude_scalars: bool = False) -> bool:
         A, B = sorted([self, other], key=lambda x: x.batch_dim)  # A is a smaller or equal batch than B
         # check scalars
-        Ac = np.around(A.coeffs, settings.EQUALITY_PRECISION_DECIMALS)
-        Bc = memoryview(np.around(B.coeffs, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+        Ac = np.around(A.coeffs, settings.EQ_TRANSFORMATION_RTOL_GAUSS)
+        Bc = memoryview(np.around(B.coeffs, settings.EQ_TRANSFORMATION_RTOL_GAUSS)).tobytes()
         if exclude_scalars or all(memoryview(c).tobytes() in Bc for c in Ac):
             # check vectors
-            Av = np.around(A.vec, settings.EQUALITY_PRECISION_DECIMALS)
-            Bv = memoryview(np.around(B.vec, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+            Av = np.around(A.vec, settings.EQ_TRANSFORMATION_RTOL_GAUSS)
+            Bv = memoryview(np.around(B.vec, settings.EQ_TRANSFORMATION_RTOL_GAUSS)).tobytes()
             if all(memoryview(v).tobytes() in Bv for v in Av):
                 # check matrices
-                Am = np.around(A.mat, settings.EQUALITY_PRECISION_DECIMALS)
-                Bm = memoryview(np.around(B.mat, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+                Am = np.around(A.mat, settings.EQ_TRANSFORMATION_RTOL_GAUSS)
+                Bm = memoryview(np.around(B.mat, settings.EQ_TRANSFORMATION_RTOL_GAUSS)).tobytes()
                 if all(memoryview(m).tobytes() in Bm for m in Am):
                     # check poly
-                    Ap = np.around(A.poly, settings.EQUALITY_PRECISION_DECIMALS)
-                    Bp = memoryview(np.around(B.poly, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
+                    Ap = np.around(A.poly, settings.EQ_TRANSFORMATION_RTOL_GAUSS)
+                    Bp = memoryview(np.around(B.poly, settings.EQ_TRANSFORMATION_RTOL_GAUSS)).tobytes()
                     if all(memoryview(p).tobytes() in Bp for p in Ap):
                         return True
         return False
 
     def __add__(self, other: Bargmann) -> Bargmann:
         if self.__eq__(other, exclude_scalars=True):
-            return self._update_Abc(self.A, self.b, self.c + other.c)
+            return self._from_self(self.A, self.b, self.c + other.c)
         combined_A = math.concat([self.A, other.A], axis=0)
         combined_b = math.concat([self.b, other.b], axis=0)
         combined_c = math.concat([self.c, other.c], axis=0)
-        return self._update_Abc(combined_A, combined_b, combined_c)
+        return self._from_self(combined_A, combined_b, combined_c)
 
     def __truediv__(self, x: Scalar) -> Bargmann:
         if not isinstance(x, (int, float, complex)):
             raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
-        return self._update_Abc(self.A, self.b, self.c / x)
+        return self._from_self(self.A, self.b, self.c / x)
 
     def __call__(self, z: ComplexVector) -> Scalar:
         r"""Value of this Fock-Bargmann function at z.
@@ -134,18 +135,18 @@ class Bargmann(Wired):
             new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
             new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
             new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
-            return self._update_Abc(math.astensor(new_a), math.astensor(new_b), math.astensor(new_c))
+            return self._from_self(math.astensor(new_a), math.astensor(new_b), math.astensor(new_c))
         else:  # assume other is a scalar
-            return self._update_Abc(self.A, self.b, other * self.c)
+            return self._from_self(self.A, self.b, other * self.c)
 
     def __and__(self, other: Bargmann) -> Bargmann:
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
         cs = [c1 * c2 for c1 in self.c for c2 in other.c]
-        return self.__class_update_Abc(math.astensor(As), math.astensor(bs), math.astensor(cs))
+        return self.__class_from_self(math.astensor(As), math.astensor(bs), math.astensor(cs))
 
     def conj(self):
-        return self._update_Abc(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        return self._from_self(math.conj(self.A), math.conj(self.b), math.conj(self.c))
 
     def __matmul__(self, other: Bargmann) -> Bargmann:
         r"""Implements the contraction of (A,b,c) triples across the marked indices."""

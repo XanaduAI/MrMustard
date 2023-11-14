@@ -1,4 +1,4 @@
-# Copyright 2021 Xanadu Quantum Technologies Inc.
+# Copyright 2023 Xanadu Quantum Technologies Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""
-This package contains the modules implementing base classes for tensors and tensor networks.
-"""
+"""This module contains the implementation of the :class:`Transformation` class."""
 
-from .wires import *
-from .networks import *
+class Wired:
+

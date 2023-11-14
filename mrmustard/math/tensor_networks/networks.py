@@ -15,52 +15,42 @@
 """ Functions and classes for tensor networks."""
 
 from __future__ import annotations
-
-from typing import Optional, Iterable
-from opt_einsum import contract as opt_contract
-
+from typing import Iterable
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
+from opt_einsum import contract as opt_contract
 
-from .tensors import Wire, Tensor
+from .wires import Wires
 
 
 def connect(
-    wire1: Wire | Iterable[Wire],
-    wire2: Wire | Iterable[Wire],
-    dim: Optional[int] = None,
+    wires1: Wires,
+    wires2: Wires,
+    TN: dict = dict(),
 ):
-    r"""Connects two wires or iterables of wires in a tensor network.
+    r"""Connects two wired objects by updating the tensor network dictionary
+    with the indices of the wires to be connected. We assume that each of the wires
+    in wires1 in the (ids ordering) is to be connected to the corresponding wire in wires2.
 
     Args:
-        wire1: The first wire.
-        wire2: The second wire.
-        dim: The dimension of the contraction.
+        wired1: The first Wires object
+        wired2: The second Wires object
+        TN (dict): The tensor network.
 
     Raises:
         ValueError: If one or both of the wires are already connected.
     """
-    if isinstance(wire1, Wire):
-        wire1 = [wire1]
-    if isinstance(wire2, Wire):
-        wire2 = [wire2]
-    for w1, w2 in zip(wire1, wire2):
-        if w1.is_connected or w2.is_connected:
-            raise ValueError("Tried to connect wires that are already connected.")
-
-        if dim:
-            w1.dim = dim
-            w2.dim = dim
-
-        w1.is_connected = True
-        w2.is_connected = True
-
-        w1.contraction_id = w2.contraction_id
+    idx1 = [id for id in wires1.ids if id is not None]
+    idx2 = [id for id in wires2.ids if id is not None]
+    for i,j in zip(idx1, idx2):
+        TN[i] = j
+        TN[j] = i
 
 
-def contract(tensors: list[Tensor], default_dim: int):
-    r"""Contract a list of tensors.
+def contract_fock(tensors: Iterable, TN: dict):
+    r"""Contract a list of tensors according to the tensor network
+    in the Fock basis.
 
     Args:
         tensors: The tensors to contract.
@@ -70,14 +60,26 @@ def contract(tensors: list[Tensor], default_dim: int):
         The contracted tensor.
     """
     opt_einsum_args = []
-    for (
-        t
-    ) in tensors:  # TODO: distinguish between continuous and discrete representations
+    for t in tensors:  # TODO: distinguish between CV and DV representations
         shape = t.shape(default_dim=default_dim, out_in=True)
         opt_einsum_args.append(t.value(shape=shape))
         opt_einsum_args.append([w.contraction_id for w in t.wires])
     return opt_contract(*opt_einsum_args)
 
+def contract_bargmann(representations: Iterable, TN: dict):
+    r"""Contract a list of tensors using the Bargmann representation.
+
+    Args:
+        tensors: The tensors to contract.
+        dim: The default dimension of the contractions.
+
+    Returns:
+        The contracted tensor.
+    """
+    # a dumb implementation that contracts the tensors one by one
+    T = tensors[0]
+    for t in tensors[1:]:
+        T = bargmann.contract_two_Abc(T, t, TN)
 
 def draw(
     tensors: list[Tensor],

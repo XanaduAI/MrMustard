@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from abc import abstractproperty
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -26,13 +27,16 @@ from typing import (
 
 import numpy as np
 
-from mrmustard import math, settings
+from mrmustard import math, physics, settings
+from mrmustard.math.tensor_networks.wires import Wires
 
 if TYPE_CHECKING:
     from .transformation import Transformation
 
+from abc import ABC, abstractproperty
 
-class State:
+
+class State(ABC):
     r"""Mixin class for quantum states. It supplies common functionalities and properties of all states.
     Note that Ket and DM implement their own ``from_foo`` methods.
 
@@ -50,8 +54,8 @@ class State:
     A State object also supports the tensor network operations, e.g. contraction, tensor product, etc.
 
     .. code-block:: python
-        connect(rho.output[0], channel.input[0])
-        contract([rho, channel0])
+        TN = connect(rho.wires.output[0], channel.wires.input[0], {})
+        new_rho = contract([rho, channel0], TN)
 
     The actual implementation of the algebraic functionality is beyond the representation interface.
     Representation objects come in two types: there is RepresentationCV and RepresentationDV.
@@ -68,16 +72,36 @@ class State:
     def is_pure(self):
         r"""Returns whether the state is pure."""
         return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
+    
+    @abstractproperty
+    def purity(self) -> float:
+        r"""Returns the purity of the state."""
+        pass
+
+    @property
+    def wires(self) -> Wires:
+        r"""Returns the wires of the state from the representation."""
+        self._representation.wires
 
     @property
     def modes(self) -> List[int]:
         r"""Returns the modes of the state."""
-        return self._representation.modes_out
+        return self.wires.modes  # NOTE: implementation must have a wires attribute
 
     @property
     def num_modes(self) -> int:
         r"""Returns the number of modes of the state."""
         return len(self.modes)
+    
+    @property
+    def dual(self) -> State:
+        r"""Returns the dual of the state."""
+        return self.__class__(self.representation.dual, modes=self.modes)
+    
+    @property
+    def adjoint(self) -> State:
+        r"""Returns the adjoint of the state."""
+        return self.__class__(self.representation.adjoint, modes=self.modes)
 
     @trainable_property
     def L2_norm(self) -> float:
@@ -117,24 +141,27 @@ class State:
         If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(5) >> Coherent(x=0.1).dual``.
         """
         common_modes = [m for m in self.modes_out if m in other.modes_in]
+        TN = {}
         try:
-            connect(
-                self._representation[common_modes].output.ket,
-                other._representation[common_modes].input.ket
-                or other._representation.adjoint[common_modes].input.ket,
+            TN = connect(
+                self.wires[common_modes].output.ket,
+                other.wires[common_modes].input.ket
+                or other.wires.adjoint[common_modes].input.ket,
+                TN,
             )
         except AttributeError:  # if self is a bra with no ket
             pass
         try:
-            connect(
-                self._representation[common_modes].output.bra,
-                other._representation[common_modes].input.bra
-                or other._representation.adjoint[common_modes].input.bra,
+            TN = connect(
+                self.wires[common_modes].output.bra,
+                other.wires[common_modes].input.bra
+                or other.wires.adjoint[common_modes].input.bra,
+                TN,
             )
         except AttributeError:  # if self is a ket with no bra
             pass
-        new_repr = contract(self._representation, other._representation)
-        return self.__class__(representation=new_repr, modes=new_repr.modes)
+        new = contract(self, other, TN)
+        return self.__class__(representation=new._representation, modes=new.modes)
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
@@ -222,6 +249,9 @@ class State:
     # REPR STUFF #
     ##############
 
+    def __len__(self):
+        return len(self._representation)
+
     @staticmethod  # TODO: move away from here?
     def _format_probability(prob: Optional[float]) -> str:
         if prob is None:
@@ -234,10 +264,10 @@ class State:
     def _repr_markdown_(self):
         r"""Prints the table to show the properties of the state."""
         purity = self.purity
-        probability = self.state_probability
-        num_modes = self.representation.num_modes
-        bosonic_size = "1" if isinstance(self.representation, (WignerKet, WignerDM)) else "N/A"
-        representation = self.representation.name
+        probability = self.probability
+        num_modes = self._representation.num_modes
+        bosonic_size = len(self)
+        representation = self._representation.name
         table = (
             f"#### {self.__class__.__qualname__}\n\n"
             + "| Purity | Probability | Num modes | Bosonic size | Representation |\n"
@@ -259,9 +289,12 @@ class State:
 
 
 class Ket(State):
-    def __init__(self, representation, modes, name):
+    def __init__(self, representation, modes):
         self._representation = representation
-        super().__init__(modes_out_ket=modes)
+
+    @property
+    def wires(self):
+        return self._representation.wires
 
     @property
     def purity(self) -> float:
@@ -283,16 +316,14 @@ class Ket(State):
     def from_fock(cls, fock_array, modes, name="Ket"):
         return cls(Fock(fock_array), modes, name=name)
 
-    def __rshift__(self, other: DualView | Transformation | Measurement) -> State | complex:
+    def __rshift__(self, other: Transformation | Measurement) -> State | complex:
         r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
-        If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(5) >> Coherent(x=0.1).dual``.
+        If other is a Measurement (e.g. a povm element), self is projected onto it, e.g. ``Gaussian(5) >> Homodyne(x=0.1)``.
         """
-        common_modes = [m for m in self.modes_out if m in other.modes_in]
-        connect(
-            self._representation[common_modes].output.ket,
-            other._representation[common_modes].input.ket
-            or other._representation.adjoint[common_modes].input.ket,
-        )
+        common_modes = [m for m in self.wires.modes_out if m in other.wires.modes_in]
+        TN = connect(self.wires[common_modes].output.ket, other.wires[common_modes].input.ket, {})
+        contracted = contract([self, other], TN)
+        return self.__class__(representation=contracted._representation, modes=contracted.modes)
 
 
     @classmethod
@@ -354,21 +385,11 @@ class Ket(State):
             DM: the converted DM in the phase space representation
         """
         assert s in [1, 0, -1]
-        if not characteristic:
-            # siegel_weil is the kernel that maps Bargmann to P/Wigner/Husimi (i.e. phase space)
-            Abc = physics.bargmann.siegel_weil([s] * self.representation.dimension)
-        else:
-            # with the s-displacement we get the characteristic functions (Fourier Transforms) of P/Wigner/Husimi
-            Abc = physics.bargmann.s_displacement([s] * self.representation.dimension)
-        kernel = Bargmann(*Abc)
-        connect(self._representation.output.ket, kernel.input.ket)
-        connect(self._representation.output.ket.adjoint, kernel.input.bra)
-        new_repr = contract([self._representation, kernel])
-        if s == 0:  # if Wigner / characteristic
-            pass
-            # return in p/q basis
-        else:
-            return new_repr.A, new_repr.b, new_repr.c, new_repr.poly
+        d = self._representation.dimension
+        Abc = physics.bargmann.siegel_weil([s] * d) if not characteristic else physics.bargmann.s_displacement([s] * d)
+        kernel = DM(Bargmann(*Abc).conj, modes=self.modes).dual
+        new = self >> kernel
+        return new._representation.A, new._representation.b, new._representation.c, new._representation.poly
 
     def quadrature(self, angle: float):
         r"""Returns the state converted to quadrature (wavefunction) representation with the given quadrature angle.
