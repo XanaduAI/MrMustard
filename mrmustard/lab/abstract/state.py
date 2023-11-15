@@ -29,6 +29,8 @@ import numpy as np
 
 from mrmustard import math, physics, settings
 from mrmustard.math.tensor_networks.wires import Wires
+from mrmustard.lab.abstract.wired import Wired
+from mrmustard.lab.utils import trainable_property
 
 if TYPE_CHECKING:
     from .transformation import Transformation
@@ -36,7 +38,7 @@ if TYPE_CHECKING:
 from abc import ABC, abstractproperty
 
 
-class State(ABC):
+class State(Wired):
     r"""Mixin class for quantum states. It supplies common functionalities and properties of all states.
     Note that Ket and DM implement their own ``from_foo`` methods.
 
@@ -73,15 +75,15 @@ class State(ABC):
         r"""Returns whether the state is pure."""
         return np.isclose(self.purity, 1.0, atol=settings.PURITY_ATOL)
     
-    @abstractproperty
+    @property
     def purity(self) -> float:
         r"""Returns the purity of the state."""
-        pass
+        raise NotImplementedError
 
-    @property
-    def wires(self) -> Wires:
-        r"""Returns the wires of the state from the representation."""
-        self._representation.wires
+    # @property
+    # def wires(self) -> Wires:
+    #     r"""Returns the wires of the state from the representation."""
+    #     self._representation.wires
 
     @property
     def modes(self) -> List[int]:
@@ -96,21 +98,22 @@ class State(ABC):
     @property
     def dual(self) -> State:
         r"""Returns the dual of the state."""
-        return self.__class__(self.representation.dual, modes=self.modes)
+        return self.__class__(self._representation.dual, modes=self.modes)
     
     @property
     def adjoint(self) -> State:
         r"""Returns the adjoint of the state."""
-        return self.__class__(self.representation.adjoint, modes=self.modes)
+        return self.__class__(self._representation.adjoint, modes=self.modes)
 
     @trainable_property
     def L2_norm(self) -> float:
         r"""Returns the L2 norm of the Hilbert space vector or L2 norm (Hilbert-Schmidt) of a density matrix."""
-        return self >> self.dual
+        return math.abs(self >> self.dual)
 
     def get_modes(self, modes: int | Iterable) -> State:
-        # TODO: write partial_trace in the representation
-        self.__class__(self._representation.partial_trace(keep=modes), modes=modes)
+        trace = [m for m in self.modes if m not in modes]
+        TN = connect(self.adjoint.wires[trace].output.bra, self.wires[trace].output.ket, {})
+        return contract(self, TN)
 
     def __getitem__(self, modes: int | Iterable) -> State:
         r"""Returns a new state object with same internal data except modes
@@ -158,7 +161,7 @@ class State(ABC):
             )
         except AttributeError:
             pass
-        new = contract(self, other, TN)
+        new = contract([self, other], TN)
         return self.__class__(representation=new._representation, modes=new.modes)
 
     def __lshift__(self, other: State) -> State | complex:
