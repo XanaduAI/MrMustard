@@ -161,8 +161,8 @@ class State(Wired):
             )
         except AttributeError:
             pass
-        new = contract([self, other], TN)
-        return self.__class__(representation=new._representation, modes=new.modes)
+        new = contract([self, other], TN)  # ??
+        return self.__class__(representation=new._representation, modes=new.modes)   # ??
 
     def __lshift__(self, other: State) -> State | complex:
         r"""dual of __rshift__"""
