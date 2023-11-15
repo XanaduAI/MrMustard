@@ -14,5 +14,9 @@
 
 """This module contains the implementation of the :class:`Transformation` class."""
 
+
+
 class Wired:
+    def __init__(self, wires):
+        self.wires = wires
 

@@ -192,5 +192,5 @@ class Wires:
         )
     
     def __bool__(self):
-        r"""Evaluate self to True if any of the ids are not None and False otherwise"""
+        r"""Make self truthy if any of the ids are not None and falsy otherwise"""
         return any(self.ids)

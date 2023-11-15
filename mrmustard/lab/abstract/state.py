@@ -136,7 +136,7 @@ class State(ABC):
         r"""Returns whether the states are equal. Modes are dealt with in the internal representation."""
         return self._representation == other._representation
 
-    def __rshift__(self, other: DualView | Transformation | Measurement) -> State | complex:
+    def __rshift__(self, other: State | Transformation | Measurement) -> State | complex:
         r"""If `other` is a transformation, it is applied to self, e.g. ``Coherent(x=0.1) >> Sgate(r=0.1)``.
         If other is a dual State (i.e. a povm element), self is projected onto it, e.g. ``Gaussian(5) >> Coherent(x=0.1).dual``.
         """
@@ -144,21 +144,19 @@ class State(ABC):
         TN = {}
         try:
             TN = connect(
-                self.wires[common_modes].output.ket,
-                other.wires[common_modes].input.ket
-                or other.wires.adjoint[common_modes].input.ket,
+                self.wires[common_modes].output.ket or self.adjoint.wires[common_modes].output.ket,  # or... because self might be defined on the bra side only
+                other.wires[common_modes].input.ket or other.wires.adjoint[common_modes].input.ket,  # or... because other might be defined on the bra side only
                 TN,
             )
-        except AttributeError:  # if self is a bra with no ket
+        except AttributeError:
             pass
         try:
             TN = connect(
-                self.wires[common_modes].output.bra,
-                other.wires[common_modes].input.bra
-                or other.wires.adjoint[common_modes].input.bra,
+                self.wires[common_modes].output.bra or self.adjoint.wires[common_modes].output.bra,  # or... because self might be defined on the ket side only
+                other.wires[common_modes].input.bra or other.wires.adjoint[common_modes].input.bra,  # or... because other might be defined on the ket side only
                 TN,
             )
-        except AttributeError:  # if self is a ket with no bra
+        except AttributeError:
             pass
         new = contract(self, other, TN)
         return self.__class__(representation=new._representation, modes=new.modes)
