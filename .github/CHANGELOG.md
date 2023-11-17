@@ -70,7 +70,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 ### Contributors
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin),
-[Jan Provaznik](https://github.com/jan-provaznik)
+[Jan Provaznik](https://github.com/jan-provaznik),
+[Yuan Yao](https://github.com/sylviemonet)
 
 # Release 0.6.0 (current release)
 
