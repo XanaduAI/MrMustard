@@ -59,6 +59,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
 * Fixed inconsistent use of `atol` in purity evaluation for Gaussian states.
 [(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
+* Fixed the documentations for loss_XYd and amp_XYd functions for Gaussian channels.
+[(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
 
 ### Documentation
 
