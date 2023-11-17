@@ -442,8 +442,8 @@ def loss_XYd(
 
     .. math::
 
-        X = math.sqrt(gain)
-        Y = (gain - 1) * (2 * nbar + 1) * hbar / 2
+        X = math.sqrt(transmissivity)
+        Y = (1-transmissivity) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -466,6 +466,13 @@ def loss_XYd(
 
 def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
+
+    .. math::
+
+        X = math.sqrt(gain)
+        Y = (gain-1) * (2 * nbar + 1) * hbar / 2
+
+    Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 111)
 
     The quantum limited amplifier channel is recovered for ``nbar = 0.0``.
 
