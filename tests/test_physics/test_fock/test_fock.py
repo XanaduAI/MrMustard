@@ -19,6 +19,7 @@ from hypothesis import strategies as st
 from scipy.special import factorial
 from thewalrus.quantum import total_photon_number_distribution
 
+from mrmustard import math
 from mrmustard.lab import (
     TMSV,
     Attenuator,
@@ -160,16 +161,17 @@ def test_density_matrix(num_modes):
 
 
 @pytest.mark.parametrize(
-    "state",
+    "state, kwargs",
     [
-        Vacuum(num_modes=2),
-        Fock([4, 3], modes=[0, 1]),
-        Coherent(x=[0.1, 0.2], y=[-0.4, 0.4], cutoffs=[10, 10]),
-        Gaussian(num_modes=2, cutoffs=[35, 35]),
+        (Vacuum, {"num_modes": 2}),
+        (Fock, {"n": [4, 3], "modes": [0, 1]}),
+        (Coherent, {"x": [0.1, 0.2], "y": [-0.4, 0.4], "cutoffs": [10, 10]}),
+        (Gaussian, {"num_modes": 2, "cutoffs": [35, 35]}),
     ],
 )
-def test_dm_to_ket(state):
+def test_dm_to_ket(state, kwargs):
     """Tests pure state density matrix conversion to ket"""
+    state = state(**kwargs)
     dm = state.dm()
     ket = fock.dm_to_ket(dm)
     # check if ket is normalized
@@ -186,7 +188,8 @@ def test_dm_to_ket_error():
     """Test fock.dm_to_ket raises an error when state is mixed"""
     state = Coherent(x=0.1, y=-0.4, cutoffs=[15]) >> Attenuator(0.5)
 
-    with pytest.raises(ValueError):
+    e = ValueError if math.backend_name == "tensorflow" else TypeError
+    with pytest.raises(e):
         fock.dm_to_ket(state)
 
 

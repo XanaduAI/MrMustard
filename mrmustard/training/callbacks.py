@@ -74,9 +74,6 @@ from pathlib import Path
 from typing import Callable, Optional, Mapping, Sequence, Union
 import numpy as np
 import tensorflow as tf
-from mrmustard.math import Math
-
-math = Math()
 
 
 @dataclass
@@ -240,7 +237,6 @@ class TensorboardCallback(Callback):  # pylint: disable=too-many-instance-attrib
         **kwargs,
     ):  # pylint: disable=unused-argument,arguments-differ
         """Logs costs and parameters to Tensorboard."""
-
         self.init_writer(trainables=trainables)
         obj_tag = "objectives"
 

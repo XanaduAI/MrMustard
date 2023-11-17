@@ -18,10 +18,7 @@ Unit tests for the :class:`MMTensor`.
 import numpy as np
 import pytest
 
-from mrmustard.math import Math
-from mrmustard.math.mmtensor import MMTensor
-
-math = Math()
+from mrmustard.math.tensor_wrappers.mmtensor import MMTensor
 
 
 def test_mmtensor_creation():

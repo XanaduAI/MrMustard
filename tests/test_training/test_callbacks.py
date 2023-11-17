@@ -17,21 +17,22 @@
 import numpy as np
 import tensorflow as tf
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.circuit import Circuit
 from mrmustard.lab.gates import (
     BSgate,
     S2gate,
 )
 from mrmustard.lab.states import Vacuum
-from mrmustard.math import Math
 from mrmustard.training import Optimizer, TensorboardCallback
 
-math = Math()
+from ..conftest import skip_np
 
 
 def test_tensorboard_callback(tmp_path):
     """Tests tensorboard callbacks on hong-ou-mandel optimization."""
+    skip_np()
+
     settings.SEED = 42
     i, k = 2, 3
     r = np.arcsinh(1.0)

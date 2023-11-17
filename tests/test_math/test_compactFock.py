@@ -1,18 +1,32 @@
 """
-Unit tests for mrmustard.math.numba.compactFock~
+Unit tests for mrmustard.math.compactFock.compactFock~
 """
+import importlib
+import pytest
 import numpy as np
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from mrmustard import math, settings
 from mrmustard.lab import Ggate, SqueezedVacuum, State, Vacuum
-from mrmustard.math import Math
 from mrmustard.physics import fidelity, normalize
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.training import Optimizer
 from tests.random import n_mode_mixed_state
+from ..conftest import skip_np
 
-math = Math()  # use methods in math if you want them to be differentiable
+original_precision = settings.PRECISION_BITS_HERMITE_POLY
+precisions = [128, 256, 384, 512]
+
+do_julia = True if importlib.util.find_spec("julia") else False
+precisions = (
+    [128, 256, 384, 512]
+    if do_julia
+    else [
+        128,
+    ]
+)
 
 
 def allowed_cutoffs(max_cutoffs):
@@ -36,15 +50,18 @@ def random_ABC(draw, M):
 
 
 @given(random_ABC(M=3))
-def test_compactFock_diagonal(A_B_G0):
+@pytest.mark.parametrize("precision", precisions)
+def test_compactFock_diagonal(precision, A_B_G0):
     """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     for cutoffs in allowed_cutoffs((7, 7, 7)):
         A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
         # Vanilla MM
         G_ref = math.hermite_renormalized(
             math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-        ).numpy()  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        G_ref = math.asnumpy(G_ref)
 
         # Extract diagonal amplitudes from vanilla MM
         ref_diag = np.zeros(cutoffs, dtype=np.complex128)
@@ -58,10 +75,16 @@ def test_compactFock_diagonal(A_B_G0):
         )
         assert np.allclose(ref_diag, G_diag)
 
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision
+
 
 @given(random_ABC(M=3))
-def test_compactFock_1leftover(A_B_G0):
+@pytest.mark.parametrize("precision", precisions)
+def test_compactFock_1leftover(precision, A_B_G0):
     """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    skip_np()
+
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     for cutoffs in allowed_cutoffs((7, 7, 7)):
         A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
@@ -73,7 +96,8 @@ def test_compactFock_1leftover(A_B_G0):
         # Vanilla MM
         G_ref = math.hermite_renormalized(
             math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-        ).numpy()  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+        G_ref = math.asnumpy(G_ref)
 
         # Extract amplitudes of leftover mode from vanilla MM
         ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
@@ -83,9 +107,15 @@ def test_compactFock_1leftover(A_B_G0):
             ]
         assert np.allclose(ref_leftover, G_leftover)
 
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
-def test_compactFock_diagonal_gradients():
+
+@pytest.mark.parametrize("precision", precisions)
+def test_compactFock_diagonal_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
+    skip_np()
+
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Ggate(num_modes=3, symplectic_trainable=True)
 
     def cost_fn():
@@ -103,9 +133,15 @@ def test_compactFock_diagonal_gradients():
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
 
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
-def test_compactFock_1leftover_gradients():
+
+@pytest.mark.parametrize("precision", precisions)
+def test_compactFock_1leftover_gradients(precision):
     """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    skip_np()
+
+    settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Ggate(num_modes=3, symplectic_trainable=True)
 
     def cost_fn():
@@ -122,3 +158,5 @@ def test_compactFock_1leftover_gradients():
     opt.minimize(cost_fn, by_optimizing=[G], max_steps=50)
     for i in range(2, min(20, len(opt.opt_history))):
         assert opt.opt_history[i - 1] >= opt.opt_history[i]
+
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision

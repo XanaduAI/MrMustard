@@ -24,15 +24,14 @@ from typing import List, Optional, Tuple
 
 from mrmustard import settings
 from mrmustard.lab.abstract import State, Transformation
-from mrmustard.training import Parametrized
 from mrmustard.utils.typing import RealMatrix, RealVector
 from mrmustard.lab.circuit_drawer import circuit_text
-from mrmustard.math.xptensor import XPMatrix, XPVector
+from mrmustard.math.tensor_wrappers import XPMatrix, XPVector
 
 import numpy as np
 
 
-class Circuit(Transformation, Parametrized):
+class Circuit(Transformation):
     """Represents a quantum circuit: a set of operations to be applied on quantum states.
 
     Args:
@@ -43,6 +42,13 @@ class Circuit(Transformation, Parametrized):
         self._ops = list(ops) if ops is not None else []
         super().__init__(name="Circuit")
         self.reset()
+
+    @property
+    def ops(self) -> Optional[List]:
+        r"""
+        The list of operations comprising the circuit.
+        """
+        return self._ops
 
     def reset(self):
         """Resets the state of the circuit clearing the list of modes and setting the compiled flag to false."""

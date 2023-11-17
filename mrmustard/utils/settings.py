@@ -18,7 +18,6 @@
 import os
 from rich import print
 import rich.table
-from julia.api import Julia
 import numpy as np
 
 __all__ = ["Settings", "settings"]
@@ -81,7 +80,6 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._backend = "tensorflow"
         self._hbar = ImmutableSetting(2.0, "HBAR")
         self._debug = False
         self._autocutoff_probability = 0.999  # capture at least 99.9% of the probability
@@ -103,8 +101,12 @@ class Settings:
         self.rng = np.random.default_rng(self._seed)
         self._default_bs_method = "vanilla"  # can be 'vanilla' or 'schwinger'
         self._precision_bits_hermite_poly = 128
+        self._julia_initialized = (
+            False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
+        )
 
     def _force_hbar(self, value):
+        r"can set the value of HBAR at any time. use with caution."
         self._hbar._value = value
 
     @property
@@ -133,20 +135,6 @@ class Settings:
     @AUTOCUTOFF_PROBABILITY.setter
     def AUTOCUTOFF_PROBABILITY(self, value: float):
         self._autocutoff_probability = value
-
-    @property
-    def BACKEND(self):
-        r"""The backend which is used. Default is ``tensorflow``.
-
-        Can be either ``'tensorflow'`` or ``'torch'``.
-        """
-        return self._backend
-
-    @BACKEND.setter
-    def BACKEND(self, value: str):
-        if value not in ["tensorflow", "torch"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
-        self._backend = value
 
     @property
     def CIRCUIT_DECIMALS(self):
@@ -280,30 +268,46 @@ class Settings:
         r"""
         The number of bits used to represent a single Fock amplitude when calculating Hermite polynomials.
         Default is 128 (i.e. the Fock representation has dtype complex128).
+        Currently allowed values: 128, 256, 384, 512
         """
         return self._precision_bits_hermite_poly
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = [128, 512]
+        allowed_values = [128, 256, 384, 512]
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
             )
         self._precision_bits_hermite_poly = value
+        if (
+            value != 128 and not self._julia_initialized
+        ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
+            from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
 
-        if value != 128:
-            # initialize Julia
             # the next line must be run before "from julia import Main as Main_julia"
-            _ = Julia(compiled_modules=False)
-            # julia must be imported after running "_ = Julia(compiled_modules=False)"
+            LibJulia.load().init_julia(
+                ["--compiled-modules=no", "--project=julia_pkg"]
+            )  # also loads julia environment
+            # the next line must be run after "LibJulia.load().init_julia()"
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             # import Julia functions
             utils_directory = os.path.dirname(__file__)
-            mm_directory = os.path.dirname(utils_directory)
-            Main_julia.cd(mm_directory)
-            Main_julia.include("math/lattice/strategies/vanilla.jl")
+            Main_julia.cd(utils_directory)
+            Main_julia.include("../math/lattice/strategies/julia/getPrecision.jl")
+            Main_julia.include("../math/lattice/strategies/julia/vanilla.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/helperFunctions.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_amps.jl")
+            Main_julia.include("../math/lattice/strategies/julia/compactFock/diagonal_grad.jl")
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_amps.jl"
+            )
+            Main_julia.include(
+                "../math/lattice/strategies/julia/compactFock/singleLeftoverMode_grad.jl"
+            )
+
+            self._julia_initialized = True
 
     # use rich.table to print the settings
     def __repr__(self) -> str:

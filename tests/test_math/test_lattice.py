@@ -14,19 +14,31 @@
 
 """Tests for the lattice module"""
 
+import importlib
 import pytest
 import numpy as np
 
 from mrmustard.lab import Gaussian
 from mrmustard import settings
+from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 
-p0 = settings.PRECISION_BITS_HERMITE_POLY
+original_precision = settings.PRECISION_BITS_HERMITE_POLY
+
+do_julia = True if importlib.util.find_spec("julia") else False
+precisions = (
+    [128, 256, 384, 512]
+    if do_julia
+    else [
+        128,
+    ]
+)
 
 
-@pytest.mark.parametrize("precision", ([128, 512]))
+@pytest.mark.parametrize("precision", precisions)
 def test_vanillaNumba_vs_binomial(precision):
     """Test that the vanilla method and the binomial method give the same result.
     Test is repeated for all possible values of PRECISION_BITS_HERMITE_POLY."""
+
     settings.PRECISION_BITS_HERMITE_POLY = precision
     G = Gaussian(2)
 
@@ -35,4 +47,19 @@ def test_vanillaNumba_vs_binomial(precision):
 
     assert np.allclose(ket_vanilla, ket_binomial)
 
-    settings.PRECISION_BITS_HERMITE_POLY = p0  # put original value back
+    settings.PRECISION_BITS_HERMITE_POLY = original_precision
+
+
+def test_binomial_vs_binomialDict():
+    """Test that binomial and binomial_dict give the same result."""
+
+    A, b, c = Gaussian(2).bargmann(numpy=True)
+    max_prob = 0.9
+    local_cutoffs = (10, 10)
+    global_cutoff = 15
+
+    G, norm = binomial(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
+    D = binomial_dict(local_cutoffs, A, b, c.item(), max_prob, global_cutoff)
+
+    for idx in D.keys():
+        assert np.isclose(D[idx], G[idx])

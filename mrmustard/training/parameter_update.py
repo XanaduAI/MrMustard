@@ -16,12 +16,10 @@
 """
 
 from typing import Tuple, Sequence
-from mrmustard.math import Math
 from mrmustard.utils.typing import Tensor
 
+from mrmustard import math
 from .parameter import Trainable
-
-math = Math()
 
 
 def update_symplectic(grads_and_vars: Sequence[Tuple[Tensor, Trainable]], symplectic_lr: float):

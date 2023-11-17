@@ -28,13 +28,11 @@ many-photon setting.
 
     import numpy as np
 
+    from mrmustard import math
     from mrmustard.lab.gates import S2gate, BSgate
     from mrmustard.lab.states import Vacuum
     from mrmustard.lab.circuit import Circuit
     from mrmustard.training import Optimizer
-    from mrmustard.math import Math
-
-    math = Math()
 
     r = np.arcsinh(1.0)
     s2_0 = S2gate(r=r, phi=0.0, phi_trainable=True)[0, 1]
@@ -66,6 +64,5 @@ Then, we can see the optimized value of the parameters, for example
 
 """
 
-from .parametrized import Parametrized
 from .optimizer import Optimizer
 from .callbacks import TensorboardCallback

@@ -16,10 +16,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-import matplotlib.pyplot as plt
-import warnings
-
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -29,10 +25,13 @@ from typing import (
     Tuple,
     Union,
 )
+import warnings
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import cm
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
+from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import (
     ComplexMatrix,
@@ -47,8 +46,6 @@ from mrmustard.physics.wigner import wigner_discretized
 
 if TYPE_CHECKING:
     from .transformation import Transformation
-
-math = Math()
 
 
 # pylint: disable=too-many-instance-attributes
@@ -97,7 +94,7 @@ class State:  # pylint: disable=too-many-public-methods
         self._norm = _norm
         if cov is not None and means is not None:
             self.is_gaussian = True
-            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0)
+            self.is_hilbert_vector = np.allclose(gaussian.purity(self.cov), 1.0, atol=1e-6)
             self.num_modes = cov.shape[-1] // 2
         elif eigenvalues is not None and symplectic is not None:
             self.is_gaussian = True
@@ -117,6 +114,26 @@ class State:  # pylint: disable=too-many-public-methods
             assert (
                 len(modes) == self.num_modes
             ), f"Number of modes supplied ({len(modes)}) must match the representation dimension {self.num_modes}"
+
+    def _add_parameter(self, parameter: Union[Constant, Variable]):
+        r"""
+        Adds a parameter to a state.
+
+        Args:
+            parameter: The parameter to add.
+        """
+        if not getattr(self, "_parameter_set", None):
+            msg = "Cannot add a parameter to a state with no parameter set."
+            raise ValueError(msg)
+        self.parameter_set.add_parameter(parameter)
+        self.__dict__[parameter.name] = parameter
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this state.
+        """
+        return getattr(self, "_parameter_set", None)
 
     @property
     def modes(self):

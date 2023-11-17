@@ -22,9 +22,9 @@ from typing import List, Optional, Tuple
 
 import uuid
 
-from mrmustard.math import Math
+from mrmustard.math.backend_manager import BackendManager
 
-math = Math()
+math = BackendManager()
 
 
 __all__ = ["Wire", "Tensor"]
@@ -411,7 +411,8 @@ class AdjointView(Tensor):
         )
         shape_ret = shape_in_bra + shape_out_bra + shape_in_ket + shape_out_ket
 
-        return math.conj(math.astensor(self._original.value(shape_ret)))
+        ret = math.conj(math.astensor(self._original.value(shape_ret)))
+        return ret
 
 
 class DualView(Tensor):

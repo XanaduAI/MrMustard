@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This module contains the Tensorflow implementation of the :class:`Math` interface."""
+"""This module contains the tensorflow backend."""
+
+# pylint: disable = missing-function-docstring, missing-class-docstring
 
 from typing import Callable, List, Optional, Sequence, Tuple, Union
 
@@ -21,34 +23,36 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import hashlib
 
-from mrmustard import settings
-from mrmustard.math.autocast import Autocast
-from mrmustard.math.lattice import strategies
-from mrmustard.math.compactFock.compactFock_inputValidation import (
+from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
 )
-from mrmustard.utils.typing import Tensor, Trainable
-from .math_interface import MathInterface
+from ..utils.settings import settings
+from ..utils.typing import Tensor, Trainable
+from .backend_base import BackendBase
+from .autocast import Autocast
+from .lattice import strategies
 
 
-# pylint: disable=too-many-public-methods,no-self-argument,arguments-differ
-class TFMath(MathInterface):
-    r"""Tensorflow implemantion of the :class:`Math` interface."""
+# pylint: disable=too-many-public-methods
+class BackendTensorflow(BackendBase):  # pragma: no cover
+    r"""
+    A base class for backends.
+    """
 
+    int32 = tf.int32
     float64 = tf.float64
     float32 = tf.float32
     complex64 = tf.complex64
     complex128 = tf.complex128
 
-    def __getattr__(self, name):
-        return getattr(tf, name)
+    def __init__(self):
+        super().__init__(name="tensorflow")
 
-    # ~~~~~~~~~
-    # Basic ops
-    # ~~~~~~~~~
+    def __repr__(self) -> str:
+        return "BackendTensorflow()"
 
     def abs(self, array: tf.Tensor) -> tf.Tensor:
         return tf.abs(array)
@@ -56,7 +60,8 @@ class TFMath(MathInterface):
     def any(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.reduce_any(array)
 
-    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=tf.float64) -> tf.Tensor:
+    def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
@@ -67,6 +72,7 @@ class TFMath(MathInterface):
         return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.convert_to_tensor(array, dtype=dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
@@ -89,6 +95,13 @@ class TFMath(MathInterface):
             [self.concat([mat1, Za], axis=-1), self.concat([Zb, mat2], axis=-1)], axis=-2
         )
 
+    def block(self, blocks: List[List[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
+        rows = [self.concat(row, axis=axes[1]) for row in blocks]
+        return self.concat(rows, axis=axes[0])
+
+    def boolean_mask(self, tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
+        return tf.boolean_mask(tensor, mask)
+
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
@@ -100,8 +113,7 @@ class TFMath(MathInterface):
     def concat(self, values: Sequence[tf.Tensor], axis: int) -> tf.Tensor:
         if any(tf.rank(v) == 0 for v in values):
             return tf.stack(values, axis)
-        else:
-            return tf.concat(values, axis)
+        return tf.concat(values, axis)
 
     def conj(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.conj(array)
@@ -128,24 +140,17 @@ class TFMath(MathInterface):
         self,
         array: tf.Tensor,
         filters: tf.Tensor,
-        strides: Optional[List[int]] = None,
-        padding="VALID",
+        padding: Optional[str] = None,
         data_format="NWC",
-        dilations: Optional[List[int]] = None,
     ) -> tf.Tensor:
-        return tf.nn.convolution(array, filters, strides, padding, data_format, dilations)
+        padding = padding or "VALID"
+        return tf.nn.convolution(array, filters=filters, padding=padding, data_format=data_format)
 
     def cos(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cos(array)
 
     def cosh(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.cosh(array)
-
-    def atan2(self, y: tf.Tensor, x: tf.Tensor) -> tf.Tensor:
-        return tf.math.atan2(y, x)
-
-    def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
-        return tf.complex(real, imag)
 
     def det(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.det(matrix)
@@ -170,7 +175,8 @@ class TFMath(MathInterface):
     def expm(self, matrix: tf.Tensor) -> tf.Tensor:
         return tf.linalg.expm(matrix)
 
-    def eye(self, size: int, dtype=tf.float64) -> tf.Tensor:
+    def eye(self, size: int, dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.eye(size, dtype=dtype)
 
     def eye_like(self, array: tf.Tensor) -> Tensor:
@@ -179,7 +185,7 @@ class TFMath(MathInterface):
     def from_backend(self, value) -> bool:
         return isinstance(value, (tf.Tensor, tf.Variable))
 
-    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int = None) -> tf.Tensor:
+    def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
     def hash_tensor(self, tensor: tf.Tensor) -> int:
@@ -218,6 +224,9 @@ class TFMath(MathInterface):
     def matvec(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, adjoint_a=False) -> tf.Tensor:
         return tf.linalg.matvec(a, b, transpose_a, adjoint_a)
 
+    def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
+        return tf.complex(real, imag)
+
     @Autocast()
     def maximum(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.maximum(a, b)
@@ -231,21 +240,24 @@ class TFMath(MathInterface):
         value,
         bounds: Union[Tuple[Optional[float], Optional[float]], None],
         name: str,
-        dtype=tf.float64,
+        dtype=None,
     ):
         bounds = bounds or (None, None)
-        value = self.convert_to_tensor(value, dtype)
+        dtype = dtype or tf.float64
+        value = self.astensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
-    def new_constant(self, value, name: str, dtype=tf.float64):
-        value = self.convert_to_tensor(value, dtype)
+    def new_constant(self, value, name: str, dtype=None):
+        dtype = dtype or tf.float64
+        value = self.astensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
     def norm(self, array: tf.Tensor) -> tf.Tensor:
         """Note that the norm preserves the type of array."""
         return tf.linalg.norm(array)
 
-    def ones(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
+    def ones(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.ones(shape, dtype=dtype)
 
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
@@ -333,6 +345,7 @@ class TFMath(MathInterface):
         yield from hash_dict.values()
 
     def zeros(self, shape: Sequence[int], dtype=tf.float64) -> tf.Tensor:
+        dtype = dtype or tf.float64
         return tf.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
@@ -353,14 +366,29 @@ class TFMath(MathInterface):
     def MultivariateNormalTriL(self, loc: Tensor, scale_tril: Tensor):
         return tfp.distributions.MultivariateNormalTriL(loc=loc, scale_tril=scale_tril)
 
+    @staticmethod
+    def eigh(tensor: tf.Tensor) -> Tensor:
+        return tf.linalg.eigh(tensor)
+
+    @staticmethod
+    def eigvals(tensor: tf.Tensor) -> Tensor:
+        return tf.linalg.eigvals(tensor)
+
+    @staticmethod
+    def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
+        return tf.math.xlogy(x, y)
+
+    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
+        # The sqrtm function has issues with matrices that are close to zero, hence we branch
+        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
+            return self.zeros_like(tensor)
+        return tf.linalg.sqrtm(tensor)
+
     # ~~~~~~~~~~~~~~~~~
     # Special functions
     # ~~~~~~~~~~~~~~~~~
 
-    # TODO: is a wrapper class better?
-    @staticmethod
-    def DefaultEuclideanOptimizer() -> tf.keras.optimizers.legacy.Optimizer:
-        r"""Default optimizer for the Euclidean parameters."""
+    def DefaultEuclideanOptimizer(self) -> tf.keras.optimizers.legacy.Optimizer:
         return tf.keras.optimizers.legacy.Adam(learning_rate=0.001)
 
     def value_and_gradients(
@@ -383,7 +411,7 @@ class TFMath(MathInterface):
     @tf.custom_gradient
     def hermite_renormalized(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
-    ) -> tf.Tensor:
+    ) -> Tuple[tf.Tensor, Callable]:
         r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
@@ -398,14 +426,14 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial of given shape.
         """
-        precision_bits = (
-            settings.PRECISION_BITS_HERMITE_POLY
-        )  # number of bits used to represent a single Fock amplitude (default: complex128)
+
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
             G = strategies.vanilla(tuple(shape), _A, _B, _C)
-        else:  # julia (with precision_bits = 512)
+        else:  # julia
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
@@ -414,7 +442,10 @@ class TFMath(MathInterface):
                 _B.astype(np.complex128),
                 _C.astype(np.complex128),
             )
-            G = Main_julia.vanilla(_A, _B, _C.item(), np.array(shape, dtype=np.int64))
+
+            G = Main_julia.Vanilla.vanilla(
+                _A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits
+            )
 
         def grad(dLdGconj):
             dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
@@ -504,16 +535,34 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
-        )
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        if precision_bits == 128:  # numba (complex128)
+            poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+                hermite_multidimensional_diagonal, [A, B, C, cutoffs], [A.dtype] * 5
+            )
+        else:  # julia (higher precision than complex128)
+            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+
+            poly0, poly2, poly1010, poly1001, poly1 = Main_julia.DiagonalAmps.fock_diagonal_amps(
+                A, B, C.item(), tuple(cutoffs), precision_bits
+            )
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_diagonal,
-                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
-                [poly0.dtype] * 3,
-            )
+            if precision_bits == 128:  # numba (complex128)
+                dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                    grad_hermite_multidimensional_diagonal,
+                    [A, B, C.item(), poly0, poly2, poly1010, poly1001, poly1],
+                    [poly0.dtype] * 3,
+                )
+            else:  # julia (higher precision than complex128)
+                dpoly_dC = poly0 / C.item()
+                dpoly_dA, dpoly_dB = Main_julia.DiagonalGrad.fock_diagonal_grad(
+                    A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
+                )
+
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
@@ -525,7 +574,7 @@ class TFMath(MathInterface):
     def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
@@ -552,16 +601,40 @@ class TFMath(MathInterface):
         Returns:
             The renormalized Hermite polynomial.
         """
-        poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-            hermite_multidimensional_1leftoverMode, [A, B, C, cutoffs], [A.dtype] * 5
-        )
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        precision_bits = settings.PRECISION_BITS_HERMITE_POLY
+
+        if precision_bits == 128:  # numba (complex128)
+            poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
+                hermite_multidimensional_1leftoverMode, [A, B, C.item(), cutoffs], [A.dtype] * 5
+            )
+        else:  # julia (higher precision than complex128)
+            # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
+            from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
+
+            (
+                poly0,
+                poly2,
+                poly1010,
+                poly1001,
+                poly1,
+            ) = Main_julia.LeftoverModeAmps.fock_1leftoverMode_amps(
+                A, B, C.item(), tuple(cutoffs), precision_bits
+            )
 
         def grad(dLdpoly):
-            dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
-                grad_hermite_multidimensional_1leftoverMode,
-                [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
-                [poly0.dtype] * 3,
-            )
+            if precision_bits == 128:  # numba (complex128)
+                dpoly_dC, dpoly_dA, dpoly_dB = tf.numpy_function(
+                    grad_hermite_multidimensional_1leftoverMode,
+                    [A, B, C, poly0, poly2, poly1010, poly1001, poly1],
+                    [poly0.dtype] * 3,
+                )
+            else:  # julia (higher precision than complex128)
+                dpoly_dC = poly0 / C.item()
+                dpoly_dA, dpoly_dB = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                    A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
+                )
+
             ax = tuple(range(dLdpoly.ndim))
             dLdA = self.sum(dLdpoly[..., None, None] * self.conj(dpoly_dA), axes=ax)
             dLdB = self.sum(dLdpoly[..., None] * self.conj(dpoly_dB), axes=ax)
@@ -569,53 +642,6 @@ class TFMath(MathInterface):
             return dLdA, dLdB, dLdC
 
         return poly0, grad
-
-    @staticmethod
-    def eigvals(tensor: tf.Tensor) -> Tensor:
-        """Returns the eigenvalues of a matrix."""
-        return tf.linalg.eigvals(tensor)
-
-    @staticmethod
-    def eigvalsh(tensor: tf.Tensor) -> Tensor:
-        """Returns the eigenvalues of a Real Symmetric or Hermitian matrix."""
-        return tf.linalg.eigvalsh(tensor)
-
-    @staticmethod
-    def svd(tensor: tf.Tensor) -> Tensor:
-        """Returns the Singular Value Decomposition of a matrix."""
-        return tf.linalg.svd(tensor)
-
-    @staticmethod
-    def xlogy(x: tf.Tensor, y: tf.Tensor) -> Tensor:
-        """Returns 0 if ``x == 0,`` and ``x * log(y)`` otherwise, elementwise."""
-        return tf.math.xlogy(x, y)
-
-    @staticmethod
-    def eigh(tensor: tf.Tensor) -> Tensor:
-        """Returns the eigenvalues and eigenvectors of a matrix."""
-        return tf.linalg.eigh(tensor)
-
-    def sqrtm(self, tensor: tf.Tensor, rtol=1e-05, atol=1e-08) -> Tensor:
-        """Returns the matrix square root of a square matrix, such that ``sqrt(A) @ sqrt(A) = A``."""
-
-        # The sqrtm function has issues with matrices that are close to zero, hence we branch
-        if np.allclose(tensor, 0, rtol=rtol, atol=atol):
-            return self.zeros_like(tensor)
-        return tf.linalg.sqrtm(tensor)
-
-    @staticmethod
-    def boolean_mask(tensor: tf.Tensor, mask: tf.Tensor) -> Tensor:
-        """Returns a tensor based on the truth value of the boolean mask."""
-        return tf.boolean_mask(tensor, mask)
-
-    @staticmethod
-    def custom_gradient(func, *args, **kwargs):
-        """Decorator to define a function with a custom gradient."""
-        return tf.custom_gradient(func, *args, **kwargs)
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Extras (not in the Interface)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @tf.custom_gradient
     def getitem(tensor, *, key):

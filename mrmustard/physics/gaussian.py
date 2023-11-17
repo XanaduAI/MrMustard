@@ -20,12 +20,9 @@ from typing import Any, Optional, Sequence, Tuple, Union
 
 from thewalrus.quantum import is_pure_cov
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 from mrmustard.utils.typing import Matrix, Scalar, Vector
-from mrmustard.math.xptensor import XPMatrix, XPVector
-
-math = Math()
+from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
 
 
 #  ~~~~~~
@@ -166,8 +163,8 @@ def squeezing_symplectic(r: Union[Scalar, Vector], phi: Union[Scalar, Vector]) -
     Returns:
         Tensor: symplectic matrix of a squeezing gate
     """
-    r = math.atleast_1d(r)
-    phi = math.atleast_1d(phi)
+    r = math.atleast_1d(r, math.float64)
+    phi = math.atleast_1d(phi, math.float64)
     if r.shape[-1] == 1:
         r = math.tile(r, phi.shape)
     if phi.shape[-1] == 1:
@@ -197,8 +194,8 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> Vector:
     Returns:
         Vector: displacement vector of a displacement gate
     """
-    x = math.atleast_1d(x)
-    y = math.atleast_1d(y)
+    x = math.atleast_1d(x, math.float64)
+    y = math.atleast_1d(y, math.float64)
     if x.shape[-1] == 1:
         x = math.tile(x, y.shape)
     if y.shape[-1] == 1:
@@ -290,11 +287,11 @@ def two_mode_squeezing_symplectic(r: Scalar, phi: Scalar) -> Matrix:
     Returns:
         Matrix: symplectic matrix of a two-mode squeezing gate
     """
-    cp = math.cos(phi)
-    sp = math.sin(phi)
-    ch = math.cosh(r)
-    sh = math.sinh(r)
-    zero = math.zeros_like(r)
+    cp = math.cast(math.cos(phi), math.float64)
+    sp = math.cast(math.sin(phi), math.float64)
+    ch = math.cast(math.cosh(r), math.float64)
+    sh = math.cast(math.sinh(r), math.float64)
+    zero = math.cast(math.zeros_like(math.asnumpy(r)), math.float64)
     return math.astensor(
         [
             [ch, cp * sh, zero, sp * sh],
@@ -445,8 +442,8 @@ def loss_XYd(
 
     .. math::
 
-        X = math.sqrt(gain)
-        Y = (gain - 1) * (2 * nbar + 1) * hbar / 2
+        X = math.sqrt(transmissivity)
+        Y = (1-transmissivity) * (2 * nbar + 1) * hbar / 2
 
     Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 108)
 
@@ -469,6 +466,13 @@ def loss_XYd(
 
 def amp_XYd(gain: Union[Scalar, Vector], nbar: Union[Scalar, Vector]) -> Matrix:
     r"""Returns the ``X``, ``Y`` matrices and the d vector for the noisy amplifier channel.
+
+    .. math::
+
+        X = math.sqrt(gain)
+        Y = (gain-1) * (2 * nbar + 1) * hbar / 2
+
+    Reference: Alessio Serafini - Quantum Continuous Variables (5.77, p. 111)
 
     The quantum limited amplifier channel is recovered for ``nbar = 0.0``.
 
@@ -662,7 +666,8 @@ def trace(cov: Matrix, means: Vector, Bmodes: Sequence[int]) -> Tuple[Matrix, Ve
     """
     N = len(cov) // 2
     Aindices = math.astensor(
-        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes]
+        [i for i in range(N) if i not in Bmodes] + [i + N for i in range(N) if i not in Bmodes],
+        dtype=math.int32,
     )
     A_cov_block = math.gather(math.gather(cov, Aindices, axis=0), Aindices, axis=1)
     A_means_vec = math.gather(means, Aindices)

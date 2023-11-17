@@ -23,14 +23,10 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from mrmustard import settings
-from mrmustard.math import Math
-from mrmustard.math.caching import tensor_int_cache
+from mrmustard import math, settings
 from mrmustard.math.lattice import strategies
-from mrmustard.math.mmtensor import MMTensor
-from mrmustard.math.compactFock.compactFock_diagonal_amps import (
-    fock_representation_diagonal_amps,
-)
+from mrmustard.math.caching import tensor_int_cache
+from mrmustard.math.tensor_wrappers.mmtensor import MMTensor
 from mrmustard.physics.bargmann import (
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
@@ -39,7 +35,6 @@ from mrmustard.physics.bargmann import (
 )
 from mrmustard.utils.typing import ComplexTensor, Matrix, Scalar, Tensor, Vector
 
-math = Math()
 SQRT = np.sqrt(np.arange(1e6))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -80,7 +75,7 @@ def autocutoffs(cov: Matrix, means: Vector, probability: float):
         means_i = np.array([means[i], means[i + M]])
         # apply 1-d recursion until probability is less than 0.99
         A, B, C = [math.asnumpy(x) for x in wigner_to_bargmann_rho(cov_i, means_i)]
-        diag = fock_representation_diagonal_amps(A, B, C, 1, cutoffs=[100])[0]
+        diag = math.hermite_renormalized_diagonal(A, B, C, cutoffs=[100])
         # find at what index in the cumsum the probability is more than 0.99
         for i, val in enumerate(np.cumsum(diag)):
             if val > probability:
@@ -323,10 +318,11 @@ def number_means(tensor, is_dm: bool):
     r"""Returns the mean of the number operator in each mode."""
     probs = math.all_diagonals(tensor, real=True) if is_dm else math.abs(tensor) ** 2
     modes = list(range(len(probs.shape)))
+    # print("aa", [modes[:k] + modes[k + 1 :] for k in range(len(modes))])
     marginals = [math.sum(probs, axes=modes[:k] + modes[k + 1 :]) for k in range(len(modes))]
     return math.astensor(
         [
-            math.sum(marginal * math.arange(len(marginal), dtype=marginal.dtype))
+            math.sum(marginal * math.arange(len(marginal), dtype=math.float64))
             for marginal in marginals
         ]
     )
@@ -706,7 +702,9 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
     x_tensor = math.sqrt(omega_over_hbar) * math.cast(q, "float64")  # unit-less vector
 
     # prefactor term (\Omega/\hbar \pi)**(1/4) * 1 / sqrt(2**n)
-    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(2 ** (-math.arange(0, cutoff)))
+    prefactor = (omega_over_hbar / np.pi) ** (1 / 4) * math.sqrt(
+        math.pow(1 / 2, math.arange(0, cutoff))
+    )
 
     # Renormalized physicist hermite polys: Hn / sqrt(n!)
     R = -np.array([[2 + 0j]])  # to get the physicist polys
@@ -888,6 +886,10 @@ def displacement(x, y, shape, tol=1e-15):
     else:
         gate = math.eye(max(shape), dtype="complex128")[: shape[0], : shape[1]]
 
+    ret = math.astensor(gate, dtype=gate.dtype.name)
+    if math.backend_name == "numpy":
+        return ret
+
     def grad(dL_dDc):
         dD_da, dD_dac = strategies.jacobian_displacement(math.asnumpy(gate), alpha)
         dL_dac = np.sum(np.conj(dL_dDc) * dD_dac + dL_dDc * np.conj(dD_da))
@@ -895,7 +897,7 @@ def displacement(x, y, shape, tol=1e-15):
         dLdy = 2 * np.imag(dL_dac)
         return math.astensor(dLdx, dtype=x.dtype), math.astensor(dLdy, dtype=y.dtype)
 
-    return math.astensor(gate, dtype=gate.dtype.name), grad
+    return ret, grad
 
 
 @math.custom_gradient
@@ -918,6 +920,10 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
             f"Unknown beamsplitter method {method}. Options are 'vanilla' and 'schwinger'."
         )
 
+    ret = math.astensor(bs_unitary, dtype=bs_unitary.dtype.name)
+    if math.backend_name == "numpy":
+        return ret
+
     def vjp(dLdGc):
         dtheta, dphi = strategies.beamsplitter_vjp(
             math.asnumpy(bs_unitary),
@@ -927,13 +933,17 @@ def beamsplitter(theta: float, phi: float, shape: Sequence[int], method: str):
         )
         return math.astensor(dtheta, dtype=theta.dtype), math.astensor(dphi, dtype=phi.dtype)
 
-    return math.astensor(bs_unitary, dtype=bs_unitary.dtype.name), vjp
+    return ret, vjp
 
 
 @math.custom_gradient
 def squeezer(r, phi, shape):
     r"""creates a single mode squeezer matrix using a numba-based fock lattice strategy"""
     sq_unitary = strategies.squeezer(shape, math.asnumpy(r), math.asnumpy(phi))
+
+    ret = math.astensor(sq_unitary, dtype=sq_unitary.dtype.name)
+    if math.backend_name == "numpy":
+        return ret
 
     def vjp(dLdGc):
         dr, dphi = strategies.squeezer_vjp(
@@ -944,13 +954,17 @@ def squeezer(r, phi, shape):
         )
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
-    return math.astensor(sq_unitary, dtype=sq_unitary.dtype.name), vjp
+    return ret, vjp
 
 
 @math.custom_gradient
 def squeezed(r, phi, shape):
     r"""creates a single mode squeezed state using a numba-based fock lattice strategy"""
     sq_ket = strategies.squeezed(shape, math.asnumpy(r), math.asnumpy(phi))
+
+    ret = math.astensor(sq_ket, dtype=sq_ket.dtype.name)
+    if math.backend_name == "numpy":
+        return ret
 
     def vjp(dLdGc):
         dr, dphi = strategies.squeezed_vjp(
@@ -961,4 +975,4 @@ def squeezed(r, phi, shape):
         )
         return math.astensor(dr, dtype=r.dtype), math.astensor(dphi, phi.dtype)
 
-    return math.astensor(sq_ket, dtype=sq_ket.dtype.name), vjp
+    return ret, vjp
