@@ -13,47 +13,19 @@
 # limitations under the License.
 
 r"""
-The ``math`` module contains low-level functions for performing mathematical operations.
-
-It is recommended that users access the backends using the an instance of the :class:`Math` class rather than the backends themselves.
-
-The Math class is a wrapper that passes the calls to the currently active backend, which is determined by
-the ``BACKEND`` parameter in ``mrmustard.settings`` (the default is ``tensorflow``).
-
-The advantage of using the Math class is that the same code can run on different backends, allowing for a
-greater degree of flexibility and code reuse.
-
-.. code-block::
-
-    from mrmustard.math import Math
-    math = Math()
-    math.cos(x)  # tensorflow backend
-
-    from mrmustard import settings
-    settings.BACKEND = 'torch'
-
-    math.cos(x)  # torch backend
+The point of entry for the backend.
 """
-import importlib
-from mrmustard import settings
+import sys
 
-if importlib.util.find_spec("tensorflow"):
-    from mrmustard.math.tensorflow_wrapper import TFMath
-if importlib.util.find_spec("torch"):
-    from mrmustard.math.torch_wrapper import TorchMath
+from .autocast import *
+from .caching import *
+from .backend_base import *
+from .backend_manager import BackendManager
+from .backend_numpy import *
+from .lattice import *
+from .parameters import *
+from .parameter_set import *
+from .tensor_networks import *
+from .tensor_wrappers import *
 
-
-class Math:
-    r"""
-    This class is a switcher for performing math operations on the currently active backend.
-    """
-
-    def __getattribute__(self, name):
-        if settings.BACKEND == "tensorflow":
-            return object.__getattribute__(TFMath(), name)
-        elif settings.BACKEND == "torch":
-            return object.__getattribute__(TorchMath(), name)
-        else:
-            raise ValueError(
-                f"No `{settings.BACKEND}` backend found. Ensure your backend is either ``'tensorflow'`` or ``'torch'``"
-            )
+sys.modules[__name__] = BackendManager()

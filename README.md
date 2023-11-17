@@ -31,6 +31,22 @@ Mr Mustard supports:
 - Plug-and-play backends (TensorFlow as default)
 - An abstraction layer `XPTensor` for seamless symplectic algebra (experimental)
 
+# Increased numerical stability using Julia [optional]
+
+Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
+To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
+an installation of [Julia](https://github.com/JuliaLang/juliaup#installation) is required (version 1.9.3 recommended).
+
+* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
+
+* When installing MrMustard via `poetry install` or `pip install`, the required Julia packages have to be installed manually as follows:
+
+```
+julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
+```
+
+* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed _only_ if Julia was previously installed by the user.
+
 # The lab module
 The lab module contains things you'd find in a lab: states, transformations, measurements, circuits. States can be used at the beginning of a circuit as well as at the end, in which case a state is interpreted as a measurement (a projection onto that state). Transformations are usually parametrized and map states to states. The action on states is differentiable with respect to the state and to the gate parameters.
 
@@ -216,17 +232,14 @@ The physics module contains a growing number of functions that we can apply to s
 
 
 # The math module
-The math module is the backbone of Mr Mustard, which consists in the [`Math`](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
+The math module is the backbone of Mr Mustard. Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or numpy and your code will be plug-and-play too!
 ```python
-from mrmustard import settings
-from mrmustard.math import Math
-math = Math()
+import mrmustard.math as math
 
+math.cos(0.1)  # numpy
+
+math.change_backend("tensorflow")
 math.cos(0.1)  # tensorflow
-
-settings.BACKEND = 'torch'
-
-math.cos(0.1)  # pytorch (upcoming)
 ```
 
 ### Optimization

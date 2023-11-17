@@ -1,6 +1,11 @@
 # Release 0.7.0 (development release)
 
 ### New features
+* Added a new interface for backends, as well as a `numpy` backend (which is now default). Users can run
+  all the functions in the `utils`, `math`, `physics`, and `lab` with both backends, while `training`
+  requires using `tensorflow`. The `numpy` backend provides significant improvements both in import
+  time and runtime. [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
 * Added the classes and methods to create, contract, and draw tensor networks with `mrmustard.math`.
   [(#284)](https://github.com/XanaduAI/MrMustard/pull/284)
 
@@ -23,6 +28,15 @@
 * Moved `settings.py`, `logger.py`, and `typing.py` to `utils`.
   [(#289)](https://github.com/XanaduAI/MrMustard/pull/289)
 
+* Removed the `Math` class. To use the mathematical backend, replace
+  `from mrmustard.math import Math ; math = Math()` with `import mrmustard.math as math`
+  in your scripts.
+  [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
+* The `numpy` backend is now default. To switch to the `tensorflow`
+  backend, add the line `math.change_backend("tensorflow")` to your scripts.
+  [(#301)](https://github.com/XanaduAI/MrMustard/pull/301)
+
 ### Improvements
 
 * Calculating Fock representations and their gradients is now more numerically stable (i.e. numerical blowups that 
@@ -31,7 +45,7 @@ This holds for both the "vanilla strategy" [(#274)](https://github.com/XanaduAI/
 "diagonal strategy" and "single leftover mode strategy" [(#288)](https://github.com/XanaduAI/MrMustard/pull/288/).
 This is done by representing Fock amplitudes with a higher precision than complex128 (countering floating-point errors). 
 We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
-The precision is controlled by setting settings.PRECISION_BITS_HERMITE_POLY. The default value is 128, 
+The precision is controlled by `setting settings.PRECISION_BITS_HERMITE_POLY`. The default value is ``128``, 
 which uses the old Numba code. When setting to a higher value, the new Julia code is run.
 
 * Replaced parameters in `training` with `Constant` and `Variable` classes.
@@ -40,20 +54,31 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Improved how states, transformations, and detectors deal with parameters by replacing the `Parametrized` class with `ParameterSet`.
   [(#298)](https://github.com/XanaduAI/MrMustard/pull/298)
 
+* Includes julia dependencies into the python packaging for downstream installation reproducibility.
+  Removes dependency on tomli to load pyproject.toml for version info, uses importlib.metadata instead.
+  [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
+  [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
 [(#291)](https://github.com/XanaduAI/MrMustard/pull/291)
 * Fixed inconsistent use of `atol` in purity evaluation for Gaussian states.
 [(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
+* Fixed the documentations for loss_XYd and amp_XYd functions for Gaussian channels.
+[(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
 
 ### Documentation
+
+### Tests
+* Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
 
 ### Contributors
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin),
+[Jan Provaznik](https://github.com/jan-provaznik),
+[Yuan Yao](https://github.com/sylviemonet)
 [Filippo Miatto](https://github.com/ziofil)
-[Jan Provaznik](https://github.com/jan-provaznik)
 
 # Release 0.6.0 (current release)
 
@@ -78,6 +103,13 @@ can select their preferred methods by setting the value of `Settings.DISCRETIZAT
   [(#273)](https://github.com/XanaduAI/MrMustard/pull/273)
 
 ### Improvements
+
+* Calculating Fock representations using the "vanilla strategy" is now more numerically stable (i.e. numerical blowups 
+that result from repeatedly applying the recurrence relation are now postponed to higher cutoff values).
+This is done by representing Fock amplitudes with a higher precision than complex128 
+(which counters the accumulation of floating-point errors). 
+We run Julia code via PyJulia (where Numba was used before) to keep the code fast.
+[(#274)](https://github.com/XanaduAI/MrMustard/pull/274)
 
 * Tensorflow bumped to v2.14 with poetry installation working out of the box on Linux and Mac.
   [(#281)](https://github.com/XanaduAI/MrMustard/pull/281)
@@ -756,3 +788,4 @@ This release contains contributions from (in alphabetical order):
 [Sebastián Duque](https://github.com/sduquemesa), [Zhi Han](https://github.com/hanzhihua1),
 [Theodor Isacsson](https://github.com/thisac/), [Josh Izaac](https://github.com/josh146),
 [Filippo Miatto](https://github.com/ziofil), [Nicolas Quesada](https://github.com/nquesada)
+

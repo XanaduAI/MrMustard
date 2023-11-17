@@ -18,7 +18,7 @@ from hypothesis import assume, given
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.lab.abstract import State
 from mrmustard.lab.gates import Attenuator, Dgate, Ggate, Sgate
 from mrmustard.lab.states import (
@@ -30,11 +30,9 @@ from mrmustard.lab.states import (
     Thermal,
     Vacuum,
 )
-from mrmustard.math import Math
 from mrmustard.physics import gaussian as gp
 from tests.random import angle, medium_float, n_mode_pure_state, nmodes, r
 
-math = Math()
 hbar0 = settings.HBAR
 
 
@@ -279,7 +277,7 @@ def test_ket_from_pure_dm_new_cutoffs():
     "tests that the shape of the internal fock representation reflects the new cutoffs"
     state = Vacuum(1) >> Sgate(0.1) >> Dgate(0.1, 0.1)  # weak gaussian state
     state = State(dm=state.dm(cutoffs=[20]))  # assign pure dm directly
-    assert state.ket(cutoffs=[5]).shape.as_list() == [5]  # shape should be [5]
+    assert list(state.ket(cutoffs=[5]).shape) == [5]  # shape should be [5]
 
 
 def test_ket_probability():

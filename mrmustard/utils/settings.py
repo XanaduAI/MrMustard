@@ -18,7 +18,6 @@
 import os
 from rich import print
 import rich.table
-from julia.api import Julia
 import numpy as np
 
 __all__ = ["Settings", "settings"]
@@ -81,7 +80,6 @@ class Settings:
         return cls.instance
 
     def __init__(self):
-        self._backend = "tensorflow"
         self._hbar = ImmutableSetting(2.0, "HBAR")
         self._debug = False
         self._autocutoff_probability = 0.999  # capture at least 99.9% of the probability
@@ -106,12 +104,6 @@ class Settings:
         self._julia_initialized = (
             False  # set to True when Julia is initialized (cf. PRECISION_BITS_HERMITE_POLY.setter)
         )
-        self._allowed_precision_bits_hermite_poly = [
-            128,
-            256,
-            384,
-            512,
-        ]  # possible values for settings.PRECISION_BITS_HERMITE_POLY
 
     def _force_hbar(self, value):
         r"can set the value of HBAR at any time. use with caution."
@@ -143,20 +135,6 @@ class Settings:
     @AUTOCUTOFF_PROBABILITY.setter
     def AUTOCUTOFF_PROBABILITY(self, value: float):
         self._autocutoff_probability = value
-
-    @property
-    def BACKEND(self):
-        r"""The backend which is used. Default is ``tensorflow``.
-
-        Can be either ``'tensorflow'`` or ``'torch'``.
-        """
-        return self._backend
-
-    @BACKEND.setter
-    def BACKEND(self, value: str):
-        if value not in ["tensorflow", "torch"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
-        self._backend = value
 
     @property
     def CIRCUIT_DECIMALS(self):
@@ -296,19 +274,22 @@ class Settings:
 
     @PRECISION_BITS_HERMITE_POLY.setter
     def PRECISION_BITS_HERMITE_POLY(self, value: int):
-        allowed_values = self._allowed_precision_bits_hermite_poly
+        allowed_values = [128, 256, 384, 512]
         if value not in allowed_values:
             raise ValueError(
                 f"precision_bits_hermite_poly must be one of the following values: {allowed_values}"
             )
         self._precision_bits_hermite_poly = value
-
         if (
             value != 128 and not self._julia_initialized
         ):  # initialize Julia when precision > complex128 and if it wasn't initialized before
+            from julia.api import LibJulia  # pylint: disable=import-outside-toplevel
+
             # the next line must be run before "from julia import Main as Main_julia"
-            _ = Julia(compiled_modules=False)
-            # julia must be imported after running "_ = Julia(compiled_modules=False)"
+            LibJulia.load().init_julia(
+                ["--compiled-modules=no", "--project=julia_pkg"]
+            )  # also loads julia environment
+            # the next line must be run after "LibJulia.load().init_julia()"
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
             # import Julia functions

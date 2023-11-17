@@ -17,10 +17,10 @@
 from typing import Sequence, Union
 import numpy as np
 
-from mrmustard.math import Math
+from mrmustard.math.backend_manager import BackendManager
 from .parameters import Constant, Variable
 
-math = Math()
+math = BackendManager()
 
 __all__ = [
     "ParameterSet",

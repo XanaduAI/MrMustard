@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=import-outside-toplevel
+
 """Tests for the ray-based trainer."""
 
 import sys
@@ -35,12 +37,17 @@ from mrmustard.physics import fidelity
 from mrmustard.training import Optimizer
 from mrmustard.training.trainer import map_trainer, train_device, update_pop
 
+from ..conftest import skip_np
 
-@pytest.fixture(scope="function")
+
 def wrappers():
     """Dummy wrappers tested."""
 
     def make_circ(x=0.0, return_type=None):
+        from mrmustard import math
+
+        math.change_backend("tensorflow")
+
         circ = Ggate(num_modes=1, symplectic_trainable=True) >> Dgate(
             x=x, x_trainable=True, y_trainable=True
         )
@@ -49,6 +56,10 @@ def wrappers():
         )
 
     def cost_fn(circ=make_circ(0.1), y_targ=0.0):
+        from mrmustard import math
+
+        math.change_backend("tensorflow")
+
         target = Gaussian(1) >> Dgate(-0.1, y_targ)
         s = Vacuum(1) >> circ
         return -fidelity(s, target)
@@ -64,10 +75,12 @@ class TestTrainer:
         "tasks", [5, [{"y_targ": 0.1}, {"y_targ": -0.2}], {"c0": {}, "c1": {"y_targ": 0.07}}]
     )
     @pytest.mark.parametrize("seed", [None, 42])
-    def test_circ_cost(self, wrappers, tasks, seed):  # pylint: disable=redefined-outer-name
+    def test_circ_cost(self, tasks, seed):  # pylint: disable=redefined-outer-name
         """Test distributed cost calculations."""
+        skip_np()
+
         has_seed = isinstance(seed, int)
-        _, cost_fn = wrappers
+        _, cost_fn = wrappers()
         results = map_trainer(
             cost_fn=cost_fn,
             tasks=tasks,
@@ -96,12 +109,12 @@ class TestTrainer:
         "return_type",
         [None, "dict"],
     )
-    def test_circ_optimize(
-        self, wrappers, tasks, return_type
-    ):  # pylint: disable=redefined-outer-name
+    def test_circ_optimize(self, tasks, return_type):  # pylint: disable=redefined-outer-name
         """Test distributed optimizations."""
+        skip_np()
+
         max_steps = 15
-        make_circ, cost_fn = wrappers
+        make_circ, cost_fn = wrappers()
         results = map_trainer(
             cost_fn=cost_fn,
             device_factory=make_circ,
@@ -139,11 +152,11 @@ class TestTrainer:
             lambda c: (Vacuum(1) >> c >> c >> c).fock_probabilities([5]),
         ],
     )
-    def test_circ_optimize_metrics(
-        self, wrappers, metric_fns
-    ):  # pylint: disable=redefined-outer-name
+    def test_circ_optimize_metrics(self, metric_fns):  # pylint: disable=redefined-outer-name
         """Tests custom metric functions on final circuits."""
-        make_circ, cost_fn = wrappers
+        skip_np()
+
+        make_circ, cost_fn = wrappers()
 
         tasks = {
             "my-job": {"x": 0.1, "euclidean_lr": 0.01, "max_steps": 100},
@@ -179,6 +192,8 @@ class TestTrainer:
 
     def test_update_pop(self):
         """Test for coverage."""
+        skip_np()
+
         d = {"a": 3, "b": "foo"}
         kwargs = {"b": "bar", "c": 22}
         d1, kwargs = update_pop(d, **kwargs)
@@ -187,6 +202,8 @@ class TestTrainer:
 
     def test_no_ray(self, monkeypatch):
         """Tests ray import error"""
+        skip_np()
+
         monkeypatch.setitem(sys.modules, "ray", None)
         with pytest.raises(ImportError, match="Failed to import `ray`"):
             _ = map_trainer(
@@ -196,6 +213,8 @@ class TestTrainer:
 
     def test_invalid_tasks(self):
         """Tests unexpected tasks arg"""
+        skip_np()
+
         with pytest.raises(
             ValueError, match="`tasks` is expected to be of type int, list, or dict."
         ):
@@ -204,9 +223,11 @@ class TestTrainer:
                 num_cpus=NUM_CPUS,
             )
 
-    def test_warn_unused_kwargs(self, wrappers):  # pylint: disable=redefined-outer-name
+    def test_warn_unused_kwargs(self):  # pylint: disable=redefined-outer-name
         """Test warning of unused kwargs"""
-        _, cost_fn = wrappers
+        skip_np()
+
+        _, cost_fn = wrappers()
         with pytest.warns(UserWarning, match="Unused kwargs:"):
             results = train_device(
                 cost_fn=cost_fn,
@@ -215,9 +236,11 @@ class TestTrainer:
         assert len(results) >= 4
         assert isinstance(results["cost"], float)
 
-    def test_no_pbar(self, wrappers):  # pylint: disable=redefined-outer-name
+    def test_no_pbar(self):  # pylint: disable=redefined-outer-name
         """Test turning off pregress bar"""
-        _, cost_fn = wrappers
+        skip_np()
+
+        _, cost_fn = wrappers()
         results = map_trainer(
             cost_fn=cost_fn,
             tasks=2,
@@ -227,9 +250,11 @@ class TestTrainer:
         assert len(results) == 2
 
     @pytest.mark.parametrize("tasks", [2, {"c0": {}, "c1": {"y_targ": -0.7}}])
-    def test_unblock(self, wrappers, tasks):  # pylint: disable=redefined-outer-name
+    def test_unblock(self, tasks):  # pylint: disable=redefined-outer-name
         """Test unblock async mode"""
-        _, cost_fn = wrappers
+        skip_np()
+
+        _, cost_fn = wrappers()
         result_getter = map_trainer(
             cost_fn=cost_fn,
             tasks=tasks,

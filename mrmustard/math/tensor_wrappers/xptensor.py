@@ -26,10 +26,10 @@ from typing import (
     Union,
 )
 
-from mrmustard.math import Math
 from mrmustard.utils.typing import Matrix, Scalar, Tensor, Vector
+from mrmustard.math.backend_manager import BackendManager
 
-math = Math()
+math = BackendManager()
 
 
 class XPTensor(ABC):

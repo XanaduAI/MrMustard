@@ -18,7 +18,6 @@ as well as the following Python packages:
 * `Rich <https://pypi.org/project/rich/>`_
 * `tqdm <https://tqdm.github.io/>`_
 
-
 If you currently do not have Python 3 installed, we recommend
 `Anaconda for Python 3 <https://www.anaconda.com/download/>`_, a distributed version
 of Python packaged for scientific computation.
@@ -38,29 +37,21 @@ using development mode:
 The ``-e`` flag ensures that edits to the source code will be reflected when
 importing Mr Mustard in Python.
 
-
-PyTorch support
+Increased numerical stability using Julia [optional]
 ------------------
+Converting phase space objects to Fock space can be numerically unstable due to accumulating floating point errors.
+To resolve this, the conversion can be performed with extended-precision arithmetic. To use this feature,
+an installation of `Julia <https://github.com/JuliaLang/juliaup#installation>`_ is required (version 1.9.3 recommended).
 
-To use Mr Mustard with PyTorch using CPU, install it as follows:
+* When installing MrMustard via devcontainer, Julia and its required packages are automatically installed.
 
-.. code-block:: console
-
-    pip install torch
-
-To install PyTorch with GPU and CUDA 10.2 support:
-
-.. code-block:: console
-
-    pip install torch==1.10.0+cu102
-
-To instead use CUDA 11.3:
+* When installing MrMustard via ``poetry install`` or ``pip install``, the required Julia packages have to be installed manually as follows:
 
 .. code-block:: console
 
-    pip install torch==1.10.0+cu113
+    julia --project="julia_pkg" -e "using Pkg; Pkg.instantiate()"
 
-Refer to `PyTorch <https://pytorch.org/get-started/locally/>`_ project webpage for more details.
+* When installing MrMustard via the `MakeFile`, the required Julia packages are automatically installed only if Julia was previously installed by the user.
 
 Development environment
 -----------------------
@@ -91,6 +82,10 @@ Individual test modules are run by invoking pytest directly from the command lin
 .. code-block:: bash
 
     pytest tests/test_fidelity.py
+
+The ``--backend`` flag allows specifying the backend used when running the tests. To
+use the numpy backend, type ``pytest tests/test_fidelity.py`` or ``pytest tests/test_fidelity.py --backend=numpy``.
+To use the tensorflow backend, run the command ``pytest tests/test_fidelity.py --backend=tensorflow``.
 
 .. note:: **Run options for Mr Mustard tests**
 

@@ -23,8 +23,7 @@ from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from mrmustard import settings
-from mrmustard.math import Math
+from mrmustard import math, settings
 from mrmustard.math.parameter_set import ParameterSet
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.math.tensor_networks import Tensor
@@ -32,8 +31,6 @@ from mrmustard.physics import bargmann, fock, gaussian
 from mrmustard.utils.typing import RealMatrix, RealVector
 
 from .state import State
-
-math = Math()
 
 
 class Transformation(Tensor):
@@ -121,9 +118,6 @@ class Transformation(Tensor):
             cov=cov, means=means, modes=state.modes, _norm=state.norm
         )  # NOTE: assumes modes don't change
         return new_state
-
-    def _transform_fock(self, state: State, dual: bool) -> State:
-        raise NotImplementedError
 
     @property
     def num_modes(self) -> int:
