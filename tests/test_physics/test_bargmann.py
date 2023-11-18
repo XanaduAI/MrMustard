@@ -9,9 +9,7 @@ from mrmustard.physics.bargmann import (
     reorder_abc,
 )
 from mrmustard.physics.bargmann_repr import BargmannExp
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard import math
 
 
 def test_wigner_to_bargmann_psi():

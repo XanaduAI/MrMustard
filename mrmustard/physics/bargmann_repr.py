@@ -21,10 +21,9 @@ import numpy as np
 from mrmustard import settings
 from mrmustard.physics.representations import Data, MatVecData
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc
-from mrmustard.math import Math
+from mrmustard import math
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Matrix, Scalar, Vector
 
-math = Math()
 
 
 class BargmannExp(MatVecData):

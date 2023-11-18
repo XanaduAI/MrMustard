@@ -19,9 +19,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import Any, Union
 
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard import math
 
 from mrmustard.utils.typing import Scalar, Batch, Matrix, Vector
 from mrmustard.utils import settings

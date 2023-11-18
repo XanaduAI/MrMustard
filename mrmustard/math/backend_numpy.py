@@ -77,7 +77,16 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return self.cast(np.array(array), dtype=dtype)
 
     def atleast_1d(self, array: np.array, dtype=None) -> np.array:
-        return self.cast(np.reshape(array, [-1]), dtype)
+        return self.cast(np.atleast_1d(array), dtype)
+    
+    def atleast_2d(self, array: np.array, dtype=None) -> np.array:
+        return self.cast(np.atleast_2d(array), dtype)
+
+    def atleast_3d(self, array: np.array, dtype=None) -> np.array:
+        return self.cast(np.atleast_3d(array), dtype)
+    
+    def block_diag(self, mat1, mat2) -> np.array:
+        return np.block([[mat1, np.zeros((mat1.shape[0], mat2.shape[1]))], [np.zeros((mat2.shape[0], mat1.shape[1])), mat2]])
 
     def block(self, blocks: List[List[np.array]], axes=(-2, -1)) -> np.array:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]

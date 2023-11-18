@@ -269,6 +269,44 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least one dimension.
         """
         return self._apply("atleast_1d", (array, dtype))
+    
+    def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least two dimensions.
+
+        Args:
+            array: The array to convert.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
+
+        Returns:
+            The array with at least two dimensions.
+        """
+        return self._apply("atleast_2d", (array, dtype))
+    
+    def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least three dimensions.
+
+        Args:
+            array: The array to convert.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
+
+        Returns:
+            The array with at least three dimensions.
+        """
+        return self._apply("atleast_3d", (array, dtype))
+
+    def block_diag(self, mat1: Tensor, mat2: Tensor) -> Tensor:
+        r"""Returns a block diagonal matrix from the given arrays.
+
+        Args:
+            mat1: A matrix.
+            mat2: A matrix.
+
+        Returns:
+            The block diagonal matrix.
+        """
+        return self._apply("block_diag", (mat1, mat2))
 
     def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
         """
