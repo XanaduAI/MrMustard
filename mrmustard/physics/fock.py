@@ -713,7 +713,7 @@ def oscillator_eigenstate(q: Vector, cutoff: int) -> Tensor:
         poly = math.hermite_renormalized(
             R, 2 * math.astensor([xi], "complex128"), 1 + 0j, (cutoff,)
         )
-        return math.cast(poly, "float64")
+        return math.real(poly)
 
     hermite_polys = math.map_fn(f_hermite_polys, x_tensor)
 
@@ -844,7 +844,7 @@ def quadrature_distribution(
         else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
     )
 
-    return x, math.cast(pdf, "float64")
+    return x, math.real(pdf)
 
 
 def sample_homodyne(state: Tensor, quadrature_angle: float = 0.0) -> Tuple[float, float]:
