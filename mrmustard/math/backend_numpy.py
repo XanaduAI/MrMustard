@@ -90,7 +90,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def cast(self, array: np.array, dtype=None) -> np.array:
         if dtype is None:
             return array
-        # return np.array(array, dtype=dtype)
         
         if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
             array = self.real(array)
