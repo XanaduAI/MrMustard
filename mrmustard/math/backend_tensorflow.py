@@ -87,7 +87,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
-        
+
         if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
             array = self.real(array)
         return tf.cast(array, dtype)
@@ -470,7 +470,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         r"""In mrmustard.math.compactFock.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
-        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()  # ordering is [0,2,4,...,1,3,5,...]
+        ordering = (
+            np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        )  # ordering is [0,2,4,...,1,3,5,...]
         A = tf.gather(A, ordering, axis=1)
         A = tf.gather(A, ordering)
         B = tf.gather(B, ordering)
