@@ -47,7 +47,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     float64 = np.float64
     complex64 = np.complex64
     complex128 = np.complex128
-    allowed_types = [int32, float32, float64, complex64, complex128]
 
     def __init__(self):
         super().__init__(name="numpy")

@@ -42,8 +42,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     """
 
     int32 = tf.int32
-    float64 = tf.float64
     float32 = tf.float32
+    float64 = tf.float64
     complex64 = tf.complex64
     complex128 = tf.complex128
 
