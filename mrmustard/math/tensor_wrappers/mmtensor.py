@@ -169,7 +169,7 @@ class MMTensor:
 
         # Contract the tensor and assign new axis labels (unique except for the contracted ones)
         return MMTensor(
-            math.einsum(einsum_str, self.tensor),
+            math.einsum(einsum_str, (self.tensor,)),
             [label for label in unique_labels if label not in repeated],
         )
 

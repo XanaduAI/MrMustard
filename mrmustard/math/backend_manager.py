@@ -15,7 +15,7 @@
 """This module contains the backend manager."""
 
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from functools import lru_cache
 from itertools import product
@@ -464,7 +464,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, *tensors) -> Tensor:
+    def einsum(self, string: str, tensors, optimize: Union[bool, str] = False) -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
@@ -474,7 +474,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, *tensors))
+        return self._apply("einsum", (string, tensors, optimize))
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
@@ -722,6 +722,19 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 b,
             ),
         )
+    
+    def multiply(self, tensor1: Tensor, tensor2: Tensor) -> Tensor:
+        r"""
+        Returns an element-wise ``tensor1*tensor2``.
+
+        Args:
+            tensor1: A tensor.
+            tensor2: Another tensor.
+
+        Returns:
+            The element-wise product between ``tensor1`` and ``tensor2``.
+        """
+        return self._apply("multiply", (tensor1, tensor2))
 
     def new_variable(
         self, value: Tensor, bounds: Tuple[Optional[float], Optional[float]], name: str, dtype=None

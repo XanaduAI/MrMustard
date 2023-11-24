@@ -138,8 +138,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             return ret.reshape(original_sh[:-1] + inner_shape)
 
     def diag_part(self, array: np.array, k: int) -> np.array:
-        ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1)
-        ret.flags.writeable = True
+        ret = np.diagonal(array, offset=k, axis1=-2, axis2=-1).copy()
         return ret
 
     def set_diag(self, array: np.array, diag: np.array, k: int) -> np.array:
@@ -155,9 +154,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return array
 
-    def einsum(self, string: str, *tensors) -> np.array:
+    def einsum(self, string: str, tensors, optimize: Union[bool, str]) -> np.array:
         if type(string) is str:
-            return np.einsum(string, *tensors)
+            return np.einsum(string, *tensors, optimize=optimize)
         return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: np.array) -> np.array:
@@ -226,6 +225,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     @Autocast()
     def minimum(self, a: np.array, b: np.array) -> np.array:
         return np.minimum(a, b)
+    
+    def multiply(self, tensor1: np.array, tensor2: np.array) -> np.array:
+        return np.multiply(tensor1, tensor2)
 
     def new_variable(
         self,
