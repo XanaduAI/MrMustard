@@ -464,12 +464,13 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("eigh", (tensor,))
 
-    def einsum(self, string: str, tensors, optimize: Union[bool, str] = False) -> Tensor:
+    def einsum(self, string: str, tensors, optimize: Union[bool, str] = "greedy") -> Tensor:
         r"""The result of the Einstein summation convention on the tensors.
 
         Args:
             string: The string of the Einstein summation convention.
             tensors: The tensors to perform the Einstein summation on.
+            optimize: The optimization strategy. Default is ``greedy``.
 
         Returns:
             The result of the Einstein summation convention.
