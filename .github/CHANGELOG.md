@@ -57,6 +57,9 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   Hermite polynomials over a batch of B vectors.
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
 
+* Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
+
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
