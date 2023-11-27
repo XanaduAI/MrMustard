@@ -72,7 +72,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     G = np.zeros(shape, dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape[:-1]) # We know the last dimension is the batch one
+    path = np.ndindex(shape[:-1])  # We know the last dimension is the batch one
 
     # write vacuum amplitude
     G[next(path)] = c
@@ -80,7 +80,7 @@ def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: 
     # iterate over the rest of the indices
     for index in path:
         G[index] = steps.vanilla_step_batch(G, A, b, index)
-    
+
     return G
 
 

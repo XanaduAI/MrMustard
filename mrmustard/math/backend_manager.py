@@ -565,7 +565,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 axis,
             ),
         )
-    
+
     def hermite_renormalized_diagonal(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
     ) -> Tensor:
