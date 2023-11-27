@@ -419,6 +419,24 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad
+    
+    def hermite_renormalized_batch(self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]) -> tf.Tensor:
+        r"""multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The Hermite polynomial of given shape.
+        """
+        G = strategies.vanilla_batch(tuple(shape), A, B, C)
+        return G
 
     @tf.custom_gradient
     def hermite_renormalized_binomial(
