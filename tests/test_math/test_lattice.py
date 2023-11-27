@@ -77,14 +77,14 @@ def test_vanillabatchNumba_vs_vanillaNumba():
 
     # Vanilla MM
     G_ref = math.hermite_renormalized(
-        A, B, C, shape=cutoffs
+        A, B, C, shape=cutoffs[:-1]
     )
 
     # replicate the B
-    B_batched = np.tile(B, (len(B),1))
-    
+    B_batched = np.stack((B,)*batch,axis=1)
+
     G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=cutoffs)
 
-    assert np.allclose(G_ref, G_batched[0])
-    assert np.allclose(G_ref, G_batched[1])
-    assert np.allclose(G_ref, G_batched[2])
+    assert np.allclose(G_ref, G_batched[:,:,:,:,0])
+    assert np.allclose(G_ref, G_batched[:,:,:,:,1])
+    assert np.allclose(G_ref, G_batched[:,:,:,:,2])

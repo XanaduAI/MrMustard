@@ -92,7 +92,7 @@ def vanilla_step_batch(
     i, pivot = first_available_pivot(index)
 
     # pivot contribution
-    value_at_index = b[:, i] * G[pivot]
+    value_at_index = b[i] * G[pivot]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):

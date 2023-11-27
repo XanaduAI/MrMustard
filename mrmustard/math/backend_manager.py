@@ -115,7 +115,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             "complex64",
             "complex128",
             "hermite_renormalized",
-            # "hermite_renormalized_batch",
+            "hermite_renormalized_batch",
             "hermite_renormalized_binomial",
             "hermite_renormalized_diagonal_reorderedAB",
             "hermite_renormalized_1leftoverMode_reorderedAB",
