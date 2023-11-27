@@ -475,7 +475,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Returns:
             The result of the Einstein summation convention.
         """
-        return self._apply("einsum", (string, optimize, tensors))
+        return self._apply("einsum", (string, optimize, *tensors))
 
     def exp(self, array: Tensor) -> Tensor:
         r"""The exponential of array element-wise.
