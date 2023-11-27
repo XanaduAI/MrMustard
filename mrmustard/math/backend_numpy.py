@@ -154,7 +154,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return array
 
-    def einsum(self, string: str, optimize: Union[bool, str], tensors) -> np.array:
+    def einsum(self, string: str, optimize: Union[bool, str], *tensors) -> np.array:
         return np.einsum(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.array) -> np.array:
