@@ -407,6 +407,16 @@ class TestBackendManager:
         res = math.asnumpy(math.minimum(arr1, arr2))
         assert np.allclose(res, arr1)
 
+    def test_multiply(self):
+        r"""
+        Tests the ``multiply`` method.
+        """
+        arr1 = np.array([1.0, 2.0, 3.0, 4.0])
+        arr2 = 2 * arr1
+        res = math.multiply(arr1, arr2)
+        exp = np.array([2.0, 8.0, 18.0, 32.0])
+        assert np.allclose(res, exp)
+
     @pytest.mark.parametrize("t", types)
     def test_new_variable(self, t):
         r"""
