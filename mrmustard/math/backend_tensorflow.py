@@ -429,6 +429,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         tensor of given shape in case of B is a batched vector with a batched diemnsion on the
         last index.
 
+        Note that this function is only available for the forward pass, not with the gradient.
+
         Args:
             A: The A matrix.
             B: The batched B vector with its batch dimension on the last index.
