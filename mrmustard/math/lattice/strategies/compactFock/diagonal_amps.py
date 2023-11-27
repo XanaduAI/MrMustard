@@ -15,7 +15,9 @@ from mrmustard.math.lattice.strategies.compactFock.helperFunctions import (
 
 
 @njit
-def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1):  # pragma: no cover
+def use_offDiag_pivot(
+    A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001, arr1
+):  # pragma: no cover
     """
     Apply recurrence relation for pivot of type [a+1,a,b,b,c,c,...] / [a,a,b+1,b,c,c,...] / [a,a,b,b,c+1,c,...]
     Args:
