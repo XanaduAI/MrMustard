@@ -55,13 +55,15 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
 @njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
+    r"""Vanilla batched Fock-Bargmann strategy. Fills the tensor by iterating over all indices
     in ndindex order.
+    Note that this function is different from vanilla with b is no longer a vector,
+    it becomes a bathced vector with the batch dimension on the last index.
 
     Args:
-        shape (tuple[int, ...]): shape of the output tensor
+        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the last term
         A (np.ndarray): A matrix of the Fock-Bargmann representation
-        b (np.ndarray): B vector of the Fock-Bargmann representation
+        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
         c (complex): vacuum amplitude
 
     Returns:

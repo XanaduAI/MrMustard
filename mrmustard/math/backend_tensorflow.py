@@ -423,19 +423,20 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def hermite_renormalized_batch(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
     ) -> tf.Tensor:
-        r"""multidimensional Hermite polynomial given by the "exponential" Taylor
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
         series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
         at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape.
+        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
+        last index.
 
         Args:
             A: The A matrix.
-            B: The B vector.
+            B: The batched B vector with its batch dimension on the last index.
             C: The C scalar.
             shape: The shape of the final tensor.
 
         Returns:
-            The Hermite polynomial of given shape.
+            The batched Hermite polynomial of given shape.
         """
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
