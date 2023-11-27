@@ -29,7 +29,7 @@ import numpy as np
 from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
-from .lattice.strategies import binomial, vanilla
+from .lattice.strategies import binomial, vanilla, vanilla_batch
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
@@ -438,6 +438,24 @@ class BackendNumpy(BackendBase):  # pragma: no cover
                 _A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits
             )
 
+        return G
+    
+    def hermite_renormalized_batch(self, A: np.array, B: np.array, C: np.array, shape: Tuple[int]) -> np.array:
+        r"""multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape.
+
+        Args:
+            A: The A matrix.
+            B: The B vector.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The Hermite polynomial of given shape.
+        """
+        G = vanilla_batch(tuple(shape), A, B, C)
         return G
 
     def hermite_renormalized_binomial(

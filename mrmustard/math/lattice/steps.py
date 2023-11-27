@@ -68,6 +68,41 @@ def vanilla_step(
 
 
 @njit
+def vanilla_step_batch(
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexVector,
+    index: tuple[int, ...],
+) -> complex:
+    r"""Fock-Bargmann recurrence relation step, vanilla version.
+    This function returns the amplitude of the Gaussian tensor G
+    at G[index]. It does not modify G.
+    The necessary pivot and neighbours must have already been computed,
+    as this step will read those values from G.
+
+    Args:
+        G (array or dict): fock amplitudes data store that supports getitem[tuple[int, ...]]
+        A (array): A matrix of the Fock-Bargmann representation
+        b (array): B vector of the Fock-Bargmann representation
+        index (Sequence): index of the amplitude to calculate
+    Returns:
+        complex: the value of the amplitude at the given index
+    """
+    # get pivot
+    i, pivot = first_available_pivot(index)
+
+    # pivot contribution
+
+    value_at_index = b[:, i] * G[(...,*pivot)]
+
+    # neighbors contribution
+    for j, neighbor in lower_neighbors(pivot):
+            value_at_index += A[i, j] * SQRT[pivot[j]] * G[(..., *neighbor)]
+
+    return value_at_index / SQRT[index[i]]
+
+
+@njit
 def vanilla_step_jacobian(
     G: ComplexTensor,
     A: ComplexMatrix,
