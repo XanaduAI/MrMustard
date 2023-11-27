@@ -72,11 +72,11 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
 
 ### Contributors
-[Eli Bourassa](https://github.com/elib20)
+[Eli Bourassa](https://github.com/elib20),
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Jan Provaznik](https://github.com/jan-provaznik),
-[Yuan Yao](https://github.com/sylviemonet),
+[Yuan Yao](https://github.com/sylviemonet)
 
 # Release 0.6.0 (current release)
 
