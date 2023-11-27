@@ -53,6 +53,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
   [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
 
+* Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.

@@ -43,8 +43,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     """
 
     int32 = np.int32
-    float64 = np.float64
     float32 = np.float32
+    float64 = np.float64
     complex64 = np.complex64
     complex128 = np.complex128
 
@@ -90,6 +90,8 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         if dtype is None:
             return array
 
+        if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
+            array = self.real(array)
         return np.array(array, dtype=dtype)
 
     def clip(self, array, a_min, a_max) -> np.array:
