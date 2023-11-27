@@ -53,7 +53,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
   [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
 
-* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating Hermite polynomials.
+* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating 
+  Hermite polynomials over a batch of B vectors.
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
 
 ### Bug fixes
@@ -71,10 +72,11 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
 
 ### Contributors
+[Eli Bourassa](https://github.com/elib20)
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Jan Provaznik](https://github.com/jan-provaznik),
-[Yuan Yao](https://github.com/sylviemonet)
+[Yuan Yao](https://github.com/sylviemonet),
 
 # Release 0.6.0 (current release)
 
