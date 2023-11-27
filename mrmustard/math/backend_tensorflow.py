@@ -435,7 +435,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         Returns:
             The Hermite polynomial of given shape.
         """
-        G = strategies.vanilla_batch(tuple(shape), A, B, C)
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+
+        G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
         return G
 
     @tf.custom_gradient
