@@ -38,24 +38,30 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    a = FlatIndex(np.array([2, 2]), 0)
-    a.increment()
-    a.first_available_pivot()
-    a.lower_neighbours()
 
     # init output tensor
-    G = np.zeros(shape, dtype=np.complex128)
+    ret = np.zeros(np.prod(np.array(shape)), dtype=np.complex128)
 
     # initialize path iterator
-    path = np.ndindex(shape)
+    index = FlatIndex(np.array(shape), 0)
 
     # write vacuum amplitude
-    G[next(path)] = c
+    ret[index.value] = c
 
     # iterate over the rest of the indices
-    for index in path:
-        G[index] = steps.vanilla_step(G, A, b, index)
-    return G
+    for _ in range(1, index.range):
+        index.increment()
+
+        i, pivot = index.first_available_pivot()
+        value_at_index = b[i] * ret[pivot.value]
+
+        ii = SQRT[index[i]]
+        for (j, n) in enumerate(pivot.lower_neighbours()):
+            value_at_index += A[i, j] * SQRT[pivot[j]] * ret[n]
+            ret[index.value] = value_at_index/ii
+
+        return ret.reshape(shape)
+
 
 
 @njit
