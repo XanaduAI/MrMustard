@@ -829,7 +829,7 @@ def quadrature_distribution(
         theta = -math.arange(cutoff) * quadrature_angle
         Ur = math.diag(math.make_complex(math.cos(theta), math.sin(theta)))
         state = (
-            math.einsum("ij,jk,kl->il", False, Ur, state, math.dagger(Ur))
+            math.einsum("ij,jk,kl->il", Ur, state, math.dagger(Ur))
             if is_dm
             else math.matvec(Ur, state)
         )
@@ -839,9 +839,9 @@ def quadrature_distribution(
 
     psi_x = math.cast(oscillator_eigenstate(x, cutoff), "complex128")
     pdf = (
-        math.einsum("nm,nj,mj->j", False, state, psi_x, psi_x)
+        math.einsum("nm,nj,mj->j", state, psi_x, psi_x)
         if is_dm
-        else math.abs(math.einsum("n,nj->j", False, state, psi_x)) ** 2
+        else math.abs(math.einsum("n,nj->j", state, psi_x)) ** 2
     )
 
     return x, math.cast(pdf, "float64")
