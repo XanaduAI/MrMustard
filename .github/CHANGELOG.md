@@ -53,6 +53,9 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
   [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
 
+* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating Hermite polynomials.
+  [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
