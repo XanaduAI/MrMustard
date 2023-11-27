@@ -155,9 +155,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return array
 
     def einsum(self, string: str, tensors, optimize: Union[bool, str]) -> np.array:
-        if type(string) is str:
-            return np.einsum(string, *tensors, optimize=optimize)
-        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
+        return np.einsum(string, *tensors, optimize=optimize)
 
     def exp(self, array: np.array) -> np.array:
         return np.exp(array)
