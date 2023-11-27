@@ -19,7 +19,7 @@ import pytest
 import numpy as np
 
 from mrmustard.lab import Gaussian
-from mrmustard import settings
+from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 

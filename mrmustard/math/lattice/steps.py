@@ -69,11 +69,11 @@ def vanilla_step(
 
 @njit
 def vanilla_step_batch(
-    G: np.array,
-    A: np.array,
-    b: np.array,
+    G: ComplexTensor,
+    A: ComplexMatrix,
+    b: ComplexTensor,
     index: tuple[int, ...],
-) -> np.array:
+) -> complex:
     r"""Fock-Bargmann recurrence relation step, vanilla version.
     This function returns the amplitude of the Gaussian tensor G
     at G[index]. It does not modify G.
@@ -92,12 +92,11 @@ def vanilla_step_batch(
     i, pivot = first_available_pivot(index)
 
     # pivot contribution
-
     value_at_index = b[:, i] * G[pivot]
 
     # neighbors contribution
     for j, neighbor in lower_neighbors(pivot):
-            value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
+        value_at_index += A[i, j] * SQRT[pivot[j]] * G[neighbor]
 
     return value_at_index / SQRT[index[i]]
 
