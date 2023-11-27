@@ -37,10 +37,11 @@ class FlatIndex:
         self._shape = shape
         self._range = np.prod(shape)
         
-        self._base = np.zeros_like(shape)
+        self._base = np.zeros_like(shape)  # strides (ravel e unravel)
         for i in range(1, len(shape)):
             self._base[i-1] = np.prod(shape[i:])
         self._base[-1] = 1
+        
 
     @property
     def base(self) -> Sequence[int]:
@@ -75,7 +76,7 @@ class FlatIndex:
         """
         for (i, b) in enumerate(self.base):
             if self.value >= b:
-                ret = FlatIndex(self.shape, self.value -b)
+                ret = FlatIndex(self.shape, self.value - b)
                 return (i, ret)
         msg = "Index is zero."
         raise ValueError(msg)
