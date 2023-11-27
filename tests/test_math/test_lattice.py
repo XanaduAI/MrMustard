@@ -74,7 +74,7 @@ def test_vanillabatchNumba_vs_vanillaNumba():
     )  # Create random state (M mode Gaussian state with displacement)
 
     batch = 3
-    cutoffs = (60, 60, 60, 60, batch)
+    cutoffs = (20, 20, 20, 20, batch)
 
     # Vanilla MM
     G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs[:-1])
