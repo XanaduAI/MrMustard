@@ -33,7 +33,10 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
     pivot[2 * d] += 1
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
-    G_in = np.empty(2 * M, dtype=np.complex128)
+    if B.ndim == 1:
+        G_in = np.empty(2 * M, dtype=np.complex128)
+    elif B.ndim == 2:
+        G_in = np.empty((2 * M, B.shape[1]), dtype=np.complex128)
 
     ########## READ ##########
     GB = arr1[(2 * d,) + params] * B
@@ -54,7 +57,10 @@ def use_offDiag_pivot(A, B, M, cutoffs, params, d, arr0, arr2, arr1010, arr1001,
             G_in[2 * i + 1] = arr1010[(d, i - d - 1) + params_adapted]
 
     ########## WRITE ##########
-    G_in = np.multiply(K_l, G_in)
+    if B.ndim == 1:
+        G_in = np.multiply(K_l, G_in)
+    elif B.ndim == 2:
+        G_in = np.multiply(np.expand_dims(K_l, 1), G_in)
 
     # Array0
     params_adapted = tuple_setitem(params, d, params[d] + 1)
@@ -91,7 +97,10 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
     pivot = repeat_twice(params)
     K_l = SQRT[pivot]
     K_i = SQRT[pivot + 1]
-    G_in = np.empty(2 * M, dtype=np.complex128)
+    if B.ndim == 1:
+        G_in = np.empty(2 * M, dtype=np.complex128)
+    elif B.ndim == 2:
+        G_in = np.empty((2 * M, B.shape[1]), dtype=np.complex128)
 
     ########## READ ##########
     GB = arr0[params] * B
@@ -105,7 +114,10 @@ def use_diag_pivot(A, B, M, cutoffs, params, arr0, arr1):
             ]  # [i+1-2*(i%2) for i in range(6)] = [1,0,3,2,5,4]
 
     ########## WRITE ##########
-    G_in = np.multiply(K_l, G_in)
+    if B.ndim == 1:
+        G_in = np.multiply(K_l, G_in)
+    elif B.ndim == 2:
+        G_in = np.multiply(np.expand_dims(K_l, 1), G_in)
 
     # Array1
     for i in range(2 * M):
@@ -165,16 +177,30 @@ def fock_representation_diagonal_amps(A, B, G0, M, cutoffs):
     tuple_type = numba.types.UniTuple(int64, M)
     list_type = numba.types.ListType(tuple_type)
 
-    arr0 = np.empty(cutoffs, dtype=np.complex128)
+    if B.ndim == 1:
+        arr0 = np.empty(cutoffs, dtype=np.complex128)
+        arr2 = np.empty((M,) + cutoffs, dtype=np.complex128)
+        arr1 = np.empty((2 * M,) + cutoffs, dtype=np.complex128)
+        if M == 1:
+            arr1010 = np.empty((1, 1, 1), dtype=np.complex128)
+            arr1001 = np.empty((1, 1, 1), dtype=np.complex128)
+        else:
+            arr1010 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
+            arr1001 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
+
+    elif B.ndim == 2:
+        batch_length = B.shape[1]
+        arr0 = np.empty(cutoffs + (batch_length,), dtype=np.complex128)
+        arr2 = np.empty((M,) + cutoffs + (batch_length,), dtype=np.complex128)
+        arr1 = np.empty((2 * M,) + cutoffs + (batch_length,), dtype=np.complex128)
+        if M == 1:
+            arr1010 = np.empty((1, 1, 1) + (batch_length,), dtype=np.complex128)
+            arr1001 = np.empty((1, 1, 1) + (batch_length,), dtype=np.complex128)
+        else:
+            arr1010 = np.empty((M, M - 1) + cutoffs + (batch_length,), dtype=np.complex128)
+            arr1001 = np.empty((M, M - 1) + cutoffs + (batch_length,), dtype=np.complex128)
+
     arr0[(0,) * M] = G0
-    arr2 = np.empty((M,) + cutoffs, dtype=np.complex128)
-    arr1 = np.empty((2 * M,) + cutoffs, dtype=np.complex128)
-    if M == 1:
-        arr1010 = np.empty((1, 1, 1), dtype=np.complex128)
-        arr1001 = np.empty((1, 1, 1), dtype=np.complex128)
-    else:
-        arr1010 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
-        arr1001 = np.empty((M, M - 1) + cutoffs, dtype=np.complex128)
     return fock_representation_diagonal_amps_NUMBA(
         A, B, M, cutoffs, arr0, arr2, arr1010, arr1001, arr1, tuple_type, list_type
     )

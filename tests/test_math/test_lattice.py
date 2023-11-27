@@ -87,3 +87,26 @@ def test_vanillabatchNumba_vs_vanillaNumba():
     assert np.allclose(G_ref, G_batched[:, :, :, :, 0])
     assert np.allclose(G_ref, G_batched[:, :, :, :, 1])
     assert np.allclose(G_ref, G_batched[:, :, :, :, 2])
+
+
+def test_diagonalbatchNumba_vs_diagonalNumba():
+    """Test the batch version works versus the normal diagonal version."""
+    state = Gaussian(3)
+    A, B, C = wigner_to_bargmann_rho(
+        state.cov, state.means
+    )  # Create random state (M mode Gaussian state with displacement)
+
+    batch = 3
+    cutoffs = (18, 19, 20, batch)
+
+    # Diagonal MM
+    G_ref = math.hermite_renormalized_diagonal(A, B, C, cutoffs=cutoffs[:-1])
+
+    # replicate the B
+    B_batched = np.stack((B,) * batch, axis=1)
+
+    G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
+
+    assert np.allclose(G_ref, G_batched[:, :, :, 0])
+    assert np.allclose(G_ref, G_batched[:, :, :, 1])
+    assert np.allclose(G_ref, G_batched[:, :, :, 2])

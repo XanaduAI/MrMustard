@@ -574,6 +574,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
 
+    def hermite_renormalized_diagonal_batch(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
+        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
+
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
     ) -> Tensor:
