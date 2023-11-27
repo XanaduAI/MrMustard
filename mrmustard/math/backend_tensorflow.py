@@ -143,7 +143,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def diag_part(self, array: tf.Tensor, k: int = 0) -> tf.Tensor:
         return tf.linalg.diag_part(array, k=k)
 
-    def einsum(self, string: str, tensors, optimize: Union[bool, str]) -> tf.Tensor:
+    def einsum(self, string: str, optimize: Union[bool, str], tensors) -> tf.Tensor:
         if type(string) is str:
             return tf.einsum(string, *tensors, optimize=optimize)
         return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
