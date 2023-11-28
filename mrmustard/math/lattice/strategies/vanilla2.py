@@ -44,21 +44,23 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
     # initialize path iterator
     index = FlatIndex(np.array(shape), 0)
+    index = FlatIndex(np.array(shape), 0)
+    index = FlatIndex(np.array(shape), 0)
 
     # write vacuum amplitude
-    ret[index.value] = c
+    # ret[index.value] = c
 
     # iterate over the rest of the indices
-    for i in range(1, index.range):
-        index.increment()
+    # for i in range(1, index.range):
+        # index.increment()
 
-        i, pivot = index.first_available_pivot()
-        value_at_index = b[i] * ret[pivot.value]
+        # i, pivot = index.first_available_pivot()
+        # value_at_index = b[i] * ret[pivot.value]
 
-        ii = SQRT[index[i]]
-        for (j, n) in enumerate(pivot.lower_neighbours()):
-            value_at_index += A[i, j] * SQRT[pivot[j]] * ret[n]
-            ret[index.value] = value_at_index/ii
+        # ii = SQRT[index[i]]
+        # for (j, n) in enumerate(pivot.lower_neighbours()):
+        #     value_at_index += A[i, j] * SQRT[pivot[j]] * ret[n]
+        #     ret[index.value] = value_at_index/ii
 
     return ret.reshape(shape)
 

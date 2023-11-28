@@ -17,7 +17,6 @@ from numba import njit
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .indices import FlatIndex
 
 SQRT = np.sqrt(np.arange(100000))
 
@@ -38,11 +37,6 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    a = FlatIndex(np.array([2, 2]), 0)
-    a.increment()
-    a.first_available_pivot()
-    a.lower_neighbours()
-
     # init output tensor
     G = np.zeros(shape, dtype=np.complex128)
 
@@ -51,12 +45,10 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
     # write vacuum amplitude
     G[next(path)] = c
-    print(c)
 
     # iterate over the rest of the indices
-    for index in path:
-        print("hey", steps.vanilla_step(G, A, b, index))
-        G[index] = steps.vanilla_step(G, A, b, index)
+    # for index in path:
+    #     G[index] = steps.vanilla_step(G, A, b, index)
     return G
 
 
