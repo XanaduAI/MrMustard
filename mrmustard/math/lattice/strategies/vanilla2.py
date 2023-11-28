@@ -49,7 +49,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     ret[index.value] = c
 
     # iterate over the rest of the indices
-    for _ in range(1, index.range):
+    for i in range(1, index.range):
         index.increment()
 
         i, pivot = index.first_available_pivot()
@@ -60,7 +60,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
             value_at_index += A[i, j] * SQRT[pivot[j]] * ret[n]
             ret[index.value] = value_at_index/ii
 
-        return ret.reshape(shape)
+    return ret.reshape(shape)
 
 
 

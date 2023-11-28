@@ -51,9 +51,11 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
 
     # write vacuum amplitude
     G[next(path)] = c
+    print(c)
 
     # iterate over the rest of the indices
     for index in path:
+        print("hey", steps.vanilla_step(G, A, b, index))
         G[index] = steps.vanilla_step(G, A, b, index)
     return G
 
