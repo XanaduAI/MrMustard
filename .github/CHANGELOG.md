@@ -58,6 +58,7 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
 
 * Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
+  [(#307)](https://github.com/XanaduAI/MrMustard/pull/307)
 
 
 ### Bug fixes
