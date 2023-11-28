@@ -17,11 +17,10 @@ from numba import njit
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .indices import FlatIndex, shape_to_strides, shape_to_range
-
-SQRT = np.sqrt(np.arange(100000))
+from .indices2 import first_available_pivot, lower_neighbours, project, shape_to_strides, shape_to_range
 
 __all__ = ["vanilla", "vanilla_jacobian", "vanilla_vjp"]
+
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
@@ -38,30 +37,26 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
     np_shape = np.array(shape)
+    rng = shape_to_range(np_shape)
+    strides = shape_to_strides(np_shape)
 
     # init output tensor
-    # ret = np.zeros(np.prod(np_shape), dtype=np.complex128)
-    ret = [0 + 0j for _ in range(np.prod(np_shape))]
-
-    # initialize index
-    index = FlatIndex(0, shape_to_range(np_shape), shape_to_strides(np_shape))
+    ret = np.array([0 + 0j] * np.prod(np_shape), dtype=np.complex128)
 
     # write vacuum amplitude
-    ret[index.value] = c
+    ret[0] = c
 
     # iterate over the rest of the indices
-    for _ in range(1, index.range):
-        index.increment()
+    for index in range(1, rng):
+        i, pivot = first_available_pivot(index, strides)
+        value_at_index = b[i] * ret[pivot]
 
-        i, pivot = index.first_available_pivot()
-        value_at_index = b[i] * ret[pivot.value]
+        for (j, n) in lower_neighbours(pivot, strides):
+            value_at_index += A[i, j] * np.sqrt(project(pivot, j, strides)) * ret[n]
+        ret[index] = value_at_index/np.sqrt(project(index, i, strides))
 
-        for (j, n) in pivot.lower_neighbours():
-            value_at_index += A[i, j] * SQRT[pivot[j]] * ret[n]
-        ret[index.value] = value_at_index/SQRT[index[i]]
-
-    # return ret
-    return np.array(ret).reshape(shape)
+    return ret.reshape(shape)
+    # return np.array(ret).reshape(shape)
 
 
 

@@ -30,7 +30,7 @@ from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
 from .lattice.strategies import binomial
-from .lattice.strategies.vanilla2 import vanilla
+from .lattice.strategies.vanilla3 import vanilla
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
@@ -427,7 +427,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
-            G = vanilla(tuple(shape), _A, _B, _C)
+            G = vanilla(tuple(shape), _A, _B, _C.max())
         else:  # julia (with precision_bits = 512)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel

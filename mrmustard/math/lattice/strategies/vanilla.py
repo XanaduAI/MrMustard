@@ -47,8 +47,8 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     G[next(path)] = c
 
     # iterate over the rest of the indices
-    # for index in path:
-    #     G[index] = steps.vanilla_step(G, A, b, index)
+    for index in path:
+        G[index] = steps.vanilla_step(G, A, b, index)
     return G
 
 

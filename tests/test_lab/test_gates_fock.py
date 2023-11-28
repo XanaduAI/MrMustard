@@ -79,7 +79,7 @@ def test_Dgate_2mode(state, xxyy):
 def test_single_mode_fock_equals_gaussian_dm(gate):
     """Test same state is obtained via fock representation or phase space
     for single mode circuits."""
-    cutoffs = [23]
+    cutoffs = [60]
     gaussian_state = SqueezedVacuum(0.5) >> Attenuator(0.5)
     fock_state = State(dm=gaussian_state.dm(cutoffs))
 

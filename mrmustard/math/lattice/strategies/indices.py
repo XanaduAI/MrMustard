@@ -13,18 +13,17 @@
 # limitations under the License.
 
 from typing import Sequence
-from numba import int64
+from numba import int64, njit
 from numba.experimental import jitclass
 
 import numpy as np
 
-__all__ = ["FlatIndex",]
+__all__ = ["FlatIndex", "shape_to_strides", "shape_to_range"]
 
 spec = [
-    ("_strides", int64[:]),
-    ("_range", int64),
-    ("_shape", int64[:]),
     ("_value", int64),
+    ("_range", int64),
+    ("_strides", int64[:]),
 ]
 
 @jitclass(spec)
@@ -32,20 +31,10 @@ class FlatIndex:
     r"""
     A class representing the index of a flattened tensor.
     """
-    def __init__(self, shape: Sequence[int], value: int) -> None:
+    def __init__(self, value: int, range: int, strides: Sequence[int]) -> None:
         self._value = value
-        self._shape = shape
-        self._range = np.prod(shape)
-
-        if self.value >= self.range:
-            msg = f"Value out of range"
-            raise ValueError(msg)
-        
-        self._strides = np.zeros_like(shape)  # strides (ravel e unravel)
-        for i in range(1, len(shape)):
-            self._strides[i-1] = np.prod(shape[i:])
-        self._strides[-1] = 1
-        
+        self._range = range
+        self._strides = strides        
 
     @property
     def strides(self) -> Sequence[int]:
@@ -60,13 +49,6 @@ class FlatIndex:
         The range of this index.
         """
         return self._range
-    
-    @property
-    def shape(self) -> int:
-        r"""
-        The shape of this index.
-        """
-        return self._shape
         
     @property
     def value(self) -> int:
@@ -80,7 +62,7 @@ class FlatIndex:
         """
         for (i, b) in enumerate(self.strides):
             if self.value >= b:
-                ret = FlatIndex(self.shape, self.value - b)
+                ret = FlatIndex(self.value - b, self.range, self.strides)
                 return (i, ret)
         msg = "Index is zero."
         raise ValueError(msg)
@@ -90,18 +72,18 @@ class FlatIndex:
         Increments this index by ``1``.
         """
         self._value += 1
-        if self.value >= self.range:
-            msg = "``FlatIndex`` cannot be incremented."
-            raise ValueError(msg)
+        # if self.value >= self.range:
+        #     msg = "``FlatIndex`` cannot be incremented."
+        #     raise ValueError(msg)
         
-    def lower_neighbours(self) -> Sequence[int64]:
-        for b in self.strides:
-            if self.value >= b:
-                yield self.value - b
-            else:
-                yield self.value + self.range - b
+    def lower_neighbours(self) -> tuple[int, Sequence[int]]:
+        for (j, b) in enumerate(self.strides):
+            y = self.value - b
+            # yield j, y if y >= 0 else y + self.range
+            if y >= 0:
+                yield j, y
 
-    def __getitem__(self, idx: int64) -> int64:
+    def __getitem__(self, idx: int) -> int:
         val = self.value
         for j in range(len(self.strides)):
             bj = self.strides[j]
@@ -115,4 +97,22 @@ class FlatIndex:
                 val -= bj
         msg = "Cannot find element ``idx`` in FlatIndex."
         raise ValueError(msg)
+
+@njit 
+def shape_to_strides(shape: Sequence[int]) -> Sequence[int]:
+    r"""
+    Calculates strides from shape.
+    """
+    strides = np.ones_like(shape)
+    for i in range(1, len(shape)):
+        strides[i-1] = np.prod(shape[i:])
+    return strides
+
+@njit 
+def shape_to_range(shape: Sequence[int]) -> int:
+    r"""
+    Calculates range from shape.
+    """
+    ret = np.prod(shape)
+    return ret
     
