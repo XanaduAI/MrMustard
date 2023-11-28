@@ -85,9 +85,6 @@ def test_single_mode_fock_equals_gaussian_dm(gate):
 
     via_fock_space_dm = (fock_state >> gate).dm(cutoffs)
     via_phase_space_dm = (gaussian_state >> gate).dm(cutoffs)
-    # print(via_fock_space_dm)
-    # print(via_phase_space_dm)
-    assert False
     assert np.allclose(via_fock_space_dm, via_phase_space_dm)
 
 
