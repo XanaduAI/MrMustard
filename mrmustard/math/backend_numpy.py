@@ -29,10 +29,11 @@ import numpy as np
 from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
-from .lattice.strategies import binomial, vanilla
+from .lattice.strategies import binomial, vanilla, vanilla_batch
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
+    hermite_multidimensional_diagonal_batch,
 )
 
 
@@ -442,6 +443,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return G
 
+    def hermite_renormalized_batch(
+        self, A: np.array, B: np.array, C: np.array, shape: Tuple[int]
+    ) -> np.array:
+        G = vanilla_batch(tuple(shape), A, B, C)
+        return G
+
     def hermite_renormalized_binomial(
         self,
         A: np.array,
@@ -486,15 +493,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
         A = self.gather(A, ordering, axis=1)
         A = self.gather(A, ordering)
-        B = self.gather(B, ordering)
+        B = self.gather(B, ordering, axis=0)
         return A, B
 
     def hermite_renormalized_diagonal(
         self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
     ) -> np.array:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
@@ -518,6 +522,31 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             The renormalized Hermite polynomial.
         """
         poly0, _, _, _, _ = hermite_multidimensional_diagonal(A, B, C, cutoffs)
+
+        return poly0
+
+    def hermite_renormalized_diagonal_batch(
+        self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
+    ) -> np.array:
+        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
+
+    def hermite_renormalized_diagonal_reorderedAB_batch(
+        self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
+    ) -> np.array:
+        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
+
+        Args:
+            A: The A matrix.
+            B: The B vectors.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial from different B values.
+        """
+        poly0, _, _, _, _ = hermite_multidimensional_diagonal_batch(A, B, C, cutoffs)
 
         return poly0
 

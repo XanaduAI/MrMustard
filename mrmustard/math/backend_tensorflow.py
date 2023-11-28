@@ -27,6 +27,7 @@ from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
+    hermite_multidimensional_diagonal_batch,
 )
 from ..utils.settings import settings
 from ..utils.typing import Tensor, Trainable
@@ -423,6 +424,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         return G, grad
 
+    def hermite_renormalized_batch(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+    ) -> tf.Tensor:
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+
+        G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
+        return G
+
     @tf.custom_gradient
     def hermite_renormalized_binomial(
         self,
@@ -475,15 +484,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         )  # ordering is [0,2,4,...,1,3,5,...]
         A = tf.gather(A, ordering, axis=1)
         A = tf.gather(A, ordering)
-        B = tf.gather(B, ordering)
+        B = tf.gather(B, ordering, axis=0)
         return A, B
 
     def hermite_renormalized_diagonal(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
@@ -542,6 +548,35 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return dLdA, dLdB, dLdC
 
         return poly0, grad
+
+    def hermite_renormalized_diagonal_batch(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
+
+    def hermite_renormalized_diagonal_reorderedAB_batch(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
+
+        Args:
+            A: The A matrix.
+            B: The B vectors.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial from different B values.
+        """
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+
+        poly0, _, _, _, _ = tf.numpy_function(
+            hermite_multidimensional_diagonal_batch, [A, B, C, cutoffs], [A.dtype] * 5
+        )
+
+        return poly0
 
     def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
