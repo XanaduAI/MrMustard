@@ -446,21 +446,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def hermite_renormalized_batch(
         self, A: np.array, B: np.array, C: np.array, shape: Tuple[int]
     ) -> np.array:
-        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
-        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
-        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
-        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
-        last index.
-
-        Args:
-            A: The A matrix.
-            B: The batched B vector with its batch dimension on the last index.
-            C: The C scalar.
-            shape: The shape of the final tensor.
-
-        Returns:
-            The batched Hermite polynomial of given shape.
-        """
         G = vanilla_batch(tuple(shape), A, B, C)
         return G
 
