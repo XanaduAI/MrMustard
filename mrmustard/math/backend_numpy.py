@@ -499,9 +499,6 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def hermite_renormalized_diagonal(
         self, A: np.array, B: np.array, C: np.array, cutoffs: Tuple[int]
     ) -> np.array:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.numba.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
