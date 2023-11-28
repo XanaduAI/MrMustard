@@ -21,7 +21,7 @@ import numpy as np
 __all__ = ["FlatIndex",]
 
 spec = [
-    ("_base", int64[:]),
+    ("_strides", int64[:]),
     ("_range", int64),
     ("_shape", int64[:]),
     ("_value", int64),
@@ -32,23 +32,27 @@ class FlatIndex:
     r"""
     A class representing the index of a flattened tensor.
     """
-    def __init__(self, shape: Sequence[int], value: int = 0) -> None:
+    def __init__(self, shape: Sequence[int], value: int) -> None:
         self._value = value
         self._shape = shape
         self._range = np.prod(shape)
+
+        if self.value >= self.range:
+            msg = f"Value out of range"
+            raise ValueError(msg)
         
-        self._base = np.zeros_like(shape)  # strides (ravel e unravel)
+        self._strides = np.zeros_like(shape)  # strides (ravel e unravel)
         for i in range(1, len(shape)):
-            self._base[i-1] = np.prod(shape[i:])
-        self._base[-1] = 1
+            self._strides[i-1] = np.prod(shape[i:])
+        self._strides[-1] = 1
         
 
     @property
-    def base(self) -> Sequence[int]:
+    def strides(self) -> Sequence[int]:
         r"""
-        The base of this index.
+        The strides of this index.
         """
-        return self._base
+        return self._strides
     
     @property
     def range(self) -> int:
@@ -74,7 +78,7 @@ class FlatIndex:
     def first_available_pivot(self):
         r"""
         """
-        for (i, b) in enumerate(self.base):
+        for (i, b) in enumerate(self.strides):
             if self.value >= b:
                 ret = FlatIndex(self.shape, self.value - b)
                 return (i, ret)
@@ -87,11 +91,11 @@ class FlatIndex:
         """
         self._value += 1
         if self.value >= self.range:
-            msg = "FlatIndex cannot be incremented."
+            msg = "``FlatIndex`` cannot be incremented."
             raise ValueError(msg)
         
     def lower_neighbours(self) -> Sequence[int64]:
-        for b in self.base:
+        for b in self.strides:
             if self.value >= b:
                 yield self.value - b
             else:
@@ -99,8 +103,8 @@ class FlatIndex:
 
     def __getitem__(self, idx: int64) -> int64:
         val = self.value
-        for j in range(len(self.base)):
-            bj = self.base[j]
+        for j in range(len(self.strides)):
+            bj = self.strides[j]
             if idx == j:
                 ret = 0
                 while val >= bj:
