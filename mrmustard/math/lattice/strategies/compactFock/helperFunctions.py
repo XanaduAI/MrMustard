@@ -20,7 +20,7 @@ def repeat_twice(params):
     Returns:
         (1D array): [a,a,b,b,c,c,...]
     """
-    pivot = np.empty(2 * len(params), dtype=np.int64)
+    pivot = np.zeros(2 * len(params), dtype=np.int64)
     for i, val in enumerate(params):
         pivot[2 * i] = val
         pivot[2 * i + 1] = val
