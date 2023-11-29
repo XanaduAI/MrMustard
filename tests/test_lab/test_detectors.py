@@ -309,7 +309,7 @@ class TestHomodyneDetector:
             state = State(dm=state.dm(cutoffs=[40]))
         detector = Homodyne(0.0)
 
-        results = np.empty((self.N_MEAS, 2))
+        results = np.zeros((self.N_MEAS, 2))
         for i in range(self.N_MEAS):
             _ = state << detector
             results[i] = math.asnumpy(detector.outcome)

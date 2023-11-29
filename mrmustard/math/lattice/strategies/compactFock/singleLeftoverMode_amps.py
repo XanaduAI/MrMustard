@@ -107,7 +107,7 @@ def use_offDiag_pivot(
 
     ########## READ ##########
     read_GB = (2 * d,) + params
-    GB = np.empty((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
+    GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
             GB[m, n] = arr1[(m, n) + read_GB] * B
@@ -180,7 +180,7 @@ def use_diag_pivot(A, B, M, cutoff_leftoverMode, cutoffs_tail, params, arr0, arr
 
     ########## READ ##########
     read_GB = params
-    GB = np.empty((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
+    GB = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode, len(B)), dtype=np.complex128)
     for m in range(cutoff_leftoverMode):
         for n in range(cutoff_leftoverMode):
             GB[m, n] = arr0[(m, n) + read_GB] * B
@@ -302,24 +302,24 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
 
     arr0 = np.zeros(
         (cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail, dtype=np.complex128
-    )  # doesn't work with np.empty
+    )
     arr0[(0,) * (M + 1)] = G0
-    arr2 = np.empty(
+    arr2 = np.zeros(
         (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail, dtype=np.complex128
     )
-    arr1 = np.empty(
+    arr1 = np.zeros(
         (cutoff_leftoverMode, cutoff_leftoverMode) + (2 * (M - 1),) + cutoffs_tail,
         dtype=np.complex128,
     )
     if M == 2:
-        arr1010 = np.empty((1, 1, 1, 1, 1), dtype=np.complex128)
-        arr1001 = np.empty((1, 1, 1, 1, 1), dtype=np.complex128)
+        arr1010 = np.zeros((1, 1, 1, 1, 1), dtype=np.complex128)
+        arr1001 = np.zeros((1, 1, 1, 1, 1), dtype=np.complex128)
     else:
-        arr1010 = np.empty(
+        arr1010 = np.ezerosmpty(
             (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail,
             dtype=np.complex128,
         )
-        arr1001 = np.empty(
+        arr1001 = np.zeros(
             (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail,
             dtype=np.complex128,
         )
