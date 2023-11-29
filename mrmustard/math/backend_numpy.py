@@ -61,7 +61,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def any(self, array: np.ndarray) -> np.ndarray:
         return np.any(array)
 
-    def arange(self, start: int, limit: Optional[int] = None, delta: int = 1, dtype=np.float64) -> np.ndarray:
+    def arange(
+        self, start: int, limit: Optional[int] = None, delta: int = 1, dtype=np.float64
+    ) -> np.ndarray:
         return np.arange(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: np.ndarray) -> np.ndarray:
@@ -219,7 +221,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return real + 1j * imag
 
     @Autocast()
-    def matvec(self, a: np.ndarray, b: np.ndarray, transpose_a=False, adjoint_a=False) -> np.ndarray:
+    def matvec(
+        self, a: np.ndarray, b: np.ndarray, transpose_a=False, adjoint_a=False
+    ) -> np.ndarray:
         return self.matmul(a, b, transpose_a, adjoint_a)
 
     @Autocast()
