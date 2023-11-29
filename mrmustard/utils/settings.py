@@ -15,11 +15,11 @@
 """A module containing the settings.
 """
 
+from typing import Any
 import os
 from rich import print
 import rich.table
 import numpy as np
-from typing import Any
 
 __all__ = ["Settings", "settings"]
 
