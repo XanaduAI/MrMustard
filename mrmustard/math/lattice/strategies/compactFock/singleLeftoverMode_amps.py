@@ -300,9 +300,7 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
     list_type = numba.types.ListType(tuple_type)
     zero_tuple = (0,) * (M - 1)
 
-    arr0 = np.zeros(
-        (cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail, dtype=np.complex128
-    )
+    arr0 = np.zeros((cutoff_leftoverMode, cutoff_leftoverMode) + cutoffs_tail, dtype=np.complex128)
     arr0[(0,) * (M + 1)] = G0
     arr2 = np.zeros(
         (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1,) + cutoffs_tail, dtype=np.complex128
