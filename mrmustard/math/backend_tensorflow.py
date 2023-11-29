@@ -28,6 +28,7 @@ from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_diagonal,
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
+    hermite_multidimensional_diagonal_batch,
 )
 from ..utils.settings import settings
 from ..utils.typing import Tensor, Trainable
@@ -43,8 +44,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     """
 
     int32 = tf.int32
-    float64 = tf.float64
     float32 = tf.float32
+    float64 = tf.float64
     complex64 = tf.complex64
     complex128 = tf.complex128
 
@@ -105,6 +106,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def cast(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         if dtype is None:
             return array
+
+        if dtype not in [self.complex64, self.complex128, "complex64", "complex128"]:
+            array = self.real(array)
         return tf.cast(array, dtype)
 
     def clip(self, array, a_min, a_max) -> tf.Tensor:
@@ -453,6 +457,14 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         return G, grad
 
+    def hermite_renormalized_batch(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, shape: Tuple[int]
+    ) -> tf.Tensor:
+        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+
+        G = strategies.vanilla_batch(tuple(shape), _A, _B, _C)
+        return G
+
     @tf.custom_gradient
     def hermite_renormalized_binomial(
         self,
@@ -500,18 +512,17 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         r"""In mrmustard.math.compactFock.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
-        ordering = np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        ordering = (
+            np.arange(2 * A.shape[0] // 2).reshape(2, -1).T.flatten()
+        )  # ordering is [0,2,4,...,1,3,5,...]
         A = tf.gather(A, ordering, axis=1)
         A = tf.gather(A, ordering)
-        B = tf.gather(B, ordering)
+        B = tf.gather(B, ordering, axis=0)
         return A, B
 
     def hermite_renormalized_diagonal(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
     ) -> tf.Tensor:
-        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock.compactFock~
-        Then, calculate the required renormalized multidimensional Hermite polynomial.
-        """
         A, B = self.reorder_AB_bargmann(A, B)
         return self.hermite_renormalized_diagonal_reorderedAB(A, B, C, cutoffs=cutoffs)
 
@@ -570,6 +581,35 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             return dLdA, dLdB, dLdC
 
         return poly0, grad
+
+    def hermite_renormalized_diagonal_batch(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
+        A, B = self.reorder_AB_bargmann(A, B)
+        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
+
+    def hermite_renormalized_diagonal_reorderedAB_batch(
+        self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]
+    ) -> tf.Tensor:
+        r"""Same as hermite_renormalized_diagonal_reorderedAB but works for a batch of different B's.
+
+        Args:
+            A: The A matrix.
+            B: The B vectors.
+            C: The C scalar.
+            cutoffs: upper boundary of photon numbers in each mode
+
+        Returns:
+            The renormalized Hermite polynomial from different B values.
+        """
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+
+        poly0, _, _, _, _ = tf.numpy_function(
+            hermite_multidimensional_diagonal_batch, [A, B, C, cutoffs], [A.dtype] * 5
+        )
+
+        return poly0
 
     def hermite_renormalized_1leftoverMode(
         self, A: tf.Tensor, B: tf.Tensor, C: tf.Tensor, cutoffs: Tuple[int]

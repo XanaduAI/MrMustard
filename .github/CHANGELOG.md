@@ -59,6 +59,14 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
   [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
 
+* Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating 
+  Hermite polynomials over a batch of B vectors.
+  [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
+
+* Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
+  [(#307)](https://github.com/XanaduAI/MrMustard/pull/307)
+
+
 ### Bug fixes
 
 * Added the missing `shape` input parameters to all methods `U` in the `gates.py` file.
@@ -67,6 +75,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
 * Fixed the documentations for loss_XYd and amp_XYd functions for Gaussian channels.
 [(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
+* Replaced all instances of `np.empty` with `np.zeros` to fix instabilities.
+[(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
 
 ### Documentation
 
@@ -74,6 +84,7 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Added tests for calculating Fock amplitudes with a higher precision than `complex128`.
 
 ### Contributors
+[Eli Bourassa](https://github.com/elib20),
 [Robbe De Prins](https://github.com/rdprins),
 [Samuele Ferracin](https://github.com/SamFerracin),
 [Jan Provaznik](https://github.com/jan-provaznik),
