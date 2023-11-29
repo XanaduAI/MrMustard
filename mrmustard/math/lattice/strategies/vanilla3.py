@@ -17,7 +17,7 @@ from numba import njit
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .indices2 import first_available_pivot, lower_neighbours, project, shape_to_strides, shape_to_range
+from .indices2 import first_available_pivot, lower_neighbours, lower_neighbours2, project, shape_to_strides, shape_to_range
 
 __all__ = ["vanilla", "vanilla_jacobian", "vanilla_vjp"]
 
@@ -51,9 +51,18 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         i, pivot = first_available_pivot(index, strides)
         value_at_index = b[i] * ret[pivot]
 
-        for (j, n) in lower_neighbours(pivot, strides):
-            value_at_index += A[i, j] * np.sqrt(project(pivot, j, strides)) * ret[n]
+        for (j, at_j, n) in lower_neighbours2(pivot, strides):
+            value_at_index += A[i, j] * np.sqrt(at_j) * ret[n]
         ret[index] = value_at_index/np.sqrt(project(index, i, strides))
+
+    # # iterate over the rest of the indices
+    # for index in range(1, rng):
+    #     i, pivot = first_available_pivot(index, strides)
+    #     value_at_index = b[i] * ret[pivot]
+
+    #     for (j, n) in lower_neighbours(pivot, strides):
+    #         value_at_index += A[i, j] * np.sqrt(project(pivot, j, strides)) * ret[n]
+    #     ret[index] = value_at_index/np.sqrt(project(index, i, strides))
 
     return ret.reshape(shape)
     # return np.array(ret).reshape(shape)

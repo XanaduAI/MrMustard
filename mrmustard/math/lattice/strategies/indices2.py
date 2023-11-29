@@ -18,12 +18,30 @@ from numba import njit
 import numpy as np
 
 @njit
+def pivot_and_neighbours(index: int, strides: Sequence[int]) -> Iterator[tuple[int, tuple[int, ...]]]:
+    # yield the pivot
+    for (i, b) in enumerate(strides):
+        pivot = index - b
+        if pivot >= 0:
+            yield i, pivot
+            break
+
+    # yield the pivot's first neighbour
+    if pivot - b >= 0:
+        yield i, pivot - b
+
+    # yield pivot's other neighbours
+    for j, b in enumerate(strides[i+1:]):
+        yield i + 1 + j, pivot - b
+
+@njit
 def first_available_pivot(index: int, strides: Sequence[int]):
     r"""
     """
     for (i, b) in enumerate(strides):
-        if index >= b:
-            return (i, index - b)
+        y = index - b
+        if y >= 0:
+            return (i, y)
     raise ValueError("Index is zero.")
     
 @njit
@@ -32,6 +50,16 @@ def lower_neighbours(index: int, strides: Sequence[int]) -> Iterator[tuple[int, 
         y = index - b
         if y >= 0:
             yield i, y
+    
+@njit
+def lower_neighbours2(index: int, strides: Sequence[int]) -> Iterator[tuple[int, int, tuple[int, ...]]]:
+    for (i, b) in enumerate(strides):
+        y = index - b
+        if y >= 0:
+            for at_i in range(1, b + 1):
+                if y - at_i * b <= 0:
+                    break
+            yield i, at_i, y
 
 @njit
 def project(index: int, idx: int, strides: Sequence[int]) -> int:
@@ -45,16 +73,6 @@ def project(index: int, idx: int, strides: Sequence[int]) -> int:
         while index >= bj:
             index -= bj
     raise ValueError("Cannot find element ``idx`` in FlatIndex.")
-
-@njit
-def project_on_dominant_stride(index: int, idx: int, strides: Sequence[int]) -> int:
-    return 1
-    bj = strides[idx]
-    ret = 0
-    while index >= bj:
-        ret += 1
-        index -= bj
-    return ret
 
 @njit 
 def shape_to_strides(shape: Sequence[int]) -> Sequence[int]:
