@@ -69,6 +69,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 [(#294)](https://github.com/XanaduAI/MrMustard/pull/294)
 * Fixed the documentations for loss_XYd and amp_XYd functions for Gaussian channels.
 [(#305)](https://github.com/XanaduAI/MrMustard/pull/305)
+* Replaced all instances of `np.empty` with `np.zeros` to fix instabilities.
+[(#309)](https://github.com/XanaduAI/MrMustard/pull/309)
 
 ### Documentation
 

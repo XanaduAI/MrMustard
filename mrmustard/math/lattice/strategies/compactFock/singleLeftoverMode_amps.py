@@ -315,7 +315,7 @@ def fock_representation_1leftoverMode_amps(A, B, G0, M, cutoffs):
         arr1010 = np.zeros((1, 1, 1, 1, 1), dtype=np.complex128)
         arr1001 = np.zeros((1, 1, 1, 1, 1), dtype=np.complex128)
     else:
-        arr1010 = np.ezerosmpty(
+        arr1010 = np.zeros(
             (cutoff_leftoverMode, cutoff_leftoverMode) + (M - 1, M - 2) + cutoffs_tail,
             dtype=np.complex128,
         )
