@@ -31,14 +31,4 @@ def first_available_pivot(index: int, strides: Sequence[int]) -> tuple[int, tupl
 def lower_neighbours(index: int, strides: Sequence[int], start: int) -> Iterator[tuple[int, tuple[int, ...]]]:
     for i in range(start, len(strides)):
         yield i, index - strides[i]
-
-# @njit 
-# def shape_to_strides(shape: Sequence[int]) -> Sequence[int]:
-#     r"""
-#     Calculates strides from shape.
-#     """
-#     strides = np.ones_like(shape)
-#     for i in range(1, len(shape)):
-#         strides[i-1] = np.prod(shape[i:])
-#     return strides
     
