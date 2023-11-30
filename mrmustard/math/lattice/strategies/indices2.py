@@ -17,70 +17,28 @@ from numba import njit
 
 import numpy as np
 
-# @njit
-# def pivot_and_neighbours(index: int, strides: Sequence[int]) -> Iterator[tuple[int, tuple[int, ...]]]:
-#     # yield the pivot
-#     for (i, b) in enumerate(strides):
-#         pivot = index - b
-#         if pivot >= 0:
-#             yield i, pivot
-#             break
-
-#     # yield the pivot's first neighbour
-#     if pivot - b >= 0:
-#         yield i, pivot - b
-
-#     # yield pivot's other neighbours
-#     for j, b in enumerate(strides[i+1:]):
-#         yield i + 1 + j, pivot - b
-
 @njit
-def first_available_pivot(index: int, strides: Sequence[int]):
+def first_available_pivot(index: int, strides: Sequence[int]) -> tuple[int, tuple[int, ...]]:
     r"""
     """
-    for (i, b) in enumerate(strides):
-        y = index - b
+    for i in range(len(strides)):
+        y = index - strides[i]
         if y >= 0:
             return (i, y)
     raise ValueError("Index is zero.")
     
 @njit
-def lower_neighbours(index: int, strides: Sequence[int]) -> Iterator[tuple[int, tuple[int, ...]]]:
-    for (i, b) in enumerate(strides):
-        y = index - b
-        if y >= 0:
-            yield i, y
+def lower_neighbours(index: int, strides: Sequence[int], start: int) -> Iterator[tuple[int, tuple[int, ...]]]:
+    for i in range(start, len(strides)):
+        yield i, index - strides[i]
 
-@njit
-def project(index: int, idx: int, strides: Sequence[int]) -> int:
-    for j, bj in enumerate(strides):
-        if idx == j:        
-            ret = 0
-            while index - bj >= 0:
-                ret += 1
-                index -= bj
-            return ret
-        
-        for _ in range(index):
-            if index - bj < 0:
-                break
-            index -= bj
-    raise ValueError("Cannot find element ``idx`` in FlatIndex.")
-
-@njit 
-def shape_to_strides(shape: Sequence[int]) -> Sequence[int]:
-    r"""
-    Calculates strides from shape.
-    """
-    strides = np.ones_like(shape)
-    for i in range(1, len(shape)):
-        strides[i-1] = np.prod(shape[i:])
-    return strides
-
-@njit 
-def shape_to_range(shape: Sequence[int]) -> int:
-    r"""
-    Calculates range from shape.
-    """
-    return np.prod(shape)
+# @njit 
+# def shape_to_strides(shape: Sequence[int]) -> Sequence[int]:
+#     r"""
+#     Calculates strides from shape.
+#     """
+#     strides = np.ones_like(shape)
+#     for i in range(1, len(shape)):
+#         strides[i-1] = np.prod(shape[i:])
+#     return strides
     

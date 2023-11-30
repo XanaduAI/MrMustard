@@ -18,7 +18,7 @@ from numba import njit, prange
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 # from .indices2 import lower_neighbours, project, shape_to_strides, shape_to_range
-from .indices2 import first_available_pivot, lower_neighbours, project, shape_to_strides, shape_to_range
+from .indices2 import first_available_pivot, lower_neighbours
 
 __all__ = ["vanilla", "vanilla_jacobian", "vanilla_vjp"]
 
@@ -38,27 +38,52 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
     np_shape = np.array(shape)
-    rng = shape_to_range(np_shape)
-    strides = shape_to_strides(np_shape)
+        
+    strides = np.ones_like(np_shape)
+    for i in range(1, len(np_shape)):
+        strides[i-1] = np.prod(np_shape[i:])
 
-    # init output tensor
-    ret = [0 + 0j] * np.prod(np_shape)
+    # init flat output tensor
+    ret = np.array([0 + 0j] * np.prod(np_shape))
+
+    # initialize indeces
+    # ``index`` is the index of the flattened output tensor, while
+    # ``index_u_iter`` iterates through the unravelled counterparts of
+    # ``index``.
+    index = 0
+    index_u_iter = np.ndindex(shape)
+    next(index_u_iter)
 
     # write vacuum amplitude
     ret[0] = c
 
     # iterate over the rest of the indices
-    for index in range(1, rng):
+    for index_u in index_u_iter:
+        # update index
+        index += 1
+
+        # calculate pivot's contribution
         i, pivot = first_available_pivot(index, strides)
         value_at_index = b[i] * ret[pivot]
 
-        for (j, n) in lower_neighbours(pivot, strides):
-            value_at_index += A[i, j] * np.sqrt(project(pivot, j, strides)) * ret[n]
-        ret[index] = value_at_index/np.sqrt(project(index, i, strides))
+        # add the contribution of pivot's lower's neighbours
+        ns = lower_neighbours(pivot, strides, i)
+        (j0, n0) = next(ns)
+        value_at_index += A[i, j0] * np.sqrt(index_u[j0] - 1) * ret[n0]
+        for (j, n) in ns:
+            value_at_index += A[i, j] * np.sqrt(index_u[j]) * ret[n]
+        ret[index] = value_at_index/np.sqrt(index_u[i])
 
-    # return ret.reshape(shape)
-    return np.array(ret).reshape(shape)
+    # # iterate over the rest of the indices
+    # for index in range(1, np.prod(np_shape)):
+    #     i, pivot = first_available_pivot(index, strides)
+    #     value_at_index = b[i] * ret[pivot]
 
+    #     for (j, n) in lower_neighbours(pivot, strides):
+    #         value_at_index += A[i, j] * np.sqrt(project(pivot, j, strides)) * ret[n]
+    #     ret[index] = value_at_index/np.sqrt(project(index, i, strides))
+
+    return ret.reshape(shape)
 
 
 @njit
