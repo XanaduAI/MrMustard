@@ -17,8 +17,7 @@ from numba import njit
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-
-SQRT = np.sqrt(np.arange(100000))
+from .flat_indices import first_available_pivot, lower_neighbours, shape_to_strides
 
 __all__ = ["vanilla", "vanilla_jacobian", "vanilla_vjp"]
 
@@ -37,19 +36,41 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    # init output tensor
-    G = np.zeros(shape, dtype=np.complex128)
+    # calculate the strides    
+    strides = shape_to_strides(np.array(shape))
 
-    # initialize path iterator
-    path = np.ndindex(shape)
+    # init flat output tensor
+    ret = np.array([0 + 0j] * np.prod(np.array(shape)))
+
+    # initialize the indeces.
+    # ``index`` is the index of the flattened output tensor, while
+    # ``index_u_iter`` iterates through the unravelled counterparts of
+    # ``index``.
+    index = 0
+    index_u_iter = np.ndindex(shape)
+    next(index_u_iter)
 
     # write vacuum amplitude
-    G[next(path)] = c
+    ret[0] = c
 
     # iterate over the rest of the indices
-    for index in path:
-        G[index] = steps.vanilla_step(G, A, b, index)
-    return G
+    for index_u in index_u_iter:
+        # update index
+        index += 1
+
+        # calculate pivot's contribution
+        i, pivot = first_available_pivot(index, strides)
+        value_at_index = b[i] * ret[pivot]
+
+        # add the contribution of pivot's lower's neighbours
+        ns = lower_neighbours(pivot, strides, i)
+        (j0, n0) = next(ns)
+        value_at_index += A[i, j0] * np.sqrt(index_u[j0] - 1) * ret[n0]
+        for (j, n) in ns:
+            value_at_index += A[i, j] * np.sqrt(index_u[j]) * ret[n]
+        ret[index] = value_at_index/np.sqrt(index_u[i])
+
+    return ret.reshape(shape)
 
 
 @njit

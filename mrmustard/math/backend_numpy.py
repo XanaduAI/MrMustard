@@ -30,7 +30,7 @@ from .autocast import Autocast
 from .backend_base import BackendBase
 from ..utils.settings import settings
 from .lattice.strategies import binomial
-from .lattice.strategies.vanilla3 import vanilla
+from .lattice.strategies.vanilla import vanilla
 from .lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_1leftoverMode,
     hermite_multidimensional_diagonal,
