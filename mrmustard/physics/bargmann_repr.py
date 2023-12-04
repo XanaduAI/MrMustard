@@ -18,16 +18,14 @@ from typing import Optional, Union
 from itertools import product
 import numpy as np
 
-from mrmustard import settings
-from mrmustard.physics.representations import Data, MatVecData
 from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc
-from mrmustard.math import Math
+from mrmustard.math import math
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Matrix, Scalar, Vector
 
-math = Math()
+class Representation: pass
 
 
-class BargmannExp(MatVecData):
+class Bargmann(Representation):
     r"""Sum of Exponentials of a quadratic polynomial for the Fock-Bargmann function.
 
     Quadratic polynomial is made of: quadratic coefficients, linear coefficients, constant.
@@ -45,25 +43,8 @@ class BargmannExp(MatVecData):
         c (Optional[Batch[complex]]):      batch of coefficients c_i (default: [1.0])
     """
 
-    def __init__(
-        self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Optional[Batch[Scalar]] = None
-    ) -> None:
-        super().__init__(mat=A, vec=b, coeffs=c)
-        self._contract_idxs = []
-
-    def __call__(self, z: ComplexVector) -> Scalar:
-        r"""Value of this Fock-Bargmann function at z.
-
-        Args:
-            z (ComplexVector): point at which the function is evaluated
-
-        Returns:
-            Scalar: value of the function
-        """
-        val = 0.0
-        for A, b, c in zip(self.A, self.b, self.c):
-            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * c
-        return val
+    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar], poly: Tensor):
+        self.ansatz = ABCAnsatz(A, b, c)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
