@@ -17,157 +17,181 @@ from __future__ import annotations
 import numpy as np
 
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any, Union, Optional
 
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard.math import math
 
 from mrmustard.utils.typing import Scalar, Batch, Matrix, Vector
 from mrmustard.utils import settings
 
 
-class Data(ABC):
-    r"""Abstract parent class for types of data encoding a quantum state's representation."""
+class Ansatz(ABC):
+    r"""Abstract parent class for the various structures that we use to define quantum objects.
+    It supports the basic mathematical operations (addition, subtraction, multiplication,
+    division, negation, equality, etc).
+
+    Effectively it can be thought of as a function over a continuous and/or discrete domain.
+    Note that n-dimensional arrays are like functions defined over an integer lattice of points,
+    so this class is also the parent of e.g. the Fock representation.
+    """
 
     @abstractmethod
-    def __neg__(self) -> Data:
+    def __neg__(self) -> Ansatz:
         ...
 
     @abstractmethod
-    def __eq__(self, other: Data) -> bool:
+    def __eq__(self, other: Ansatz) -> bool:
         ...
 
     @abstractmethod
-    def __add__(self, other: Data) -> Data:
+    def __add__(self, other: Ansatz) -> Ansatz:
         ...
 
-    def __sub__(self, other: Data) -> Data:
+    def __sub__(self, other: Ansatz) -> Ansatz:
         try:
             return self.__add__(-other)
         except AttributeError as e:
             raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
-    def __call__(self, dom: Any) -> Scalar:
-        r"""Evaluate the function at a point in the domain."""
+    def __call__(self, point: Any) -> Scalar:
+        r"""Evaluate the function at the given point in the domain."""
         ...
 
     @abstractmethod
-    def __truediv__(self, other: Union[Scalar, Data]) -> Data:
+    def __truediv__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
         ...
 
     @abstractmethod
-    def __mul__(self, other: Union[Scalar, Data]) -> Data:
+    def __mul__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
         ...
 
-    def __rmul__(self, other: Scalar) -> Data:
+    def __rmul__(self, other: Scalar) -> Ansatz:
         return self.__mul__(other=other)
 
+    @abstractmethod
+    def __matmul__(self, other: Ansatz) -> Ansatz:
+        ...
 
-class MatVecData(Data):  # Note: this class is abstract!
-    r"""Contains matrix and vector -like data for certain Representation objects.
+
+class MatVecScalar(Ansatz):
+    r"""The ansatz for certain continuous representations is parametrized by
+    a triple of a matrix, a vector and a scalar. For example, the Bargmann
+    representation c exp(z A z / 2 + b z) is of this form (where A,b,c form
+    the triple), or the Wigner representation (where Sigma,mu,1 form the triple).
+
+    Note that this class is not initializable (despite having an initializer)
+    because it doesn't implement all the abstract methods of Ansatz.
+    Specifically, it doesn't implement the __call__, __mul__ and  __matmul__
+    methods, which are representation-specific.
+
+    Its meaning is to group together functionalities that are common to all
+    (matrix, vector, scalar)-type representations and avoid code duplication.
 
     Args:
-        mat (Batch[Matrix]): the matrix-like data to be contained in the class
-        vec (Batch[Vector]):    the vector-like data to be contained in the class
-        coeffs (Batch[Scalar]): the coefficients
+        mat (Batch[Matrix]):    the matrix-like data
+        vec (Batch[Vector]):    the vector-like data
+        scalar (Batch[Scalar]): the scalar-like data
     """
 
-    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], coeffs: Batch[Scalar]) -> None:
-        if coeffs is None:  # default all 1s
-            coeffs = math.ones(len(vec), dtype=math.float64)
-
+    def __init__(
+        self, mat: Batch[Matrix], vec: Batch[Vector], scalar: Optional[Batch[Scalar]]
+    ) -> None:
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
-        self.coeffs = math.atleast_1d(math.astensor(coeffs))
-        assert (
-            len(self.mat) == len(self.vec) == len(self.coeffs)
-        ), "All inputs must have the same batch size."
-        assert (
-            self.mat.shape[-1] == self.mat.shape[-2] == self.vec.shape[-1]
-        ), "A and b must have the same dimension and A must be symmetric"
-        self.batch_dim = self.mat.shape[0]
-        self.dim = self.mat.shape[-1]
+        if scalar is None:  # default all 1s
+            scalar = math.ones(self.vec.shape[:-1], dtype=math.float64)
+        self.scalar = math.atleast_1d(math.astensor(scalar))
+        self.batch_size = self.mat.shape[0]
+        # self.dim = self.mat.shape[-1]
+        self._simplified = False
 
-    def __neg__(self) -> MatVecData:
-        return self.__class__(self.mat, self.vec, -self.coeffs)
+    def __neg__(self) -> MatVecScalar:
+        return self.__class__(self.mat, self.vec, -self.scalar)
 
-    def __eq__(self, other: MatVecData, exclude_scalars: bool = False) -> bool:
-        A, B = sorted([self, other], key=lambda x: x.batch_dim)  # A smaller or equal batch than B
-        # check scalars
-        Ac = np.around(A.coeffs, settings.EQUALITY_PRECISION_DECIMALS)
-        Bc = memoryview(np.around(B.coeffs, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
-        if exclude_scalars or all(memoryview(c).tobytes() in Bc for c in Ac):
-            # check vectors
-            Av = np.around(A.vec, settings.EQUALITY_PRECISION_DECIMALS)
-            Bv = memoryview(np.around(B.vec, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
-            if all(memoryview(v).tobytes() in Bv for v in Av):
-                # check matrices
-                Am = np.around(A.mat, settings.EQUALITY_PRECISION_DECIMALS)
-                Bm = memoryview(np.around(B.mat, settings.EQUALITY_PRECISION_DECIMALS)).tobytes()
-                if all(memoryview(m).tobytes() in Bm for m in Am):
-                    return True
-        return False
+    def __eq__(
+        self, other: MatVecScalar
+    ) -> bool:  # TODO: This method still needs to be rigorously tested and benchmarked
+        # simplify and order the batch dimension
+        if not self._simplified:
+            self.simplify()
+        if not other._simplified:
+            other.simplify()
+        # check for differences
+        return (
+            np.allclose(self.scalar, other.scalar)
+            and np.allclose(self.vec, other.vec)
+            and np.allclose(self.mat, other.mat)
+        )
 
-    def __add__(self, other: MatVecData) -> MatVecData:
-        if self.__eq__(other, exclude_scalars=True):
-            new_coeffs = self.coeffs + other.coeffs
-            return self.__class__(self.mat, self.vec, new_coeffs)
+    def _equal_no_scalar(self, other: MatVecScalar) -> bool:
+        # simplify and order the batch dimension
+        if not self._simplified:
+            self.simplify()
+        if not other._simplified:
+            other.simplify()
+        return np.allclose(self.vec, other.vec) and np.allclose(self.mat, other.mat)
+
+    def __add__(self, other: MatVecScalar) -> MatVecScalar:
+        if self._equal_no_scalar(other):
+            new_scalar = self.scalar + other.scalar
+            new_self = self.__class__(self.mat, self.vec, new_scalar)
+            new_self._simplified = True
+            return new_self
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
-        combined_coeffs = math.concat([self.coeffs, other.coeffs], axis=0)
-        return self.__class__(combined_matrices, combined_vectors, combined_coeffs)
+        combined_scalar = math.concat([self.scalar, other.scalar], axis=0)
+        # note output is not simplified
+        return self.__class__(combined_matrices, combined_vectors, combined_scalar)
 
-    def __truediv__(self, x: Scalar) -> MatVecData:
+    def __truediv__(self, x: Scalar) -> MatVecScalar:
         if not isinstance(x, (int, float, complex)):
             raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
-        new_coeffs = self.coeffs / x
-        return self.__class__(self.mat, self.vec, new_coeffs)
+        new_scalar = self.scalar / x
+        return self.__class__(self.mat, self.vec, new_scalar)
 
-    # # TODO: decide which simplify we want to keep
-    # def simplify(self, rtol:float=1e-6, atol:float=1e-6) -> MatVecData:
-    #     N = self.mat.shape[0]
-    #     mask = np.ones(N, dtype=np.int8)
+    def simplify(self) -> None:
+        r"""Simplifies the representation by combining together terms that are equal.
+        Two terms are considered equal if their matrix and vector parts are equal.
+        In which case only one is kept and the scalars are added."""
+        indices_to_check = set(range(self.batch_size))
+        removed = []
+        while indices_to_check:
+            i = indices_to_check.pop()
+            for j in indices_to_check.copy():
+                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
+                    self.scalar[i] += self.scalar[j]
+                    indices_to_check.remove(j)
+                    removed.append(j)
+        to_keep = [i for i in range(self.batch_size) if i not in removed]
+        self.mat = math.gather(self.mat, to_keep, axis=0)
+        self.vec = math.gather(self.vec, to_keep, axis=0)
+        self.scalar = math.gather(self.scalar, to_keep, axis=0)
+        self._simplified = True
 
-    #     for i in range(N):
+    def simplify_v2(self) -> None:
+        r"""A different implementation that orders the batch dimension first."""
+        self._order_batch()
+        to_keep = [d0 := 0]
+        mat,vec = self.mat[d0], self.vec[d0]
+        for d in range(1,self.batch_size):
+            if np.allclose(mat, self.mat[d]) and np.allclose(vec, self.vec[d]):
+                self.scalar[d0] += self.scalar[d]
+            else:
+                to_keep = [d0 := d]
+                mat,vec = self.mat[d0], self.vec[d0]
+        self.mat = math.gather(self.mat, to_keep, axis=0)
+        self.vec = math.gather(self.vec, to_keep, axis=0)
+        self.scalar = math.gather(self.scalar, to_keep, axis=0)
+        self._simplified = True
 
-    #         for j in range(i + 1, N):
-
-    #             if mask[i] == 0 or i == j:  # evaluated previously
-    #                 continue
-
-    #             if np.allclose(
-    #                 self.mat[i], self.mat[j], rtol=rtol, atol=atol, equal_nan=True
-    #             ) and np.allclose(
-    #                 self.vec[i], self.vec[j], rtol=rtol, atol=atol, equal_nan=True
-    #             ):
-    #                 self.coeffs[i] += self.coeffs[j]
-    #                 mask[j] = 0
-
-    #     return self.__class__(
-    #         mat = self.mat[mask == 1],
-    #         vec = self.vec[mask == 1],
-    #         coeffs = self.coeffs[mask == 1]
-    #         )
-
-    # # TODO: decide which simplify we want to keep
-    # def old_simplify(self) -> None:
-    #     indices_to_check = set(range(self.batch_size))
-    #     removed = set()
-
-    #     while indices_to_check:
-    #         i = indices_to_check.pop()
-
-    #         for j in indices_to_check.copy():
-    #             if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
-    #                 self.vec[i], self.vec[j]
-    #             ):
-    #                 self.coeffs[i] += self.coeffs[j]
-    #                 indices_to_check.remove(j)
-    #                 removed.add(j)
-
-    #     to_keep = [i for i in range(self.batch_size) if i not in removed]
-    #     self.mat = self.mat[to_keep]
-    #     self.vec = self.vec[to_keep]
-    #     self.coeffs = self.coeffs[to_keep]
+    def _order_batch(self):
+        flattened_tensors = []
+        for i in range(self.batch_size):
+            flattened_tensors.append(
+                math.concat([self.vec[i].flatten(), self.mat[i].flatten(), self.scalar[i]], axis=0)  # vec, mat, scalar ordering
+            )
+        sorted_indices = np.argsort(flattened_tensors, axis=0, kind="stable")
+        self.mat = math.gather(self.mat, sorted_indices, axis=0)
+        self.vec = math.gather(self.vec, sorted_indices, axis=0)
+        self.scalar = math.gather(self.scalar, sorted_indices, axis=0)
