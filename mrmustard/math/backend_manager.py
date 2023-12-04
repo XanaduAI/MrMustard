@@ -34,6 +34,7 @@ from ..utils.typing import (
     Tensor,
     Trainable,
     Vector,
+    Batch,
 )
 
 __all__ = [
@@ -83,16 +84,23 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     _backend = BackendNumpy()
 
     # the configured Euclidean optimizer.
-    _euclidean_opt: type = None
+    _euclidean_opt: Optional[type] = None
 
     # whether or not the backend can be changed
     _is_immutable = False
+
+    # backend types
+    int32: Any
+    float32: Any
+    float64: Any
+    complex64: Any
+    complex128: Any
 
     def __init__(self) -> None:
         # binding types and decorators of numpy backend
         self._bind()
 
-    def _apply(self, fn: str, args: Optional[Sequence[any]] = ()) -> any:
+    def _apply(self, fn: str, args: Optional[Sequence[Any]] = ()) -> Any:
         r"""
         Applies a function ``fn`` from the backend in use to the given ``args``.
         """
@@ -269,6 +277,34 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             The array with at least one dimension.
         """
         return self._apply("atleast_1d", (array, dtype))
+
+    def atleast_2d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least two dimensions.
+
+        Args:
+            array: The array to convert.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
+
+        Returns:
+            The array with at least two dimensions.
+        """
+        return self._apply("atleast_2d", (array, dtype))
+
+    def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
+        r"""Returns an array with at least three dimensions by eventually inserting
+        new axes at the beginning. Note this is not the usual way atleast_3d works
+        (usually it adds at the beginning and/or end).
+
+        Args:
+            array: The array to convert.
+            dtype: The data type of the array. If ``None``, the returned array
+                is of the same type as the given one.
+
+        Returns:
+            The array with at least three dimensions.
+        """
+        return self._apply("atleast_3d", (array, dtype))
 
     def boolean_mask(self, tensor: Tensor, mask: Tensor) -> Tensor:
         """
@@ -545,7 +581,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("from_backend", (value,))
 
-    def gather(self, array: Tensor, indices: Tensor, axis: Optional[int] = None) -> Tensor:
+    def gather(self, array: Tensor, indices: Batch[int], axis: Optional[int] = None) -> Tensor:
         r"""The values of the array at the given indices.
 
         Args:
