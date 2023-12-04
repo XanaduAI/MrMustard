@@ -19,7 +19,7 @@ from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
 from .flat_indices import first_available_pivot, lower_neighbours, shape_to_strides
 
-__all__ = ["vanilla", "vanilla_jacobian", "vanilla_vjp"]
+__all__ = ["vanilla", "vanilla_batch", "vanilla_jacobian", "vanilla_vjp"]
 
 
 @njit
@@ -71,6 +71,39 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         ret[index] = value_at_index/np.sqrt(index_u[i])
 
     return ret.reshape(shape)
+
+
+@njit
+def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
+    r"""Vanilla batched Fock-Bargmann strategy. Fills the tensor by iterating over all indices
+    in ndindex order.
+    Note that this function is different from vanilla with b is no longer a vector,
+    it becomes a bathced vector with the batch dimension on the last index.
+
+    Args:
+        shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the last term
+        A (np.ndarray): A matrix of the Fock-Bargmann representation
+        b (np.ndarray): batched B vector of the Fock-Bargmann representation, the batch dimension is on the last index
+        c (complex): vacuum amplitude
+
+    Returns:
+        np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
+    """
+
+    # init output tensor
+    G = np.zeros(shape, dtype=np.complex128)
+
+    # initialize path iterator
+    path = np.ndindex(shape[:-1])  # We know the last dimension is the batch one
+
+    # write vacuum amplitude
+    G[next(path)] = c
+
+    # iterate over the rest of the indices
+    for index in path:
+        G[index] = steps.vanilla_step_batch(G, A, b, index)
+
+    return G
 
 
 @njit

@@ -15,6 +15,7 @@
 """A module containing the settings.
 """
 
+from typing import Any
 import os
 from rich import print
 import rich.table
@@ -31,7 +32,7 @@ class ImmutableSetting:
         name (str): the name of this setting
     """
 
-    def __init__(self, value: any, name: str) -> None:
+    def __init__(self, value: Any, name: str) -> None:
         self._value = value
         self._name = name
         self._is_immutable = False

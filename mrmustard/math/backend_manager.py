@@ -565,6 +565,26 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             ),
         )
 
+    def hermite_renormalized_batch(
+        self, A: Tensor, B: Tensor, C: Tensor, shape: Tuple[int]
+    ) -> Tensor:
+        r"""Renormalized multidimensional Hermite polynomial given by the "exponential" Taylor
+        series of :math:`exp(C + Bx + 1/2*Ax^2)` at zero, where the series has :math:`sqrt(n!)`
+        at the denominator rather than :math:`n!`. It computes all the amplitudes within the
+        tensor of given shape in case of B is a batched vector with a batched diemnsion on the
+        last index.
+
+        Args:
+            A: The A matrix.
+            B: The batched B vector with its batch dimension on the last index.
+            C: The C scalar.
+            shape: The shape of the final tensor.
+
+        Returns:
+            The batched Hermite polynomial of given shape.
+        """
+        return self._apply("hermite_renormalized_batch", (A, B, C, shape))
+
     def hermite_renormalized_diagonal(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
     ) -> Tensor:
@@ -572,6 +592,14 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         Then, calculates the required renormalized multidimensional Hermite polynomial.
         """
         return self._apply("hermite_renormalized_diagonal", (A, B, C, cutoffs))
+
+    def hermite_renormalized_diagonal_batch(
+        self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]
+    ) -> Tensor:
+        r"""First, reorder A and B parameters of Bargmann representation to match conventions in mrmustard.math.compactFock~
+        Then, calculates the required renormalized multidimensional Hermite polynomial.
+        Same as hermite_renormalized_diagonal but works for a batch of different B's."""
+        return self._apply("hermite_renormalized_diagonal_batch", (A, B, C, cutoffs))
 
     def hermite_renormalized_1leftoverMode(
         self, A: Tensor, B: Tensor, C: Tensor, cutoffs: Tuple[int]

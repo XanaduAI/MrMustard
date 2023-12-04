@@ -19,7 +19,8 @@ import pytest
 import numpy as np
 
 from mrmustard.lab import Gaussian
-from mrmustard import settings
+from mrmustard import settings, math
+from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
@@ -63,3 +64,49 @@ def test_binomial_vs_binomialDict():
 
     for idx in D.keys():
         assert np.isclose(D[idx], G[idx])
+
+
+def test_vanillabatchNumba_vs_vanillaNumba():
+    """Test the batch version works versus the normal vanilla version."""
+    state = Gaussian(3)
+    A, B, C = wigner_to_bargmann_rho(
+        state.cov, state.means
+    )  # Create random state (M mode Gaussian state with displacement)
+
+    batch = 3
+    cutoffs = (20, 20, 20, 20, batch)
+
+    # Vanilla MM
+    G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs[:-1])
+
+    # replicate the B
+    B_batched = np.stack((B,) * batch, axis=1)
+
+    G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=cutoffs)
+
+    assert np.allclose(G_ref, G_batched[:, :, :, :, 0])
+    assert np.allclose(G_ref, G_batched[:, :, :, :, 1])
+    assert np.allclose(G_ref, G_batched[:, :, :, :, 2])
+
+
+def test_diagonalbatchNumba_vs_diagonalNumba():
+    """Test the batch version works versus the normal diagonal version."""
+    state = Gaussian(3)
+    A, B, C = wigner_to_bargmann_rho(
+        state.cov, state.means
+    )  # Create random state (M mode Gaussian state with displacement)
+
+    batch = 3
+    cutoffs = (18, 19, 20, batch)
+
+    # Diagonal MM
+    G_ref = math.hermite_renormalized_diagonal(A, B, C, cutoffs=cutoffs[:-1])
+
+    # replicate the B
+    B_batched = np.stack((B,) * batch, axis=1)
+
+    G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
+
+    assert np.allclose(G_ref, G_batched[:, :, :, 0])
+    assert np.allclose(G_ref, G_batched[:, :, :, 1])
+    assert np.allclose(G_ref, G_batched[:, :, :, 2])
