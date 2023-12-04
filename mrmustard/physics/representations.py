@@ -195,3 +195,26 @@ class MatVecScalar(Ansatz):
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.scalar = math.gather(self.scalar, sorted_indices, axis=0)
+
+
+
+class ABCExp(MatVecScalar):
+    r"""The ansatz F(z) = sum_i c_i exp(z^T A_i z / 2 + z^T b_i)"""
+
+    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar]) -> None:
+        super().__init__(mat=A, vec=b, coeffs=c)
+
+    def __call__(self, z: ComplexVector) -> Scalar:
+    r"""Value of this Fock-Bargmann function at z.
+
+    Args:
+        z (ComplexVector): point at which the function is evaluated
+
+    Returns:
+        Scalar: value of the function
+    """
+    val = 0.0
+    for A, b, c in zip(self.A, self.b, self.c):
+        val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * c
+    return val
+
