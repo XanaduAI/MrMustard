@@ -108,83 +108,9 @@ def wigner_to_bargmann_U(X, d):
     return A[2 * N :, 2 * N :], B[2 * N :], math.sqrt(C)
 
 
-def contract_Abc_base(
-    Abc: Tuple[ComplexMatrix, ComplexVector, complex], idx: Sequence[int]
-):
-    r"""Returns the contraction of an A matrix over a subset of indices.
-        The indices are assumed to be in the order i1,i2...j1,j2... where
-        the contraction pairs are (i1,j1), (i2,j2), etc...
-    Arguments:
-        Abc (tuple): the (A,b,c) triple
-        idx (tuple): the indices to contract over
-
-    Returns:
-        tuple: the contracted (A,b,c) triple
-    """
-    assert not len(idx) % 2
-    n = len(idx) // 2
-    A, b, c = Abc
-    not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
-
-    I = math.eye(n, dtype=A.dtype)
-    Z = math.zeros((n, n), dtype=A.dtype)
-    X = math.block([[Z, I], [I, Z]])
-
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) - X
-    D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
-    R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
-
-    bM = math.gather(b, idx, axis=-1)
-    bR = math.gather(b, not_idx, axis=-1)
-
-    A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-    b_post = bR - math.sum(bM * math.solve(M, bM))
-    c_post = (
-        c
-        * math.sqrt((-1) ** n / math.det(M))
-        * math.exp(
-            -0.5 * math.sum(bM * math.solve(M, bM))
-        )  # this is exp(-0.5 * bM.T @ M^-1 @ bM)
-    )
-
-    return A_post, b_post, c_post
-
-
-def join_Abc(Abc1, Abc2):
-    r"""Joins two (A,b,c) triples into a single (A,b,c) triple by block addition of the A matrices and
-    concatenating the b vectors.
-
-    Arguments:
-        Abc1 (tuple): the first (A,b,c) triple
-        Abc2 (tuple): the second (A,b,c) triple
-
-    Returns:
-        tuple: the joined (A,b,c) triple
-    """
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    A12 = math.block_diag(A1, A2)
-    b12 = math.concat([b1, b2], axis=-1)
-    c12 = c1 * c2
-    return A12, b12, c12
-
-
-def reorder_ab(A, b, order: Sequence[int]):
-    r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
-
-    Arguments:
-        A, b (tuple): the matrix and vector of the (A,b,c) triple
-        order (tuple): the new order of the indices
-
-    Returns:
-        tuple: the reordered (A,b,c) triple
-    """
-    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
-    b = math.gather(b, order, axis=-1)
-    return A, b
-
-
-def complex_gaussian_integral(Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1):
+def complex_gaussian_integral(
+    Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1
+):  # TODO: fix factors of pi and stuff
     r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
     The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
 
@@ -193,7 +119,7 @@ def complex_gaussian_integral(Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tup
     where
 
     F(z) = exp(-0.5 z^T A z + b^T z)
-    
+
     Here z is an `n`-dim complex vector, A is an `n x n` complex matrix,
     b is an `n`-dim complex vector, c is a complex scalar, and dmu(z) is a non-holomorphic
     complex measure over a subset of m pairs of z,z* variables. These are specified
@@ -205,7 +131,7 @@ def complex_gaussian_integral(Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tup
 
     Arguments:
         A,b,c (tuple): the (A,b,c) triple
-        idx_z (tuple(int,...)): the tuple of indices of the z variables 
+        idx_z (tuple(int,...)): the tuple of indices of the z variables
         idx_zconj (tuple(int,...)): the tuple of indices of the z* variables
         measure (float): the exponent of the measure (default is -1: Bargmann measure)
 
@@ -215,7 +141,7 @@ def complex_gaussian_integral(Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tup
     assert len(idx_z) == len(idx_zconj)
     n = len(idx_z)
     idx = tuple(idx_z) + tuple(idx_zconj)
-    A,b,c = Abc
+    A, b, c = Abc
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
     I = math.eye(n, dtype=A.dtype)
@@ -239,7 +165,9 @@ def complex_gaussian_integral(Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tup
     return A_post, b_post, c_post
 
 
-def real_gaussian_integral(Abc: tuple, idx: tuple[int, ...], measure: float = 0):
+def real_gaussian_integral(
+    Abc: tuple, idx: tuple[int, ...], measure: float = 0
+):  # TODO: fix factors of pi and stuff
     r"""Computes the Gaussian integral of the exponential of a real quadratic form.
     The integral is defined as (note that in general we integrate over a subset of m dimensions):
 
@@ -248,7 +176,7 @@ def real_gaussian_integral(Abc: tuple, idx: tuple[int, ...], measure: float = 0)
     where
 
     F(x) = exp(-0.5 x^T A x + b^T x)
-    
+
     Here z is an `n`-dim real vector, A is an `n x n` real matrix,
     b is an `n`-dim real vector, c is a real scalar, and dmu(x) is a real measure over a
     subset of m variables. These are specified by idx.
@@ -258,17 +186,20 @@ def real_gaussian_integral(Abc: tuple, idx: tuple[int, ...], measure: float = 0)
 
     Arguments:
         A,b,c (tuple): the (A,b,c) triple
-        idx (tuple(int,...)): the tuple of indices of the integration variables 
+        idx (tuple(int,...)): the tuple of indices of the integration variables
         measure (float): the exponent of the measure (default is 0: Lebesgue measure)
 
     Returns:
         tuple: the (A,b,c) triple of the result of the integral
     """
     m = len(idx)
-    A,b,c = Abc
+    A, b, c = Abc
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + np.eye(m, dtype=A.dtype) * measure
+    M = (
+        math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
+        + np.eye(m, dtype=A.dtype) * measure
+    )
     D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
 
@@ -282,5 +213,62 @@ def real_gaussian_integral(Abc: tuple, idx: tuple[int, ...], measure: float = 0)
         * math.sqrt((-1) ** m / math.det(M))
         * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
-
     return A_post, b_post, c_post
+
+
+def join_Abc(Abc1, Abc2):
+    r"""Joins two (A,b,c) triples into a single (A,b,c) triple by block addition of the A matrices and
+    concatenating the b vectors.
+
+    Arguments:
+        Abc1 (tuple): the first (A,b,c) triple
+        Abc2 (tuple): the second (A,b,c) triple
+
+    Returns:
+        tuple: the joined (A,b,c) triple
+    """
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    A12 = math.block_diag(A1, A2)
+    b12 = math.concat([b1, b2], axis=-1)
+    c12 = c1 * c2
+    return A12, b12, c12
+
+
+def reorder_abc(Abc: tuple, order: Sequence[int]):
+    r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
+
+    Arguments:
+        Abc (tuple): the (A,b,c) triple
+        order (tuple): the new order of the indices
+
+    Returns:
+        tuple: the reordered (A,b,c) triple
+    """
+    A, b, c = Abc
+    A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
+    b = math.gather(b, order, axis=-1)
+    if len(c.shape) == len(order):
+        c = math.transpose(c, order)
+    return A, b, c
+
+
+def contract_two_Abc(
+    Abc1: Tuple[ComplexMatrix, ComplexVector, complex],
+    Abc2: Tuple[ComplexMatrix, ComplexVector, complex],
+    idx1: Sequence[int],
+    idx2: Sequence[int],
+):
+    r"""Returns the contraction of two (A,b,c) triples.
+
+    Arguments:
+        Abc1 (tuple): the first (A,b,c) triple
+        Abc2 (tuple): the second (A,b,c) triple
+        idx1 (tuple): the indices of the first (A,b,c) triple to contract
+        idx2 (tuple): the indices of the second (A,b,c) triple to contract
+
+    Returns:
+        tuple: the contracted (A,b,c) triple
+    """
+    Abc = join_Abc(Abc1, Abc2)
+    return complex_gaussian_integral(Abc, idx1, idx2)
