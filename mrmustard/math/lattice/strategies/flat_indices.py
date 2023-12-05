@@ -25,11 +25,6 @@ from numba import njit
 
 import numpy as np
 
-from typing import Iterator, Sequence
-from numba import njit
-
-import numpy as np
-
 
 @njit
 def first_available_pivot(
