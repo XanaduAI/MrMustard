@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from mrmustard.math import math
+from mrmustard import math
 from mrmustard.physics import bargmann
 from mrmustard.physics.representations import PolyExpAnsatz
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector

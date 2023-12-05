@@ -20,7 +20,7 @@ from typing import Any, Union
 
 import numpy as np
 
-from mrmustard.math import math
+from mrmustard import math
 from mrmustard.utils.typing import Batch, Matrix, Scalar, Tensor, Vector
 
 
