@@ -21,7 +21,6 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import hashlib
 
 from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     grad_hermite_multidimensional_1leftoverMode,
@@ -30,10 +29,11 @@ from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
+
 from ..utils.settings import settings
 from ..utils.typing import Tensor, Trainable
-from .backend_base import BackendBase
 from .autocast import Autocast
+from .backend_base import BackendBase
 from .lattice import strategies
 
 
@@ -192,10 +192,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def gather(self, array: tf.Tensor, indices: tf.Tensor, axis: int) -> tf.Tensor:
         return tf.gather(array, indices, axis=axis)
 
-    def hash_tensor(self, tensor: tf.Tensor) -> int:
-        REF = self.asnumpy(tensor).tobytes()
-        return hashlib.sha256(REF).hexdigest()
-
     def imag(self, array: tf.Tensor) -> tf.Tensor:
         return tf.math.imag(array)
 
@@ -337,16 +333,6 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     @Autocast()
     def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
         return tf.tensor_scatter_nd_add(tensor, indices, values)
-
-    def unique_tensors(self, lst: List[Tensor]) -> List[Tensor]:
-        hash_dict = {}
-        for i, tensor in enumerate(lst):
-            try:
-                if (hash := self.hash_tensor(tensor)) not in hash_dict:
-                    hash_dict[hash] = (i, tensor)
-            except TypeError:
-                continue
-        yield from hash_dict.values()
 
     def zeros(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
         dtype = dtype or tf.float64
