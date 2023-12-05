@@ -14,23 +14,48 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
-from itertools import product
-import numpy as np
-
-from mrmustard.physics.bargmann import contract_two_Abc, reorder_abc
 from mrmustard.math import math
-from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexVector, Matrix, Scalar, Vector
+from mrmustard.physics.bargmann import contract_two_Abc, reorder_ab
+from mrmustard.physics.representations import PolyExpAnsatz
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 
-class Representation: pass
+
+class Representation:
+    def from_ansatz(self, ansatz: PolyExpAnsatz) -> Representation:
+        raise NotImplementedError
+
+    def __add__(self, other):
+        return self.from_ansatz(self.ansatz + other.ansatz)
+
+    def __sub__(self, other):
+        return self.from_ansatz(self.ansatz - other.ansatz)
+
+    def __mul__(self, other):
+        try:
+            return self.from_ansatz(self.ansatz * other.ansatz)
+        except AttributeError:
+            return self.from_ansatz(self.ansatz * other)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        try:
+            return self.from_ansatz(self.ansatz / other.ansatz)
+        except AttributeError:
+            return self.from_ansatz(self.ansatz / other)
+
+    def __rtruediv__(self, other):
+        return self.from_ansatz(other / self.ansatz)
 
 
 class Bargmann(Representation):
-    r"""Sum of Exponentials of a quadratic polynomial for the Fock-Bargmann function.
-
-    Quadratic polynomial is made of: quadratic coefficients, linear coefficients, constant.
-    Each of these has a batch dimension, and the batch dimension is the same for all of them.
-    They are the parameters of the function `sum_i c_i * exp(x^T A_i x / 2 + x^T b_i)`.
+    r"""Fock-Bargmann representation of a broad class of quantum states,
+    transformations, measurements, channels, etc.
+    The ansatz available in this representation is a linear combination of
+    exponentials of bilinear forms with a polynomial part:
+    .. math::
+        F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)
 
     This function allows for vector space operations on BargmannExp objects including linear combinations,
     outer product, and inner product. The inner product is defined as the contraction of two
@@ -40,49 +65,54 @@ class Bargmann(Representation):
     Args:
         A (Batch[ComplexMatrix]):          batch of quadratic coefficient A_i
         b (Batch[ComplexVector]):          batch of linear coefficients b_i
-        c (Optional[Batch[complex]]):      batch of coefficients c_i (default: [1.0])
+        c (Optional[Batch[ComplexTensor]]):      batch of arrays c_i (default: [1.0])
     """
 
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar], poly: Tensor):
-        self.ansatz = ABCAnsatz(A, b, c)
+    def __init__(
+        self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Batch[ComplexTensor]
+    ):
+        self.ansatz = PolyExpAnsatz(A, b, c)
+
+    def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
+        r"""Returns a Bargmann object from an ansatz object."""
+        return self.__class__(ansatz.A, ansatz.b, ansatz.c)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
-        return self.mat
+        return self.ansatz.A
 
     @property
     def b(self) -> Batch[ComplexVector]:
-        return self.vec
+        return self.anstaz.b
 
     @property
-    def c(self) -> Batch[Scalar]:
-        return self.coeffs
-
-    def __mul__(self, other: Union[Scalar, BargmannExp]) -> BargmannExp:
-        if isinstance(other, BargmannExp):
-            new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
-            new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
-            new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
-            return self.__class__(A=new_a, b=new_b, c=new_c)
-        else:
-            try:  # scalar
-                return self.__class__(self.A, self.b, other * self.c)
-            except Exception as e:  # Neither same object type nor a scalar case
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
-
-    def __and__(self, other: BargmannExp) -> BargmannExp:
-        As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
-        bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
-        cs = [c1 * c2 for c1 in self.c for c2 in other.c]
-        return self.__class__(As, bs, cs)
+    def c(self) -> Batch[ComplexTensor]:
+        return self.anstaz.c
 
     def conj(self):
-        new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        new = self.__class__(
+            math.conj(self.A), math.conj(self.b), math.conj(self.c), math.conj(self.c)
+        )
         new._contract_idxs = self._contract_idxs
         return new
 
-    def __matmul__(self, other: BargmannExp) -> BargmannExp:
-        r"""Implements the contraction of (A,b,c) triples across the marked indices."""
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
+            if i >= self.ansatz.dim:
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                )
+        new = self.__class__(self.A, self.b, self.c, self.c)
+        new._contract_idxs = idx
+        return new
+
+    def __matmul__(self, other: Bargmann) -> Bargmann:
+        r"""Implements the inner product of ansatzs across the marked indices."""
+        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
+            raise NotImplementedError(
+                "Inner product of ansatzs is only supported for ansatzs with polynomial of degree 0."
+            )
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
@@ -92,37 +122,15 @@ class Bargmann(Representation):
                         (A2, b2, c2),
                         self._contract_idxs,
                         other._contract_idxs,
+                        measure=1.0,  # this is for the inner product in Fock-Bargmann representation
                     )
                 )
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
-    def __getitem__(self, idx: int | tuple[int, ...]) -> BargmannExp:
-        idx = (idx,) if isinstance(idx, int) else idx
-        for i in idx:
-            if i > self.dim:
-                raise IndexError(
-                    f"Index {i} out of bounds for {self.__class__.__qualname__} of dimension {self.dim}."
-                )
-        new = self.__class__(self.A, self.b, self.c)
-        new._contract_idxs = idx
-        return new
-
-    def reorder(self, order: tuple[int, ...] | list[int]) -> BargmannExp:
-        A, b, c = reorder_abc((self.A, self.b, self.c), order)
-        new = self.__class__(A, b, c)
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
+        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
+        A, b = reorder_ab((self.A, self.b), order)
+        new = self.__class__(A, b, math.transpose(self.c, order))
         new._contract_idxs = self._contract_idxs
         return new
-
-    def simplify(self) -> None:
-        r"""use math.unique_tensors to remove duplicates of a tensor in the A stack, b stack, and c stack"""
-        # indices unique tensors of A,b,c stacks
-        unique_A = (i for i, _ in math.unique_tensors(self.A))
-        unique_b = (i for i, _ in math.unique_tensors(self.b))
-        unique_c = (i for i, _ in math.unique_tensors(self.c))
-        # unique triples of A,b,c
-        uniques = [i for i in unique_A if i in unique_b and i in unique_c]
-        # gather unique triples
-        self.mat = math.gather(self.A, uniques, axis=0)
-        self.vec = math.gather(self.b, uniques, axis=0)
-        self.coeff = math.gather(self.c, uniques, axis=0)
