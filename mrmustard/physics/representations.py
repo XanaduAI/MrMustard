@@ -14,271 +14,150 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from itertools import product
-from typing import Any, Union
-
-import numpy as np
-
 from mrmustard import math
-from mrmustard.utils.typing import Batch, Matrix, Scalar, Tensor, Vector
+from mrmustard.physics import bargmann
+from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
+from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 
 
-class Ansatz(ABC):
-    r"""Abstract parent class for Ansatze that we use to define quantum objects.
-    It supports all the mathematical operations (addition, subtraction, multiplication,
-    division, negation, equality, etc).
+class Representation:
+    def from_ansatz(self, ansatz: Ansatz) -> Ansatz:
+        raise NotImplementedError
 
-    Effectively it can be thought of as a function over a continuous and/or discrete domain.
-    Note that n-dimensional arrays are like functions defined over an integer lattice of points,
-    so this class is also the parent of e.g. the Fock representation.
-    """
+    def __add__(self, other):
+        return self.from_ansatz(self.ansatz + other.ansatz)
 
-    @abstractmethod
-    def __neg__(self) -> Ansatz:
-        ...
+    def __sub__(self, other):
+        return self.from_ansatz(self.ansatz - other.ansatz)
 
-    @abstractmethod
-    def __eq__(self, other: Ansatz) -> bool:
-        ...
-
-    @abstractmethod
-    def __add__(self, other: Ansatz) -> Ansatz:
-        ...
-
-    def __sub__(self, other: Ansatz) -> Ansatz:
+    def __mul__(self, other):
         try:
-            return self.__add__(-other)
-        except AttributeError as e:
-            raise TypeError(
-                f"Cannot subtract {self.__class__} and {other.__class__}."
-            ) from e
+            return self.from_ansatz(self.ansatz * other.ansatz)
+        except AttributeError:
+            return self.from_ansatz(self.ansatz * other)
 
-    @abstractmethod
-    def __call__(self, point: Any) -> Scalar:
-        r"""Evaluate the function at the given point in the domain."""
-        ...
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
-    @abstractmethod
-    def __truediv__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
-        ...
+    def __truediv__(self, other):
+        try:
+            return self.from_ansatz(self.ansatz / other.ansatz)
+        except AttributeError:
+            return self.from_ansatz(self.ansatz / other)
 
-    @abstractmethod
-    def __mul__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
-        ...
-
-    def __rmul__(self, other: Scalar) -> Ansatz:
-        return self.__mul__(other=other)
+    def __rtruediv__(self, other):
+        return self.from_ansatz(other / self.ansatz)
 
 
-class PolyExpBase(Ansatz):
-    r"""A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
-    For example, the Bargmann representation c exp(z A z / 2 + b z) is of this form
-    (where A,b,c is the triple), or the Wigner representation (where Sigma,mu,1 is the triple).
+class Bargmann(Representation):
+    r"""Fock-Bargmann representation of a broad class of quantum states,
+    transformations, measurements, channels, etc.
+    The ansatz available in this representation is a linear combination of
+    exponentials of bilinear forms with a polynomial part:
+    .. math::
+        F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)
 
-    Note that this class is not initializable (despite having an initializer)
-    because it doesn't implement all the abstract methods of Ansatz, and it is in
-    fact more general.
-    Concrete ansatze that inherit from this class will have to implement __call__,
-    __mul__ and  __matmul__, which are representation-specific.
-
-    Note that the arguments are expected to be batched, i.e. to have a batch dimension
-    or to be an iterable. This is because this class also provides the linear superposition
-    functionality by implementing the __add__ method, which concatenates the batch dimensions.
-
-    As this can blow up the number of terms in the representation, it is recommended to
-    run the `simplify()` method after adding terms together, which will combine together
-    terms that have the same exponential part.
+    This function allows for vector space operations on Bargmann objects including linear combinations,
+    outer product, and inner product. The inner product is defined as the contraction of two
+    Bargmann objects across marked indices. This can also be used to contract existing indices
+    in one Bargmann object, e.g. to implement the partial trace.
 
     Args:
-        mat (Batch[Matrix]):    the matrix-like data
-        vec (Batch[Vector]):    the vector-like data
-        array (Batch[Tensor]):  the array-like data
+        A (Batch[ComplexMatrix]): batch of quadratic coefficient A_i
+        b (Batch[ComplexVector]): batch of linear coefficients b_i
+        c (Batch[ComplexTensor]): batch of arrays c_i (default: [1.0])
     """
 
-    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
-        self.mat = math.atleast_3d(math.astensor(mat))
-        self.vec = math.atleast_2d(math.astensor(vec))
-        self.array = math.atleast_1d(math.astensor(array))
-        self.batch_size = self.mat.shape[0]
-        self.dim = self.mat.shape[-1]
-        self._simplified = False
+    def __init__(
+        self,
+        A: Batch[ComplexMatrix],
+        b: Batch[ComplexVector],
+        c: Batch[ComplexTensor] = [1.0],
+    ):
+        self.ansatz = PolyExpAnsatz(A, b, c)
 
-    def __neg__(self) -> PolyExpBase:
-        return self.__class__(self.mat, self.vec, -self.array)
-
-    def __eq__(self, other: PolyExpBase) -> bool:
-        return self._equal_no_array(self, other) and np.allclose(
-            self.array, other.array
-        )
-
-    def _equal_no_array(self, other: PolyExpBase) -> bool:
-        self.simplify()
-        other.simplify()
-        return np.allclose(self.vec, other.vec) and np.allclose(self.mat, other.mat)
-
-    def __add__(self, other: PolyExpBase) -> PolyExpBase:
-        combined_matrices = math.concat([self.mat, other.mat], axis=0)
-        combined_vectors = math.concat([self.vec, other.vec], axis=0)
-        combined_arrays = math.concat([self.array, other.array], axis=0)
-        # note output is not simplified
-        return self.__class__(combined_matrices, combined_vectors, combined_arrays)
-
-    def __truediv__(self, x: Scalar) -> PolyExpBase:
-        if not isinstance(x, (int, float, complex)):
-            raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
-        new_array = self.array / x
-        return self.__class__(self.mat, self.vec, new_array)
-
-    def simplify(self) -> None:
-        r"""Simplifies the representation by combining together terms that have the same
-        exponential part, i.e. two terms along the batch are considered equal if their
-        matrix and vector are equal. In this case only one is kept and the arrays are added.
-
-        Does not run if the representation has already been simplified, so it's safe to call.
-        """
-        if self._simplified:
-            return
-        indices_to_check = set(range(self.batch_size))
-        removed = []
-        while indices_to_check:
-            i = indices_to_check.pop()
-            for j in indices_to_check.copy():
-                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
-                    self.vec[i], self.vec[j]
-                ):
-                    self.array[i] += self.array[j]
-                    indices_to_check.remove(j)
-                    removed.append(j)
-        to_keep = [i for i in range(self.batch_size) if i not in removed]
-        self.mat = math.gather(self.mat, to_keep, axis=0)
-        self.vec = math.gather(self.vec, to_keep, axis=0)
-        self.array = math.gather(self.array, to_keep, axis=0)
-        self._simplified = True
-
-    def simplify_v2(self) -> None:
-        r"""A different implementation that orders the batch dimension first."""
-        if self._simplified:
-            return
-        self._order_batch()
-        to_keep = [d0 := 0]
-        mat, vec = self.mat[d0], self.vec[d0]
-        for d in range(1, self.batch_size):
-            if np.allclose(mat, self.mat[d]) and np.allclose(vec, self.vec[d]):
-                self.array[d0] += self.array[d]
-            else:
-                to_keep = [d0 := d]
-                mat, vec = self.mat[d0], self.vec[d0]
-        self.mat = math.gather(self.mat, to_keep, axis=0)
-        self.vec = math.gather(self.vec, to_keep, axis=0)
-        self.array = math.gather(self.array, to_keep, axis=0)
-        self._simplified = True
-
-    def _order_batch(self):
-        flattened_tensors = []
-        for i in range(self.batch_size):
-            flattened_tensors.append(
-                math.concat(
-                    [self.vec[i].flatten(), self.mat[i].flatten(), self.array[i]],
-                    axis=0,
-                )  # check in vec, mat, array order
-            )
-        sorted_indices = np.argsort(flattened_tensors, axis=0, kind="stable")
-        self.mat = math.gather(self.mat, sorted_indices, axis=0)
-        self.vec = math.gather(self.vec, sorted_indices, axis=0)
-        self.array = math.gather(self.array, sorted_indices, axis=0)
-
-
-class PolyExpAnsatz(PolyExpBase):
-    """
-    Represents the ansatz function:
-
-        F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i),
-
-    where each poly_i is a polynomial in z that can be expressed as:
-
-        poly_i(z) = sum_k c^(i)_k z^k,
-
-    with k being a multi-index. The batch of arrays c^(i) are not just array values but can be polynomials
-    of varying order, defined by the terms arr_k z^k for each i. The matrices A_i and vectors b_i
-    are parameters of the exponential terms in the ansatz, and z is a vector of variables.
-
-    Attributes:
-        A (Batch[Matrix]): The list of square matrices A_i
-        b (Batch[Vector]): The list of vectors b_i
-        c (Batch[Tensor]): The array of coefficients for the polynomial terms in the ansatz.
-
-    Example:
-        >>> A = [np.array([[1.0, 0.0], [0.0, 1.0]])]
-        >>> b = [np.array([1.0, 1.0])]
-        >>> c = [np.array(1.0)]
-        >>> F = PolyExpAnsatz(A, b, c)
-        >>> z = np.array([1.0, 2.0])
-        >>> print(F(z))  # prints the value of F at z
-    """
-
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Tensor]):
-        super().__init__(mat=A, vec=b, array=c)
+    def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
+        r"""Returns a Bargmann object from an ansatz object."""
+        return self.__class__(ansatz.A, ansatz.b, ansatz.c)
 
     @property
-    def degree(self) -> int:
-        return self.array.shape[-1] - 1
+    def A(self) -> Batch[ComplexMatrix]:
+        return self.ansatz.A
 
-    def __call__(self, z: Vector) -> Scalar:
-        r"""Value of this ansatz at z.
+    @property
+    def b(self) -> Batch[ComplexVector]:
+        return self.anstaz.b
+
+    @property
+    def c(self) -> Batch[ComplexTensor]:
+        return self.anstaz.c
+
+    def conj(self):
+        new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
+        new._contract_idxs = self._contract_idxs
+        return new
+
+    def __getitem__(self, idx: int | tuple[int, ...]) -> Bargmann:
+        idx = (idx,) if isinstance(idx, int) else idx
+        for i in idx:
+            if i >= self.ansatz.dim:
+                raise IndexError(
+                    f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
+                )
+        new = self.__class__(self.A, self.b, self.c)
+        new._contract_idxs = idx
+        return new
+
+    def __matmul__(self, other: Bargmann) -> Bargmann:
+        r"""Implements the inner product of ansatzs across the marked indices."""
+        if self.ansatz.degree > 0 or other.ansatz.degree > 0:
+            raise NotImplementedError(
+                "Inner product of ansatzs is only supported for ansatzs with polynomial of degree 0."
+            )
+        Abc = []
+        for A1, b1, c1 in zip(self.A, self.b, self.c):
+            for A2, b2, c2 in zip(other.A, other.b, other.c):
+                Abc.append(
+                    bargmann.contract_two_Abc(
+                        (A1, b1, c1),
+                        (A2, b2, c2),
+                        self._contract_idxs,
+                        other._contract_idxs,
+                        measure=1.0,  # this is for the inner product in Fock-Bargmann representation
+                    )
+                )
+        A, b, c = zip(*Abc)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
+        r"""Implements the partial trace over the given index pairs.
 
         Args:
-            z (ComplexVector): point at which the function is evaluated
+            idx_z (tuple[int, ...]): indices to trace over
+            idx_zconj (tuple[int, ...]): indices to trace over
 
         Returns:
-            Scalar: value of the function
+            Bargmann: the ansatz with the given indices traced over
         """
-        val = 0.0
-        for A, b, c in zip(self.A, self.b, self.c):
-            val += math.exp(
-                0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)
-            ) * math.polyval(z, c)  # TODO: implement math.polyval
-        return val
+        if self.ansatz.degree > 0:
+            raise NotImplementedError(
+                "Partial trace is only supported for ansatzs with polynomial of degree 0."
+            )
+        if len(idx_z) != len(idx_zconj):
+            raise ValueError(
+                "The number of indices to trace over must be the same for z and z*."
+            )
+        A, b, c = [], [], []
+        for Ai, bi, ci in zip(self.A, self.b, self.c):
+            Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
+            A.append(Aij)
+            b.append(bij)
+            c.append(cij)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
-    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        """Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
-
-        Args:
-            other (Union[Scalar, PolyExpAnsatz]): A scalar or another ansatz.
-
-        Raises:
-            TypeError: If other is neither a scalar nor an ansatz.
-
-        Returns:
-            PolyExpAnsatz: The product of this ansatz and other.
-        """
-        if isinstance(other, PolyExpAnsatz):
-            new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
-            new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
-            new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
-            return self.__class__(A=new_a, b=new_b, c=new_c)
-        else:
-            try:
-                return self.__class__(self.A, self.b, other * self.c)
-            except Exception as e:
-                raise TypeError(
-                    f"Cannot multiply {self.__class__} and {other.__class__}."
-                ) from e
-
-    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        """Tensor product of this ansatz with another ansatz.
-        Equivalent to F(a) * G(b) (with different arguments, that is).
-        As it distributes over addition on both self and other,
-        the batch size of the result is the product of the batch
-        size of self and other.
-
-        Args:
-            other (PolyExpAnsatz): Another ansatz.
-
-        Returns:
-            PolyExpAnsatz: The tensor product of this ansatz and other.
-        """
-        As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
-        bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
-        cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
-        return self.__class__(As, bs, cs)
+    def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
+        r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
+        A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
+        new = self.__class__(A, b, c)
+        new._contract_idxs = self._contract_idxs
+        return new

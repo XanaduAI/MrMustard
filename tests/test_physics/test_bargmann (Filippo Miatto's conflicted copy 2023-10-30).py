@@ -10,7 +10,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
 )
-from mrmustard.physics.bargmann_repr import Bargmann
+from mrmustard.physics.representations import Bargmann
 
 
 def test_wigner_to_bargmann_psi():
