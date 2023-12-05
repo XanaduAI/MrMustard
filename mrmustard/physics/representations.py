@@ -14,15 +14,14 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from itertools import product
+from typing import Any, Union
+
 import numpy as np
 
-from abc import ABC, abstractmethod
-from typing import Any, Union, Optional
-
 from mrmustard.math import math
-
-from mrmustard.utils.typing import Scalar, Batch, Matrix, Vector
-from mrmustard.utils import settings
+from mrmustard.utils.typing import Batch, Matrix, Scalar, Tensor, Vector
 
 
 class Ansatz(ABC):
@@ -74,11 +73,11 @@ class Ansatz(ABC):
         ...
 
 
-class MatVecScalar(Ansatz):
+class MatVecArray(Ansatz):
     r"""The ansatz for certain continuous representations is parametrized by
-    a triple of a matrix, a vector and a scalar. For example, the Bargmann
-    representation c exp(z A z / 2 + b z) is of this form (where A,b,c form
-    the triple), or the Wigner representation (where Sigma,mu,1 form the triple).
+    a triple of a matrix, a vector and a polynomial (array of coefficients).
+    For example, the Bargmann representation c exp(z A z / 2 + b z) is of this form
+    (where A,b,c form the triple), or the Wigner representation (where Sigma,mu,1 form the triple).
 
     Note that this class is not initializable (despite having an initializer)
     because it doesn't implement all the abstract methods of Ansatz.
@@ -86,135 +85,170 @@ class MatVecScalar(Ansatz):
     methods, which are representation-specific.
 
     Its meaning is to group together functionalities that are common to all
-    (matrix, vector, scalar)-type representations and avoid code duplication.
+    (matrix, vector, array)-type representations and avoid code duplication.
 
     Args:
         mat (Batch[Matrix]):    the matrix-like data
         vec (Batch[Vector]):    the vector-like data
-        scalar (Batch[Scalar]): the scalar-like data
+        array (Batch[Tensor]):  the array-like data
     """
 
-    def __init__(
-        self, mat: Batch[Matrix], vec: Batch[Vector], scalar: Optional[Batch[Scalar]]
-    ) -> None:
+    def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
         self.mat = math.atleast_3d(math.astensor(mat))
         self.vec = math.atleast_2d(math.astensor(vec))
-        if scalar is None:  # default all 1s
-            scalar = math.ones(self.vec.shape[:-1], dtype=math.float64)
-        self.scalar = math.atleast_1d(math.astensor(scalar))
+        self.array = math.atleast_1d(math.astensor(array))
         self.batch_size = self.mat.shape[0]
-        # self.dim = self.mat.shape[-1]
+        self.dim = self.mat.shape[-1]
         self._simplified = False
 
-    def __neg__(self) -> MatVecScalar:
-        return self.__class__(self.mat, self.vec, -self.scalar)
+    def __neg__(self) -> MatVecArray:
+        return self.__class__(self.mat, self.vec, -self.array)
 
-    def __eq__(
-        self, other: MatVecScalar
-    ) -> bool:  # TODO: This method still needs to be rigorously tested and benchmarked
-        # simplify and order the batch dimension
-        if not self._simplified:
-            self.simplify()
-        if not other._simplified:
-            other.simplify()
-        # check for differences
-        return (
-            np.allclose(self.scalar, other.scalar)
-            and np.allclose(self.vec, other.vec)
-            and np.allclose(self.mat, other.mat)
-        )
+    def __eq__(self, other: MatVecArray) -> bool:
+        return self._equal_no_array(self, other) and np.allclose(self.array, other.array)
 
-    def _equal_no_scalar(self, other: MatVecScalar) -> bool:
-        # simplify and order the batch dimension
-        if not self._simplified:
-            self.simplify()
-        if not other._simplified:
-            other.simplify()
+    def _equal_no_array(self, other: MatVecArray) -> bool:
+        self.simplify()
+        other.simplify()
         return np.allclose(self.vec, other.vec) and np.allclose(self.mat, other.mat)
 
-    def __add__(self, other: MatVecScalar) -> MatVecScalar:
-        if self._equal_no_scalar(other):
-            new_scalar = self.scalar + other.scalar
-            new_self = self.__class__(self.mat, self.vec, new_scalar)
-            new_self._simplified = True
-            return new_self
+    def __add__(self, other: MatVecArray) -> MatVecArray:
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
-        combined_scalar = math.concat([self.scalar, other.scalar], axis=0)
+        combined_arrays = math.concat([self.array, other.array], axis=0)
         # note output is not simplified
-        return self.__class__(combined_matrices, combined_vectors, combined_scalar)
+        return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
-    def __truediv__(self, x: Scalar) -> MatVecScalar:
+    def __truediv__(self, x: Scalar) -> MatVecArray:
         if not isinstance(x, (int, float, complex)):
             raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
-        new_scalar = self.scalar / x
-        return self.__class__(self.mat, self.vec, new_scalar)
+        new_array = self.array / x
+        return self.__class__(self.mat, self.vec, new_array)
 
     def simplify(self) -> None:
-        r"""Simplifies the representation by combining together terms that are equal.
-        Two terms are considered equal if their matrix and vector parts are equal.
-        In which case only one is kept and the scalars are added."""
+        r"""Simplifies the representation by combining together terms that have the same
+        exponential part, i.e. two terms along the batch are considered equal if their
+        matrix and vector are equal. In this case only one is kept and the arrays are added.
+        
+        Does not run if the representation has already been simplified, so it's safe to call.
+        """
+        if self._simplified:
+            return
         indices_to_check = set(range(self.batch_size))
         removed = []
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
-                    self.scalar[i] += self.scalar[j]
+                    self.array[i] += self.array[j]
                     indices_to_check.remove(j)
                     removed.append(j)
         to_keep = [i for i in range(self.batch_size) if i not in removed]
         self.mat = math.gather(self.mat, to_keep, axis=0)
         self.vec = math.gather(self.vec, to_keep, axis=0)
-        self.scalar = math.gather(self.scalar, to_keep, axis=0)
+        self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
 
     def simplify_v2(self) -> None:
         r"""A different implementation that orders the batch dimension first."""
+        if self._simplified:
+            return
         self._order_batch()
         to_keep = [d0 := 0]
         mat,vec = self.mat[d0], self.vec[d0]
         for d in range(1,self.batch_size):
             if np.allclose(mat, self.mat[d]) and np.allclose(vec, self.vec[d]):
-                self.scalar[d0] += self.scalar[d]
+                self.array[d0] += self.array[d]
             else:
                 to_keep = [d0 := d]
                 mat,vec = self.mat[d0], self.vec[d0]
         self.mat = math.gather(self.mat, to_keep, axis=0)
         self.vec = math.gather(self.vec, to_keep, axis=0)
-        self.scalar = math.gather(self.scalar, to_keep, axis=0)
+        self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
 
     def _order_batch(self):
         flattened_tensors = []
         for i in range(self.batch_size):
             flattened_tensors.append(
-                math.concat([self.vec[i].flatten(), self.mat[i].flatten(), self.scalar[i]], axis=0)  # vec, mat, scalar ordering
+                math.concat([self.vec[i].flatten(), self.mat[i].flatten(), self.array[i]], axis=0)  # check in vec, mat, array order
             )
         sorted_indices = np.argsort(flattened_tensors, axis=0, kind="stable")
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
-        self.scalar = math.gather(self.scalar, sorted_indices, axis=0)
+        self.array = math.gather(self.array, sorted_indices, axis=0)
 
 
 
-class ABCExp(MatVecScalar):
-    r"""The ansatz F(z) = sum_i c_i exp(z^T A_i z / 2 + z^T b_i)"""
-
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Scalar]) -> None:
-        super().__init__(mat=A, vec=b, coeffs=c)
-
-    def __call__(self, z: ComplexVector) -> Scalar:
-    r"""Value of this Fock-Bargmann function at z.
-
-    Args:
-        z (ComplexVector): point at which the function is evaluated
-
-    Returns:
-        Scalar: value of the function
+class PolyExpAnsatz(MatVecArray):
     """
-    val = 0.0
-    for A, b, c in zip(self.A, self.b, self.c):
-        val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * c
-    return val
+    Represents the ansatz function:
 
+        F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i),
+
+    where each poly_i is a polynomial in z that can be expressed as:
+
+        poly_i(z) = sum_k c^(i)_k z^k,
+
+    with k being a multi-index. The batch of arrays c^(i) are not just array values but can be polynomials
+    of varying order, defined by the terms arr_k z^k for each i. The matrices A_i and vectors b_i
+    are parameters of the exponential terms in the ansatz, and z is a vector of variables.
+
+    Attributes:
+        A (Batch[Matrix]): The list of square matrices A_i
+        b (Batch[Vector]): The list of vectors b_i
+        c (Batch[Tensor]): The array of coefficients for the polynomial terms in the ansatz.
+
+    Example:
+        >>> A = [np.array([[1.0, 0.0], [0.0, 1.0]])]
+        >>> b = [np.array([1.0, 1.0])]
+        >>> c = [np.array(1.0)]
+        >>> F = PolyExpAnsatz(A, b, c)
+        >>> z = np.array([1.0, 2.0])
+        >>> print(F(z))  # prints the value of F at z
+    """
+    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Tensor]):
+        super().__init__(mat=A, vec=b, array=c)
+
+    def __call__(self, z: Vector) -> Scalar:
+        r"""Value of this ansatz at z.
+
+        Args:
+            z (ComplexVector): point at which the function is evaluated
+
+        Returns:
+            Scalar: value of the function
+        """
+        val = 0.0
+        for A, b, c in zip(self.A, self.b, self.c):
+            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * math.polyval(z, c)  # TODO: implement math.polyval
+        return val
+
+    def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
+        """Multiplies this ansatz by a scalar or another ansatz.
+
+        Args:
+            other (Union[Scalar, PolyExpAnsatz]): A scalar or another ansatz.
+
+        Raises:
+            TypeError: If other is neither a scalar nor an ansatz.
+
+        Returns:
+            PolyExpAnsatz: The product of this ansatz and other.
+        """
+        if isinstance(other, PolyExpAnsatz):
+            new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
+            new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
+            new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
+            return self.__class__(A=new_a, b=new_b, c=new_c)
+        else:
+            try:  # array
+                return self.__class__(self.A, self.b, other * self.c)
+            except Exception as e:  # Neither same object type nor a array case
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+
+    def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
+        As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
+        bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
+        cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
+        return self.__class__(As, bs, cs)
