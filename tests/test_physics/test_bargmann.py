@@ -54,9 +54,7 @@ def test_bargmann_numpy_state():
 def test_bargmann_numpy_transformation():
     """Tests that the numpy option of the bargmann method of State works correctly"""
     transformation = Ggate(1)
-    assert all(
-        isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True)
-    )
+    assert all(isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True))
 
 
 def test_abc_contraction_2mode_psi_U():
@@ -84,9 +82,7 @@ def test_abc_contraction_2mode_rho_phi():
     # out1bra, out2bra, in1bra, in2bra, out1ket, out2ket, in1ket, in2ket
     A2, b2, c2 = phi.bargmann()
 
-    A_abc, b_abc, c_abc = contract_two_Abc(
-        (A1, b1, c1), (A2, b2, c2), (0, 1, 2, 3), (2, 3, 6, 7)
-    )
+    A_abc, b_abc, c_abc = contract_two_Abc((A1, b1, c1), (A2, b2, c2), (0, 1, 2, 3), (2, 3, 6, 7))
 
     A_mm, b_mm, c_mm = (rho >> phi).bargmann()
 
@@ -97,12 +93,7 @@ def test_abc_contraction_2mode_rho_phi():
 
 def test_abc_contraction_3mode_rho_2mode_U():
     "tests that the abc contraction works for U rho U_dagger"
-    rho = (
-        Gaussian(3)
-        >> Attenuator([0.1, 0.2, 0.4])
-        >> Ggate(3)
-        >> Attenuator([0.4, 0.5, 0.9])
-    )
+    rho = Gaussian(3) >> Attenuator([0.1, 0.2, 0.4]) >> Ggate(3) >> Attenuator([0.4, 0.5, 0.9])
     U = Ggate(2)
 
     # out1bra, out2bra, out3bra, out1ket, out2ket, out3ket

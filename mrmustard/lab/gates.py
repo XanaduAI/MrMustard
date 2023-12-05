@@ -1041,7 +1041,9 @@ class PhaseNoise(Channel):
 
         coeff = math.cast(
             math.exp(
-                -0.5 * self.phase_stdev.value**2 * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
+                -0.5
+                * self.phase_stdev.value**2
+                * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
             ),
             dm.dtype,
         )
