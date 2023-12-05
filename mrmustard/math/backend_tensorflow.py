@@ -400,26 +400,26 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
+        A, B, C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
 
         if precision_bits == 128:  # numba
-            G = strategies.vanilla(tuple(shape), _A, _B, _C)
+            G = strategies.vanilla(tuple(shape), A, B, C)
         else:  # julia
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            _A, _B, _C = (
-                _A.astype(np.complex128),
-                _B.astype(np.complex128),
-                _C.astype(np.complex128),
+            A, B, C = (
+                A.astype(np.complex128),
+                B.astype(np.complex128),
+                C.astype(np.complex128),
             )
 
             G = Main_julia.Vanilla.vanilla(
-                _A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits
+                A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits
             )
 
         def grad(dLdGconj):
-            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, _C, np.conj(dLdGconj))
+            dLdA, dLdB, dLdC = strategies.vanilla_vjp(G, C, np.conj(dLdGconj))
             return self.conj(dLdA), self.conj(dLdB), self.conj(dLdC)
 
         return G, grad

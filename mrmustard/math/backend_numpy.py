@@ -428,21 +428,19 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         precision_bits = settings.PRECISION_BITS_HERMITE_POLY
 
-        _A, _B, _C = self.asnumpy(A), self.asnumpy(B), self.asnumpy(C)
-
         if precision_bits == 128:  # numba
-            G = vanilla(tuple(shape), _A, _B, _C.max())
+            G = vanilla(tuple(shape), A, B, C)
         else:  # julia (with precision_bits = 512)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            _A, _B, _C = (
-                _A.astype(np.complex128),
-                _B.astype(np.complex128),
-                _C.astype(np.complex128),
+            A, B, C = (
+                A.astype(np.complex128),
+                B.astype(np.complex128),
+                C.astype(np.complex128),
             )
             G = Main_julia.Vanilla.vanilla(
-                _A, _B, _C.item(), np.array(shape, dtype=np.int64), precision_bits
+                A, B, C.item(), np.array(shape, dtype=np.int64), precision_bits
             )
 
         return G

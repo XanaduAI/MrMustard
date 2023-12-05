@@ -17,7 +17,7 @@ from numba import njit
 
 from mrmustard.math.lattice import paths, steps
 from mrmustard.utils.typing import ComplexMatrix, ComplexTensor, ComplexVector
-from .flat_indices import first_available_pivot, lower_neighbours, shape_to_strides
+from .flat_indices import first_available_pivot, lower_neighbors, shape_to_strides
 
 __all__ = ["vanilla", "vanilla_batch", "vanilla_jacobian", "vanilla_vjp"]
 
@@ -65,7 +65,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         value_at_index = b[i] * ret[pivot]
 
         # add the contribution of pivot's lower's neighbours
-        ns = lower_neighbours(pivot, strides, i)
+        ns = lower_neighbors(pivot, strides, i)
         (j0, n0) = next(ns)
         value_at_index += A[i, j0] * np.sqrt(index_u[j0] - 1) * ret[n0]
         for j, n in ns:
