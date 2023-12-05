@@ -24,8 +24,10 @@ __all__ = ["vanilla", "vanilla_batch", "vanilla_jacobian", "vanilla_vjp"]
 
 @njit
 def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy. Fills the tensor by iterating over all indices
-    in ndindex order.
+    r"""Vanilla Fock-Bargmann strategy.
+
+    Flattens the tensors, then fills it by iterating over all indices in the order
+    given by ``np.ndindex``. Finally, it reshapes the tensor before returning.
 
     Args:
         shape (tuple[int, ...]): shape of the output tensor
@@ -36,7 +38,7 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
     Returns:
         np.ndarray: Fock representation of the Gaussian tensor with shape ``shape``
     """
-    # calculate the strides    
+    # calculate the strides
     strides = shape_to_strides(np.array(shape))
 
     # init flat output tensor
@@ -66,19 +68,19 @@ def vanilla(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cov
         ns = lower_neighbours(pivot, strides, i)
         (j0, n0) = next(ns)
         value_at_index += A[i, j0] * np.sqrt(index_u[j0] - 1) * ret[n0]
-        for (j, n) in ns:
+        for j, n in ns:
             value_at_index += A[i, j] * np.sqrt(index_u[j]) * ret[n]
-        ret[index] = value_at_index/np.sqrt(index_u[i])
+        ret[index] = value_at_index / np.sqrt(index_u[i])
 
     return ret.reshape(shape)
 
 
 @njit
 def vanilla_batch(shape: tuple[int, ...], A, b, c) -> ComplexTensor:  # pragma: no cover
-    r"""Vanilla batched Fock-Bargmann strategy. Fills the tensor by iterating over all indices
-    in ndindex order.
-    Note that this function is different from vanilla with b is no longer a vector,
-    it becomes a bathced vector with the batch dimension on the last index.
+    r"""Vanilla Fock-Bargmann strategy for batched ``b``, with batched dimension on the
+    last index.
+
+    Fills the tensor by iterating over all indices in the order given by ``np.ndindex``.
 
     Args:
         shape (tuple[int, ...]): shape of the output tensor with the batch dimension on the last term

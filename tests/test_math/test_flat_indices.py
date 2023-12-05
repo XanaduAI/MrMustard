@@ -12,15 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for indices"""
+"""Tests for flat indices"""
 
 import numpy as np
 import pytest
 
-from mrmustard.math.lattice.strategies.flat_indices import first_available_pivot, shape_to_strides
+from mrmustard.math.lattice.strategies.flat_indices import (
+    first_available_pivot,
+    lower_neighbors,
+    shape_to_strides,
+)
+
+
+def test_shape_to_strides():
+    r"""
+    Tests the ``shape_to_strides`` method.
+    """
+    shape1 = np.array([2])
+    strides1 = np.array([1])
+    assert np.allclose(shape_to_strides(shape1), strides1)
+
+    shape2 = np.array([1, 2])
+    strides2 = np.array([2, 1])
+    assert np.allclose(shape_to_strides(shape2), strides2)
+
+    shape3 = np.array([4, 5, 6])
+    strides3 = np.array([30, 6, 1])
+    assert np.allclose(shape_to_strides(shape3), strides3)
 
 
 def test_first_available_pivot():
+    r"""
+    Tests the ``first_available_pivot`` method.
+    """
     strides1 = shape_to_strides(np.array([2, 2, 2]))
 
     with pytest.raises(ValueError, match="zero"):
@@ -32,3 +56,14 @@ def test_first_available_pivot():
     assert first_available_pivot(5, strides1) == (0, 1)
     assert first_available_pivot(6, strides1) == (0, 2)
     assert first_available_pivot(7, strides1) == (0, 3)
+
+
+def test_lower_neighbors():
+    r"""
+    Tests the ``lower_neighbors`` method.
+    """
+    strides = shape_to_strides(np.array([2, 2, 2]))
+
+    assert list(lower_neighbors(1, strides, 0)) == [(0, -3), (1, -1), (2, 0)]
+    assert list(lower_neighbors(1, strides, 1)) == [(1, -1), (2, 0)]
+    assert list(lower_neighbors(1, strides, 2)) == [(2, 0)]
