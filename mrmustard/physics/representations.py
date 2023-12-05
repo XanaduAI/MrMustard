@@ -50,7 +50,9 @@ class Ansatz(ABC):
         try:
             return self.__add__(-other)
         except AttributeError as e:
-            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
+            raise TypeError(
+                f"Cannot subtract {self.__class__} and {other.__class__}."
+            ) from e
 
     @abstractmethod
     def __call__(self, point: Any) -> Scalar:
@@ -105,7 +107,9 @@ class MatVecArray(Ansatz):
         return self.__class__(self.mat, self.vec, -self.array)
 
     def __eq__(self, other: MatVecArray) -> bool:
-        return self._equal_no_array(self, other) and np.allclose(self.array, other.array)
+        return self._equal_no_array(self, other) and np.allclose(
+            self.array, other.array
+        )
 
     def _equal_no_array(self, other: MatVecArray) -> bool:
         self.simplify()
@@ -129,7 +133,7 @@ class MatVecArray(Ansatz):
         r"""Simplifies the representation by combining together terms that have the same
         exponential part, i.e. two terms along the batch are considered equal if their
         matrix and vector are equal. In this case only one is kept and the arrays are added.
-        
+
         Does not run if the representation has already been simplified, so it's safe to call.
         """
         if self._simplified:
@@ -139,7 +143,9 @@ class MatVecArray(Ansatz):
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
-                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
+                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
+                    self.vec[i], self.vec[j]
+                ):
                     self.array[i] += self.array[j]
                     indices_to_check.remove(j)
                     removed.append(j)
@@ -155,13 +161,13 @@ class MatVecArray(Ansatz):
             return
         self._order_batch()
         to_keep = [d0 := 0]
-        mat,vec = self.mat[d0], self.vec[d0]
-        for d in range(1,self.batch_size):
+        mat, vec = self.mat[d0], self.vec[d0]
+        for d in range(1, self.batch_size):
             if np.allclose(mat, self.mat[d]) and np.allclose(vec, self.vec[d]):
                 self.array[d0] += self.array[d]
             else:
                 to_keep = [d0 := d]
-                mat,vec = self.mat[d0], self.vec[d0]
+                mat, vec = self.mat[d0], self.vec[d0]
         self.mat = math.gather(self.mat, to_keep, axis=0)
         self.vec = math.gather(self.vec, to_keep, axis=0)
         self.array = math.gather(self.array, to_keep, axis=0)
@@ -171,13 +177,15 @@ class MatVecArray(Ansatz):
         flattened_tensors = []
         for i in range(self.batch_size):
             flattened_tensors.append(
-                math.concat([self.vec[i].flatten(), self.mat[i].flatten(), self.array[i]], axis=0)  # check in vec, mat, array order
+                math.concat(
+                    [self.vec[i].flatten(), self.mat[i].flatten(), self.array[i]],
+                    axis=0,
+                )  # check in vec, mat, array order
             )
         sorted_indices = np.argsort(flattened_tensors, axis=0, kind="stable")
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
-
 
 
 class PolyExpAnsatz(MatVecArray):
@@ -207,8 +215,13 @@ class PolyExpAnsatz(MatVecArray):
         >>> z = np.array([1.0, 2.0])
         >>> print(F(z))  # prints the value of F at z
     """
+
     def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Tensor]):
         super().__init__(mat=A, vec=b, array=c)
+
+    @property
+    def degree(self) -> int:
+        return self.array.shape[-1] - 1
 
     def __call__(self, z: Vector) -> Scalar:
         r"""Value of this ansatz at z.
@@ -221,7 +234,9 @@ class PolyExpAnsatz(MatVecArray):
         """
         val = 0.0
         for A, b, c in zip(self.A, self.b, self.c):
-            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * math.polyval(z, c)  # TODO: implement math.polyval
+            val += math.exp(
+                0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)
+            ) * math.polyval(z, c)  # TODO: implement math.polyval
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
@@ -245,7 +260,9 @@ class PolyExpAnsatz(MatVecArray):
             try:  # array
                 return self.__class__(self.A, self.b, other * self.c)
             except Exception as e:  # Neither same object type nor a array case
-                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
+                raise TypeError(
+                    f"Cannot multiply {self.__class__} and {other.__class__}."
+                ) from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
