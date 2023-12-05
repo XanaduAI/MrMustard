@@ -57,10 +57,10 @@ class Bargmann(Representation):
     .. math::
         F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)
 
-    This function allows for vector space operations on BargmannExp objects including linear combinations,
+    This function allows for vector space operations on Bargmann objects including linear combinations,
     outer product, and inner product. The inner product is defined as the contraction of two
-    BargmannExp objects across marked indices. This can also be used to contract existing indices
-    in one BargmannExp object, e.g. to implement the partial trace.
+    Bargmann objects across marked indices. This can also be used to contract existing indices
+    in one Bargmann object, e.g. to implement the partial trace.
 
     Args:
         A (Batch[ComplexMatrix]): batch of quadratic coefficient A_i
