@@ -1,17 +1,16 @@
 import numpy as np
+
+from mrmustard import math
 from mrmustard.lab import Attenuator, Dgate, Gaussian, Ggate
 from mrmustard.physics.bargmann import (
+    contract_two_Abc,
+    reorder_abc,
     wigner_to_bargmann_Choi,
     wigner_to_bargmann_psi,
     wigner_to_bargmann_rho,
     wigner_to_bargmann_U,
-    contract_two_Abc,
-    reorder_abc,
 )
-from mrmustard.physics.bargmann_repr import BargmannExp
-from mrmustard.math import Math
-
-math = Math()
+from mrmustard.physics.bargmann_repr import Bargmann
 
 
 def test_wigner_to_bargmann_psi():
@@ -55,7 +54,9 @@ def test_bargmann_numpy_state():
 def test_bargmann_numpy_transformation():
     """Tests that the numpy option of the bargmann method of State works correctly"""
     transformation = Ggate(1)
-    assert all(isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True))
+    assert all(
+        isinstance(thing, np.ndarray) for thing in transformation.bargmann(numpy=True)
+    )
 
 
 def test_abc_contraction_2mode_psi_U():
@@ -83,7 +84,9 @@ def test_abc_contraction_2mode_rho_phi():
     # out1bra, out2bra, in1bra, in2bra, out1ket, out2ket, in1ket, in2ket
     A2, b2, c2 = phi.bargmann()
 
-    A_abc, b_abc, c_abc = contract_two_Abc((A1, b1, c1), (A2, b2, c2), (0, 1, 2, 3), (2, 3, 6, 7))
+    A_abc, b_abc, c_abc = contract_two_Abc(
+        (A1, b1, c1), (A2, b2, c2), (0, 1, 2, 3), (2, 3, 6, 7)
+    )
 
     A_mm, b_mm, c_mm = (rho >> phi).bargmann()
 
@@ -94,7 +97,12 @@ def test_abc_contraction_2mode_rho_phi():
 
 def test_abc_contraction_3mode_rho_2mode_U():
     "tests that the abc contraction works for U rho U_dagger"
-    rho = Gaussian(3) >> Attenuator([0.1, 0.2, 0.4]) >> Ggate(3) >> Attenuator([0.4, 0.5, 0.9])
+    rho = (
+        Gaussian(3)
+        >> Attenuator([0.1, 0.2, 0.4])
+        >> Ggate(3)
+        >> Attenuator([0.4, 0.5, 0.9])
+    )
     U = Ggate(2)
 
     # out1bra, out2bra, out3bra, out1ket, out2ket, out3ket
@@ -107,7 +115,10 @@ def test_abc_contraction_3mode_rho_2mode_U():
     )  # left in out1ket_U, out2ket_U, out1bra_rho, out2bra_rho, out3bra_rho, out1ket_rho
 
     A_abc, b_abc, c_abc = contract_two_Abc(
-        (A_abc, b_abc, c_abc), (math.conj(A2), math.conj(b2), math.conj(c2)), (3, 4), (2, 3)
+        (A_abc, b_abc, c_abc),
+        (math.conj(A2), math.conj(b2), math.conj(c2)),
+        (3, 4),
+        (2, 3),
     )  # left in out1ket_U, out2ket_U, out1bra_rho, out1ket_rho, out1bra_U, out2bra_U
 
     A_abc, b_abc, c_abc = reorder_abc((A_abc, b_abc, c_abc), (2, 4, 5, 3, 0, 1))
@@ -119,15 +130,15 @@ def test_abc_contraction_3mode_rho_2mode_U():
     assert np.allclose(c_abc, c_mm)
 
 
-def test_BargmannExp_2mode_psi_U():
+def test_Bargmann_2mode_psi_U():
     psi = Gaussian(2)
     U = Ggate(2)
 
     A1, b1, c1 = psi.bargmann()  # out1ket, out2ket
     A2, b2, c2 = U.bargmann()  # out1ket, out2ket, in1ket, in2ket
 
-    Abc1 = BargmannExp(A1, b1, c1)
-    Abc2 = BargmannExp(A2, b2, c2)
+    Abc1 = Bargmann(A1, b1, c1)
+    Abc2 = Bargmann(A2, b2, c2)
 
     psiU = Abc1[0, 1] @ Abc2[2, 3]
 
