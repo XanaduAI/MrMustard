@@ -176,9 +176,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def einsum(self, string: str, *tensors) -> Optional[np.ndarray]:
         if type(string) is str:
             return np.einsum(string, *tensors)
-        return (
-            None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
-        )
+        return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
     def exp(self, array: np.ndarray) -> np.ndarray:
         return np.exp(array)
@@ -198,9 +196,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def from_backend(self, value) -> bool:
         return isinstance(value, np.ndarray)
 
-    def gather(
-        self, array: np.ndarray, indices: np.ndarray, axis: int = 0
-    ) -> np.ndarray:
+    def gather(self, array: np.ndarray, indices: np.ndarray, axis: int = 0) -> np.ndarray:
         return np.take(array, indices, axis=axis)
 
     def imag(self, array: np.ndarray) -> np.ndarray:
@@ -324,26 +320,20 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def trace(self, array: np.ndarray, dtype=None) -> np.ndarray:
         return self.cast(np.trace(array), dtype)
 
-    def transpose(
-        self, a: np.ndarray, perm: Sequence[int] = None
-    ) -> Optional[np.ndarray]:
+    def transpose(self, a: np.ndarray, perm: Sequence[int] = None) -> Optional[np.ndarray]:
         if a is None:
             return None  # TODO: remove and address None inputs where tranpose is used
         return np.transpose(a, axes=perm)
 
     @Autocast()
-    def update_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
-    ):
+    def update_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
         ret = deepcopy(tensor)
         for n_index, index in enumerate(indices):
             ret[tuple(index)] = values[n_index]
         return ret
 
     @Autocast()
-    def update_add_tensor(
-        self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray
-    ):
+    def update_add_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
         # https://stackoverflow.com/questions/65734836/numpy-equivalent-to-tf-tensor-scatter-nd-add-method
         indices = np.array(indices)  # figure out why we need this
         indices = tuple(indices.reshape(-1, indices.shape[-1]).T)
@@ -502,9 +492,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
         return G
 
-    def reorder_AB_bargmann(
-        self, A: np.ndarray, B: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def reorder_AB_bargmann(self, A: np.ndarray, B: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         r"""In mrmustard.math.numba.compactFock~ dimensions of the Fock representation are ordered like [mode0,mode0,mode1,mode1,...]
         while in mrmustard.physics.bargmann the ordering is [mode0,mode1,...,mode0,mode1,...]. Here we reorder A and B.
         """
@@ -551,9 +539,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     ) -> np.ndarray:
         r"""Same as hermite_renormalized_diagonal but works for a batch of different B's."""
         A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_diagonal_reorderedAB_batch(
-            A, B, C, cutoffs=cutoffs
-        )
+        return self.hermite_renormalized_diagonal_reorderedAB_batch(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_diagonal_reorderedAB_batch(
         self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]
@@ -580,9 +566,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         Then, calculate the required renormalized multidimensional Hermite polynomial.
         """
         A, B = self.reorder_AB_bargmann(A, B)
-        return self.hermite_renormalized_1leftoverMode_reorderedAB(
-            A, B, C, cutoffs=cutoffs
-        )
+        return self.hermite_renormalized_1leftoverMode_reorderedAB(A, B, C, cutoffs=cutoffs)
 
     def hermite_renormalized_1leftoverMode_reorderedAB(
         self, A: np.ndarray, B: np.ndarray, C: np.ndarray, cutoffs: Tuple[int]

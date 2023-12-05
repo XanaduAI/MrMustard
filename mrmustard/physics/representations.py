@@ -145,9 +145,7 @@ class Bargmann(Representation):
                 "Partial trace is only supported for ansatzs with polynomial of degree 0."
             )
         if len(idx_z) != len(idx_zconj):
-            raise ValueError(
-                "The number of indices to trace over must be the same for z and z*."
-            )
+            raise ValueError("The number of indices to trace over must be the same for z and z*.")
         A, b, c = [], [], []
         for Ai, bi, ci in zip(self.A, self.b, self.c):
             Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
