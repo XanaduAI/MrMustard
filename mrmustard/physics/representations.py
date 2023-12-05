@@ -82,15 +82,15 @@ class Bargmann(Representation):
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
-        return self.ansatz.A
+        return self.ansatz.mat
 
     @property
     def b(self) -> Batch[ComplexVector]:
-        return self.anstaz.b
+        return self.ansatz.vec
 
     @property
     def c(self) -> Batch[ComplexTensor]:
-        return self.anstaz.c
+        return self.ansatz.array
 
     def conj(self):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
@@ -123,10 +123,11 @@ class Bargmann(Representation):
                         (A2, b2, c2),
                         self._contract_idxs,
                         other._contract_idxs,
-                        measure=1.0,  # this is for the inner product in Fock-Bargmann representation
                     )
                 )
         A, b, c = zip(*Abc)
+        print(A)
+        print(math.astensor(A))
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
@@ -144,7 +145,9 @@ class Bargmann(Representation):
                 "Partial trace is only supported for ansatzs with polynomial of degree 0."
             )
         if len(idx_z) != len(idx_zconj):
-            raise ValueError("The number of indices to trace over must be the same for z and z*.")
+            raise ValueError(
+                "The number of indices to trace over must be the same for z and z*."
+            )
         A, b, c = [], [], []
         for Ai, bi, ci in zip(self.A, self.b, self.c):
             Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)

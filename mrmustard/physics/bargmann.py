@@ -139,10 +139,10 @@ def complex_gaussian_integral(
     Returns:
         tuple: the (A,b,c) triple of the result of the integral
     """
+    A, b, c = Abc
     assert len(idx_z) == len(idx_zconj)
     n = len(idx_z)
     idx = tuple(idx_z) + tuple(idx_zconj)
-    A, b, c = Abc
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
     I = math.eye(n, dtype=A.dtype)
