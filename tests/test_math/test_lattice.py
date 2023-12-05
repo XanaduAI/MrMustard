@@ -69,7 +69,7 @@ def test_binomial_vs_binomialDict():
 @pytest.mark.parametrize("n_batches", [1, 3])
 def test_vanillabatchNumba_vs_vanillaNumba(n_batches):
     """Test the batch version works versus the normal vanilla version."""
-    state = Gaussian(3) >> Dgate([0., 0.1, 0.2])
+    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
     A, B, C = wigner_to_bargmann_rho(
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
@@ -91,7 +91,7 @@ def test_vanillabatchNumba_vs_vanillaNumba(n_batches):
 @pytest.mark.parametrize("n_batches", [1, 3])
 def test_diagonalbatchNumba_vs_diagonalNumba(n_batches):
     """Test the batch version works versus the normal diagonal version."""
-    state = Gaussian(3) >> Dgate([0., 0.1, 0.2])
+    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
     A, B, C = wigner_to_bargmann_rho(
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
