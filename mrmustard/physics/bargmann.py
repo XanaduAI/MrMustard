@@ -89,10 +89,12 @@ def wigner_to_bargmann_Choi(X, Y, d):
     A = math.matmul(math.matmul(R, A), math.dagger(R))
     A = math.matmul(math.Xmat(2 * N), A)
     b = math.matvec(xi_inv, d)
-    B = math.matvec(math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)) / math.sqrt(
-        settings.HBAR, dtype=R.dtype
+    B = math.matvec(
+        math.conj(R), math.concat([b, -math.matvec(XT, b)], axis=-1)
+    ) / math.sqrt(settings.HBAR, dtype=R.dtype)
+    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(
+        math.det(xi), dtype=b.dtype
     )
-    C = math.exp(-0.5 * math.sum(d * b) / settings.HBAR) / math.sqrt(math.det(xi), dtype=b.dtype)
     # now A and B have order [out_r, in_r out_l, in_l].
     return A, B, math.cast(C, "complex128")
 
@@ -156,7 +158,9 @@ def complex_gaussian_integral(
     A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
     b_post = bR - math.sum(bM * math.solve(M, bM))
     c_post = (
-        c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+        c
+        * math.sqrt((-1) ** n / math.det(M))
+        * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
 
     return A_post, b_post, c_post
@@ -194,7 +198,10 @@ def real_gaussian_integral(
     A, b, c = Abc
     not_idx = tuple(i for i in range(A.shape[-1]) if i not in idx)
 
-    M = math.gather(math.gather(A, idx, axis=-1), idx, axis=-2) + np.eye(m, dtype=A.dtype) * measure
+    M = (
+        math.gather(math.gather(A, idx, axis=-1), idx, axis=-2)
+        + np.eye(m, dtype=A.dtype) * measure
+    )
     D = math.gather(math.gather(A, idx, axis=-1), not_idx, axis=-2)
     R = math.gather(math.gather(A, not_idx, axis=-1), not_idx, axis=-2)
 
@@ -204,7 +211,9 @@ def real_gaussian_integral(
     A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
     b_post = bR - math.sum(bM * math.solve(M, bM))
     c_post = (
-        c * math.sqrt((-1) ** m / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
+        c
+        * math.sqrt((-1) ** m / math.det(M))
+        * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
     return A_post, b_post, c_post
 
@@ -224,7 +233,7 @@ def join_Abc(Abc1, Abc2):
     A2, b2, c2 = Abc2
     A12 = math.block_diag(A1, A2)
     b12 = math.concat([b1, b2], axis=-1)
-    c12 = c1 * c2
+    c12 = math.outer(c1, c2)
     return A12, b12, c12
 
 
@@ -264,4 +273,6 @@ def contract_two_Abc(
         tuple: the contracted (A,b,c) triple
     """
     Abc = join_Abc(Abc1, Abc2)
-    return complex_gaussian_integral(Abc, idx1, idx2, measure=-1.0)
+    return complex_gaussian_integral(
+        Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
+    )
