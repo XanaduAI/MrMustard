@@ -25,8 +25,8 @@ from mrmustard.utils.typing import Batch, Matrix, Scalar, Tensor, Vector
 
 
 class Ansatz(ABC):
-    r"""Abstract parent class for the various structures that we use to define quantum objects.
-    It supports the basic mathematical operations (addition, subtraction, multiplication,
+    r"""Abstract parent class for Ansatze that we use to define quantum objects.
+    It supports all the mathematical operations (addition, subtraction, multiplication,
     division, negation, equality, etc).
 
     Effectively it can be thought of as a function over a continuous and/or discrete domain.
@@ -70,24 +70,25 @@ class Ansatz(ABC):
     def __rmul__(self, other: Scalar) -> Ansatz:
         return self.__mul__(other=other)
 
-    @abstractmethod
-    def __matmul__(self, other: Ansatz) -> Ansatz:
-        ...
 
-
-class MatVecArray(Ansatz):
-    r"""The ansatz for certain continuous representations is parametrized by
-    a triple of a matrix, a vector and a polynomial (array of coefficients).
+class PolyExpBase(Ansatz):
+    r"""A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
     For example, the Bargmann representation c exp(z A z / 2 + b z) is of this form
-    (where A,b,c form the triple), or the Wigner representation (where Sigma,mu,1 form the triple).
+    (where A,b,c is the triple), or the Wigner representation (where Sigma,mu,1 is the triple).
 
     Note that this class is not initializable (despite having an initializer)
-    because it doesn't implement all the abstract methods of Ansatz.
-    Specifically, it doesn't implement the __call__, __mul__ and  __matmul__
-    methods, which are representation-specific.
+    because it doesn't implement all the abstract methods of Ansatz, and it is in
+    fact more general.
+    Concrete ansatze that inherit from this class will have to implement __call__,
+    __mul__ and  __matmul__, which are representation-specific.
 
-    Its meaning is to group together functionalities that are common to all
-    (matrix, vector, array)-type representations and avoid code duplication.
+    Note that the arguments are expected to be batched, i.e. to have a batch dimension
+    or to be an iterable. This is because this class also provides the linear superposition
+    functionality by implementing the __add__ method, which concatenates the batch dimensions.
+
+    As this can blow up the number of terms in the representation, it is recommended to
+    run the `simplify()` method after adding terms together, which will combine together
+    terms that have the same exponential part.
 
     Args:
         mat (Batch[Matrix]):    the matrix-like data
@@ -103,27 +104,27 @@ class MatVecArray(Ansatz):
         self.dim = self.mat.shape[-1]
         self._simplified = False
 
-    def __neg__(self) -> MatVecArray:
+    def __neg__(self) -> PolyExpBase:
         return self.__class__(self.mat, self.vec, -self.array)
 
-    def __eq__(self, other: MatVecArray) -> bool:
+    def __eq__(self, other: PolyExpBase) -> bool:
         return self._equal_no_array(self, other) and np.allclose(
             self.array, other.array
         )
 
-    def _equal_no_array(self, other: MatVecArray) -> bool:
+    def _equal_no_array(self, other: PolyExpBase) -> bool:
         self.simplify()
         other.simplify()
         return np.allclose(self.vec, other.vec) and np.allclose(self.mat, other.mat)
 
-    def __add__(self, other: MatVecArray) -> MatVecArray:
+    def __add__(self, other: PolyExpBase) -> PolyExpBase:
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
         combined_vectors = math.concat([self.vec, other.vec], axis=0)
         combined_arrays = math.concat([self.array, other.array], axis=0)
         # note output is not simplified
         return self.__class__(combined_matrices, combined_vectors, combined_arrays)
 
-    def __truediv__(self, x: Scalar) -> MatVecArray:
+    def __truediv__(self, x: Scalar) -> PolyExpBase:
         if not isinstance(x, (int, float, complex)):
             raise TypeError(f"Cannot divide {self.__class__} by {x.__class__}.")
         new_array = self.array / x
@@ -188,7 +189,7 @@ class MatVecArray(Ansatz):
         self.array = math.gather(self.array, sorted_indices, axis=0)
 
 
-class PolyExpAnsatz(MatVecArray):
+class PolyExpAnsatz(PolyExpBase):
     """
     Represents the ansatz function:
 
@@ -240,7 +241,7 @@ class PolyExpAnsatz(MatVecArray):
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        """Multiplies this ansatz by a scalar or another ansatz.
+        """Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
             other (Union[Scalar, PolyExpAnsatz]): A scalar or another ansatz.
@@ -257,14 +258,26 @@ class PolyExpAnsatz(MatVecArray):
             new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
-            try:  # array
+            try:
                 return self.__class__(self.A, self.b, other * self.c)
-            except Exception as e:  # Neither same object type nor a array case
+            except Exception as e:
                 raise TypeError(
                     f"Cannot multiply {self.__class__} and {other.__class__}."
                 ) from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
+        """Tensor product of this ansatz with another ansatz.
+        Equivalent to F(a) * G(b) (with different arguments, that is).
+        As it distributes over addition on both self and other,
+        the batch size of the result is the product of the batch
+        size of self and other.
+
+        Args:
+            other (PolyExpAnsatz): Another ansatz.
+
+        Returns:
+            PolyExpAnsatz: The tensor product of this ansatz and other.
+        """
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]
         cs = [math.outer(c1, c2) for c1 in self.c for c2 in other.c]
