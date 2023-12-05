@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from mrmustard.math import math
-from mrmustard.physics.bargmann import contract_two_Abc, reorder_ab
+from mrmustard.physics import bargmann
 from mrmustard.physics.representations import PolyExpAnsatz
 from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector
 
@@ -63,14 +63,12 @@ class Bargmann(Representation):
     in one BargmannExp object, e.g. to implement the partial trace.
 
     Args:
-        A (Batch[ComplexMatrix]):          batch of quadratic coefficient A_i
-        b (Batch[ComplexVector]):          batch of linear coefficients b_i
-        c (Optional[Batch[ComplexTensor]]):      batch of arrays c_i (default: [1.0])
+        A (Batch[ComplexMatrix]): batch of quadratic coefficient A_i
+        b (Batch[ComplexVector]): batch of linear coefficients b_i
+        c (Batch[ComplexTensor]): batch of arrays c_i (default: [1.0])
     """
 
-    def __init__(
-        self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Batch[ComplexTensor]
-    ):
+    def __init__(self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Batch[ComplexTensor] = [1.0]):
         self.ansatz = PolyExpAnsatz(A, b, c)
 
     def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
@@ -90,9 +88,7 @@ class Bargmann(Representation):
         return self.anstaz.c
 
     def conj(self):
-        new = self.__class__(
-            math.conj(self.A), math.conj(self.b), math.conj(self.c), math.conj(self.c)
-        )
+        new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs
         return new
 
@@ -103,7 +99,7 @@ class Bargmann(Representation):
                 raise IndexError(
                     f"Index {i} out of bounds for ansatz {self.ansatz.__class__.__qualname__} of dimension {self.ansatz.dim}."
                 )
-        new = self.__class__(self.A, self.b, self.c, self.c)
+        new = self.__class__(self.A, self.b, self.c)
         new._contract_idxs = idx
         return new
 
@@ -117,7 +113,7 @@ class Bargmann(Representation):
         for A1, b1, c1 in zip(self.A, self.b, self.c):
             for A2, b2, c2 in zip(other.A, other.b, other.c):
                 Abc.append(
-                    contract_two_Abc(
+                    bargmann.contract_two_Abc(
                         (A1, b1, c1),
                         (A2, b2, c2),
                         self._contract_idxs,
@@ -128,9 +124,24 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
+        r"""Implements the partial trace over the given index pairs."""
+        if self.ansatz.degree > 0:
+            raise NotImplementedError("Partial trace is only supported for ansatzs with polynomial of degree 0.")
+        if len(idx_z) != len(idx_zconj):
+            raise ValueError("The number of indices to trace over must be the same for z and z*.")
+        A, b, c = [], [], []
+        for Ai, bi, ci in zip(self.A, self.b, self.c):
+            Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
+            A.append(Aij)
+            b.append(bij)
+            c.append(cij)
+        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+            
+
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
-        A, b = reorder_ab((self.A, self.b), order)
+        A, b = bargmann.reorder_ab((self.A, self.b), order)
         new = self.__class__(A, b, math.transpose(self.c, order))
         new._contract_idxs = self._contract_idxs
         return new
