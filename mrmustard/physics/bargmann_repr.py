@@ -149,7 +149,7 @@ class Bargmann(Representation):
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
-        A, b = bargmann.reorder_ab((self.A, self.b), order)
-        new = self.__class__(A, b, math.transpose(self.c, order))
+        A, b, c = bargmann.reorder_abc((self.A, self.b, self.c), order)
+        new = self.__class__(A, b, c)
         new._contract_idxs = self._contract_idxs
         return new
