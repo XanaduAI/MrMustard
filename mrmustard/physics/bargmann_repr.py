@@ -68,7 +68,12 @@ class Bargmann(Representation):
         c (Batch[ComplexTensor]): batch of arrays c_i (default: [1.0])
     """
 
-    def __init__(self, A: Batch[ComplexMatrix], b: Batch[ComplexVector], c: Batch[ComplexTensor] = [1.0]):
+    def __init__(
+        self,
+        A: Batch[ComplexMatrix],
+        b: Batch[ComplexVector],
+        c: Batch[ComplexTensor] = [1.0],
+    ):
         self.ansatz = PolyExpAnsatz(A, b, c)
 
     def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
@@ -126,7 +131,7 @@ class Bargmann(Representation):
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
         r"""Implements the partial trace over the given index pairs.
-        
+
         Args:
             idx_z (tuple[int, ...]): indices to trace over
             idx_zconj (tuple[int, ...]): indices to trace over
@@ -135,9 +140,13 @@ class Bargmann(Representation):
             Bargmann: the ansatz with the given indices traced over
         """
         if self.ansatz.degree > 0:
-            raise NotImplementedError("Partial trace is only supported for ansatzs with polynomial of degree 0.")
+            raise NotImplementedError(
+                "Partial trace is only supported for ansatzs with polynomial of degree 0."
+            )
         if len(idx_z) != len(idx_zconj):
-            raise ValueError("The number of indices to trace over must be the same for z and z*.")
+            raise ValueError(
+                "The number of indices to trace over must be the same for z and z*."
+            )
         A, b, c = [], [], []
         for Ai, bi, ci in zip(self.A, self.b, self.c):
             Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
@@ -145,7 +154,6 @@ class Bargmann(Representation):
             b.append(bij)
             c.append(cij)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
-            
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
