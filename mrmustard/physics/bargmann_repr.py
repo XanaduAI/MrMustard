@@ -125,7 +125,15 @@ class Bargmann(Representation):
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
-        r"""Implements the partial trace over the given index pairs."""
+        r"""Implements the partial trace over the given index pairs.
+        
+        Args:
+            idx_z (tuple[int, ...]): indices to trace over
+            idx_zconj (tuple[int, ...]): indices to trace over
+
+        Returns:
+            Bargmann: the ansatz with the given indices traced over
+        """
         if self.ansatz.degree > 0:
             raise NotImplementedError("Partial trace is only supported for ansatzs with polynomial of degree 0.")
         if len(idx_z) != len(idx_zconj):
