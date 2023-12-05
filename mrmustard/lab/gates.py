@@ -68,6 +68,7 @@ class Dgate(Unitary):
         y_trainable bool: whether y is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "D"
     parallelizable = True
@@ -167,6 +168,7 @@ class Sgate(Unitary):
         phi_trainable bool: whether phi is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "S"
     parallelizable = True
@@ -261,6 +263,7 @@ class Rgate(Unitary):
         angle_trainable bool: whether angle is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "R"
     parallelizable = True
@@ -355,6 +358,7 @@ class Pgate(Unitary):
         shearing_trainable bool: whether shearing is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "P"
     parallelizable = True
@@ -391,6 +395,7 @@ class CXgate(Unitary):
         s_trainable (bool): whether s is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "CX"
     parallelizable = False
@@ -425,6 +430,7 @@ class CZgate(Unitary):
         s_trainable (bool): whether s is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "CZ"
     parallelizable = False
@@ -462,6 +468,7 @@ class BSgate(Unitary):
         phi_trainable bool: whether phi is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "BS"
     parallelizable = False
@@ -557,6 +564,7 @@ class MZgate(Unitary):
         internal (bool): whether phases are both in the internal arms (default is False)
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "MZ"
     parallelizable = False
@@ -605,6 +613,7 @@ class S2gate(Unitary):
         phi_trainable bool: whether phi is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "S2"
     parallelizable = False
@@ -646,6 +655,7 @@ class Interferometer(Unitary):
         unitary_trainable (bool): whether unitary is a trainable variable
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "I"
     parallelizable = False
@@ -699,6 +709,7 @@ class RealInterferometer(Unitary):
             If set to `None` a random real unitary (orthogonal) matrix is used.
         orthogonal_trainable (bool): whether orthogonal is a trainable variable
     """
+
     is_gaussian = True
     short_name = "RI"
     parallelizable = False
@@ -757,6 +768,7 @@ class Ggate(Unitary):
         symplectic (2d array): a valid symplectic matrix in XXPP order. For N modes it must have shape ``(2N,2N)``.
         symplectic_trainable (bool): whether symplectic is a trainable variable.
     """
+
     is_gaussian = True
     short_name = "G"
     parallelizable = False
@@ -834,6 +846,7 @@ class Attenuator(Channel):
         nbar_bounds (float, float): bounds for the average number of photons in the thermal state
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "Att"
     parallelizable = True
@@ -896,6 +909,7 @@ class Amplifier(Channel):
         nbar_bounds (float, float): bounds for the average number of photons in the thermal state
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "Amp"
     parallelizable = True
@@ -952,6 +966,7 @@ class AdditiveNoise(Channel):
         noise_bounds (float, float): bounds for the noise
         modes (optional, List[int]): the list of modes this gate is applied to
     """
+
     is_gaussian = True
     short_name = "Add"
     parallelizable = True
@@ -1026,9 +1041,7 @@ class PhaseNoise(Channel):
 
         coeff = math.cast(
             math.exp(
-                -0.5
-                * self.phase_stdev.value**2
-                * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
+                -0.5 * self.phase_stdev.value**2 * math.arange(-dm.shape[-2] + 1, dm.shape[-1]) ** 2
             ),
             dm.dtype,
         )

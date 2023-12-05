@@ -50,9 +50,7 @@ class Ansatz(ABC):
         try:
             return self.__add__(-other)
         except AttributeError as e:
-            raise TypeError(
-                f"Cannot subtract {self.__class__} and {other.__class__}."
-            ) from e
+            raise TypeError(f"Cannot subtract {self.__class__} and {other.__class__}.") from e
 
     @abstractmethod
     def __call__(self, point: Any) -> Scalar:
@@ -108,9 +106,7 @@ class PolyExpBase(Ansatz):
         return self.__class__(self.mat, self.vec, -self.array)
 
     def __eq__(self, other: PolyExpBase) -> bool:
-        return self._equal_no_array(self, other) and np.allclose(
-            self.array, other.array
-        )
+        return self._equal_no_array(self, other) and np.allclose(self.array, other.array)
 
     def _equal_no_array(self, other: PolyExpBase) -> bool:
         self.simplify()
@@ -144,9 +140,7 @@ class PolyExpBase(Ansatz):
         while indices_to_check:
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
-                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(
-                    self.vec[i], self.vec[j]
-                ):
+                if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
                     self.array[i] += self.array[j]
                     indices_to_check.remove(j)
                     removed.append(j)
@@ -235,9 +229,9 @@ class PolyExpAnsatz(PolyExpBase):
         """
         val = 0.0
         for A, b, c in zip(self.A, self.b, self.c):
-            val += math.exp(
-                0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)
-            ) * math.polyval(z, c)  # TODO: implement math.polyval
+            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * math.polyval(
+                z, c
+            )  # TODO: implement math.polyval
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
@@ -261,9 +255,7 @@ class PolyExpAnsatz(PolyExpBase):
             try:
                 return self.__class__(self.A, self.b, other * self.c)
             except Exception as e:
-                raise TypeError(
-                    f"Cannot multiply {self.__class__} and {other.__class__}."
-                ) from e
+                raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         """Tensor product of this ansatz with another ansatz.
