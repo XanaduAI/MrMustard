@@ -111,6 +111,7 @@ def wigner_to_bargmann_U(X, d):
 def complex_gaussian_integral(
     Abc: tuple, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], measure: float = -1
 ):  # TODO: fix factors of pi and stuff
+    # TODO: move to math
     r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
     The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
 
@@ -168,6 +169,7 @@ def complex_gaussian_integral(
 def real_gaussian_integral(
     Abc: tuple, idx: tuple[int, ...], measure: float = 0
 ):  # TODO: fix factors of pi and stuff
+    # TODO: move to math
     r"""Computes the Gaussian integral of the exponential of a real quadratic form.
     The integral is defined as (note that in general we integrate over a subset of m dimensions):
 
