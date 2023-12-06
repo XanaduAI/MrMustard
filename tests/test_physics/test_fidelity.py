@@ -70,9 +70,9 @@ class TestGaussianStates:
         expected = np.exp(-np.linalg.norm(beta1 - beta2) ** 2)
         assert np.allclose(expected, fid)
 
-    @pytest.mark.parametrize("hbar", [0.5, 1.0, 2.0, 1.6])
     @pytest.mark.parametrize("r1", np.random.rand(3))
     @pytest.mark.parametrize("r2", np.random.rand(3))
+    @pytest.mark.parametrize("hbar", [0.5, 1.0, 2.0, 1.6])
     def test_fidelity_squeezed_vacuum(self, r1, r2, hbar):
         """Tests fidelity between two squeezed states"""
         settings._force_hbar(hbar)

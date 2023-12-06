@@ -126,8 +126,6 @@ class Bargmann(Representation):
                     )
                 )
         A, b, c = zip(*Abc)
-        print(A)
-        print(math.astensor(A))
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
     def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:

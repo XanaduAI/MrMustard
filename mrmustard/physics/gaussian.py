@@ -21,9 +21,8 @@ from typing import Any, Optional, Sequence, Tuple, Union
 from thewalrus.quantum import is_pure_cov
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Scalar, Vector
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
-
+from mrmustard.utils.typing import Matrix, Scalar, Vector
 
 #  ~~~~~~
 #  States
@@ -843,7 +842,7 @@ def physical_partial_transpose(cov: Matrix, modes: Sequence[int]) -> Matrix:
 def log_negativity(cov: Matrix) -> float:
     r"""Returns the log_negativity of a Gaussian state.
 
-    Reference: `https://arxiv.org/pdf/quant-ph/0102117.pdf <https://arxiv.org/pdf/quant-ph/0102117.pdf>`_ , Equation 57, 61.
+    Reference: `https://arxiv.org/abs/quant-ph/0102117 <https://arxiv.org/abs/quant-ph/0102117>`_ , Equation 57, 61.
 
     Args:
         cov (Matrix): the covariance matrix
