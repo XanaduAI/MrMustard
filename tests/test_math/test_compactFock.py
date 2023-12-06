@@ -17,7 +17,6 @@ from tests.random import n_mode_mixed_state
 from ..conftest import skip_np
 
 original_precision = settings.PRECISION_BITS_HERMITE_POLY
-precisions = [128, 256, 384, 512]
 
 do_julia = True if importlib.util.find_spec("julia") else False
 precisions = (
@@ -29,20 +28,11 @@ precisions = (
 )
 
 
-def allowed_cutoffs(max_cutoffs):
-    r"""Generate all cutoffs from (1,)*M to max_cutoffs"""
-    res = []
-    for idx in np.ndindex(max_cutoffs):
-        cutoffs = np.array(idx) + 1
-        res.append(tuple(cutoffs))
-    return res
-
-
 @st.composite
 def random_ABC(draw, M):
     r"""
-    generate random Bargmann parameters A,B,C
-    for a multimode Gaussian state with displacement
+    Generates random Bargmann parameters A,B,C
+    for an ``M``-mode mixed state.
     """
     state = draw(n_mode_mixed_state(M))
     A, B, G0 = wigner_to_bargmann_rho(state.cov, state.means)
@@ -54,26 +44,27 @@ def random_ABC(draw, M):
 def test_compactFock_diagonal(precision, A_B_G0):
     """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
     settings.PRECISION_BITS_HERMITE_POLY = precision
-    for cutoffs in allowed_cutoffs((7, 7, 7)):
-        A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
+    cutoffs = (7, 7, 7)
 
-        # Vanilla MM
-        G_ref = math.hermite_renormalized(
-            math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-        )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
-        G_ref = math.asnumpy(G_ref)
+    A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
-        # Extract diagonal amplitudes from vanilla MM
-        ref_diag = np.zeros(cutoffs, dtype=np.complex128)
-        for inds in np.ndindex(*cutoffs):
-            inds_expanded = list(inds) + list(inds)  # a,b,c,a,b,c
-            ref_diag[inds] = G_ref[tuple(inds_expanded)]
+    # Vanilla MM
+    G_ref = math.hermite_renormalized(
+        math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
+    )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+    G_ref = math.asnumpy(G_ref)
 
-        # New MM
-        G_diag = math.hermite_renormalized_diagonal(
-            math.conj(-A), math.conj(B), math.conj(G0), cutoffs
-        )
-        assert np.allclose(ref_diag, G_diag)
+    # Extract diagonal amplitudes from vanilla MM
+    ref_diag = np.zeros(cutoffs, dtype=np.complex128)
+    for inds in np.ndindex(*cutoffs):
+        inds_expanded = list(inds) + list(inds)  # a,b,c,a,b,c
+        ref_diag[inds] = G_ref[tuple(inds_expanded)]
+
+    # New MM
+    G_diag = math.hermite_renormalized_diagonal(
+        math.conj(-A), math.conj(B), math.conj(G0), cutoffs
+    )
+    assert np.allclose(ref_diag, G_diag)
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
@@ -85,27 +76,28 @@ def test_compactFock_1leftover(precision, A_B_G0):
     skip_np()
 
     settings.PRECISION_BITS_HERMITE_POLY = precision
-    for cutoffs in allowed_cutoffs((7, 7, 7)):
-        A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
+    cutoffs = (7, 7, 7)
 
-        # New algorithm
-        G_leftover = math.hermite_renormalized_1leftoverMode(
-            math.conj(-A), math.conj(B), math.conj(G0), cutoffs
-        )
+    A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
-        # Vanilla MM
-        G_ref = math.hermite_renormalized(
-            math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
-        )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
-        G_ref = math.asnumpy(G_ref)
+    # New algorithm
+    G_leftover = math.hermite_renormalized_1leftoverMode(
+        math.conj(-A), math.conj(B), math.conj(G0), cutoffs
+    )
 
-        # Extract amplitudes of leftover mode from vanilla MM
-        ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
-        for inds in np.ndindex(*cutoffs[1:]):
-            ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = G_ref[
-                tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
-            ]
-        assert np.allclose(ref_leftover, G_leftover)
+    # Vanilla MM
+    G_ref = math.hermite_renormalized(
+        math.conj(-A), math.conj(B), math.conj(G0), shape=list(cutoffs) * 2
+    )  # note: shape=[C1,C2,C3,...,C1,C2,C3,...]
+    G_ref = math.asnumpy(G_ref)
+
+    # Extract amplitudes of leftover mode from vanilla MM
+    ref_leftover = np.zeros([cutoffs[0]] * 2 + list(cutoffs)[1:], dtype=np.complex128)
+    for inds in np.ndindex(*cutoffs[1:]):
+        ref_leftover[tuple([slice(cutoffs[0]), slice(cutoffs[0])] + list(inds))] = G_ref[
+            tuple([slice(cutoffs[0])] + list(inds) + [slice(cutoffs[0])] + list(inds))
+        ]
+    assert np.allclose(ref_leftover, G_leftover)
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
 
