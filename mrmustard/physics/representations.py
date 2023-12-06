@@ -82,15 +82,15 @@ class Bargmann(Representation):
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
-        return self.ansatz.mat
+        return self.ansatz.A
 
     @property
     def b(self) -> Batch[ComplexVector]:
-        return self.ansatz.vec
+        return self.ansatz.b
 
     @property
     def c(self) -> Batch[ComplexTensor]:
-        return self.ansatz.array
+        return self.ansatz.c
 
     def conj(self):
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))

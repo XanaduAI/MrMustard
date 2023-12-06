@@ -48,6 +48,7 @@ negative = st.floats(max_value=0, exclude_max=True, allow_infinity=False, allow_
 real_not_zero = st.one_of(negative, positive)
 small_float = st.floats(min_value=-0.1, max_value=0.1, allow_infinity=False, allow_nan=False)
 medium_float = st.floats(min_value=-1.0, max_value=1.0, allow_infinity=False, allow_nan=False)
+complex_nonzero = st.complex_numbers(allow_infinity=False, allow_nan=False, min_magnitude=1e-9, max_magnitude=1e9)
 
 # physical parameters
 nmodes = st.integers(min_value=1, max_value=10)
@@ -55,7 +56,6 @@ angle = st.floats(min_value=0, max_value=2 * np.pi)
 r = st.floats(min_value=0, max_value=1.25, allow_infinity=False, allow_nan=False)
 prob = st.floats(min_value=0, max_value=1, allow_infinity=False, allow_nan=False)
 gain = st.floats(min_value=1, max_value=2, allow_infinity=False, allow_nan=False)
-
 
 @st.composite
 def vector(draw, length):
@@ -70,6 +70,25 @@ def list_of_ints(draw, N):
         st.lists(st.integers(min_value=0, max_value=N), min_size=N, max_size=N, unique=True)
     )
 
+@st.composite
+def matrix(draw, rows, cols):
+    """Return a strategy for generating matrices of shape `rows` x `cols`."""
+    elements = st.floats(allow_infinity=False, allow_nan=False, max_value=1e10, min_value=-1e10)
+    return draw(arrays(np.float, (rows, cols), elements=elements))
+
+@st.composite
+def complex_matrix(draw, rows, cols):
+    """Return a strategy for generating matrices of shape `rows` x `cols` with complex numbers."""
+    max_abs_value = 1e10
+    elements = st.complex_numbers(min_magnitude=0, max_magnitude=max_abs_value, allow_infinity=False, allow_nan=False)
+    return draw(arrays(np.complex, (rows, cols), elements=elements))
+
+@st.composite
+def complex_vector(draw, length):
+    """Return a strategy for generating vectors of length `length` with complex numbers."""
+    max_abs_value = 1e10
+    elements = st.complex_numbers(min_magnitude=0, max_magnitude=max_abs_value, allow_infinity=False, allow_nan=False)
+    return draw(arrays(np.complex, (length,), elements=elements))
 
 def array_of_(strategy, minlen=0, maxlen=100):
     r"""Return a strategy that returns an array of values from `strategy`."""

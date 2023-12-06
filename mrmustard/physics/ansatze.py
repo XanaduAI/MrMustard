@@ -21,7 +21,16 @@ from typing import Any, Union
 import numpy as np
 
 from mrmustard import math
-from mrmustard.utils.typing import Batch, Matrix, Scalar, Tensor, Vector
+from mrmustard.utils.typing import (
+    Batch,
+    ComplexMatrix,
+    ComplexTensor,
+    ComplexVector,
+    Matrix,
+    Scalar,
+    Tensor,
+    Vector,
+)
 
 
 class Ansatz(ABC):
@@ -106,7 +115,7 @@ class PolyExpBase(Ansatz):
         return self.__class__(self.mat, self.vec, -self.array)
 
     def __eq__(self, other: PolyExpBase) -> bool:
-        return self._equal_no_array(self, other) and np.allclose(self.array, other.array)
+        return self._equal_no_array(other) and np.allclose(self.array, other.array)
 
     def _equal_no_array(self, other: PolyExpBase) -> bool:
         self.simplify()
@@ -215,6 +224,18 @@ class PolyExpAnsatz(PolyExpBase):
         super().__init__(mat=A, vec=b, array=c)
 
     @property
+    def A(self) -> Batch[ComplexMatrix]:
+        return self.mat
+
+    @property
+    def b(self) -> Batch[ComplexVector]:
+        return self.vec
+
+    @property
+    def c(self) -> Batch[ComplexTensor]:
+        return self.array
+
+    @property
     def degree(self) -> int:
         return self.array.shape[-1] - 1
 
@@ -229,9 +250,7 @@ class PolyExpAnsatz(PolyExpBase):
         """
         val = 0.0
         for A, b, c in zip(self.A, self.b, self.c):
-            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * math.polyval(
-                z, c
-            )  # TODO: implement math.polyval
+            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * c  # TODO: implement math.polyval(z, c)
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
