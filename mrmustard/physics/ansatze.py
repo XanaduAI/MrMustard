@@ -249,6 +249,7 @@ class PolyExpAnsatz(PolyExpBase):
             Scalar: value of the function
         """
         val = 0.0
+        z = math.atleast_1d(math.astensor(z))
         for A, b, c in zip(self.A, self.b, self.c):
             val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * c  # TODO: implement math.polyval(z, c)
         return val

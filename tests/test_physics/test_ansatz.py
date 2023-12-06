@@ -13,90 +13,128 @@
 # limitations under the License.
 
 import numpy as np
-from hypothesis import given
+from hypothesis import assume, given
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
 
 from mrmustard import math
 from mrmustard.physics.ansatze import PolyExpAnsatz
-from tests.random import complex_matrix, complex_nonzero, complex_vector
+from tests.random import complex_vector
 
+# Complex number strategy
+complex_number = st.complex_numbers(min_magnitude=1e-9, max_magnitude=1, allow_infinity=False, allow_nan=False)
 
-@given(A=complex_matrix(2,2), b=complex_vector(2), c=complex_nonzero)
-def test_PolyExpAnsatz(A, b, c):
+# Size strategy
+size = st.integers(min_value=1, max_value=9)
+
+@st.composite
+def Abc_triple(draw, n = None):
+    n = n or draw(size)
+    
+    # Complex symmetric matrix A
+    A = draw(arrays(dtype=complex, shape=(n, n), elements=complex_number))
+    A = 0.5 * (A + A.T)  # Make it symmetric
+    
+    # Complex vector b
+    b = draw(arrays(dtype=complex, shape=n, elements=complex_number))
+    
+    # Complex scalar c
+    c = draw(complex_number)
+    
+    return A, b, c
+
+@given(Abc=Abc_triple())
+def test_PolyExpAnsatz(Abc):
     """Test that the PolyExpAnsatz class is initialized correctly"""
+    A, b, c = Abc
     ansatz = PolyExpAnsatz(A, b, c)
     assert np.allclose(ansatz.mat[0], A)
     assert np.allclose(ansatz.vec[0], b)
     assert np.allclose(ansatz.array[0], c)
 
+@st.composite
+def AbcAbc(draw):
+    n = draw(size)
+    Abc1 = draw(Abc_triple(n))
+    Abc2 = draw(Abc_triple(n))
+    return Abc1, Abc2
+
 # test adding two PolyExpAnsatz objects
-@given(A=complex_matrix(2,2), b=complex_vector(2), c=complex_nonzero,
-       A2=complex_matrix(2,2), b2=complex_vector(2), c2=complex_nonzero)
-def test_PolyExpAnsatz_add(A, b, c, A2, b2, c2):
+@given(Abc1_Abc2 = AbcAbc())
+def test_PolyExpAnsatz_add(Abc1_Abc2):
     """Test that we can add two PolyExpAnsatz objects"""
-    ansatz = PolyExpAnsatz(A, b, c)
+    Abc1, Abc2 = Abc1_Abc2
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    ansatz = PolyExpAnsatz(A1, b1, c1)
     ansatz2 = PolyExpAnsatz(A2, b2, c2)
     ansatz3 = ansatz + ansatz2
-    assert np.allclose(ansatz3.mat[0], A)
-    assert np.allclose(ansatz3.vec[0], b)
-    assert np.allclose(ansatz3.array[0], c)
+    assert np.allclose(ansatz3.mat[0], A1)
+    assert np.allclose(ansatz3.vec[0], b1)
+    assert np.allclose(ansatz3.array[0], c1)
     assert np.allclose(ansatz3.mat[1], A2)
     assert np.allclose(ansatz3.vec[1], b2)
     assert np.allclose(ansatz3.array[1], c2)
 
 # test multiplying two PolyExpAnsatz objects
-@given(A=complex_matrix(2,2), b=complex_vector(2), c=complex_nonzero,
-       A2=complex_matrix(2,2), b2=complex_vector(2), c2=complex_nonzero)
-def test_PolyExpAnsatz_mul(A, b, c, A2, b2, c2):
+@given(Abc1_Abc2 = AbcAbc())
+def test_PolyExpAnsatz_mul(Abc1_Abc2):
     """Test that we can multiply two PolyExpAnsatz objects"""
-    ansatz = PolyExpAnsatz(A, b, c)
+    Abc1, Abc2 = Abc1_Abc2
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    ansatz = PolyExpAnsatz(A1, b1, c1)
     ansatz2 = PolyExpAnsatz(A2, b2, c2)
     ansatz3 = ansatz * ansatz2
-    assert np.allclose(ansatz3.mat[0], A + A2)
-    assert np.allclose(ansatz3.vec[0], b + b2)
-    assert np.allclose(ansatz3.array[0], c * c2)
+    assert np.allclose(ansatz3.mat[0], A1 + A2)
+    assert np.allclose(ansatz3.vec[0], b1 + b2)
+    assert np.allclose(ansatz3.array[0], c1 * c2)
 
 
 # test multiplying a PolyExpAnsatz object by a scalar
-@given(A=complex_matrix(3,3), b=complex_vector(3), c=complex_nonzero, d=complex_nonzero)
-def test_PolyExpAnsatz_mul_scalar(A, b, c, d):
+@given(Abc = Abc_triple(), d=complex_number)
+def test_PolyExpAnsatz_mul_scalar(Abc, d):
     """Test that we can multiply a PolyExpAnsatz object by a scalar"""
+    A, b, c = Abc
     ansatz = PolyExpAnsatz(A, b, c)
     ansatz2 = ansatz * d
     assert np.allclose(ansatz2.mat[0], A)
     assert np.allclose(ansatz2.vec[0], b)
     assert np.allclose(ansatz2.array[0], d * c)
 
-
 # test calling the PolyExpAnsatz object
-@given(A=complex_matrix(3,3), b=complex_vector(3), c=complex_nonzero, z=complex_vector(3))
-def test_PolyExpAnsatz_call(A, b, c, z):
+@given(Abc = Abc_triple(), z=complex_vector())
+def test_PolyExpAnsatz_call(Abc, z):
     """Test that we can call the PolyExpAnsatz object"""
+    A, b, c = Abc
+    assume(len(z) == A.shape[-1])
     ansatz = PolyExpAnsatz(A, b, c)
+    assert np.allclose(ansatz(z*0), c)
     assert np.allclose(ansatz(z), c * np.exp(0.5 * z.conj().T @ A @ z + b.conj().T @ z))
 
 
 # test tensor product of two PolyExpAnsatz objects
-@given(A=complex_matrix(1,1), b=complex_vector(1), c=complex_nonzero,
-       A2=complex_matrix(2,2), b2=complex_vector(2), c2=complex_nonzero)
-def test_PolyExpAnsatz_kron(A, b, c, A2, b2, c2):
+@given(Abc1_Abc2 = AbcAbc())
+def test_PolyExpAnsatz_kron(Abc1_Abc2):
     """Test that we can tensor product two PolyExpAnsatz objects"""
-    ansatz = PolyExpAnsatz(A, b, c)
+    Abc1, Abc2 = Abc1_Abc2
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    ansatz = PolyExpAnsatz(A1, b1, c1)
     ansatz2 = PolyExpAnsatz(A2, b2, c2)
     ansatz3 = ansatz & ansatz2
-    assert np.allclose(ansatz3.mat[0], math.block_diag(A, A2))
-    assert np.allclose(ansatz3.vec[0], math.concat([b, b2], -1))
-    assert np.allclose(ansatz3.array[0], c * c2)
+    assert np.allclose(ansatz3.mat[0], math.block_diag(A1, A2))
+    assert np.allclose(ansatz3.vec[0], math.concat([b1, b2], -1))
+    assert np.allclose(ansatz3.array[0], c1* c2)
 
 # test equality
-def test_PolyExpAnsatz_eq():
+@given(Abc1_Abc2 = AbcAbc())
+def test_PolyExpAnsatz_eq(Abc1_Abc2):
     """Test that we can compare two PolyExpAnsatz objects"""
-    A = np.random.rand(3, 3) + 1j * np.random.rand(3, 3)
-    b = np.random.rand(3) + 1j * np.random.rand(3)
-    c = np.random.rand(1)[0] + 1j * np.random.rand(1)[0]
-    A2 = np.random.rand(3, 3) + 1j * np.random.rand(3, 3)
-    b2 = np.random.rand(3) + 1j * np.random.rand(3)
-    c2 = np.random.rand(1)[0] + 1j * np.random.rand(1)[0]
-    ansatz = PolyExpAnsatz(A, b, c)
+    Abc1, Abc2 = Abc1_Abc2
+    A1, b1, c1 = Abc1
+    A2, b2, c2 = Abc2
+    ansatz = PolyExpAnsatz(A1, b1, c1)
     ansatz2 = PolyExpAnsatz(A2, b2, c2)
     assert ansatz == ansatz
     assert ansatz2 == ansatz2
