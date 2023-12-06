@@ -63,9 +63,7 @@ def test_compactFock_diagonal(precision, A_B_G0):
         ref_diag[inds] = G_ref[tuple(inds_expanded)]
 
     # New MM
-    G_diag = math.hermite_renormalized_diagonal(
-        math.conj(-A), math.conj(B), math.conj(G0), cutoffs
-    )
+    G_diag = math.hermite_renormalized_diagonal(math.conj(-A), math.conj(B), math.conj(G0), cutoffs)
     assert np.allclose(ref_diag, G_diag)
 
     settings.PRECISION_BITS_HERMITE_POLY = original_precision
