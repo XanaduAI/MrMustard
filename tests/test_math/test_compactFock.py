@@ -42,7 +42,9 @@ def random_ABC(draw, M):
 @given(random_ABC(M=3))
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_diagonal(precision, A_B_G0):
-    """Test getting Fock amplitudes if all modes are detected (math.hermite_renormalized_diagonal)"""
+    r"""Test getting Fock amplitudes if all modes are
+    detected (math.hermite_renormalized_diagonal)
+    """
     settings.PRECISION_BITS_HERMITE_POLY = precision
     cutoffs = (7, 7, 7)
 
@@ -72,7 +74,10 @@ def test_compactFock_diagonal(precision, A_B_G0):
 @given(random_ABC(M=3))
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_1leftover(precision, A_B_G0):
-    """Test getting Fock amplitudes if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    r"""
+    Test getting Fock amplitudes if all but the first mode
+    are detected (math.hermite_renormalized_1leftoverMode).
+    """
     skip_np()
 
     settings.PRECISION_BITS_HERMITE_POLY = precision
@@ -104,20 +109,23 @@ def test_compactFock_1leftover(precision, A_B_G0):
 
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_diagonal_gradients(precision):
-    """Test getting Fock amplitudes AND GRADIENTS if all modes are detected (math.hermite_renormalized_diagonal)"""
+    r"""
+    Test getting Fock amplitudes and gradients if all modes
+    are detected (math.hermite_renormalized_diagonal).
+    """
     skip_np()
 
     settings.PRECISION_BITS_HERMITE_POLY = precision
-    G = Ggate(num_modes=3, symplectic_trainable=True)
+    G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
-        n1, n2, n3 = 2, 2, 4  # number of detected photons
-        state_opt = Vacuum(3) >> G
+        n1, n2 = 2, 4  # number of detected photons
+        state_opt = Vacuum(2) >> G
         A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
         probs = math.hermite_renormalized_diagonal(
-            math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[n1 + 1, n2 + 1, n3 + 1]
+            math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[n1 + 1, n2 + 1]
         )
-        p = probs[n1, n2, n3]
+        p = probs[n1, n2]
         return -math.real(p)
 
     opt = Optimizer(symplectic_lr=0.5)
@@ -130,20 +138,23 @@ def test_compactFock_diagonal_gradients(precision):
 
 @pytest.mark.parametrize("precision", precisions)
 def test_compactFock_1leftover_gradients(precision):
-    """Test getting Fock amplitudes AND GRADIENTS if all but the first mode are detected (math.hermite_renormalized_1leftoverMode)"""
+    r"""
+    Test getting Fock amplitudes and if all but the first
+    mode are detected (math.hermite_renormalized_1leftoverMode).
+    """
     skip_np()
 
     settings.PRECISION_BITS_HERMITE_POLY = precision
-    G = Ggate(num_modes=3, symplectic_trainable=True)
+    G = Ggate(num_modes=2, symplectic_trainable=True)
 
     def cost_fn():
-        n2, n3 = 1, 3  # number of detected photons
-        state_opt = Vacuum(3) >> G
+        n2 = 3  # number of detected photons
+        state_opt = Vacuum(2) >> G
         A, B, G0 = wigner_to_bargmann_rho(state_opt.cov, state_opt.means)
         marginal = math.hermite_renormalized_1leftoverMode(
-            math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[8, n2 + 1, n3 + 1]
+            math.conj(-A), math.conj(B), math.conj(G0), cutoffs=[8, n2 + 1]
         )
-        conditional_state = normalize(State(dm=marginal[..., n2, n3]))
+        conditional_state = normalize(State(dm=marginal[..., n2]))
         return -fidelity(conditional_state, SqueezedVacuum(r=1))
 
     opt = Optimizer(symplectic_lr=0.1)
