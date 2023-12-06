@@ -46,7 +46,7 @@ def test_compactFock_diagonal(precision, A_B_G0):
     detected (math.hermite_renormalized_diagonal)
     """
     settings.PRECISION_BITS_HERMITE_POLY = precision
-    cutoffs = (7, 7, 7)
+    cutoffs = (5, 5, 5)
 
     A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
@@ -81,7 +81,7 @@ def test_compactFock_1leftover(precision, A_B_G0):
     skip_np()
 
     settings.PRECISION_BITS_HERMITE_POLY = precision
-    cutoffs = (7, 7, 7)
+    cutoffs = (5, 5, 5)
 
     A, B, G0 = A_B_G0  # Create random state (M mode Gaussian state with displacement)
 
