@@ -140,3 +140,35 @@ def test_PolyExpAnsatz_eq(Abc1_Abc2):
     assert ansatz2 == ansatz2
     assert ansatz != ansatz2
     assert ansatz2 != ansatz
+
+
+# test simplify
+@given(Abc = Abc_triple())
+def test_PolyExpAnsatz_simplify(Abc):
+    """Test that we can simplify a PolyExpAnsatz object"""
+    A, b, c = Abc
+    ansatz = PolyExpAnsatz(A, b, c)
+    ansatz = ansatz + ansatz
+    assert np.allclose(ansatz.A[0], ansatz.A[1])
+    assert np.allclose(ansatz.A[0], A)
+    assert np.allclose(ansatz.b[0], ansatz.b[1])
+    assert np.allclose(ansatz.b[0], b)
+    ansatz.simplify()
+    assert len(ansatz.A) == 1
+    assert len(ansatz.b) == 1
+    assert ansatz.c == 2 * c
+
+@given(Abc = Abc_triple())
+def test_PolyExpAnsatz_simplify_v2(Abc):
+    """Test that we can simplify a PolyExpAnsatz object"""
+    A, b, c = Abc
+    ansatz = PolyExpAnsatz(A, b, c)
+    ansatz = ansatz + ansatz
+    assert np.allclose(ansatz.A[0], ansatz.A[1])
+    assert np.allclose(ansatz.A[0], A)
+    assert np.allclose(ansatz.b[0], ansatz.b[1])
+    assert np.allclose(ansatz.b[0], b)
+    # ansatz.simplify_v2()
+    assert len(ansatz.A) == 1
+    assert len(ansatz.b) == 1
+    assert np.allclose(ansatz.c, 2 * c)

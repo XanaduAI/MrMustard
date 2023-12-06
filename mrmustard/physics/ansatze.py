@@ -170,12 +170,14 @@ class PolyExpBase(Ansatz):
             if np.allclose(mat, self.mat[d]) and np.allclose(vec, self.vec[d]):
                 self.array[d0] += self.array[d]
             else:
-                to_keep = [d0 := d]
+                to_keep.append(d)
+                d0 = d
                 mat, vec = self.mat[d0], self.vec[d0]
         self.mat = math.gather(self.mat, to_keep, axis=0)
         self.vec = math.gather(self.vec, to_keep, axis=0)
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
+        return to_keep
 
     def _order_batch(self):
         flattened_tensors = []
@@ -186,6 +188,7 @@ class PolyExpBase(Ansatz):
                     axis=0,
                 )  # check in vec, mat, array order
             )
+        print(flattened_tensors)
         sorted_indices = np.argsort(flattened_tensors, axis=0, kind="stable")
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
