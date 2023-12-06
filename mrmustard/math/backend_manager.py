@@ -145,12 +145,12 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         return f"Backend({self.backend_name})"
 
     @property
-    def backend(cls) -> BackendBase:
+    def backend(self) -> BackendBase:
         r"""
         The backend that is being used.
         """
-        cls._is_immutable = True
-        return cls._backend
+        self._is_immutable = True
+        return self._backend
 
     @property
     def backend_name(self) -> str:
@@ -159,7 +159,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._backend.name
 
-    def change_backend(cls, name: str) -> None:
+    def change_backend(self, name: str) -> None:
         r"""
         Changes the backend to a different one.
 
@@ -170,8 +170,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             msg = "Backend must be either ``numpy`` or ``tensorflow``"
             raise ValueError(msg)
 
-        if cls.backend_name != name:
-            if cls._is_immutable:
+        if self.backend_name != name:
+            if self._is_immutable:
                 msg = "Can no longer change the backend in this session."
                 raise ValueError(msg)
 
@@ -186,10 +186,10 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
                 backend = getattr(module, object)()
 
             # switch backend
-            cls._backend = backend
+            self._backend = backend
 
             # bind
-            cls._bind()
+            self._bind()
 
     # ~~~~~~~
     # Methods
@@ -1211,11 +1211,11 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @property
-    def euclidean_opt(cls):
+    def euclidean_opt(self):
         r"""The configured Euclidean optimizer."""
-        if not cls._euclidean_opt:
-            cls._euclidean_opt = cls.DefaultEuclideanOptimizer()
-        return cls._euclidean_opt
+        if not self._euclidean_opt:
+            self._euclidean_opt = self.DefaultEuclideanOptimizer()
+        return self._euclidean_opt
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Methods that build on the basic ops and don't need to be overridden in the backend implementation
