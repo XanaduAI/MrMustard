@@ -121,7 +121,9 @@ class PolyExpBase(Ansatz):
     def _equal_no_array(self, other: PolyExpBase) -> bool:
         self.simplify()
         other.simplify()
-        return np.allclose(self.vec, other.vec, atol=1e-10) and np.allclose(self.mat, other.mat, atol=1e-10)
+        return np.allclose(self.vec, other.vec, atol=1e-10) and np.allclose(
+            self.mat, other.mat, atol=1e-10
+        )
 
     def __add__(self, other: PolyExpBase) -> PolyExpBase:
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
@@ -180,7 +182,10 @@ class PolyExpBase(Ansatz):
         self._simplified = True
 
     def _order_batch(self):
-        generators = [itertools.chain(self.vec[i].flat, self.mat[i].flat, self.array[i].flat) for i in range(self.batch_size)]
+        generators = [
+            itertools.chain(self.vec[i].flat, self.mat[i].flat, self.array[i].flat)
+            for i in range(self.batch_size)
+        ]
         sorted_indices = argsort_gen(generators)
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
@@ -243,10 +248,17 @@ class PolyExpAnsatz(PolyExpBase):
         Returns:
             Scalar: value of the function
         """
-        val = 0.0
-        z = math.atleast_1d(math.astensor(z))
+        z = math.atleast_1d(math.astensor(z))  # shape (..., b)
+        z_batch_shape = z.shape[:-1]
+        val = math.zeros(z_batch_shape, dtype=self.A.dtype)
         for A, b, c in zip(self.A, self.b, self.c):
-            val += math.exp(0.5 * math.sum(z * math.matvec(A, z)) + math.sum(z * b)) * c  # TODO: implement math.polyval(z, c)
+            val += (
+                math.exp(
+                    0.5 * math.sum(z * math.einsum("ab,...b->...a", A, z), axes=[-1])
+                    + math.sum(z * b, axes=[-1])
+                )
+                * c
+            )  # TODO: implement math.polyval(z, c)
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
