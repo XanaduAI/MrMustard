@@ -158,6 +158,16 @@ def test_PolyExpAnsatz_simplify(Abc):
     assert len(ansatz.b) == 1
     assert ansatz.c == 2 * c
 
+def test_order_batch():
+    ansatz = PolyExpAnsatz(A = [np.array([[0]]), np.array([[1]])], b = [np.array([1]), np.array([0])], c = [1,2])
+    ansatz._order_batch()
+    assert np.allclose(ansatz.A[0], np.array([[1]]))
+    assert np.allclose(ansatz.b[0], np.array([0]))
+    assert ansatz.c[0] == 2
+    assert np.allclose(ansatz.A[1], np.array([[0]]))
+    assert np.allclose(ansatz.b[1], np.array([1]))
+    assert ansatz.c[1] == 1
+
 @given(Abc = Abc_triple())
 def test_PolyExpAnsatz_simplify_v2(Abc):
     """Test that we can simplify a PolyExpAnsatz object"""
@@ -168,7 +178,7 @@ def test_PolyExpAnsatz_simplify_v2(Abc):
     assert np.allclose(ansatz.A[0], A)
     assert np.allclose(ansatz.b[0], ansatz.b[1])
     assert np.allclose(ansatz.b[0], b)
-    # ansatz.simplify_v2()
+    ansatz.simplify_v2()
     assert len(ansatz.A) == 1
     assert len(ansatz.b) == 1
     assert np.allclose(ansatz.c, 2 * c)

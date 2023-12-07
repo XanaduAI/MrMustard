@@ -14,13 +14,14 @@
 
 from __future__ import annotations
 
+import itertools
 from abc import ABC, abstractmethod
-from itertools import product
 from typing import Any, Union
 
 import numpy as np
 
 from mrmustard import math
+from mrmustard.utils.argsort import argsort_gen
 from mrmustard.utils.typing import (
     Batch,
     ComplexMatrix,
@@ -180,16 +181,8 @@ class PolyExpBase(Ansatz):
         return to_keep
 
     def _order_batch(self):
-        flattened_tensors = []
-        for i in range(self.batch_size):
-            flattened_tensors.append(
-                math.concat(
-                    [self.vec[i].flatten(), self.mat[i].flatten(), self.array[i]],
-                    axis=0,
-                )  # check in vec, mat, array order
-            )
-        print(flattened_tensors)
-        sorted_indices = np.argsort(flattened_tensors, axis=0, kind="stable")
+        generators = [itertools.chain(self.vec[i].flat, self.mat[i].flat, self.array[i].flat) for i in range(self.batch_size)]
+        sorted_indices = argsort_gen(generators)
         self.mat = math.gather(self.mat, sorted_indices, axis=0)
         self.vec = math.gather(self.vec, sorted_indices, axis=0)
         self.array = math.gather(self.array, sorted_indices, axis=0)
@@ -270,9 +263,9 @@ class PolyExpAnsatz(PolyExpBase):
             PolyExpAnsatz: The product of this ansatz and other.
         """
         if isinstance(other, PolyExpAnsatz):
-            new_a = [A1 + A2 for A1, A2 in product(self.A, other.A)]
-            new_b = [b1 + b2 for b1, b2 in product(self.b, other.b)]
-            new_c = [c1 * c2 for c1, c2 in product(self.c, other.c)]
+            new_a = [A1 + A2 for A1, A2 in itertools.product(self.A, other.A)]
+            new_b = [b1 + b2 for b1, b2 in itertools.product(self.b, other.b)]
+            new_c = [c1 * c2 for c1, c2 in itertools.product(self.c, other.c)]
             return self.__class__(A=new_a, b=new_b, c=new_c)
         else:
             try:
