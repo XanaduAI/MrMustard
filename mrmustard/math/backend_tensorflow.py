@@ -303,7 +303,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.sqrt(self.cast(x, dtype))
 
     def sum(self, array: tf.Tensor, axes: Sequence[int] = None):
-        return tf.reduce_sum(array, axes)
+        return tf.reduce_sum(array, tuple(reversed(sorted(axes))))
 
     @Autocast()
     def tensordot(self, a: tf.Tensor, b: tf.Tensor, axes: List[int]) -> tf.Tensor:

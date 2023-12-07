@@ -306,7 +306,7 @@ class BackendNumpy(BackendBase):  # pragma: no cover
             return np.sum(array)
 
         ret = array
-        for axis in axes:
+        for axis in reversed(sorted(axes)):
             ret = np.sum(ret, axis=axis)
         return ret
 
