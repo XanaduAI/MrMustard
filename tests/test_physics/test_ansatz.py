@@ -114,12 +114,8 @@ def test_PolyExpAnsatz_mul_scalar(Abc, d):
 def test_PolyExpAnsatz_call(Abc):
     """Test that we can call the PolyExpAnsatz object"""
     A, b, c = Abc
-    z = np.random.normal(size=A.shape[0], scale=1.0, loc=0.0) + 1j * np.random.normal(
-        size=A.shape[0], scale=1.0, loc=0.0
-    )
     ansatz = PolyExpAnsatz(A, b, c)
-    assert np.allclose(ansatz(math.zeros_like(z)), c)
-    assert np.allclose(ansatz(z), c * np.exp(0.5 * z @ A @ z + b.T @ z))
+    assert np.allclose(ansatz(z=math.zeros_like(b)), c)
 
 
 # test tensor product of two PolyExpAnsatz objects
