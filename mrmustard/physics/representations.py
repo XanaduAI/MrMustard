@@ -109,10 +109,10 @@ class Bargmann(Representation):
         return new
 
     def __matmul__(self, other: Bargmann) -> Bargmann:
-        r"""Implements the inner product of ansatzs across the marked indices."""
+        r"""Implements the inner product of ansatze across the marked indices."""
         if self.ansatz.degree > 0 or other.ansatz.degree > 0:
             raise NotImplementedError(
-                "Inner product of ansatzs is only supported for ansatzs with polynomial of degree 0."
+                "Inner product of ansatze is only supported for ansatze with polynomial of degree 0."
             )
         Abc = []
         for A1, b1, c1 in zip(self.A, self.b, self.c):
