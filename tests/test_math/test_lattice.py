@@ -18,7 +18,7 @@ import importlib
 import pytest
 import numpy as np
 
-from mrmustard.lab import Gaussian
+from mrmustard.lab import Gaussian, Dgate
 from mrmustard import settings, math
 from mrmustard.physics.bargmann import wigner_to_bargmann_rho
 from mrmustard.math.lattice.strategies.binomial import binomial, binomial_dict
@@ -66,47 +66,45 @@ def test_binomial_vs_binomialDict():
         assert np.isclose(D[idx], G[idx])
 
 
-def test_vanillabatchNumba_vs_vanillaNumba():
+@pytest.mark.parametrize("batch_size", [1, 3])
+def test_vanillabatchNumba_vs_vanillaNumba(batch_size):
     """Test the batch version works versus the normal vanilla version."""
-    state = Gaussian(3)
+    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
     A, B, C = wigner_to_bargmann_rho(
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
 
-    batch = 3
-    cutoffs = (20, 20, 20, 20, batch)
+    cutoffs = (20, 20, 20, 20, batch_size)
 
     # Vanilla MM
     G_ref = math.hermite_renormalized(A, B, C, shape=cutoffs[:-1])
 
     # replicate the B
-    B_batched = np.stack((B,) * batch, axis=1)
+    B_batched = np.stack((B,) * batch_size, axis=1)
 
     G_batched = math.hermite_renormalized_batch(A, B_batched, C, shape=cutoffs)
 
-    assert np.allclose(G_ref, G_batched[:, :, :, :, 0])
-    assert np.allclose(G_ref, G_batched[:, :, :, :, 1])
-    assert np.allclose(G_ref, G_batched[:, :, :, :, 2])
+    for nb in range(batch_size):
+        assert np.allclose(G_ref, G_batched[:, :, :, :, nb])
 
 
-def test_diagonalbatchNumba_vs_diagonalNumba():
+@pytest.mark.parametrize("batch_size", [1, 3])
+def test_diagonalbatchNumba_vs_diagonalNumba(batch_size):
     """Test the batch version works versus the normal diagonal version."""
-    state = Gaussian(3)
+    state = Gaussian(3) >> Dgate([0.0, 0.1, 0.2])
     A, B, C = wigner_to_bargmann_rho(
         state.cov, state.means
     )  # Create random state (M mode Gaussian state with displacement)
 
-    batch = 3
-    cutoffs = (18, 19, 20, batch)
+    cutoffs = (18, 19, 20, batch_size)
 
     # Diagonal MM
     G_ref = math.hermite_renormalized_diagonal(A, B, C, cutoffs=cutoffs[:-1])
 
     # replicate the B
-    B_batched = np.stack((B,) * batch, axis=1)
+    B_batched = np.stack((B,) * batch_size, axis=1)
 
     G_batched = math.hermite_renormalized_diagonal_batch(A, B_batched, C, cutoffs=cutoffs[:-1])
 
-    assert np.allclose(G_ref, G_batched[:, :, :, 0])
-    assert np.allclose(G_ref, G_batched[:, :, :, 1])
-    assert np.allclose(G_ref, G_batched[:, :, :, 2])
+    for nb in range(batch_size):
+        assert np.allclose(G_ref, G_batched[:, :, :, nb])

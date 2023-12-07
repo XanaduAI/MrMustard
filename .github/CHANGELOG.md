@@ -59,6 +59,11 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
   [(#303)](https://github.com/XanaduAI/MrMustard/pull/303)
   [(#304)](https://github.com/XanaduAI/MrMustard/pull/304)
 
+* Improves the algorithm implemented in `vanilla` to achieve a speedup. Specifically, the improved
+  algorithm works on a flattened array (which is reshaped before returning) as opposed to a
+  multi-dimensional array.
+  [(#312)](https://github.com/XanaduAI/MrMustard/pull/312)
+
 * Adds functions `hermite_renormalized_batch` and `hermite_renormalized_diagonal_batch` to speed up calculating 
   Hermite polynomials over a batch of B vectors.
   [(#308)](https://github.com/XanaduAI/MrMustard/pull/308)
