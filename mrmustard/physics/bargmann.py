@@ -126,7 +126,7 @@ def complex_gaussian_integral(
     measure:
 
     # TODO: fix factors of pi and stuff (also this is for m=1)
-    dmu(z) = exp(- measure * |z|^2) d^2z = exp(measure * |z|^2) dRe(z) dIm(z)
+    dmu(z) = exp(measure * |z|^2) d^2z = exp(measure * |z|^2) dRe(z) dIm(z)
 
     Arguments:
         A,b,c (tuple): the (A,b,c) triple
