@@ -110,7 +110,7 @@ def test_PolyExpAnsatz_call(Abc, z):
     assume(len(z) == A.shape[-1])
     ansatz = PolyExpAnsatz(A, b, c)
     assert np.allclose(ansatz(z*0), c)
-    assert np.allclose(ansatz(z), c * np.exp(0.5 * z.conj().T @ A @ z + b.conj().T @ z))
+    assert np.allclose(ansatz(z), c * np.exp(0.5 * z @ A @ z + b.T @ z))
 
 
 # test tensor product of two PolyExpAnsatz objects
@@ -128,14 +128,12 @@ def test_PolyExpAnsatz_kron(Abc1_Abc2):
     assert np.allclose(ansatz3.array[0], c1* c2)
 
 # test equality
-@given(Abc1_Abc2 = AbcAbc())
-def test_PolyExpAnsatz_eq(Abc1_Abc2):
+@given(Abc = Abc_triple())
+def test_PolyExpAnsatz_eq(Abc):
     """Test that we can compare two PolyExpAnsatz objects"""
-    Abc1, Abc2 = Abc1_Abc2
-    A1, b1, c1 = Abc1
-    A2, b2, c2 = Abc2
-    ansatz = PolyExpAnsatz(A1, b1, c1)
-    ansatz2 = PolyExpAnsatz(A2, b2, c2)
+    A, b, c = Abc
+    ansatz = PolyExpAnsatz(A, b, c)
+    ansatz2 = PolyExpAnsatz(2*A, 2*b, 2*c)
     assert ansatz == ansatz
     assert ansatz2 == ansatz2
     assert ansatz != ansatz2

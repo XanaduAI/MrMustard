@@ -116,12 +116,12 @@ class PolyExpBase(Ansatz):
         return self.__class__(self.mat, self.vec, -self.array)
 
     def __eq__(self, other: PolyExpBase) -> bool:
-        return self._equal_no_array(other) and np.allclose(self.array, other.array)
+        return self._equal_no_array(other) and np.allclose(self.array, other.array, atol=1e-10)
 
     def _equal_no_array(self, other: PolyExpBase) -> bool:
         self.simplify()
         other.simplify()
-        return np.allclose(self.vec, other.vec) and np.allclose(self.mat, other.mat)
+        return np.allclose(self.vec, other.vec, atol=1e-10) and np.allclose(self.mat, other.mat, atol=1e-10)
 
     def __add__(self, other: PolyExpBase) -> PolyExpBase:
         combined_matrices = math.concat([self.mat, other.mat], axis=0)
@@ -178,7 +178,6 @@ class PolyExpBase(Ansatz):
         self.vec = math.gather(self.vec, to_keep, axis=0)
         self.array = math.gather(self.array, to_keep, axis=0)
         self._simplified = True
-        return to_keep
 
     def _order_batch(self):
         generators = [itertools.chain(self.vec[i].flat, self.mat[i].flat, self.array[i].flat) for i in range(self.batch_size)]
