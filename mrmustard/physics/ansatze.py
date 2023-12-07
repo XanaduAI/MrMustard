@@ -183,7 +183,11 @@ class PolyExpBase(Ansatz):
 
     def _order_batch(self):
         generators = [
-            itertools.chain(self.vec[i].flat, self.mat[i].flat, self.array[i].flat)
+            itertools.chain(
+                math.asnumpy(self.vec[i]).flat,
+                math.asnumpy(self.mat[i].flat),
+                math.asnumpy(self.array[i]).flat,
+            )
             for i in range(self.batch_size)
         ]
         sorted_indices = argsort_gen(generators)
