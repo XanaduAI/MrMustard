@@ -226,7 +226,7 @@ class PolyExpAnsatz(PolyExpBase):
         >>> print(F(z))  # prints the value of F at z
     """
 
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Tensor], name: str = ''):
+    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Tensor], name: str = ""):
         self.name = name
         super().__init__(mat=A, vec=b, array=c)
 
@@ -246,14 +246,19 @@ class PolyExpAnsatz(PolyExpBase):
     def degree(self) -> int:
         return self.array.shape[-1] - 1
 
-    def plot(self, just_phase:bool = False, with_measure:bool = False, xlim=(-2 * np.pi,2 * np.pi), ylim=(-2 * np.pi,2 * np.pi)):
-
+    def plot(
+        self,
+        just_phase: bool = False,
+        with_measure: bool = False,
+        xlim=(-2 * np.pi, 2 * np.pi),
+        ylim=(-2 * np.pi, 2 * np.pi),
+    ):
         # eval F(z) on a grid of complex numbers
-        X,Y = np.mgrid[xlim[0]:xlim[1]:400j, ylim[0]:ylim[1]:400j]
-        Z = (X + 1j*Y).T
-        f_values = self(Z[...,None])
+        X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
+        Z = (X + 1j * Y).T
+        f_values = self(Z[..., None])
         if with_measure:
-            f_values = f_values * np.exp(-np.abs(Z)**2)
+            f_values = f_values * np.exp(-np.abs(Z) ** 2)
 
         # Get phase and magnitude of F(z)
         phases = np.angle(f_values) / (2 * np.pi) % 1
@@ -266,20 +271,20 @@ class PolyExpAnsatz(PolyExpBase):
         hsv_values[..., 1] = 1
         hsv_values[..., 2] = 1 if just_phase else magnitudes_scaled
         rgb_values = colors.hsv_to_rgb(hsv_values)
-        
+
         # Plot the image
         im, ax = plt.subplots()
         ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
         title = "$F_{" + self.name + "}(z)$"
-        ax.set_title("arg("+title+")" if just_phase else title)
+        ax.set_title("arg(" + title + ")" if just_phase else title)
         plt.show(block=False)  # ?
         return im, ax
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""Value of this ansatz at z. This consumes the last dimension of z.
-        i.e. the output is 
+        i.e. the output is
 
         Args:
             z (ComplexVector): point at which the function is evaluated
@@ -288,9 +293,11 @@ class PolyExpAnsatz(PolyExpBase):
             Scalar: value of the function
         """
         z = np.atleast_1d(z)  # shape (Z, n)
-        zz = np.einsum('...a,...b->...ab', z, z)[...,None,:,:]  # shape (Z, 1, n, n))
-        sum1 = 0.5 * math.sum(zz * self.A, axes=[-1,-2])  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
-        sum2 = np.sum(z[...,None,:] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
+        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (Z, 1, n, n))
+        sum1 = 0.5 * math.sum(
+            zz * self.A, axes=[-1, -2]
+        )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
+        sum2 = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
         exp_sum = np.exp(sum1 + sum2)  # (Z, b)
         result = exp_sum * self.c  # (Z, b)
         val = np.sum(result, axis=-1)  # (Z)
