@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Optional, Union
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from .wires import Wires
+from .wires import Wired
 
 
 class CircuitComponent:
@@ -35,12 +35,14 @@ class CircuitComponent:
 
     def __init__(
         self,
+        name: str,
         modes_in_ket: Optional[list[int]] = None,
         modes_out_ket: Optional[list[int]] = None,
         modes_in_bra: Optional[list[int]] = None,
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
-        self._wires = Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        self._name = name
+        self._wires = Wired(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
         self._parameter_set = ParameterSet()
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
@@ -54,8 +56,29 @@ class CircuitComponent:
         self.__dict__[parameter.name] = parameter
 
     @property
-    def wires(self) -> Wires:
+    def name(self):
+        r"""
+        The name of this component.
+        """
+        return self._name
+
+    @property
+    def parameter_set(self):
+        r"""
+        The set of parameters for this transformation.
+        """
+        return self._parameter_set
+
+    @property
+    def wires(self) -> Wired:
         r"""
         The wires of this ``CircuitComponent``.
         """
         return self._wires
+
+    def light_copy(self) -> CircuitComponent:
+        r""" """
+        instance = super().__new__(self.__class__)
+        instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
+        instance.__dict__["_wires"] = self.wires.new()
+        return instance

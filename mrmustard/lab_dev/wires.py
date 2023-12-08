@@ -18,6 +18,7 @@ Classes to represent wires for tensor network applications.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Optional, Sequence, Union
 
 import uuid
@@ -27,61 +28,114 @@ __all__ = [
 ]
 
 
-def random_int() -> int:
+class Wire:
     r"""
-    Returns a random integer obtained from a UUID
-    """
-    return uuid.uuid1().int
+    A class to represent individual wires in a tensor network.
 
-
-class WiresLog:
-    r"""
-    A wrap around a dictionary that maps modes to a wire ``id`` or ``None``.
+    Each wire owns a label ``mode`` that represents the mode of light that the wire
+    is acting on. Moreover, it is characterized by a numerical identifier ``id``,
+    as well as by a boolean ``is_connected`` that is ``True`` if this wire has been
+    connected to another wire, and ``False`` otherwise.
 
     Arguments:
-        modes: All the modes in this ``WireLog``.
-        modes_with_id: The modes that need to be given an ``id``.
+        mode: The mode of light the wire is acting on.
     """
 
-    def __init__(
-        self, modes: Optional[Sequence[int]] = None, modes_with_id: Optional[Sequence[int]] = None
-    ) -> None:
-        modes = modes or []
-        modes_with_id = modes_with_id or []
-        if not set(modes_with_id).issubset(modes):
-            msg = f"{modes_with_id} is not subset of {modes}"
-            raise ValueError(msg)
-        self._log = {m: uuid.uuid1().int if m in modes_with_id else None for m in modes}
+    def __init__(self, mode: int) -> None:
+        self._mode = mode
+        self._id = uuid.uuid1().int
+        self._is_connected = False
 
     @property
-    def log(self) -> dict[int, Optional[int]]:
+    def id(self) -> int:
         r"""
-        The dictionary mapping modes to ``id``s wrapped in this ``WireLog``.
+        The numerical identifier of this wire.
         """
-        return self._log
+        return self._id
 
-    def remove_ids(self) -> WiresLog:
-        r"""
-        Returns a new ``WiresLog`` where all the ``id``s in the log are replaced with ``None``.
-        """
-        return WiresLog(list(self._log.keys()))
+    @id.setter
+    def id(self, value: int):
+        if self.is_connected:
+            msg = "Cannot change the ``id`` or a wire that is already connected."
+            raise ValueError(msg)
+        self._id = value
 
-    def __getitem__(self, modes: Sequence[int]) -> WiresLog:
+    @property
+    def is_connected(self) -> bool:
         r"""
-        Returns a new ``WiresLog`` with wires on remaining modes set to ``None``.
+        Whether or not this wire is connected with another wire.
         """
-        ret = WiresLog()
-        ret._log = {m: (v if m in modes else None) for m, v in self._log.items()}
-        return ret
+        return self._is_connected
+
+    @is_connected.setter
+    def is_connected(self, value: bool):
+        self._is_connected = value
+
+    @property
+    def mode(self) -> int:
+        r"""
+        The mode represented by this wire.
+        """
+        return self._mode
+
+    def connect(self, other: Wire) -> None:
+        r"""
+        Connects this wire with another wire.
+
+        Raises an error if one or both wires are already connected with a
+        different wires, and does nothing if the two wires are already connected
+        together.
+
+        Arguments:
+            other: Another wire.
+
+        Raises:
+            ValueError: If one or both wires are already connected with a
+                different wires.
+        """
+        if self.id != other.id:
+            if not (self.is_connected or other.is_connected):
+                other.id = self.id
+                self.is_connected = True
+                other.is_connected = True
+            else:
+                msg = "Cannot connect a wire that is already connected."
+                raise ValueError(msg)
 
 
 class Wires:
     r"""
-    A class with wire functionality for tensor network tensor applications.
+    A list of ``Wire`` objects.
 
-    Each wire is characterized by a unique identifier ``id``, which must be different from
-    the identifiers of all the other wires in the tensor network. Additionally, it owns a
-    label ``mode`` that represents the mode of light that this wire is acting on.
+    Arguments:
+        modes: All the modes in this ``Wires``.
+    """
+
+    def __init__(self, modes: Optional[Sequence[int]] = None) -> None:
+        modes = modes or []
+        self._items = {m: Wire(m) for m in modes}
+
+    @property
+    def modes(self):
+        r"""
+        The modes in this ``Wires``.
+        """
+        return list(self._items.keys())
+
+    @property
+    def items(self):
+        r"""
+        The ``Wire``s in this ``Wires``.
+        """
+        return list(self._items.values())
+
+    def __getitem__(self, idx: int):
+        return self._items[idx]
+
+
+class Wired:
+    r"""
+    A class representing a wired object for tensor network tensor applications.
 
     Args:
         modes_out_bra: The output modes on the bra side.
@@ -97,7 +151,7 @@ class Wires:
         modes_in_bra: Optional[list[int]] = None,
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
-        msg = "Modes on ket and bra sides must be equal, unless either of them is ``None``."
+        msg = "modes on ket and bra sides must be equal, unless either of them is ``None``."
         if modes_in_ket and modes_in_bra:
             if modes_in_ket != modes_in_bra:
                 msg = f"Input {msg}"
@@ -107,92 +161,69 @@ class Wires:
                 msg = f"Output {msg}"
                 raise ValueError(msg)
 
-        all_modes = (
-            (modes_in_ket or [])
-            + (modes_out_ket or [])
-            + (modes_in_bra or [])
-            + (modes_out_bra or [])
+        self._modes = list(
+            set(
+                (modes_in_ket or [])
+                + (modes_out_ket or [])
+                + (modes_in_bra or [])
+                + (modes_out_bra or [])
+            )
         )
-        self._modes = list[set(all_modes)]
 
-        self._in_ket = WiresLog(self._modes, modes_in_ket)
-        self._out_ket = WiresLog(self._modes, modes_out_ket)
-        self._in_bra = WiresLog(self._modes, modes_in_bra)
-        self._out_bra = WiresLog(self._modes, modes_out_bra)
+        self._in_ket = Wires(modes_in_ket)
+        self._out_ket = Wires(modes_out_ket)
+        self._in_bra = Wires(modes_in_bra)
+        self._out_bra = Wires(modes_out_bra)
 
     @classmethod
-    def from_wires(
-        cls, in_ket: WiresLog, out_ket: WiresLog, in_bra: WiresLog, out_bra: WiresLog
-    ) -> Wires:
+    def from_wires(cls, in_ket: Wires, out_ket: Wires, in_bra: Wires, out_bra: Wires) -> Wires:
         r"""
         Initializes a ``Wires`` object from ``WireLog`` objects.
         """
-        ret = Wires()
+        ret = Wired()
         ret._in_ket = in_ket
-        ret._out_ket = out_ket
+        ret._in_ket = out_ket
         ret._in_bra = in_bra
         ret._out_bra = out_bra
         return ret
 
-    @property
-    def input(self) -> Wires:
+    def new(self) -> Wired:
         r"""
-        Returns a new tensor where the output wires have no ``id``s.
+        Returns a new instance of this ``Wired`` with new ``id``s.
         """
-        return self.from_wires(
-            self._in_ket,
-            self._out_ket.remove_ids(),
-            self._in_bra,
-            self._out_bra.remove_ids(),
-        )
+        modes_in_ket = self.in_ket.modes
+        modes_out_ket = self.out_ket.modes
+        modes_in_bra = self.in_bra.modes
+        modes_out_bra = self.out_bra.modes
+        return Wired(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
 
     @property
-    def output(self) -> Wires:
+    def in_ket(self) -> Wires:
         r"""
-        Returns a new tensor where the input wires have no ``id``s.
+        The ``Wires`` for the input modes on the ket side.
         """
-        return self.from_wires(
-            self._in_ket.remove_ids(),
-            self._out_ket,
-            self._in_bra.remove_ids(),
-            self._out_bra,
-        )
+        return self._in_ket
 
     @property
-    def ket(self) -> Wires:
+    def out_ket(self) -> Wires:
         r"""
-        Returns a new tensor where the bra wires have no ``id``s.
+        The ``Wires`` for the output modes on the ket side.
         """
-        return self.from_wires(
-            self._in_ket,
-            self._out_ket,
-            self._in_bra.remove_ids(),
-            self._out_bra.remove_ids(),
-        )
+        return self._out_ket
 
     @property
-    def bra(self) -> Wires:
+    def in_bra(self) -> Wires:
         r"""
-        Returns a new tensor where the ket wires have no ``id``s.
+        The ``Wires`` for the input modes on the bra side.
         """
-        return self.from_wires(
-            self._in_ket.remove_ids(),
-            self._out_ket.remove_ids(),
-            self._in_bra,
-            self._out_bra,
-        )
+        return self._in_bra
 
-    def __getitem__(self, modes: Union[int, Sequence[int]]) -> Wires:
+    @property
+    def out_bra(self) -> Wires:
         r"""
-        Returns a new ``Wires`` object with wires on remaining modes set to ``None``.
+        The ``Wires`` for the output modes on the bra side.
         """
-        modes = [modes] if isinstance(modes, int) else modes
-        return self.from_wires(
-            self._in_ket[modes],
-            self._out_ket[modes],
-            self._in_bra[modes],
-            self._out_bra[modes],
-        )
+        return self._out_bra
 
     @property
     def adjoint(self) -> Wires:
@@ -217,43 +248,6 @@ class Wires:
     @property
     def modes(self) -> list[int]:
         r"""
-        The modes in this ``Wires``.
+        A sorted list of all the modes in this ``Wires``.
         """
         return self._modes
-
-    @property
-    def modes_out(self) -> list[int]:
-        r"""
-        Returns a list of output modes for this ``Wires``.
-        """
-        return list({m: None for m in self._out_bra | self._out_ket}.keys())
-
-    @property
-    def modes_in(self) -> list[int]:
-        r"""
-        Returns a list of input modes on the bra side for this ``Wires``.
-        """
-        return list({m: None for m in self._in_bra | self._in_ket}.keys())
-
-    @property
-    def modes_ket(self) -> list[int]:
-        r"""
-        Returns a list of output modes on the ket side for this ``Wires``.
-        """
-        return list({m: None for m in self._out_ket | self._in_ket}.keys())
-
-    # @property
-    # def ids(self) -> list[int | None]:
-    #     r"""
-    #     Returns a list of ids for this Tensor for id position search.
-    #     """
-    #     return (
-    #         list(self._out_bra.values())
-    #         + list(self._in_bra.values())
-    #         + list(self._out_ket.values())
-    #         + list(self._in_ket.values())
-    #     )
-
-    # def __bool__(self):
-    #     r"""Make self truthy if any of the ids are not None and falsy otherwise"""
-    #     return any(self.ids)

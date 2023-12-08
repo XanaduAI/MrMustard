@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import Optional, Sequence, Tuple, Union
 
 from mrmustard import math
+from .circuits import Circuit, to_circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
 from .wires import Wires
@@ -36,10 +37,26 @@ class Unitary(Transformation):
     r"""
     Base class for all unitary transformations.
     """
-    def __init__(self, modes):
-        super().__init__(modes_in_ket=modes, modes_out_ket=modes)
 
-class DGate:
+    def __init__(self, name, modes):
+        super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
+
+    def __rshift__(self, other: Union[CircuitComponent, Circuit]):
+        r"""
+        Returns a ``Circuit`` with two connected components, namely
+        ``self`` and ``other.light_copy()``.
+        """
+        other_cp = other.light_copy()
+
+        modes_out_self = set(self.wires.out_ket.modes)
+        if isinstance(other_cp, CircuitComponent):
+            modes_in_other = set(other_cp.wires.in_ket.modes)
+            for m in modes_out_self.intersection(modes_in_other):
+                self.wires.out_ket[m].connect(other_cp.wires.in_ket[m])
+        return to_circuit([self, other_cp])
+
+
+class Dgate(Unitary):
     r"""
 
     If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
@@ -70,7 +87,6 @@ class DGate:
         modes: Optional[Sequence[int]] = None,
     ) -> None:
         m = max(len(math.atleast_1d(x)), len(math.atleast_1d(y)))
-        super.__init__(modes = modes or list(range(m)))
+        super().__init__("Dgate", modes=modes or list(range(m)))
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
-        

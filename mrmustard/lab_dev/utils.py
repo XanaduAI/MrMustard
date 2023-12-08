@@ -44,3 +44,10 @@ def make_parameter(
     if not is_trainable:
         return Constant(value=value, name=name)
     return Variable(value=value, name=name, bounds=bounds, update_fn=update_fn)
+
+
+def light_copy(obj, duplicate: list[str]):
+    r""" """
+    instance = object.__new__(type(obj))
+    instance.__dict__.update({k: v for k, v in obj.__dict__.items() if k in duplicate})
+    return instance
