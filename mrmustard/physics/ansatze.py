@@ -250,6 +250,7 @@ class PolyExpAnsatz(PolyExpBase):
         self,
         just_phase: bool = False,
         with_measure: bool = False,
+        log_scale: bool = False,
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
     ):
@@ -257,6 +258,8 @@ class PolyExpAnsatz(PolyExpBase):
         X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
         Z = (X + 1j * Y).T
         f_values = self(Z[..., None])
+        if log_scale:
+            f_values = np.log(np.abs(f_values)) * np.arg(f_values)
         if with_measure:
             f_values = f_values * np.exp(-np.abs(Z) ** 2)
 
@@ -277,11 +280,12 @@ class PolyExpAnsatz(PolyExpBase):
         ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
-        title = "$F_{" + self.name + "}(z)$"
+        title = "F_{" + self.name + "}(z)"
+        title = "arg({title})\log|{title}|" if log_scale else title
         title = title + "exp(-|z|^2)" if with_measure else title
-        title = "arg(" + title + ")" if just_phase else title
-        ax.set_title(title)
-        plt.show(block=False)  # ?
+        title = "arg(F_{" + self.name + "}(z))" if just_phase else title
+        ax.set_title("$" + title + "$")
+        plt.show(block=False)  # why block=False?
         return im, ax
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
@@ -301,7 +305,6 @@ class PolyExpAnsatz(PolyExpBase):
         )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
         sum2 = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
         exp_sum = np.exp(sum1 + sum2)  # (Z, b)
-        print(exp_sum.shape)
         result = exp_sum * self.c  # (Z, b)
         val = np.sum(result, axis=-1)  # (Z)
         return val
