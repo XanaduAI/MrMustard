@@ -278,7 +278,9 @@ class PolyExpAnsatz(PolyExpBase):
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
         title = "$F_{" + self.name + "}(z)$"
-        ax.set_title("arg(" + title + ")" if just_phase else title)
+        title = title + "exp(-|z|^2)" if with_measure else title
+        title = "arg(" + title + ")" if just_phase else title
+        ax.set_title(title)
         plt.show(block=False)  # ?
         return im, ax
 
