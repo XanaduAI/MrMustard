@@ -75,10 +75,28 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = [1.0],
     ):
         self.ansatz = PolyExpAnsatz(A, b, c)
+        self._name = "Bargmann"
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, name: str):
+        self._name = name
+        self.ansatz.name = name
+
+    def __call__(self, z: ComplexTensor) -> ComplexTensor:
+        r"""Evaluates the Bargmann function at the given points."""
+        return self.ansatz(z)
 
     def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
         r"""Returns a Bargmann object from an ansatz object."""
         return self.__class__(ansatz.A, ansatz.b, ansatz.c)
+
+    def plot(self, just_phase: bool = False, with_measure: bool = True, log_scale: bool = False):
+        r"""Plots the Bargmann function."""
+        return self.ansatz.plot(just_phase, with_measure, log_scale)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
