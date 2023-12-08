@@ -187,7 +187,7 @@ class PolyExpBase(Ansatz):
         generators = [
             itertools.chain(
                 math.asnumpy(self.vec[i]).flat,
-                math.asnumpy(self.mat[i].flat),
+                math.asnumpy(self.mat[i]).flat,
                 math.asnumpy(self.array[i]).flat,
             )
             for i in range(self.batch_size)
