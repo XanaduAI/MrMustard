@@ -553,7 +553,6 @@ def general_dyne(
     proj_cov: Matrix,
     proj_means: Optional[Vector] = None,
     modes: Optional[Sequence[int]] = None,
-    sample_shape: Optional[Sequence[int]] = (),
 ) -> Tuple[Scalar, Scalar, Matrix, Vector, Any]:
     r"""Returns the results of a general-dyne measurement. If ``proj_means`` are not provided
     (as ``None``), they are sampled from the probability distribution.
@@ -567,7 +566,6 @@ def general_dyne(
             is sampled from the generaldyne probability distribution.
         modes (Optional Sequence[int]): modes being measured (modes are indexed from 0 to num_modes-1),
             if modes are not provided then the first modes (according to the size of ``cov``) are measured.
-        sample_shape (Optional Sequence[int]): shape of the sample to be drawn from the probability distribution.
 
     Returns:
         Tuple[Scalar, Scalar, Matrix, Vector]:
@@ -575,12 +573,12 @@ def general_dyne(
             oucome probability [units of `\hbar**N`],
             post-measurement covariace [units of `2\hbar`]
             post-measurement means vector [units of `\sqrt{\hbar}`].
+            pdf (Tensorflow probability distribution)
     """
     N, M = cov.shape[-1] // 2, proj_cov.shape[-1] // 2
     # Bmodes are the modes being measured and Amodes are the leftover modes
     Bmodes = modes or list(range(M))
     Amodes = list(set(list(range(N))) - set(Bmodes))
-
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
     reduced_cov = B + proj_cov
@@ -588,9 +586,10 @@ def general_dyne(
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
     pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
-    outcome = (
-        pdf.sample(math.astensor(sample_shape), dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
-    )
+    if proj_means is None:
+        outcome = pdf.sample(dtype=cov.dtype)
+    else:
+        outcome = math.cast(proj_means, cov.dtype)
     prob = pdf.prob(outcome)
 
     # calculate conditional output state of unmeasured modes
