@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Optional, Union
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from .wires import Wired
+from .wires import Wires
 
 
 class CircuitComponent:
@@ -42,7 +42,7 @@ class CircuitComponent:
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
         self._name = name
-        self._wires = Wired(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        self._wires = Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
         self._parameter_set = ParameterSet()
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
@@ -54,6 +54,10 @@ class CircuitComponent:
         """
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
+
+    @property
+    def modes(self) -> set(int):
+        return self.wires.modes
 
     @property
     def name(self):
@@ -70,15 +74,22 @@ class CircuitComponent:
         return self._parameter_set
 
     @property
-    def wires(self) -> Wired:
+    def wires(self) -> Wires:
         r"""
         The wires of this ``CircuitComponent``.
         """
         return self._wires
 
     def light_copy(self) -> CircuitComponent:
-        r""" """
+        r"""
+        """
         instance = super().__new__(self.__class__)
         instance.__dict__ = {k: v for k, v in self.__dict__.items() if k != "wires"}
         instance.__dict__["_wires"] = self.wires.new()
-        return instance
+        return instance    
+
+    def __getitem__(self, idx):
+        ret = CircuitComponent(self.name)
+        ret._wires = self._wires[idx]
+        ret._parameter_set = self.parameter_set
+        return ret

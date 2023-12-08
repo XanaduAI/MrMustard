@@ -12,21 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Classes to represent wires for tensor network applications.
-"""
+""" Classes for constructing tensors."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Optional, Sequence, Union
 
 import uuid
-
-__all__ = [
-    "Wires",
-]
-
 
 class Wire:
     r"""
@@ -102,46 +94,17 @@ class Wire:
                 msg = "Cannot connect a wire that is already connected."
                 raise ValueError(msg)
 
-
 class Wires:
     r"""
-    A list of ``Wire`` objects.
+    A class with wire functionality for tensor network tensor applications.
 
-    Arguments:
-        modes: All the modes in this ``Wires``.
-    """
-
-    def __init__(self, modes: Optional[Sequence[int]] = None) -> None:
-        modes = modes or []
-        self._items = {m: Wire(m) for m in modes}
-
-    @property
-    def modes(self):
-        r"""
-        The modes in this ``Wires``.
-        """
-        return list(self._items.keys())
-
-    @property
-    def items(self):
-        r"""
-        The ``Wire``s in this ``Wires``.
-        """
-        return list(self._items.values())
-
-    def __getitem__(self, idx: int):
-        return self._items[idx]
-
-
-class Wired:
-    r"""
-    A class representing a wired object for tensor network tensor applications.
+    In general we distinguish between input and output wires, and between ket and bra sides.
 
     Args:
-        modes_out_bra: The output modes on the bra side.
-        modes_in_bra: The input modes on the bra side.
-        modes_out_ket: The output modes on the ket side.
         modes_in_ket: The input modes on the ket side.
+        modes_out_ket: The output modes on the ket side.
+        modes_in_bra: The input modes on the bra side.
+        modes_out_bra: The output modes on the bra side.
     """
 
     def __init__(
@@ -151,7 +114,9 @@ class Wired:
         modes_in_bra: Optional[list[int]] = None,
         modes_out_bra: Optional[list[int]] = None,
     ) -> None:
-        msg = "modes on ket and bra sides must be equal, unless either of them is ``None``."
+        msg = (
+            "modes on ket and bra sides must be equal, unless either of them is `None`."
+        )
         if modes_in_ket and modes_in_bra:
             if modes_in_ket != modes_in_bra:
                 msg = f"Input {msg}"
@@ -160,94 +125,182 @@ class Wired:
             if modes_out_ket != modes_out_bra:
                 msg = f"Output {msg}"
                 raise ValueError(msg)
+            
+        modes_in_ket = modes_in_ket or []
+        modes_out_ket = modes_out_ket or []
+        modes_in_bra = modes_in_bra or []
+        modes_out_bra = modes_out_bra or []
+        self._modes = set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
 
-        self._modes = list(
-            set(
-                (modes_in_ket or [])
-                + (modes_out_ket or [])
-                + (modes_in_bra or [])
-                + (modes_out_bra or [])
-            )
-        )
-
-        self._in_ket = Wires(modes_in_ket)
-        self._out_ket = Wires(modes_out_ket)
-        self._in_bra = Wires(modes_in_bra)
-        self._out_bra = Wires(modes_out_bra)
+        self._out_ket = {
+            m: Wire(m) if m in modes_out_ket else None for m in self._modes
+        }
+        self._in_bra = {
+            m: Wire(m) if m in modes_in_bra else None for m in self._modes
+        }
+        self._out_bra = {
+            m: Wire(m) if m in modes_out_bra else None for m in self._modes
+        }
+        self._in_ket = {
+            m: Wire(m) if m in modes_in_ket else None for m in self._modes
+        }
 
     @classmethod
-    def from_wires(cls, in_ket: Wires, out_ket: Wires, in_bra: Wires, out_bra: Wires) -> Wires:
-        r"""
-        Initializes a ``Wires`` object from ``WireLog`` objects.
-        """
-        ret = Wired()
-        ret._in_ket = in_ket
-        ret._in_ket = out_ket
-        ret._in_bra = in_bra
-        ret._out_bra = out_bra
-        return ret
-
-    def new(self) -> Wired:
-        r"""
-        Returns a new instance of this ``Wired`` with new ``id``s.
-        """
-        modes_in_ket = self.in_ket.modes
-        modes_out_ket = self.out_ket.modes
-        modes_in_bra = self.in_bra.modes
-        modes_out_bra = self.out_bra.modes
-        return Wired(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+    def from_wires(cls, in_ket, out_ket, in_bra, out_bra) -> Wires:
+        new = Wires()
+        new._in_ket = in_ket
+        new._in_bra = in_bra
+        new._out_ket = out_ket
+        new._out_bra = out_bra
+        return new
 
     @property
-    def in_ket(self) -> Wires:
+    def in_ket(self) -> dict[int, Optional[Wire]]:
         r"""
-        The ``Wires`` for the input modes on the ket side.
+        A dictionary mapping an integer ``m`` to a ``Wire`` if mode ``m`` has an
+        input wire on the ket side, and to ``None`` otherwise.
         """
         return self._in_ket
 
     @property
-    def out_ket(self) -> Wires:
+    def out_ket(self) -> dict[int, Optional[Wire]]:
         r"""
-        The ``Wires`` for the output modes on the ket side.
+        A dictionary mapping an integer ``m`` to a ``Wire`` if mode ``m`` has an
+        ouput wire on the ket side, and to ``None`` otherwise.
         """
         return self._out_ket
 
     @property
-    def in_bra(self) -> Wires:
+    def in_bra(self) -> dict[int, Optional[Wire]]:
         r"""
-        The ``Wires`` for the input modes on the bra side.
+        A dictionary mapping an integer ``m`` to a ``Wire`` if mode ``m`` has an
+        input wire on the bra side, and to ``None`` otherwise.
         """
         return self._in_bra
 
     @property
     def out_bra(self) -> Wires:
         r"""
-        The ``Wires`` for the output modes on the bra side.
+        A dictionary mapping an integer ``m`` to a ``Wire`` if mode ``m`` has an
+        ouput wire on the bra side, and to ``None`` otherwise.
         """
         return self._out_bra
 
     @property
-    def adjoint(self) -> Wires:
-        r"""The adjoint view of this Wires. That is, ket <-> bra."""
-        return self.from_wires(
-            self._in_bra,
-            self._out_bra,
-            self._in_ket,
-            self._out_ket,
-        )
-
-    @property
-    def dual(self) -> Wires:
-        r"""The dual view of this ``Wires``. That is, input <-> output."""
-        return self.from_wires(
-            self._out_ket,
-            self._in_ket,
-            self._out_bra,
-            self._in_bra,
-        )
-
-    @property
-    def modes(self) -> list[int]:
+    def input(self) -> Wires:
         r"""
-        A sorted list of all the modes in this ``Wires``.
+        Returns a new tensor with output wires set to None
+        """
+        return self.from_wires(
+            {m: None for m in self._in_ket},
+            self._out_ket,
+            {m: None for m in self._in_bra},
+            self._out_bra,
+        )
+
+    @property
+    def output(self) -> Wires:
+        r"""
+        Returns a new tensor with input wires set to None
+        """
+        return self.from_wires(
+            self._in_ket,
+            {m: None for m in self._out_ket},
+            self._in_bra,
+            {m: None for m in self._out_bra},
+        )
+
+    @property
+    def ket(self) -> Wires:
+        r"""
+        Returns a new tensor with bra wires set to None
+        """
+        return self.from_wires(
+            {m: None for m in self._in_ket},
+            {m: None for m in self._out_ket},
+            self._in_bra,
+            self._out_bra,
+        )
+
+    @property
+    def bra(self) -> Wires:
+        r"""
+        Returns a new tensor with ket wires set to None
+        """
+        return self.from_wires(
+            self._in_ket,
+            self._out_ket,
+            {m: None for m in self._in_bra},
+            {m: None for m in self._out_bra},
+        )
+
+    @property
+    def adjoint(self) -> Wires:
+        r"""The adjoint of this ``Wires`` (with new ``id``s). That is, ket <-> bra."""
+        return self.from_wires(self._in_bra, self._out_bra, self._in_ket, self._out_ket)
+
+    @property
+    def modes(self) -> set[int]:
+        r"""
+        The set of all the modes (input, output, ket, and bra) in this ``Wires``.
         """
         return self._modes
+
+    @property
+    def modes_out(self) -> list[int]:
+        r"""
+        It returns a list of output modes for this Tensor.
+        """
+        return list({m: None for m in self._out_bra | self._out_ket}.keys())
+    
+    @property
+    def modes_in(self) -> list[int]:
+        r"""
+        It returns a list of input modes on the bra side for this Tensor.
+        """
+        return list({m: None for m in self._in_bra | self._in_ket}.keys())
+    
+    @property
+    def modes_ket(self) -> list[int]:
+        r"""
+        It returns a list of output modes on the ket side for this Tensor.
+        """
+        return list({m: None for m in self._out_ket | self._in_ket}.keys())
+    
+    @property
+    def ids(self) -> list[int | None]:
+        r"""
+        It returns a list of ids for this Tensor for id position search.
+        """
+        return (
+            list(self._out_bra.values())
+            + list(self._in_bra.values())
+            + list(self._out_ket.values())
+            + list(self._in_ket.values())
+        )
+    
+    def new(self) -> Wires:
+        r"""
+        Returns a new instance of this ``Wires`` with new ``id``s.
+        """
+        modes_in_ket = [m for m, w in self.in_ket.items() if w]
+        modes_out_ket = [m for m, w in self.out_ket.items() if w]
+        modes_in_bra = [m for m, w in self.in_bra.items() if w]
+        modes_out_bra = [m for m, w in self.out_bra.items() if w]
+        return Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+    
+    def __bool__(self):
+        r"""Make self truthy if any of the ids are not None and falsy otherwise"""
+        return any(self.ids)
+
+    def __getitem__(self, modes) -> Wires:
+        r"""
+        Returns a new ``Wires`` with wires on remaining modes set to ``None``.
+        """
+        modes = [modes] if isinstance(modes, int) else modes
+        return self.from_wires(
+            {m: k for m, k in self._in_ket.items() if m in modes},
+            {m: k for m, k in self._out_ket.items() if m in modes},
+            {m: k for m, k in self._in_bra.items() if m in modes},
+            {m: k for m, k in self._out_bra.items() if m in modes},
+        )

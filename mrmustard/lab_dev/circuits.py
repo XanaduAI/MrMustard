@@ -27,46 +27,78 @@ import matplotlib.pyplot as plt
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from .circuit_components import CircuitComponent
-from .wires import Wires
+from .wires import Wire, Wires
 
 
-def to_circuit(components: Optional[Sequence[CircuitComponent]] = None) -> Circuit:
+class Network:
     r"""
-    Returns a circuit with given components.
-
-    It does not check whether these components are connected, hence it should be used with
-    care (and used only by Mr Mustard developers).
-
-    Arguments:
-        components: The components of the returned circuit.
+    An book-keeping object used by ``Circuit``s to keep track of the unconnected output
+    wires, so that these wires can be quickly connected to those of new components added to the
+    circuit.
     """
-    ret = Circuit()
-    ret._components = components
-    return ret
+    def __init__(self) -> None:
+        self._ket = {}
+
+    @property
+    def ket(self) -> dict[int, Wire]:
+        return self._ket
 
 
 class Circuit:
     r"""
     A quantum circuit.
 
-    Quantum circuits can be generated using the operators ``>>`` and ``<<`` to connect
-    sequences of ``CircuitComponent``s.
+    Quantum circuits store a list of ``CircuitComponent`` objects, alongside a ``Network``
+    that allows quickly adding new components to the circuit. They can be generated using the
+    operators ``>>`` and ``<<`` on sequences of ``CircuitComponent``s.
 
     .. code-block::
 
-        g1 = Dgate(x=0.5, y=0.3)
-        g2 = Sgate(0.1)
-        circuit == g1 >> g2
+        g1 = Dgate(1, modes=[0, 1])
+        g2 = Dgate(1, modes=[0,])
+        g3 = Dgate(1, modes=[1,])
+        g4 = Dgate(1, modes=[0, 1, 9])
+
+        circ = g1 >> g2 >> g2 >> g3 >> g4
+        circ.draw();
     """
 
     def __init__(
         self,
     ) -> None:
         self._components = []
+        self._network = Network()
+
+    @classmethod
+    def from_components(cls, components: Sequence[CircuitComponent], network: Optional[Network]):
+        r"""
+        Returns a circuit from a list of ``CircuitComponents`` and a ``Network``.
+        
+        It does perform any validation on the given ``components`` and ``network``, and therefore
+        should be used with caution.
+
+        Arguments:
+            components: A list of circuit components.
+            network: A network.
+        """
+        ret = Circuit()
+        ret._components = components
+        ret._network = network
+        return ret
 
     @property
     def components(self) -> Sequence[CircuitComponent]:
+        r"""
+        The components in this circuit.
+        """
         return self._components
+    
+    @property
+    def network(self) -> Network:
+        r"""
+        The network in this circuit.
+        """
+        return self._network
 
     def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
         r"""
@@ -75,15 +107,23 @@ class Circuit:
         a ``Circuit``) correctly connected.
         """
         if isinstance(other, CircuitComponent):
-            other = to_circuit([other.light_copy()])
-
-        ret = self.components
+            other = Circuit.from_components([other], Network())
+        
         for component in other.components:
-            connected_component = (ret[-1] >> component)[1]
-            ret = to_circuit(ret + [connected_component])
-        return ret
+            new_component = component.light_copy()
+            for m in new_component.modes:
+                try:
+                    self._network.ket[m].connect(new_component.wires.in_ket[m])
+                except KeyError:
+                    pass
+                self._network.ket[m] = new_component.wires.out_ket[m]
+            self._components += [new_component]
+        return Circuit.from_components(self.components, self.network)
 
     def __getitem__(self, idx: int) -> CircuitComponent:
+        r"""
+        The component in position ``idx`` of this circuit's components.
+        """
         return self._components[idx]
 
     def draw(self, layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
@@ -122,14 +162,14 @@ class Circuit:
             node_size.append(150)
             node_color.append("red")
 
-            wires_in = (
-                component.wires.in_ket.items
-                + component.wires.in_bra.items
-            )
-            wires_out = (
-                component.wires.out_ket.items
-                + component.wires.out_bra.items
-            )
+            wires_in = [w for w in
+                list(component.wires.in_ket.values())
+                + list(component.wires.in_bra.values())
+            if w]
+            wires_out = [w for w in
+                list(component.wires.out_ket.values())
+                + list(component.wires.out_bra.values())
+            if w]
             wires = wires_in + wires_out
             for wire in wires:
                 wire_id = wire.id
@@ -190,5 +230,4 @@ class Circuit:
         )
 
         plt.title("Mr Mustard Circuit")
-        plt.show()
         return fig
