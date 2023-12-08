@@ -18,11 +18,10 @@ This module implements the set of detector classes that perform measurements on 
 
 from typing import Iterable, List, Optional, Tuple, Union
 
-from mrmustard import settings
+from mrmustard import math, settings
 from mrmustard.physics import fock, gaussian
 from mrmustard.utils.typing import RealMatrix, RealVector
 
-from mrmustard import math
 from .abstract import FockMeasurement, Measurement, State
 from .gates import Rgate
 from .states import Coherent, DisplacedSqueezed
@@ -271,7 +270,7 @@ class Generaldyne(Measurement):
     def _measure_gaussian(self, other) -> Union[State, float]:
         remaining_modes = list(set(other.modes) - set(self.modes))
 
-        outcome, prob, new_cov, new_means = gaussian.general_dyne(
+        outcome, prob, new_cov, new_means, pdf = gaussian.general_dyne(
             other.cov, other.means, self.state.cov, None, modes=self.modes
         )
         self.state = State(cov=self.state.cov, means=outcome)
