@@ -155,7 +155,7 @@ class PolyExpBase(Ansatz):
             i = indices_to_check.pop()
             for j in indices_to_check.copy():
                 if np.allclose(self.mat[i], self.mat[j]) and np.allclose(self.vec[i], self.vec[j]):
-                    math.update_add(self.array, i, self.array[j])
+                    self.array = math.update_add_tensor(self.array, [i], self.array[j])
                     indices_to_check.remove(j)
                     removed.append(j)
         to_keep = [i for i in range(self.batch_size) if i not in removed]
@@ -173,7 +173,7 @@ class PolyExpBase(Ansatz):
         mat, vec = self.mat[d0], self.vec[d0]
         for d in range(1, self.batch_size):
             if np.allclose(mat, self.mat[d]) and np.allclose(vec, self.vec[d]):
-                math.update_add(self.array, d0, self.array[d])
+                self.array = math.update_add_tensor(self.array, [d0], self.array[d])
             else:
                 to_keep.append(d)
                 d0 = d
