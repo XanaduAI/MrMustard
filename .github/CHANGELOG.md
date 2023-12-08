@@ -65,6 +65,8 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
   [(#307)](https://github.com/XanaduAI/MrMustard/pull/307)
 
+* When re-assigning an immutable setting with the same value, no more error is raised.
+  [(#316)](https://github.com/XanaduAI/MrMustard/pull/316)
 
 ### Bug fixes
 
