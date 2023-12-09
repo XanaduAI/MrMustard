@@ -21,8 +21,13 @@ from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexV
 
 
 class Representation:
+    _contract_idxs: tuple[int, ...] = ()
+
     def from_ansatz(self, ansatz: Ansatz) -> Ansatz:
         raise NotImplementedError
+
+    def __eq__(self, other):
+        return self.ansatz == other.ansatz
 
     def __add__(self, other):
         return self.from_ansatz(self.ansatz + other.ansatz)
@@ -47,6 +52,9 @@ class Representation:
 
     def __rtruediv__(self, other):
         return self.from_ansatz(other / self.ansatz)
+
+    def __and__(self, other):
+        return self.from_ansatz(self.ansatz & other.ansatz)
 
 
 class Bargmann(Representation):
@@ -163,8 +171,9 @@ class Bargmann(Representation):
         if len(idx_z) != len(idx_zconj):
             raise ValueError("The number of indices to trace over must be the same for z and z*.")
         A, b, c = [], [], []
-        for Ai, bi, ci in zip(self.A, self.b, self.c):
-            Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
+        for Abci in zip(self.A, self.b, self.c):
+            # Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
+            Aij, bij, cij = bargmann.complex_gaussian_integral(Abci, idx_z, idx_zconj, measure=-1.0)
             A.append(Aij)
             b.append(bij)
             c.append(cij)
