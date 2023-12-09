@@ -270,7 +270,7 @@ class Generaldyne(Measurement):
     def _measure_gaussian(self, other) -> Union[State, float]:
         remaining_modes = list(set(other.modes) - set(self.modes))
 
-        outcome, prob, new_cov, new_means, pdf = gaussian.general_dyne(
+        outcome, prob, new_cov, new_means, _ = gaussian.general_dyne(
             other.cov, other.means, self.state.cov, None, modes=self.modes
         )
         self.state = State(cov=self.state.cov, means=outcome)
