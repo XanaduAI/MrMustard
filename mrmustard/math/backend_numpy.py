@@ -325,12 +325,12 @@ class BackendNumpy(BackendBase):  # pragma: no cover
         return np.transpose(a, axes=perm)
 
     @Autocast()
-    def update_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
+    def update_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray) -> np.ndarray:
         tensor[indices] = values
         return tensor
 
     @Autocast()
-    def update_add_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
+    def update_add_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray) -> np.ndarray:
         tensor[indices] += values
         return tensor
 

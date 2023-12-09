@@ -1068,6 +1068,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             tensor: The tensor to update
             indices: The indices to update
             values: The values to update
+
+        Returns:
+            The updated tensor
         """
         return self._apply("update_tensor", (tensor, indices, values))
 
@@ -1078,6 +1081,9 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
             tensor: The tensor to update
             indices: The indices to update
             values: The values to add
+
+        Returns:
+            The updated tensor
         """
         return self._apply("update_add_tensor", (tensor, indices, values))
 

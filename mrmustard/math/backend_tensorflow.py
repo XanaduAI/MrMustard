@@ -321,11 +321,11 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.transpose(a, perm)
 
     @Autocast()
-    def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
+    def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor) -> tf.Tensor:
         return tf.tensor_scatter_nd_update(tensor, indices, values)
 
     @Autocast()
-    def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
+    def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor) -> tf.Tensor:
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
