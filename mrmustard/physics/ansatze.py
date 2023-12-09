@@ -259,7 +259,7 @@ class PolyExpAnsatz(PolyExpBase):
         Z = (X + 1j * Y).T
         f_values = self(Z[..., None])
         if log_scale:
-            f_values = np.log(np.abs(f_values)) * np.arg(f_values)
+            f_values = np.log(np.abs(f_values)) * np.exp(1j*np.angle(f_values))
         if with_measure:
             f_values = f_values * np.exp(-np.abs(Z) ** 2)
 
@@ -283,8 +283,8 @@ class PolyExpAnsatz(PolyExpBase):
         title = "F_{" + self.name + "}(z)"
         title = "arg({title})\log|{title}|" if log_scale else title
         title = title + "exp(-|z|^2)" if with_measure else title
-        title = "arg(F_{" + self.name + "}(z))" if just_phase else title
-        ax.set_title("$" + title + "$")
+        title = "$arg(F_{" + self.name + "}(z))$" if just_phase else title
+        ax.set_title(title)
         plt.show(block=False)  # why block=False?
         return im, ax
 
