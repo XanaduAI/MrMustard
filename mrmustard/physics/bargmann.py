@@ -267,3 +267,17 @@ def contract_two_Abc(
     return complex_gaussian_integral(
         Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
     )
+
+def trace_Abc(A, b, c, idx_z, idx_zconj):
+    r"""Returns the partial trace of an (A,b,c) triple.
+
+    Arguments:
+        A,b,c (tuple): the (A,b,c) triple
+        idx_z (tuple(int,...)): the tuple of indices of the z variables
+        idx_zconj (tuple(int,...)): the tuple of indices of the z* variables
+
+    Returns:
+        tuple: the partial trace of the (A,b,c) triple
+    """
+    Abc = A, b, c
+    return complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
