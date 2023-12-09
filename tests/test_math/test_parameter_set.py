@@ -81,5 +81,5 @@ class TestParameterSet:
         ps.add_parameter(var1)
 
         assert ps.to_string(1) == "1.2, 2.3, 3.5"
-        assert ps.to_string(3) == "1.234, 2.346, 3.457"
+        assert ps.to_string(3) == "1.235, 2.346, 3.457"
         assert ps.to_string(10) == "1.2345, 2.3456, 3.4567"
