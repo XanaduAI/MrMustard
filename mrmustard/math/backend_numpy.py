@@ -17,7 +17,6 @@
 # pylint: disable = missing-function-docstring, missing-class-docstring, fixme
 
 
-from copy import deepcopy
 from math import lgamma as mlgamma
 from typing import List, Optional, Sequence, Tuple, Union
 
@@ -327,19 +326,13 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     @Autocast()
     def update_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
-        ret = deepcopy(tensor)
-        for n_index, index in enumerate(indices):
-            ret[tuple(index)] = values[n_index]
-        return ret
+        tensor[indices] = values
+        return tensor
 
     @Autocast()
     def update_add_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray):
-        # https://stackoverflow.com/questions/65734836/numpy-equivalent-to-tf-tensor-scatter-nd-add-method
-        indices = np.array(indices)  # figure out why we need this
-        indices = tuple(indices.reshape(-1, indices.shape[-1]).T)
-        ret = deepcopy(tensor)
-        np.add.at(ret, indices, values)
-        return ret
+        tensor[indices] += values
+        return tensor
 
     def zeros(self, shape: Sequence[int], dtype=np.float64) -> np.ndarray:
         return np.zeros(shape, dtype=dtype)
