@@ -595,7 +595,7 @@ def general_dyne(
     # calculate conditional output state of unmeasured modes
     num_remaining_modes = N - M
     if num_remaining_modes == 0:
-        return outcome, prob, None, None
+        return outcome, prob, None, None, pdf
 
     AB_inv = math.matmul(AB, math.inv(reduced_cov))
     new_cov = A - math.matmul(AB_inv, math.transpose(AB))
