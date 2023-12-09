@@ -284,6 +284,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
 
+    def round(self, array: tf.Tensor, decimals: int = 0) -> tf.Tensor:
+        return tf.round(10**decimals * array) / 10**decimals
+
     def set_diag(self, array: tf.Tensor, diag: tf.Tensor, k: int) -> tf.Tensor:
         return tf.linalg.set_diag(array, diag, k=k)
 

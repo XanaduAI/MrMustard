@@ -933,6 +933,18 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("reshape", (array, shape))
 
+    def round(self, array: Tensor, decimals) -> Tensor:
+        r"""The array rounded to the nearest integer.
+
+        Args:
+            array: The array to round
+            decimals (int): number of decimals to round to
+
+        Returns:
+            The array rounded to the nearest integer
+        """
+        return self._apply("round", (array, decimals))
+
     def set_diag(self, array: Tensor, diag: Tensor, k: int) -> Tensor:
         r"""The array with the diagonal set to ``diag``.
 

@@ -285,6 +285,9 @@ class BackendNumpy(BackendBase):  # pragma: no cover
     def reshape(self, array: np.ndarray, shape: Sequence[int]) -> np.ndarray:
         return np.reshape(array, shape)
 
+    def round(self, array: np.ndarray, decimals: int = 0) -> np.ndarray:
+        return np.round(array, decimals)
+
     def sin(self, array: np.ndarray) -> np.ndarray:
         return np.sin(array)
 
@@ -326,12 +329,14 @@ class BackendNumpy(BackendBase):  # pragma: no cover
 
     @Autocast()
     def update_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray) -> np.ndarray:
-        tensor[indices] = values
+        for i, v in zip(indices, values):
+            tensor[i] = v
         return tensor
 
     @Autocast()
     def update_add_tensor(self, tensor: np.ndarray, indices: np.ndarray, values: np.ndarray) -> np.ndarray:
-        tensor[indices] += values
+        for i, v in zip(indices, values):
+            tensor[i] += v
         return tensor
 
     def zeros(self, shape: Sequence[int], dtype=np.float64) -> np.ndarray:
