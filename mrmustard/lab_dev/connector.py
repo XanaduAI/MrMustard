@@ -18,45 +18,27 @@ Classed and methods to connect the components of quantum circuits.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 from ..utils.typing import Mode
 from .circuit_components import CircuitComponent
 from .wires import Wire
 
+def connect_two(wire1: Wire, wire2: Wire) -> None:
+    wire1.connect(wire2)
 
-class NetworkLog:
-    r"""
-    A book-keeping object used by ``make_connections``s to keep track of the unconnected output
-    wires, so that these wires can be quickly connected to those of new components added
-    to the circuit.
-    """
-
-    def __init__(self) -> None:
-        self._ket = {}
-
-    @property
-    def ket(self) -> dict[Mode, Wire]:
-        r"""
-        A map from modes to wires on the ket side.
-        """
-        return self._ket
-
-
-def make_connections(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
+def connect_all(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
     r"""
     Takes as input a sequence of unconnected circuit components and connects them together.
     """
     ret = []
-    log = NetworkLog()
+    output_ket: dict[Mode, Optional[Wire]] = {m: None for c in components for m in c.modes}
 
     for component in components:
         new_component = component.light_copy()
         for m in new_component.modes:
-            try:
-                log.ket[m].connect(new_component.wires.in_ket[m])
-            except KeyError:
-                pass
-            log.ket[m] = new_component.wires.out_ket[m]
+            if output_ket[m]:
+                connect_two(output_ket[m], new_component.wires.in_ket[m])
+            output_ket[m] = new_component.wires.out_ket[m]
         ret += [new_component]
     return ret

@@ -25,7 +25,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .circuit_components import CircuitComponent
-from .connector import make_connections
+from .connector import connect_all
 
 __all__ = ["Circuit",]
 
@@ -92,7 +92,7 @@ class Circuit:
         Returns:
             A figure showing the tensor network.
         """
-        components = make_connections(self.components)
+        components = connect_all(self.components)
 
         try:
             fn_layout = getattr(nx.drawing.layout, layout)
