@@ -21,6 +21,8 @@ from mrmustard.utils.typing import Mode
 
 import uuid
 
+__all__ = ["Wire", "Wires"]
+
 
 class Wire:
     r"""
@@ -199,6 +201,13 @@ class Wires:
         The adjoint of this ``Wires`` (with new ``id``s), obtained switching kets and bras.
         """
         return self.from_wires(self._in_bra, self._out_bra, self._in_ket, self._out_ket)
+
+    @property
+    def modes(self) -> set[int]:
+        r"""
+        The set of all the modes (input, output, ket, and bra) in this ``Wires``.
+        """
+        return self._modes
 
     def new(self) -> Wires:
         r"""

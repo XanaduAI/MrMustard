@@ -13,26 +13,21 @@
 # limitations under the License.
 
 """
-A class to connect the components of quantum circuits.
+Classed and methods to connect the components of quantum circuits.
 """
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Union
+from typing import Sequence
 
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-
-from ..math.parameter_set import ParameterSet
-from ..math.parameters import Constant, Variable
+from ..utils.typing import Mode
 from .circuit_components import CircuitComponent
-from .wires import Wire, Wires
+from .wires import Wire
 
 
-class Network:
+class NetworkLog:
     r"""
-    A book-keeping object used by ``Circuit``s to keep track of the unconnected output
+    A book-keeping object used by ``make_connections``s to keep track of the unconnected output
     wires, so that these wires can be quickly connected to those of new components added
     to the circuit.
     """
@@ -41,7 +36,10 @@ class Network:
         self._ket = {}
 
     @property
-    def ket(self) -> dict[int, Wire]:
+    def ket(self) -> dict[Mode, Wire]:
+        r"""
+        A map from modes to wires on the ket side.
+        """
         return self._ket
 
 
@@ -49,3 +47,16 @@ def make_connections(components: Sequence[CircuitComponent]) -> Sequence[Circuit
     r"""
     Takes as input a sequence of unconnected circuit components and connects them together.
     """
+    ret = []
+    log = NetworkLog()
+
+    for component in components:
+        new_component = component.light_copy()
+        for m in new_component.modes:
+            try:
+                log.ket[m].connect(new_component.wires.in_ket[m])
+            except KeyError:
+                pass
+            log.ket[m] = new_component.wires.out_ket[m]
+        ret += [new_component]
+    return ret

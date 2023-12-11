@@ -18,13 +18,16 @@ A class to quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Union
+from typing import Iterable, Sequence, Union
 
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
 from .circuit_components import CircuitComponent
+from .connector import make_connections
+
+__all__ = ["Circuit",]
 
 
 class Circuit:
@@ -89,6 +92,8 @@ class Circuit:
         Returns:
             A figure showing the tensor network.
         """
+        components = make_connections(self.components)
+
         try:
             fn_layout = getattr(nx.drawing.layout, layout)
         except AttributeError:
@@ -107,7 +112,7 @@ class Circuit:
         arrows_in = nx.Graph()
         arrows_out = nx.Graph()
 
-        for idx, component in enumerate(self.components):
+        for idx, component in enumerate(components):
             component_id = component.name + str(idx)
             graph.add_node(component_id)
             component_labels[component_id] = component.name

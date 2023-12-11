@@ -21,9 +21,11 @@ from __future__ import annotations
 from typing import Optional, Sequence, Tuple, Union
 
 from mrmustard import math
-from .circuits import Circuit, Network
+from .circuits import Circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
+
+__all__ = ["Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
