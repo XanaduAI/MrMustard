@@ -259,7 +259,7 @@ class PolyExpAnsatz(PolyExpBase):
         Z = (X + 1j * Y).T
         f_values = self(Z[..., None])
         if log_scale:
-            f_values = np.log(np.abs(f_values)) * np.exp(1j*np.angle(f_values))
+            f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
         if with_measure:
             f_values = f_values * np.exp(-np.abs(Z) ** 2)
 

@@ -268,6 +268,7 @@ def contract_two_Abc(
         Abc, idx1, tuple(n + Abc1[0].shape[-1] for n in idx2), measure=-1.0
     )
 
+
 def trace_Abc(A, b, c, idx_z, idx_zconj):
     r"""Returns the partial trace of an (A,b,c) triple.
 
