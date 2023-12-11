@@ -24,6 +24,8 @@ from ..math.parameters import Constant, Variable
 from ..utils.typing import Mode
 from .wires import Wires
 
+__all__ = ["CircuitComponent",]
+
 
 class CircuitComponent:
     r"""

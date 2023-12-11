@@ -21,6 +21,8 @@ from mrmustard.utils.typing import Mode
 
 import uuid
 
+__all__ = ["Wire", "Wires"]
+
 
 class Wire:
     r"""
