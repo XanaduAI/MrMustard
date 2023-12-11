@@ -47,21 +47,9 @@ class Unitary(Transformation):
 
     def __rshift__(self, other: CircuitComponent):
         r"""
-        Returns a ``Circuit`` with two connected components, namely
-        ``self`` and ``other.light_copy()``.
+        Returns a ``Circuit`` with two connected, light-copied from ``self`` and ``other``.
         """
-        network = Network()
-        for m in self.modes:
-            network.ket[m] = self.wires.out_ket[m]
-
-        other_cp = other.light_copy()
-        for m in other_cp.modes:
-            try:
-                network.ket[m].connect(other_cp.wires.in_ket[m])
-            except KeyError:
-                pass
-            network.ket[m] = other_cp.wires.out_ket[m]
-        return Circuit.from_components([self, other_cp], network)
+        return Circuit([self, other])
 
 
 class Dgate(Unitary):
