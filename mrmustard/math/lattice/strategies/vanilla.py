@@ -147,19 +147,42 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     Returns:
         tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
     """
-    D = G.ndim
+    shape = G.shape
+
+    # calculate the strides
+    strides = shape_to_strides(np.array(shape))
+
+    # linearize G
+    G_lin = G.reshape((np.prod(np.array(shape)),))
 
     # init gradients
+    D = G.ndim
     dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
     db = np.zeros(D, dtype=np.complex128)  # component of dL/db
     dLdA = np.zeros_like(dA)
     dLdb = np.zeros_like(db)
 
-    # initialize path iterator
-    path = np.ndindex(G.shape)
+    # initialize the indeces.
+    # ``index`` is the index of the flattened output tensor, while
+    # ``index_u_iter`` iterates through the unravelled counterparts of
+    # ``index``.
+    index = 0
+    index_u_iter = np.ndindex(shape)
+    next(index_u_iter)
 
-    # skip first index
-    next(path)
+    for index_u in index_u_iter:
+        index += 1
+
+        ns = lower_neighbors(index, strides, 0)
+        (j0, n0) = next(ns)
+
+        for (j, n) in ns:  # pylint: disable=consider-using-enumerate
+            db[j] = np.sqrt[index_u[j]] * G[n]
+            dA[j, j] = 0.5 * np.sqrt[index_u[i] * n[j]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
+            for j in range(i + 1, len(db)):
+                dA[i, j] = np.sqrt[index[i] * pivot_i[j]] * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
+
+    return dA, db
 
     # iterate over the rest of the indices
     for index in path:
