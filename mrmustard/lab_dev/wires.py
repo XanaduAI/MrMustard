@@ -40,6 +40,8 @@ class Wire:
         self._mode = mode
         self._id = uuid.uuid1().int
         self._is_connected = False
+        # self._is_ket = ..
+        # self._is_input = ..
 
     @property
     def id(self) -> int:
@@ -85,6 +87,11 @@ class Wire:
             ValueError: If one or both wires are already connected with different
                 wires.
         """
+        # think about adding more error checking to make sure we can only connect
+        # correctly. E.g.:
+        # - Can we connect wire on mode 1 with wire on mode 3?
+        # - Can we connect two input wires?
+        # - Can we connect a ket with a bra?
         if self.id != other.id:
             if not (self.is_connected or other.is_connected):
                 other.id = self.id
