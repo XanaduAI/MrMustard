@@ -24,7 +24,6 @@ from mrmustard import math
 from .circuits import Circuit, Network
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
-from .wires import Wires
 
 
 class Transformation(CircuitComponent):
@@ -36,6 +35,11 @@ class Transformation(CircuitComponent):
 class Unitary(Transformation):
     r"""
     Base class for all unitary transformations.
+
+    Arguments:
+        name: The name of this unitary.
+        modes_in_ket: The input modes on the ket side.
+        modes_out_ket: The output modes on the ket side.
     """
 
     def __init__(self, name, modes):
@@ -49,7 +53,7 @@ class Unitary(Transformation):
         network = Network()
         for m in self.modes:
             network.ket[m] = self.wires.out_ket[m]
-        
+
         other_cp = other.light_copy()
         for m in other_cp.modes:
             try:
@@ -58,14 +62,6 @@ class Unitary(Transformation):
                 pass
             network.ket[m] = other_cp.wires.out_ket[m]
         return Circuit.from_components([self, other_cp], network)
-
-
-        # modes_out_self = set(self.wires.out_ket.modes)
-        # if isinstance(other_cp, CircuitComponent):
-        #     modes_in_other = set(other_cp.wires.in_ket.modes)
-        #     for m in modes_out_self.intersection(modes_in_other):
-        #         self.wires.out_ket[m].connect(other_cp.wires.in_ket[m])
-        # return to_circuit([self, other_cp])
 
 
 class Dgate(Unitary):

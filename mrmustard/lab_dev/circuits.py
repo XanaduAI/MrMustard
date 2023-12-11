@@ -32,10 +32,11 @@ from .wires import Wire, Wires
 
 class Network:
     r"""
-    An book-keeping object used by ``Circuit``s to keep track of the unconnected output
-    wires, so that these wires can be quickly connected to those of new components added to the
-    circuit.
+    A book-keeping object used by ``Circuit``s to keep track of the unconnected output
+    wires, so that these wires can be quickly connected to those of new components added
+    to the circuit.
     """
+
     def __init__(self) -> None:
         self._ket = {}
 
@@ -73,7 +74,7 @@ class Circuit:
     def from_components(cls, components: Sequence[CircuitComponent], network: Optional[Network]):
         r"""
         Returns a circuit from a list of ``CircuitComponents`` and a ``Network``.
-        
+
         It does perform any validation on the given ``components`` and ``network``, and therefore
         should be used with caution.
 
@@ -92,7 +93,7 @@ class Circuit:
         The components in this circuit.
         """
         return self._components
-    
+
     @property
     def network(self) -> Network:
         r"""
@@ -108,7 +109,7 @@ class Circuit:
         """
         if isinstance(other, CircuitComponent):
             other = Circuit.from_components([other], Network())
-        
+
         for component in other.components:
             new_component = component.light_copy()
             for m in new_component.modes:
@@ -162,14 +163,18 @@ class Circuit:
             node_size.append(150)
             node_color.append("red")
 
-            wires_in = [w for w in
-                list(component.wires.in_ket.values())
+            wires_in = [
+                w
+                for w in list(component.wires.in_ket.values())
                 + list(component.wires.in_bra.values())
-            if w]
-            wires_out = [w for w in
-                list(component.wires.out_ket.values())
+                if w
+            ]
+            wires_out = [
+                w
+                for w in list(component.wires.out_ket.values())
                 + list(component.wires.out_bra.values())
-            if w]
+                if w
+            ]
             wires = wires_in + wires_out
             for wire in wires:
                 wire_id = wire.id
