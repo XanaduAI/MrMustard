@@ -151,7 +151,6 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
 
     # calculate the strides
     strides = shape_to_strides(np.array(shape))
-    print(shape, strides)
 
     # linearize G
     G_lin = G.flatten()
@@ -187,42 +186,6 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
         dLdb += db * dLdG[index_u]
 
     dLdc = np.sum(G_lin.reshape(shape) * dLdG) / c
-
-    return dLdA, dLdb, dLdc
-
-@njit
-def vanilla_vjp2(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # pragma: no cover
-    r"""Vanilla Fock-Bargmann strategy gradient. Returns dL/dA, dL/db, dL/dc.
-
-    Args:
-        G (np.ndarray): Tensor result of the forward pass
-        c (complex): vacuum amplitude
-        dLdG (np.ndarray): gradient of the loss with respect to the output tensor
-
-    Returns:
-        tuple[np.ndarray, np.ndarray, complex]: dL/dA, dL/db, dL/dc
-    """
-    D = G.ndim
-
-    # init gradients
-    dA = np.zeros((D, D), dtype=np.complex128)  # component of dL/dA
-    db = np.zeros(D, dtype=np.complex128)  # component of dL/db
-    dLdA = np.zeros_like(dA)
-    dLdb = np.zeros_like(db)
-
-    # initialize path iterator
-    path = np.ndindex(G.shape)
-
-    # skip first index
-    next(path)
-
-    # iterate over the rest of the indices
-    for index in path:
-        dA, db = steps.vanilla_step_grad(G, index, dA, db)
-        dLdA += dA * dLdG[index]
-        dLdb += db * dLdG[index]
-
-    dLdc = np.sum(G * dLdG) / c
 
     return dLdA, dLdb, dLdc
 
