@@ -25,9 +25,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .circuit_components import CircuitComponent
-from .connector import connect_all
+from .connector import connect
 
-__all__ = ["Circuit",]
+__all__ = [
+    "Circuit",
+]
 
 
 class Circuit:
@@ -49,9 +51,7 @@ class Circuit:
         circ.draw();
     """
 
-    def __init__(
-        self, components = Union[CircuitComponent, Sequence[CircuitComponent]]
-    ) -> None:
+    def __init__(self, components=Union[CircuitComponent, Sequence[CircuitComponent]]) -> None:
         if not isinstance(components, Iterable):
             components = list[components]
 
@@ -92,7 +92,7 @@ class Circuit:
         Returns:
             A figure showing the tensor network.
         """
-        components = connect_all(self.components)
+        components = connect(self.components)
 
         try:
             fn_layout = getattr(nx.drawing.layout, layout)
@@ -121,32 +121,31 @@ class Circuit:
             node_color.append("red")
 
             wires_in = [
-                w
-                for w in list(component.wires.in_ket.values())
-                + list(component.wires.in_bra.values())
+                (m, w)
+                for m, w in list(component.wires.in_ket.items())
+                + list(component.wires.in_bra.items())
                 if w
             ]
             wires_out = [
-                w
-                for w in list(component.wires.out_ket.values())
-                + list(component.wires.out_bra.values())
+                (m, w)
+                for m, w in list(component.wires.out_ket.items())
+                + list(component.wires.out_bra.items())
                 if w
             ]
             wires = wires_in + wires_out
-            for wire in wires:
-                wire_id = wire.id
-                if wire_id not in graph.nodes:
+            for mode, wire in wires:
+                if wire not in graph.nodes:
                     node_size.append(0)
                     node_color.append("white")
-                    component_labels[wire_id] = ""
-                    mode_labels[wire_id] = wire.mode
+                    component_labels[wire] = ""
+                    mode_labels[wire] = mode
 
-                graph.add_node(wire_id)
-                graph.add_edge(wire_id, component_id)
-                if wire in wires_in:
-                    arrows_in.add_edge(component_id, wire_id)
+                graph.add_node(wire)
+                graph.add_edge(wire, component_id)
+                if (mode, wire) in wires_in:
+                    arrows_in.add_edge(component_id, wire)
                 else:
-                    arrows_out.add_edge(component_id, wire_id)
+                    arrows_out.add_edge(component_id, wire)
 
         pos = fn_layout(graph)
         pos_labels = {k: v + np.array([0.0, 0.05]) for k, v in pos.items()}

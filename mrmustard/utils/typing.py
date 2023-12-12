@@ -49,7 +49,7 @@ C = TypeVar("C", np.complex64, np.complex128)
 Z = TypeVar("Z", np.int16, np.int32, np.int64)
 N = TypeVar("N", np.uint16, np.uint32, np.uint64)
 
-Mode = N
+Mode = int
 Scalar = Union[R, C, Z, N]
 Vector = np.ndarray[Tuple[int], Scalar]
 Matrix = np.ndarray[Tuple[int, int], Scalar]

@@ -24,21 +24,24 @@ from ..utils.typing import Mode
 from .circuit_components import CircuitComponent
 from .wires import Wire
 
-def connect_two(wire1: Wire, wire2: Wire) -> None:
-    wire1.connect(wire2)
 
-def connect_all(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
+def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
     r"""
-    Takes as input a sequence of unconnected circuit components and connects them together.
+    Takes as input a sequence of circuit components and connects their wires.
+
+    In particular, it generates a list of light copies of the given components, then it modifies
+    the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
+    copies, leaving the input list unchanged.
     """
-    ret = []
+    # a dictionary mapping the each mode in ``components`` to the latest output wire on that
+    # mode, or ``None`` if no wires have acted on that mode yet.
     output_ket: dict[Mode, Optional[Wire]] = {m: None for c in components for m in c.modes}
 
-    for component in components:
-        new_component = component.light_copy()
-        for m in new_component.modes:
-            if output_ket[m]:
-                connect_two(output_ket[m], new_component.wires.in_ket[m])
-            output_ket[m] = new_component.wires.out_ket[m]
-        ret += [new_component]
+    ret = [component.light_copy() for component in components]
+
+    for component in ret:
+        for mode in component.modes:
+            if output_ket[mode]:
+                component.wires.in_ket[mode] = output_ket[mode]
+            output_ket[mode] = component.wires.out_ket[mode]
     return ret
