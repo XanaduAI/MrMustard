@@ -175,17 +175,16 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
 
         ns = lower_neighbors(index, strides, 0)
 
-        for i in range(len(db)):
+        for i, _ in enumerate(db):
             _, n = next(ns)
             db[i] = np.sqrt(index_u[i]) * G_lin[n]
-            dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n-strides[i]]
+            dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n - strides[i]]
             for j in range(i + 1, len(db)):
-                dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n-strides[j]]
-        
+                dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n - strides[j]]
+
         dLdA += dA * dLdG[index_u]
         dLdb += db * dLdG[index_u]
 
     dLdc = np.sum(G_lin.reshape(shape) * dLdG) / c
 
     return dLdA, dLdb, dLdc
-
