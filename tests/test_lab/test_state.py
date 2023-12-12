@@ -26,11 +26,11 @@ def test_multiplication_ket():
 
 def test_multiplication_dm():
     """Test that multiplication of Gaussians is correct"""
-    G = Gaussian(1) >> Attenuator(0.9)
+    G = Gaussian(1, cutoffs=[10]) >> Attenuator(0.9)
 
     scaled = 42.0 * G
 
-    assert np.allclose(scaled.dm(), 42.0 * G.dm())
+    assert np.allclose(scaled.dm(G.cutoffs), 42.0 * G.dm())
 
 
 def test_division_ket():
@@ -44,7 +44,7 @@ def test_division_ket():
 
 def test_division_dm():
     """Test that division of Gaussians is correct"""
-    G = Gaussian(1) >> Attenuator(0.9)
+    G = Gaussian(1, cutoffs=[10]) >> Attenuator(0.9)
 
     scaled = G / 42.0
 
