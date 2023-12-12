@@ -174,22 +174,14 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
         index += 1
 
         ns = lower_neighbors(index, strides, 0)
-        (j0, n0) = next(ns)
+        # (i0, n0) = next(ns)
 
-        for (j, n) in ns:  # pylint: disable=consider-using-enumerate
-            db[j] = np.sqrt[index_u[j]] * G[n]
-            dA[j, j] = 0.5 * np.sqrt[index_u[i] * n[j]] * G[tuple_setitem(pivot_i, i, pivot_i[i] - 1)]
-            for j in range(i + 1, len(db)):
-                dA[i, j] = np.sqrt[index[i] * pivot_i[j]] * G[tuple_setitem(pivot_i, j, pivot_i[j] - 1)]
+        for (i, n) in ns:  # pylint: disable=consider-using-enumerate
+            db[i] = np.sqrt(index_u[i]) * G_lin[n]
+            dA[i, i] = 0.5 * np.sqrt(index_u[i] * n[i]) * G_lin[n-strides[i]]
+            for j in range(i + 1, len(strides)):
+                dA[i, j] = np.sqrt(index_u[i] * n[j]) * G_lin[n-strides[j]]
 
-    return dA, db
-
-    # iterate over the rest of the indices
-    for index in path:
-        dA, db = steps.vanilla_step_grad(G, index, dA, db)
-        dLdA += dA * dLdG[index]
-        dLdb += db * dLdG[index]
-
-    dLdc = np.sum(G * dLdG) / c
+    dLdc = np.sum(G_lin.reshape(shape) * dLdG) / c
 
     return dLdA, dLdb, dLdc
