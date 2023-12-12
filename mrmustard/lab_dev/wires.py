@@ -65,10 +65,24 @@ class Wires:
         modes_in_bra = modes_in_bra or []
         modes_out_bra = modes_out_bra or []
 
-        self._out_ket = {m: uuid.uuid4() if m in modes_out_ket else None for m in self._modes}
-        self._in_bra = {m: uuid.uuid4() if m in modes_in_bra else None for m in self._modes}
-        self._out_bra = {m: uuid.uuid4() if m in modes_out_bra else None for m in self._modes}
-        self._in_ket = {m: uuid.uuid4() if m in modes_in_ket else None for m in self._modes}
+        modes = modes_in_ket or modes_out_ket or modes_in_bra or modes_out_bra
+        if (
+            (modes_in_ket and modes_in_ket != modes)
+            or (modes_out_ket and modes_out_ket != modes)
+            or (modes_in_bra and modes_in_bra != modes)
+            or (modes_out_bra and modes_out_bra != modes)
+        ):
+            # cannot define the list of modes unambiguously
+            self._modes = None
+        else:
+            self._modes = modes
+        self._set_modes = set(modes) or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
+
+        keys = self._modes or self._set_modes
+        self._out_ket = {m: uuid.uuid4() if m in modes_out_ket else None for m in keys}
+        self._in_bra = {m: uuid.uuid4() if m in modes_in_bra else None for m in keys}
+        self._out_bra = {m: uuid.uuid4() if m in modes_out_bra else None for m in keys}
+        self._in_ket = {m: uuid.uuid4() if m in modes_in_ket else None for m in keys}
 
     @property
     def in_ket(self) -> dict[Mode, Optional[Wire]]:
@@ -118,22 +132,17 @@ class Wires:
         r"""
         The list of all the ``Mode``s in this ``Wires``.
         """
-        modes_in_ket = [m for m, w in self.in_ket.items() if w]
-        modes_out_ket = [m for m, w in self.out_ket.items() if w]
-        modes_in_bra = [m for m, w in self.in_bra.items() if w]
-        modes_out_bra = [m for m, w in self.out_bra.items() if w]
-        modes = modes_in_ket or modes_out_ket or modes_in_bra or modes_out_bra
-
-        if (
-            (modes_in_ket and modes_in_ket != modes)
-            or (modes_out_ket and modes_out_ket != modes)
-            or (modes_in_bra and modes_in_bra != modes)
-            or (modes_out_bra and modes_out_bra != modes)
-        ):
+        if not self._modes:
             msg = "Cannot return the list of modes unambiguously."
             raise ValueError(msg)
+        return self._modes
 
-        return modes
+    @property
+    def set_modes(self) -> set[Mode]:
+        r"""
+        A set of all the ``Mode``s in this ``Wires``.
+        """
+        return self._set_modes
 
     def new(self) -> Wires:
         r"""
