@@ -49,7 +49,7 @@ class Unitary(Transformation):
 
     def __rshift__(self, other: CircuitComponent):
         r"""
-        Returns a ``Circuit`` with two connected, light-copied from ``self`` and ``other``.
+        Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
         """
         return Circuit([self, other])
 

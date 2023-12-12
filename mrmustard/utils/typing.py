@@ -32,6 +32,7 @@ __all__ = [
     "Matrix",
     "Tensor",
     "Trainable",
+    "Mode",
 ]
 from typing import (
     Iterator,

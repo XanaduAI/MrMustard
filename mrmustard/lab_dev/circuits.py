@@ -36,12 +36,24 @@ class Circuit:
     r"""
     A quantum circuit.
 
-    Quantum circuits store a list of ``CircuitComponent`` objects, alongside a ``Network``
-    that allows quickly adding new components to the circuit. They can be generated using the
+    Quantum circuits store a list of ``CircuitComponent``s. They can be generated directly by
+    specifying a list of components, or alternatively, indirectly using the
     operators ``>>`` and ``<<`` on sequences of ``CircuitComponent``s.
 
     .. code-block::
 
+        # direct initialization
+        g1 = Dgate(1, modes=[0, 1])
+        g2 = Dgate(1, modes=[0,])
+        g3 = Dgate(1, modes=[1,])
+        g4 = Dgate(1, modes=[0, 1, 9])
+
+        circ = Circuit([g1, g2, g2, g3, g4])
+        circ.draw();
+
+    .. code-block::
+
+        # indirect initialization
         g1 = Dgate(1, modes=[0, 1])
         g2 = Dgate(1, modes=[0,])
         g3 = Dgate(1, modes=[1,])
