@@ -151,9 +151,10 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
 
     # calculate the strides
     strides = shape_to_strides(np.array(shape))
+    print(shape, strides)
 
     # linearize G
-    G_lin = G.reshape((np.prod(np.array(shape)),))
+    G_lin = G.flatten()
 
     # init gradients
     D = G.ndim
@@ -180,7 +181,7 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
             db[i] = np.sqrt(index_u[i]) * G_lin[n]
             dA[i, i] = 0.5 * np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n-strides[i]]
             for j in range(i + 1, len(db)):
-                dA[i, j] = np.sqrt(index_u[i] * (index_u[i] - 1)) * G_lin[n-strides[j]]
+                dA[i, j] = np.sqrt(index_u[i] * index_u[j]) * G_lin[n-strides[j]]
         
         dLdA += dA * dLdG[index_u]
         dLdb += db * dLdG[index_u]
