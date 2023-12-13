@@ -250,9 +250,9 @@ class PolyExpAnsatz(PolyExpBase):
 
     def plot(
         self,
-        just_phase: bool = False,
-        with_measure: bool = False,
-        log_scale: bool = False,
+        just_phase: bool,
+        with_measure: bool,
+        log_scale: bool,
         xlim=(-2 * np.pi, 2 * np.pi),
         ylim=(-2 * np.pi, 2 * np.pi),
     ):
@@ -282,11 +282,12 @@ class PolyExpAnsatz(PolyExpBase):
         ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
         ax.set_xlabel("$Re(z)$")
         ax.set_ylabel("$Im(z)$")
-        title = "F_{" + self.name + "}(z)"
-        title = "arg({title})\log|{title}|" if log_scale else title
-        title = title + "exp(-|z|^2)" if with_measure else title
-        title = "$arg(F_{" + self.name + "}(z))$" if just_phase else title
-        ax.set_title(title)
+
+        name = "F_{" + self.name + "}(z)"
+        name = f"\\arg({name})\\log|{name}|" if log_scale else name
+        title = name + "e^{-|z|^2}" if with_measure else name
+        title = f"\\arg({name})" if just_phase else title
+        ax.set_title(f"${title}$")
         plt.show(block=False)  # why block=False?
         return im, ax
 
@@ -302,9 +303,7 @@ class PolyExpAnsatz(PolyExpBase):
         """
         z = np.atleast_2d(z)  # shape (Z, n)
         zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (Z, 1, n, n))
-        A_part = 0.5 * math.sum(
-            zz * self.A, axes=[-1, -2]
-        )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
+        A_part = 0.5 * math.sum(zz * self.A, axes=[-1, -2])  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
         b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
         exp_sum = np.exp(A_part + b_part)  # (Z, b)
         result = exp_sum * self.c  # (Z, b)
