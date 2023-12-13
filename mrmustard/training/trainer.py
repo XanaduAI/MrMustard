@@ -71,8 +71,8 @@ Examples:
         cost_fn=cost_fn,
         device_factory=make_circ,
         tasks=[
-            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
-            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+            {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50},
+            {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2},
         ],
         y_targ=0.35,
         symplectic_lr=0.05,
@@ -106,8 +106,7 @@ from typing import Mapping, Sequence
 import numpy as np
 from rich.progress import track
 
-import mrmustard as mm
-
+from mrmustard import settings
 from .optimizer import Optimizer
 
 
@@ -158,7 +157,7 @@ def train_device(
 
     """
 
-    setting_updates, kwargs = update_pop(mm.settings, **kwargs)
+    setting_updates, kwargs = update_pop(settings, **kwargs)
 
     input_kwargs = kwargs.copy() if return_kwargs else {}
 
@@ -313,8 +312,8 @@ def map_trainer(trainer=train_device, tasks=1, pbar=True, unblock=False, num_cpu
             cost_fn=cost_fn,
             device_factory=make_circ,
             tasks=[
-                {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50, 'HBAR': 1.},
-                {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2, 'HBAR': 2.},
+                {'x': 0.1, 'euclidean_lr': 0.005, 'max_steps': 50},
+                {'x': -0.7, 'euclidean_lr': 0.1, 'max_steps': 2},
             ],
             y_targ=0.35,
             symplectic_lr=0.05,

@@ -76,6 +76,3 @@ def BINOMIAL_PATHS_NUMBA_n(modes):
         key_type=typeof(((0,) * modes, 0)),
         value_type=types.ListType(typeof((0,) * modes)),
     )
-
-
-BINOMIAL_PATHS_NUMBA = {modes: BINOMIAL_PATHS_NUMBA_n(modes) for modes in range(1, 100)}

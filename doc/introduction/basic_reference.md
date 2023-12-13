@@ -179,17 +179,14 @@ The physics module contains a growing number of functions that we can apply to s
 
 ### The math module
 The math module is the backbone of Mr Mustard, which consists in the [Math](https://github.com/XanaduAI/MrMustard/blob/main/mrmustard/math/math_interface.py) interface
-Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or pytorch and your code will be plug-and-play too!
+Mr Mustard comes with a plug-and-play backends through a math interface. You can use it as a drop-in replacement for tensorflow or numpy and your code will be plug-and-play too!
 ```python
-from mrmustard import settings
-from mrmustard.math import Math
-math = Math()
+from mrmustard import math
 
+math.cos(0.1)  # numpy
+
+math.change_backend("numpy")
 math.cos(0.1)  # tensorflow
-
-settings.BACKEND = 'torch'
-
-math.cos(0.1)  # pytorch (upcoming)
 ```
 
 ### Optimization

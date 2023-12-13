@@ -14,89 +14,11 @@
 
 """This is the top-most `__init__.py` file of MrMustard package."""
 
-import numpy as np
-import rich.table
+
 from rich import print
 
 from ._version import __version__
-
-
-# pylint: disable=too-many-instance-attributes
-class Settings:
-    """Settings class."""
-
-    def __new__(cls):  # singleton
-        if not hasattr(cls, "instance"):
-            cls.instance = super(Settings, cls).__new__(cls)
-        return cls.instance
-
-    def __init__(self):
-        self._backend = "tensorflow"
-        self.HBAR = 2.0
-        self.CHOI_R = 0.881373587019543  # np.arcsinh(1.0)
-        self.DEBUG = False
-        self.AUTOCUTOFF_PROBABILITY = 0.999  # capture at least 99.9% of the probability
-        self.AUTOCUTOFF_MAX_CUTOFF = 100
-        self.AUTOCUTOFF_MIN_CUTOFF = 1
-        self.CIRCUIT_DECIMALS = 3
-        # use cutoff=5 for each mode when determining if two transformations in fock repr are equal
-        self.EQ_TRANSFORMATION_CUTOFF = 3  # 3 is enough to include a full step of the rec relations
-        self.EQ_TRANSFORMATION_RTOL_FOCK = 1e-3
-        self.EQ_TRANSFORMATION_RTOL_GAUSS = 1e-6
-        # for the detectors
-        self.PNR_INTERNAL_CUTOFF = 50
-        self.HOMODYNE_SQUEEZING = 10.0
-        # misc
-        self.PROGRESSBAR = True
-        self._seed = np.random.randint(0, 2**31 - 1)
-        self.rng = np.random.default_rng(self._seed)
-        self.DEFAULT_BS_METHOD = "vanilla"  # can be 'vanilla' or 'schwinger'
-
-    @property
-    def SEED(self):
-        """Returns the seed value if set, otherwise returns a random seed."""
-        if self._seed is None:
-            self._seed = np.random.randint(0, 2**31 - 1)
-            self.rng = np.random.default_rng(self._seed)
-        return self._seed
-
-    @SEED.setter
-    def SEED(self, value):
-        """Sets the seed value."""
-        self._seed = value
-        self.rng = np.random.default_rng(self._seed)
-
-    @property
-    def BACKEND(self):
-        """The backend which is used.
-
-        Can be either ``'tensorflow'`` or ``'torch'``.
-        """
-        return self._backend
-
-    @BACKEND.setter
-    def BACKEND(self, backend_name: str):
-        if backend_name not in ["tensorflow", "torch"]:  # pragma: no cover
-            raise ValueError("Backend must be either 'tensorflow' or 'torch'")
-        self._backend = backend_name
-
-    # use rich.table to print the settings
-    def __repr__(self):
-        """Returns a string representation of the settings."""
-        table = rich.table.Table(title="MrMustard Settings")
-        table.add_column("Setting")
-        table.add_column("Value")
-        table.add_row("BACKEND", self.BACKEND)
-        table.add_row("SEED", str(self.SEED))
-        for key, value in self.__dict__.items():
-            if key == key.upper():
-                table.add_row(key, str(value))
-        print(table)
-        return ""
-
-
-settings = Settings()
-"""Settings object."""
+from .utils.settings import *
 
 
 def version():
@@ -157,11 +79,3 @@ def about():
     print("Scipy version:             {}".format(scipy.__version__))
     print("The Walrus version:        {}".format(thewalrus.__version__))
     print("TensorFlow version:        {}".format(tensorflow.__version__))
-
-    try:  # pragma: no cover
-        import torch
-
-        torch_version = torch.__version__
-        print("Torch version:             {}".format(torch_version))
-    except ImportError:
-        torch_version = None

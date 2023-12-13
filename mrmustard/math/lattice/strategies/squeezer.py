@@ -18,7 +18,7 @@ import numpy as np
 from numba import njit
 
 from mrmustard.math.lattice import steps
-from mrmustard.typing import ComplexTensor
+from mrmustard.utils.typing import ComplexTensor
 
 SQRT = np.sqrt(np.arange(100000))
 
