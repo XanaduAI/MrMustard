@@ -22,7 +22,7 @@ from typing import Optional, Sequence, Union
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from ..utils.typing import Mode
-from .wires import Wires
+from .wires import Wire, Wires
 
 __all__ = [
     "CircuitComponent",
@@ -110,3 +110,25 @@ class CircuitComponent:
         ret._wires = self._wires[idx]
         ret._parameter_set = self.parameter_set
         return ret
+
+
+def connect(components: Sequence[CircuitComponent]) -> Sequence[CircuitComponent]:
+    r"""
+    Takes as input a sequence of circuit components and connects their wires.
+
+    In particular, it generates a list of light copies of the given components, then it modifies
+    the wires' ``id``s so that connected wires have the same ``id``. It returns the list of light
+    copies, leaving the input list unchanged.
+    """
+    # a dictionary mapping the each mode in ``components`` to the latest output wire on that
+    # mode, or ``None`` if no wires have acted on that mode yet.
+    output_ket: dict[Mode, Optional[Wire]] = {m: None for c in components for m in c.modes}
+
+    ret = [component.light_copy() for component in components]
+
+    for component in ret:
+        for mode in component.modes:
+            if output_ket[mode]:
+                component.wires.in_ket[mode] = output_ket[mode]
+            output_ket[mode] = component.wires.out_ket[mode]
+    return ret

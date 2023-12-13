@@ -50,16 +50,6 @@ class Wires:
         modes_in_bra: Optional[Sequence[Mode]] = None,
         modes_out_bra: Optional[Sequence[Mode]] = None,
     ) -> None:
-        msg = "modes on ket and bra sides must be equal, unless either of them is `None`."
-        if modes_in_ket and modes_in_bra:
-            if modes_in_ket != modes_in_bra:
-                msg = f"Input {msg}"
-                raise ValueError(msg)
-        if modes_out_ket and modes_out_bra:
-            if modes_out_ket != modes_out_bra:
-                msg = f"Output {msg}"
-                raise ValueError(msg)
-
         modes_in_ket = modes_in_ket or []
         modes_out_ket = modes_out_ket or []
         modes_in_bra = modes_in_bra or []
@@ -117,6 +107,31 @@ class Wires:
         return self._out_bra
 
     @property
+    def modes(self) -> list[Mode]:
+        r"""
+        The list of all the ``Mode``s in this ``Wires``.
+        """
+        if not self._modes:
+            msg = "Cannot return the list of modes unambiguously."
+            raise ValueError(msg)
+        return self._modes
+    
+    @property
+    def has_bra(self) -> bool:
+        r"""
+        Whether this ``Wires`` has wires on the bra side.
+        """
+        has_in = len([m for m, w in self.in_bra.items() if w]) > 0
+        has_out = len([m for m, w in self.out_bra.items() if w]) > 0
+        return has_in or has_out
+
+    @property
+    def set_modes(self) -> set[Mode]:
+        r"""
+        A set of all the ``Mode``s in this ``Wires``.
+        """
+        return self._set_modes
+
     def adjoint(self) -> Wires:
         r"""
         The adjoint of this ``Wires`` (with new ``id``s), obtained switching kets and bras.
@@ -126,23 +141,6 @@ class Wires:
         modes_in_bra = [m for m, w in self.in_bra.items() if w]
         modes_out_bra = [m for m, w in self.out_bra.items() if w]
         return Wires(modes_in_bra, modes_out_bra, modes_in_ket, modes_out_ket)
-
-    @property
-    def modes(self) -> list[Mode]:
-        r"""
-        The list of all the ``Mode``s in this ``Wires``.
-        """
-        if not self._modes:
-            msg = "Cannot return the list of modes unambiguously."
-            raise ValueError(msg)
-        return self._modes
-
-    @property
-    def set_modes(self) -> set[Mode]:
-        r"""
-        A set of all the ``Mode``s in this ``Wires``.
-        """
-        return self._set_modes
 
     def new(self) -> Wires:
         r"""

@@ -33,6 +33,12 @@ class Transformation(CircuitComponent):
     Base class for all transformations.
     """
 
+    def __rshift__(self, other: CircuitComponent):
+        r"""
+        Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
+        """
+        return Circuit([self, other])
+
 
 class Unitary(Transformation):
     r"""
@@ -40,18 +46,11 @@ class Unitary(Transformation):
 
     Arguments:
         name: The name of this unitary.
-        modes_in_ket: The input modes on the ket side.
-        modes_out_ket: The output modes on the ket side.
+        modes: The modes that this unitary acts on.
     """
 
     def __init__(self, name, modes):
         super().__init__(name, modes_in_ket=modes, modes_out_ket=modes)
-
-    def __rshift__(self, other: CircuitComponent):
-        r"""
-        Returns a ``Circuit`` with two components, light-copied from ``self`` and ``other``.
-        """
-        return Circuit([self, other])
 
 
 class Dgate(Unitary):
