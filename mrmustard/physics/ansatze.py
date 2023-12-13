@@ -83,18 +83,19 @@ class Ansatz(ABC):
 
 class PolyExpBase(Ansatz):
     r"""A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
-    For example, the Bargmann representation c exp(z A z / 2 + b z) is of this form
-    (where A,b,c is the triple), or the Wigner representation (where Sigma,mu,1 is the triple).
+    For example, the Bargmann representation :math:c exp(z A z / 2 + b z): is of this form
+    (where ``A``, ``b``, ``c`` is the triple), or the Wigner representation
+    (where ``Sigma``, ``mu``, ``1`` is the triple).
 
     Note that this class is not initializable (despite having an initializer)
     because it doesn't implement all the abstract methods of Ansatz, and it is in
     fact more general.
-    Concrete ansatze that inherit from this class will have to implement __call__,
-    __mul__ and  __matmul__, which are representation-specific.
+    Concrete ansatze that inherit from this class will have to implement ``__call__``,
+    ``__mul__`` and ``__matmul__``, which are representation-specific.
 
     Note that the arguments are expected to be batched, i.e. to have a batch dimension
     or to be an iterable. This is because this class also provides the linear superposition
-    functionality by implementing the __add__ method, which concatenates the batch dimensions.
+    functionality by implementing the ``__add__`` method, which concatenates the batch dimensions.
 
     As this can blow up the number of terms in the representation, it is recommended to
     run the `simplify()` method after adding terms together, which will combine together
@@ -145,7 +146,7 @@ class PolyExpBase(Ansatz):
         exponential part, i.e. two terms along the batch are considered equal if their
         matrix and vector are equal. In this case only one is kept and the arrays are added.
 
-        Does not run if the representation has already been simplified, so it's safe to call.
+        Does not run if the representation has already been simplified, so it is safe to call.
         """
         if self._simplified:
             return
@@ -199,18 +200,19 @@ class PolyExpBase(Ansatz):
 
 
 class PolyExpAnsatz(PolyExpBase):
-    """
+    r"""
     Represents the ansatz function:
 
-        F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i),
+        :math:`F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)`
 
-    where each poly_i is a polynomial in z that can be expressed as:
+    where each :math:`poly_i` is a polynomial in ``z`` that can be expressed as:
 
-        poly_i(z) = sum_k c^(i)_k z^k,
+        :math:`poly_i(z) = sum_k c^(i)_k z^k`,
 
-    with k being a multi-index. The batch of arrays c^(i) are not just array values but can be polynomials
-    of varying order, defined by the terms arr_k z^k for each i. The matrices A_i and vectors b_i
-    are parameters of the exponential terms in the ansatz, and z is a vector of variables.
+    with ``k`` being a multi-index. The batch of arrays :math:`c^{(i)}` are not just array values but can be polynomials
+    of varying order, defined by the terms :math:`arr_k z^k` for each ``i``.
+    The matrices :math:`A_i` and vectors :math:`b_i` are parameters of the
+    exponential terms in the ansatz, and :math:`z` is a vector of variables.
 
     Attributes:
         A (Batch[Matrix]): The list of square matrices A_i
@@ -300,17 +302,17 @@ class PolyExpAnsatz(PolyExpBase):
         """
         z = np.atleast_2d(z)  # shape (Z, n)
         zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (Z, 1, n, n))
-        sum1 = 0.5 * math.sum(
+        A_part = 0.5 * math.sum(
             zz * self.A, axes=[-1, -2]
         )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
-        sum2 = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
-        exp_sum = np.exp(sum1 + sum2)  # (Z, b)
+        b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
+        exp_sum = np.exp(A_part + b_part)  # (Z, b)
         result = exp_sum * self.c  # (Z, b)
         val = np.sum(result, axis=-1)  # (Z)
         return val
 
     def __mul__(self, other: Union[Scalar, PolyExpAnsatz]) -> PolyExpAnsatz:
-        """Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
+        r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
             other (Union[Scalar, PolyExpAnsatz]): A scalar or another ansatz.
@@ -333,7 +335,7 @@ class PolyExpAnsatz(PolyExpBase):
                 raise TypeError(f"Cannot multiply {self.__class__} and {other.__class__}.") from e
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
-        """Tensor product of this ansatz with another ansatz.
+        r"""Tensor product of this ansatz with another ansatz.
         Equivalent to F(a) * G(b) (with different arguments, that is).
         As it distributes over addition on both self and other,
         the batch size of the result is the product of the batch
