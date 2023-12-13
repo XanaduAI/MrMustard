@@ -73,7 +73,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
-        return tf.convert_to_tensor(array, dtype=dtype or array.dtype.name)
+        return self.cast(tf.convert_to_tensor(array), dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
