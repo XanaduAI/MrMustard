@@ -62,7 +62,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.math.reduce_any(array)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
@@ -73,7 +73,8 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
-        return self.cast(tf.convert_to_tensor(array), dtype)
+        dtype = dtype or np.array(array).dtype.name
+        return tf.convert_to_tensor(array, dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
         return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
@@ -165,7 +166,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.diag_part(array, k=k)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
-        if type(string) is str:
+        if isinstance(string, str):
             return tf.einsum(string, *tensors)
         return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
@@ -179,7 +180,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.expm(matrix)
 
     def eye(self, size: int, dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.eye(size, dtype=dtype)
 
     def eye_like(self, array: tf.Tensor) -> Tensor:
@@ -236,12 +237,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         dtype=None,
     ):
         bounds = bounds or (None, None)
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         value = self.astensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=None):
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         value = self.astensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
@@ -250,7 +251,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.norm(array)
 
     def ones(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.ones(shape, dtype=dtype)
 
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
@@ -333,7 +334,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
