@@ -187,8 +187,8 @@ def displacement(x: Union[Scalar, Vector], y: Union[Scalar, Vector]) -> Vector:
     The dimension depends on the dimensions of ``x`` and ``y``.
 
     Args:
-        x (scalar or vector): real part of displacement
-        y (scalar or vector): imaginary part of displacement
+        x (scalar or vector): real part of displacement (in units of :math:`\sqrt{\hbar}`)
+        y (scalar or vector): imaginary part of displacement (in units of :math:`\sqrt{\hbar}`)
 
     Returns:
         Vector: displacement vector of a displacement gate
