@@ -173,7 +173,7 @@ def real_gaussian_integral(
 
     where
 
-    F(x) = exp(-0.5 x^T A x + b^T x)
+    F(x) = exp(0.5 x^T A x + b^T x)
 
     Here z is an `n`-dim real vector, A is an `n x n` real matrix,
     b is an `n`-dim real vector, c is a real scalar, and dmu(x) is a real measure over a
@@ -202,7 +202,7 @@ def real_gaussian_integral(
     bR = math.gather(b, not_idx, axis=-1)
 
     A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-    b_post = bR - math.sum(bM * math.solve(M, bM))
+    b_post = bR - math.matvec(D, math.solve(M, bM))
     c_post = (
         c * math.sqrt((-1) ** m / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )
