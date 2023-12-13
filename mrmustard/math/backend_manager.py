@@ -297,8 +297,8 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
     def atleast_3d(self, array: Tensor, dtype=None) -> Tensor:
         r"""Returns an array with at least three dimensions by eventually inserting
-        new axes at the beginning. Note this is not the usual way atleast_3d works
-        (usually it adds at the beginning and/or end).
+        new axes at the beginning. Note this is not the way atleast_3d works in numpy
+        and tensorflow, where it adds at the beginning and/or end.
 
         Args:
             array: The array to convert.
@@ -933,7 +933,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
         """
         return self._apply("reshape", (array, shape))
 
-    def round(self, array: Tensor, decimals) -> Tensor:
+    def round(self, array: Tensor, decimals: int) -> Tensor:
         r"""The array rounded to the nearest integer.
 
         Args:
