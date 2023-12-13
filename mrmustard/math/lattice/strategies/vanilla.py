@@ -162,7 +162,7 @@ def vanilla_vjp(G, c, dLdG) -> tuple[ComplexMatrix, ComplexVector, complex]:  # 
     dLdA = np.zeros_like(dA)
     dLdb = np.zeros_like(db)
 
-    # initialize the indeces.
+    # initialize the indices.
     # ``index`` is the index of the flattened output tensor, while
     # ``index_u_iter`` iterates through the unravelled counterparts of
     # ``index``.
