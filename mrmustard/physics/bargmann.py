@@ -154,7 +154,7 @@ def complex_gaussian_integral(
     bR = math.gather(b, not_idx, axis=-1)
 
     A_post = R - math.matmul(D, math.inv(M), math.transpose(D))
-    b_post = bR - math.sum(bM * math.solve(M, bM))
+    b_post = bR - math.matvec(D, math.solve(M, bM))
     c_post = (
         c * math.sqrt((-1) ** n / math.det(M)) * math.exp(-0.5 * math.sum(bM * math.solve(M, bM)))
     )

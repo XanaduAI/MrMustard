@@ -11,6 +11,8 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
 )
 from mrmustard.physics.representations import Bargmann
+from ..random import random_Dgate
+from hypothesis import given
 
 
 def test_wigner_to_bargmann_psi():
@@ -139,3 +141,16 @@ def test_Bargmann_2mode_psi_U():
     assert np.allclose(A_abc, A_mm)
     assert np.allclose(b_abc, b_mm)
     assert np.allclose(abs(c_abc), abs(c_mm))
+
+@given(D1 = random_Dgate(), D2=random_Dgate())
+def test_composition_DD(D1,D2):
+    a1,b1,c1 = D1.bargmann()
+    a2,b2,c2 = D2.bargmann()
+    a12, b12, c12 = (D1 >> D2).bargmann()
+    composed = Bargmann(a1, b1, c1)[1] @ Bargmann(a2, b2, c2)[0]
+    assert np.allclose(composed.A[0], a12)
+    assert np.allclose(composed.b[0], b12)
+    assert np.allclose(np.abs(composed.c[0]), np.abs(c12))
+    
+    
+

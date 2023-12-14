@@ -22,6 +22,7 @@ from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexV
 
 class Representation:
     _contract_idxs: tuple[int, ...] = ()
+    ansatz: Ansatz
 
     def from_ansatz(self, ansatz: Ansatz) -> Ansatz:
         raise NotImplementedError
