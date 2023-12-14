@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any, Union, Optional
 
 import numpy as np
 from matplotlib import colors
@@ -228,8 +228,12 @@ class PolyExpAnsatz(PolyExpBase):
         >>> print(F(z))  # prints the value of F at z
     """
 
-    def __init__(self, A: Batch[Matrix], b: Batch[Vector], c: Batch[Tensor], name: str = ""):
+    def __init__(self, A: Optional[Batch[Matrix]] = None, b: Optional[Batch[Vector]] = None, c: Batch[Tensor | Scalar] = [1.0], name: str = ""):
         self.name = name
+        assert A is not None or b is not None, "Please provide either A or b."
+        dim = b[0].shape[-1] if A is None else A[0].shape[-1]
+        A = A if A is not None else np.zeros((len(b), dim, dim), dtype=b[0].dtype)
+        b = b if b is not None else np.zeros((len(A), dim), dtype=A[0].dtype)
         super().__init__(mat=A, vec=b, array=c)
 
     @property
