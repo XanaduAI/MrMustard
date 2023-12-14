@@ -21,9 +21,8 @@ from typing import Any, Optional, Sequence, Tuple, Union
 from thewalrus.quantum import is_pure_cov
 
 from mrmustard import math, settings
-from mrmustard.utils.typing import Matrix, Scalar, Vector
 from mrmustard.math.tensor_wrappers.xptensor import XPMatrix, XPVector
-
+from mrmustard.utils.typing import Matrix, Scalar, Vector
 
 #  ~~~~~~
 #  States
@@ -554,7 +553,7 @@ def general_dyne(
     proj_cov: Matrix,
     proj_means: Optional[Vector] = None,
     modes: Optional[Sequence[int]] = None,
-) -> Tuple[Scalar, Matrix, Vector]:
+) -> Tuple[Scalar, Scalar, Matrix, Vector, Any]:
     r"""Returns the results of a general-dyne measurement. If ``proj_means`` are not provided
     (as ``None``), they are sampled from the probability distribution.
 
@@ -574,12 +573,12 @@ def general_dyne(
             oucome probability [units of `\hbar**N`],
             post-measurement covariace [units of `2\hbar`]
             post-measurement means vector [units of `\sqrt{\hbar}`].
+            pdf (Tensorflow probability distribution)
     """
     N, M = cov.shape[-1] // 2, proj_cov.shape[-1] // 2
     # Bmodes are the modes being measured and Amodes are the leftover modes
     Bmodes = modes or list(range(M))
     Amodes = list(set(list(range(N))) - set(Bmodes))
-
     A, B, AB = partition_cov(cov, Amodes)
     a, b = partition_means(means, Amodes)
     reduced_cov = B + proj_cov
@@ -587,21 +586,22 @@ def general_dyne(
     # covariances are divided by 2 to match tensorflow and MrMustard conventions
     # (MrMustard uses Serafini convention where `sigma_MM = 2 sigma_TF`)
     pdf = math.MultivariateNormalTriL(loc=b, scale_tril=math.cholesky(reduced_cov / 2))
-    outcome = (
-        pdf.sample(dtype=cov.dtype) if proj_means is None else math.cast(proj_means, cov.dtype)
-    )
+    if proj_means is None:
+        outcome = pdf.sample(dtype=cov.dtype)
+    else:
+        outcome = math.cast(proj_means, cov.dtype)
     prob = pdf.prob(outcome)
 
     # calculate conditional output state of unmeasured modes
     num_remaining_modes = N - M
     if num_remaining_modes == 0:
-        return outcome, prob, None, None
+        return outcome, prob, None, None, pdf
 
     AB_inv = math.matmul(AB, math.inv(reduced_cov))
     new_cov = A - math.matmul(AB_inv, math.transpose(AB))
     new_means = a + math.matvec(AB_inv, outcome - b)
 
-    return outcome, prob, new_cov, new_means
+    return outcome, prob, new_cov, new_means, pdf
 
 
 # ~~~~~~~~~

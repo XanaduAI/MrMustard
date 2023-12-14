@@ -65,6 +65,10 @@ which uses the old Numba code. When setting to a higher value, the new Julia cod
 * Changed the ``cast`` functions in the numpy and tensorflow backends to avoid ``ComplexWarning``s.
   [(#307)](https://github.com/XanaduAI/MrMustard/pull/307)
 
+* `mrmustard.physics.gaussian.general_dyne()` now returns also the pdf of the measurement outcome. This is useful for
+  further processing (e.g. entropy of the pdf, mean, sampling) and for inclusion in cost functions.
+  [(#317)](https://github.com/XanaduAI/MrMustard/pull/317)
+
 
 ### Bug fixes
 
