@@ -11,7 +11,7 @@ from mrmustard.physics.bargmann import (
     wigner_to_bargmann_U,
 )
 from mrmustard.physics.representations import Bargmann
-from ..random import random_Dgate, random_Ggate
+from ..random import random_Dgate, random_Ggate, single_mode_unitary_gate
 from hypothesis import given
 
 
@@ -142,16 +142,16 @@ def test_Bargmann_2mode_psi_U():
     assert np.allclose(b_abc, b_mm)
     assert np.allclose(abs(c_abc), abs(c_mm))
 
-@given(D1 = random_Dgate(), D2=random_Dgate())
-def test_composition_DD(D1,D2):
-    a12,b12,c12 = (D1 >> D2).bargmann()
-    composed = Bargmann(*D2.bargmann())[1] @ Bargmann(*D1.bargmann())[0]  # out goes before in, so  
+@given(G1 = random_Ggate(num_modes=1), G2=random_Ggate(num_modes=1))
+def test_composition_GG(G1,G2):
+    a12, b12, c12 = (G1 >> G2).bargmann()
+    composed = Bargmann(*G2.bargmann())[1] @ Bargmann(*G1.bargmann())[0]
     assert np.allclose(composed.A[0], a12)
     assert np.allclose(composed.b[0], b12)
     assert np.allclose(np.abs(composed.c[0]), np.abs(c12))
 
-@given(G1 = random_Ggate(num_modes=1), G2=random_Ggate(num_modes=1))
-def test_composition_GG(G1,G2):
+@given(G1 = single_mode_unitary_gate(), G2=single_mode_unitary_gate())
+def test_composition_all(G1,G2):
     a12, b12, c12 = (G1 >> G2).bargmann()
     composed = Bargmann(*G2.bargmann())[1] @ Bargmann(*G1.bargmann())[0]
     assert np.allclose(composed.A[0], a12)
