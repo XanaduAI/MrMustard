@@ -80,6 +80,10 @@ class Ansatz(ABC):
     def __rmul__(self, other: Scalar) -> Ansatz:
         return self.__mul__(other=other)
 
+    @abstractmethod
+    def plot(self, **kwargs) -> None:
+        ...
+
 
 class PolyExpBase(Ansatz):
     r"""A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
@@ -250,6 +254,8 @@ class PolyExpAnsatz(PolyExpBase):
 
     @property
     def degree(self) -> int:
+        if self.array.ndim == 1:
+            return 0
         return self.array.shape[-1] - 1
 
     def plot(
