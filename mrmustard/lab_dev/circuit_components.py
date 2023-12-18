@@ -18,7 +18,10 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
+from abc import ABC, abstractproperty
 from typing import Optional, Sequence, Union
+
+from ..physics.representations import Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
 from ..utils.typing import Mode
@@ -29,7 +32,7 @@ __all__ = [
 ]
 
 
-class CircuitComponent:
+class CircuitComponent(ABC):
     r"""
     A base class for the components (states, transformations, and measurements)
     of quantum circuits.
@@ -63,6 +66,13 @@ class CircuitComponent:
         """
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
+
+    @abstractproperty
+    def representation(self) -> Representation:
+        r"""
+        A representation of this circuit component.
+        """
+        ...
 
     @property
     def modes(self) -> set(Mode):
@@ -106,7 +116,7 @@ class CircuitComponent:
         r"""
         Returns a slice of this component for the given modes.
         """
-        ret = CircuitComponent(self.name)
+        ret = self.light_copy()
         ret._wires = self._wires[idx]
         ret._parameter_set = self.parameter_set
         return ret

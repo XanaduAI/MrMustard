@@ -18,7 +18,8 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
-# from mrmustard.physics.gaussian import vacuum_cov, vacuum_means
+from mrmustard import math
+from ..physics.representations import Bargmann
 from .circuits import Circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
@@ -63,6 +64,12 @@ class Vacuum(Pure):
         self,
         num_modes: int,
     ) -> None:
-        # cov = vacuum_cov(num_modes)
-        # means = vacuum_means(num_modes)
         super().__init__("Vacuum", modes=list(range(num_modes)))
+
+    @property
+    def representation(self) -> Bargmann:
+        num_modes = len(self.modes)
+        A = math.zeros(shape=(num_modes, num_modes))
+        B = math.zeros(shape=(num_modes))
+        C = 1
+        return Bargmann(A, B, C)
