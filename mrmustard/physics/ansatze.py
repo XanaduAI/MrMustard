@@ -232,7 +232,13 @@ class PolyExpAnsatz(PolyExpBase):
         >>> print(F(z))  # prints the value of F at z
     """
 
-    def __init__(self, A: Optional[Batch[Matrix]] = None, b: Optional[Batch[Vector]] = None, c: Batch[Tensor | Scalar] = [1.0], name: str = ""):
+    def __init__(
+        self,
+        A: Optional[Batch[Matrix]] = None,
+        b: Optional[Batch[Vector]] = None,
+        c: Batch[Tensor | Scalar] = [1.0],
+        name: str = "",
+    ):
         self.name = name
         assert A is not None or b is not None, "Please provide either A or b."
         dim = b[0].shape[-1] if A is None else A[0].shape[-1]

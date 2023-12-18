@@ -103,7 +103,9 @@ class Bargmann(Representation):
         r"""Returns a Bargmann object from an ansatz object."""
         return self.__class__(ansatz.A, ansatz.b, ansatz.c)
 
-    def plot(self, just_phase: bool = False, with_measure: bool = True, log_scale: bool = False, **kwargs):
+    def plot(
+        self, just_phase: bool = False, with_measure: bool = True, log_scale: bool = False, **kwargs
+    ):
         r"""Plots the Bargmann function."""
         return self.ansatz.plot(just_phase, with_measure, log_scale, **kwargs)
 
