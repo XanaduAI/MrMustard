@@ -23,6 +23,7 @@ import numpy as np
 
 from mrmustard import math
 from ..physics.representations import Bargmann
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
 from .circuits import Circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
@@ -102,7 +103,7 @@ class Dgate(Unitary):
             ys = np.array([ys[0] for _ in range(num_modes)])
 
         A = np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes))
-        B = math.concat([xs + 1j*ys, -xs + 1j*ys], axis=0)
+        B = math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0)
         C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
 
         return Bargmann(A, B, C)

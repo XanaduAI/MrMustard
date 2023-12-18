@@ -18,13 +18,12 @@ A base class for the components of quantum circuits.
 
 from __future__ import annotations
 
-from abc import ABC, abstractproperty
 from typing import Optional, Sequence, Union
 
-from ..physics.representations import Representation
+from ..physics.representations import Bargmann, Representation
 from ..math.parameter_set import ParameterSet
 from ..math.parameters import Constant, Variable
-from ..utils.typing import Mode
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
 from .wires import Wire, Wires
 
 __all__ = [
@@ -32,7 +31,7 @@ __all__ = [
 ]
 
 
-class CircuitComponent(ABC):
+class CircuitComponent:
     r"""
     A base class for the components (states, transformations, and measurements)
     of quantum circuits.
@@ -57,6 +56,25 @@ class CircuitComponent(ABC):
         self._wires = Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
         self._parameter_set = ParameterSet()
 
+    @classmethod
+    def from_ABC(
+        cls,
+        name: str,
+        A: Batch[ComplexMatrix],
+        B: Batch[ComplexVector],
+        c: Batch[ComplexTensor],
+        modes_in_ket: Optional[Sequence[Mode]] = None,
+        modes_out_ket: Optional[Sequence[Mode]] = None,
+        modes_in_bra: Optional[Sequence[Mode]] = None,
+        modes_out_bra: Optional[Sequence[Mode]] = None,
+    ):
+        r"""
+        Initializes a circuit component from Bargmann's A, B, and c.
+        """
+        ret = CircuitComponent(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        ret.representation = Bargmann(A, B, c)
+        return ret
+
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
         Adds a parameter to this circuit component.
@@ -67,12 +85,12 @@ class CircuitComponent(ABC):
         self.parameter_set.add_parameter(parameter)
         self.__dict__[parameter.name] = parameter
 
-    @abstractproperty
+    @property
     def representation(self) -> Representation:
         r"""
         A representation of this circuit component.
         """
-        ...
+        raise NotImplementedError
 
     @property
     def modes(self) -> set(Mode):

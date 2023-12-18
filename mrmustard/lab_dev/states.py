@@ -18,11 +18,13 @@ The classes representing states in quantum circuits.
 
 from __future__ import annotations
 
+from typing import Sequence
+
 from mrmustard import math
 from ..physics.representations import Bargmann
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
 from .circuits import Circuit
 from .circuit_components import CircuitComponent
-from .utils import make_parameter
 
 __all__ = ["Pure", "State", "Vacuum"]
 
@@ -48,7 +50,7 @@ class Pure(State):
         modes: The modes of this pure states.
     """
 
-    def __init__(self, name, modes):
+    def __init__(self, name: str, modes: Sequence[Mode]):
         super().__init__(name, modes_out_ket=modes)
 
 
@@ -69,7 +71,7 @@ class Vacuum(Pure):
     @property
     def representation(self) -> Bargmann:
         num_modes = len(self.modes)
-        A = math.zeros(shape=(2*num_modes, 2*num_modes))
-        B = math.zeros(shape=(2*num_modes))
+        A = math.zeros(shape=(2 * num_modes, 2 * num_modes))
+        B = math.zeros(shape=(2 * num_modes))
         C = 1
         return Bargmann(A, B, C)
