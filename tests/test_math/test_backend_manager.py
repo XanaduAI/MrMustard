@@ -16,6 +16,7 @@
 Unit tests for the :class:`BackendManager`.
 """
 import math
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -131,7 +132,7 @@ class TestBackendManager:
 
         res = math.asnumpy(math.atleast_1d(arr, dtype=dtype))
 
-        exp = np.reshape(arr, [-1])
+        exp = np.atleast_1d(arr)
         if dtype:
             np_dtype = getattr(np, t, None)
             exp = exp.astype(np_dtype)
