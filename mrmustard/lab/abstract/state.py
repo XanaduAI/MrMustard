@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import (
     TYPE_CHECKING,
     Iterable,
@@ -25,14 +26,15 @@ from typing import (
     Tuple,
     Union,
 )
-import warnings
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import cm
 
 from mrmustard import math, settings
 from mrmustard.math.parameters import Constant, Variable
 from mrmustard.physics import bargmann, fock, gaussian
+from mrmustard.physics.wigner import wigner_discretized
 from mrmustard.utils.typing import (
     ComplexMatrix,
     ComplexTensor,
@@ -41,8 +43,6 @@ from mrmustard.utils.typing import (
     RealTensor,
     RealVector,
 )
-from mrmustard.physics.wigner import wigner_discretized
-
 
 if TYPE_CHECKING:
     from .transformation import Transformation

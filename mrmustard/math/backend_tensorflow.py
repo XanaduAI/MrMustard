@@ -29,10 +29,11 @@ from mrmustard.math.lattice.strategies.compactFock.inputValidation import (
     hermite_multidimensional_diagonal,
     hermite_multidimensional_diagonal_batch,
 )
+
 from ..utils.settings import settings
 from ..utils.typing import Tensor, Trainable
-from .backend_base import BackendBase
 from .autocast import Autocast
+from .backend_base import BackendBase
 from .lattice import strategies
 
 
@@ -61,7 +62,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.math.reduce_any(array)
 
     def arange(self, start: int, limit: int = None, delta: int = 1, dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.range(start, limit, delta, dtype=dtype)
 
     def asnumpy(self, tensor: tf.Tensor) -> Tensor:
@@ -72,11 +73,28 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tensor
 
     def astensor(self, array: Union[np.ndarray, tf.Tensor], dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
-        return tf.convert_to_tensor(array, dtype=dtype)
+        dtype = dtype or np.array(array).dtype.name
+        return tf.convert_to_tensor(array, dtype)
 
     def atleast_1d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
-        return self.cast(tf.reshape(array, [-1]), dtype)
+        return tf.experimental.numpy.atleast_1d(self.astensor(array, dtype))
+
+    def atleast_2d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        return tf.experimental.numpy.atleast_2d(self.astensor(array, dtype))
+
+    def atleast_3d(self, array: tf.Tensor, dtype=None) -> tf.Tensor:
+        array = self.atleast_2d(self.atleast_1d(array, dtype))
+        if len(array.shape) == 2:
+            array = self.expand_dims(array, 0)
+        return array
+
+    def block_diag(self, mat1: tf.Tensor, mat2: tf.Tensor) -> tf.Tensor:
+        Za = self.zeros((mat1.shape[-2], mat2.shape[-1]), dtype=mat1.dtype)
+        Zb = self.zeros((mat2.shape[-2], mat1.shape[-1]), dtype=mat1.dtype)
+        return self.concat(
+            [self.concat([mat1, Za], axis=-1), self.concat([Zb, mat2], axis=-1)],
+            axis=-2,
+        )
 
     def block(self, blocks: List[List[tf.Tensor]], axes=(-2, -1)) -> tf.Tensor:
         rows = [self.concat(row, axis=axes[1]) for row in blocks]
@@ -148,7 +166,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.diag_part(array, k=k)
 
     def einsum(self, string: str, *tensors) -> tf.Tensor:
-        if type(string) is str:
+        if isinstance(string, str):
             return tf.einsum(string, *tensors)
         return None  # provide same functionality as numpy.einsum or upgrade to opt_einsum
 
@@ -162,7 +180,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.expm(matrix)
 
     def eye(self, size: int, dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.eye(size, dtype=dtype)
 
     def eye_like(self, array: tf.Tensor) -> Tensor:
@@ -190,20 +208,15 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.math.log(x)
 
     @Autocast()
-    def matmul(
-        self,
-        a: tf.Tensor,
-        b: tf.Tensor,
-        transpose_a=False,
-        transpose_b=False,
-        adjoint_a=False,
-        adjoint_b=False,
-    ) -> tf.Tensor:
-        return tf.linalg.matmul(a, b, transpose_a, transpose_b, adjoint_a, adjoint_b)
+    def matmul(self, *matrices: tf.Tensor) -> tf.Tensor:
+        mat = matrices[0]
+        for matrix in matrices[1:]:
+            mat = tf.matmul(mat, matrix)
+        return mat
 
     @Autocast()
-    def matvec(self, a: tf.Tensor, b: tf.Tensor, transpose_a=False, adjoint_a=False) -> tf.Tensor:
-        return tf.linalg.matvec(a, b, transpose_a, adjoint_a)
+    def matvec(self, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+        return tf.linalg.matvec(a, b)
 
     def make_complex(self, real: tf.Tensor, imag: tf.Tensor) -> tf.Tensor:
         return tf.complex(real, imag)
@@ -224,12 +237,12 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         dtype=None,
     ):
         bounds = bounds or (None, None)
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         value = self.astensor(value, dtype)
         return tf.Variable(value, name=name, dtype=dtype, constraint=self.constraint_func(bounds))
 
     def new_constant(self, value, name: str, dtype=None):
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         value = self.astensor(value, dtype)
         return tf.constant(value, dtype=dtype, name=name)
 
@@ -238,7 +251,7 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.linalg.norm(array)
 
     def ones(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.ones(shape, dtype=dtype)
 
     def ones_like(self, array: tf.Tensor) -> tf.Tensor:
@@ -270,6 +283,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
     def reshape(self, array: tf.Tensor, shape: Sequence[int]) -> tf.Tensor:
         return tf.reshape(array, shape)
+
+    def round(self, array: tf.Tensor, decimals: int = 0) -> tf.Tensor:
+        return tf.round(10**decimals * array) / 10**decimals
 
     def set_diag(self, array: tf.Tensor, diag: tf.Tensor, k: int) -> tf.Tensor:
         return tf.linalg.set_diag(array, diag, k=k)
@@ -308,15 +324,17 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
         return tf.transpose(a, perm)
 
     @Autocast()
-    def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
+    def update_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor) -> tf.Tensor:
         return tf.tensor_scatter_nd_update(tensor, indices, values)
 
     @Autocast()
-    def update_add_tensor(self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor):
+    def update_add_tensor(
+        self, tensor: tf.Tensor, indices: tf.Tensor, values: tf.Tensor
+    ) -> tf.Tensor:
         return tf.tensor_scatter_nd_add(tensor, indices, values)
 
     def zeros(self, shape: Sequence[int], dtype=None) -> tf.Tensor:
-        dtype = dtype or tf.float64
+        dtype = dtype or self.float64
         return tf.zeros(shape, dtype=dtype)
 
     def zeros_like(self, array: tf.Tensor) -> tf.Tensor:
@@ -524,7 +542,13 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
             from julia import Main as Main_julia  # pylint: disable=import-outside-toplevel
 
-            poly0, poly2, poly1010, poly1001, poly1 = Main_julia.DiagonalAmps.fock_diagonal_amps(
+            (
+                poly0,
+                poly2,
+                poly1010,
+                poly1001,
+                poly1,
+            ) = Main_julia.DiagonalAmps.fock_diagonal_amps(
                 A, B, C.item(), tuple(cutoffs), precision_bits
             )
 
@@ -613,7 +637,9 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
 
         if precision_bits == 128:  # numba (complex128)
             poly0, poly2, poly1010, poly1001, poly1 = tf.numpy_function(
-                hermite_multidimensional_1leftoverMode, [A, B, C.item(), cutoffs], [A.dtype] * 5
+                hermite_multidimensional_1leftoverMode,
+                [A, B, C.item(), cutoffs],
+                [A.dtype] * 5,
             )
         else:  # julia (higher precision than complex128)
             # The following import must come after running "jl = Julia(compiled_modules=False)" in settings.py
@@ -638,7 +664,10 @@ class BackendTensorflow(BackendBase):  # pragma: no cover
                 )
             else:  # julia (higher precision than complex128)
                 dpoly_dC = poly0 / C.item()
-                dpoly_dA, dpoly_dB = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
+                (
+                    dpoly_dA,
+                    dpoly_dB,
+                ) = Main_julia.LeftoverModeGrad.fock_1leftoverMode_grad(
                     A, B, poly0, poly2, poly1010, poly1001, poly1, precision_bits
                 )
 

@@ -66,7 +66,9 @@ class Wires:
             self._modes = None
         else:
             self._modes = modes
-        self._set_modes = set(modes) or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
+        self._set_modes = set(modes) or set(
+            modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra
+        )
 
         keys = self._modes or self._set_modes
         self._out_ket = {m: uuid.uuid4() if m in modes_out_ket else None for m in keys}
@@ -115,7 +117,7 @@ class Wires:
             msg = "Cannot return the list of modes unambiguously."
             raise ValueError(msg)
         return self._modes
-    
+
     @property
     def has_bra(self) -> bool:
         r"""

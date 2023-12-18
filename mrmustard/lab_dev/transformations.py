@@ -19,8 +19,11 @@ The classes representing transformations in quantum circuits.
 from __future__ import annotations
 
 from typing import Optional, Sequence, Tuple, Union
+import numpy as np
 
 from mrmustard import math
+from ..physics.representations import Bargmann
+from ..utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexVector, Mode
 from .circuits import Circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
@@ -87,3 +90,20 @@ class Dgate(Unitary):
         super().__init__("Dgate", modes=modes or list(range(m)))
         self._add_parameter(make_parameter(x_trainable, x, "x", x_bounds))
         self._add_parameter(make_parameter(y_trainable, y, "y", y_bounds))
+
+    @property
+    def representation(self) -> Bargmann:
+        num_modes = len(self.modes)
+
+        xs = math.atleast_1d(self.x.value)
+        if len(xs) == 1:
+            xs = np.array([xs[0] for _ in range(num_modes)])
+        ys = math.atleast_1d(self.y.value)
+        if len(ys) == 1:
+            ys = np.array([ys[0] for _ in range(num_modes)])
+
+        A = np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes))
+        B = math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0)
+        C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
+
+        return Bargmann(A, B, C)
