@@ -25,7 +25,7 @@ from .circuits import Circuit
 from .circuit_components import CircuitComponent
 from .utils import make_parameter
 
-__all__ = ["Transformation", "Unitary"]
+__all__ = ["Dgate", "Transformation", "Unitary"]
 
 
 class Transformation(CircuitComponent):
