@@ -81,6 +81,17 @@ class TestWires:
         assert list(wires.in_ket.keys()) == [0, 2, 3, 4, 5, 9]
         assert list(wires.in_ket.values()) == [None] * 6
 
+    def test_modes_in_out(self):
+        r"""
+        Tests the methods to get modes.
+        """
+        wires = Wires(modes_in_ket=[2, 0])
+
+        assert wires.modes_out_bra == []
+        assert wires.modes_in_bra == []
+        assert wires.modes_out_ket == []
+        assert wires.modes_in_ket == [2, 0]
+
     def test_adjoint(self):
         r"""
         Tests the `adjoint` method.
@@ -138,4 +149,3 @@ class TestWires:
 
         assert wires.in_ket[2] == wires_slice.in_ket[2]
         assert wires.in_ket[9] == wires_slice.in_ket[9]
-        assert False

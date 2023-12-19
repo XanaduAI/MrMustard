@@ -51,8 +51,6 @@ class Wires:
 
         # initialize `wires` object with given modes
         wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
-
-        assert False
     """
 
     def __init__(
@@ -128,6 +126,34 @@ class Wires:
             msg = "Cannot return the list of modes unambiguously."
             raise ValueError(msg)
         return self._modes
+
+    @property
+    def modes_out_bra(self) -> list[Mode]:
+        r"""
+        The list of all the output ``Mode``s in this ``Wires`` on the bra side.
+        """
+        return [m for m, w in self.out_bra.items() if w is not None]
+
+    @property
+    def modes_in_bra(self) -> list[Mode]:
+        r"""
+        The list of all the input ``Mode``s in this ``Wires`` on the bra side.
+        """
+        return [m for m, w in self.in_bra.items() if w is not None]
+
+    @property
+    def modes_out_ket(self) -> list[Mode]:
+        r"""
+        The list of all the output ``Mode``s in this ``Wires`` on the ket side.
+        """
+        return [m for m, w in self.out_ket.items() if w is not None]
+
+    @property
+    def modes_in_ket(self) -> list[Mode]:
+        r"""
+        The list of all the input ``Mode``s in this ``Wires`` on the ket side.
+        """
+        return [m for m, w in self.in_ket.items() if w is not None]
 
     def adjoint(self) -> Wires:
         r"""
