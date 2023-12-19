@@ -32,6 +32,7 @@ __all__ = [
     "Matrix",
     "Tensor",
     "Trainable",
+    "Mode",
 ]
 from typing import (
     Iterator,
@@ -48,6 +49,8 @@ R = TypeVar("R", np.float16, np.float32, np.float64)
 C = TypeVar("C", np.complex64, np.complex128)
 Z = TypeVar("Z", np.int16, np.int32, np.int64)
 N = TypeVar("N", np.uint16, np.uint32, np.uint64)
+
+Mode = int
 
 Scalar = Union[R, C, Z, N]
 Vector = np.ndarray[Tuple[int], Scalar]
