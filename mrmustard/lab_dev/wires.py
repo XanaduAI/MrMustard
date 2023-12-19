@@ -56,16 +56,11 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_ket: Optional[Sequence[Mode]] = None,
+        modes_out_bra: Sequence[Mode] = [],
+        modes_in_bra: Sequence[Mode] = [],
+        modes_out_ket: Sequence[Mode] = [],
+        modes_in_ket: Sequence[Mode] = [],
     ) -> None:
-        modes_out_bra = modes_out_bra or []
-        modes_in_bra = modes_in_bra or []
-        modes_out_ket = modes_out_ket or []
-        modes_in_ket = modes_in_ket or []
-
         modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
         if (
             (modes_out_bra and modes_out_bra != modes)
