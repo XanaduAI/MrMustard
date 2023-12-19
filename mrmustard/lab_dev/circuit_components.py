@@ -51,10 +51,12 @@ class CircuitComponent:
         modes_out_ket: Optional[Sequence[Mode]] = None,
         modes_in_bra: Optional[Sequence[Mode]] = None,
         modes_out_bra: Optional[Sequence[Mode]] = None,
+        representation: Representation = None
     ) -> None:
         self._name = name
         self._wires = Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
         self._parameter_set = ParameterSet()
+        self._representation = representation
 
     @classmethod
     def from_ABC(
@@ -71,9 +73,7 @@ class CircuitComponent:
         r"""
         Initializes a circuit component from Bargmann's A, B, and c.
         """
-        ret = CircuitComponent(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
-        ret.representation = Bargmann(A, B, c)
-        return ret
+        return cls(name, modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra, Bargmann(A, B, c))
 
     def _add_parameter(self, parameter: Union[Constant, Variable]):
         r"""
@@ -90,7 +90,7 @@ class CircuitComponent:
         r"""
         A representation of this circuit component.
         """
-        raise NotImplementedError
+        return self._representation
 
     @property
     def modes(self) -> set(Mode):

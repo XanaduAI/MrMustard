@@ -76,6 +76,30 @@ class Wires:
         self._out_bra = {m: uuid.uuid4() if m in modes_out_bra else None for m in keys}
         self._in_ket = {m: uuid.uuid4() if m in modes_in_ket else None for m in keys}
 
+        self.modes_in_ket = modes_in_ket
+        self.modes_out_ket = modes_out_ket
+        self.modes_in_bra = modes_in_bra
+        self.modes_out_bra = modes_out_bra
+
+    def list_of_types_and_modes_of_wires(self):
+        r'''gives the list of types and modes for each wires in bargmann representation.'''
+        list_types = []
+        list_modes = []
+        for m in self.modes:
+            if m in self.modes_out_bra:
+                list_types.append('out_bra')
+                list_modes.append(m)
+            if m in self.modes_in_bra:
+                list_types.append('in_bra')
+                list_modes.append(m)
+            if m in self.modes_out_ket:
+                list_types.append('out_ket')
+                list_modes.append(m)
+            if m in self.modes_in_ket:
+                list_types.append('in_ket')
+                list_modes.append(m)
+        return list_types, list_modes
+
     @property
     def in_ket(self) -> dict[Mode, Optional[Wire]]:
         r"""

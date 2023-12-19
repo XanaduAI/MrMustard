@@ -24,8 +24,8 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .circuit_components import CircuitComponent
-from .connector import connect
+from .circuit_components import CircuitComponent, connect
+
 
 __all__ = [
     "Circuit",

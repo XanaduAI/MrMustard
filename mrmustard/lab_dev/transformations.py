@@ -101,7 +101,6 @@ class Dgate(Unitary):
         ys = math.atleast_1d(self.y.value)
         if len(ys) == 1:
             ys = np.array([ys[0] for _ in range(num_modes)])
-
         A = np.kron(np.array([[0, 1], [1, 0]]), math.eye(num_modes))
         B = math.concat([xs + 1j * ys, -xs + 1j * ys], axis=0)
         C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
