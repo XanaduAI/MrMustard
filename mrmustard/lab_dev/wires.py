@@ -30,6 +30,7 @@ An integer representing a wire in a tensor network.
 """
 
 
+# pylint: disable=too-many-boolean-expressions
 class Wires:
     r"""
     A class with wire functionality for tensor network tensor applications.
@@ -161,7 +162,12 @@ class Wires:
         modes_out_ket = [m for m, w in self.out_ket.items() if w]
         modes_in_bra = [m for m, w in self.in_bra.items() if w]
         modes_out_bra = [m for m, w in self.out_bra.items() if w]
-        return Wires(modes_in_bra, modes_out_bra, modes_in_ket, modes_out_ket)
+        return Wires(
+            modes_out_bra=modes_out_ket,
+            modes_in_bra=modes_in_ket,
+            modes_out_ket=modes_out_bra,
+            modes_in_ket=modes_in_bra,
+        )
 
     def new(self) -> Wires:
         r"""

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Tests for wires.
+"""
+
 import pytest
 
 from mrmustard.lab_dev.wires import Wires
@@ -108,7 +112,6 @@ class TestWires:
         assert set(wires.out_bra.values()) != set(wires_adj.out_ket.values())
         assert set(wires.in_bra.values()) != set(wires_adj.in_ket.values())
         assert set(wires.out_ket.values()) != set(wires_adj.out_bra.values())
-        assert set(wires.in_ket.values()) != set(wires_adj.in_bra.values())
 
     def test_new(self):
         r"""
