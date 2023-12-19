@@ -36,7 +36,13 @@ class Wires:
 
     In general we distinguish between input and output wires, and between ket and bra sides.
 
-    .. code-block::
+    Args:
+        modes_out_bra: The output modes on the bra side.
+        modes_in_bra: The input modes on the bra side.
+        modes_out_ket: The output modes on the ket side.
+        modes_in_ket: The input modes on the ket side.
+
+    .. jupyter-execute::
 
         from mrmustard.lab_dev.wires import Wires
 
@@ -46,11 +52,7 @@ class Wires:
         # initialize `wires` object with given modes
         wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
 
-    Args:
-        modes_out_bra: The output modes on the bra side.
-        modes_in_bra: The input modes on the bra side.
-        modes_out_ket: The output modes on the ket side.
-        modes_in_ket: The input modes on the ket side.
+        assert False
     """
 
     def __init__(
