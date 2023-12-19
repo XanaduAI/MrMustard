@@ -22,9 +22,9 @@ from ..utils.typing import Mode
 
 import uuid
 
-__all__ = ["Wire", "Wires"]
+__all__ = ["WireId", "Wires"]
 
-Wire = int
+WireId = int
 r"""
 An integer representing a wire in a tensor network.
 """
@@ -51,8 +51,6 @@ class Wires:
 
         # initialize `wires` object with given modes
         wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
-
-        assert False
     """
 
     def __init__(
@@ -88,33 +86,33 @@ class Wires:
         self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
 
     @property
-    def in_bra(self) -> dict[Mode, Optional[Wire]]:
+    def in_bra(self) -> dict[Mode, Optional[WireId]]:
         r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
+        A dictionary mapping a mode ``m`` to a ``WireId`` if mode ``m`` has an
         input wire on the bra side, and to ``None`` otherwise.
         """
         return self._in_bra
 
     @property
-    def out_bra(self) -> dict[Mode, Optional[Wire]]:
+    def out_bra(self) -> dict[Mode, Optional[WireId]]:
         r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
+        A dictionary mapping a mode ``m`` to a ``WireId`` if mode ``m`` has an
         ouput wire on the bra side, and to ``None`` otherwise.
         """
         return self._out_bra
 
     @property
-    def in_ket(self) -> dict[Mode, Optional[Wire]]:
+    def in_ket(self) -> dict[Mode, Optional[WireId]]:
         r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
+        A dictionary mapping a mode ``m`` to a ``WireId`` if mode ``m`` has an
         input wire on the ket side, and to ``None`` otherwise.
         """
         return self._in_ket
 
     @property
-    def out_ket(self) -> dict[Mode, Optional[Wire]]:
+    def out_ket(self) -> dict[Mode, Optional[WireId]]:
         r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
+        A dictionary mapping a mode ``m`` to a ``WireId`` if mode ``m`` has an
         ouput wire on the ket side, and to ``None`` otherwise.
         """
         return self._out_ket
