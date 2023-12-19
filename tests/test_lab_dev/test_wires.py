@@ -54,7 +54,7 @@ class TestWires:
         wires = Wires([0, 2], [9, 3], [4, 5])
 
         with pytest.raises(ValueError, match="unambiguously"):
-            wires.modes
+            wires.modes  # pylint: disable=pointless-statement
 
         assert list(wires.out_bra.keys()) == [0, 2, 3, 4, 5, 9]
         out_bra_values = list(wires.out_bra.values())
