@@ -30,7 +30,7 @@ An integer representing a wire in a tensor network.
 """
 
 
-# pylint: disable=too-many-boolean-expressions
+# pylint: disable=too-many-boolean-expressions, complex-method
 class Wires:
     r"""
     A class with wire functionality for tensor network tensor applications.
