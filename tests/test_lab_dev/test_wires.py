@@ -80,3 +80,62 @@ class TestWires:
         
         assert list(wires.in_ket.keys()) == [0, 2, 3, 4, 5, 9]
         assert list(wires.in_ket.values()) == [None] * 6
+
+    def test_adjoint(self):
+        r"""
+        Tests the `adjoint` method.
+        """
+        wires = Wires([0, 2], [9, 3], [4, 5])
+        wires_adj = wires.adjoint()
+
+        assert wires.out_bra.keys() == wires_adj.out_ket.keys()
+        assert wires.in_bra.keys() == wires_adj.in_ket.keys()
+        assert wires.out_ket.keys() == wires_adj.out_bra.keys()
+        assert wires.in_ket.keys() == wires_adj.in_bra.keys()
+
+        assert set(wires.out_bra.values()) != set(wires_adj.out_ket.values())
+        assert set(wires.in_bra.values()) != set(wires_adj.in_ket.values())
+        assert set(wires.out_ket.values()) != set(wires_adj.out_bra.values())
+        assert set(wires.in_ket.values()) != set(wires_adj.in_bra.values())
+
+    def test_new(self):
+        r"""
+        Tests the `new` method.
+        """
+        wires = Wires([0, 2], [9, 3], [4, 5])
+        wires_new = wires.new()
+
+        assert wires.out_bra.keys() == wires_new.out_bra.keys()
+        assert wires.in_bra.keys() == wires_new.in_bra.keys()
+        assert wires.out_ket.keys() == wires_new.out_ket.keys()
+        assert wires.in_ket.keys() == wires_new.in_ket.keys()
+
+        assert set(wires.out_bra.values()) != set(wires_new.out_bra.values())
+        assert set(wires.in_bra.values()) != set(wires_new.in_bra.values())
+        assert set(wires.out_ket.values()) != set(wires_new.out_ket.values())
+        assert set(wires.in_ket.values()) == set(wires_new.in_ket.values())
+
+    def test_get_item(self):
+        r"""
+        Tests the `__getitem__` method.
+        """
+        wires = Wires([0, 2], [9, 3], [4, 5])
+        wires_slice = wires[2, 9]
+
+        assert list(wires_slice.out_bra.keys()) == [2, 9]
+        assert list(wires_slice.in_bra.keys()) == [2, 9]
+        assert list(wires_slice.out_ket.keys()) == [2, 9]
+        assert list(wires_slice.in_ket.keys()) == [2, 9]
+
+        assert wires.out_bra[2] == wires_slice.out_bra[2]
+        assert wires.out_bra[9] == wires_slice.out_bra[9]
+
+        assert wires.in_bra[2] == wires_slice.in_bra[2]
+        assert wires.in_bra[9] == wires_slice.in_bra[9]
+
+        assert wires.out_ket[2] == wires_slice.out_ket[2]
+        assert wires.out_ket[9] == wires_slice.out_ket[9]
+
+        assert wires.in_ket[2] == wires_slice.in_ket[2]
+        assert wires.in_ket[9] == wires_slice.in_ket[9]
+        assert False

@@ -36,6 +36,16 @@ class Wires:
 
     In general we distinguish between input and output wires, and between ket and bra sides.
 
+    .. code-block::
+
+        from mrmustard.lab_dev.wires import Wires
+
+        # initialize modes
+        modes = [0, 1]
+
+        # initialize `wires` object with given modes
+        wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
+
     Args:
         modes_out_bra: The output modes on the bra side.
         modes_in_bra: The input modes on the bra side.
@@ -70,10 +80,10 @@ class Wires:
         keys = self._modes or set(
             modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra
         )
-        self._out_bra = {m: uuid.uuid4() if m in modes_out_bra else None for m in keys}
-        self._in_bra = {m: uuid.uuid4() if m in modes_in_bra else None for m in keys}
-        self._out_ket = {m: uuid.uuid4() if m in modes_out_ket else None for m in keys}
-        self._in_ket = {m: uuid.uuid4() if m in modes_in_ket else None for m in keys}
+        self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
+        self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
+        self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
+        self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
 
     @property
     def in_bra(self) -> dict[Mode, Optional[Wire]]:
