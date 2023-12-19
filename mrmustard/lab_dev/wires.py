@@ -17,10 +17,10 @@
 from __future__ import annotations
 
 from typing import Optional, Sequence, Union
+import uuid
 
 from ..utils.typing import Mode
 
-import uuid
 
 __all__ = ["Wire", "Wires"]
 
@@ -76,10 +76,8 @@ class Wires:
             self._modes = None
         else:
             self._modes = list(modes)
-        
-        keys = self._modes or set(
-            modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra
-        )
+
+        keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
         self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
         self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
         self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}

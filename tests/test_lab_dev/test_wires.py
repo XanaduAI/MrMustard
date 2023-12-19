@@ -16,6 +16,7 @@ import pytest
 
 from mrmustard.lab_dev.wires import Wires
 
+
 class TestWires:
     r"""
     Tests for the ``Wires`` class.
@@ -29,16 +30,16 @@ class TestWires:
         wires = Wires(modes, modes, modes)
 
         assert wires.modes == modes
-        
+
         assert list(wires.out_bra.keys()) == modes
         assert None not in list(wires.out_bra.values())
-        
+
         assert list(wires.in_bra.keys()) == modes
         assert None not in list(wires.in_bra.values())
-        
+
         assert list(wires.out_ket.keys()) == modes
         assert None not in list(wires.out_ket.values())
-        
+
         assert list(wires.in_ket.keys()) == modes
         assert list(wires.in_ket.values()) == [None] * len(modes)
 
@@ -50,7 +51,7 @@ class TestWires:
 
         with pytest.raises(ValueError, match="unambiguously"):
             wires.modes
-        
+
         assert list(wires.out_bra.keys()) == [0, 2, 3, 4, 5, 9]
         out_bra_values = list(wires.out_bra.values())
         assert out_bra_values[0] is not None
@@ -59,7 +60,7 @@ class TestWires:
         assert out_bra_values[3] is None
         assert out_bra_values[4] is None
         assert out_bra_values[5] is None
-        
+
         assert list(wires.in_bra.keys()) == [0, 2, 3, 4, 5, 9]
         in_bra_values = list(wires.in_bra.values())
         assert in_bra_values[0] is None
@@ -68,7 +69,7 @@ class TestWires:
         assert in_bra_values[3] is None
         assert in_bra_values[4] is None
         assert in_bra_values[5] is not None
-        
+
         assert list(wires.out_ket.keys()) == [0, 2, 3, 4, 5, 9]
         out_ket_values = list(wires.out_ket.values())
         assert out_ket_values[0] is None
@@ -77,7 +78,7 @@ class TestWires:
         assert out_ket_values[3] is not None
         assert out_ket_values[4] is not None
         assert out_ket_values[5] is None
-        
+
         assert list(wires.in_ket.keys()) == [0, 2, 3, 4, 5, 9]
         assert list(wires.in_ket.values()) == [None] * 6
 
