@@ -67,7 +67,24 @@ class SimulatorBargmann(Simulator):
                     return i
         return None
 
-    def run(self, circuit: Circuit) -> CircuitComponent:   
+    def run(self, circuit: Circuit) -> CircuitComponent:
+        r"""Bargmann simulator
+
+            [Code Block]
+            from mrmustard.lab_dev.transformations import Dgate
+            from mrmustard.lab_dev.simulator import SimulatorBargmann
+
+            dgate1 = Dgate(x=[0.2,0.3,0.1], modes=[0,2,3])
+            dgate2 = Dgate(x=[0.2,0.1,-0.2,-0.3], modes=[2,3, 6,101])
+            dgate3 = Dgate(x=[0.5], modes=[1])
+            circuit = dgate1>>dgate2>>dgate3
+            circuit.draw()
+
+            simulator = SimulatorBargmann()
+            output = simulator.run(circuit=circuit)
+            output.wires.list_of_types_and_modes_of_wires()
+            
+        """   
         component1 = circuit.components[0]
         for component2 in circuit.components[1:]:
             modes_out_ket_component1 = component1.wires.modes_out_ket
@@ -97,6 +114,7 @@ class SimulatorBargmann(Simulator):
             
             if index_A_matrix_component1 and index_A_matrix_component2:
                 new_Bargmann = component1.representation[index_A_matrix_component1] @ component2.representation[index_A_matrix_component2]
+                
             modes_in_ket_new = list(set(np.concatenate([component1.wires.modes_in_ket, component2.wires.modes_in_ket])))
             modes_in_bra_new = list(set(np.concatenate([component1.wires.modes_in_bra, component2.wires.modes_in_bra])))
             modes_out_ket_new = list(set(np.concatenate([component1.wires.modes_out_ket, component2.wires.modes_out_ket])))
