@@ -66,7 +66,7 @@ class Wires:
         modes_out_ket = list(modes_out_ket) or []
         modes_in_ket = list(modes_in_ket) or []
 
-        # modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
+        modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
         # if (
         #     (modes_out_bra and modes_out_bra != modes)
         #     or (modes_in_bra and modes_in_bra != modes)
@@ -78,11 +78,12 @@ class Wires:
         # else:
         #     self._modes = modes
 
-        # keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
-        # self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
-        # self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
-        # self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
-        # self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
+        self._modes = modes
+        keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
+        self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
+        self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
+        self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
+        self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
 
     @property
     def in_bra(self) -> dict[Mode, Optional[Wire]]:
