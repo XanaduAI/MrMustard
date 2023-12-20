@@ -938,7 +938,7 @@ class BackendManager:  # pylint: disable=too-many-public-methods, fixme
 
         Args:
             array: The array to round
-            decimals (int): number of decimals to round to
+            decimals: number of decimals to round to
 
         Returns:
             The array rounded to the nearest integer
