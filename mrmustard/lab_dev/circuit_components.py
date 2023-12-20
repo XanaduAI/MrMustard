@@ -54,7 +54,7 @@ class CircuitComponent:
         representation: Representation = None
     ) -> None:
         self._name = name
-        self._wires = Wires(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        self._wires = Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
         self._parameter_set = ParameterSet()
         self._representation = representation
 

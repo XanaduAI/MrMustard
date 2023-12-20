@@ -105,7 +105,6 @@ class Circuit:
             A figure showing the tensor network.
         """
         components = connect(self.components)
-
         try:
             fn_layout = getattr(nx.drawing.layout, layout)
         except AttributeError:
