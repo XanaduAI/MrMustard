@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Union
 import uuid
 
 from ..utils.typing import Mode
@@ -56,10 +56,10 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Optional[Sequence[Mode]] = None,
-        modes_in_bra: Optional[Sequence[Mode]] = None,
-        modes_out_ket: Optional[Sequence[Mode]] = None,
-        modes_in_ket: Optional[Sequence[Mode]] = None,
+        modes_out_bra: Optional[Iterable[Mode]] = None,
+        modes_in_bra: Optional[Iterable[Mode]] = None,
+        modes_out_ket: Optional[Iterable[Mode]] = None,
+        modes_in_ket: Optional[Iterable[Mode]] = None,
     ) -> None:
         modes_out_bra = modes_out_bra or []
         modes_in_bra = modes_in_bra or []
@@ -171,7 +171,7 @@ class Wires:
         """
         return Wires(self.modes_out_bra, self.modes_in_bra, self.modes_out_ket, self.modes_in_ket)
 
-    def __getitem__(self, modes: Union[Mode, Sequence[Mode]]) -> Wires:
+    def __getitem__(self, modes: Union[Mode, Iterable[Mode]]) -> Wires:
         r"""
         Returns a copy of this ``Wires`` with only the given modes. It does not
         change the ``id``s.
