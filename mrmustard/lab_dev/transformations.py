@@ -107,3 +107,73 @@ class Dgate(Unitary):
         C = np.prod([np.exp(-abs(x + 1j * y) ** 2 / 2) for x, y in zip(xs, ys)])
 
         return Bargmann(A, B, C)
+    
+
+class Channel(Transformation):
+    r"""
+    Base class for all non-unitary transformations.
+
+    Arguments:
+        name: The name of this channel.
+        modes: The modes that this channel acts on.
+    """
+
+    def __init__(self, name, modes):
+        super().__init__(
+            name, modes_in_ket=modes, modes_out_ket=modes, modes_in_bra=modes, modes_out_bra=modes
+        )
+    
+    
+class Attenuator(Channel):
+    r"""The noisy attenuator channel.
+
+    It corresponds to mixing with a thermal environment and applying the pure loss channel. The pure
+    lossy channel is recovered for nbar = 0 (i.e. mixing with vacuum).
+
+    The CPT channel is given by
+
+    .. math::
+
+        X = sqrt(transmissivity) * I
+        Y = (1-transmissivity) * (2*nbar + 1) * (hbar / 2) * I
+
+    If ``len(modes) > 1`` the gate is applied in parallel to all of the modes provided.
+    If ``transmissivity`` is a single float, the parallel instances of the gate share that parameter.
+
+    To apply mode-specific values use a list of floats.
+
+    One can optionally set bounds for `transmissivity`, which the optimizer will respect.
+
+    Args:
+        transmissivity (float or List[float]): the list of transmissivities
+        nbar (float): the average number of photons in the thermal state
+        transmissivity_trainable (bool): whether transmissivity is a trainable variable
+        nbar_trainable (bool): whether nbar is a trainable variable
+        transmissivity_bounds (float, float): bounds for the transmissivity
+        nbar_bounds (float, float): bounds for the average number of photons in the thermal state
+        modes (optional, List[int]): the list of modes this gate is applied to
+    """
+    def __init__(
+        self,
+        transmissivity: Union[Optional[float], Optional[list[float]]] = 1.0,
+        nbar: float = 0.0,
+        transmissivity_trainable: bool = False,
+        nbar_trainable: bool = False,
+        transmissivity_bounds: Tuple[Optional[float], Optional[float]] = (0.0, 1.0),
+        nbar_bounds: Tuple[Optional[float], Optional[float]] = (0.0, None),
+        modes: Optional[list[int]] = None,
+    ):
+        super().__init__(
+            modes=modes or list(range(len(math.atleast_1d(transmissivity)))),
+            name="Att",
+        )
+        self._add_parameter(
+            make_parameter(
+                transmissivity_trainable,
+                transmissivity,
+                "transmissivity",
+                transmissivity_bounds,
+                None,
+            )
+        )
+        self._add_parameter(make_parameter(nbar_trainable, nbar, "nbar", nbar_bounds))
