@@ -169,19 +169,21 @@ class Wires:
         r"""Gives the list of types and modes for each wires in bargmann representation."""
         list_types = []
         list_modes = []
-        for m in self.modes:
-            if m in self.modes_out_bra:
-                list_types.append('out_bra')
-                list_modes.append(m)
-            if m in self.modes_in_bra:
-                list_types.append('in_bra')
-                list_modes.append(m)
-            if m in self.modes_out_ket:
-                list_types.append('out_ket')
-                list_modes.append(m)
-            if m in self.modes_in_ket:
-                list_types.append('in_ket')
-                list_modes.append(m)
+        for m in self.modes_out_bra:
+            list_types.append('out_bra')
+            list_modes.append(m)
+        
+        for m in self.modes_in_bra:
+            list_types.append('in_bra')
+            list_modes.append(m)
+        
+        for m in self.modes_out_ket:
+            list_types.append('out_ket')
+            list_modes.append(m)
+
+        for m in self.modes_in_ket:
+            list_types.append('in_ket')
+            list_modes.append(m)
         return list_types, list_modes
 
     def calculate_index_for_of_a_wire(self, type_of_wire: str, mode: int) -> Union[None, int]:
