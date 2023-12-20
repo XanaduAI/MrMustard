@@ -80,7 +80,7 @@ class Wires:
         modes_in_bra: Iterable[Mode],
         modes_out_ket: Iterable[Mode],
         modes_in_ket: Iterable[Mode],
-        ):
+    ):
         r"""
         Returns the list of modes, or an empty list if the given modes are ambiguous.
         """
