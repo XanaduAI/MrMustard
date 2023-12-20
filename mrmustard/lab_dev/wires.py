@@ -66,7 +66,7 @@ class Wires:
         modes_out_ket = modes_out_ket or []
         modes_in_ket = modes_in_ket or []
 
-        self._modes = self._process_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+        self._modes = self._process_modes(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
 
         keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
         self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
