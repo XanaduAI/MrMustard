@@ -84,7 +84,8 @@ class SimulatorBargmann(Simulator):
             output = simulator.run(circuit=circuit)
             output.wires.list_of_types_and_modes_of_wires()
             
-        """   
+        """  
+        #_preparecomponent()
         component1 = circuit.components[0]
         for component2 in circuit.components[1:]:
             modes_out_ket_component1 = component1.wires.modes_out_ket
@@ -99,22 +100,19 @@ class SimulatorBargmann(Simulator):
             list_types_index1, list_types_modes1 = component1.wires.list_of_types_and_modes_of_wires()
             list_types_index2, list_types_modes2 = component2.wires.list_of_types_and_modes_of_wires()
 
-            index_A_matrix_component1 = None
-            index_A_matrix_component2 = None
+            index_A_matrix_component1 = []
+            index_A_matrix_component2 = []
 
-            if intersection_ket:
-                for mode in intersection_ket:
-                    index_A_matrix_component1 = self._calculate_index_for_A_matrix('out_ket', mode, list_types_index1, list_types_modes1)
-                    index_A_matrix_component2 = self._calculate_index_for_A_matrix('in_ket', mode, list_types_index2, list_types_modes2)
+            for mode in intersection_ket:
+                index_A_matrix_component1 += [self._calculate_index_for_A_matrix('out_ket', mode, list_types_index1, list_types_modes1)]
+                index_A_matrix_component2 += [self._calculate_index_for_A_matrix('in_ket', mode, list_types_index2, list_types_modes2)]
 
-            if intersection_bra:
-                for mode in intersection_bra:
-                    index_A_matrix_component1 += self._calculate_index_for_A_matrix('out_bra', mode, list_types_index1, list_types_modes1)
-                    index_A_matrix_component2 += self._calculate_index_for_A_matrix('in_bra', mode, list_types_index1, list_types_modes1)
+            for mode in intersection_bra:
+                index_A_matrix_component1 += self._calculate_index_for_A_matrix('out_bra', mode, list_types_index1, list_types_modes1)
+                index_A_matrix_component2 += self._calculate_index_for_A_matrix('in_bra', mode, list_types_index1, list_types_modes1)
             
-            if index_A_matrix_component1 and index_A_matrix_component2:
-                new_Bargmann = component1.representation[index_A_matrix_component1] @ component2.representation[index_A_matrix_component2]
-                
+            new_Bargmann = component1.representation[index_A_matrix_component1] @ component2.representation[index_A_matrix_component2]
+
             modes_in_ket_new = list(set(np.concatenate([component1.wires.modes_in_ket, component2.wires.modes_in_ket])))
             modes_in_bra_new = list(set(np.concatenate([component1.wires.modes_in_bra, component2.wires.modes_in_bra])))
             modes_out_ket_new = list(set(np.concatenate([component1.wires.modes_out_ket, component2.wires.modes_out_ket])))

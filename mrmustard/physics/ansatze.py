@@ -318,10 +318,10 @@ class PolyExpAnsatz(PolyExpBase):
             Scalar: value of the function
         """
         z = np.atleast_2d(z)  # shape (Z, n)
-        zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (Z, 1, n, n))
+        zz = np.einsum("...a,...b->...ab", z, math.conj(z))[..., None, :, :]  # shape (Z, 1, n, n))
         A_part = 0.5 * math.sum(
             zz * self.A, axes=[-1, -2]
-        )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)
+        )  # sum((Z,1,n,n) * (b,n,n), [-1,-2]) ~ (Z,b)›
         b_part = np.sum(z[..., None, :] * self.b, axis=-1)  # sum((Z,1,n) * (b,n), -1) ~ (Z,b)
         exp_sum = np.exp(A_part + b_part)  # (Z, b)
         result = exp_sum * self.c  # (Z, b)
