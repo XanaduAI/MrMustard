@@ -61,10 +61,10 @@ class Wires:
         modes_out_ket: Optional[Iterable[Mode]] = None,
         modes_in_ket: Optional[Iterable[Mode]] = None,
     ) -> None:
-        modes_out_bra = list(modes_out_bra) or []
-        modes_in_bra = list(modes_in_bra) or []
-        modes_out_ket = list(modes_out_ket) or []
-        modes_in_ket = list(modes_in_ket) or []
+        modes_out_bra = list(modes_out_bra)
+        modes_in_bra = list(modes_in_bra)
+        modes_out_ket = list(modes_out_ket)
+        modes_in_ket = list(modes_in_ket)
 
         modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
         # if (
