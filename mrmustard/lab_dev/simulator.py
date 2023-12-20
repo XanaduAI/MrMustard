@@ -59,13 +59,6 @@ class SimulatorBargmann(Simulator):
         if not isinstance(rep, Bargmann):
             msg = f"Expected `Bargmann`, found {rep.__class__}"
             raise ValueError(msg)
-    
-    def _calculate_index_for_A_matrix(self, type_of_wire, mode, list_types_index, list_types_modes):
-        for i, m in enumerate(list_types_modes):
-            if m == mode:
-                if type_of_wire == list_types_index[i]:
-                    return i
-        return None
 
     def run(self, circuit: Circuit) -> CircuitComponent:
         r"""Bargmann simulator
@@ -96,20 +89,17 @@ class SimulatorBargmann(Simulator):
 
             intersection_ket = list(set(modes_out_ket_component1) & set(modes_in_ket_component2))
             intersection_bra = list(set(modes_out_bra_component1) & set(modes_in_bra_component2))
-
-            list_types_index1, list_types_modes1 = component1.wires.list_of_types_and_modes_of_wires()
-            list_types_index2, list_types_modes2 = component2.wires.list_of_types_and_modes_of_wires()
-
+            
             index_A_matrix_component1 = []
             index_A_matrix_component2 = []
 
             for mode in intersection_ket:
-                index_A_matrix_component1 += [self._calculate_index_for_A_matrix('out_ket', mode, list_types_index1, list_types_modes1)]
-                index_A_matrix_component2 += [self._calculate_index_for_A_matrix('in_ket', mode, list_types_index2, list_types_modes2)]
+                index_A_matrix_component1 += [component1.wires.calculate_index_for_of_a_wire('out_ket', mode)]
+                index_A_matrix_component2 += [component2.wires.calculate_index_for_of_a_wire('in_ket', mode)]
 
             for mode in intersection_bra:
-                index_A_matrix_component1 += self._calculate_index_for_A_matrix('out_bra', mode, list_types_index1, list_types_modes1)
-                index_A_matrix_component2 += self._calculate_index_for_A_matrix('in_bra', mode, list_types_index1, list_types_modes1)
+                index_A_matrix_component1 += [component1.wires.calculate_index_for_of_a_wire('out_bra', mode)]
+                index_A_matrix_component2 += [component2.wires.calculate_index_for_of_a_wire('in_bra', mode)]
             
             new_Bargmann = component1.representation[index_A_matrix_component1] @ component2.representation[index_A_matrix_component2]
 
