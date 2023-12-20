@@ -158,26 +158,18 @@ class Wires:
         r"""
         The adjoint of this ``Wires`` (with new ``id``s), obtained switching kets and bras.
         """
-        modes_in_ket = [m for m, w in self.in_ket.items() if w]
-        modes_out_ket = [m for m, w in self.out_ket.items() if w]
-        modes_in_bra = [m for m, w in self.in_bra.items() if w]
-        modes_out_bra = [m for m, w in self.out_bra.items() if w]
         return Wires(
-            modes_out_bra=modes_out_ket,
-            modes_in_bra=modes_in_ket,
-            modes_out_ket=modes_out_bra,
-            modes_in_ket=modes_in_bra,
+            modes_out_bra=self.modes_out_ket,
+            modes_in_bra=self.modes_in_ket,
+            modes_out_ket=self.modes_out_bra,
+            modes_in_ket=self.modes_in_bra,
         )
 
     def new(self) -> Wires:
         r"""
         Returns a copy of this ``Wires`` with new ``id``s.
         """
-        modes_out_bra = [m for m, w in self.out_bra.items() if w]
-        modes_in_bra = [m for m, w in self.in_bra.items() if w]
-        modes_out_ket = [m for m, w in self.out_ket.items() if w]
-        modes_in_ket = [m for m, w in self.in_ket.items() if w]
-        return Wires(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
+        return Wires(self.modes_out_bra, self.modes_in_bra, self.modes_out_ket, self.modes_in_ket)
 
     def __getitem__(self, modes: Union[Mode, Sequence[Mode]]) -> Wires:
         r"""
