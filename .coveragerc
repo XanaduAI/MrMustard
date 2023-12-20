@@ -1,6 +1,9 @@
 # .coveragerc to control coverage.py
 [run]
 source = mrmustard
+omit =
+    mrmustard/math/backend_numpy.py
+    mrmustard/math/backend_tensorflow.py
 
 [report]
 # Regexes for lines to exclude from consideration
