@@ -37,13 +37,15 @@ from mrmustard.utils.typing import (
 
 
 class Ansatz(ABC):
-    r"""Abstract parent class for Ansatze that we use to define quantum objects.
-    It supports all the mathematical operations (addition, subtraction, multiplication,
-    division, negation, equality, etc).
+    r"""An Ansatz is a function over a continuous and/or discrete domain.
+    It supports many mathematical operations such as addition, subtraction,
+    multiplication, division, negation, equality, etc.
 
-    Effectively it can be thought of as a function over a continuous and/or discrete domain.
     Note that n-dimensional arrays are like functions defined over an integer lattice of points,
-    so this class is also the parent of e.g. the Fock representation.
+    so this class also works for e.g. the Fock representation.
+
+    This class is abstract. Concrete Ansatz classes will have to implement the
+    ``__call__``, ``__mul__``, ``__add__``, ``__sub__``, ``__neg__`` and ``__eq__`` methods.
     """
 
     @abstractmethod
@@ -79,10 +81,6 @@ class Ansatz(ABC):
 
     def __rmul__(self, other: Scalar) -> Ansatz:
         return self.__mul__(other=other)
-
-    @abstractmethod
-    def plot(self, **kwargs) -> None:
-        ...
 
 
 class PolyExpBase(Ansatz):
@@ -257,49 +255,6 @@ class PolyExpAnsatz(PolyExpBase):
         if self.array.ndim == 1:
             return 0
         return self.array.shape[-1] - 1
-
-    def plot(
-        self,
-        just_phase: bool,
-        with_measure: bool,
-        log_scale: bool,
-        xlim=(-2 * np.pi, 2 * np.pi),
-        ylim=(-2 * np.pi, 2 * np.pi),
-    ):
-        # eval F(z) on a grid of complex numbers
-        X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
-        Z = (X + 1j * Y).T
-        f_values = self(Z[..., None])
-        if log_scale:
-            f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
-        if with_measure:
-            f_values = f_values * np.exp(-np.abs(Z) ** 2)
-
-        # Get phase and magnitude of F(z)
-        phases = np.angle(f_values) / (2 * np.pi) % 1
-        magnitudes = np.abs(f_values)
-        magnitudes_scaled = magnitudes / np.max(magnitudes)
-
-        # Convert to RGB
-        hsv_values = np.zeros(f_values.shape + (3,))
-        hsv_values[..., 0] = phases
-        hsv_values[..., 1] = 1
-        hsv_values[..., 2] = 1 if just_phase else magnitudes_scaled
-        rgb_values = colors.hsv_to_rgb(hsv_values)
-
-        # Plot the image
-        im, ax = plt.subplots()
-        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
-        ax.set_xlabel("$Re(z)$")
-        ax.set_ylabel("$Im(z)$")
-
-        name = "F_{" + self.name + "}(z)"
-        name = f"\\arg({name})\\log|{name}|" if log_scale else name
-        title = name + "e^{-|z|^2}" if with_measure else name
-        title = f"\\arg({name})" if just_phase else title
-        ax.set_title(f"${title}$")
-        plt.show(block=False)  # why block=False?
-        return im, ax
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
         r"""Value of this ansatz at z. This consumes the last dimension of z.

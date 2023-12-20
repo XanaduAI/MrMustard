@@ -14,6 +14,9 @@
 
 from __future__ import annotations
 
+import numpy as np
+from matplotlib import colors
+import matplotlib.pyplot as plt
 from mrmustard import math
 from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
@@ -58,18 +61,37 @@ class Representation:
         return self.from_ansatz(self.ansatz & other.ansatz)
 
 
+
 class Bargmann(Representation):
-    r"""Fock-Bargmann representation of a broad class of quantum states,
+    r"""This class is the Fock-Bargmann representation of a broad class of quantum states,
     transformations, measurements, channels, etc.
+
     The ansatz available in this representation is a linear combination of
     exponentials of bilinear forms with a polynomial part:
     .. math::
         F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)
 
-    This function allows for vector space operations on Bargmann objects including linear combinations,
-    outer product, and inner product. The inner product is defined as the contraction of two
-    Bargmann objects across marked indices. This can also be used to contract existing indices
+    This function allows for vector space operations on Bargmann objects including
+    linear combinations, outer product, and inner product.
+    The inner product is defined as the contraction of two Bargmann objects across
+    marked indices. This can also be used to contract existing indices
     in one Bargmann object, e.g. to implement the partial trace.
+    
+    Examples:
+    >>> A = math.astensor([[[1.0]]])  # 1x1x1
+    >>> b = math.astensor([[0.0]])    # 1x1
+    >>> c = math.astensor([0.9])      # 1
+    >>> psi1 = Bargmann(A, b, c)
+    >>> psi2 = Bargmann(A, b, c)
+    >>> psi3 = 1.3 * psi1 - 2.1 * psi2  # linear combination
+    >>> assert psi3.A.shape == (2, 1, 1)  # stacked along batch dimension
+    >>> psi4 = psi1[0] @ psi2[0]  # contract wires 0 on each (inner product)
+    >>> assert psi4.A.shape == (1,)  # A is 0x0 now (no wires left)
+    >>> psi5 = psi1 & psi2  # outer product (tensor product)
+    >>> rho = psi1.conj() & psi1   # outer product (this is now the density matrix)
+    >>> assert rho.A.shape == (1, 2, 2)  # we have two wires now
+    >>> assert np.allclose(rho.trace((0,), (1,)), np.abs(c)**2)
+    
 
     Args:
         A (Batch[ComplexMatrix]): batch of quadratic coefficient A_i
@@ -84,16 +106,6 @@ class Bargmann(Representation):
         c: Batch[ComplexTensor] = [1.0],
     ):
         self.ansatz = PolyExpAnsatz(A, b, c)
-        self._name = "Bargmann"
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @name.setter
-    def name(self, name: str):
-        self._name = name
-        self.ansatz.name = name
 
     def __call__(self, z: ComplexTensor) -> ComplexTensor:
         r"""Evaluates the Bargmann function at the given points."""
@@ -102,10 +114,6 @@ class Bargmann(Representation):
     def from_ansatz(self, ansatz: PolyExpAnsatz) -> Bargmann:
         r"""Returns a Bargmann object from an ansatz object."""
         return self.__class__(ansatz.A, ansatz.b, ansatz.c)
-
-    def plot(self, just_phase: bool = False, with_measure: bool = True, log_scale: bool = False, **kwargs):
-        r"""Plots the Bargmann function."""
-        return self.ansatz.plot(just_phase, with_measure, log_scale, **kwargs)
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
@@ -186,3 +194,57 @@ class Bargmann(Representation):
         new = self.__class__(A, b, c)
         new._contract_idxs = self._contract_idxs
         return new
+    
+    def plot(
+        self,
+        just_phase: bool = False,
+        with_measure: bool = True,
+        log_scale: bool = False,
+        xlim=(-2 * np.pi, 2 * np.pi),
+        ylim=(-2 * np.pi, 2 * np.pi),
+        **kwargs,
+    ):
+        r"""Plots the Bargmann function.
+        
+        Args:
+            just_phase (bool): whether to plot only the phase of the Bargmann function
+            with_measure (bool): whether to plot the measure function
+            log_scale (bool): whether to plot the log of the Bargmann function
+            xlim (tuple[float, float]): x limits of the plot
+            ylim (tuple[float, float]): y limits of the plot
+            kwargs: other keyword arguments to be passed to the plot function
+        """
+        # eval F(z) on a grid of complex numbers
+        X, Y = np.mgrid[xlim[0] : xlim[1] : 400j, ylim[0] : ylim[1] : 400j]
+        Z = (X + 1j * Y).T
+        f_values = self(Z[..., None])
+        if log_scale:
+            f_values = np.log(np.abs(f_values)) * np.exp(1j * np.angle(f_values))
+        if with_measure:
+            f_values = f_values * np.exp(-np.abs(Z) ** 2)
+
+        # Get phase and magnitude of F(z)
+        phases = np.angle(f_values) / (2 * np.pi) % 1
+        magnitudes = np.abs(f_values)
+        magnitudes_scaled = magnitudes / np.max(magnitudes)
+
+        # Convert to RGB
+        hsv_values = np.zeros(f_values.shape + (3,))
+        hsv_values[..., 0] = phases
+        hsv_values[..., 1] = 1
+        hsv_values[..., 2] = 1 if just_phase else magnitudes_scaled
+        rgb_values = colors.hsv_to_rgb(hsv_values)
+
+        # Plot the image
+        im, ax = plt.subplots()
+        ax.imshow(rgb_values, origin="lower", extent=[xlim[0], xlim[1], ylim[0], ylim[1]])
+        ax.set_xlabel("$Re(z)$")
+        ax.set_ylabel("$Im(z)$")
+
+        name = "F_{" + self.ansatz.name + "}(z)"
+        name = f"\\arg({name})\\log|{name}|" if log_scale else name
+        title = name + "e^{-|z|^2}" if with_measure else name
+        title = f"\\arg({name})" if just_phase else title
+        ax.set_title(f"${title}$")
+        plt.show(block=False, **kwargs)
+        return im, ax
