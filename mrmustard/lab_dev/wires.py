@@ -186,7 +186,7 @@ class Wires:
             list_modes.append(m)
         return list_types, list_modes
 
-    def calculate_index_for_of_a_wire(self, type_of_wire: str, mode: int) -> Union[None, int]:
+    def calculate_index_for_a_wire_on_given_mode_and_type(self, type_of_wire: str, mode: int) -> Union[None, int]:
         r"""Gives the index of a specific wire knowing the type and the mode."""
         list_types, list_modes = self.list_of_types_and_modes_of_wires()
         for i, m in enumerate(list_modes):

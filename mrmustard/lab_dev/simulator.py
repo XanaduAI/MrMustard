@@ -89,17 +89,17 @@ class SimulatorBargmann(Simulator):
 
             intersection_ket = list(set(modes_out_ket_component1) & set(modes_in_ket_component2))
             intersection_bra = list(set(modes_out_bra_component1) & set(modes_in_bra_component2))
-            
+
             index_A_matrix_component1 = []
             index_A_matrix_component2 = []
 
             for mode in intersection_ket:
-                index_A_matrix_component1 += [component1.wires.calculate_index_for_of_a_wire('out_ket', mode)]
-                index_A_matrix_component2 += [component2.wires.calculate_index_for_of_a_wire('in_ket', mode)]
+                index_A_matrix_component1 += [component1.wires.calculate_index_for_a_wire_on_given_mode_and_type('out_ket', mode)]
+                index_A_matrix_component2 += [component2.wires.calculate_index_for_a_wire_on_given_mode_and_type('in_ket', mode)]
 
             for mode in intersection_bra:
-                index_A_matrix_component1 += [component1.wires.calculate_index_for_of_a_wire('out_bra', mode)]
-                index_A_matrix_component2 += [component2.wires.calculate_index_for_of_a_wire('in_bra', mode)]
+                index_A_matrix_component1 += [component1.wires.calculate_index_for_a_wire_on_given_mode_and_type('out_bra', mode)]
+                index_A_matrix_component2 += [component2.wires.calculate_index_for_a_wire_on_given_mode_and_type('in_bra', mode)]
             
             new_Bargmann = component1.representation[index_A_matrix_component1] @ component2.representation[index_A_matrix_component2]
 
