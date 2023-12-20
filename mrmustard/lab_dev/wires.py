@@ -54,6 +54,7 @@ class Wires:
         wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
     """
 
+    # codefactor cyclomatic_complexity disable
     def __init__(
         self,
         modes_out_bra: Optional[Iterable[Mode]] = None,
@@ -66,8 +67,7 @@ class Wires:
         modes_out_ket = modes_out_ket or []
         modes_in_ket = modes_in_ket or []
 
-        # modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
-        modes = []
+        modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
         if (
             (modes_out_bra and modes_out_bra != modes)
             or (modes_in_bra and modes_in_bra != modes)
