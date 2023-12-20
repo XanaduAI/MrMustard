@@ -61,29 +61,33 @@ class Wires:
         modes_out_ket: Optional[Iterable[Mode]] = None,
         modes_in_ket: Optional[Iterable[Mode]] = None,
     ) -> None:
-        modes_out_bra = list(modes_out_bra)
-        modes_in_bra = list(modes_in_bra)
-        modes_out_ket = list(modes_out_ket)
-        modes_in_ket = list(modes_in_ket)
+        modes_out_bra = modes_out_bra or []
+        modes_in_bra = modes_in_bra or []
+        modes_out_ket = modes_out_ket or []
+        modes_in_ket = modes_in_ket or []
 
-        modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
-        # if (
-        #     (modes_out_bra and modes_out_bra != modes)
-        #     or (modes_in_bra and modes_in_bra != modes)
-        #     or (modes_out_ket and modes_out_ket != modes)
-        #     or (modes_in_ket and modes_in_ket != modes)
-        # ):
-        #     # cannot define the list of modes unambiguously
-        #     self._modes = None
-        # else:
-        #     self._modes = modes
+        # modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
+        modes = []
+        if (
+            (modes_out_bra and modes_out_bra != modes)
+            or (modes_in_bra and modes_in_bra != modes)
+            or (modes_out_ket and modes_out_ket != modes)
+            or (modes_in_ket and modes_in_ket != modes)
+        ):
+            # cannot define the list of modes unambiguously
+            self._modes = []
+        else:
+            self._modes = list(modes)
 
-        self._modes = modes
         keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
         self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
         self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
         self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
         self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
+
+    def _parse_modes(self):
+        r"""
+        """
 
     @property
     def in_bra(self) -> dict[Mode, Optional[Wire]]:
