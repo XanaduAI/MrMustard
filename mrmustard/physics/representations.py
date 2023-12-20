@@ -24,19 +24,28 @@ from mrmustard.utils.typing import Batch, ComplexMatrix, ComplexTensor, ComplexV
 
 
 class Representation:
+    r"""
+    A base class for representations.
+    """
     _contract_idxs: tuple[int, ...] = ()
     ansatz: Ansatz
 
     def from_ansatz(self, ansatz: Ansatz) -> Ansatz:
         raise NotImplementedError
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
+        r"""
+        Whether this representation is equal to another.
+        """
         return self.ansatz == other.ansatz
 
-    def __add__(self, other):
+    def __add__(self, other) -> Ansatz:
+        r"""
+        Adds this representation to another.
+        """
         return self.from_ansatz(self.ansatz + other.ansatz)
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> Ansatz:
         return self.from_ansatz(self.ansatz - other.ansatz)
 
     def __mul__(self, other):
@@ -68,8 +77,9 @@ class Bargmann(Representation):
 
     The ansatz available in this representation is a linear combination of
     exponentials of bilinear forms with a polynomial part:
+
     .. math::
-        F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)
+        F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)
 
     This function allows for vector space operations on Bargmann objects including
     linear combinations, outer product, and inner product.
@@ -94,9 +104,9 @@ class Bargmann(Representation):
     
 
     Args:
-        A (Batch[ComplexMatrix]): batch of quadratic coefficient A_i
-        b (Batch[ComplexVector]): batch of linear coefficients b_i
-        c (Batch[ComplexTensor]): batch of arrays c_i (default: [1.0])
+        A: batch of quadratic coefficient :math:`A_i`
+        b: batch of linear coefficients :math:`b_i`
+        c: batch of arrays :math:`c_i` (default: [1.0])
     """
 
     def __init__(
@@ -117,17 +127,29 @@ class Bargmann(Representation):
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
+        r"""
+        The batch of quadratic coefficient :math:`A_i`.
+        """
         return self.ansatz.A
 
     @property
     def b(self) -> Batch[ComplexVector]:
+        r"""
+        The batch of linear coefficients :math:`b_i`
+        """
         return self.ansatz.b
 
     @property
     def c(self) -> Batch[ComplexTensor]:
+        r"""
+        The batch of arrays :math:`c_i`.
+        """
         return self.ansatz.c
 
     def conj(self):
+        r"""
+        The conjugate of this Bargmann.
+        """
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs
         return new
@@ -167,18 +189,19 @@ class Bargmann(Representation):
         r"""Implements the partial trace over the given index pairs.
 
         Args:
-            idx_z (tuple[int, ...]): indices to trace over
-            idx_zconj (tuple[int, ...]): indices to trace over
+            idx_z: indices to trace over
+            idx_zconj: indices to trace over
 
         Returns:
             Bargmann: the ansatz with the given indices traced over
         """
         if self.ansatz.degree > 0:
             raise NotImplementedError(
-                "Partial trace is only supported for ansatzs with polynomial of degree 0."
+                "Partial trace is only supported for ansatzs with polynomial of degree ``0``."
             )
         if len(idx_z) != len(idx_zconj):
-            raise ValueError("The number of indices to trace over must be the same for z and z*.")
+            msg = "The number of indices to trace over must be the same for ``z`` and ``z*``."
+            raise ValueError(msg)
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
             # Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)

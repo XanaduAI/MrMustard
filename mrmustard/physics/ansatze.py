@@ -35,6 +35,8 @@ from mrmustard.utils.typing import (
     Vector,
 )
 
+__all__ = ["Ansatz", "PolyExpBase", "PolyExpAnsatz"]
+
 
 class Ansatz(ABC):
     r"""An Ansatz is a function over a continuous and/or discrete domain.
@@ -50,17 +52,29 @@ class Ansatz(ABC):
 
     @abstractmethod
     def __neg__(self) -> Ansatz:
+        r"""
+        Negates this ansatz.
+        """
         ...
 
     @abstractmethod
     def __eq__(self, other: Ansatz) -> bool:
+        r"""
+        Whether this ansatz is equal to another ansatz.
+        """
         ...
 
     @abstractmethod
     def __add__(self, other: Ansatz) -> Ansatz:
+        r"""
+        Sums this ansatz to another ansatz.
+        """
         ...
 
     def __sub__(self, other: Ansatz) -> Ansatz:
+        r"""
+        Subtracts this ansatz to another ansatz.
+        """
         try:
             return self.__add__(-other)
         except AttributeError as e:
@@ -68,31 +82,42 @@ class Ansatz(ABC):
 
     @abstractmethod
     def __call__(self, point: Any) -> Scalar:
-        r"""Evaluate the function at the given point in the domain."""
+        r"""
+        Evaluates this ansatz at a given point in the domain.
+        """
         ...
 
     @abstractmethod
     def __truediv__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
+        r"""
+        Divides this ansatz by another ansatz or by a scalar.
+        """
         ...
 
     @abstractmethod
     def __mul__(self, other: Union[Scalar, Ansatz]) -> Ansatz:
+        r"""
+        Multiplies this ansatz by another ansatz.
+        """
         ...
 
     def __rmul__(self, other: Scalar) -> Ansatz:
+        r"""
+        Multiplies this ansatz by a scalar.
+        """
         return self.__mul__(other=other)
 
 
 class PolyExpBase(Ansatz):
-    r"""A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
-    For example, the Bargmann representation :math:c exp(z A z / 2 + b z): is of this form
-    (where ``A``, ``b``, ``c`` is the triple), or the Wigner representation
+    r"""
+    A family of Ansatze parametrized by a triple of a matrix, a vector and an array.
+    For example, the Bargmann representation :math:`c\:\textrm{exp}(z A z / 2 + b z)` is of this
+    form (where ``A``, ``b``, ``c`` is the triple), or the Wigner representation
     (where ``Sigma``, ``mu``, ``1`` is the triple).
 
-    Note that this class is not initializable (despite having an initializer)
-    because it doesn't implement all the abstract methods of Ansatz, and it is in
-    fact more general.
-    Concrete ansatze that inherit from this class will have to implement ``__call__``,
+    Note that this class is not initializable (despite having an initializer) because it does
+    not implement all the abstract methods of ``Ansatz``, and it is in fact more general.
+    Concrete ansatze that inherit from this class need to implement ``__call__``,
     ``__mul__`` and ``__matmul__``, which are representation-specific.
 
     Note that the arguments are expected to be batched, i.e. to have a batch dimension
@@ -104,9 +129,9 @@ class PolyExpBase(Ansatz):
     terms that have the same exponential part.
 
     Args:
-        mat (Batch[Matrix]):    the matrix-like data
-        vec (Batch[Vector]):    the vector-like data
-        array (Batch[Tensor]):  the array-like data
+        mat: the matrix-like data
+        vec: the vector-like data
+        array: the array-like data
     """
 
     def __init__(self, mat: Batch[Matrix], vec: Batch[Vector], array: Batch[Tensor]):
@@ -144,7 +169,8 @@ class PolyExpBase(Ansatz):
         return self.__class__(self.mat, self.vec, new_array)
 
     def simplify(self) -> None:
-        r"""Simplifies the representation by combining together terms that have the same
+        r"""
+        Simplifies the representation by combining together terms that have the same
         exponential part, i.e. two terms along the batch are considered equal if their
         matrix and vector are equal. In this case only one is kept and the arrays are added.
 
@@ -168,7 +194,9 @@ class PolyExpBase(Ansatz):
         self._simplified = True
 
     def simplify_v2(self) -> None:
-        r"""A different implementation that orders the batch dimension first."""
+        r"""
+        A different implementation that orders the batch dimension first.
+        """
         if self._simplified:
             return
         self._order_batch()
@@ -205,32 +233,40 @@ class PolyExpAnsatz(PolyExpBase):
     r"""
     Represents the ansatz function:
 
-        :math:`F(z) = sum_i poly_i(z) exp(z^T A_i z / 2 + z^T b_i)`
+        :math:`F(z) = \sum_i \textrm{poly}_i(z) \textrm{exp}(z^T A_i z / 2 + z^T b_i)`
 
-    where each :math:`poly_i` is a polynomial in ``z`` that can be expressed as:
+    where each :math:`poly_i` is a polynomial in ``z`` that can be expressed as
 
-        :math:`poly_i(z) = sum_k c^(i)_k z^k`,
+        :math:`\textrm{poly}_i(z) = \sum_k c^(i)_k z^k`,
 
-    with ``k`` being a multi-index. The batch of arrays :math:`c^{(i)}` are not just array values but can be polynomials
-    of varying order, defined by the terms :math:`arr_k z^k` for each ``i``.
-    The matrices :math:`A_i` and vectors :math:`b_i` are parameters of the
-    exponential terms in the ansatz, and :math:`z` is a vector of variables.
+    with ``k`` being a multi-index. The batch of arrays :math:`c^{(i)}` are not
+    just array values but can be polynomials of varying order, defined by the terms
+    :math:`arr_k z^k` for each ``i``. The matrices :math:`A_i` and vectors :math:`b_i` are
+    parameters of the exponential terms in the ansatz, and :math:`z` is a vector of variables.
 
-    Attributes:
-        A (Batch[Matrix]): The list of square matrices A_i
-        b (Batch[Vector]): The list of vectors b_i
-        c (Batch[Tensor]): The array of coefficients for the polynomial terms in the ansatz.
+    Args:
+        A: The list of square matrices :math:`A_i`
+        b: The list of vectors :math:`b_i`
+        c: The array of coefficients for the polynomial terms in the ansatz.
 
-    Example:
-        >>> A = [np.array([[1.0, 0.0], [0.0, 1.0]])]
-        >>> b = [np.array([1.0, 1.0])]
-        >>> c = [np.array(1.0)]
-        >>> F = PolyExpAnsatz(A, b, c)
-        >>> z = np.array([1.0, 2.0])
-        >>> print(F(z))  # prints the value of F at z
+    .. code-block::
+
+        A = [np.array([[1.0, 0.0], [0.0, 1.0]])]
+        b = [np.array([1.0, 1.0])]
+        c = [np.array(1.0)]
+        F = PolyExpAnsatz(A, b, c)
+        z = np.array([1.0, 2.0])
+        print(F(z))  # prints the value of F at z
+
     """
 
-    def __init__(self, A: Optional[Batch[Matrix]] = None, b: Optional[Batch[Vector]] = None, c: Batch[Tensor | Scalar] = [1.0], name: str = ""):
+    def __init__(
+        self,
+        A: Optional[Batch[Matrix]] = None,
+        b: Optional[Batch[Vector]] = None,
+        c: Batch[Tensor | Scalar] = [1.0],
+        name: str = "",
+    ):
         self.name = name
         assert A is not None or b is not None, "Please provide either A or b."
         dim = b[0].shape[-1] if A is None else A[0].shape[-1]
@@ -240,14 +276,23 @@ class PolyExpAnsatz(PolyExpBase):
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
+        r"""
+        The list of square matrices :math:`A_i`.
+        """
         return self.mat
 
     @property
     def b(self) -> Batch[ComplexVector]:
+        r"""
+        The list of vectors :math:`b_i`.
+        """
         return self.vec
 
     @property
     def c(self) -> Batch[ComplexTensor]:
+        r"""
+        The array of coefficients for the polynomial terms in the ansatz.
+        """
         return self.array
 
     @property
@@ -257,14 +302,14 @@ class PolyExpAnsatz(PolyExpBase):
         return self.array.shape[-1] - 1
 
     def __call__(self, z: Batch[Vector]) -> Scalar:
-        r"""Value of this ansatz at z. This consumes the last dimension of z.
-        i.e. the output is
+        r"""
+        Value of this ansatz at ``z``.
 
         Args:
-            z (ComplexVector): point at which the function is evaluated
+            z: point at which the function is evaluated
 
         Returns:
-            Scalar: value of the function
+            The value of the function.
         """
         z = np.atleast_2d(z)  # shape (Z, n)
         zz = np.einsum("...a,...b->...ab", z, z)[..., None, :, :]  # shape (Z, 1, n, n))
@@ -281,7 +326,7 @@ class PolyExpAnsatz(PolyExpBase):
         r"""Multiplies this ansatz by a scalar or another ansatz or a plain scalar.
 
         Args:
-            other (Union[Scalar, PolyExpAnsatz]): A scalar or another ansatz.
+            other: A scalar or another ansatz.
 
         Raises:
             TypeError: If other is neither a scalar nor an ansatz.
@@ -302,16 +347,16 @@ class PolyExpAnsatz(PolyExpBase):
 
     def __and__(self, other: PolyExpAnsatz) -> PolyExpAnsatz:
         r"""Tensor product of this ansatz with another ansatz.
-        Equivalent to F(a) * G(b) (with different arguments, that is).
+        Equivalent to :math:`F(a) * G(b)` (with different arguments, that is).
         As it distributes over addition on both self and other,
         the batch size of the result is the product of the batch
-        size of self and other.
+        size of this anzatz and the other one.
 
         Args:
-            other (PolyExpAnsatz): Another ansatz.
+            other: Another ansatz.
 
         Returns:
-            PolyExpAnsatz: The tensor product of this ansatz and other.
+            The tensor product of this ansatz and other.
         """
         As = [math.block_diag(a1, a2) for a1 in self.A for a2 in other.A]
         bs = [math.concat([b1, b2], axis=-1) for b1 in self.b for b2 in other.b]

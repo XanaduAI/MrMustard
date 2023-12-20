@@ -113,29 +113,29 @@ def complex_gaussian_integral(
     r"""Computes the Gaussian integral of the exponential of a complex quadratic form.
     The integral is defined as (note that in general we integrate over a subset of 2m dimensions):
 
-    \int_{C^m} F(z) dmu(z)
+    :math:`\int_{C^m} F(z) d\mu(z)`
 
     where
 
-    F(z) = exp(-0.5 z^T A z + b^T z)
+    :math:`F(z) = \textrm{exp}(-0.5 z^T A z + b^T z)`
 
-    Here z is an `n`-dim complex vector, A is an `n x n` complex matrix,
-    b is an `n`-dim complex vector, c is a complex scalar, and dmu(z) is a non-holomorphic
-    complex measure over a subset of m pairs of z,z* variables. These are specified
-    by the indices idx_z and idx_zconj. The `measure` parameter is the exponent of the
-    measure:
+    Here, ``z`` is an ``n``-dim complex vector, ``A`` is an ``n x n`` complex matrix,
+    ``b`` is an ``n``-dim complex vector, ``c`` is a complex scalar, and :math:`d\mu(z)`
+    is a non-holomorphic complex measure over a subset of m pairs of z,z* variables. These
+    are specified by the indices ``idx_z`` and ``idx_zconj``. The ``measure`` parameter is
+    the exponent of the measure:
 
     # TODO: fix factors of pi and stuff (also this is for m=1)
     dmu(z) = exp(measure * |z|^2) d^2z = exp(measure * |z|^2) dRe(z) dIm(z)
 
     Arguments:
-        A,b,c (tuple): the (A,b,c) triple
-        idx_z (tuple(int,...)): the tuple of indices of the z variables
-        idx_zconj (tuple(int,...)): the tuple of indices of the z* variables
-        measure (float): the exponent of the measure (default is -1: Bargmann measure)
+        A,b,c: the ``(A,b,c)`` triple
+        idx_z: the tuple of indices of the z variables
+        idx_zconj: the tuple of indices of the z* variables
+        measure: the exponent of the measure (default is -1: Bargmann measure)
 
     Returns:
-        tuple: the (A,b,c) triple of the result of the integral
+        The ``(A,b,c)`` triple of the result of the integral
     """
     A, b, c = Abc
     assert len(idx_z) == len(idx_zconj)
@@ -167,28 +167,29 @@ def real_gaussian_integral(
 ):  # TODO: fix factors of pi and stuff
     # TODO: move to math
     r"""Computes the Gaussian integral of the exponential of a real quadratic form.
-    The integral is defined as (note that in general we integrate over a subset of m dimensions):
+    The integral is defined as (note that in general we integrate over a subset of ``m``\
+    dimensions):
 
-    \int_{R^m} F(x) dmu(x)
+    :math:`\int_{R^m} F(x) d\mu(x)`.
 
     where
 
-    F(x) = exp(0.5 x^T A x + b^T x)
+    :math:`F(x) = \textrm{exp}(0.5 x^T A x + b^T x)`
 
-    Here z is an `n`-dim real vector, A is an `n x n` real matrix,
-    b is an `n`-dim real vector, c is a real scalar, and dmu(x) is a real measure over a
-    subset of m variables. These are specified by idx.
+    Here, ``z`` is an ``n``-dim real vector, ``A`` is an ``n x n`` real matrix,
+    ``b`` is an ``n``-dim real vector, ``c`` is a real scalar, and :math:`d\mu(x)` is a real measure over a
+    subset of ``m`` variables. These are specified by ``idx``.
     The `measure` parameter is the exponent of the measure:
 
-    dmu(x) = exp(measure * |x|^2) d^mx
+    :math:`d\mu(x) = \textrm{exp}(\textrm{measure} * |x|^2) d^mx`
 
     Arguments:
-        A,b,c (tuple): the (A,b,c) triple
-        idx (tuple(int,...)): the tuple of indices of the integration variables
-        measure (float): the exponent of the measure (default is 0: Lebesgue measure)
+        A,b,c: the ``(A,b,c)`` triple
+        idx: the tuple of indices of the integration variables
+        measure: the exponent of the measure (default is 0, which is the Lebesgue measure)
 
     Returns:
-        tuple: the (A,b,c) triple of the result of the integral
+        The ``(A,b,c)`` triple of the result of the integral
     """
     m = len(idx)
     A, b, c = Abc
@@ -210,15 +211,15 @@ def real_gaussian_integral(
 
 
 def join_Abc(Abc1, Abc2):
-    r"""Joins two (A,b,c) triples into a single (A,b,c) triple by block addition of the A matrices and
-    concatenating the b vectors.
+    r"""Joins two ``(A,b,c)`` triples into a single ``(A,b,c)`` triple by block addition of the ``A``
+    matrices and concatenating the ``b`` vectors.
 
     Arguments:
-        Abc1 (tuple): the first (A,b,c) triple
-        Abc2 (tuple): the second (A,b,c) triple
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
 
     Returns:
-        tuple: the joined (A,b,c) triple
+        The joined ``(A,b,c)`` triple
     """
     A1, b1, c1 = Abc1
     A2, b2, c2 = Abc2
@@ -229,14 +230,15 @@ def join_Abc(Abc1, Abc2):
 
 
 def reorder_abc(Abc: tuple, order: Sequence[int]):
-    r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
+    r"""
+    Reorders the indices of the A matrix and b vector of an (A,b,c) triple.
 
     Arguments:
-        Abc (tuple): the (A,b,c) triple
-        order (tuple): the new order of the indices
+        Abc: the ``(A,b,c)`` triple
+        order: the new order of the indices
 
     Returns:
-        tuple: the reordered (A,b,c) triple
+        The reordered ``(A,b,c)`` triple
     """
     A, b, c = Abc
     A = math.gather(math.gather(A, order, axis=-1), order, axis=-2)
@@ -252,16 +254,17 @@ def contract_two_Abc(
     idx1: Sequence[int],
     idx2: Sequence[int],
 ):
-    r"""Returns the contraction of two (A,b,c) triples.
+    r"""
+    Returns the contraction of two ``(A,b,c)`` triples.
 
     Arguments:
-        Abc1 (tuple): the first (A,b,c) triple
-        Abc2 (tuple): the second (A,b,c) triple
-        idx1 (tuple): the indices of the first (A,b,c) triple to contract
-        idx2 (tuple): the indices of the second (A,b,c) triple to contract
+        Abc1: the first ``(A,b,c)`` triple
+        Abc2: the second ``(A,b,c)`` triple
+        idx1: the indices of the first ``(A,b,c)`` triple to contract
+        idx2: the indices of the second ``(A,b,c)`` triple to contract
 
     Returns:
-        tuple: the contracted (A,b,c) triple
+        The contracted ``(A,b,c)`` triple
     """
     Abc = join_Abc(Abc1, Abc2)
     return complex_gaussian_integral(
@@ -270,15 +273,15 @@ def contract_two_Abc(
 
 
 def trace_Abc(A, b, c, idx_z, idx_zconj):
-    r"""Returns the partial trace of an (A,b,c) triple.
+    r"""Returns the partial trace of an ``(A,b,c)`` triple.
 
     Arguments:
-        A,b,c (tuple): the (A,b,c) triple
-        idx_z (tuple(int,...)): the tuple of indices of the z variables
-        idx_zconj (tuple(int,...)): the tuple of indices of the z* variables
+        A,b,c: the ``(A,b,c)`` triple
+        idx_z: the tuple of indices of the z variables
+        idx_zconj: the tuple of indices of the ``z*`` variables
 
     Returns:
-        tuple: the partial trace of the (A,b,c) triple
+        The partial trace of the ``(A,b,c)`` triple
     """
     Abc = A, b, c
     return complex_gaussian_integral(Abc, idx_z, idx_zconj, measure=-1.0)
