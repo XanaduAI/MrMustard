@@ -111,54 +111,6 @@ class Wires:
         """
         return self._out_bra
 
-        self.modes_in_ket = modes_in_ket
-        self.modes_out_ket = modes_out_ket
-        self.modes_in_bra = modes_in_bra
-        self.modes_out_bra = modes_out_bra
-
-    def list_of_types_and_modes_of_wires(self):
-        r'''gives the list of types and modes for each wires in bargmann representation.'''
-        list_types = []
-        list_modes = []
-        for m in self.modes:
-            if m in self.modes_out_bra:
-                list_types.append('out_bra')
-                list_modes.append(m)
-            if m in self.modes_in_bra:
-                list_types.append('in_bra')
-                list_modes.append(m)
-            if m in self.modes_out_ket:
-                list_types.append('out_ket')
-                list_modes.append(m)
-            if m in self.modes_in_ket:
-                list_types.append('in_ket')
-                list_modes.append(m)
-        return list_types, list_modes
-
-        self.modes_in_ket = modes_in_ket
-        self.modes_out_ket = modes_out_ket
-        self.modes_in_bra = modes_in_bra
-        self.modes_out_bra = modes_out_bra
-
-    def list_of_types_and_modes_of_wires(self):
-        r'''gives the list of types and modes for each wires in bargmann representation.'''
-        list_types = []
-        list_modes = []
-        for m in self.modes:
-            if m in self.modes_out_bra:
-                list_types.append('out_bra')
-                list_modes.append(m)
-            if m in self.modes_in_bra:
-                list_types.append('in_bra')
-                list_modes.append(m)
-            if m in self.modes_out_ket:
-                list_types.append('out_ket')
-                list_modes.append(m)
-            if m in self.modes_in_ket:
-                list_types.append('in_ket')
-                list_modes.append(m)
-        return list_types, list_modes
-
     @property
     def in_ket(self) -> dict[Mode, Optional[Wire]]:
         r"""
@@ -212,6 +164,25 @@ class Wires:
         The list of all the input ``Mode``s in this ``Wires`` on the ket side.
         """
         return [m for m, w in self.in_ket.items() if w is not None]
+    
+    def list_of_types_and_modes_of_wires(self):
+        r'''gives the list of types and modes for each wires in bargmann representation.'''
+        list_types = []
+        list_modes = []
+        for m in self.modes:
+            if m in self.modes_out_bra:
+                list_types.append('out_bra')
+                list_modes.append(m)
+            if m in self.modes_in_bra:
+                list_types.append('in_bra')
+                list_modes.append(m)
+            if m in self.modes_out_ket:
+                list_types.append('out_ket')
+                list_modes.append(m)
+            if m in self.modes_in_ket:
+                list_types.append('in_ket')
+                list_modes.append(m)
+        return list_types, list_modes
 
     def adjoint(self) -> Wires:
         r"""
