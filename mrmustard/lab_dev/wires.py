@@ -54,7 +54,6 @@ class Wires:
         wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
     """
 
-    # codefactor cyclomatic_complexity disable
     def __init__(
         self,
         modes_out_bra: Optional[Iterable[Mode]] = None,
@@ -67,6 +66,24 @@ class Wires:
         modes_out_ket = modes_out_ket or []
         modes_in_ket = modes_in_ket or []
 
+        self._modes = self._process_modes(modes_in_ket, modes_out_ket, modes_in_bra, modes_out_bra)
+
+        keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
+        self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
+        self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
+        self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
+        self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
+
+    @staticmethod
+    def _process_modes(
+        modes_out_bra: Iterable[Mode],
+        modes_in_bra: Iterable[Mode],
+        modes_out_ket: Iterable[Mode],
+        modes_in_ket: Iterable[Mode],
+        ):
+        r"""
+        Returns the list of modes, or an empty list if the given modes are ambiguous.
+        """
         modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
         if (
             (modes_out_bra and modes_out_bra != modes)
@@ -75,19 +92,8 @@ class Wires:
             or (modes_in_ket and modes_in_ket != modes)
         ):
             # cannot define the list of modes unambiguously
-            self._modes = []
-        else:
-            self._modes = list(modes)
-
-        keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
-        self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
-        self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
-        self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
-        self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
-
-    def _parse_modes(self):
-        r"""
-        """
+            return []
+        return list(modes)
 
     @property
     def in_bra(self) -> dict[Mode, Optional[Wire]]:
