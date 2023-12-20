@@ -82,9 +82,9 @@ class Bargmann(Representation):
     in one Bargmann object, e.g. to implement the partial trace.
 
     Args:
-        A: batch of quadratic coefficient A_i
-        b: batch of linear coefficients b_i
-        c: batch of arrays c_i (default: [1.0])
+        A: batch of quadratic coefficient :math:`A_i`
+        b: batch of linear coefficients :math:`b_i`
+        c: batch of arrays :math:`c_i` (default: [1.0])
     """
 
     def __init__(
@@ -121,17 +121,29 @@ class Bargmann(Representation):
 
     @property
     def A(self) -> Batch[ComplexMatrix]:
+        r"""
+        The batch of quadratic coefficient :math:`A_i`.
+        """
         return self.ansatz.A
 
     @property
     def b(self) -> Batch[ComplexVector]:
+        r"""
+        The batch of linear coefficients :math:`b_i`
+        """
         return self.ansatz.b
 
     @property
     def c(self) -> Batch[ComplexTensor]:
+        r"""
+        The batch of arrays :math:`c_i`.
+        """
         return self.ansatz.c
 
     def conj(self):
+        r"""
+        The conjugate of this Bargmann.
+        """
         new = self.__class__(math.conj(self.A), math.conj(self.b), math.conj(self.c))
         new._contract_idxs = self._contract_idxs
         return new
