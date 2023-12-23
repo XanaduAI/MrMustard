@@ -16,8 +16,8 @@
 
 from __future__ import annotations
 from typing import Iterable, Optional
-import uuid
 import numpy as np
+from mrmustard import settings
 
 
 class Wires:
@@ -42,10 +42,10 @@ class Wires:
         self._modes = (
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
-        out_bra = {m: uuid.uuid4().int // 1e20 if m in modes_out_bra else 0 for m in self._modes}
-        in_bra = {m: uuid.uuid4().int // 1e20 if m in modes_in_bra else 0 for m in self._modes}
-        out_ket = {m: uuid.uuid4().int // 1e20 if m in modes_out_ket else 0 for m in self._modes}
-        in_ket = {m: uuid.uuid4().int // 1e20 if m in modes_in_ket else 0 for m in self._modes}
+        out_bra = {m: settings.rng.integers(1, 2**63 - 2) if m in modes_out_bra else 0 for m in self._modes}
+        in_bra = {m: settings.rng.integers(1, 2**63 - 2) if m in modes_in_bra else 0 for m in self._modes}
+        out_ket = {m: settings.rng.integers(1, 2**63 - 2) if m in modes_out_ket else 0 for m in self._modes}
+        in_ket = {m: settings.rng.integers(1, 2**63 - 2) if m in modes_in_ket else 0 for m in self._modes}
 
         self._ids = np.array(
             [[out_bra[m], in_bra[m], out_ket[m], in_ket[m]] for m in self._modes], dtype=np.int64
@@ -61,6 +61,11 @@ class Wires:
     def modes(self) -> list[int]:
         "The modes of the available wires in the standard order."
         return [m for m in self._modes if any(self.ids[list(self._modes).index(m)] > 0)]
+    
+    @property
+    def is_ambiguous(self) -> bool:
+        "Whether the input/output wires are different."
+        return self.output.modes != self.input.modes
 
     def new(self, ids: Optional[np.ndarray] = None) -> Wires:
         "A copy of self with the given ids or new ids if ids is None."
