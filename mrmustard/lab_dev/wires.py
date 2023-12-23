@@ -15,212 +15,121 @@
 """ Classes for supporting tensor network functionalities."""
 
 from __future__ import annotations
-
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional
 import uuid
-
-from ..utils.typing import Mode
-
-
-__all__ = ["Wire", "Wires"]
-
-Wire = int
-r"""
-An integer representing a wire in a tensor network.
-"""
+import numpy as np
 
 
-# pylint: disable=too-many-boolean-expressions
 class Wires:
-    r"""
-    A class with wire functionality for tensor network tensor applications.
-
-    In general we distinguish between input and output wires, and between ket and bra sides.
+    r"""A class with wire functionality for tensor network applications.
+    Anything that wants wires should use an object of this class.
+    Note that the modes are sorted automatically.
 
     Args:
         modes_out_bra: The output modes on the bra side.
         modes_in_bra: The input modes on the bra side.
         modes_out_ket: The output modes on the ket side.
         modes_in_ket: The input modes on the ket side.
-
-    .. jupyter-execute::
-
-        from mrmustard.lab_dev.wires import Wires
-
-        # initialize modes
-        modes = [0, 1]
-
-        # initialize `wires` object with given modes
-        wires = Wires(modes_out_ket = modes, modes_in_ket = modes)
     """
 
     def __init__(
         self,
-        modes_out_bra: Optional[Iterable[Mode]] = None,
-        modes_in_bra: Optional[Iterable[Mode]] = None,
-        modes_out_ket: Optional[Iterable[Mode]] = None,
-        modes_in_ket: Optional[Iterable[Mode]] = None,
+        modes_out_bra: Iterable[int] = [],
+        modes_in_bra: Iterable[int] = [],
+        modes_out_ket: Iterable[int] = [],
+        modes_in_ket: Iterable[int] = [],
     ) -> None:
-        modes_out_bra = modes_out_bra or []
-        modes_in_bra = modes_in_bra or []
-        modes_out_ket = modes_out_ket or []
-        modes_in_ket = modes_in_ket or []
-
-        self._modes = self._process_modes(modes_out_bra, modes_in_bra, modes_out_ket, modes_in_ket)
-
-        keys = self._modes or set(modes_in_ket + modes_out_ket + modes_in_bra + modes_out_bra)
-        self._out_bra = {m: uuid.uuid4().int if m in modes_out_bra else None for m in keys}
-        self._in_bra = {m: uuid.uuid4().int if m in modes_in_bra else None for m in keys}
-        self._out_ket = {m: uuid.uuid4().int if m in modes_out_ket else None for m in keys}
-        self._in_ket = {m: uuid.uuid4().int if m in modes_in_ket else None for m in keys}
-
-    @staticmethod
-    def _process_modes(
-        modes_out_bra: Iterable[Mode],
-        modes_in_bra: Iterable[Mode],
-        modes_out_ket: Iterable[Mode],
-        modes_in_ket: Iterable[Mode],
-    ):
-        r"""
-        Returns the list of modes, or an empty list if the given modes are ambiguous.
-        """
-        modes = modes_out_bra or modes_in_bra or modes_out_ket or modes_in_ket
-        if (
-            (modes_out_bra and modes_out_bra != modes)
-            or (modes_in_bra and modes_in_bra != modes)
-            or (modes_out_ket and modes_out_ket != modes)
-            or (modes_in_ket and modes_in_ket != modes)
-        ):
-            # cannot define the list of modes unambiguously
-            return []
-        return list(modes)
-
-    @property
-    def in_bra(self) -> dict[Mode, Optional[Wire]]:
-        r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
-        input wire on the bra side, and to ``None`` otherwise.
-        """
-        return self._in_bra
-
-    @property
-    def out_bra(self) -> dict[Mode, Optional[Wire]]:
-        r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
-        ouput wire on the bra side, and to ``None`` otherwise.
-        """
-        return self._out_bra
-
-    @property
-    def in_ket(self) -> dict[Mode, Optional[Wire]]:
-        r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
-        input wire on the ket side, and to ``None`` otherwise.
-        """
-        return self._in_ket
-
-    @property
-    def out_ket(self) -> dict[Mode, Optional[Wire]]:
-        r"""
-        A dictionary mapping a mode ``m`` to a ``Wire`` if mode ``m`` has an
-        ouput wire on the ket side, and to ``None`` otherwise.
-        """
-        return self._out_ket
-
-    @property
-    def modes(self) -> list[Mode]:
-        r"""
-        The list of all the ``Mode``s in this ``Wires``.
-        """
-        if not self._modes:
-            msg = "Cannot return the list of modes unambiguously."
-            raise ValueError(msg)
-        return self._modes
-
-    @property
-    def modes_out_bra(self) -> list[Mode]:
-        r"""
-        The list of all the output ``Mode``s in this ``Wires`` on the bra side.
-        """
-        return [m for m, w in self.out_bra.items() if w is not None]
-
-    @property
-    def modes_in_bra(self) -> list[Mode]:
-        r"""
-        The list of all the input ``Mode``s in this ``Wires`` on the bra side.
-        """
-        return [m for m, w in self.in_bra.items() if w is not None]
-
-    @property
-    def modes_out_ket(self) -> list[Mode]:
-        r"""
-        The list of all the output ``Mode``s in this ``Wires`` on the ket side.
-        """
-        return [m for m, w in self.out_ket.items() if w is not None]
-
-    @property
-    def modes_in_ket(self) -> list[Mode]:
-        r"""
-        The list of all the input ``Mode``s in this ``Wires`` on the ket side.
-        """
-        return [m for m, w in self.in_ket.items() if w is not None]
-    
-    def list_of_types_and_modes_of_wires(self):
-        r"""Gives the list of types and modes for each wires in bargmann representation."""
-        list_types = []
-        list_modes = []
-        for m in self.modes_out_bra:
-            list_types.append('out_bra')
-            list_modes.append(m)
-        
-        for m in self.modes_in_bra:
-            list_types.append('in_bra')
-            list_modes.append(m)
-        
-        for m in self.modes_out_ket:
-            list_types.append('out_ket')
-            list_modes.append(m)
-
-        for m in self.modes_in_ket:
-            list_types.append('in_ket')
-            list_modes.append(m)
-        return list_types, list_modes
-
-    def calculate_index_for_a_wire_on_given_mode_and_type(self, type_of_wire: str, mode: int) -> Union[None, int]:
-        r"""Gives the index of a specific wire knowing the type and the mode."""
-        list_types, list_modes = self.list_of_types_and_modes_of_wires()
-        for i, m in enumerate(list_modes):
-            if m == mode:
-                if type_of_wire == list_types[i]:
-                    return i
-        return None
-
-    def adjoint(self) -> Wires:
-        r"""
-        The adjoint of this ``Wires`` (with new ``id``s), obtained switching kets and bras.
-        """
-        return Wires(
-            modes_out_bra=self.modes_out_ket,
-            modes_in_bra=self.modes_in_ket,
-            modes_out_ket=self.modes_out_bra,
-            modes_in_ket=self.modes_in_bra,
+        self._modes = (
+            set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
         )
+        out_bra = {m: uuid.uuid4().int // 1e20 if m in modes_out_bra else 0 for m in self._modes}
+        in_bra = {m: uuid.uuid4().int // 1e20 if m in modes_in_bra else 0 for m in self._modes}
+        out_ket = {m: uuid.uuid4().int // 1e20 if m in modes_out_ket else 0 for m in self._modes}
+        in_ket = {m: uuid.uuid4().int // 1e20 if m in modes_in_ket else 0 for m in self._modes}
 
-    def new(self) -> Wires:
-        r"""
-        Returns a copy of this ``Wires`` with new ``id``s.
-        """
-        return Wires(self.modes_out_bra, self.modes_in_bra, self.modes_out_ket, self.modes_in_ket)
+        self._ids = np.array(
+            [[out_bra[m], in_bra[m], out_ket[m], in_ket[m]] for m in self._modes], dtype=np.int64
+        )
+        self.mask = np.ones_like(self._ids, dtype=int)  # multiplicative mask
 
-    def __getitem__(self, modes: Union[Mode, Iterable[Mode]]) -> Wires:
-        r"""
-        Returns a copy of this ``Wires`` with only the given modes. It does not
-        change the ``id``s.
+    @property
+    def ids(self) -> np.ndarray:
+        "The ids of the wires in the standard order (bra/ket x out/in x mode)."
+        return self._ids * self.mask
+
+    @property
+    def modes(self) -> list[int]:
+        "The modes of the available wires in the standard order."
+        return [m for m in self._modes if any(self.ids[list(self._modes).index(m)] > 0)]
+
+    def new(self, ids: Optional[np.ndarray] = None) -> Wires:
+        "A copy of self with the given ids or new ids if ids is None."
+        if ids is None:
+            w = Wires(
+                self.bra.output.modes,
+                self.bra.input.modes,
+                self.ket.output.modes,
+                self.ket.input.modes,
+            )
+        else:
+            w = Wires()
+            w._modes = self._modes
+            w._ids = ids
+        w.mask = self.mask.copy()
+        return w
+
+    @property
+    def indices(self) -> list[int]:
+        r"""Returns the array of indices of the given id in the standard order.
+        (bra/ket x out/in x mode). Use this to get the indices for bargmann contractions.
         """
-        modes = [modes] if isinstance(modes, Mode) else modes
-        ret = Wires()
-        ret._out_bra = {m: k for m, k in self._out_bra.items() if m in modes}
-        ret._in_bra = {m: k for m, k in self._in_bra.items() if m in modes}
-        ret._out_ket = {m: k for m, k in self._out_ket.items() if m in modes}
-        ret._in_ket = {m: k for m, k in self._in_ket.items() if m in modes}
-        return ret
+        flat = self.ids.T.ravel()
+        flat = flat[flat != 0]
+        return np.where(flat > 0)[0].tolist()
+
+    def masked_view(self, masked_rows=[], masked_cols=[]) -> Wires:
+        r"""A view of this Wires object with the given mask."""
+        w = self.new(self._ids)
+        w.mask[masked_rows, :] = -1
+        w.mask[:, masked_cols] = -1
+        return w
+
+    @property
+    def input(self) -> Wires:
+        "A view of this Wires object without output wires"
+        return self.masked_view(masked_cols=[0, 2])
+
+    @property
+    def output(self) -> Wires:
+        "A view of this Wires object without input wires"
+        return self.masked_view(masked_cols=[1, 3])
+
+    @property
+    def ket(self) -> Wires:
+        "A view of this Wires object without bra wires"
+        return self.masked_view(masked_cols=[0, 1])
+
+    @property
+    def bra(self) -> Wires:
+        "A view of this Wires object without ket wires"
+        return self.masked_view(masked_cols=[2, 3])
+
+    def __getitem__(self, modes: Iterable[int] | int) -> Wires:
+        "A view of this Wires object with wires only on the given modes."
+        modes = [modes] if isinstance(modes, int) else modes
+        idxs = [list(self._modes).index(m) for m in self._modes.difference(modes)]
+        return self.masked_view(masked_rows=idxs)
+
+    @property
+    def adjoint(self) -> Wires:
+        "A new Wires object with ket <-> bra."
+        w = self.new(self._ids[:, [1, 0, 3, 2]])
+        w.mask = self.mask[:, [1, 0, 3, 2]]
+        return w
+
+    @property
+    def dual(self) -> Wires:
+        "A new Wires object with input <-> output."
+        w = self.new(self._ids[:, [2, 3, 0, 1]])
+        w.mask = self.mask[:, [2, 3, 0, 1]]
+        return w
