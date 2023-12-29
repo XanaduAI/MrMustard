@@ -18,18 +18,18 @@ A class to quantum circuits.
 
 from __future__ import annotations
 
-from typing import Iterable, Sequence, Union
+from typing import Sequence
 
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .circuit_components import CircuitComponent, connect
+from mrmustard.physics.representations import Representation, Bargmann
+
+from .circuit_components import CircuitComponent
 
 
-__all__ = [
-    "Circuit",
-]
+__all__ = ["Circuit"]
 
 
 class Circuit:
@@ -63,36 +63,57 @@ class Circuit:
         circ.draw();
     """
 
-    def __init__(self, components=Union[CircuitComponent, Sequence[CircuitComponent]]) -> None:
-        if not isinstance(components, Iterable):
-            components = list[components]
+    def __init__(self, components: Sequence[CircuitComponent] = [], connections: dict[int,int] = {}) -> None:
+        self.components = list(components)
+        self.components_by_id = {id:i for i,c in enumerate(self.components) for id in c.wires.ids}
+        self.connections = self._connect(self.components, connections)
 
-        self._components = [c.light_copy() for c in components]
+    @staticmethod
+    def _connect(components: Sequence[CircuitComponent], connections: dict[int,int]) -> dict[int,int]:
+        r"""Connects all components (sets their wires.connection[id] value) and returns the updated dictionary of connections.
+        Supports mode reinitialization."""
+        for i,c in enumerate(components):
+            ket_modes = set(m for m in c.wires.output.ket.modes if c.wires.output.ket[m].ids[0] not in connections)
+            bra_modes = set(m for m in c.wires.output.bra.modes if c.wires.output.bra[m].ids[0] not in connections)
+            for c_ in components[i+1:]:
+                common_ket = ket_modes & c_.wires.input.ket.modes
+                common_bra = bra_modes & c_.wires.input.bra.modes
+                for m in common_ket:
+                    id = c.wires[m].output.ket.ids[0]
+                    if id not in connections:
+                        c.wires.connections[id] = connections[id] = c_.wires[m].input.ket.ids[0]
+                for m in common_bra:
+                    id = c.wires[m].output.bra.ids[0]
+                    if id not in connections:
+                        c.wires.connections[id] = connections[id] = c_.wires[m].input.bra.ids[0]
+                ket_modes -= common_ket
+                bra_modes -= common_bra
+                if not ket_modes and not bra_modes:
+                    break
+        return connections
 
-    @property
-    def components(self) -> Sequence[CircuitComponent]:
+    def _contract_CV(self):
+        r"""Contracts the circuit assuming it is made of CV (Bargmann) stuff."""
+        r = self.components[0].representation
+        order = []
+        for c in self.components[1:]:
+            r = r & c.representation  # tensor product 
+            order += [c.wires.index(id) for id in self.connections if id in c.wires.ids]
+
+        
+
+    def __rshift__(self, other: Circuit | CircuitComponent) -> Circuit:
         r"""
-        The components in this circuit.
+        Returns a ``Circuit`` that contains all the components of ``self`` and ``other``.
         """
-        return self._components
-
-    def __rshift__(self, other: Union[CircuitComponent, Circuit]) -> Circuit:
-        r"""
-        Returns a ``Circuit`` that contains all the components of ``self``, as well as
-        a light copy of ``other`` (or light copies of ``other.components`` if ``other`` is
-        a ``Circuit``).
-        """
-        if isinstance(other, CircuitComponent):
-            other = Circuit([other])
-
-        ret = Circuit(self.components + other.components)
-        return ret
+        other = Circuit([other]) if isinstance(other, CircuitComponent) else other
+        return Circuit(self.components + other.components, self.connections | other.connections)
 
     def __getitem__(self, idx: int) -> CircuitComponent:
         r"""
         The component in position ``idx`` of this circuit's components.
         """
-        return self._components[idx]
+        return self.components[idx]
 
     def draw(self, layout: str = "spring_layout", figsize: tuple[int, int] = (10, 6)):
         r"""Draws the components in this circuit in the style of a tensor network.
@@ -203,3 +224,11 @@ class Circuit:
 
         plt.title("Mr Mustard Circuit")
         return fig
+
+
+class Network:
+    r"""
+    A network of components.
+    
+    Supports methods like 
+    """
