@@ -224,11 +224,3 @@ class Circuit:
 
         plt.title("Mr Mustard Circuit")
         return fig
-
-
-class Network:
-    r"""
-    A network of components.
-    
-    Supports methods like 
-    """
