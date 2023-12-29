@@ -79,8 +79,8 @@ class Bargmann(Representation):
 
     def __init__(
         self,
-        A: Batch[ComplexMatrix],
-        b: Batch[ComplexVector],
+        A: Batch[ComplexMatrix] = [],
+        b: Batch[ComplexVector] = [],
         c: Batch[ComplexTensor] = [1.0],
     ):
         self.ansatz = PolyExpAnsatz(A, b, c)
