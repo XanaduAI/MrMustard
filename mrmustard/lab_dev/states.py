@@ -33,6 +33,7 @@ class State(CircuitComponent):
     r"""
     Base class for all states.
     """
+    def __init__(name, modes
 
     def __rshift__(self, other: CircuitComponent):
         r"""
@@ -41,7 +42,7 @@ class State(CircuitComponent):
         return Circuit([self, other])
 
 
-class Pure(State):
+class Ket(State):
     r"""
     Base class for all pure states.
 
@@ -53,8 +54,11 @@ class Pure(State):
     def __init__(self, name: str, modes: Sequence[Mode]):
         super().__init__(name, modes_out_ket=modes)
 
+class DM(State):
 
-class Vacuum(Pure):
+
+
+class Vacuum(Ket):
     r"""
     The N-mode vacuum state.
 
