@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from __future__ import annotations
-
+from typing import Optional
 from mrmustard import math
 from mrmustard.physics import bargmann
 from mrmustard.physics.ansatze import Ansatz, PolyExpAnsatz
@@ -157,22 +157,21 @@ class Bargmann(Representation):
         A, b, c = zip(*Abc)
         return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
 
-    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...]) -> Bargmann:
+    def trace(self, idx_z: tuple[int, ...], idx_zconj: tuple[int, ...], idx_out: Optional[tuple[int,...]]=None) -> Bargmann:
         r"""Implements the partial trace over the given index pairs.
 
         Args:
             idx_z (tuple[int, ...]): indices to trace over
             idx_zconj (tuple[int, ...]): indices to trace over
+            idx_out (tuple[int, ...]): ordered output indices (default: None, i.e. leftover ordering)
 
         Returns:
             Bargmann: the ansatz with the given indices traced over
         """
-        if self.ansatz.degree > 0:
-            raise NotImplementedError(
-                "Partial trace is only supported for ansatzs with polynomial of degree 0."
-            )
-        if len(idx_z) != len(idx_zconj):
-            raise ValueError("The number of indices to trace over must be the same for z and z*.")
+        assert self.ansatz.degree == 0, "supported only for ansatze with polynomial of degree 0."
+        assert len(idx_z) == len(idx_zconj), "idx_z and idx_zconj must have the same length"
+        assert set(idx_z).isdisjoint(set(idx_zconj)), "idx_z and idx_zconj must be disjoint"
+
         A, b, c = [], [], []
         for Abci in zip(self.A, self.b, self.c):
             # Aij, bij, cij = bargmann.trace_Abc(Ai, bi, ci, idx_z, idx_zconj)
@@ -180,7 +179,13 @@ class Bargmann(Representation):
             A.append(Aij)
             b.append(bij)
             c.append(cij)
-        return self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+        result = self.__class__(math.astensor(A), math.astensor(b), math.astensor(c))
+        if idx_out is not None:
+            assert set(idx_out).isdisjoint(set(idx_z + idx_zconj)), "idx_out must be disjoint from idx_z and idx_zconj"
+            leftover = [i for i in range(self.ansatz.dim) if i not in idx_z + idx_zconj]
+            result = result.reorder([leftover.index(i) for i in idx_out])
+        return result
+
 
     def reorder(self, order: tuple[int, ...] | list[int]) -> Bargmann:
         r"""Reorders the indices of the A matrix and b vector of an (A,b,c) triple."""
