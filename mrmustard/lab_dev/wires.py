@@ -67,7 +67,6 @@ class Wires:
         ik = {m: randint(1, 2**62) if m in modes_in_ket else 0 for m in self._modes}
         self._id_array = np.array([[ob[m], ib[m], ok[m], ik[m]] for m in self._modes])
         self.mask = np.ones_like(self._id_array)  # multiplicative mask
-        self.connections: dict[int, int] = {}
 
     def copy(self, id_array: Optional[np.ndarray] = None) -> Wires:
         "A disconnected soft copy of self with optional custom id_array."
@@ -84,12 +83,36 @@ class Wires:
         w = self.copy(self._id_array)
         w.mask[masked_rows, :] = -1
         w.mask[:, masked_cols] = -1
-        w.connections = {id:self.connections[id] for id in w.ids if id in self.connections}  # subset of connections
         return w
     
+    def subset(self, ids: Iterable[int]) -> Wires:
+        "A subset of this Wires object with only the given ids."
+        subset = [self.ids.index(i) for i in ids]
+        _id_array = self._id_array[subset]
+        w = Wires()
+        w._id_array = _id_array
+        w.mask = self.mask[subset]
+        w._modes = [self._modes[i] for i in subset]
+        return w
+
     def __bool__(self) -> bool:
         "True if this Wires object contains any wires."
         return len(self.ids) > 0
+    
+    def __add__(self, other: Wires) -> Wires:
+        "A new Wires object with the wires of self and other."
+        modes_rows = {}
+        all_modes = sorted(set(self.modes) | set(other.modes))
+        for m in all_modes:
+            self_row = self.id_array[self.modes.index(m)]
+            other_row = other.id_array[other.modes.index(m)]
+            assert all(self_row[self_row > 0] != other_row[other_row > 0]), "duplicate wires"
+            modes_rows[m] = self_row + other_row
+        w = Wires()
+        w._id_array = np.array([modes_rows[m] for m in sorted(modes_rows)])
+        w.mask = np.ones_like(w._id_array)
+        w._modes = sorted(modes_rows)
+        return w
 
     @property
     def id_array(self) -> np.ndarray:
@@ -101,11 +124,17 @@ class Wires:
         "The list of ids of the available wires in the standard order."
         flat = self.id_array.T.ravel()
         return flat[flat > 0].tolist()
+    
+    @ids.setter
+    def ids(self, ids: list[int]):
+        "Sets the ids of the available wires."
+        assert len(ids) == len(self.ids), "incompatible ids"
+        self._id_array.flat[self.id_array.flatten() > 0] = ids
 
     @property
-    def modes(self) -> set[int]:
+    def modes(self) -> list[int]:
         "The set of modes of the populated wires."
-        return set(m for m in self._modes if any(self.id_array[self._modes.index(m)] > 0))
+        return [m for m in self._modes if any(self.id_array[self._modes.index(m)] > 0)]
 
     @property
     def indices(self) -> list[int]:
@@ -147,7 +176,6 @@ class Wires:
         "A new Wires object with ket <-> bra."
         w = self.copy(self._id_array[:, [1, 0, 3, 2]])
         w.mask = self.mask[:, [1, 0, 3, 2]]
-        w.connections = {id:self.connections[id] for id in w.ids}
         return w
 
     @property
@@ -155,5 +183,4 @@ class Wires:
         "A new Wires object with input <-> output."
         w = self.copy(self._id_array[:, [2, 3, 0, 1]])
         w.mask = self.mask[:, [2, 3, 0, 1]]
-        w.connections = {id:self.connections[id] for id in w.ids}
         return w
