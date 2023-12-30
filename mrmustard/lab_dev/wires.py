@@ -52,10 +52,10 @@ class Wires:
 
     def __init__(
         self,
-        modes_out_bra: Iterable[int] = set(),
-        modes_in_bra: Iterable[int] = set(),
-        modes_out_ket: Iterable[int] = set(),
-        modes_in_ket: Iterable[int] = set(),
+        modes_out_bra: Iterable[int] = [],
+        modes_in_bra: Iterable[int] = [],
+        modes_out_ket: Iterable[int] = [],
+        modes_in_ket: Iterable[int] = [],
     ) -> None:
         self._modes = sorted(
             set(modes_out_bra) | set(modes_in_bra) | set(modes_out_ket) | set(modes_in_ket)
